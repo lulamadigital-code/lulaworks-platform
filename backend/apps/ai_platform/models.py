@@ -10,7 +10,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 
-from apps.core.models import PlatformBaseModel
+from apps.core.models import PlatformBaseModel, TenantBaseModel
 
 
 class PromptTemplate(PlatformBaseModel):
@@ -81,3 +81,41 @@ class AIUsageLog(models.Model):
 
     def __str__(self):
         return f"{self.provider}/{self.agent} {self.credits_used}cr"
+
+
+class ApprovalStatus(models.TextChoices):
+    DRAFT = "draft", "Draft (awaiting human review)"
+    APPROVED = "approved", "Approved by human"
+    REJECTED = "rejected", "Rejected by human"
+
+
+class AIInteraction(TenantBaseModel):
+    """The AI audit record + governance state (AI_PLATFORM §8-9). Every Lulama/agent
+    run is a DRAFT until a human decides. Rejected suggestions are kept — they feed
+    the prompt learning loop. The AI never commits a business side-effect: approving
+    an interaction records the human's acceptance of the DRAFT, it does not execute.
+    """
+
+    request_text = models.TextField()
+    agent = models.CharField(max_length=48, default="lulama")  # lulama = orchestrator
+    prompt_version = models.CharField(max_length=16, default="v1")
+    provider = models.CharField(max_length=24, default="deterministic")
+    result = models.JSONField(default=dict, blank=True)      # the consolidated draft
+    confidence = models.DecimalField(max_digits=4, decimal_places=3, default=0)  # 0-1
+    approval_status = models.CharField(
+        max_length=12, choices=ApprovalStatus.choices, default=ApprovalStatus.DRAFT
+    )
+    # Optional business entity the interaction concerns (e.g. a project).
+    entity_type = models.CharField(max_length=48, blank=True)
+    entity_id = models.UUIDField(null=True, blank=True)
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["company", "approval_status"])]
+
+    def __str__(self):
+        return f"{self.agent}: {self.request_text[:40]} [{self.approval_status}]"

@@ -39,6 +39,8 @@ urlpatterns = [
     path("api/v1/", include("apps.execution.urls")),
     # Finance, Commercial & Payments
     path("api/v1/", include("apps.finance.urls")),
+    # AI Platform — Lulama orchestrator + agents
+    path("api/v1/", include("apps.ai_platform.urls")),
     # OpenAPI
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/v1/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),

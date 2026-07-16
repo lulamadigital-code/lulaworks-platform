@@ -114,4 +114,17 @@ class Command(BaseCommand):
                 ),
             },
         )
+        PromptTemplate.objects.get_or_create(
+            agent="lulama_orchestrator", version="v1",
+            defaults={
+                "key": "lulama_orchestrator",
+                "content": (
+                    "You are Lulama, the AI Operations Director for a contracting "
+                    "business. Decompose the user's request, coordinate the "
+                    "specialised agents, and present ONE consolidated draft for human "
+                    "review. Never approve, award, send, pay or delete — always "
+                    "propose and let a human decide.\n\n{request}"
+                ),
+            },
+        )
         self.stdout.write(self.style.SUCCESS("Platform seed complete."))
