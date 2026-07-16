@@ -16,7 +16,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"  # host 5433 → avoids a locally-running Postgres on 5432
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 5s
@@ -28,7 +28,7 @@ services:
     volumes:
       - redis-data:/data
     ports:
-      - "6379:6379"
+      - "6380:6379"  # host 6380 → avoids a locally-running Redis on 6379
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -37,6 +37,7 @@ services:
 
   api:
     build: ./backend
+    image: lulaworks/api:dev  # one image, reused by worker + beat below
     env_file: .env.docker
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.dev
@@ -58,7 +59,7 @@ services:
       retries: 5
 
   worker:
-    build: ./backend
+    image: lulaworks/api:dev  # same image as api
     env_file: .env.docker
     command: celery -A config worker -l info
     depends_on:
@@ -68,9 +69,10 @@ services:
         condition: service_healthy
 
   beat:
-    build: ./backend
+    image: lulaworks/api:dev  # same image as api
     env_file: .env.docker
-    command: celery -A config beat -l info
+    # schedule file in /tmp (always writable by the non-root user)
+    command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
     depends_on:
       redis:
         condition: service_healthy

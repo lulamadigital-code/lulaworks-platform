@@ -18,10 +18,13 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# Non-root runtime user (security).
+# Non-root runtime user (security). Pre-create writable dirs and own /app so the
+# unprivileged user can run collectstatic (→ staticfiles) and write media.
 RUN useradd --create-home --uid 10001 appuser
 COPY --chown=appuser:appuser . .
-RUN chmod +x entrypoint.sh
+RUN mkdir -p /app/staticfiles /app/media \
+    && chown -R appuser:appuser /app \
+    && chmod +x entrypoint.sh
 
 USER appuser
 EXPOSE 8000
