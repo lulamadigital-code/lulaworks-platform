@@ -29,6 +29,8 @@ urlpatterns = [
     path("api/v1/", include("apps.rfq.urls")),
     # Procurement
     path("api/v1/", include("apps.procurement.urls")),
+    # Estimating & Quotation Intelligence
+    path("api/v1/", include("apps.estimating.urls")),
     # OpenAPI
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/v1/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
