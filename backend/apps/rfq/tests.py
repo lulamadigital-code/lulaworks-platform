@@ -35,6 +35,19 @@ class ExtractionTests(APITestCase):
         self.assertEqual(len(e.lines), 3)
         self.assertEqual(e.lines[0].unit_price, Decimal("485.00"))
 
+    def test_ocr_fallback_when_no_text_layer(self):
+        """Scanned PDF (no text layer) → OCR fallback is used."""
+        from apps.rfq import extraction as ex
+
+        orig_pdf, orig_ocr = ex._pdfplumber_text, ex._ocr_text
+        ex._pdfplumber_text = lambda src: ""          # simulate scanned (no text)
+        ex._ocr_text = lambda data: "PO NUMBER 5502442801 scanned"
+        try:
+            text = ex.extract_text(str(FIXTURE))
+        finally:
+            ex._pdfplumber_text, ex._ocr_text = orig_pdf, orig_ocr
+        self.assertIn("5502442801", text)  # came from the OCR path
+
 
 class RFQPipelineTests(APITestCase):
     def setUp(self):

@@ -79,9 +79,40 @@ def to_decimal(raw) -> Decimal:
         return Decimal("0")
 
 
-def extract_text(pdf_path) -> str:
-    with pdfplumber.open(pdf_path) as pdf:
+def _pdfplumber_text(pdf_source) -> str:
+    with pdfplumber.open(pdf_source) as pdf:
         return "\n".join(page.extract_text() or "" for page in pdf.pages)
+
+
+def _ocr_text(pdf_bytes: bytes) -> str:
+    """OCR a scanned/image PDF (RFQ_INTELLIGENCE §3, decision 15: Tesseract
+    first). Lazy-imported so it's not a hard dependency — returns '' if the
+    OCR toolchain (pytesseract + pdf2image + tesseract binary) is unavailable."""
+    try:
+        import pdf2image
+        import pytesseract
+    except ImportError:
+        return ""
+    try:
+        images = pdf2image.convert_from_bytes(pdf_bytes, dpi=200)
+    except Exception:
+        return ""
+    return "\n".join(pytesseract.image_to_string(img) for img in images)
+
+
+def extract_text(pdf_source) -> str:
+    """Text layer first (free, exact); OCR fallback for scanned/image PDFs."""
+    text = _pdfplumber_text(pdf_source)
+    if text.strip():
+        return text
+    # No text layer → scanned. Re-read bytes for OCR.
+    if hasattr(pdf_source, "seek"):
+        pdf_source.seek(0)
+        data = pdf_source.read()
+    else:
+        with open(pdf_source, "rb") as fh:
+            data = fh.read()
+    return _ocr_text(data)
 
 
 def extract_rfq(pdf_path) -> Extraction:

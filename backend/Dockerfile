@@ -12,7 +12,8 @@ WORKDIR /app
 # psycopg2-binary + Pillow ship manylinux wheels, so no build toolchain needed.
 # libpq5 is the runtime Postgres client lib (safety for psycopg).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libpq5 curl \
+    && apt-get install -y --no-install-recommends \
+       libpq5 curl tesseract-ocr poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
