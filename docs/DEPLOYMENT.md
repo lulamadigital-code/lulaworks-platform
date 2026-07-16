@@ -82,4 +82,4 @@ Scaling: api/worker scale horizontally (stateless). Postgres/Redis scale as mana
 - `config.settings.prod` hardens security (SSL redirect, HSTS, secure cookies, proxy SSL header) for the ALB/ECS edge.
 - No business logic changed.
 
-> **Note:** Docker is not installed on the current development Mac, so the images were authored and validated by inspection + component checks (settings import under prod, migrations, tests, collectstatic all pass). `docker compose build && up` runs wherever Docker is available (your machine / CI).
+> **Validated (2026-07-16):** `docker compose build && up` runs the full stack — **api, worker, beat, db, redis all healthy**. `/health/` returns ok, JWT is issued over HTTP through gunicorn, the OpenAPI schema + Swagger (`/api/v1/docs/`) serve 200, and the **14-test suite passes inside the container**. Local dev publishes db→`5433` and redis→`6380` on the host to avoid clashing with a locally-running Postgres/Redis (internal ports are unchanged).
