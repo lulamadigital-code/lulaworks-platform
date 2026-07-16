@@ -26,6 +26,7 @@ class ProjectViewSet(TenantViewSet):
     required_perms = {
         "create": "projects.create",
         "override": "compliance.override",
+        "capture_actuals": "execution.manage",
     }
 
     def get_queryset(self):
@@ -74,3 +75,30 @@ class ProjectViewSet(TenantViewSet):
             return Response({"error": {"code": "invalid", "message": str(exc)}},
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(recompute_readiness(project))
+
+    # ── Execution/operations surface (Module 9) — execution services imported
+    # lazily so the projects root stays free of an import-time execution dependency.
+    @action(detail=True, methods=["get"])
+    def health(self, request, pk=None):
+        """Live composite project health (budget dimension Golden-Rule gated)."""
+        from apps.execution.services import project_health
+        return Response(project_health(self.get_object(), request.user))
+
+    @action(detail=True, methods=["get"], url_path="progress-report")
+    def progress_report(self, request, pk=None):
+        """Daily progress report. ?audience=customer strips cost + internal issues."""
+        from apps.execution.services import daily_progress_report
+        audience = request.query_params.get("audience", "internal")
+        return Response(daily_progress_report(self.get_object(), audience=audience,
+                                              user=request.user))
+
+    @action(detail=True, methods=["post"], url_path="capture-actuals")
+    def capture_actuals(self, request, pk=None):
+        """Push execution actuals into the estimate — closes the Module 7 loop."""
+        from apps.execution.services import capture_project_actuals
+        try:
+            result = capture_project_actuals(self.get_object(), request.user)
+        except ValueError as exc:
+            return Response({"error": {"code": "invalid", "message": str(exc)}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response(result, status=status.HTTP_201_CREATED)

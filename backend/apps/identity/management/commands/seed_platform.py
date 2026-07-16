@@ -26,6 +26,8 @@ PERMISSIONS = [
     ("procurement.manage", "procurement", "Manage suppliers & POs"),
     ("po.approve", "procurement", "Approve purchase orders"),
     ("ai.generate", "ai", "Use AI features"),
+    ("execution.manage", "execution", "Manage tasks, resources & allocations"),
+    ("timesheet.approve", "execution", "Approve timesheets"),
 ]
 
 # role -> permission codenames ("*" = all)
@@ -34,14 +36,15 @@ ROLES = {
     "Company Administrator": ["*"],
     "Operations Manager": ["projects.create", "projects.view", "rfq.upload",
                             "rfq.approve", "quotes.create", "procurement.manage",
-                            "estimating.manage", "compliance.manage", "ai.generate"],
+                            "estimating.manage", "compliance.manage", "execution.manage",
+                            "timesheet.approve", "ai.generate"],
     "Finance Manager": ["finance.view_money", "invoices.approve", "billing.manage",
                         "po.approve", "estimating.approve", "projects.view"],
     "Estimator": ["estimating.manage", "finance.view_money", "quotes.create",
                   "projects.view", "ai.generate"],
     "Procurement Officer": ["procurement.manage", "finance.view_money", "projects.view"],
     "Safety Officer": ["compliance.manage", "compliance.override", "projects.view"],
-    "Supervisor": ["projects.view", "ai.generate"],
+    "Supervisor": ["projects.view", "execution.manage", "timesheet.approve", "ai.generate"],
     "Worker": ["projects.view"],
 }
 
