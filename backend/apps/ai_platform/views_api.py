@@ -39,7 +39,7 @@ class AIInteractionViewSet(TenantViewSet):
         if data.get("quotation"):
             quotation = get_object_or_404(Quotation.objects.all(), id=data["quotation"])
         interaction = orchestrate(request.user.active_company, request.user, data["request"],
-                                  project=project, quotation=quotation)
+                                  project=project, quotation=quotation, enrich=data.get("enrich"))
         return Response(AIInteractionSerializer(interaction).data,
                         status=status.HTTP_201_CREATED)
 

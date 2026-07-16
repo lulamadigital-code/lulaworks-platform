@@ -221,3 +221,70 @@ class AIAPITests(APITestCase):
         self.client.force_authenticate(rival)
         resp = self.client.get(f"/api/v1/ai/interactions/{interaction.id}/")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+
+# ── Live-LLM enrichment (grounded, metered, with fallback) ────────────────────
+
+from unittest.mock import patch  # noqa: E402
+
+from .gateway import AIResponse  # noqa: E402
+from .providers import AIProvider  # noqa: E402
+
+
+class _StubProvider(AIProvider):
+    name = "claude"
+
+    def __init__(self, *, fail=False):
+        self.fail = fail
+
+    def complete(self, prompt, *, system="", max_tokens=2000):
+        if self.fail:
+            raise RuntimeError("provider timeout")
+        # The stub echoes that it only saw grounded facts — never invents.
+        return AIResponse(text="Executive briefing (grounded).", provider="claude",
+                          tokens_in=50, tokens_out=20, credits_used=Decimal("1"))
+
+
+class EnrichmentTests(APITestCase):
+    def _setup(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            allocate_credits(c, Decimal("10"))
+            project = compliant_project(c)
+            user = user_with(c, PERMS)
+        return c, project, user
+
+    def test_enrich_adds_briefing_and_meters_credits(self):
+        c, project, user = self._setup()
+        with tenant_scope(c.id), \
+                patch("apps.ai_platform.orchestrator.configured_provider_names",
+                      return_value=["claude"]), \
+                patch("apps.ai_platform.orchestrator.get_provider",
+                      return_value=_StubProvider()):
+            interaction = orchestrate(c, user, "Prepare this project", project=project,
+                                      enrich=True)
+            balance = credit_balance(c)
+        self.assertEqual(interaction.provider, "claude")
+        self.assertIn("executive_briefing", interaction.result)
+        self.assertEqual(balance, Decimal("9"))   # 10 − 1 credit metered
+
+    def test_provider_failure_falls_back_to_deterministic(self):
+        c, project, user = self._setup()
+        with tenant_scope(c.id), \
+                patch("apps.ai_platform.orchestrator.configured_provider_names",
+                      return_value=["claude"]), \
+                patch("apps.ai_platform.orchestrator.get_provider",
+                      return_value=_StubProvider(fail=True)):
+            interaction = orchestrate(c, user, "Prepare this project", project=project,
+                                      enrich=True)
+            balance = credit_balance(c)
+        self.assertEqual(interaction.provider, "deterministic")   # graceful fallback
+        self.assertNotIn("executive_briefing", interaction.result)
+        self.assertEqual(balance, Decimal("10"))   # nothing debited on failure
+
+    def test_default_path_stays_deterministic_without_key(self):
+        c, project, user = self._setup()
+        with tenant_scope(c.id):
+            interaction = orchestrate(c, user, "Prepare this project", project=project)
+        self.assertEqual(interaction.provider, "deterministic")   # enrich=None, no key
+        self.assertEqual(credit_balance(c), Decimal("10"))

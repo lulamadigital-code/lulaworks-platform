@@ -16,6 +16,8 @@ class AskSerializer(serializers.Serializer):
     request = serializers.CharField()
     project = serializers.UUIDField(required=False)
     quotation = serializers.UUIDField(required=False)
+    # None = auto (enrich when a provider is configured); explicit true/false overrides.
+    enrich = serializers.BooleanField(required=False, allow_null=True, default=None)
 
 
 class DecisionSerializer(serializers.Serializer):

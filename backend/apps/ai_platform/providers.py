@@ -18,14 +18,25 @@ class NotConfiguredError(RuntimeError):
     """Raised when a provider is selected but its API key/SDK is unavailable."""
 
 
+def _key_for(provider: str) -> str:
+    return {
+        "claude": settings.ANTHROPIC_API_KEY,
+        "openai": settings.OPENAI_API_KEY,
+        "gemini": settings.GEMINI_API_KEY,
+    }.get(provider, "")
+
+
 def ai_configured() -> bool:
     """True if the active provider has an API key configured."""
-    provider = settings.AI_PROVIDER
-    return bool(
-        (provider == "claude" and settings.ANTHROPIC_API_KEY)
-        or (provider == "openai" and settings.OPENAI_API_KEY)
-        or (provider == "gemini" and settings.GEMINI_API_KEY)
-    )
+    return bool(_key_for(settings.AI_PROVIDER))
+
+
+def configured_provider_names() -> list[str]:
+    """The active provider first, then the others that also have a key — the
+    fallback order (AI_PLATFORM §2: provider down → next provider)."""
+    active = settings.AI_PROVIDER
+    ordered = [active] + [p for p in ("claude", "openai", "gemini") if p != active]
+    return [p for p in ordered if _key_for(p)]
 
 
 class ClaudeProvider(AIProvider):

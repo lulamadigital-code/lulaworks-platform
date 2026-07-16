@@ -73,6 +73,19 @@ Scaling: api/worker scale horizontally (stateless). Postgres/Redis scale as mana
 | `REDIS_URL` | broker + cache | `redis://redis:6379/0` | ElastiCache endpoint |
 | `CORS_ALLOWED_ORIGINS` | web/app origins | localhost | app domains |
 | `AWS_*` (later) | S3/SES | — | IAM task role |
+| `AI_PROVIDER` | active LLM (`claude`/`openai`/`gemini`) | unset → deterministic | `claude` |
+| `ANTHROPIC_API_KEY` | live LLM key (enables metered enrichment) | unset | **secret** |
+| `ANTHROPIC_MODEL` | model id | `claude-sonnet-5` | `claude-sonnet-5` |
+
+### Going live with AI (optional)
+The platform is **deterministic-first**: with no key set, Lulama and every agent run
+fully on grounded data — free, exact, no LLM. To enable the metered live-LLM
+executive briefing, set `ANTHROPIC_API_KEY` (via `.env.docker` locally, **Secrets
+Manager** in prod) and `AI_PROVIDER=claude`. The `anthropic` SDK ships in the image;
+the gateway meters every call against the tenant's credit ledger, falls back
+provider→provider then to the deterministic result on any failure, and the LLM only
+*phrases* the deterministic facts — it is never the source of truth. No key, no
+credits, or a provider outage all degrade gracefully to the deterministic path.
 
 ## 7. What changed in the code for container-first
 

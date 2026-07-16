@@ -44,5 +44,17 @@ RFQ → Estimate → Quotation → award → Project → compliance gate → exe
 actuals → Finance (profit + forecast) → Lulama orchestrates it all, human approves.
 ```
 
+## Live LLM — wired (2026-07-16)
+The Claude provider is **wired end to end**: the `anthropic` SDK ships in the image, and
+Lulama gains an optional **grounded executive briefing** — the metered gateway sends the
+agents' *deterministic* findings to the LLM, which only phrases them (never invents facts
+or numbers). Provider fallback order (claude→openai→gemini), metered against the credit
+ledger, with graceful degradation to the deterministic result on no-key / no-credits /
+provider error — all stub-tested (3 tests). To go live, set `ANTHROPIC_API_KEY` +
+`AI_PROVIDER=claude` (see DEPLOYMENT.md §6). Default (no key) stays deterministic and free.
+
 ## Honestly deferred (platform-wide, noted not hidden)
-Live LLM calls (need an API key; gateway + adapters built and stub-tested), pgvector similarity for Project DNA, Celery-parallel agent dispatch (agents run synchronously today), the Flutter app, and AWS/ECS deployment (container-first foundation is ready). The deterministic spine is complete and real.
+pgvector similarity for Project DNA, Celery-parallel agent dispatch (agents run
+synchronously today), the Flutter app, and AWS/ECS deployment (container-first foundation
+is ready). The deterministic spine is complete and real; the live LLM path is wired and
+stub-tested end to end (a real API key exercises it against Anthropic).

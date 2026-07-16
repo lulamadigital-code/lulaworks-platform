@@ -11,6 +11,8 @@ Deterministic-first: agents ground their answers in the real modules for free.
 The metered LLM (via the gateway) is an optional narrative enrichment.
 """
 
+import json
+import logging
 from decimal import Decimal
 
 from django.utils import timezone
@@ -19,8 +21,12 @@ from apps.core.events import publish
 
 from . import governance
 from .agents import AGENTS, AgentResult, _decimalless, agent_required_perm
+from .gateway import InsufficientCreditsError, run_metered
 from .models import AIInteraction, ApprovalStatus, PromptTemplate
+from .providers import NotConfiguredError, ai_configured, configured_provider_names, get_provider
 from .tools import ToolPermissionError
+
+logger = logging.getLogger(__name__)
 
 PROMPT_AGENT = "lulama_orchestrator"
 
@@ -72,20 +78,68 @@ def _detected_proposals(request_text: str) -> list[dict]:
     return proposals
 
 
+def _prompt() -> PromptTemplate | None:
+    return PromptTemplate.objects.filter(agent=PROMPT_AGENT, is_active=True).first()
+
+
 def _prompt_version() -> str:
-    tpl = PromptTemplate.objects.filter(agent=PROMPT_AGENT, is_active=True).first()
+    tpl = _prompt()
     return tpl.version if tpl else "v1"
+
+
+# ── Optional live-LLM enrichment (deterministic-first: facts stay authoritative) ─
+
+def _maybe_enrich(company, user, consolidated) -> tuple[str, str] | None:
+    """Turn the GROUNDED agent findings into a natural-language executive briefing
+    via the metered gateway. The LLM only *phrases* the deterministic facts — it is
+    never the source of truth. Tries providers in fallback order; on any failure
+    (no key/SDK, out of credits, provider error) returns None and the caller keeps
+    the deterministic result. Returns (provider_name, briefing_text)."""
+    tpl = _prompt()
+    system = tpl.content.split("\n\n{request}")[0] if tpl else (
+        "You are Lulama, an AI Operations Director. Summarise ONLY the facts given."
+    )
+    grounded = {
+        "request": consolidated.get("headline", ""),
+        "agents": [{"agent": a["agent"], "summary": a["summary"], "findings": a["findings"]}
+                   for a in consolidated["agents"]],
+        "proposed_actions": consolidated["proposed_actions"],
+    }
+    prompt = (
+        "Write a concise executive briefing (<=120 words) for the Operations "
+        "Director from the grounded findings below. Use ONLY these facts — do not "
+        "invent numbers, names or actions. Note that any proposed actions require "
+        "human approval.\n\nFINDINGS:\n" + json.dumps(grounded, default=str)
+    )
+    for name in configured_provider_names():
+        try:
+            provider = get_provider(name)
+            resp = run_metered(company, user, provider, prompt, agent="lulama", system=system)
+            return resp.provider, resp.text
+        except InsufficientCreditsError:
+            logger.info("Lulama enrichment skipped: no AI credits.")
+            return None
+        except (NotConfiguredError, Exception) as exc:  # noqa: BLE001 - resilient fallback
+            logger.warning("Lulama enrichment via %s failed (%s); trying next / falling back.",
+                           name, exc)
+            continue
+    return None
 
 
 # ── The orchestrator ──────────────────────────────────────────────────────────
 
-def orchestrate(company, user, request_text, *, project=None, quotation=None) -> AIInteraction:
+def orchestrate(company, user, request_text, *, project=None, quotation=None,
+                enrich=None) -> AIInteraction:
     """Decompose → dispatch permitted agents → aggregate ONE reviewable draft.
 
     Security model: an agent runs only if the invoking user holds its required
     permission; skipped agents are recorded (the AI never exceeds the user's RBAC).
     Governance: side-effecting intents are surfaced as human-approval proposals —
     the AI never executes them.
+
+    `enrich` adds a metered live-LLM executive briefing over the grounded facts
+    (default: on when a provider is configured). The deterministic result is always
+    produced first and stands on its own if the LLM is unavailable.
     """
     plan = decompose(request_text)
     results: list[AgentResult] = []
@@ -119,9 +173,18 @@ def orchestrate(company, user, request_text, *, project=None, quotation=None) ->
         "requires_human_approval": any(a.get("requires_approval") for a in proposed_actions),
     }
 
+    # Deterministic result stands alone; the LLM only phrases it (metered, grounded).
+    provider = "deterministic"
+    if enrich is None:
+        enrich = ai_configured()
+    if enrich and results:
+        enriched = _maybe_enrich(company, user, consolidated)
+        if enriched is not None:
+            provider, consolidated["executive_briefing"] = enriched
+
     interaction = AIInteraction.objects.create(
         company=company, request_text=request_text, agent="lulama",
-        prompt_version=_prompt_version(), provider="deterministic",
+        prompt_version=_prompt_version(), provider=provider,
         result=_decimalless(consolidated), confidence=Decimal(str(overall)),
         approval_status=ApprovalStatus.DRAFT,
         entity_type="Project" if project else "", entity_id=project.id if project else None,
