@@ -8,7 +8,8 @@ select = ["E", "F", "I", "UP", "B", "DJ"]
 ignore = ["B008"]  # DRF/Django default-in-call patterns are idiomatic
 
 [tool.ruff.lint.per-file-ignores]
-"*/tests.py" = ["E402"]
+"*/tests.py" = ["E402", "E501"]
+"*/tests_*.py" = ["E402", "E501"]
 "config/settings/*" = ["F403", "F405"]
 
 [tool.pytest.ini_options]

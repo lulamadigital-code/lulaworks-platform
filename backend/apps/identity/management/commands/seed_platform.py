@@ -20,6 +20,8 @@ PERMISSIONS = [
     ("quotes.create", "estimating", "Create quotations"),
     ("compliance.override", "compliance", "Override compliance gate"),
     ("invoices.approve", "finance", "Approve invoices"),
+    ("procurement.manage", "procurement", "Manage suppliers & POs"),
+    ("po.approve", "procurement", "Approve purchase orders"),
     ("ai.generate", "ai", "Use AI features"),
 ]
 
@@ -28,9 +30,11 @@ ROLES = {
     "Company Owner": ["*"],
     "Company Administrator": ["*"],
     "Operations Manager": ["projects.create", "projects.view", "rfq.upload",
-                            "rfq.approve", "quotes.create", "ai.generate"],
+                            "rfq.approve", "quotes.create", "procurement.manage",
+                            "ai.generate"],
     "Finance Manager": ["finance.view_money", "invoices.approve", "billing.manage",
-                        "projects.view"],
+                        "po.approve", "projects.view"],
+    "Procurement Officer": ["procurement.manage", "finance.view_money", "projects.view"],
     "Safety Officer": ["compliance.override", "projects.view"],
     "Supervisor": ["projects.view", "ai.generate"],
     "Worker": ["projects.view"],
