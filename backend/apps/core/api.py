@@ -5,6 +5,7 @@ from rest_framework import viewsets
 from rest_framework.views import exception_handler as drf_exception_handler
 
 from .middleware import set_tenant_from_request
+from .permissions import HasPermission
 
 
 def exception_handler(exc, context):
@@ -33,6 +34,7 @@ class TenantViewSet(viewsets.ModelViewSet):
     """
 
     model = None
+    permission_classes = [HasPermission]  # RBAC via required_perms/required_perm
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
