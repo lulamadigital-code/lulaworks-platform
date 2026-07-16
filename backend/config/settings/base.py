@@ -143,6 +143,16 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
+# --- AI providers (AI_PLATFORM §2). Deterministic-first; AI is fallback/premium.
+# Keys come from the environment (Secrets Manager in prod); empty = not
+# configured, and the platform runs fully on the deterministic path. ---
+AI_PROVIDER = config("AI_PROVIDER", default="claude")
+ANTHROPIC_API_KEY = config("ANTHROPIC_API_KEY", default="")
+ANTHROPIC_MODEL = config("ANTHROPIC_MODEL", default="claude-sonnet-5")
+OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
+GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
+AI_CREDITS_PER_EXTRACTION = config("AI_CREDITS_PER_EXTRACTION", default="1", cast=str)
+
 # --- Celery / Redis (async boundary; DATA_MODEL §14) ---
 REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_BROKER_URL = REDIS_URL

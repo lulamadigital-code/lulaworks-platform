@@ -15,6 +15,7 @@ from apps.quotes.services import create_quotation
 from apps.storage.models import StorageFile
 
 from .extraction import extract_rfq
+from .intelligence import enrich_with_ai
 from .models import ExtractedField, RFQDocument, RFQLineItem, RFQStatus
 
 CONFIDENCE_THRESHOLD = 0.85  # below → needs_review (RFQ_INTELLIGENCE decision 16)
@@ -46,9 +47,13 @@ def ingest_rfq(company, user, *, uploaded_file, original_name: str) -> RFQDocume
     with default_storage.open(saved_path, "rb") as fh:
         extraction = extract_rfq(fh)
 
+    # Deterministic-first; AI fills gaps only if a provider is configured (§4).
+    extraction = enrich_with_ai(company, user, extraction)
+
     rfq.warnings = extraction.warnings
+    rfq.extracted_text = extraction.text[:20000]
     rfq.status = RFQStatus.IN_REVIEW
-    rfq.save(update_fields=["warnings", "status"])
+    rfq.save(update_fields=["warnings", "extracted_text", "status"])
 
     for key, ev in extraction.fields.items():
         ExtractedField.objects.create(

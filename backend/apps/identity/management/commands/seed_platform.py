@@ -4,6 +4,7 @@ subscription plans, and feature-flag definitions. Idempotent."""
 from django.core.management.base import BaseCommand
 
 from apps.administration.models import FeatureFlagDefinition
+from apps.ai_platform.models import PromptTemplate
 from apps.billing.models import Plan
 from apps.identity.models import Permission, Role
 
@@ -87,4 +88,17 @@ class Command(BaseCommand):
             FeatureFlagDefinition.objects.get_or_create(
                 key=key, defaults={"description": desc, "default_enabled": default}
             )
+
+        PromptTemplate.objects.get_or_create(
+            agent="rfq_extraction", version="v1",
+            defaults={
+                "key": "rfq_extraction",
+                "content": (
+                    "Extract from this RFQ/PO text as strict JSON with keys "
+                    '"fields" (key -> {value, confidence}) and "lines" '
+                    "([{description, qty, unit, unit_price}]). Find: po_number, "
+                    "order_date, client, site, contact, scope, work_type.\n\n{text}"
+                ),
+            },
+        )
         self.stdout.write(self.style.SUCCESS("Platform seed complete."))

@@ -37,6 +37,7 @@ class Extraction:
     fields: dict = field(default_factory=dict)   # key -> ExtractedValue
     lines: list = field(default_factory=list)
     warnings: list = field(default_factory=list)
+    text: str = ""
 
 
 PO_NUMBER_RE = re.compile(
@@ -86,6 +87,7 @@ def extract_text(pdf_path) -> str:
 def extract_rfq(pdf_path) -> Extraction:
     result = Extraction()
     text = extract_text(pdf_path)
+    result.text = text
     if not text.strip():
         result.warnings.append("No text extracted — scanned image? OCR/AI fallback needed.")
         return result

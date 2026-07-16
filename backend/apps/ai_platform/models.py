@@ -10,6 +10,28 @@ import uuid
 from django.conf import settings
 from django.db import models
 
+from apps.core.models import PlatformBaseModel
+
+
+class PromptTemplate(PlatformBaseModel):
+    """Versioned prompt registry (AI_PLATFORM §6) — prompts are never hardcoded
+    in application code. Each agent owns versioned prompts; only one is active."""
+
+    agent = models.CharField(max_length=48)  # rfq_extraction, quote_writer, ...
+    key = models.CharField(max_length=64)
+    version = models.CharField(max_length=16, default="v1")
+    content = models.TextField()
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["agent", "-version"]
+        constraints = [
+            models.UniqueConstraint(fields=["agent", "version"], name="unique_prompt_version")
+        ]
+
+    def __str__(self):
+        return f"{self.agent}/{self.version}"
+
 
 class AICreditLedger(models.Model):
     """Append-only credit ledger. Balance = latest balance_after."""
