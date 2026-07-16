@@ -94,6 +94,10 @@ def approve_rfq(rfq: RFQDocument, user, *, client_name: str) -> RFQDocument:
     rfq.status = RFQStatus.APPROVED
     rfq.approved_by = user
     rfq.save(update_fields=["quotation", "status", "approved_by"])
+    # Knowledge capture (private always; shared/aggregate only if opted in).
+    from apps.knowledge.services import capture_from_rfq
+
+    capture_from_rfq(rfq, quote, user)
     for f in rfq.fields.all():
         f.review_status = "approved"
         f.approved_value = f.approved_value or f.value
