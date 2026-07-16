@@ -1,0 +1,14 @@
+# LulaWorks platform — backend dependencies (Phase 1 foundation)
+Django==6.0.2
+djangorestframework==3.17.1
+djangorestframework-simplejwt==5.5.1
+django-filter==25.1
+drf-spectacular==0.28.0
+django-cors-headers==4.9.0
+django-simple-history==3.10.1
+celery==5.6.3
+redis==6.4.0
+python-decouple==3.8
+psycopg2-binary==2.9.11
+Pillow==12.2.0
+gunicorn==26.0.0
