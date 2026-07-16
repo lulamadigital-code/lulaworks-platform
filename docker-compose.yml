@@ -1,0 +1,82 @@
+# LulaWorks — local development stack (container-first).
+#
+# App services (api, worker, beat) all run from the SAME image with different
+# commands. Postgres and Redis run as containers here for DEV convenience only;
+# in production they are EXTERNAL managed services (RDS, ElastiCache) and are
+# NOT part of this file. Persistent data lives in named volumes / external
+# services — never inside app containers.
+
+services:
+  db: # DEV ONLY — production uses Amazon RDS PostgreSQL (external)
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-lulaworks_platform}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis: # DEV ONLY — production uses Amazon ElastiCache (external)
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    env_file: .env.docker
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build: ./backend
+    env_file: .env.docker
+    command: celery -A config worker -l info
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+
+  beat:
+    build: ./backend
+    env_file: .env.docker
+    command: celery -A config beat -l info
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:

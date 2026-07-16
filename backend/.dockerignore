@@ -1,0 +1,18 @@
+# Never bake secrets or local state into the image
+.env
+.env.*
+*.env.local
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+staticfiles/
+media/
+*.sqlite3
+
+.git/
+.gitignore
+.DS_Store
