@@ -31,6 +31,10 @@ urlpatterns = [
     path("api/v1/", include("apps.procurement.urls")),
     # Estimating & Quotation Intelligence
     path("api/v1/", include("apps.estimating.urls")),
+    # Projects (execution aggregate root)
+    path("api/v1/", include("apps.projects.urls")),
+    # Compliance Intelligence (the readiness gate)
+    path("api/v1/", include("apps.compliance.urls")),
     # OpenAPI
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/v1/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
