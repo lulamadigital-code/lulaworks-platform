@@ -32,6 +32,9 @@ class AICreditLedger(models.Model):
         ordering = ["-created_at"]
         indexes = [models.Index(fields=["company", "created_at"])]
 
+    def __str__(self):
+        return f"{self.entry_type} {self.credits} → {self.balance_after}"
+
 
 class AIUsageLog(models.Model):
     """Per-request AI usage (append-only, high-volume → partition by month)."""
@@ -53,3 +56,6 @@ class AIUsageLog(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.provider}/{self.agent} {self.credits_used}cr"

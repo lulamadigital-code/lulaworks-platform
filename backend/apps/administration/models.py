@@ -77,7 +77,9 @@ class NumberingRule(PlatformBaseModel):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["company", "doc_type"], name="unique_numbering_per_type")
+            models.UniqueConstraint(
+                fields=["company", "doc_type"], name="unique_numbering_per_type"
+            )
         ]
 
     def __str__(self):
@@ -88,7 +90,9 @@ class NumberSequence(models.Model):
     """Atomic counter behind NumberingRule. Locked on allocation."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    company = models.ForeignKey("identity.Company", on_delete=models.CASCADE, related_name="+")
+    company = models.ForeignKey(
+        "identity.Company", on_delete=models.CASCADE, related_name="+"
+    )
     doc_type = models.CharField(max_length=40)
     year = models.PositiveSmallIntegerField()
     last_seq = models.PositiveIntegerField(default=0)
@@ -99,6 +103,9 @@ class NumberSequence(models.Model):
                 fields=["company", "doc_type", "year"], name="unique_sequence_per_type_year"
             )
         ]
+
+    def __str__(self):
+        return f"{self.doc_type} {self.year}: {self.last_seq}"
 
 
 class FeatureFlagDefinition(PlatformBaseModel):

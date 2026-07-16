@@ -53,14 +53,18 @@ def _post_ledger(company, entry_type, credits: Decimal, source: str) -> Decimal:
 
 
 def allocate_credits(company, amount: Decimal, source="monthly") -> Decimal:
-    return _post_ledger(company, AICreditLedger.EntryType.ALLOCATION, Decimal(amount), source)
+    return _post_ledger(
+        company, AICreditLedger.EntryType.ALLOCATION, Decimal(amount), source
+    )
 
 
 def topup_credits(company, amount: Decimal, source="purchase") -> Decimal:
     return _post_ledger(company, AICreditLedger.EntryType.TOPUP, Decimal(amount), source)
 
 
-def run_metered(company, user, provider: AIProvider, prompt: str, *, agent="", **kwargs) -> AIResponse:
+def run_metered(
+    company, user, provider: AIProvider, prompt: str, *, agent="", **kwargs
+) -> AIResponse:
     """Execute an AI call through the gateway: check balance → call → log usage
     → debit ledger. Fails closed if the tenant is out of credits."""
     if credit_balance(company) <= 0:
@@ -72,5 +76,8 @@ def run_metered(company, user, provider: AIProvider, prompt: str, *, agent="", *
         credits_used=resp.credits_used, status="ok",
     )
     if resp.credits_used:
-        _post_ledger(company, AICreditLedger.EntryType.CONSUMPTION, -resp.credits_used, agent or resp.provider)
+        _post_ledger(
+            company, AICreditLedger.EntryType.CONSUMPTION, -resp.credits_used,
+            agent or resp.provider,
+        )
     return resp

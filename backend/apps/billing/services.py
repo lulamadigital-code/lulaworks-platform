@@ -30,9 +30,13 @@ def check_user_seat(company, current_user_count: int) -> EntitlementResult:
     sub = _subscription(company)
     limit = sub.limit("max_users", company.max_users) if sub else company.max_users
     if current_user_count >= limit:
-        return EntitlementResult(False, reason=f"User limit ({limit}) reached — upgrade to add more.")
+        return EntitlementResult(
+            False, reason=f"User limit ({limit}) reached — upgrade to add more."
+        )
     if current_user_count >= int(limit * WARN_RATIO):
-        return EntitlementResult(True, warn=True, reason=f"Approaching user limit ({limit}).")
+        return EntitlementResult(
+            True, warn=True, reason=f"Approaching user limit ({limit})."
+        )
     return EntitlementResult(True)
 
 
@@ -41,4 +45,6 @@ def check_module(company, module_key: str) -> EntitlementResult:
     entitled = sub.plan.module_entitlements if sub else []
     if module_key in entitled or not entitled:
         return EntitlementResult(True)
-    return EntitlementResult(False, reason=f"'{module_key}' is not in your plan — upgrade to enable.")
+    return EntitlementResult(
+        False, reason=f"'{module_key}' is not in your plan — upgrade to enable."
+    )

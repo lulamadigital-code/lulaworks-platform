@@ -5,7 +5,9 @@ subscribers. Idempotent consumers key on event_id."""
 from .models import DomainEvent
 
 
-def publish(event_type: str, *, company=None, subject=None, payload=None, actor=None) -> DomainEvent:
+def publish(
+    event_type: str, *, company=None, subject=None, payload=None, actor=None
+) -> DomainEvent:
     subject_type = subject.__class__.__name__ if subject is not None else ""
     subject_id = getattr(subject, "id", None)
     return DomainEvent.objects.create(
