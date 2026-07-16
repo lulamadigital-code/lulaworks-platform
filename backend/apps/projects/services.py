@@ -34,4 +34,9 @@ def award_quotation(company, user, *, quotation, work_type="", mine="", site="")
     # Compose the compliance checklist for the new project (Module 8 §5).
     from apps.compliance.services import discover_requirements
     discover_requirements(project, user)
+
+    # Auto-create the commercial budget baseline from the approved estimate,
+    # if one exists (Module 10 §3). Best-effort — no-op without an approved estimate.
+    from apps.finance.services import create_budget_from_estimate
+    create_budget_from_estimate(project, user)
     return project

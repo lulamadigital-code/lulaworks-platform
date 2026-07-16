@@ -102,3 +102,56 @@ class ProjectViewSet(TenantViewSet):
             return Response({"error": {"code": "invalid", "message": str(exc)}},
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(result, status=status.HTTP_201_CREATED)
+
+    # ── Commercial/finance surface (Module 10) — all money, so every endpoint
+    # requires finance.view_money (Golden Rule). Finance services lazy-imported.
+    def _need_money(self, request):
+        return bool(request.user.has_perm_code("finance.view_money"))
+
+    def _forbidden(self):
+        return Response({"error": {"code": "forbidden", "message": "Need finance.view_money."}},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    @action(detail=True, methods=["post"], url_path="create-budget")
+    def create_budget(self, request, pk=None):
+        """Create the budget baseline from the approved estimate (Module 10 §3)."""
+        if not self._need_money(request):
+            return self._forbidden()
+        from apps.finance.services import create_budget_from_estimate
+        budget = create_budget_from_estimate(self.get_object(), request.user)
+        if budget is None:
+            return Response({"error": {"code": "invalid",
+                                       "message": "No approved estimate for this project."}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        from apps.finance.services import budget_vs_actual
+        return Response(budget_vs_actual(self.get_object()), status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"])
+    def budget(self, request, pk=None):
+        """Live budget vs actual per category (rebuilds actuals from source first)."""
+        if not self._need_money(request):
+            return self._forbidden()
+        from apps.finance.services import budget_vs_actual, rebuild_actuals_from_sources
+        project = self.get_object()
+        rebuild_actuals_from_sources(project, request.user)
+        return Response(budget_vs_actual(project))
+
+    @action(detail=True, methods=["get"])
+    def profitability(self, request, pk=None):
+        """Live profitability: revenue, actual cost, gross profit, margin, variance."""
+        if not self._need_money(request):
+            return self._forbidden()
+        from apps.finance.services import profitability, rebuild_actuals_from_sources
+        project = self.get_object()
+        rebuild_actuals_from_sources(project, request.user)
+        return Response(profitability(project))
+
+    @action(detail=True, methods=["get"], url_path="profit-forecast")
+    def profit_forecast(self, request, pk=None):
+        """Project Profit Predictor — explainable final-outcome forecast (Module 10 §10)."""
+        if not self._need_money(request):
+            return self._forbidden()
+        from apps.finance.services import profit_forecast, rebuild_actuals_from_sources
+        project = self.get_object()
+        rebuild_actuals_from_sources(project, request.user)
+        return Response(profit_forecast(project))
