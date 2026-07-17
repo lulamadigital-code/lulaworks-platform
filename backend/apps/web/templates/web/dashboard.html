@@ -1,0 +1,52 @@
+{% extends "web/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Operations dashboard</h1>
+<p class="sub">What needs attention across the portfolio.</p>
+
+<div class="grid">
+  <div class="tile"><div class="n">{{ project_count }}</div><div class="l">Projects</div></div>
+  <div class="tile"><div class="n">{{ ready }}</div><div class="l">Ready for site</div></div>
+  <div class="tile"><div class="n">{{ in_execution }}</div><div class="l">In execution</div></div>
+  <div class="tile"><div class="n">{{ attention|length }}</div><div class="l">Blocked on compliance</div></div>
+</div>
+
+{% if can_view_money %}
+<h2>Commercial</h2>
+<div class="grid">
+  <div class="tile"><div class="n">R{{ commercial.revenue }}</div><div class="l">Revenue</div></div>
+  <div class="tile"><div class="n">R{{ commercial.cost }}</div><div class="l">Actual cost</div></div>
+  <div class="tile"><div class="n">{{ commercial.margin_pct }}%</div><div class="l">Portfolio margin</div></div>
+  <div class="tile"><div class="n">R{{ commercial.outstanding_retention }}</div><div class="l">Retention held</div></div>
+</div>
+{% if commercial.loss_making_projects %}
+<div class="card" style="border-color:var(--badbg);">
+  <strong style="color:var(--bad);">Loss-making ({{ commercial.loss_making_projects|length }})</strong>
+  <table style="margin-top:8px;">
+    {% for lm in commercial.loss_making_projects %}
+    <tr><td>{{ lm.project }}</td><td class="right muted">margin {{ lm.margin_pct }}%</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endif %}
+
+<h2>Needs attention — compliance not ready</h2>
+{% if attention %}
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Project</th><th>Client</th><th>Readiness</th><th></th></tr>
+    {% for a in attention %}
+    <tr>
+      <td><a href="{% url 'web:project_detail' a.project.id %}">{{ a.project.number }}</a></td>
+      <td class="muted">{{ a.project.client_name }}</td>
+      <td><span class="chip bad">{{ a.readiness.overall }}% · {{ a.readiness.blocking|length }} blocking</span></td>
+      <td class="right"><a href="{% url 'web:project_detail' a.project.id %}">Review →</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<div class="card muted">Nothing blocked — every project is compliance-ready. ✓</div>
+{% endif %}
+{% endblock %}

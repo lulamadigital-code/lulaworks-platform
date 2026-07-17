@@ -1,0 +1,36 @@
+{% comment %}The Work Readiness gate — shared by the full page and the HTMX refresh.{% endcomment %}
+<div id="readiness" class="card">
+  <div class="row" style="margin-bottom:12px;">
+    {% if readiness.gate_status == 'ready' %}
+      <span class="chip ok" style="font-size:14px;">✓ Ready for site</span>
+    {% elif readiness.gate_status == 'overridden' %}
+      <span class="chip warn" style="font-size:14px;">Ready (overridden)</span>
+    {% else %}
+      <span class="chip bad" style="font-size:14px;">Not ready for site</span>
+    {% endif %}
+    <span class="sp" style="flex:1;"></span>
+    <strong style="font-size:20px;">{{ readiness.overall }}%</strong>
+    <button class="btn" style="padding:6px 12px; font-size:13px;"
+            hx-get="{% url 'web:readiness_partial' project.id %}"
+            hx-target="#readiness" hx-swap="outerHTML">Refresh</button>
+  </div>
+  <div class="bar-track" style="margin-bottom:16px;">
+    <div class="bar-fill" style="width:{{ readiness.overall }}%;
+         {% if not readiness.gate_status == 'ready' and not readiness.gate_status == 'overridden' %}background:var(--bad);{% endif %}"></div>
+  </div>
+  {% for cat, pct in readiness.categories.items %}
+  <div class="row">
+    <span class="lbl">{{ cat|capfirst }}</span>
+    <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:{{ pct }}%;"></div></div>
+    <span class="val">{{ pct }}%</span>
+  </div>
+  {% endfor %}
+  {% if readiness.blocking %}
+  <div style="border-top:1px solid var(--line); margin-top:14px; padding-top:12px;">
+    <strong style="color:var(--bad);">Blocking ({{ readiness.blocking|length }})</strong>
+    <ul style="margin:8px 0 0; padding-left:18px;" class="muted">
+      {% for b in readiness.blocking %}<li>{{ b.name }} <span style="opacity:.7;">({{ b.source }})</span></li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</div>

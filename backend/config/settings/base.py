@@ -48,6 +48,7 @@ LOCAL_APPS = [
     "apps.compliance",
     "apps.execution",
     "apps.finance",
+    "apps.web",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -100,6 +101,12 @@ DATABASES = {
 }
 
 AUTH_USER_MODEL = "identity.User"
+
+# Session-authenticated manager web (server-rendered HTML + HTMX). Separate from
+# the JWT API used by the Flutter field app.
+LOGIN_URL = "web:login"
+LOGIN_REDIRECT_URL = "web:dashboard"
+LOGOUT_REDIRECT_URL = "web:login"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

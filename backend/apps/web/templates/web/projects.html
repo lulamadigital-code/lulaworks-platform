@@ -1,0 +1,28 @@
+{% extends "web/base.html" %}
+{% block title %}Projects{% endblock %}
+{% block content %}
+<h1>Projects</h1>
+<p class="sub">{{ projects|length }} project{{ projects|length|pluralize }}.</p>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Number</th><th>Title</th><th>Client</th><th>Work type</th><th>Status</th></tr>
+    {% for p in projects %}
+    <tr>
+      <td><a href="{% url 'web:project_detail' p.id %}">{{ p.number }}</a></td>
+      <td>{{ p.title|default:"—" }}</td>
+      <td class="muted">{{ p.client_name }}</td>
+      <td class="muted">{{ p.work_type|default:"—" }}</td>
+      <td>
+        {% if p.status == 'ready' %}<span class="chip ok">Ready</span>
+        {% elif p.status == 'in_execution' %}<span class="chip ok">In execution</span>
+        {% elif p.status == 'complete' %}<span class="chip">Complete</span>
+        {% elif p.status == 'cancelled' %}<span class="chip bad">Cancelled</span>
+        {% else %}<span class="chip warn">Pending compliance</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="muted" style="padding:20px;">No projects yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

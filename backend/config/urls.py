@@ -44,4 +44,7 @@ urlpatterns = [
     # OpenAPI
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/v1/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
+    # Manager web (session-auth, server-rendered HTML + HTMX) — mounted last so
+    # admin / api / health take precedence.
+    path("", include("apps.web.urls")),
 ]

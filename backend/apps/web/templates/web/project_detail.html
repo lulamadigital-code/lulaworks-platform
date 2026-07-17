@@ -1,0 +1,64 @@
+{% extends "web/base.html" %}
+{% block title %}{{ project.number }}{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:projects' %}">← Projects</a></p>
+<h1>{{ project.title|default:project.client_name }}</h1>
+<p class="sub">{{ project.number }} · {{ project.client_name }}{% if project.site %} · {{ project.site }}{% endif %}{% if project.work_type %} · {{ project.work_type }}{% endif %}</p>
+
+<h2>Work readiness</h2>
+{% include "web/_readiness.html" %}
+
+<h2>Project health</h2>
+<div class="grid">
+  <div class="tile"><div class="n">{{ health.overall }}%</div><div class="l">Overall</div></div>
+  {% for dim, val in health.dimensions.items %}
+  <div class="tile"><div class="n">{{ val }}%</div><div class="l">{{ dim|capfirst }}</div></div>
+  {% endfor %}
+</div>
+
+{% if can_view_money %}
+<h2>Commercial <span class="muted" style="font-size:12px; font-weight:400;">(finance only)</span></h2>
+<div class="grid">
+  <div class="tile"><div class="n">R{{ profitability.revenue }}</div><div class="l">Revenue</div></div>
+  <div class="tile"><div class="n">R{{ profitability.actual_cost }}</div><div class="l">Actual cost</div></div>
+  <div class="tile"><div class="n">R{{ profitability.gross_profit }}</div><div class="l">Gross profit</div></div>
+  <div class="tile"><div class="n">{{ profitability.margin_pct }}%</div><div class="l">Margin</div></div>
+</div>
+<div class="card" style="{% if forecast.verdict == 'at risk' %}border-color:var(--badbg);{% elif forecast.verdict == 'watch' %}border-color:var(--warnbg);{% endif %}">
+  <div class="row">
+    <strong>Profit forecast</strong>
+    <span class="sp" style="flex:1;"></span>
+    {% if forecast.verdict == 'at risk' %}<span class="chip bad">AT RISK</span>
+    {% elif forecast.verdict == 'watch' %}<span class="chip warn">WATCH</span>
+    {% else %}<span class="chip ok">ON TRACK</span>{% endif %}
+  </div>
+  <p class="muted" style="margin:8px 0 0;">{{ forecast.narrative }}</p>
+</div>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Category</th><th class="right">Budget</th><th class="right">Actual</th><th class="right">Variance</th></tr>
+    {% for l in budget.lines %}
+    <tr><td>{{ l.category|capfirst }}</td><td class="right">R{{ l.budget }}</td>
+      <td class="right">R{{ l.actual }}</td>
+      <td class="right" style="{% if l.variance|slice:':1' != '-' and l.variance != '0.00' %}color:var(--bad);{% endif %}">R{{ l.variance }}</td></tr>
+    {% endfor %}
+    <tr style="font-weight:700;"><td>Total</td><td class="right">R{{ budget.total_budget }}</td>
+      <td class="right">R{{ budget.total_actual }}</td><td></td></tr>
+  </table>
+</div>
+{% endif %}
+
+<h2>Compliance checklist</h2>
+<div class="card" style="padding:0;">
+  <table>
+    {% for c in checklist %}
+    <tr>
+      <td>{% if c.is_satisfied %}<span style="color:var(--ok);">●</span>{% else %}<span class="muted">○</span>{% endif %}
+        {{ c.name }}</td>
+      <td class="muted right">{{ c.category }} · {{ c.status }}{% if c.is_mandatory %} · mandatory{% endif %}</td>
+    </tr>
+    {% empty %}<tr><td class="muted" style="padding:16px;">No compliance items.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}
