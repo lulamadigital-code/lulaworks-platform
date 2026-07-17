@@ -1,9 +1,13 @@
 {% extends "web/base.html" %}
+{% load static %}
 {% block title %}Sign in{% endblock %}
 {% block content %}
 <div style="max-width:380px; margin:8vh auto;">
   <div style="text-align:center; margin-bottom:20px;">
-    <div class="login-logo">{% include "web/_mark.svg" %}<span class="word">lulaworks</span></div>
+    <div class="login-logo">
+      {% if has_logo %}<img src="{% static logo_static %}" class="brand-img" alt="LulaWorks">
+      {% else %}{% include "web/_mark.svg" %}<span class="word">lulaworks</span>{% endif %}
+    </div>
     <div class="muted" style="margin-top:6px;">Manager dashboards</div>
   </div>
   <div class="card">

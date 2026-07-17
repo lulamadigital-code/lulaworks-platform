@@ -5,11 +5,13 @@ document boundary)."""
 
 from io import BytesIO
 
-from reportlab.lib import colors
+from django.contrib.staticfiles import finders
+from reportlab.lib import colors, utils
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import (
+    Image,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -18,6 +20,17 @@ from reportlab.platypus import (
 )
 
 BRAND = colors.HexColor("#0E6E6E")
+
+
+def _logo_flowable(max_h=16 * mm):
+    """The real logo image if one has been dropped into static (web/logo.png);
+    else None (the caller falls back to the company name as text)."""
+    path = finders.find("web/logo.png")
+    if not path:
+        return None
+    reader = utils.ImageReader(path)
+    iw, ih = reader.getSize()
+    return Image(path, width=max_h * iw / ih, height=max_h)
 
 
 def quotation_pdf_bytes(quote) -> bytes:
@@ -33,8 +46,9 @@ def quotation_pdf_bytes(quote) -> bytes:
     muted = styles["BodyText"].clone("muted")
     muted.textColor = colors.HexColor("#5b6b6a")
 
+    logo = _logo_flowable()
     story = [
-        Paragraph(company.name, h),
+        logo if logo is not None else Paragraph(company.name, h),
         Paragraph("QUOTATION", styles["Heading2"]),
         Spacer(1, 6 * mm),
     ]
