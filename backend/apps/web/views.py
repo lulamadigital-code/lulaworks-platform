@@ -10,26 +10,33 @@ whole request, so `Project.objects.all()` is already tenant-scoped here.
 Golden Rule: money is computed/shown only for users with `finance.view_money`.
 """
 
+from decimal import Decimal, InvalidOperation
+
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.ai_platform.orchestrator import orchestrate
-from apps.compliance.services import recompute_readiness
+from apps.compliance.models import ComplianceItem
+from apps.compliance.services import approve_item, recompute_readiness
+from apps.compliance.services import override as override_gate
 from apps.estimating.models import Estimate, EstimateStatus
-from apps.estimating.services import approve_estimate
+from apps.estimating.services import approve_estimate, create_revision
 from apps.execution.services import project_health
 from apps.finance.models import Invoice
 from apps.finance.services import (
     budget_vs_actual,
     commercial_dashboard,
+    create_progress_claim,
     profit_forecast,
     profitability,
     rebuild_actuals_from_sources,
+    record_payment,
 )
-from apps.procurement.models import PurchaseOrder, Supplier
+from apps.procurement.models import GRN, GRNLine, PurchaseOrder, Supplier
 from apps.procurement.services import three_way_match
 from apps.projects.models import Project, ProjectStatus
 
@@ -98,6 +105,9 @@ def project_detail(request, pk):
         "health": project_health(project, request.user),
         "checklist": project.compliance_items.all(),
         "can_view_money": _can_view_money(request.user),
+        "can_compliance": request.user.has_perm_code("compliance.override"),
+        "can_finance": request.user.has_perm_code("finance.manage"),
+        "today": timezone.localdate().isoformat(),
     }
     if context["can_view_money"]:
         rebuild_actuals_from_sources(project, request.user)
@@ -133,6 +143,8 @@ def estimate_detail(request, pk):
         "estimate": estimate,
         "can_view_money": _can_view_money(request.user),
         "can_approve": can_approve,
+        "can_revise": (estimate.status != EstimateStatus.SUPERSEDED
+                       and request.user.has_perm_code("estimating.manage")),
     })
 
 
@@ -174,6 +186,7 @@ def po_detail(request, pk):
         "match": three_way_match(po),
         "can_view_money": _can_view_money(request.user),
         "can_approve": can_approve,
+        "can_receive": request.user.has_perm_code("procurement.manage"),
     })
 
 
@@ -208,6 +221,7 @@ def commercial(request):
         "aging_rows": aging_rows,
         "invoices": Invoice.objects.all().select_related("project").prefetch_related(
             "lines", "payments"),
+        "can_finance": request.user.has_perm_code("finance.manage"),
     })
 
 
@@ -230,3 +244,118 @@ def lulama(request):
         context["interaction"] = orchestrate(
             request.user.active_company, request.user, text, project=project)
     return render(request, "web/lulama.html", context)
+
+
+# ── Operating actions (managers actually do the work here) ────────────────────
+
+def _to_decimal(raw, default="0"):
+    try:
+        return Decimal(str(raw or default))
+    except (InvalidOperation, TypeError):
+        return Decimal(default)
+
+
+@login_required
+@require_POST
+def compliance_item_approve(request, pk):
+    """Approve a compliance item from the project page — the gate recomputes live."""
+    if not request.user.has_perm_code("compliance.override"):
+        messages.error(request, "You do not have permission to approve compliance items.")
+        return redirect("web:dashboard")
+    item = get_object_or_404(ComplianceItem.objects.all().select_related("project"), pk=pk)
+    expiry = request.POST.get("expiry") or None
+    approve_item(item, request.user, expiry=expiry)
+    messages.success(request, f"Approved: {item.name}.")
+    return redirect("web:project_detail", pk=item.project_id)
+
+
+@login_required
+@require_POST
+def project_override(request, pk):
+    """Authorised override of the compliance gate — reason required, audited."""
+    if not request.user.has_perm_code("compliance.override"):
+        messages.error(request, "You do not have permission to override compliance.")
+        return redirect("web:project_detail", pk=pk)
+    project = get_object_or_404(Project.objects.all(), pk=pk)
+    reason = request.POST.get("reason", "").strip()
+    if not reason:
+        messages.error(request, "An override needs a reason.")
+        return redirect("web:project_detail", pk=pk)
+    override_gate(project, request.user, reason=reason)
+    messages.success(request, "Compliance gate overridden (audited).")
+    return redirect("web:project_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def po_receive(request, pk):
+    """Record goods received (a GRN) against a PO — feeds the 3-way match."""
+    if not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You do not have permission to receive goods.")
+        return redirect("web:po_detail", pk=pk)
+    po = get_object_or_404(PurchaseOrder.objects.all().prefetch_related("lines"), pk=pk)
+    company = request.user.active_company
+    grn = GRN.objects.create(company=company, purchase_order=po, seq=po.grns.count() + 1,
+                             date=timezone.localdate(), received_by=request.user,
+                             created_by=request.user, updated_by=request.user)
+    received = 0
+    for line in po.lines.all():
+        qty = _to_decimal(request.POST.get(f"qty_{line.id}"))
+        if qty > 0:
+            GRNLine.objects.create(company=company, grn=grn, po_line=line,
+                                   description=line.description, qty_received=qty,
+                                   created_by=request.user, updated_by=request.user)
+            received += 1
+    if received:
+        messages.success(request, f"Goods received on {po.number} ({received} line(s)).")
+    else:
+        grn.delete(hard=True)
+        messages.error(request, "Enter a received quantity on at least one line.")
+    return redirect("web:po_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def estimate_revise(request, pk):
+    """Create a new estimate revision (the prior one is superseded, never overwritten)."""
+    if not request.user.has_perm_code("estimating.manage"):
+        messages.error(request, "You do not have permission to revise estimates.")
+        return redirect("web:estimate_detail", pk=pk)
+    estimate = get_object_or_404(Estimate.objects.all(), pk=pk)
+    new = create_revision(estimate, request.user, reason=request.POST.get("reason", "").strip())
+    messages.success(request, f"Created revision v{new.version}.")
+    return redirect("web:estimate_detail", pk=new.id)
+
+
+@login_required
+@require_POST
+def project_progress_claim(request, pk):
+    """Raise a progress claim (a % of the contract value, with retention held)."""
+    if not request.user.has_perm_code("finance.manage"):
+        messages.error(request, "You do not have permission to raise claims.")
+        return redirect("web:project_detail", pk=pk)
+    project = get_object_or_404(Project.objects.all(), pk=pk)
+    pct = _to_decimal(request.POST.get("percent_complete"))
+    retention = _to_decimal(request.POST.get("retention"), "10")
+    invoice = create_progress_claim(project, request.user, percent_complete=pct,
+                                    retention_pct=retention)
+    messages.success(request, f"Progress claim {invoice.number} raised (draft).")
+    return redirect("web:project_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def invoice_payment(request, pk):
+    """Record a customer payment against an invoice (POP)."""
+    if not request.user.has_perm_code("finance.manage"):
+        messages.error(request, "You do not have permission to record payments.")
+        return redirect("web:commercial")
+    invoice = get_object_or_404(Invoice.objects.all(), pk=pk)
+    amount = _to_decimal(request.POST.get("amount"))
+    if amount <= 0:
+        messages.error(request, "Enter a payment amount.")
+        return redirect("web:commercial")
+    record_payment(invoice, request.user, amount=amount,
+                   reference=request.POST.get("reference", ""))
+    messages.success(request, f"Payment of R{amount} recorded on {invoice.number}.")
+    return redirect("web:commercial")

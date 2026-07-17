@@ -12,11 +12,20 @@
 <p class="sub">{{ estimate.number }} v{{ estimate.version }} · {{ estimate.client_name }}
   {% if estimate.work_type %} · {{ estimate.work_type }}{% endif %} · risk {{ estimate.risk_score }}</p>
 
-{% if can_approve %}
-<form method="post" action="{% url 'web:estimate_approve' estimate.id %}" style="margin-bottom:16px;">
-  {% csrf_token %}<button class="btn" type="submit">Approve estimate</button>
-</form>
-{% endif %}
+<div class="row" style="gap:10px; margin-bottom:16px;">
+  {% if can_approve %}
+  <form method="post" action="{% url 'web:estimate_approve' estimate.id %}" style="margin:0;">
+    {% csrf_token %}<button class="btn" type="submit">Approve estimate</button>
+  </form>
+  {% endif %}
+  {% if can_revise %}
+  <form method="post" action="{% url 'web:estimate_revise' estimate.id %}" class="row" style="gap:6px; margin:0;">
+    {% csrf_token %}
+    <input type="text" name="reason" placeholder="Revision reason…" style="width:220px; padding:8px 10px;">
+    <button class="btn" type="submit" style="background:var(--brand-d);">Create revision</button>
+  </form>
+  {% endif %}
+</div>
 
 {% if can_view_money %}
 <div class="grid">

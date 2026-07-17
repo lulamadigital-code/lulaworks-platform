@@ -8,6 +8,16 @@
 <h2>Work readiness</h2>
 {% include "web/_readiness.html" %}
 
+{% if can_compliance and not readiness.gate_status == 'ready' and not readiness.gate_status == 'overridden' %}
+<div class="card">
+  <form method="post" action="{% url 'web:project_override' project.id %}" class="row" style="gap:8px;">
+    {% csrf_token %}
+    <input type="text" name="reason" placeholder="Override reason (audited)…" style="flex:1;" required>
+    <button class="btn" type="submit" style="background:var(--warn);">Override gate</button>
+  </form>
+</div>
+{% endif %}
+
 <h2>Project health</h2>
 <div class="grid">
   <div class="tile"><div class="n">{{ health.overall }}%</div><div class="l">Overall</div></div>
@@ -56,9 +66,34 @@
       <td>{% if c.is_satisfied %}<span style="color:var(--ok);">●</span>{% else %}<span class="muted">○</span>{% endif %}
         {{ c.name }}</td>
       <td class="muted right">{{ c.category }} · {{ c.status }}{% if c.is_mandatory %} · mandatory{% endif %}</td>
+      {% if can_compliance %}
+      <td class="right" style="width:220px;">
+        {% if not c.is_satisfied %}
+        <form method="post" action="{% url 'web:compliance_item_approve' c.id %}" class="row" style="gap:6px; justify-content:flex-end; margin:0;">
+          {% csrf_token %}
+          <input type="date" name="expiry" value="{{ today }}" style="width:auto; padding:5px 8px;">
+          <button class="btn" style="padding:5px 12px; font-size:13px;" type="submit">Approve</button>
+        </form>
+        {% endif %}
+      </td>
+      {% endif %}
     </tr>
     {% empty %}<tr><td class="muted" style="padding:16px;">No compliance items.</td></tr>
     {% endfor %}
   </table>
 </div>
+
+{% if can_finance and can_view_money %}
+<h2>Raise a progress claim</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:project_progress_claim' project.id %}" class="row" style="gap:10px;">
+    {% csrf_token %}
+    <span class="muted">% complete</span>
+    <input type="number" name="percent_complete" min="0" max="100" step="1" value="40" style="width:90px;">
+    <span class="muted">retention %</span>
+    <input type="number" name="retention" min="0" max="100" step="1" value="10" style="width:90px;">
+    <button class="btn" type="submit">Raise claim</button>
+  </form>
+</div>
+{% endif %}
 {% endblock %}

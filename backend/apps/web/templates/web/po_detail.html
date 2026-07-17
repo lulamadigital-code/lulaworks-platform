@@ -33,16 +33,24 @@
 </div>
 
 <h2>Lines</h2>
+<form method="post" action="{% url 'web:po_receive' po.id %}">
+{% csrf_token %}
 <div class="card" style="padding:0;">
   <table>
-    <tr><th>Item</th><th class="right">Qty</th><th class="right">Received</th>
-      {% if can_view_money %}<th class="right">Unit price</th><th class="right">Line total</th>{% endif %}</tr>
+    <tr><th>Item</th><th class="right">Qty</th><th class="right">Received</th><th class="right">Outstanding</th>
+      {% if can_view_money %}<th class="right">Unit price</th><th class="right">Line total</th>{% endif %}
+      {% if can_receive %}<th class="right">Receive now</th>{% endif %}</tr>
     {% for l in po.lines.all %}
     <tr><td>{{ l.description }}</td><td class="right">{{ l.qty }} {{ l.unit }}</td>
-      <td class="right">{{ l.qty_received }}</td>
-      {% if can_view_money %}<td class="right">R{{ l.unit_price }}</td><td class="right">R{{ l.line_total }}</td>{% endif %}</tr>
+      <td class="right">{{ l.qty_received }}</td><td class="right">{{ l.outstanding }}</td>
+      {% if can_view_money %}<td class="right">R{{ l.unit_price }}</td><td class="right">R{{ l.line_total }}</td>{% endif %}
+      {% if can_receive %}<td class="right"><input type="number" name="qty_{{ l.id }}" min="0" step="0.01"
+        value="{{ l.outstanding }}" style="width:90px; padding:5px 8px; text-align:right;"></td>{% endif %}</tr>
     {% endfor %}
-    {% if can_view_money %}<tr style="font-weight:700;"><td colspan="4" class="right">Total</td><td class="right">R{{ po.total }}</td></tr>{% endif %}
+    {% if can_view_money %}<tr style="font-weight:700;"><td colspan="5" class="right">Total</td>
+      <td class="right">R{{ po.total }}</td>{% if can_receive %}<td></td>{% endif %}</tr>{% endif %}
   </table>
 </div>
+{% if can_receive %}<button class="btn" type="submit">Receive goods (create GRN)</button>{% endif %}
+</form>
 {% endblock %}

@@ -2,18 +2,20 @@
 the HTML surface (money hidden from non-finance users), and tenant isolation."""
 
 from datetime import date, timedelta
+from decimal import Decimal
 
 from django.test import TestCase
 
 from apps.administration.models import NumberingRule
-from apps.compliance.models import ComplianceRequirement
+from apps.compliance.models import ComplianceItem, ComplianceRequirement, ItemStatus
 from apps.compliance.services import approve_item
 from apps.core.context import tenant_scope
 from apps.estimating.models import Estimate, EstimateStatus
 from apps.estimating.services import approve_estimate, create_estimate
+from apps.finance.models import Invoice
 from apps.identity.models import Company, Membership, Permission, Role, User
-from apps.procurement.models import Supplier
-from apps.procurement.services import create_purchase_order
+from apps.procurement.models import GRN, Supplier
+from apps.procurement.services import create_purchase_order, three_way_match
 from apps.projects.services import award_quotation
 from apps.quotes.models import Quotation
 
@@ -201,3 +203,91 @@ class CommercialAndLulamaTests(TestCase):
         user = user_with(c, ["projects.view"])
         self.client.force_login(user)
         self.assertEqual(self.client.get("/lulama/").status_code, 302)  # bounced
+
+
+class ActionsTests(TestCase):
+    """The manager web is an operating tool: clear the gate, receive goods, bill,
+    revise — each action permission-gated and reflected in the domain."""
+
+    def test_compliance_item_approve_opens_gate(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            project = awarded_project(c)
+            item = project.compliance_items.first()
+            item.status = ItemStatus.MISSING
+            item.expiry = None
+            item.save(update_fields=["status", "expiry"])
+        no_perm = user_with(c, ["projects.view"], email="np@lulama.co.za")
+        approver = user_with(c, ["projects.view", "compliance.override"], email="so@lulama.co.za")
+
+        self.client.force_login(no_perm)
+        self.client.post(f"/compliance-items/{item.id}/approve/", {"expiry": "2027-06-30"})
+        with tenant_scope(c.id):
+            self.assertEqual(ComplianceItem.objects.get(id=item.id).status, ItemStatus.MISSING)
+
+        self.client.force_login(approver)
+        self.client.post(f"/compliance-items/{item.id}/approve/", {"expiry": "2027-06-30"})
+        with tenant_scope(c.id):
+            self.assertEqual(ComplianceItem.objects.get(id=item.id).status, ItemStatus.APPROVED)
+
+    def test_override_requires_reason_and_permission(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            project = awarded_project(c)
+            project.compliance_items.update(status=ItemStatus.MISSING, expiry=None)
+        approver = user_with(c, ["projects.view", "compliance.override"], email="so@lulama.co.za")
+        self.client.force_login(approver)
+        # no reason → no override
+        self.client.post(f"/projects/{project.id}/override/", {"reason": ""})
+        with tenant_scope(c.id):
+            self.assertFalse(project.compliance_overrides.exists())
+        # with reason → overridden
+        self.client.post(f"/projects/{project.id}/override/", {"reason": "client accepted risk"})
+        with tenant_scope(c.id):
+            self.assertTrue(project.compliance_overrides.exists())
+
+    def test_po_receive_creates_grn_and_updates_match(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            s = Supplier.objects.create(company=c, name="NJR")
+            po = create_purchase_order(c, None, supplier=s,
+                                       lines=[{"description": "Steel", "qty": 12, "unit_price": 485}])
+            line = po.lines.first()
+        user = user_with(c, ["projects.view", "procurement.manage"], email="buy@lulama.co.za")
+        self.client.force_login(user)
+        self.client.post(f"/purchase-orders/{po.id}/receive/", {f"qty_{line.id}": "12"})
+        with tenant_scope(c.id):
+            self.assertTrue(GRN.objects.filter(purchase_order=po).exists())
+            self.assertEqual(po.lines.first().qty_received, Decimal("12"))
+            # quantity variance is now cleared in the 3-way match
+            match = three_way_match(po)
+            self.assertFalse(any(v["type"] == "quantity" for v in match["variances"]))
+
+    def test_estimate_revise_creates_new_version(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            awarded_project(c)
+            est = Estimate.objects.first()
+        user = user_with(c, ["estimating.manage"], email="est@lulama.co.za")
+        self.client.force_login(user)
+        self.client.post(f"/estimates/{est.id}/revise/", {"reason": "scope cut"})
+        with tenant_scope(c.id):
+            self.assertEqual(Estimate.objects.filter(number=est.number).count(), 2)
+
+    def test_progress_claim_and_payment(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            project = awarded_project(c)  # budget auto-created from approved estimate
+        finance = user_with(c, ["projects.view", "finance.view_money", "finance.manage"],
+                            email="fin@lulama.co.za")
+        self.client.force_login(finance)
+        self.client.post(f"/projects/{project.id}/progress-claim/",
+                         {"percent_complete": "40", "retention": "10"})
+        with tenant_scope(c.id):
+            inv = Invoice.objects.filter(project=project, is_progress_claim=True).first()
+            self.assertIsNotNone(inv)
+            outstanding = inv.outstanding
+        self.client.post(f"/invoices/{inv.id}/payment/", {"amount": str(outstanding)})
+        with tenant_scope(c.id):
+            inv.refresh_from_db()
+            self.assertEqual(inv.status, "paid")
