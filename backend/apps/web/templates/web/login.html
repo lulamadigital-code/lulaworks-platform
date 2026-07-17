@@ -3,8 +3,8 @@
 {% block content %}
 <div style="max-width:380px; margin:8vh auto;">
   <div style="text-align:center; margin-bottom:20px;">
-    <div style="font-size:30px; font-weight:700; color:var(--brand);">◈ LulaWorks</div>
-    <div class="muted">Manager dashboards</div>
+    <div class="login-logo">{% include "web/_mark.svg" %}<span class="word">lulaworks</span></div>
+    <div class="muted" style="margin-top:6px;">Manager dashboards</div>
   </div>
   <div class="card">
     <form method="post" action="{% url 'web:login' %}">

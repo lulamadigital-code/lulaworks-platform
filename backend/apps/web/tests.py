@@ -393,3 +393,4 @@ class QuotationTests(TestCase):
             self.assertEqual(len(lines), 2)
             self.assertEqual(lines[0].description, "Steel lip channel")
             self.assertEqual(lines[1].unit_price, Decimal("1200"))
+

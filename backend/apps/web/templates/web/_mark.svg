@@ -1,0 +1,11 @@
+<svg class="mark" viewBox="0 0 116 84" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LulaWorks">
+  <!-- teal W strokes — inherit the surrounding text colour (white on the header, teal on light) -->
+  <g fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="14" y1="22" x2="30" y2="62"/>
+    <line x1="54" y1="62" x2="68" y2="22"/>
+    <line x1="68" y1="22" x2="82" y2="62"/>
+  </g>
+  <!-- grey accents -->
+  <circle cx="42" cy="58" r="7" fill="#A7AEB3"/>
+  <circle cx="100" cy="24" r="12" fill="#A7AEB3"/>
+</svg>
