@@ -56,12 +56,17 @@ def quotation_pdf_bytes(quote) -> bytes:
     ]))
     story += [meta_tbl, Spacer(1, 8 * mm)]
 
+    # Description must wrap within its column → wrap it in a Paragraph (plain
+    # strings overflow reportlab table cells).
+    cell = small.clone("cell")
+    cell.fontSize = 9
+    cell.leading = 11
     rows = [["#", "Description", "Qty", "Unit", "Unit price", "Line total"]]
     for ln in quote.lines.all():
-        rows.append([str(ln.position), ln.description, f"{ln.qty:g}", ln.unit,
-                     f"R {ln.unit_price:,.2f}", f"R {ln.line_total:,.2f}"])
+        rows.append([str(ln.position), Paragraph(ln.description, cell), f"{ln.qty:g}",
+                     ln.unit, f"R {ln.unit_price:,.2f}", f"R {ln.line_total:,.2f}"])
     if len(rows) == 1:
-        rows.append(["", "No line items.", "", "", "", ""])
+        rows.append(["", Paragraph("No line items.", cell), "", "", "", ""])
 
     tbl = Table(rows, colWidths=[10 * mm, 78 * mm, 16 * mm, 18 * mm, 26 * mm, 26 * mm],
                 repeatRows=1)
@@ -71,6 +76,7 @@ def quotation_pdf_bytes(quote) -> bytes:
         ("FONTSIZE", (0, 0), (-1, -1), 9),
         ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
         ("ALIGN", (0, 0), (0, -1), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f2f6f6")]),
         ("LINEBELOW", (0, 0), (-1, -1), 0.4, colors.HexColor("#dfe6e6")),
         ("TOPPADDING", (0, 0), (-1, -1), 5),
