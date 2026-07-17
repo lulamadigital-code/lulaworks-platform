@@ -1,0 +1,25 @@
+{% extends "web/base.html" %}
+{% block title %}Purchase orders{% endblock %}
+{% block content %}
+<h1>Purchase orders</h1>
+<p class="sub">Outbound orders to suppliers. <a href="{% url 'web:suppliers' %}">Suppliers →</a></p>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Number</th><th>Supplier</th><th>Status</th>{% if can_view_money %}<th class="right">Total</th>{% endif %}</tr>
+    {% for po in purchase_orders %}
+    <tr>
+      <td><a href="{% url 'web:po_detail' po.id %}">{{ po.number }}</a></td>
+      <td class="muted">{{ po.supplier.name }}</td>
+      <td>
+        {% if po.status == 'approved' or po.status == 'completed' %}<span class="chip ok">{{ po.get_status_display }}</span>
+        {% elif po.status == 'cancelled' %}<span class="chip bad">Cancelled</span>
+        {% elif po.status == 'draft' or po.status == 'pending_approval' %}<span class="chip warn">{{ po.get_status_display }}</span>
+        {% else %}<span class="chip">{{ po.get_status_display }}</span>{% endif %}
+      </td>
+      {% if can_view_money %}<td class="right">R{{ po.total }}</td>{% endif %}
+    </tr>
+    {% empty %}<tr><td colspan="4" class="muted" style="padding:20px;">No purchase orders yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

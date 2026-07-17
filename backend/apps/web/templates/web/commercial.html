@@ -1,0 +1,59 @@
+{% extends "web/base.html" %}
+{% block title %}Commercial{% endblock %}
+{% block content %}
+<h1>Commercial</h1>
+<p class="sub">Portfolio money view — finance only.</p>
+
+<div class="grid">
+  <div class="tile"><div class="n">R{{ commercial.revenue }}</div><div class="l">Revenue</div></div>
+  <div class="tile"><div class="n">R{{ commercial.cost }}</div><div class="l">Actual cost</div></div>
+  <div class="tile"><div class="n">R{{ commercial.gross_profit }}</div><div class="l">Gross profit</div></div>
+  <div class="tile"><div class="n">{{ commercial.margin_pct }}%</div><div class="l">Margin</div></div>
+</div>
+
+<h2>Receivables</h2>
+<div class="grid">
+  <div class="tile"><div class="n">R{{ commercial.outstanding_invoiced }}</div><div class="l">Outstanding</div></div>
+  <div class="tile"><div class="n">R{{ commercial.overdue }}</div><div class="l">Overdue</div></div>
+  <div class="tile"><div class="n">R{{ commercial.outstanding_retention }}</div><div class="l">Retention held</div></div>
+</div>
+<div class="card">
+  <strong>Aging</strong>
+  <table style="margin-top:8px;">
+    <tr>{% for row in aging_rows %}<th>{{ row.0 }}</th>{% endfor %}</tr>
+    <tr>{% for row in aging_rows %}<td>R{{ row.1 }}</td>{% endfor %}</tr>
+  </table>
+</div>
+
+{% if commercial.loss_making_projects %}
+<h2 style="color:var(--bad);">Loss-making projects</h2>
+<div class="card" style="padding:0; border-color:var(--badbg);">
+  <table>
+    <tr><th>Project</th><th class="right">Gross profit</th><th class="right">Margin</th></tr>
+    {% for lm in commercial.loss_making_projects %}
+    <tr><td>{{ lm.project }}</td><td class="right">R{{ lm.gross_profit }}</td>
+      <td class="right">{{ lm.margin_pct }}%</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<h2>Invoices</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Number</th><th>Client</th><th>Type</th><th>Status</th>
+      <th class="right">Total</th><th class="right">Outstanding</th></tr>
+    {% for inv in invoices %}
+    <tr>
+      <td>{{ inv.number }}</td><td class="muted">{{ inv.client_name }}</td>
+      <td class="muted">{% if inv.is_progress_claim %}Progress claim{% else %}Invoice{% endif %}</td>
+      <td>{% if inv.status == 'paid' %}<span class="chip ok">Paid</span>
+        {% elif inv.status == 'draft' %}<span class="chip">Draft</span>
+        {% else %}<span class="chip warn">{{ inv.get_status_display }}</span>{% endif %}</td>
+      <td class="right">R{{ inv.total }}</td><td class="right">R{{ inv.outstanding }}</td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">No invoices yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

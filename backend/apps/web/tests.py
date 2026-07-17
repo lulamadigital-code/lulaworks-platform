@@ -9,8 +9,11 @@ from apps.administration.models import NumberingRule
 from apps.compliance.models import ComplianceRequirement
 from apps.compliance.services import approve_item
 from apps.core.context import tenant_scope
+from apps.estimating.models import Estimate, EstimateStatus
 from apps.estimating.services import approve_estimate, create_estimate
 from apps.identity.models import Company, Membership, Permission, Role, User
+from apps.procurement.models import Supplier
+from apps.procurement.services import create_purchase_order
 from apps.projects.services import award_quotation
 from apps.quotes.models import Quotation
 
@@ -116,3 +119,85 @@ class ReadinessPartialTests(TestCase):
         resp = self.client.get(f"/projects/{project.id}/readiness/")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Ready for site")
+
+
+class EstimatesTests(TestCase):
+    def test_list_and_detail_money_gated(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            awarded_project(c)
+            estimate = Estimate.objects.first()
+        broke = user_with(c, ["projects.view"], email="ops@lulama.co.za")
+        rich = user_with(c, ["projects.view", "finance.view_money"], email="fin@lulama.co.za")
+
+        self.client.force_login(rich)
+        self.assertContains(self.client.get("/estimates/"), estimate.number)
+        self.assertContains(self.client.get(f"/estimates/{estimate.id}/"), "Selling price")
+        self.client.force_login(broke)
+        self.assertNotContains(self.client.get(f"/estimates/{estimate.id}/"), "Selling price")
+
+    def test_approve_requires_permission(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            awarded_project(c)
+            est = create_estimate(c, None, client_name="X", sections=[
+                {"category": "labour", "lines": [{"description": "L", "qty": 1, "unit_cost": 10}]}])
+            est.status = EstimateStatus.AWAITING_APPROVAL
+            est.save(update_fields=["status"])
+        no_perm = user_with(c, ["projects.view"], email="np@lulama.co.za")
+        approver = user_with(c, ["estimating.approve"], email="ap@lulama.co.za")
+
+        self.client.force_login(no_perm)
+        self.client.post(f"/estimates/{est.id}/approve/")
+        with tenant_scope(c.id):
+            self.assertEqual(Estimate.objects.get(id=est.id).status, EstimateStatus.AWAITING_APPROVAL)
+        self.client.force_login(approver)
+        self.client.post(f"/estimates/{est.id}/approve/")
+        with tenant_scope(c.id):
+            self.assertEqual(Estimate.objects.get(id=est.id).status, EstimateStatus.APPROVED)
+
+
+class ProcurementTests(TestCase):
+    def test_suppliers_and_po_pages(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            s = Supplier.objects.create(company=c, name="NJR Steel", performance_score=80)
+            po = create_purchase_order(c, None, supplier=s,
+                                       lines=[{"description": "Steel", "qty": 12, "unit_price": 485}])
+        user = user_with(c, ["projects.view", "finance.view_money"])
+        self.client.force_login(user)
+        self.assertContains(self.client.get("/suppliers/"), "NJR Steel")
+        detail = self.client.get(f"/purchase-orders/{po.id}/")
+        self.assertContains(detail, "3-way match")
+        self.assertContains(detail, po.number)
+
+
+class CommercialAndLulamaTests(TestCase):
+    def test_commercial_requires_finance(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            awarded_project(c)
+        broke = user_with(c, ["projects.view"], email="ops@lulama.co.za")
+        rich = user_with(c, ["projects.view", "finance.view_money"], email="fin@lulama.co.za")
+        self.client.force_login(broke)
+        self.assertEqual(self.client.get("/commercial/").status_code, 302)  # bounced
+        self.client.force_login(rich)
+        self.assertContains(self.client.get("/commercial/"), "Aging")
+
+    def test_lulama_ask_renders_draft(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            project = awarded_project(c)
+        user = user_with(c, ["projects.view", "ai.generate"])
+        self.client.force_login(user)
+        self.assertEqual(self.client.get("/lulama/").status_code, 200)
+        resp = self.client.post("/lulama/", {"request": "Prepare this project",
+                                             "project": str(project.id)})
+        self.assertContains(resp, "Consolidated draft")
+        self.assertContains(resp, "confidence")
+
+    def test_lulama_requires_ai_permission(self):
+        c = make_company()
+        user = user_with(c, ["projects.view"])
+        self.client.force_login(user)
+        self.assertEqual(self.client.get("/lulama/").status_code, 302)  # bounced

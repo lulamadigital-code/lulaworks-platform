@@ -1,0 +1,29 @@
+{% extends "web/base.html" %}
+{% block title %}Estimates{% endblock %}
+{% block content %}
+<h1>Estimates</h1>
+<p class="sub">Internal cost estimates. Money is finance-only (Golden Rule).</p>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Number</th><th>Client</th><th>Work type</th><th>Status</th>
+      {% if can_view_money %}<th class="right">Margin</th><th class="right">Selling price</th>{% endif %}</tr>
+    {% for e in estimates %}
+    <tr>
+      <td><a href="{% url 'web:estimate_detail' e.id %}">{{ e.number }} v{{ e.version }}</a></td>
+      <td class="muted">{{ e.client_name }}</td>
+      <td class="muted">{{ e.work_type|default:"—" }}</td>
+      <td>
+        {% if e.status == 'approved' %}<span class="chip ok">Approved</span>
+        {% elif e.status == 'awaiting_approval' %}<span class="chip warn">Awaiting approval</span>
+        {% elif e.status == 'rejected' %}<span class="chip bad">Rejected</span>
+        {% elif e.status == 'superseded' %}<span class="chip">Superseded</span>
+        {% else %}<span class="chip">{{ e.get_status_display }}</span>{% endif %}
+      </td>
+      {% if can_view_money %}<td class="right">{{ e.margin_pct }}%</td>
+        <td class="right">R{{ e.selling_price }}</td>{% endif %}
+    </tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">No estimates yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

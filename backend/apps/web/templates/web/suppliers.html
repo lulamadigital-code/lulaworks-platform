@@ -1,0 +1,24 @@
+{% extends "web/base.html" %}
+{% block title %}Suppliers{% endblock %}
+{% block content %}
+<h1>Suppliers</h1>
+<p class="sub">Ranked by weighted performance score. <a href="{% url 'web:purchase_orders' %}">Purchase orders →</a></p>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Supplier</th><th>Categories</th><th>Terms</th><th class="right">Performance</th></tr>
+    {% for s in suppliers %}
+    <tr>
+      <td>{% if s.preferred %}★ {% endif %}{{ s.name }}</td>
+      <td class="muted">{{ s.categories|join:", "|default:"—" }}</td>
+      <td class="muted">{{ s.payment_terms }}</td>
+      <td class="right">
+        {% if s.performance_score >= 75 %}<span class="chip ok">{{ s.performance_score }}</span>
+        {% elif s.performance_score >= 50 %}<span class="chip warn">{{ s.performance_score }}</span>
+        {% else %}<span class="chip bad">{{ s.performance_score }}</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="4" class="muted" style="padding:20px;">No suppliers yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

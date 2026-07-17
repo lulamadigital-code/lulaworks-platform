@@ -57,6 +57,10 @@
     <nav>
       <a href="{% url 'web:dashboard' %}">Dashboard</a>
       <a href="{% url 'web:projects' %}">Projects</a>
+      <a href="{% url 'web:estimates' %}">Estimates</a>
+      <a href="{% url 'web:purchase_orders' %}">Procurement</a>
+      {% if perms_money %}<a href="{% url 'web:commercial' %}">Commercial</a>{% endif %}
+      <a href="{% url 'web:lulama' %}">Lulama</a>
     </nav>
     <span class="sp"></span>
     <span class="who">{{ user.email }}</span>

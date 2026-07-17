@@ -1,0 +1,52 @@
+{% extends "web/base.html" %}
+{% block title %}{{ estimate.number }}{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:estimates' %}">← Estimates</a></p>
+<div class="row">
+  <h1 style="margin:0;">{{ estimate.title|default:estimate.client_name }}</h1>
+  <span class="sp" style="flex:1;"></span>
+  {% if estimate.status == 'approved' %}<span class="chip ok">Approved</span>
+  {% elif estimate.status == 'awaiting_approval' %}<span class="chip warn">Awaiting approval</span>
+  {% else %}<span class="chip">{{ estimate.get_status_display }}</span>{% endif %}
+</div>
+<p class="sub">{{ estimate.number }} v{{ estimate.version }} · {{ estimate.client_name }}
+  {% if estimate.work_type %} · {{ estimate.work_type }}{% endif %} · risk {{ estimate.risk_score }}</p>
+
+{% if can_approve %}
+<form method="post" action="{% url 'web:estimate_approve' estimate.id %}" style="margin-bottom:16px;">
+  {% csrf_token %}<button class="btn" type="submit">Approve estimate</button>
+</form>
+{% endif %}
+
+{% if can_view_money %}
+<div class="grid">
+  <div class="tile"><div class="n">R{{ estimate.total_cost }}</div><div class="l">Total cost</div></div>
+  <div class="tile"><div class="n">{{ estimate.markup_pct }}%</div><div class="l">Markup</div></div>
+  <div class="tile"><div class="n">R{{ estimate.selling_price }}</div><div class="l">Selling price</div></div>
+  <div class="tile"><div class="n">{{ estimate.margin_pct }}%</div><div class="l">Margin</div></div>
+</div>
+{% for s in estimate.sections.all %}
+<h2>{{ s.get_category_display }} <span class="muted" style="font-size:13px; font-weight:400;">· R{{ s.subtotal }}</span></h2>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Item</th><th class="right">Qty</th><th class="right">Unit cost</th>
+      <th class="right">Line cost</th><th>Source</th></tr>
+    {% for l in s.lines.all %}
+    <tr><td>{{ l.description }}{% if l.source_ref %}<br><span class="muted" style="font-size:12px;">{{ l.source_ref }}</span>{% endif %}</td>
+      <td class="right">{{ l.qty }} {{ l.unit }}</td><td class="right">R{{ l.unit_cost }}</td>
+      <td class="right">R{{ l.line_cost }}</td>
+      <td><span class="chip">{{ l.get_source_display }}</span></td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endfor %}
+{% else %}
+<div class="card muted">Cost build-up and margin are visible to finance roles only (Financial Golden Rule).</div>
+{% endif %}
+
+{% if estimate.risk_flags %}
+<h2>Risk flags</h2>
+<div class="card"><ul style="margin:0; padding-left:18px;" class="muted">
+  {% for f in estimate.risk_flags %}<li>{{ f }}</li>{% endfor %}</ul></div>
+{% endif %}
+{% endblock %}

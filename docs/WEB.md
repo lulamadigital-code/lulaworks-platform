@@ -16,9 +16,12 @@ Session-authenticated (email/password via Django's `ModelBackend`), separate fro
 |---|---|
 | `/login/`, `/logout/` | session auth |
 | `/` | **Operations dashboard** — portfolio tiles, compliance attention list, and (finance only) the commercial panel |
-| `/projects/` | projects table |
-| `/projects/<id>/` | **project detail** — Work Readiness gate, health score, and (finance only) profitability + profit forecast + budget-vs-actual |
+| `/projects/`, `/projects/<id>/` | projects table + **project detail** (Work Readiness gate, health, and finance-only profitability + forecast + budget-vs-actual) |
 | `/projects/<id>/readiness/` | HTMX partial — live re-render of the gate card |
+| `/estimates/`, `/estimates/<id>/` | **estimates** list + detail (cost sections/lines, margin, risk — finance-gated); **approve** action (`estimating.approve`) |
+| `/suppliers/`, `/purchase-orders/`, `/purchase-orders/<id>/` | **procurement** — suppliers by performance, POs, PO detail with **3-way match** panel + **approve** (`po.approve`) |
+| `/commercial/` | **commercial** — portfolio money, aging buckets, retention, loss-making, invoices (`finance.view_money`) |
+| `/lulama/` | **Lulama** — ask → one consolidated draft (grounded agent cards + confidence + governance proposals) (`ai.generate`) |
 
 ## Guarantees (reused, not re-implemented)
 - **Financial Golden Rule** — the commercial/profitability blocks are computed and rendered only for users with `finance.view_money`. Test-enforced (`GoldenRuleTests`): an ops user gets the operational view; a finance user additionally sees the money.
