@@ -55,7 +55,8 @@
 {% if rfq.quotation %}
 <div class="card" style="border-color:var(--okbg);">
   <strong style="color:var(--ok);">✓ Approved</strong> — quotation
-  <strong>{{ rfq.quotation.number }}</strong> created. Next: build an estimate, then award to a project.
+  <a href="{% url 'web:quotation_detail' rfq.quotation.id %}"><strong>{{ rfq.quotation.number }}</strong></a>
+  created. <a href="{% url 'web:quotation_detail' rfq.quotation.id %}">View / edit / download →</a>
 </div>
 {% elif can_approve %}
 <h2>Approve → create quotation</h2>

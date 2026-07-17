@@ -16,6 +16,11 @@ urlpatterns = [
          name="project_progress_claim"),
     path("compliance-items/<uuid:pk>/approve/", views.compliance_item_approve,
          name="compliance_item_approve"),
+    # Quotations (view · review · edit · PDF)
+    path("quotations/", views.quotations_list, name="quotations"),
+    path("quotations/<uuid:pk>/", views.quotation_detail, name="quotation_detail"),
+    path("quotations/<uuid:pk>/edit/", views.quotation_edit, name="quotation_edit"),
+    path("quotations/<uuid:pk>/pdf/", views.quotation_pdf, name="quotation_pdf"),
     # RFQ (front door)
     path("rfq/", views.rfq_list, name="rfq"),
     path("rfq/upload/", views.rfq_upload, name="rfq_upload"),

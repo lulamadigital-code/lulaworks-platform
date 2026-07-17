@@ -338,3 +338,58 @@ class RFQTests(TestCase):
             rfq.refresh_from_db()
             self.assertIsNotNone(rfq.quotation_id)
             self.assertEqual(rfq.status, RFQStatus.APPROVED)
+
+
+class QuotationTests(TestCase):
+    """View, review, edit and download a quotation from the manager web."""
+
+    def _quote(self, company):
+        from apps.quotes.services import create_quotation
+        return create_quotation(company, None, client_name="Sasol", title="Pump overhaul",
+                                lines=[{"description": "Steel", "qty": 12, "unit_price": 485}])
+
+    def test_detail_and_pdf_download(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._quote(c)
+        user = user_with(c, ["projects.view", "finance.view_money"])
+        self.client.force_login(user)
+        detail = self.client.get(f"/quotations/{q.id}/")
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, q.number)
+        self.assertContains(detail, "Steel")
+        # PDF download
+        pdf = self.client.get(f"/quotations/{q.id}/pdf/")
+        self.assertEqual(pdf.status_code, 200)
+        self.assertEqual(pdf["Content-Type"], "application/pdf")
+        self.assertTrue(pdf.content.startswith(b"%PDF"))
+        self.assertIn(f"{q.number}.pdf", pdf["Content-Disposition"])
+
+    def test_edit_requires_permission_and_updates_lines(self):
+        from apps.quotes.models import QuotationLine
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._quote(c)
+        no_perm = user_with(c, ["projects.view"], email="np@lulama.co.za")
+        editor = user_with(c, ["projects.view", "quotes.create"], email="ed@lulama.co.za")
+
+        # no permission → edit page redirects, no change
+        self.client.force_login(no_perm)
+        self.assertEqual(self.client.get(f"/quotations/{q.id}/edit/").status_code, 302)
+
+        # editor → change a line + add one
+        self.client.force_login(editor)
+        self.assertEqual(self.client.get(f"/quotations/{q.id}/edit/").status_code, 200)
+        self.client.post(f"/quotations/{q.id}/edit/", {
+            "client_name": "Sasol Secunda", "title": "Pump overhaul", "site": "Secunda",
+            "vat_rate": "15", "notes": "",
+            "description": ["Steel lip channel", "Bearing kit"],
+            "qty": ["10", "4"], "unit": ["m", "set"], "unit_price": ["500", "1200"],
+        })
+        with tenant_scope(c.id):
+            q.refresh_from_db()
+            self.assertEqual(q.client_name, "Sasol Secunda")
+            lines = list(QuotationLine.objects.filter(quotation=q).order_by("position"))
+            self.assertEqual(len(lines), 2)
+            self.assertEqual(lines[0].description, "Steel lip channel")
+            self.assertEqual(lines[1].unit_price, Decimal("1200"))

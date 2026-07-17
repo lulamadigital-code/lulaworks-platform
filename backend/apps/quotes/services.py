@@ -1,3 +1,7 @@
+from decimal import Decimal, InvalidOperation
+
+from django.db import transaction
+
 from apps.administration.services import next_number
 from apps.core.events import publish
 
@@ -20,4 +24,50 @@ def create_quotation(company, user, *, client_name, title="", site="", lines=Non
         )
     publish("QuotationCreated", company=company, subject=quote, actor=user,
             payload={"number": quote.number, "client": client_name})
+    return quote
+
+
+def _dec(raw, default="0"):
+    try:
+        return Decimal(str(raw).strip() or default)
+    except (InvalidOperation, TypeError, AttributeError):
+        return Decimal(default)
+
+
+@transaction.atomic
+def update_quotation(quote, user, *, title=None, client_name=None, site=None,
+                     vat_rate=None, validity_date=None, notes=None, lines=None) -> Quotation:
+    """Edit a draft quotation: header fields and a full replacement of the line
+    set (the manager edits rows on the page). Lines with a blank description are
+    dropped, so removing a line = clearing its description."""
+    if title is not None:
+        quote.title = title
+    if client_name:
+        quote.client_name = client_name
+    if site is not None:
+        quote.site = site
+    if vat_rate is not None:
+        quote.vat_rate = _dec(vat_rate, "15")
+    if validity_date is not None:
+        quote.validity_date = validity_date or None
+    if notes is not None:
+        quote.notes = notes
+    quote.updated_by = user
+    quote.save()
+
+    if lines is not None:
+        quote.lines.all().delete()
+        pos = 0
+        for line in lines:
+            desc = (line.get("description") or "").strip()
+            if not desc:
+                continue
+            pos += 1
+            quote.lines.create(
+                company=quote.company, position=pos, description=desc,
+                qty=_dec(line.get("qty"), "1"), unit=line.get("unit") or "each",
+                unit_price=_dec(line.get("unit_price"), "0"),
+            )
+    publish("QuotationUpdated", company=quote.company, subject=quote, actor=user,
+            payload={"number": quote.number})
     return quote

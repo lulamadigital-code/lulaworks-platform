@@ -1,0 +1,29 @@
+{% extends "web/base.html" %}
+{% block title %}Quotations{% endblock %}
+{% block content %}
+<h1>Quotations</h1>
+<p class="sub">The customer-facing price documents. View, review, edit a draft, or download the PDF.</p>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Number</th><th>Client</th><th>Title</th><th>Status</th>
+      {% if can_view_money %}<th class="right">Total</th>{% endif %}<th></th></tr>
+    {% for q in quotations %}
+    <tr>
+      <td><a href="{% url 'web:quotation_detail' q.id %}">{{ q.number }}</a></td>
+      <td class="muted">{{ q.client_name }}</td>
+      <td class="muted">{{ q.title|default:"—" }}</td>
+      <td>{% if q.status == 'awarded' %}<span class="chip ok">Awarded</span>
+        {% elif q.status == 'lost' %}<span class="chip bad">Lost</span>
+        {% elif q.status == 'sent' %}<span class="chip warn">Sent</span>
+        {% else %}<span class="chip">Draft</span>{% endif %}</td>
+      {% if can_view_money %}<td class="right">R{{ q.total }}</td>{% endif %}
+      <td class="right">
+        <a href="{% url 'web:quotation_detail' q.id %}">View</a> ·
+        <a href="{% url 'web:quotation_pdf' q.id %}">PDF</a>
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">No quotations yet — approve an RFQ to create one.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}
