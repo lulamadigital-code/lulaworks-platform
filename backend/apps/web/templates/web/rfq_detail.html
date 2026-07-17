@@ -1,0 +1,72 @@
+{% extends "web/base.html" %}
+{% block title %}RFQ review{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:rfq' %}">← RFQ intake</a></p>
+<div class="row">
+  <h1 style="margin:0;">{{ rfq.original_name|default:"RFQ" }}</h1>
+  <span class="sp" style="flex:1;"></span>
+  {% if rfq.status == 'approved' %}<span class="chip ok">Approved</span>
+  {% else %}<span class="chip warn">{{ rfq.get_status_display }}</span>{% endif %}
+</div>
+<p class="sub">Review the extraction, then approve to create the quotation.</p>
+
+{% if rfq.warnings %}
+<div class="card" style="border-color:var(--warnbg); background:#fffdf7;">
+  <strong style="color:var(--warn);">Needs attention</strong>
+  <ul style="margin:8px 0 0; padding-left:18px;" class="muted">
+    {% for w in rfq.warnings %}<li>{{ w }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<h2>Extracted fields</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Field</th><th>Value</th><th>Method</th><th class="right">Confidence</th></tr>
+    {% for f in rfq.fields.all %}
+    <tr>
+      <td>{{ f.key }}</td>
+      <td>{{ f.value|default:"—" }}</td>
+      <td><span class="chip">{{ f.method }}</span></td>
+      <td class="right">
+        {% if f.confidence >= 0.9 %}<span class="chip ok">{{ f.confidence }}</span>
+        {% elif f.confidence >= 0.6 %}<span class="chip warn">{{ f.confidence }}</span>
+        {% else %}<span class="chip bad">{{ f.confidence }}</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="4" class="muted" style="padding:16px;">No fields extracted — check the document.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<h2>Line items ({{ rfq.lines.count }})</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>#</th><th>Description</th><th class="right">Qty</th><th class="right">Unit price</th></tr>
+    {% for l in rfq.lines.all %}
+    <tr><td class="muted">{{ l.position }}</td><td>{{ l.description }}</td>
+      <td class="right">{{ l.qty }} {{ l.unit }}</td>
+      <td class="right">{% if l.unit_price %}R{{ l.unit_price }}{% else %}—{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="4" class="muted" style="padding:16px;">No line items extracted.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% if rfq.quotation %}
+<div class="card" style="border-color:var(--okbg);">
+  <strong style="color:var(--ok);">✓ Approved</strong> — quotation
+  <strong>{{ rfq.quotation.number }}</strong> created. Next: build an estimate, then award to a project.
+</div>
+{% elif can_approve %}
+<h2>Approve → create quotation</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:rfq_approve' rfq.id %}" class="row" style="gap:10px;">
+    {% csrf_token %}
+    <input type="text" name="client_name" placeholder="Client name" style="flex:1;" required>
+    <button class="btn" type="submit">Approve &amp; create quotation</button>
+  </form>
+  <p class="muted" style="margin:8px 0 0; font-size:13px;">Approval is a human step — nothing is auto-approved.
+    This mints the Quotation and Project DNA from the reviewed data.</p>
+</div>
+{% endif %}
+{% endblock %}

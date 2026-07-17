@@ -16,6 +16,11 @@ urlpatterns = [
          name="project_progress_claim"),
     path("compliance-items/<uuid:pk>/approve/", views.compliance_item_approve,
          name="compliance_item_approve"),
+    # RFQ (front door)
+    path("rfq/", views.rfq_list, name="rfq"),
+    path("rfq/upload/", views.rfq_upload, name="rfq_upload"),
+    path("rfq/<uuid:pk>/", views.rfq_detail, name="rfq_detail"),
+    path("rfq/<uuid:pk>/approve/", views.rfq_approve, name="rfq_approve"),
     # Estimating
     path("estimates/", views.estimates_list, name="estimates"),
     path("estimates/<uuid:pk>/", views.estimate_detail, name="estimate_detail"),

@@ -101,8 +101,15 @@ def _ocr_text(pdf_bytes: bytes) -> str:
 
 
 def extract_text(pdf_source) -> str:
-    """Text layer first (free, exact); OCR fallback for scanned/image PDFs."""
-    text = _pdfplumber_text(pdf_source)
+    """Text layer first (free, exact); OCR fallback for scanned/image PDFs.
+
+    Resilient to a non-PDF or corrupt upload: a pdfplumber failure is treated as
+    'no text layer' and falls through to OCR / empty (the caller warns), so a bad
+    file never 500s the upload."""
+    try:
+        text = _pdfplumber_text(pdf_source)
+    except Exception:
+        text = ""
     if text.strip():
         return text
     # No text layer → scanned. Re-read bytes for OCR.

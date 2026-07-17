@@ -291,3 +291,50 @@ class ActionsTests(TestCase):
         with tenant_scope(c.id):
             inv.refresh_from_db()
             self.assertEqual(inv.status, "paid")
+
+
+class RFQTests(TestCase):
+    """The RFQ front door: upload → extract → review → approve → quotation."""
+
+    def test_upload_requires_permission(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from apps.rfq.models import RFQDocument
+        c = make_company()
+        pdf = SimpleUploadedFile("rfq.pdf", b"%PDF-1.4 not-a-real-pdf",
+                                 content_type="application/pdf")
+        no_perm = user_with(c, ["projects.view"], email="np@lulama.co.za")
+        self.client.force_login(no_perm)
+        self.client.post("/rfq/upload/", {"file": pdf})
+        with tenant_scope(c.id):
+            self.assertEqual(RFQDocument.objects.count(), 0)
+
+        pdf2 = SimpleUploadedFile("rfq.pdf", b"%PDF-1.4 not-a-real-pdf",
+                                  content_type="application/pdf")
+        uploader = user_with(c, ["projects.view", "rfq.upload"], email="up@lulama.co.za")
+        self.client.force_login(uploader)
+        self.client.post("/rfq/upload/", {"file": pdf2})
+        with tenant_scope(c.id):
+            self.assertEqual(RFQDocument.objects.count(), 1)  # resilient extraction, no 500
+
+    def test_approve_creates_quotation(self):
+        from apps.rfq.models import RFQDocument, RFQStatus
+        c = make_company()
+        with tenant_scope(c.id):
+            rfq = RFQDocument.objects.create(company=c, original_name="Coupa PO",
+                                             status=RFQStatus.IN_REVIEW)
+            rfq.lines.create(company=c, position=1, description="Steel", qty=12, unit_price=485)
+        no_perm = user_with(c, ["projects.view"], email="np@lulama.co.za")
+        approver = user_with(c, ["projects.view", "rfq.approve"], email="ap@lulama.co.za")
+
+        self.client.force_login(no_perm)
+        self.client.post(f"/rfq/{rfq.id}/approve/", {"client_name": "Sasol"})
+        with tenant_scope(c.id):
+            self.assertIsNone(RFQDocument.objects.get(id=rfq.id).quotation_id)
+
+        self.client.force_login(approver)
+        self.client.post(f"/rfq/{rfq.id}/approve/", {"client_name": "Sasol"})
+        with tenant_scope(c.id):
+            rfq.refresh_from_db()
+            self.assertIsNotNone(rfq.quotation_id)
+            self.assertEqual(rfq.status, RFQStatus.APPROVED)

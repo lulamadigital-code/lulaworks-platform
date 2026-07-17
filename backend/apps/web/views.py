@@ -39,6 +39,8 @@ from apps.finance.services import (
 from apps.procurement.models import GRN, GRNLine, PurchaseOrder, Supplier
 from apps.procurement.services import three_way_match
 from apps.projects.models import Project, ProjectStatus
+from apps.rfq.models import RFQDocument
+from apps.rfq.services import approve_rfq, ingest_rfq
 
 
 def login_view(request):
@@ -123,6 +125,63 @@ def readiness_partial(request, pk):
     project = get_object_or_404(Project.objects.all(), pk=pk)
     return render(request, "web/_readiness.html",
                   {"project": project, "readiness": recompute_readiness(project)})
+
+
+# ── RFQ (the front door: upload → extract → review → approve → quotation) ─────
+
+@login_required
+def rfq_list(request):
+    return render(request, "web/rfq.html", {
+        "rfqs": RFQDocument.objects.all(),
+        "can_upload": request.user.has_perm_code("rfq.upload"),
+    })
+
+
+@login_required
+@require_POST
+def rfq_upload(request):
+    if not request.user.has_perm_code("rfq.upload"):
+        messages.error(request, "You do not have permission to upload RFQs.")
+        return redirect("web:rfq")
+    upload = request.FILES.get("file")
+    if upload is None:
+        messages.error(request, "Choose a file to upload.")
+        return redirect("web:rfq")
+    rfq = ingest_rfq(request.user.active_company, request.user,
+                     uploaded_file=upload, original_name=upload.name)
+    messages.success(request, f"Extracted {rfq.fields.count()} field(s) and "
+                              f"{rfq.lines.count()} line(s). Review below.")
+    return redirect("web:rfq_detail", pk=rfq.id)
+
+
+@login_required
+def rfq_detail(request, pk):
+    rfq = get_object_or_404(
+        RFQDocument.objects.all().prefetch_related("fields", "lines"), pk=pk)
+    return render(request, "web/rfq_detail.html", {
+        "rfq": rfq,
+        "can_approve": (rfq.status not in ("approved", "rejected")
+                        and request.user.has_perm_code("rfq.approve")),
+    })
+
+
+@login_required
+@require_POST
+def rfq_approve(request, pk):
+    """Human approval (never automatic) → creates the Quotation + Project DNA."""
+    if not request.user.has_perm_code("rfq.approve"):
+        messages.error(request, "You do not have permission to approve RFQs.")
+        return redirect("web:rfq_detail", pk=pk)
+    rfq = get_object_or_404(RFQDocument.objects.all(), pk=pk)
+    client_name = request.POST.get("client_name", "").strip()
+    if not client_name:
+        messages.error(request, "Enter the client name to create the quotation.")
+        return redirect("web:rfq_detail", pk=pk)
+    approve_rfq(rfq, request.user, client_name=client_name)
+    rfq.refresh_from_db()
+    messages.success(request, f"Approved → quotation {rfq.quotation.number} created. "
+                              "Next: build an estimate, then award to a project.")
+    return redirect("web:rfq_detail", pk=pk)
 
 
 # ── Estimates ─────────────────────────────────────────────────────────────────
