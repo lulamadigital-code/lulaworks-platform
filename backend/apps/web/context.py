@@ -15,7 +15,29 @@ def logo_static_name() -> str:
     return "web/logo.png" if finders.find("web/logo.png") else "web/logo.svg"
 
 
+_SECTIONS = {
+    "dashboard": "dashboard",
+    "work": "work", "work_new": "work", "work_detail": "work",
+    "work_start": "work", "work_complete": "work",
+    "rfq": "rfq", "rfq_detail": "rfq", "rfq_upload": "rfq", "rfq_approve": "rfq",
+    "quotations": "quotations", "quotation_detail": "quotations",
+    "quotation_edit": "quotations", "quotation_pdf": "quotations",
+    "projects": "projects", "project_detail": "projects", "readiness_partial": "projects",
+    "project_override": "projects", "project_progress_claim": "projects",
+    "compliance_item_approve": "projects",
+    "estimates": "estimates", "estimate_detail": "estimates",
+    "estimate_approve": "estimates", "estimate_revise": "estimates",
+    "suppliers": "procurement", "purchase_orders": "procurement", "po_detail": "procurement",
+    "po_approve": "procurement", "po_receive": "procurement",
+    "commercial": "commercial", "invoice_payment": "commercial",
+    "lulama": "lulama",
+}
+
+
 def nav_flags(request):
     user = getattr(request, "user", None)
     can = bool(user and user.is_authenticated and user.has_perm_code("finance.view_money"))
-    return {"perms_money": can, "has_logo": has_logo_file(), "logo_static": logo_static_name()}
+    rm = getattr(request, "resolver_match", None)
+    section = _SECTIONS.get(rm.url_name, "") if rm else ""
+    return {"perms_money": can, "has_logo": has_logo_file(),
+            "logo_static": logo_static_name(), "nav_section": section}

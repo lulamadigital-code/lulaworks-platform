@@ -7,81 +7,140 @@
   <title>{% block title %}LulaWorks{% endblock %} · LulaWorks</title>
   <script src="{% static 'web/htmx.min.js' %}" defer></script>
   <style>
-    :root {
-      --brand:#0E6E6E; --brand-d:#0a5555; --logo:#18A5B8; --ink:#14201f; --muted:#5b6b6a;
-      --line:#e3e9e8; --bg:#f6f8f8; --card:#fff; --ok:#15803d; --okbg:#dcfce7;
-      --warn:#b45309; --warnbg:#ffedd5; --bad:#b91c1c; --badbg:#fee2e2; --radius:12px;
+    :root{
+      --bg:#f6f7fb; --surface:#fff; --ink:#292f4c; --muted:#676879; --line:#e6e9ef;
+      --primary:#17a2b8; --primary-d:#0e7c8c; --primary-t:#e6f6f9;
+      --green:#00c875; --green-t:#e2f9ee; --orange:#fdab3d; --orange-t:#fff3e2;
+      --red:#e2445c; --red-t:#fde8eb; --blue:#579bfc; --blue-t:#e9f1ff;
+      --purple:#a25ddc; --purple-t:#f3ebfb; --grey:#c4c7d0; --r:14px;
+      --shadow:0 4px 16px rgba(41,47,76,.06); --shadow-lg:0 8px 30px rgba(41,47,76,.10);
     }
-    * { box-sizing:border-box; }
-    body { margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-           color:var(--ink); background:var(--bg); }
-    a { color:var(--brand); text-decoration:none; } a:hover { text-decoration:underline; }
-    header { background:var(--brand); color:#fff; }
-    .bar { max-width:1080px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; gap:20px; }
-    .bar .brand { font-weight:700; font-size:19px; display:flex; align-items:center; gap:9px;
-                  letter-spacing:-.01em; }
-    .brand .mark { height:24px; width:auto; display:block; }
-    .brand-img { height:30px; width:auto; display:block; }
-    .login-logo .brand-img { height:64px; width:auto; }
-    .login-logo { display:flex; flex-direction:column; align-items:center; gap:8px; color:var(--logo); }
-    .login-logo .mark { height:56px; width:auto; }
-    .login-logo .word { font-size:34px; font-weight:800; letter-spacing:-.03em; }
-    .bar nav { display:flex; gap:18px; margin-left:8px; }
-    .bar nav a { color:#d6efef; } .bar nav a:hover { color:#fff; }
-    .bar .sp { flex:1; }
-    .bar .who { color:#bfe3e3; font-size:13px; }
-    main { max-width:1080px; margin:0 auto; padding:24px 20px 60px; }
-    h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:16px; margin:24px 0 10px; }
-    .sub { color:var(--muted); margin:0 0 20px; }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
-            padding:18px; margin-bottom:16px; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
-    .tile { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; }
-    .tile .n { font-size:26px; font-weight:700; } .tile .l { color:var(--muted); font-size:13px; }
-    table { width:100%; border-collapse:collapse; } th,td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); }
-    th { color:var(--muted); font-weight:600; font-size:13px; }
-    .chip { display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
-    .chip.ok { background:var(--okbg); color:var(--ok); }
-    .chip.warn { background:var(--warnbg); color:var(--warn); }
-    .chip.bad { background:var(--badbg); color:var(--bad); }
-    .bar-track { background:var(--line); border-radius:6px; height:8px; overflow:hidden; }
-    .bar-fill { height:100%; background:var(--brand); }
-    .row { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
-    .row .lbl { width:130px; color:var(--muted); font-size:14px; } .row .val { width:44px; text-align:right; }
-    .msg { padding:10px 14px; border-radius:8px; margin-bottom:14px; }
-    .msg.error { background:var(--badbg); color:var(--bad); }
-    .btn { display:inline-block; background:var(--brand); color:#fff; padding:9px 16px; border:0;
-           border-radius:8px; font-weight:600; cursor:pointer; } .btn:hover { background:var(--brand-d); text-decoration:none; }
-    .muted { color:var(--muted); } .right { text-align:right; }
-    input { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:15px; }
-    label { display:block; font-size:13px; color:var(--muted); margin:12px 0 4px; }
+    *{box-sizing:border-box}
+    body{margin:0;font:14.5px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+         color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+    a{color:var(--primary-d);text-decoration:none}a:hover{text-decoration:underline}
+    h1{font-size:24px;margin:0 0 4px;letter-spacing:-.02em}
+    h2{font-size:16px;margin:26px 0 12px;letter-spacing:-.01em}
+    .sub{color:var(--muted);margin:0 0 22px}
+    .muted{color:var(--muted)} .right{text-align:right}
+
+    /* ---- App shell: sidebar + workspace ---- */
+    body.shell{display:flex;min-height:100vh}
+    body.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+              background:radial-gradient(1200px 500px at 50% -10%,var(--primary-t),var(--bg))}
+    body.auth .main{flex:0 1 420px} body.auth .content{padding:0;max-width:none}
+    .sidebar{width:236px;background:var(--surface);border-right:1px solid var(--line);
+             position:sticky;top:0;height:100vh;display:flex;flex-direction:column;flex:0 0 236px}
+    .sidebar .logo{display:flex;align-items:center;gap:9px;padding:20px 20px 16px;font-weight:800;
+                   font-size:19px;color:var(--primary);letter-spacing:-.02em}
+    .sidebar .logo .mark{height:26px;width:auto}
+    .sidebar .logo .brand-img{height:30px;width:auto}
+    .nav{padding:6px 12px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+    .nav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;color:var(--muted);
+           font-weight:600;font-size:14px;position:relative}
+    .nav a:hover{background:#f2f3f8;color:var(--ink);text-decoration:none}
+    .nav a.active{background:var(--primary-t);color:var(--primary-d)}
+    .nav a.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;
+                          border-radius:0 3px 3px 0;background:var(--primary)}
+    .nav a svg{width:18px;height:18px;flex:0 0 18px}
+    .side-foot{margin-top:auto;padding:14px 16px;border-top:1px solid var(--line);
+               display:flex;align-items:center;gap:10px}
+    .side-foot .who{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;flex:1}
+    .side-foot a{font-size:12.5px;font-weight:600}
+    .main{flex:1;min-width:0}
+    .content{max-width:1160px;margin:0 auto;padding:30px 34px 70px}
+
+    /* ---- Cards / widgets ---- */
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+          padding:20px;margin-bottom:18px;box-shadow:var(--shadow)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:18px}
+    .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px;
+          box-shadow:var(--shadow);position:relative;overflow:hidden}
+    .tile .n{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+    .tile .l{color:var(--muted);font-size:13px;margin-top:3px;font-weight:600}
+    .tile .ic{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:10px;
+              display:flex;align-items:center;justify-content:center;font-size:17px}
+
+    /* ---- Status pills ---- */
+    .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:20px;
+          font-size:12px;font-weight:700;background:#eef0f5;color:var(--muted);white-space:nowrap}
+    .chip.ok{background:var(--green-t);color:#0a8f57} .chip.warn{background:var(--orange-t);color:#b9711a}
+    .chip.bad{background:var(--red-t);color:#c22a41} .chip.info{background:var(--blue-t);color:#2f6fd0}
+    .chip.purple{background:var(--purple-t);color:#7c3fb8}
+
+    /* ---- Tables ---- */
+    table{width:100%;border-collapse:collapse}
+    th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--line)}
+    th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+    tbody tr:hover,table tr:hover{background:#fafbfd}
+    .card>table tr:last-child td{border-bottom:0}
+
+    /* ---- Bars ---- */
+    .bar-track{background:#eef0f5;border-radius:8px;height:9px;overflow:hidden}
+    .bar-fill{height:100%;background:var(--primary);border-radius:8px}
+    .row{display:flex;align-items:center;gap:10px} .row .lbl{width:130px;color:var(--muted);font-size:13px}
+    .row .val{width:44px;text-align:right} .sp{flex:1}
+
+    /* ---- Buttons / inputs ---- */
+    .btn{display:inline-flex;align-items:center;gap:7px;background:var(--primary);color:#fff;padding:9px 17px;
+         border:0;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 2px 6px rgba(23,162,184,.28)}
+    .btn:hover{background:var(--primary-d);text-decoration:none}
+    input,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;
+                 background:#fff;color:var(--ink)}
+    input:focus,select:focus{outline:0;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-t)}
+    label{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 5px;font-weight:600}
+    .msg{padding:12px 16px;border-radius:10px;margin-bottom:16px;font-weight:600;box-shadow:var(--shadow)}
+    .msg.success{background:var(--green-t);color:#0a8f57} .msg.error{background:var(--red-t);color:#c22a41}
+
+    /* ---- Charts ---- */
+    .charts{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+    @media(max-width:820px){.charts{grid-template-columns:1fr}.sidebar{display:none}}
+    .legend{display:flex;flex-direction:column;gap:9px}
+    .legend .li{display:flex;align-items:center;gap:9px;font-size:13.5px}
+    .legend .dot{width:11px;height:11px;border-radius:4px;flex:0 0 11px}
+    .barrow{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .barrow .cap{width:120px;font-size:13px;color:var(--muted)}
+    .barrow .track{flex:1;background:#eef0f5;border-radius:7px;height:22px;overflow:hidden}
+    .barrow .fill{height:100%;border-radius:7px;display:flex;align-items:center;padding-left:9px;
+                  color:#fff;font-size:12px;font-weight:700;min-width:26px}
+
+    /* ---- Login ---- */
+    .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+               background:radial-gradient(1200px 500px at 50% -10%,var(--primary-t),var(--bg))}
+    .login-logo{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--primary)}
+    .login-logo .mark{height:58px;width:auto} .login-logo .brand-img{height:66px;width:auto}
+    .login-logo .word{font-size:34px;font-weight:800;letter-spacing:-.03em}
   </style>
 </head>
-<body>
+<body class="{% if user.is_authenticated %}shell{% else %}auth{% endif %}">
   {% if user.is_authenticated %}
-  <header><div class="bar">
-    <a class="brand" href="{% url 'web:dashboard' %}" style="color:#fff;">
+  <aside class="sidebar">
+    <a class="logo" href="{% url 'web:dashboard' %}">
       {% if has_logo %}<img src="{% static logo_static %}" class="brand-img" alt="LulaWorks">
-      {% else %}{% include "web/_mark.svg" %}<span>lulaworks</span>{% endif %}</a>
-    <nav>
-      <a href="{% url 'web:dashboard' %}">Dashboard</a>
-      <a href="{% url 'web:work' %}">Work</a>
-      <a href="{% url 'web:rfq' %}">RFQ</a>
-      <a href="{% url 'web:quotations' %}">Quotations</a>
-      <a href="{% url 'web:projects' %}">Projects</a>
-      <a href="{% url 'web:estimates' %}">Estimates</a>
-      <a href="{% url 'web:purchase_orders' %}">Procurement</a>
-      {% if perms_money %}<a href="{% url 'web:commercial' %}">Commercial</a>{% endif %}
-      <a href="{% url 'web:lulama' %}">Lulama</a>
+      {% else %}{% include "web/_mark.svg" %}<span>lulaworks</span>{% endif %}
+    </a>
+    <nav class="nav">
+      {% include "web/_navlink.html" with url='web:dashboard' key='dashboard' label='Dashboard' icon='grid' %}
+      {% include "web/_navlink.html" with url='web:work' key='work' label='Work' icon='check' %}
+      {% include "web/_navlink.html" with url='web:rfq' key='rfq' label='RFQ' icon='inbox' %}
+      {% include "web/_navlink.html" with url='web:quotations' key='quotations' label='Quotations' icon='doc' %}
+      {% include "web/_navlink.html" with url='web:projects' key='projects' label='Projects' icon='folder' %}
+      {% include "web/_navlink.html" with url='web:estimates' key='estimates' label='Estimates' icon='calc' %}
+      {% include "web/_navlink.html" with url='web:purchase_orders' key='procurement' label='Procurement' icon='cart' %}
+      {% if perms_money %}{% include "web/_navlink.html" with url='web:commercial' key='commercial' label='Commercial' icon='cash' %}{% endif %}
+      {% include "web/_navlink.html" with url='web:lulama' key='lulama' label='Lulama AI' icon='spark' %}
     </nav>
-    <span class="sp"></span>
-    <span class="who">{{ user.email }}</span>
-    <a href="{% url 'web:logout' %}" style="color:#fff">Sign out</a>
-  </div></header>
+    <div class="side-foot">
+      <span class="who">{{ user.email }}</span>
+      <a href="{% url 'web:logout' %}">Sign out</a>
+    </div>
+  </aside>
   {% endif %}
-  <main>
-    {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
-    {% block content %}{% endblock %}
+  <main class="main">
+    <div class="content">
+      {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+      {% block content %}{% endblock %}
+    </div>
   </main>
 </body>
 </html>

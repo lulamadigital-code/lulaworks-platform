@@ -79,10 +79,42 @@ def _can_view_money(user) -> bool:
     return user.has_perm_code("finance.view_money")
 
 
+_STATUS_META = {
+    "draft": ("#c4c7d0", "Draft"), "planned": ("#c4c7d0", "Planned"),
+    "ready": ("#fdab3d", "Ready"), "in_progress": ("#579bfc", "In progress"),
+    "on_hold": ("#a25ddc", "On hold"), "blocked": ("#e2445c", "Blocked"),
+    "awaiting_inspection": ("#a25ddc", "Quality check"), "completed": ("#00c875", "Completed"),
+    "cancelled": ("#c4c7d0", "Cancelled"),
+}
+_ORIGIN_META = {
+    "rfq": ("#a25ddc", "RFQ / Tender"), "manual": ("#579bfc", "Manual"),
+    "recurring": ("#00c875", "Recurring"), "customer_request": ("#fdab3d", "Customer request"),
+}
+
+
+def _donut(status_counts, total):
+    """Build SVG donut segments (dash/gap/rotate computed server-side — no JS)."""
+    from math import pi
+    circumference = 2 * pi * 54
+    segments, cum = [], 0.0
+    for status, cnt in sorted(status_counts.items(), key=lambda x: -x[1]):
+        color, label = _STATUS_META.get(status, ("#17a2b8", status.replace("_", " ").title()))
+        pct = cnt / total if total else 0
+        segments.append({
+            "color": color, "label": label, "count": cnt, "pct": round(pct * 100),
+            "dash": round(pct * circumference, 2), "gap": round((1 - pct) * circumference, 2),
+            "rotate": round(-90 + cum * 360, 2),
+        })
+        cum += pct
+    return {"segments": segments, "circ": round(circumference, 2)}
+
+
 @login_required
 def dashboard(request):
-    """Portfolio home: attention list (compliance-blocked projects) for everyone;
-    the commercial panel only for money-authorised managers (Golden Rule)."""
+    """Portfolio home: KPI widgets + charts, plus the compliance attention list.
+    The commercial panel is finance-only (Golden Rule)."""
+    from collections import Counter
+
     projects = list(Project.objects.all().select_related("quotation"))
     attention = []
     for p in projects:
@@ -90,11 +122,26 @@ def dashboard(request):
         if r["gate_status"] == "not_ready":
             attention.append({"project": p, "readiness": r})
 
+    work = list(Task.objects.all())
+    status_counts = Counter(t.status for t in work)
+    origin_counts = Counter(t.origin for t in work)
+    max_origin = max(origin_counts.values(), default=1)
+    origins = [
+        {"label": lbl, "color": col, "count": origin_counts.get(key, 0),
+         "pct": round(origin_counts.get(key, 0) / max_origin * 100) if max_origin else 0}
+        for key, (col, lbl) in _ORIGIN_META.items() if origin_counts.get(key, 0)
+    ]
+
     context = {
         "project_count": len(projects),
         "attention": attention,
         "in_execution": sum(1 for p in projects if p.status == ProjectStatus.IN_EXECUTION),
         "ready": sum(1 for p in projects if p.status == ProjectStatus.READY),
+        "work_total": len(work),
+        "work_completed": status_counts.get("completed", 0),
+        "work_blocked": status_counts.get("blocked", 0),
+        "donut": _donut(status_counts, len(work)),
+        "origins": origins,
         "can_view_money": _can_view_money(request.user),
     }
     if context["can_view_money"]:
