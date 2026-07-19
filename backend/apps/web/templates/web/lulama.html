@@ -1,8 +1,8 @@
 {% extends "web/base.html" %}
-{% block title %}Lulama{% endblock %}
+{% block title %}LulaAI{% endblock %}
 {% block content %}
-<h1>Lulama</h1>
-<p class="sub">Your AI Operations Director. Lulama coordinates the specialised agents
+<h1>LulaAI</h1>
+<p class="sub">Your AI Operations Director. LulaAI coordinates the specialised agents
   and returns one draft to review — it proposes, you approve.</p>
 
 <div class="card">
@@ -16,7 +16,7 @@
         {{ p.number }} · {{ p.client_name }}</option>
       {% endfor %}
     </select>
-    <label>Ask Lulama</label>
+    <label>Ask LulaAI</label>
     <input type="text" name="request" value="{{ request_text }}">
     <button class="btn" type="submit" style="margin-top:14px;">Ask</button>
   </form>
@@ -55,7 +55,7 @@
     {% else %}<span class="chip">advisory</span>{% endif %}
   </div>
   {% endfor %}
-  <p class="muted" style="margin:4px 0 0; font-size:12px;">Lulama never executes these — a human approves them.</p>
+  <p class="muted" style="margin:4px 0 0; font-size:12px;">LulaAI never executes these — a human approves them.</p>
 </div>
 {% endif %}
 
