@@ -1,11 +1,11 @@
-<svg class="mark" viewBox="0 0 116 84" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LulaWorks">
-  <!-- teal W strokes — inherit the surrounding text colour (white on the header, teal on light) -->
-  <g fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="14" y1="22" x2="30" y2="62"/>
-    <line x1="54" y1="62" x2="68" y2="22"/>
-    <line x1="68" y1="22" x2="82" y2="62"/>
+<svg class="mark" viewBox="0 0 118 74" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LulaWorks">
+  <!-- teal "W" strokes — inherit the surrounding text colour (white on the teal
+       header, logo-teal on light). Rounded thick bars, like the wordmark's 'w'. -->
+  <g fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 14 L27 58"/>
+    <path d="M46 58 L60 14 L74 58"/>
   </g>
-  <!-- grey accents -->
-  <circle cx="42" cy="58" r="7" fill="#A7AEB3"/>
-  <circle cx="100" cy="24" r="12" fill="#A7AEB3"/>
+  <!-- grey accents: small dot in the first valley, larger circle top-right -->
+  <circle cx="35" cy="54" r="6.5" fill="#9BA1A6"/>
+  <circle cx="96" cy="18" r="12" fill="#9BA1A6"/>
 </svg>
