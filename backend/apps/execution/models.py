@@ -53,10 +53,30 @@ class TaskPriority(models.TextChoices):
     CRITICAL = "critical", "Critical"
 
 
+class WorkOrigin(models.TextChoices):
+    """How the work started — the ONLY real difference between jobs. Everything
+    else flows through the same Work engine (unified workflow)."""
+    RFQ = "rfq", "RFQ / Tender"
+    MANUAL = "manual", "Manual task"
+    RECURRING = "recurring", "Recurring schedule"
+    CUSTOMER_REQUEST = "customer_request", "Customer request"
+
+
 class Task(TenantBaseModel):
+    """A unit of Work. It may belong to a Project (large, gated jobs) or stand
+    alone (a small task — e.g. "Replace faulty DB board"); the only difference is
+    how it started (`origin`). One task engine serves both."""
+
     project = models.ForeignKey(
-        "projects.Project", on_delete=models.CASCADE, related_name="tasks"
+        "projects.Project", on_delete=models.CASCADE, null=True, blank=True,
+        related_name="tasks",
     )
+    origin = models.CharField(max_length=20, choices=WorkOrigin.choices,
+                              default=WorkOrigin.MANUAL)
+    # Standalone billable work carries its own client (project work bills via the
+    # project); internal work isn't billed.
+    is_billable = models.BooleanField(default=False)
+    client_name = models.CharField(max_length=255, blank=True)
     work_package = models.ForeignKey(
         WorkPackage, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks"
     )
@@ -86,10 +106,14 @@ class Task(TenantBaseModel):
     blocked_reason = models.CharField(max_length=255, blank=True)  # computed cache
 
     class Meta:
-        ordering = ["project", "created_at"]
+        ordering = ["-created_at"]
 
     def __str__(self):
         return self.name
+
+    @property
+    def is_standalone(self) -> bool:
+        return self.project_id is None
 
 
 class Resource(TenantBaseModel):

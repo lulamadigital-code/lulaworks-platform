@@ -26,7 +26,14 @@ from apps.compliance.services import approve_item, recompute_readiness
 from apps.compliance.services import override as override_gate
 from apps.estimating.models import Estimate, EstimateStatus
 from apps.estimating.services import approve_estimate, create_revision
-from apps.execution.services import project_health
+from apps.execution.models import Task, WorkOrigin
+from apps.execution.services import (
+    complete_task,
+    compute_task_readiness,
+    create_work,
+    project_health,
+    start_task,
+)
 from apps.finance.models import Invoice
 from apps.finance.services import (
     budget_vs_actual,
@@ -129,6 +136,93 @@ def readiness_partial(request, pk):
     project = get_object_or_404(Project.objects.all(), pk=pk)
     return render(request, "web/_readiness.html",
                   {"project": project, "readiness": recompute_readiness(project)})
+
+
+# ── Work (the unified engine: RFQ / manual / recurring — all one Work list) ───
+
+@login_required
+def work_list(request):
+    """Every unit of work, whatever its origin — project tasks and standalone
+    jobs in one list (the unified Work engine)."""
+    qs = Task.objects.all().select_related("project", "assignee")
+    origin = request.GET.get("origin")
+    if origin:
+        qs = qs.filter(origin=origin)
+    scope = request.GET.get("scope")
+    if scope == "standalone":
+        qs = qs.filter(project__isnull=True)
+    elif scope == "project":
+        qs = qs.filter(project__isnull=False)
+    return render(request, "web/work.html", {
+        "tasks": qs, "origins": WorkOrigin.choices,
+        "origin": origin, "scope": scope,
+        "can_manage": request.user.has_perm_code("execution.manage"),
+    })
+
+
+@login_required
+def work_new(request):
+    if not request.user.has_perm_code("execution.manage"):
+        messages.error(request, "You do not have permission to create work.")
+        return redirect("web:work")
+    if request.method == "POST":
+        project = None
+        if request.POST.get("project"):
+            project = get_object_or_404(Project.objects.all(), pk=request.POST["project"])
+        task = create_work(
+            request.user.active_company, request.user,
+            name=request.POST.get("name", "").strip() or "Untitled work",
+            description=request.POST.get("description", "").strip(),
+            origin=request.POST.get("origin") or WorkOrigin.MANUAL,
+            project=project,
+            is_billable=bool(request.POST.get("is_billable")),
+            client_name=request.POST.get("client_name", "").strip(),
+        )
+        messages.success(request, f"Work created: {task.name}.")
+        return redirect("web:work_detail", pk=task.id)
+    return render(request, "web/work_new.html", {
+        "origins": WorkOrigin.choices,
+        "projects": Project.objects.all(),
+    })
+
+
+@login_required
+def work_detail(request, pk):
+    task = get_object_or_404(
+        Task.objects.all().select_related("project", "assignee"), pk=pk)
+    status, reason = compute_task_readiness(task)
+    return render(request, "web/work_detail.html", {
+        "task": task, "readiness_status": status, "readiness_reason": reason,
+        "can_manage": request.user.has_perm_code("execution.manage"),
+    })
+
+
+@login_required
+@require_POST
+def work_start(request, pk):
+    if not request.user.has_perm_code("execution.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:work_detail", pk=pk)
+    task = get_object_or_404(Task.objects.all(), pk=pk)
+    try:
+        start_task(task, request.user)
+    except ValueError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"Started: {task.name}.")
+    return redirect("web:work_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def work_complete(request, pk):
+    if not request.user.has_perm_code("execution.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:work_detail", pk=pk)
+    task = get_object_or_404(Task.objects.all(), pk=pk)
+    complete_task(task, request.user, actual_hours=request.POST.get("actual_hours") or None)
+    messages.success(request, f"Completed: {task.name}.")
+    return redirect("web:work_detail", pk=pk)
 
 
 # ── Quotations (view · review · edit · download PDF) ──────────────────────────

@@ -37,7 +37,8 @@ def compute_task_readiness(task) -> tuple[str, str]:
         names = ", ".join(incomplete.values_list("name", flat=True)[:3])
         reasons.append(f"waiting on predecessor: {names}")
 
-    if task.blocks_on_compliance and not can_start(task.project):
+    # Standalone work (no project) has no compliance gate — only project work does.
+    if task.blocks_on_compliance and task.project_id and not can_start(task.project):
         reasons.append("project not compliance-ready")
 
     if task.material_po_id:
@@ -82,11 +83,11 @@ def start_task(task, user) -> Task:
 
     from apps.projects.models import ProjectStatus
     project = task.project
-    if project.status == ProjectStatus.READY:
+    if project and project.status == ProjectStatus.READY:
         project.status = ProjectStatus.IN_EXECUTION
         project.save(update_fields=["status", "updated_at"])
     publish("TaskStarted", company=task.company, subject=task, actor=user,
-            payload={"task": task.name, "project": project.number})
+            payload={"task": task.name, "project": project.number if project else "standalone"})
     return task
 
 
@@ -102,9 +103,34 @@ def complete_task(task, user, *, actual_hours=None) -> Task:
     # Successors may now become ready (event-driven recompute).
     for succ in task.successors.all():
         refresh_task_status(succ)
-    recompute_project_progress(task.project)
+    if task.project_id:
+        recompute_project_progress(task.project)
     publish("TaskCompleted", company=task.company, subject=task, actor=user,
             payload={"task": task.name})
+    return task
+
+
+def create_work(company, user, *, name, origin=None, project=None, description="",
+                is_billable=False, client_name="", assignee=None,
+                blocks_on_compliance=None) -> Task:
+    """The single entry point for Work, whatever its origin (RFQ / manual /
+    recurring / customer request). Project work is compliance-gated; standalone
+    work is not. Returns a READY-or-BLOCKED task with its status computed."""
+    from .models import WorkOrigin
+    origin = origin or WorkOrigin.MANUAL
+    if blocks_on_compliance is None:
+        blocks_on_compliance = project is not None  # only project work is gated
+    task = Task.objects.create(
+        company=company, project=project, origin=origin, name=name,
+        description=description, is_billable=is_billable,
+        client_name=client_name or (project.client_name if project else ""),
+        assignee=assignee, blocks_on_compliance=blocks_on_compliance,
+        created_by=user, updated_by=user,
+    )
+    refresh_task_status(task)
+    publish("WorkCreated", company=company, subject=task, actor=user,
+            payload={"name": name, "origin": origin,
+                     "standalone": project is None, "billable": is_billable})
     return task
 
 

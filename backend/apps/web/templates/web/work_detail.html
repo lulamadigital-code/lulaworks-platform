@@ -1,0 +1,54 @@
+{% extends "web/base.html" %}
+{% block title %}{{ task.name }}{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:work' %}">← Work</a></p>
+<div class="row">
+  <h1 style="margin:0;">{{ task.name }}</h1>
+  <span class="sp" style="flex:1;"></span>
+  {% if task.status == 'completed' %}<span class="chip ok">Completed</span>
+  {% elif task.status == 'in_progress' %}<span class="chip ok">In progress</span>
+  {% elif task.status == 'blocked' %}<span class="chip bad">Blocked</span>
+  {% else %}<span class="chip">{{ task.get_status_display }}</span>{% endif %}
+</div>
+<p class="sub">{{ task.get_origin_display }}
+  · {% if task.project %}<a href="{% url 'web:project_detail' task.project.id %}">{{ task.project.number }}</a>{% else %}Standalone{% endif %}
+  {% if task.is_billable %}· billable{% if task.client_name %} · {{ task.client_name }}{% endif %}{% endif %}</p>
+
+{% if task.description %}<div class="card muted">{{ task.description }}</div>{% endif %}
+
+<div class="card">
+  <div class="row">
+    <strong>Readiness</strong>
+    <span class="sp" style="flex:1;"></span>
+    {% if readiness_status == 'ready' %}<span class="chip warn">Ready to start</span>
+    {% elif readiness_status == 'in_progress' %}<span class="chip ok">In progress</span>
+    {% elif readiness_status == 'blocked' %}<span class="chip bad">Blocked</span>
+    {% else %}<span class="chip">{{ readiness_status }}</span>{% endif %}
+  </div>
+  {% if readiness_reason %}<p class="muted" style="margin:8px 0 0;">{{ readiness_reason }}</p>{% endif %}
+</div>
+
+{% if can_manage %}
+<div class="row" style="gap:10px;">
+  {% if readiness_status == 'ready' %}
+  <form method="post" action="{% url 'web:work_start' task.id %}" style="margin:0;">
+    {% csrf_token %}<button class="btn" type="submit">Start work</button>
+  </form>
+  {% endif %}
+  {% if task.status == 'in_progress' or task.status == 'ready' %}
+  <form method="post" action="{% url 'web:work_complete' task.id %}" class="row" style="gap:8px; margin:0;">
+    {% csrf_token %}
+    <input type="number" name="actual_hours" step="0.25" placeholder="hours" style="width:100px;">
+    <button class="btn" type="submit" style="background:var(--brand-d);">Mark complete</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if task.is_billable and task.status == 'completed' %}
+<div class="card" style="border-color:var(--okbg);">
+  ✓ Completed & billable — invoicing standalone work is the next step
+  (project work bills via <a href="{% url 'web:commercial' %}">Commercial</a>).
+</div>
+{% endif %}
+{% endblock %}

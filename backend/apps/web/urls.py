@@ -21,6 +21,12 @@ urlpatterns = [
     path("quotations/<uuid:pk>/", views.quotation_detail, name="quotation_detail"),
     path("quotations/<uuid:pk>/edit/", views.quotation_edit, name="quotation_edit"),
     path("quotations/<uuid:pk>/pdf/", views.quotation_pdf, name="quotation_pdf"),
+    # Work (unified engine)
+    path("work/", views.work_list, name="work"),
+    path("work/new/", views.work_new, name="work_new"),
+    path("work/<uuid:pk>/", views.work_detail, name="work_detail"),
+    path("work/<uuid:pk>/start/", views.work_start, name="work_start"),
+    path("work/<uuid:pk>/complete/", views.work_complete, name="work_complete"),
     # RFQ (front door)
     path("rfq/", views.rfq_list, name="rfq"),
     path("rfq/upload/", views.rfq_upload, name="rfq_upload"),

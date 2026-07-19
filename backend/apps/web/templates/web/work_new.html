@@ -1,0 +1,39 @@
+{% extends "web/base.html" %}
+{% block title %}New work{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:work' %}">← Work</a></p>
+<h1>New work</h1>
+<p class="sub">Create a task. Leave the project blank for standalone work
+  (e.g. "Replace faulty DB board") — no RFQ, no quotation, just work.</p>
+
+<form method="post" action="{% url 'web:work_new' %}">
+  {% csrf_token %}
+  <div class="card">
+    <label>What needs doing?</label>
+    <input type="text" name="name" placeholder="e.g. Replace faulty DB board" required autofocus>
+    <label>Details (optional)</label>
+    <input type="text" name="description" placeholder="Notes, location, scope…">
+    <div class="grid" style="grid-template-columns:1fr 1fr; margin-top:8px;">
+      <div>
+        <label>Origin</label>
+        <select name="origin" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;">
+          {% for value, label in origins %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Project (optional — leave blank for standalone)</label>
+        <select name="project" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;">
+          <option value="">Standalone (no project)</option>
+          {% for p in projects %}<option value="{{ p.id }}">{{ p.number }} · {{ p.client_name }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <label style="display:flex; align-items:center; gap:8px; margin-top:12px;">
+      <input type="checkbox" name="is_billable" style="width:auto;"> Billable work
+    </label>
+    <label>Client (for billable standalone work)</label>
+    <input type="text" name="client_name" placeholder="Client name">
+  </div>
+  <button class="btn" type="submit">Create work</button>
+</form>
+{% endblock %}

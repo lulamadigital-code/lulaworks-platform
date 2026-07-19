@@ -394,3 +394,53 @@ class QuotationTests(TestCase):
             self.assertEqual(lines[0].description, "Steel lip channel")
             self.assertEqual(lines[1].unit_price, Decimal("1200"))
 
+
+
+class UnifiedWorkTests(TestCase):
+    """The unified Work engine: standalone work (no project, no compliance gate)
+    flows through the same lifecycle as project work — Example 2 (the electrician)."""
+
+    def test_standalone_work_create_start_complete(self):
+        from apps.execution.models import Task, TaskStatus
+        c = make_company()
+        mgr = user_with(c, ["projects.view", "execution.manage"], email="mgr@lulama.co.za")
+        self.client.force_login(mgr)
+
+        # New standalone work — no project, no RFQ, no quotation
+        resp = self.client.post("/work/new/", {
+            "name": "Replace faulty DB board", "origin": "manual",
+            "project": "", "is_billable": "on", "client_name": "Corner Cafe",
+        })
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(c.id):
+            task = Task.objects.get(name="Replace faulty DB board")
+            self.assertIsNone(task.project_id)          # standalone
+            self.assertTrue(task.is_billable)
+            self.assertFalse(task.blocks_on_compliance)  # no project → no gate
+            self.assertEqual(task.status, TaskStatus.READY)  # ready immediately
+
+        self.client.post(f"/work/{task.id}/start/")
+        with tenant_scope(c.id):
+            self.assertEqual(Task.objects.get(id=task.id).status, TaskStatus.IN_PROGRESS)
+        self.client.post(f"/work/{task.id}/complete/", {"actual_hours": "2"})
+        with tenant_scope(c.id):
+            self.assertEqual(Task.objects.get(id=task.id).status, TaskStatus.COMPLETED)
+
+    def test_work_new_requires_permission(self):
+        c = make_company()
+        viewer = user_with(c, ["projects.view"], email="v@lulama.co.za")
+        self.client.force_login(viewer)
+        resp = self.client.post("/work/new/", {"name": "X"})
+        self.assertEqual(resp.status_code, 302)  # redirected, not created
+        from apps.execution.models import Task
+        with tenant_scope(c.id):
+            self.assertFalse(Task.objects.filter(name="X").exists())
+
+    def test_work_list_shows_all_origins(self):
+        c = make_company()
+        mgr = user_with(c, ["projects.view", "execution.manage"], email="m2@lulama.co.za")
+        with tenant_scope(c.id):
+            from apps.execution.services import create_work
+            create_work(c, mgr, name="Standalone job", origin="manual")
+        self.client.force_login(mgr)
+        self.assertContains(self.client.get("/work/"), "Standalone job")

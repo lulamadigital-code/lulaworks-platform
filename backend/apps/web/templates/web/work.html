@@ -1,0 +1,47 @@
+{% extends "web/base.html" %}
+{% block title %}Work{% endblock %}
+{% block content %}
+<div class="row">
+  <h1 style="margin:0;">Work</h1>
+  <span class="sp" style="flex:1;"></span>
+  {% if can_manage %}<a class="btn" href="{% url 'web:work_new' %}">+ New work</a>{% endif %}
+</div>
+<p class="sub">Everything is Work — RFQ tenders, manual tasks, recurring schedules — one engine.
+  The only difference is how it started.</p>
+
+<div class="row" style="gap:8px; margin-bottom:14px;">
+  <a class="chip {% if not scope and not origin %}ok{% endif %}" href="{% url 'web:work' %}"
+     style="text-decoration:none;">All</a>
+  <a class="chip {% if scope == 'standalone' %}ok{% endif %}" href="?scope=standalone"
+     style="text-decoration:none;">Standalone</a>
+  <a class="chip {% if scope == 'project' %}ok{% endif %}" href="?scope=project"
+     style="text-decoration:none;">Project</a>
+  {% for value, label in origins %}
+  <a class="chip {% if origin == value %}ok{% endif %}" href="?origin={{ value }}"
+     style="text-decoration:none;">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Work</th><th>Origin</th><th>Belongs to</th><th>Assignee</th><th>Status</th></tr>
+    {% for t in tasks %}
+    <tr>
+      <td><a href="{% url 'web:work_detail' t.id %}">{{ t.name }}</a>
+        {% if t.is_billable %}<span class="chip" style="margin-left:6px;">billable</span>{% endif %}</td>
+      <td class="muted">{{ t.get_origin_display }}</td>
+      <td class="muted">{% if t.project %}<a href="{% url 'web:project_detail' t.project.id %}">{{ t.project.number }}</a>{% else %}Standalone{% endif %}</td>
+      <td class="muted">{{ t.assignee.name|default:"—" }}</td>
+      <td>
+        {% if t.status == 'completed' %}<span class="chip ok">Completed</span>
+        {% elif t.status == 'in_progress' %}<span class="chip ok">In progress</span>
+        {% elif t.status == 'blocked' %}<span class="chip bad">Blocked</span>
+        {% elif t.status == 'ready' %}<span class="chip warn">Ready</span>
+        {% else %}<span class="chip">{{ t.get_status_display }}</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="5" class="muted" style="padding:20px;">No work yet — create some.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}
