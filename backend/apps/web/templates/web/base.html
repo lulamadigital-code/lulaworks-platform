@@ -234,6 +234,23 @@
       .totop{right:14px;bottom:14px}
     }
 
+    /* ---- Avatars & people ---- */
+    .av{border-radius:50%;object-fit:cover;flex:0 0 auto;display:inline-flex;
+        align-items:center;justify-content:center;background:#eef0f5}
+    .av.init{background:var(--primary-t);color:var(--primary-d);font-weight:800;
+             letter-spacing:.02em}
+    .personcell{display:flex;align-items:center;gap:12px;color:var(--ink)}
+    .personcell:hover{text-decoration:none}
+    .personcell:hover strong{color:var(--primary-d)}
+    .personhead{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:18px}
+    .avatar-edit{display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+                 padding-bottom:16px;border-bottom:1px solid var(--line)}
+    .nowrap{white-space:nowrap}
+    .side-foot .me{display:flex;align-items:center;gap:9px;flex:1;min-width:0;color:var(--ink)}
+    .side-foot .me:hover{text-decoration:none}
+    .side-foot .me span{font-size:12.5px;color:var(--muted);overflow:hidden;
+                        text-overflow:ellipsis;white-space:nowrap}
+
     /* ---- People ---- */
     .pw{font:600 21px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
         letter-spacing:.06em;background:var(--green-t);color:#0a8f57;
@@ -281,7 +298,10 @@
       {% include "web/_navlink.html" with url='web:notifications' key='notifications' label='Inbox' icon='bell' badge=unread_notifications %}
     </nav>
     <div class="side-foot">
-      <span class="who">{{ user.email }}</span>
+      <a class="me" href="{% url 'web:profile' %}" title="My profile">
+        {% include "web/_avatar.html" with p=user size=28 %}
+        <span>{{ user.get_full_name|default:user.email }}</span>
+      </a>
       <a href="{% url 'web:logout' %}">Sign out</a>
     </div>
   </aside>

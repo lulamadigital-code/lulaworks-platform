@@ -1,0 +1,93 @@
+{% extends "web/base.html" %}
+{% block title %}My profile{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>My profile</h1>
+    <p class="sub" style="margin:0;">Your photo and details. Everyone can edit their
+      own profile, whatever their role.</p>
+  </div>
+  <a class="btn ghost" href="{% url 'web:change_password' %}">Change password</a>
+</div>
+
+<div class="two-col">
+  <div>
+    <div class="card">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="avatar-edit">
+          {% include "web/_avatar.html" with p=person size=96 %}
+          <div style="flex:1;min-width:200px;">
+            <label style="margin-top:0;">Profile photo</label>
+            <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif">
+            <p class="muted" style="margin:8px 0 0;font-size:12.5px;">
+              JPEG, PNG, WebP or GIF, up to 5&nbsp;MB. Your photo appears on every
+              job you are assigned to, so the crew can see who is who.
+            </p>
+          </div>
+        </div>
+
+        <div class="two" style="margin-top:8px;">
+          <div>
+            <label>First name</label>
+            <input type="text" name="first_name" value="{{ person.first_name }}">
+          </div>
+          <div>
+            <label>Last name</label>
+            <input type="text" name="last_name" value="{{ person.last_name }}">
+          </div>
+        </div>
+
+        <label>Mobile</label>
+        <input type="text" name="mobile" value="{{ person.mobile }}" placeholder="+27 …">
+
+        <label>Email (your sign-in)</label>
+        <input type="text" value="{{ person.email }}" disabled
+               title="Ask an administrator to change your email">
+
+        <div class="row" style="margin-top:18px;gap:12px;">
+          <button class="btn" type="submit">Save profile</button>
+          {% if person.avatar %}
+          <button class="btn ghost" type="submit" name="remove_avatar" value="1"
+                  data-confirm="Remove your profile photo?">Remove photo</button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <h2 style="margin-top:0;">Where you stand</h2>
+    <div class="card">
+      <table class="kv">
+        <tr><td class="muted">Company</td><td>{{ person.active_company.name }}</td></tr>
+        <tr><td class="muted">Role</td><td>{{ membership.role.name|default:"—" }}</td></tr>
+        <tr><td class="muted">Job title</td><td>{{ membership.job_title|default:"—" }}</td></tr>
+        <tr><td class="muted">Open work</td><td>{{ work.open_count }}</td></tr>
+        <tr><td class="muted">Completed</td><td>{{ work.past_count }}</td></tr>
+      </table>
+      <p class="muted" style="margin:12px 0 0;font-size:12.5px;">
+        Your role is set by an administrator — it decides what you can see and do.
+      </p>
+    </div>
+
+    {% if work.current %}
+    <h2>Your open work</h2>
+    <div class="card" style="padding:0;">
+      {% for entry in work.current %}
+      <a class="workrow" href="{% url 'web:work_detail' entry.task.id %}">
+        <span class="prio {{ entry.task.priority }}"></span>
+        <span class="wr-main">
+          <strong>{{ entry.task.name }}</strong>
+          <span class="muted">as {{ entry.roles|join:" &amp; " }}</span>
+        </span>
+        {% include "web/_statuschip.html" with s=entry.task %}
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

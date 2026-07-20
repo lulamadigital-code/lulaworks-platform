@@ -1,0 +1,126 @@
+{% extends "web/base.html" %}
+{% block title %}{{ person }}{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:people' %}">← People</a></p>
+
+<div class="card personhead">
+  {% include "web/_avatar.html" with p=person size=76 %}
+  <div style="flex:1;min-width:200px;">
+    <h1 style="margin:0 0 4px;">{{ person.get_full_name|default:person.email }}</h1>
+    <p class="muted" style="margin:0 0 8px;">
+      {{ membership.job_title|default:"—" }}{% if person.get_full_name %} · {{ person.email }}{% endif %}
+      {% if person.mobile %} · {{ person.mobile }}{% endif %}
+    </p>
+    <span class="chip info">{{ membership.role.name|default:"No role" }}</span>
+    {% if membership.status == 'active' %}<span class="chip ok">Active</span>
+    {% else %}<span class="chip">Deactivated</span>{% endif %}
+    {% if person.must_change_password %}<span class="chip warn">has not set a password yet</span>{% endif %}
+  </div>
+  {% if is_me %}<a class="btn ghost" href="{% url 'web:profile' %}">Edit my profile</a>{% endif %}
+</div>
+
+<div class="grid">
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▶</div>
+    <div class="n">{{ work.open_count }}</div><div class="l">Open work</div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div>
+    <div class="n">{{ work.past_count }}</div><div class="l">Completed</div></div>
+  <div class="tile"><div class="ic" style="background:var(--red-t);color:#c22a41;">!</div>
+    <div class="n">{{ work.overdue_count }}</div><div class="l">Overdue</div></div>
+  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">⏱</div>
+    <div class="n">{{ work.estimated_hours }}</div><div class="l">Hours on open work</div></div>
+</div>
+
+{% if work.projects %}
+<h2>Projects they have worked on</h2>
+<div class="card" style="padding:0;">
+  {% for row in work.projects %}
+  <a class="workrow" href="{% url 'web:project_detail' row.project.id %}">
+    <span class="wr-main">
+      <strong>{{ row.project.number }}</strong>
+      <span class="muted">{{ row.project.client_name }}{% if row.project.site %} · {{ row.project.site }}{% endif %}</span>
+    </span>
+    <span class="chip">{{ row.count }} job{{ row.count|pluralize }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h2>Working on now ({{ work.current|length }})</h2>
+<div class="card" style="padding:0;">
+  {% for entry in work.current %}
+  <a class="workrow" href="{% url 'web:work_detail' entry.task.id %}">
+    <span class="prio {{ entry.task.priority }}" title="{{ entry.task.get_priority_display }}"></span>
+    <span class="wr-main">
+      <strong>{{ entry.task.name }}</strong>
+      <span class="muted">
+        {% if entry.task.project %}{{ entry.task.project.number }}{% else %}Standalone{% endif %}
+        · as {{ entry.roles|join:" &amp; " }}
+        {% if entry.task.due_date %} · due {{ entry.task.due_date|date:"d M" }}{% endif %}
+      </span>
+    </span>
+    <span class="wr-prog">
+      <span class="bar-track"><span class="bar-fill" style="width:{{ entry.task.progress_pct }}%;"></span></span>
+      <span class="muted" style="font-size:12px;">{{ entry.task.progress_pct }}%</span>
+    </span>
+    {% if entry.task.is_overdue %}<span class="chip bad">Overdue</span>{% endif %}
+    {% include "web/_statuschip.html" with s=entry.task %}
+  </a>
+  {% empty %}
+  <p class="muted" style="padding:22px;">Nothing open right now.</p>
+  {% endfor %}
+</div>
+
+<h2>Past work ({{ work.past|length }})</h2>
+<div class="card" style="padding:0;">
+  {% for entry in work.past %}
+  <a class="workrow" href="{% url 'web:work_detail' entry.task.id %}">
+    <span class="wr-main">
+      <strong>{{ entry.task.name }}</strong>
+      <span class="muted">
+        {% if entry.task.project %}{{ entry.task.project.number }}{% else %}Standalone{% endif %}
+        · as {{ entry.roles|join:" &amp; " }}
+        {% if entry.task.completed_at %} · finished {{ entry.task.completed_at|date:"d M Y" }}{% endif %}
+      </span>
+    </span>
+    {% if entry.task.actual_hours %}<span class="chip">{{ entry.task.actual_hours }}h</span>{% endif %}
+    {% include "web/_statuschip.html" with s=entry.task %}
+  </a>
+  {% empty %}
+  <p class="muted" style="padding:22px;">No completed work yet.</p>
+  {% endfor %}
+</div>
+
+{% if can_manage and not is_me %}
+<div class="card">
+  <div class="row" style="gap:12px;flex-wrap:wrap;">
+    <form method="post" action="{% url 'web:people_role' membership.id %}" class="row" style="gap:8px;">
+      {% csrf_token %}
+      <select name="role" style="width:auto;min-width:170px;">
+        {% for r in roles %}
+        <option value="{{ r.id }}" {% if r.id == membership.role_id %}selected{% endif %}>{{ r.name }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn ghost" type="submit">Change role</button>
+    </form>
+    <span class="sp"></span>
+    <form method="post" action="{% url 'web:people_status' membership.id %}"
+          {% if membership.status == 'active' %}data-confirm="Deactivate {{ person.get_full_name|default:person.email|escapejs }}?&#10;&#10;They lose access immediately and disappear from every assignment picker. Their name stays on the {{ work.open_count }} open and {{ work.past_count }} finished job(s) listed above, and you can restore them at any time."{% endif %}>
+      {% csrf_token %}
+      {% if membership.status == 'active' %}
+      <input type="hidden" name="activate" value="">
+      <button class="btn ghost" type="submit">Deactivate member</button>
+      {% else %}
+      <input type="hidden" name="activate" value="1">
+      <button class="btn ghost" type="submit">Restore member</button>
+      {% endif %}
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% if membership.status != 'active' %}
+<p class="muted" style="font-size:12.5px;">This person is deactivated — they cannot
+  sign in and are not offered in assignment pickers, but their history above stays
+  exactly as it was.</p>
+{% endif %}
+{% endblock %}

@@ -74,10 +74,15 @@
     {% for m in members %}
     <tr {% if m.status != 'active' %}class="dim"{% endif %}>
       <td>
-        <strong>{{ m.user.get_full_name|default:m.user.email }}</strong>
-        {% if m.user.get_full_name %}<br><span class="muted" style="font-size:12.5px;">{{ m.user.email }}</span>{% endif %}
-        {% if m.user.must_change_password %}
-        <br><span class="chip warn">has not set a password yet</span>{% endif %}
+        <a class="personcell" href="{% url 'web:person_detail' m.id %}">
+          {% include "web/_avatar.html" with p=m.user size=38 %}
+          <span>
+            <strong>{{ m.user.get_full_name|default:m.user.email }}</strong>
+            {% if m.user.get_full_name %}<br><span class="muted" style="font-size:12.5px;">{{ m.user.email }}</span>{% endif %}
+            {% if m.user.must_change_password %}
+            <br><span class="chip warn">has not set a password yet</span>{% endif %}
+          </span>
+        </a>
       </td>
       <td class="muted">{{ m.job_title|default:"—" }}</td>
       <td>
@@ -97,9 +102,10 @@
         {% if m.status == 'active' %}<span class="chip ok">Active</span>
         {% else %}<span class="chip">Deactivated</span>{% endif %}
       </td>
-      <td class="right">
+      <td class="right nowrap">
         {% if can_manage and m.user_id != user.id %}
-        <form method="post" action="{% url 'web:people_status' m.id %}">
+        <form method="post" action="{% url 'web:people_status' m.id %}"
+              {% if m.status == 'active' %}data-confirm="Deactivate {{ m.user.get_full_name|default:m.user.email|escapejs }}?&#10;&#10;They lose access immediately and disappear from every assignment picker. Their name stays on the work they have already done, and you can restore them at any time."{% endif %}>
           {% csrf_token %}
           {% if m.status == 'active' %}
           <input type="hidden" name="activate" value="">

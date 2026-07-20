@@ -98,6 +98,15 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
         return f"{self.first_name} {self.last_name}".strip()
 
     @property
+    def initials(self) -> str:
+        """Fallback avatar when there is no photo — initials, else the first
+        two characters of the email so there is never a blank circle."""
+        parts = [p for p in (self.first_name, self.last_name) if p]
+        if parts:
+            return "".join(p[0] for p in parts[:2]).upper()
+        return (self.email or "?")[:2].upper()
+
+    @property
     def company_id(self):
         """Read by TenantMiddleware / TenantManager to set the ambient tenant."""
         return self.active_company_id

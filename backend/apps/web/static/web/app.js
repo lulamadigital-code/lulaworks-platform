@@ -32,3 +32,18 @@
   document.addEventListener("htmx:afterSwap", measure);
   measure();
 })();
+
+/* Ask before anything destructive. A form carrying data-confirm="…" must be
+   acknowledged before it submits. Server-side rules are the real protection —
+   this only stops an accidental click. */
+(function () {
+  "use strict";
+  document.addEventListener("submit", function (event) {
+    var form = event.target.closest("form[data-confirm]");
+    if (!form) return;
+    if (!window.confirm(form.getAttribute("data-confirm"))) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }, true);
+})();

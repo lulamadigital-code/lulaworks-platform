@@ -61,6 +61,24 @@ administrator).
 Multi-company is honoured: an email that already exists on the platform gains a
 second membership and keeps its existing password rather than erroring.
 
+### Member pages, profiles and photos
+- `/people/<membership-id>/` — a member's page: their live workload, **what they
+  are working on now** (with the role they hold on each job), **their past work**
+  with actual hours, and the projects they have touched. Reads through
+  `Assignment`, so someone who is approver on one job and executor on another
+  shows up correctly on both.
+- `/profile/` — self-service, available to **every** member whatever their role:
+  photo, name, mobile. Email is read-only (an administrator changes it).
+- Avatars fall back to coloured initials, so a row is never a blank circle. The
+  sidebar footer is the entry point to your own profile.
+- Uploads are validated by declared content type **and** by decoding the file
+  with Pillow — a renamed executable is rejected even if it ends in `.png`.
+  Max 5 MB. Media is served by Django in DEBUG only; production uses S3.
+- Destructive actions carry `data-confirm`, handled by one delegated listener in
+  `web/app.js`. Deactivating a member names the person and spells out the
+  consequence. Cancel genuinely aborts the submit (test-verified) — and the
+  server-side rules remain the real protection.
+
 ## Scrolling & small screens
 - `scroll-behavior: smooth` with a `prefers-reduced-motion` opt-out.
 - Scrollbars are styled thin-but-visible, so a long page *looks* scrollable.

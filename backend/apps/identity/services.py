@@ -151,3 +151,52 @@ def selectable_roles():
     """Role templates a manager can assign. Roles are platform-level templates
     shared by every company (see seed_platform)."""
     return Role.objects.all().order_by("name")
+
+
+# ── What a person actually works on ───────────────────────────────────────────
+
+def member_work(user, company):
+    """Everything this person is attached to, split into live and finished.
+
+    Reads through `Assignment`, so it reflects the four real roles rather than a
+    single "assignee" field — someone can be the approver on one job and on the
+    execution team of another, and both show up.
+    """
+    from apps.execution.models import Assignment, TaskStatus
+
+    rows = (Assignment.objects
+            .filter(user=user, company=company)
+            .select_related("task", "task__project", "task__phase")
+            .order_by("-task__created_at"))
+
+    done_states = {TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELLED}
+    current, past, seen = [], [], {}
+
+    for row in rows:
+        task = row.task
+        # One line per task, collecting every role they hold on it.
+        entry = seen.get(task.id)
+        if entry is None:
+            entry = {"task": task, "roles": []}
+            seen[task.id] = entry
+            (past if task.status in done_states else current).append(entry)
+        entry["roles"].append(row.get_role_display())
+
+    projects = {}
+    for entry in current + past:
+        project = entry["task"].project
+        if project is not None:
+            projects.setdefault(project.id, {"project": project, "count": 0})
+            projects[project.id]["count"] += 1
+
+    open_tasks = [e["task"] for e in current]
+    return {
+        "current": current,
+        "past": past,
+        "projects": sorted(projects.values(), key=lambda p: -p["count"]),
+        "open_count": len(open_tasks),
+        "past_count": len(past),
+        "overdue_count": sum(1 for t in open_tasks if t.is_overdue),
+        "blocked_count": sum(1 for t in open_tasks if t.status == "blocked"),
+        "estimated_hours": sum((t.estimated_hours or 0) for t in open_tasks),
+    }

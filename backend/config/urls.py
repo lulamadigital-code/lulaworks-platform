@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
@@ -48,3 +49,9 @@ urlpatterns = [
     # admin / api / health take precedence.
     path("", include("apps.web.urls")),
 ]
+
+# Uploaded media (avatars, work files) in DEVELOPMENT only. In production these
+# live in S3 behind the CDN and are never served by Django.
+if settings.DEBUG:
+    from django.conf.urls.static import static
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

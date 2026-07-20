@@ -1,0 +1,9 @@
+{% comment %}Person avatar: their photo, else coloured initials. Params: p (a User),
+optional size (px, default 34).{% endcomment %}
+{% if p.avatar %}
+<img class="av" src="{{ p.avatar.url }}" alt="{{ p }}"
+     style="width:{{ size|default:34 }}px;height:{{ size|default:34 }}px;">
+{% else %}
+<span class="av init" style="width:{{ size|default:34 }}px;height:{{ size|default:34 }}px;
+      font-size:{% widthratio size|default:34 100 40 %}px;">{{ p.initials }}</span>
+{% endif %}

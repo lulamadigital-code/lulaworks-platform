@@ -71,6 +71,7 @@ from apps.identity.services import (
     MemberError,
     assignable_users,
     company_members,
+    member_work,
     # aliased: `add_member` already means "add someone to a work item"
     add_member as add_company_member,
     selectable_roles,
@@ -764,6 +765,84 @@ def people_status(request, pk):
             request,
             f"{membership.user.email} " + ("restored." if activate else "deactivated."))
     return redirect("web:people")
+
+
+@login_required
+def person_detail(request, pk):
+    """One member: who they are, what they are on right now, and what they have
+    finished. Reads through Assignment, so every role they hold shows up."""
+    membership = get_object_or_404(
+        Membership.objects.select_related("user", "role")
+                  .filter(company=request.user.active_company), pk=pk)
+    work = member_work(membership.user, request.user.active_company)
+    return render(request, "web/person_detail.html", {
+        "membership": membership,
+        "person": membership.user,
+        "work": work,
+        "roles": selectable_roles(),
+        "can_manage": request.user.has_perm_code("users.invite"),
+        "is_me": membership.user_id == request.user.id,
+    })
+
+
+@login_required
+def profile(request):
+    """Your own profile — the one page every member can edit for themselves,
+    whatever their role. Adding a photo is the first thing a new member does
+    after signing in with the password they were handed."""
+    user = request.user
+    if request.method == "POST":
+        if request.POST.get("remove_avatar") and user.avatar:
+            user.avatar.delete(save=False)
+            user.avatar = None
+            user.save(update_fields=["avatar"])
+            messages.success(request, "Photo removed.")
+            return redirect("web:profile")
+
+        upload = request.FILES.get("avatar")
+        if upload is not None:
+            error = _validate_avatar(upload)
+            if error:
+                messages.error(request, error)
+                return redirect("web:profile")
+            user.avatar = upload
+
+        user.first_name = request.POST.get("first_name", "").strip()
+        user.last_name = request.POST.get("last_name", "").strip()
+        user.mobile = request.POST.get("mobile", "").strip()
+        user.save(update_fields=["first_name", "last_name", "mobile", "avatar"])
+        messages.success(request, "Profile updated.")
+        return redirect("web:profile")
+
+    membership = Membership.objects.filter(
+        company=user.active_company, user=user).select_related("role").first()
+    return render(request, "web/profile.html", {
+        "person": user, "membership": membership,
+        "work": member_work(user, user.active_company),
+    })
+
+
+#: Anything bigger is a phone photo nobody needs as an avatar.
+MAX_AVATAR_BYTES = 5 * 1024 * 1024
+ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+
+
+def _validate_avatar(upload):
+    """Reject by declared type AND by actually decoding the file — a renamed
+    executable must not be stored just because it ends in .png."""
+    if upload.size > MAX_AVATAR_BYTES:
+        return "That image is larger than 5 MB — please use a smaller one."
+    if upload.content_type not in ALLOWED_AVATAR_TYPES:
+        return "Please upload a JPEG, PNG, WebP or GIF image."
+    try:
+        from PIL import Image
+        image = Image.open(upload)
+        image.verify()          # raises unless this really is an image
+    except Exception:           # noqa: BLE001 - any decode failure is a rejection
+        return "That file is not a readable image."
+    finally:
+        upload.seek(0)
+    return None
 
 
 @login_required
