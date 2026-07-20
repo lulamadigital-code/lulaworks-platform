@@ -123,11 +123,28 @@ def extract_text(pdf_source) -> str:
 
 
 def extract_rfq(pdf_path) -> Extraction:
-    result = Extraction()
+    """Extract from a FILE (PDF text layer, else OCR)."""
     text = extract_text(pdf_path)
+    if not text.strip():
+        result = Extraction()
+        result.warnings.append("No text extracted — scanned image? OCR/AI fallback needed.")
+        return result
+    return parse_rfq_text(text)
+
+
+def parse_rfq_text(text: str) -> Extraction:
+    """Parse RFQ text that is ALREADY in hand — a PDF's text layer, an OCR pass,
+    or an RFQ someone pasted in from an email or WhatsApp message.
+
+    Only the structured table is turned into line items here. Loose prose ("4 x
+    mechanical seals") is deliberately NOT auto-converted: it is offered as a
+    reviewable suggestion instead (see `suggestions.py`), because inferring line
+    items from a sentence is a guess and guesses need a human tick.
+    """
+    result = Extraction()
     result.text = text
     if not text.strip():
-        result.warnings.append("No text extracted — scanned image? OCR/AI fallback needed.")
+        result.warnings.append("Nothing to parse — the text was empty.")
         return result
 
     if m := PO_NUMBER_RE.search(text):
@@ -169,3 +186,90 @@ def extract_rfq(pdf_path) -> Extraction:
     if not result.lines:
         result.warnings.append("No line items recognised — review and add manually.")
     return result
+
+
+# ── Informal RFQs: "please quote 4 x mechanical seals" ────────────────────────
+#
+# An RFQ often arrives as an email or a WhatsApp message rather than a formal
+# purchase order. These patterns pull a quantity/unit/description out of a line
+# of prose. Everything found here is a SUGGESTION for a human to confirm — the
+# rigid table parser above is the only path that creates line items directly.
+
+_UNIT_WORDS = (
+    r"each|ea|off|no|nr|pcs|pc|piece|pieces|unit|units|set|sets|pair|pairs|"
+    r"m|mm|metre|metres|meter|meters|km|kg|g|t|ton|tons|l|lt|litre|litres|"
+    r"box|boxes|roll|rolls|drum|drums|bag|bags|length|lengths|hour|hours|hr|hrs|day|days"
+)
+
+#: "4 x mechanical seal", "10off gaskets", "2 × pump", "5 sets of bearings"
+_QTY_FIRST = re.compile(
+    rf"^(?P<qty>\d+(?:[.,]\d+)?)\s*(?:(?P<unit>{_UNIT_WORDS})\b)?\s*"
+    rf"(?:x|×|of|off)?\s*(?P<desc>[A-Za-z][^\n]{{2,}})$",
+    re.IGNORECASE,
+)
+#: "mechanical seal - 4", "gaskets: 10 each", "pump x 2"
+_QTY_LAST = re.compile(
+    rf"^(?P<desc>[A-Za-z][^\n]{{2,}}?)\s*(?:[-–—:]|x|×)\s*"
+    rf"(?P<qty>\d+(?:[.,]\d+)?)\s*(?P<unit>{_UNIT_WORDS})?\.?$",
+    re.IGNORECASE,
+)
+#: "qty 3 valve", "quantity: 6 bolts"
+_QTY_LABEL = re.compile(
+    rf"^(?:qty|quantity)\s*:?\s*(?P<qty>\d+(?:[.,]\d+)?)\s*"
+    rf"(?P<unit>{_UNIT_WORDS})?\s*(?:x|×|of)?\s*(?P<desc>[A-Za-z][^\n]{{2,}})$",
+    re.IGNORECASE,
+)
+
+#: Lines that are conversation, not items.
+_NOT_AN_ITEM = re.compile(
+    r"^(hi|hello|hey|dear|good\s+(morning|afternoon|day)|thanks|thank you|regards|"
+    r"kind regards|best regards|please|kindly|could you|can you|we (need|require|would)|"
+    r"quote|quotation|rfq|attention|attn|from|to|subject|sent|date|cc|bcc|"
+    r"urgent|asap|delivery|deliver|note|nb|ps)\b",
+    re.IGNORECASE,
+)
+_BULLET = re.compile(r"^\s*(?:[-*•·–—]|\(?\d{1,2}[.)])\s*")
+
+
+def _clean_description(text: str) -> str:
+    text = text.strip(" \t-–—:;,.")
+    text = re.sub(r"\s{2,}", " ", text)
+    return text
+
+
+def parse_loose_lines(text: str) -> list[ExtractedLine]:
+    """Best-effort line items from informal text. Tuned to under-report rather
+    than over-report: a missed item costs one manual entry, an invented item
+    could end up priced into a quotation."""
+    found: list[ExtractedLine] = []
+    seen: set[str] = set()
+
+    for raw in text.splitlines():
+        line = _BULLET.sub("", raw.strip())
+        if not line or len(line) > 160:
+            continue
+        if _NOT_AN_ITEM.match(line) or line.endswith(":") or line.endswith("?"):
+            continue
+        if not re.search(r"[A-Za-z]{3,}", line):
+            continue
+
+        for pattern in (_QTY_LABEL, _QTY_FIRST, _QTY_LAST):
+            m = pattern.match(line)
+            if not m:
+                continue
+            desc = _clean_description(m.group("desc"))
+            # A description that is only a unit word is a parse artefact.
+            if len(desc) < 3 or re.fullmatch(_UNIT_WORDS, desc, re.IGNORECASE):
+                break
+            key = desc.lower()
+            if key in seen:
+                break
+            seen.add(key)
+            found.append(ExtractedLine(
+                description=desc,
+                qty=to_decimal(m.group("qty")) or Decimal("1"),
+                unit=(m.group("unit") or "each").lower(),
+                unit_price=None,
+            ))
+            break
+    return found

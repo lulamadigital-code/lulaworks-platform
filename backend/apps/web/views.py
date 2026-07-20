@@ -96,7 +96,15 @@ from apps.quotes.models import Quotation, QuotationStatus
 from apps.quotes.pdf import quotation_pdf_bytes
 from apps.quotes.services import update_quotation
 from apps.rfq.models import RFQDocument
-from apps.rfq.services import approve_rfq, ingest_rfq
+from apps.rfq.models import RFQLineItem
+from apps.rfq.services import (
+    add_line_item,
+    approve_rfq,
+    delete_line_item,
+    ingest_rfq,
+    ingest_rfq_text,
+    update_line_item,
+)
 
 
 def login_view(request):
@@ -985,11 +993,23 @@ def rfq_upload(request):
         messages.error(request, "You do not have permission to upload RFQs.")
         return redirect("web:rfq")
     upload = request.FILES.get("file")
-    if upload is None:
-        messages.error(request, "Choose a file to upload.")
+    pasted = request.POST.get("text", "").strip()
+
+    if upload is not None:
+        rfq = ingest_rfq(request.user.active_company, request.user,
+                         uploaded_file=upload, original_name=upload.name)
+    elif pasted:
+        try:
+            rfq = ingest_rfq_text(
+                request.user.active_company, request.user, text=pasted,
+                original_name=request.POST.get("label", ""))
+        except ValueError as exc:
+            messages.error(request, str(exc))
+            return redirect("web:rfq")
+    else:
+        messages.error(request, "Attach a document or paste the RFQ text.")
         return redirect("web:rfq")
-    rfq = ingest_rfq(request.user.active_company, request.user,
-                     uploaded_file=upload, original_name=upload.name)
+
     messages.success(request, f"Extracted {rfq.fields.count()} field(s) and "
                               f"{rfq.lines.count()} line(s). Review below.")
     return redirect("web:rfq_detail", pk=rfq.id)
@@ -999,11 +1019,55 @@ def rfq_upload(request):
 def rfq_detail(request, pk):
     rfq = get_object_or_404(
         RFQDocument.objects.all().prefetch_related("fields", "lines"), pk=pk)
-    return render(request, "web/rfq_detail.html", {
+    editable = (rfq.status not in ("approved", "rejected")
+                and request.user.has_perm_code("rfq.upload"))
+    context = {
         "rfq": rfq,
+        "can_edit": editable,
         "can_approve": (rfq.status not in ("approved", "rejected")
                         and request.user.has_perm_code("rfq.approve")),
-    })
+    }
+    return render(request, "web/rfq_detail.html", context)
+
+
+@login_required
+@require_POST
+def rfq_line(request, pk):
+    """Add, edit or remove a line by hand — the reviewer has the last word."""
+    rfq = get_object_or_404(RFQDocument.objects.all(), pk=pk)
+    if not request.user.has_perm_code("rfq.upload"):
+        messages.error(request, "You do not have permission to edit this RFQ.")
+        return redirect("web:rfq_detail", pk=pk)
+    if rfq.status in ("approved", "rejected"):
+        messages.error(request, "This RFQ is closed — it can no longer be edited.")
+        return redirect("web:rfq_detail", pk=pk)
+
+    action = request.POST.get("action", "add")
+    if action == "add":
+        description = request.POST.get("description", "").strip()
+        if not description:
+            messages.error(request, "Enter a description.")
+        else:
+            add_line_item(rfq, request.user, description=description,
+                          qty=_decimal_or_none(request.POST.get("qty")) or 1,
+                          unit=request.POST.get("unit", "each").strip() or "each",
+                          unit_price=_decimal_or_none(request.POST.get("unit_price")))
+            messages.success(request, "Line added.")
+    else:
+        line = get_object_or_404(RFQLineItem.objects.filter(rfq=rfq),
+                                 pk=request.POST.get("line"))
+        if action == "delete":
+            delete_line_item(line)
+            messages.success(request, "Line removed.")
+        else:
+            update_line_item(
+                line, request.user,
+                description=request.POST.get("description"),
+                qty=_decimal_or_none(request.POST.get("qty")),
+                unit=request.POST.get("unit"),
+                unit_price=_decimal_or_none(request.POST.get("unit_price")))
+            messages.success(request, "Line updated.")
+    return redirect("web:rfq_detail", pk=pk)
 
 
 @login_required

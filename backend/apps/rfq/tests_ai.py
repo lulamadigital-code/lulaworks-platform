@@ -1,5 +1,13 @@
 """AI extraction layer tests — offline, with a stub provider. The live
-Claude/OpenAI/Gemini path activates when an API key is configured."""
+Claude/OpenAI/Gemini path activates when an API key is configured.
+
+Every test that asserts "AI is off" pins the keys to empty explicitly. They used
+to rely on the ambient environment having no key, which quietly became false the
+day a real one was configured — a test that changes meaning based on a developer's
+.env is not a test.
+"""
+
+
 
 from decimal import Decimal
 
@@ -12,6 +20,10 @@ from apps.identity.models import Company
 
 from .extraction import ExtractedValue, Extraction
 from .intelligence import enrich_with_ai
+
+#: Applied to any test whose premise is "no AI provider is available".
+NO_AI = override_settings(AI_PROVIDER="claude", ANTHROPIC_API_KEY="",
+                          OPENAI_API_KEY="", GEMINI_API_KEY="")
 
 
 class StubExtractor(AIProvider):
@@ -27,7 +39,8 @@ class StubExtractor(AIProvider):
 
 
 class ProviderConfigTests(TestCase):
-    def test_not_configured_by_default(self):
+    @NO_AI
+    def test_not_configured_when_no_keys_are_set(self):
         self.assertFalse(ai_configured())
         with self.assertRaises(NotConfiguredError):
             get_provider()
@@ -72,6 +85,7 @@ class EnrichmentTests(TestCase):
             enrich_with_ai(self.company, None, e, provider=StubExtractor(), force=True)
         self.assertEqual(e.fields["work_type"].value, "existing")  # AI did not overwrite
 
+    @NO_AI
     def test_no_ai_when_unconfigured(self):
         # no provider passed, AI not configured → deterministic returned unchanged
         e = self._deterministic()

@@ -14,7 +14,7 @@ from apps.knowledge.models import ProjectDNA
 from apps.quotes.services import create_quotation
 from apps.storage.models import StorageFile
 
-from .extraction import extract_rfq
+from .extraction import extract_rfq, parse_rfq_text
 from .intelligence import enrich_with_ai
 from .models import ExtractedField, RFQDocument, RFQLineItem, RFQStatus
 
@@ -110,3 +110,91 @@ def approve_rfq(rfq: RFQDocument, user, *, client_name: str) -> RFQDocument:
 def _field(rfq, key: str) -> str:
     f = rfq.fields.filter(key=key).first()
     return (f.approved_value or f.value) if f else ""
+
+
+# ── Pasted-text intake ────────────────────────────────────────────────────────
+
+@transaction.atomic
+def ingest_rfq_text(company, user, *, text: str, original_name: str = "") -> RFQDocument:
+    """Take an RFQ that arrived as TEXT rather than a document — an email body, a
+    WhatsApp message, a scribbled list someone retyped.
+
+    Same pipeline, same review, same human approval as an uploaded file; it just
+    skips the PDF/OCR step because the text is already in hand. There is no
+    StorageFile because there is no original document to preserve — the pasted
+    text itself is the record, kept verbatim in `extracted_text`.
+    """
+    text = (text or "").strip()
+    if not text:
+        raise ValueError("Paste the RFQ text first.")
+
+    rfq = RFQDocument.objects.create(
+        company=company, source_file=None,
+        original_name=original_name.strip() or _summarise(text),
+        doc_class="rfq_text", status=RFQStatus.UPLOADED,
+        created_by=user, updated_by=user,
+    )
+
+    extraction = parse_rfq_text(text)
+    extraction = enrich_with_ai(company, user, extraction)
+
+    rfq.warnings = extraction.warnings
+    rfq.extracted_text = text[:20000]
+    rfq.status = RFQStatus.IN_REVIEW
+    rfq.save(update_fields=["warnings", "extracted_text", "status"])
+
+    for key, ev in extraction.fields.items():
+        ExtractedField.objects.create(
+            company=company, rfq=rfq, key=key, value=ev.value, confidence=ev.confidence,
+            method=ev.method, source_text=ev.source_text,
+            review_status="auto" if ev.confidence >= CONFIDENCE_THRESHOLD else "needs_review",
+        )
+    for pos, line in enumerate(extraction.lines, start=1):
+        RFQLineItem.objects.create(
+            company=company, rfq=rfq, position=pos, description=line.description,
+            qty=line.qty, unit=line.unit, unit_price=line.unit_price, confidence=0.9,
+        )
+    publish("RFQExtracted", company=company, subject=rfq, actor=user,
+            payload={"source": "pasted_text", "fields": len(extraction.fields),
+                     "lines": len(extraction.lines)})
+    return rfq
+
+
+def _summarise(text: str, limit: int = 60) -> str:
+    """A readable name for a pasted RFQ — its first meaningful line."""
+    for raw in text.splitlines():
+        line = raw.strip()
+        if len(line) > 3:
+            return (line[:limit] + "…") if len(line) > limit else line
+    return "Pasted RFQ"
+
+
+# ── Manual line-item editing (the reviewer always has the last word) ──────────
+
+def add_line_item(rfq, user, *, description, qty=1, unit="each", unit_price=None):
+    return RFQLineItem.objects.create(
+        company=rfq.company, rfq=rfq, position=rfq.lines.count() + 1,
+        description=description.strip(), qty=qty, unit=unit or "each",
+        unit_price=unit_price, confidence=1.0,   # typed by a human = certain
+        created_by=user, updated_by=user,
+    )
+
+
+def update_line_item(line, user, *, description=None, qty=None, unit=None,
+                     unit_price=None):
+    if description is not None:
+        line.description = description.strip()
+    if qty is not None:
+        line.qty = qty
+    if unit is not None:
+        line.unit = unit or "each"
+    if unit_price is not None:
+        line.unit_price = unit_price
+    line.confidence = 1.0        # a human corrected it
+    line.updated_by = user
+    line.save()
+    return line
+
+
+def delete_line_item(line) -> None:
+    line.delete()

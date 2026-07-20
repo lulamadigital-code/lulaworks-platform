@@ -4,7 +4,7 @@ the HTML surface (money hidden from non-finance users), and tenant isolation."""
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from apps.administration.models import NumberingRule
 from apps.compliance.models import ComplianceItem, ComplianceRequirement, ItemStatus
@@ -293,6 +293,14 @@ class ActionsTests(TestCase):
             self.assertEqual(inv.status, "paid")
 
 
+#: These exercise the pipeline's plumbing, not the AI. Pinning the provider off
+#: keeps them fast, deterministic, and free — without it they reach a live API
+#: the moment a developer configures a key.
+NO_AI = override_settings(AI_PROVIDER="claude", ANTHROPIC_API_KEY="",
+                          OPENAI_API_KEY="", GEMINI_API_KEY="")
+
+
+@NO_AI
 class RFQTests(TestCase):
     """The RFQ front door: upload → extract → review → approve → quotation."""
 

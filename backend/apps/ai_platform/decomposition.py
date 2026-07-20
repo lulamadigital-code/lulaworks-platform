@@ -425,7 +425,8 @@ def _maybe_enrich(company, user, draft: Decomposition, *, name, description) -> 
     for provider_name in configured_provider_names():
         try:
             provider = get_provider(provider_name)
-            resp = run_metered(company, user, provider, prompt, agent="lulaai_decompose")
+            resp = run_metered(company, user, provider, prompt,
+                               agent="lulaai_decompose", json_mode=True)
             payload = json.loads(_json_slice(resp.text))
         except InsufficientCreditsError:
             logger.info("Decomposition enrichment skipped: no AI credits.")

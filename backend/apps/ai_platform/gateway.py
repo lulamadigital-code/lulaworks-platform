@@ -33,6 +33,9 @@ class AIProvider:
     name = "base"
 
     def complete(self, prompt: str, **kwargs) -> AIResponse:  # pragma: no cover - interface
+        """Adapters accept `system`, `max_tokens`, `json_mode`, and tolerate
+        unknown kwargs so a provider-specific option never breaks a call that
+        falls back to a different provider."""
         raise NotImplementedError
 
 

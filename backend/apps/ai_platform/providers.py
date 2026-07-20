@@ -26,9 +26,9 @@ def _key_for(provider: str) -> str:
     }.get(provider, "")
 
 
-def ai_configured() -> bool:
-    """True if the active provider has an API key configured."""
-    return bool(_key_for(settings.AI_PROVIDER))
+def ai_configured(provider: str | None = None) -> bool:
+    """True if the given provider (default: the active one) has a key."""
+    return bool(_key_for(provider or settings.AI_PROVIDER))
 
 
 def configured_provider_names() -> list[str]:
@@ -42,7 +42,8 @@ def configured_provider_names() -> list[str]:
 class ClaudeProvider(AIProvider):
     name = "claude"
 
-    def complete(self, prompt: str, *, system: str = "", max_tokens: int = 2000) -> AIResponse:
+    def complete(self, prompt: str, *, system: str = "", max_tokens: int = 2000,
+                 json_mode: bool = False, **_) -> AIResponse:
         if not settings.ANTHROPIC_API_KEY:
             raise NotConfiguredError("ANTHROPIC_API_KEY is not set.")
         try:
@@ -70,7 +71,8 @@ class ClaudeProvider(AIProvider):
 class OpenAIProvider(AIProvider):
     name = "openai"
 
-    def complete(self, prompt: str, *, system: str = "", max_tokens: int = 2000) -> AIResponse:
+    def complete(self, prompt: str, *, system: str = "", max_tokens: int = 2000,
+                 json_mode: bool = False, **_) -> AIResponse:
         if not settings.OPENAI_API_KEY:
             raise NotConfiguredError("OPENAI_API_KEY is not set.")
         try:
@@ -96,20 +98,57 @@ class OpenAIProvider(AIProvider):
 
 
 class GeminiProvider(AIProvider):
+    """Google Gemini via the `google-genai` SDK.
+
+    The model is configurable (GEMINI_MODEL) because Google ships new ones
+    often; the default is a fast, inexpensive one, which suits this workload —
+    short prompts returning small structured JSON, called per document.
+    """
+
     name = "gemini"
 
-    def complete(self, prompt: str, *, system: str = "", max_tokens: int = 2000) -> AIResponse:
+    def complete(self, prompt: str, *, system: str = "", max_tokens: int = 2000,
+                 json_mode: bool = False, **_) -> AIResponse:
         if not settings.GEMINI_API_KEY:
             raise NotConfiguredError("GEMINI_API_KEY is not set.")
         try:
-            import google.generativeai as genai  # lazy
-        except ImportError as exc:  # pragma: no cover
-            raise NotConfiguredError("google-generativeai SDK not installed.") from exc
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-1.5-pro")
-        resp = model.generate_content((system + "\n\n" + prompt).strip())
+            from google import genai              # lazy: no hard dependency
+            from google.genai import types
+        except ImportError as exc:  # pragma: no cover - optional extra
+            raise NotConfiguredError(
+                "google-genai SDK not installed (pip install google-genai)."
+            ) from exc
+
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        config = types.GenerateContentConfig(max_output_tokens=max_tokens)
+        if system:
+            config.system_instruction = system
+
+        # Gemini 2.5 models "think" by default, and those tokens are drawn from
+        # the SAME output budget as the answer. On a long extraction prompt the
+        # thinking can consume the whole budget and return empty text. These are
+        # structured extraction calls, not reasoning problems, so thinking is off
+        # by default — set GEMINI_THINKING_BUDGET to re-enable it.
+        budget = int(settings.GEMINI_THINKING_BUDGET)
+        try:
+            config.thinking_config = types.ThinkingConfig(thinking_budget=budget)
+        except (AttributeError, TypeError):   # older SDK / model without thinking
+            pass
+
+        # Ask for JSON natively rather than parsing it out of a ```json fence.
+        if json_mode:
+            config.response_mime_type = "application/json"
+
+        resp = client.models.generate_content(
+            model=settings.GEMINI_MODEL, contents=prompt, config=config,
+        )
+
+        usage = getattr(resp, "usage_metadata", None)
+        tokens_in = getattr(usage, "prompt_token_count", 0) or 0
+        tokens_out = getattr(usage, "candidates_token_count", 0) or 0
         return AIResponse(
-            text=resp.text, provider=self.name,
+            text=resp.text or "", provider=self.name,
+            tokens_in=tokens_in, tokens_out=tokens_out,
             credits_used=Decimal(settings.AI_CREDITS_PER_EXTRACTION),
         )
 
@@ -124,6 +163,9 @@ def get_provider(name: str | None = None) -> AIProvider:
     cls = _PROVIDERS.get(name)
     if cls is None:
         raise NotConfiguredError(f"Unknown AI provider '{name}'.")
-    if not ai_configured():
+    # Check the key for the provider being ASKED for — not the active one.
+    # Getting this wrong made every fallback attempt fail whenever the primary
+    # provider was unconfigured, which is exactly when fallback matters.
+    if not ai_configured(name):
         raise NotConfiguredError(f"Provider '{name}' has no API key configured.")
     return cls()

@@ -1,28 +1,66 @@
 {% extends "web/base.html" %}
 {% block title %}RFQ{% endblock %}
 {% block content %}
-<h1>RFQ intake</h1>
-<p class="sub">The front door: upload an RFQ / Coupa PO → automatic extraction → you review → approve to a quotation.</p>
+
+<div class="pagehead">
+  <div>
+    <h1>RFQ intake</h1>
+    <p class="sub" style="margin:0;">The front door. However the request arrives —
+      a formal PO, an email, a WhatsApp message — it lands here, gets extracted,
+      you review it, and you approve it into a quotation.</p>
+  </div>
+</div>
 
 {% if can_upload %}
-<div class="card">
-  <form method="post" action="{% url 'web:rfq_upload' %}" enctype="multipart/form-data" class="row" style="gap:10px;">
-    {% csrf_token %}
-    <input type="file" name="file" accept=".pdf" required
-           style="flex:1; padding:8px; border:1px dashed var(--line); border-radius:8px; background:#fff;">
-    <button class="btn" type="submit">Upload &amp; extract</button>
-  </form>
-  <p class="muted" style="margin:8px 0 0; font-size:13px;">Deterministic parser runs first (free, exact);
-    AI fills gaps only if a provider is configured. Nothing is auto-approved.</p>
+<div class="two-col">
+  <div>
+    <h2 style="margin-top:0;">A document</h2>
+    <div class="card">
+      <form method="post" action="{% url 'web:rfq_upload' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg" required
+               style="padding:10px;border:1px dashed var(--line);border-radius:9px;background:#fff;">
+        <button class="btn" type="submit" style="margin-top:14px;">Upload &amp; extract</button>
+      </form>
+      <p class="muted" style="margin:12px 0 0;font-size:12.5px;">
+        PDF or a photo of one. The text layer is read first (free and exact);
+        scanned pages fall through to OCR.
+      </p>
+    </div>
+  </div>
+
+  <div>
+    <h2 style="margin-top:0;">…or paste the text</h2>
+    <div class="card">
+      <form method="post" action="{% url 'web:rfq_upload' %}">
+        {% csrf_token %}
+        <textarea name="text" rows="8" required
+                  placeholder="Paste the email or message here, for example:&#10;&#10;Hi Ronny&#10;Please quote us on the following for Plant 2:&#10;- 4 x mechanical seals for pump P-204&#10;- 2 gearboxes SEW K87&#10;- 10 m of 50mm discharge pipe&#10;Needed by Friday.&#10;Regards&#10;Sipho"></textarea>
+        <label>Label (optional)</label>
+        <input type="text" name="label" placeholder="e.g. Sasol — pump spares (email)">
+        <button class="btn" type="submit" style="margin-top:14px;">Extract from text</button>
+      </form>
+      <p class="muted" style="margin:12px 0 0;font-size:12.5px;">
+        Most RFQs are not formal documents. Paste it verbatim — the text itself
+        is kept as the record.
+      </p>
+    </div>
+  </div>
 </div>
 {% endif %}
 
-<div class="card" style="padding:0;">
+<h2>RFQs</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Document</th><th>Status</th><th class="right">Fields</th><th class="right">Lines</th><th></th></tr>
+    <tr><th>Request</th><th>Arrived as</th><th>Status</th>
+        <th class="right">Fields</th><th class="right">Lines</th><th></th></tr>
     {% for r in rfqs %}
     <tr>
       <td><a href="{% url 'web:rfq_detail' r.id %}">{{ r.original_name|default:"RFQ" }}</a></td>
+      <td class="muted">
+        {% if r.doc_class == 'rfq_text' %}<span class="chip">Pasted text</span>
+        {% else %}<span class="chip">Document</span>{% endif %}
+      </td>
       <td>{% if r.status == 'approved' %}<span class="chip ok">Approved</span>
         {% elif r.status == 'rejected' %}<span class="chip bad">Rejected</span>
         {% else %}<span class="chip warn">{{ r.get_status_display }}</span>{% endif %}</td>
@@ -30,7 +68,8 @@
       <td class="right">{{ r.lines.count }}</td>
       <td class="right"><a href="{% url 'web:rfq_detail' r.id %}">Review →</a></td>
     </tr>
-    {% empty %}<tr><td colspan="5" class="muted" style="padding:20px;">No RFQs yet — upload one above.</td></tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">
+      No RFQs yet — upload one or paste one above.</td></tr>
     {% endfor %}
   </table>
 </div>

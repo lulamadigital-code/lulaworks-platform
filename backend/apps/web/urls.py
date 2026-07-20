@@ -54,6 +54,7 @@ urlpatterns = [
     path("rfq/upload/", views.rfq_upload, name="rfq_upload"),
     path("rfq/<uuid:pk>/", views.rfq_detail, name="rfq_detail"),
     path("rfq/<uuid:pk>/approve/", views.rfq_approve, name="rfq_approve"),
+    path("rfq/<uuid:pk>/lines/", views.rfq_line, name="rfq_line"),
     # Estimating
     path("estimates/", views.estimates_list, name="estimates"),
     path("estimates/<uuid:pk>/", views.estimate_detail, name="estimate_detail"),

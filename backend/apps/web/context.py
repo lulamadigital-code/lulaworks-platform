@@ -28,6 +28,7 @@ _SECTIONS = {
     "people_status": "people", "person_detail": "people",
     "profile": "profile",
     "rfq": "rfq", "rfq_detail": "rfq", "rfq_upload": "rfq", "rfq_approve": "rfq",
+    "rfq_line": "rfq",
     "quotations": "quotations", "quotation_detail": "quotations",
     "quotation_edit": "quotations", "quotation_pdf": "quotations",
     "projects": "projects", "project_detail": "projects", "readiness_partial": "projects",

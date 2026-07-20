@@ -168,6 +168,10 @@ ANTHROPIC_API_KEY = config("ANTHROPIC_API_KEY", default="")
 ANTHROPIC_MODEL = config("ANTHROPIC_MODEL", default="claude-sonnet-5")
 OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
 GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
+GEMINI_MODEL = config("GEMINI_MODEL", default="gemini-2.5-flash")
+# 0 disables "thinking" — those tokens share the output budget and can
+# starve the answer on long extraction prompts.
+GEMINI_THINKING_BUDGET = config("GEMINI_THINKING_BUDGET", default="0", cast=str)
 AI_CREDITS_PER_EXTRACTION = config("AI_CREDITS_PER_EXTRACTION", default="1", cast=str)
 
 # --- Celery / Redis (async boundary; DATA_MODEL §14) ---

@@ -21,7 +21,14 @@ from apps.identity.models import Company, Membership, Permission, Role, User
 from apps.projects.services import award_quotation
 from apps.quotes.models import Quotation
 
+from django.test import override_settings
+
 from .gateway import allocate_credits, credit_balance
+
+#: Pins "no provider configured" so these tests never depend on a developer's
+#: .env — and never reach a live API.
+NO_AI = override_settings(AI_PROVIDER="claude", ANTHROPIC_API_KEY="",
+                          OPENAI_API_KEY="", GEMINI_API_KEY="")
 from .models import ApprovalStatus
 from .orchestrator import orchestrate, record_decision
 from .tools import ToolPermissionError, available_tools, run_tool
@@ -174,6 +181,7 @@ class PromptVersionTests(APITestCase):
 
 
 class MeteringTests(APITestCase):
+    @NO_AI
     def test_deterministic_path_consumes_no_credits(self):
         c = make_company()
         with tenant_scope(c.id):
@@ -282,6 +290,7 @@ class EnrichmentTests(APITestCase):
         self.assertNotIn("executive_briefing", interaction.result)
         self.assertEqual(balance, Decimal("10"))   # nothing debited on failure
 
+    @NO_AI
     def test_default_path_stays_deterministic_without_key(self):
         c, project, user = self._setup()
         with tenant_scope(c.id):
