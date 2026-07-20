@@ -234,6 +234,14 @@
       .totop{right:14px;bottom:14px}
     }
 
+    /* ---- People ---- */
+    .pw{font:600 21px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+        letter-spacing:.06em;background:var(--green-t);color:#0a8f57;
+        padding:12px 16px;border-radius:10px;margin:12px 0;
+        user-select:all;word-break:break-all}
+    tr.dim td{opacity:.55}
+    tr.dim td strong{font-weight:600}
+
     /* ---- Back to top (long pages) ---- */
     .totop{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;
            background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-lg);
@@ -269,6 +277,7 @@
       {% include "web/_navlink.html" with url='web:purchase_orders' key='procurement' label='Procurement' icon='cart' %}
       {% if perms_money %}{% include "web/_navlink.html" with url='web:commercial' key='commercial' label='Commercial' icon='cash' %}{% endif %}
       {% include "web/_navlink.html" with url='web:lulama' key='lulama' label='LulaAI' icon='spark' %}
+      {% include "web/_navlink.html" with url='web:people' key='people' label='People' icon='users' %}
       {% include "web/_navlink.html" with url='web:notifications' key='notifications' label='Inbox' icon='bell' badge=unread_notifications %}
     </nav>
     <div class="side-foot">

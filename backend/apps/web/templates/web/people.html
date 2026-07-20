@@ -1,0 +1,124 @@
+{% extends "web/base.html" %}
+{% block title %}People{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>People</h1>
+    <p class="sub" style="margin:0;">Your company's members. Everyone here is
+      assignable to work — active members fill every team picker.</p>
+  </div>
+  <span class="chip info">{{ active_count }} active</span>
+</div>
+
+{# Shown exactly once, straight after creation, then dropped from the session. #}
+{% if new_password %}
+<div class="card" style="border-left:4px solid var(--green);border-radius:0 var(--r) var(--r) 0;">
+  <strong>Temporary password for {{ new_email }}</strong>
+  <p class="pw">{{ new_password }}</p>
+  <p class="muted" style="margin:0;font-size:13px;">
+    Hand this over now — <strong>it will not be shown again</strong> and is not stored
+    anywhere in readable form. They must choose their own password the first time
+    they sign in; until they do, they cannot reach any other page.
+  </p>
+</div>
+{% endif %}
+
+{% if can_manage %}
+<h2>Add a member</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:people_add' %}">
+    {% csrf_token %}
+    <div class="two">
+      <div>
+        <label>Email (their sign-in)</label>
+        <input type="email" name="email" required placeholder="thabo@lulama.co.za">
+      </div>
+      <div>
+        <label>Role</label>
+        <select name="role" required>
+          <option value="">Choose a role…</option>
+          {% for r in roles %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>First name</label>
+        <input type="text" name="first_name" placeholder="Thabo">
+      </div>
+      <div>
+        <label>Last name</label>
+        <input type="text" name="last_name" placeholder="Mahlangu">
+      </div>
+      <div>
+        <label>Job title</label>
+        <input type="text" name="job_title" placeholder="Millwright">
+      </div>
+      <div>
+        <label>Mobile</label>
+        <input type="text" name="mobile" placeholder="+27 …">
+      </div>
+    </div>
+    <button class="btn" type="submit" style="margin-top:16px;">Add member</button>
+    <p class="muted" style="margin:12px 0 0;font-size:12.5px;">
+      A temporary password is generated and shown to you once — there is no invite
+      email yet, so you pass it on yourself.
+    </p>
+  </form>
+</div>
+{% endif %}
+
+<h2>Members</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Person</th><th>Job title</th><th>Role</th><th>Status</th><th></th></tr>
+    {% for m in members %}
+    <tr {% if m.status != 'active' %}class="dim"{% endif %}>
+      <td>
+        <strong>{{ m.user.get_full_name|default:m.user.email }}</strong>
+        {% if m.user.get_full_name %}<br><span class="muted" style="font-size:12.5px;">{{ m.user.email }}</span>{% endif %}
+        {% if m.user.must_change_password %}
+        <br><span class="chip warn">has not set a password yet</span>{% endif %}
+      </td>
+      <td class="muted">{{ m.job_title|default:"—" }}</td>
+      <td>
+        {% if can_manage and m.status == 'active' %}
+        <form method="post" action="{% url 'web:people_role' m.id %}" class="row" style="gap:6px;">
+          {% csrf_token %}
+          <select name="role" style="width:auto;min-width:150px;">
+            {% for r in roles %}
+            <option value="{{ r.id }}" {% if r.id == m.role_id %}selected{% endif %}>{{ r.name }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn ghost" type="submit">Save</button>
+        </form>
+        {% else %}<span class="chip">{{ m.role.name|default:"No role" }}</span>{% endif %}
+      </td>
+      <td>
+        {% if m.status == 'active' %}<span class="chip ok">Active</span>
+        {% else %}<span class="chip">Deactivated</span>{% endif %}
+      </td>
+      <td class="right">
+        {% if can_manage and m.user_id != user.id %}
+        <form method="post" action="{% url 'web:people_status' m.id %}">
+          {% csrf_token %}
+          {% if m.status == 'active' %}
+          <input type="hidden" name="activate" value="">
+          <button class="btn ghost" type="submit">Deactivate</button>
+          {% else %}
+          <input type="hidden" name="activate" value="1">
+          <button class="btn ghost" type="submit">Restore</button>
+          {% endif %}
+        </form>
+        {% elif m.user_id == user.id %}<span class="muted" style="font-size:12.5px;">you</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<p class="muted" style="font-size:12.5px;">
+  Members are deactivated, never deleted — a person who leaves keeps their name on
+  the work, timesheets and sign-offs they touched. Deactivating removes every
+  permission immediately and takes them out of all assignment pickers.
+</p>
+{% endblock %}

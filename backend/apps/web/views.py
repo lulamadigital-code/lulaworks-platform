@@ -66,6 +66,18 @@ from apps.execution.services import (
     unread_count,
     work_dashboard,
 )
+from apps.identity.models import Membership, Role
+from apps.identity.services import (
+    MemberError,
+    assignable_users,
+    company_members,
+    # aliased: `add_member` already means "add someone to a work item"
+    add_member as add_company_member,
+    selectable_roles,
+    set_member_role,
+    set_member_status,
+    set_password,
+)
 from apps.finance.models import Invoice
 from apps.finance.services import (
     budget_vs_actual,
@@ -655,12 +667,141 @@ def project_phase_add(request, pk):
     return redirect("web:project_detail", pk=pk)
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# People — the company's own members (the pool every work picker reads from)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def people(request):
+    """Who works here. Managing members needs `users.invite`; everyone else may
+    see the team (they work with these people)."""
+    company = request.user.active_company
+    members = company_members(company)
+    return render(request, "web/people.html", {
+        "members": members,
+        "active_count": sum(1 for m in members if m.status == "active"),
+        "roles": selectable_roles(),
+        "can_manage": request.user.has_perm_code("users.invite"),
+        # Surfaced once, immediately after creation — never stored or re-shown.
+        "new_password": request.session.pop("new_member_password", None),
+        "new_email": request.session.pop("new_member_email", None),
+    })
+
+
+@login_required
+@require_POST
+def people_add(request):
+    if not request.user.has_perm_code("users.invite"):
+        messages.error(request, "You do not have permission to manage members.")
+        return redirect("web:people")
+
+    role = Role.objects.filter(pk=request.POST.get("role")).first()
+    if role is None:
+        messages.error(request, "Choose a role for the new member.")
+        return redirect("web:people")
+
+    try:
+        membership, temp_password = add_company_member(
+            request.user.active_company, request.user,
+            email=request.POST.get("email", ""),
+            first_name=request.POST.get("first_name", ""),
+            last_name=request.POST.get("last_name", ""),
+            job_title=request.POST.get("job_title", ""),
+            mobile=request.POST.get("mobile", ""),
+            role=role,
+        )
+    except MemberError as exc:
+        messages.error(request, str(exc))
+        return redirect("web:people")
+
+    if temp_password:
+        # Carried in the session for exactly one render, then popped.
+        request.session["new_member_password"] = temp_password
+        request.session["new_member_email"] = membership.user.email
+        messages.success(request, f"{membership.user.email} added.")
+    else:
+        messages.success(
+            request,
+            f"{membership.user.email} already had a LulaWorks account and has "
+            "been added to this company with their existing password.")
+    return redirect("web:people")
+
+
+@login_required
+@require_POST
+def people_role(request, pk):
+    if not request.user.has_perm_code("users.invite"):
+        messages.error(request, "You do not have permission to manage members.")
+        return redirect("web:people")
+    membership = get_object_or_404(
+        Membership.objects.filter(company=request.user.active_company), pk=pk)
+    role = Role.objects.filter(pk=request.POST.get("role")).first()
+    if role is None:
+        messages.error(request, "Unknown role.")
+    else:
+        set_member_role(membership, role)
+        messages.success(request, f"{membership.user.email} is now {role.name}.")
+    return redirect("web:people")
+
+
+@login_required
+@require_POST
+def people_status(request, pk):
+    """Deactivate or restore. Never deletes — a departed employee stays attached
+    to the work, timesheets and sign-offs they touched."""
+    if not request.user.has_perm_code("users.invite"):
+        messages.error(request, "You do not have permission to manage members.")
+        return redirect("web:people")
+    membership = get_object_or_404(
+        Membership.objects.filter(company=request.user.active_company), pk=pk)
+    activate = bool(request.POST.get("activate"))
+    try:
+        set_member_status(membership, request.user, active=activate)
+    except MemberError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(
+            request,
+            f"{membership.user.email} " + ("restored." if activate else "deactivated."))
+    return redirect("web:people")
+
+
+@login_required
+def change_password(request):
+    """Choose your own password. Forced (via middleware) for accounts a manager
+    created with a temporary one; available to anyone otherwise."""
+    forced = request.user.must_change_password
+    if request.method == "POST":
+        current = request.POST.get("current_password", "")
+        new = request.POST.get("new_password", "")
+        confirm = request.POST.get("confirm_password", "")
+
+        if not request.user.check_password(current):
+            messages.error(request, "Your current password is not correct.")
+        elif len(new) < 10:
+            messages.error(request, "Choose at least 10 characters.")
+        elif new != confirm:
+            messages.error(request, "The two new passwords do not match.")
+        elif new == current:
+            messages.error(request, "The new password must be different.")
+        else:
+            set_password(request.user, new)
+            # Changing the hash rotates the session auth hash — keep them signed in.
+            from django.contrib.auth import update_session_auth_hash
+            update_session_auth_hash(request, request.user)
+            messages.success(request, "Password updated.")
+            return redirect("web:dashboard")
+
+    return render(request, "web/change_password.html", {"forced": forced})
+
+
 # ── Small helpers for the work forms ──────────────────────────────────────────
 
 def _company_users(user):
-    """Everyone in the acting user's company — the pool the team pickers offer."""
-    from apps.identity.models import User
-    return User.objects.filter(memberships__company=user.active_company).distinct()
+    """The pool every team picker offers: ACTIVE members of the acting user's
+    company. Someone who has left stops being assignable but keeps their name on
+    the work they already did."""
+    return assignable_users(user.active_company)
 
 
 def _user_or_none(value):

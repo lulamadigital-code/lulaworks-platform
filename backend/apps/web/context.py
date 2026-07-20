@@ -24,6 +24,8 @@ _SECTIONS = {
     "work_file_add": "work", "work_member": "work", "work_link": "work",
     "work_decompose": "work", "work_decompose_apply": "work",
     "notifications": "notifications",
+    "people": "people", "people_add": "people", "people_role": "people",
+    "people_status": "people",
     "rfq": "rfq", "rfq_detail": "rfq", "rfq_upload": "rfq", "rfq_approve": "rfq",
     "quotations": "quotations", "quotation_detail": "quotations",
     "quotation_edit": "quotations", "quotation_pdf": "quotations",

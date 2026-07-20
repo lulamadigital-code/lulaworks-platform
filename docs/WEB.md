@@ -34,6 +34,33 @@ See [MODULE8.md](MODULE8.md) for the engine itself.
 - **Tenant isolation** — a project from another company `404`s (the fail-closed manager). Test-enforced.
 - **One source of truth** — views call `recompute_readiness`, `project_health`, `profitability`, `profit_forecast`, `budget_vs_actual`, `commercial_dashboard` — the same services the API and Flutter app use.
 
+## People — company members
+`/people/` (`users.invite` to manage; everyone may view the team).
+
+**Add directly.** There is no invite email yet (no SMTP), so a manager creates
+the account and a temporary password is generated and shown **exactly once**,
+carried in the session for a single render then popped. It is never stored in
+readable form. The alphabet excludes `O 0 l 1 I` because these get read out over
+a phone.
+
+**The temporary password is not a usable credential.** `User.must_change_password`
+is set on creation, and `ForcePasswordChangeMiddleware` redirects every manager-web
+page to `/password/` until the holder chooses their own. Verified: `/`, `/work/`,
+`/people/` and `/commercial/` all `302 -> /password/` while the gate is set.
+
+**Deactivate, never delete.** A departed member keeps their name on the work,
+timesheets and sign-offs they touched — deleting them would make the audit trail
+lie. Deactivation flips `Membership.status`, which `User.active_membership()`
+already filters on, so **every permission is revoked instantly** with no extra
+enforcement, and `assignable_users()` drops them from every team picker.
+
+Two lockout guards: you cannot deactivate yourself, and you cannot deactivate the
+last active member holding `users.invite` (which would strand the company with no
+administrator).
+
+Multi-company is honoured: an email that already exists on the platform gains a
+second membership and keeps its existing password rather than erroring.
+
 ## Scrolling & small screens
 - `scroll-behavior: smooth` with a `prefers-reduced-motion` opt-out.
 - Scrollbars are styled thin-but-visible, so a long page *looks* scrollable.

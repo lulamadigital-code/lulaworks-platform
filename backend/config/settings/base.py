@@ -65,6 +65,9 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
+    # Admin-created accounts must replace their temporary password before they
+    # can use anything (manager web only; the JWT API is untouched).
+    "apps.web.middleware.ForcePasswordChangeMiddleware",
     # Ambient tenant resolution — sets TenantContext from the JWT (DATA_MODEL §1).
     "apps.core.middleware.TenantMiddleware",
 ]

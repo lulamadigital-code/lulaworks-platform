@@ -7,6 +7,12 @@ app_name = "web"
 urlpatterns = [
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
+    path("password/", views.change_password, name="change_password"),
+    # People — the company's own members, and the pool every work picker reads
+    path("people/", views.people, name="people"),
+    path("people/add/", views.people_add, name="people_add"),
+    path("people/<uuid:pk>/role/", views.people_role, name="people_role"),
+    path("people/<uuid:pk>/status/", views.people_status, name="people_status"),
     path("", views.dashboard, name="dashboard"),
     path("projects/", views.projects_list, name="projects"),
     path("projects/<uuid:pk>/", views.project_detail, name="project_detail"),

@@ -77,6 +77,10 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    # Set when a manager creates the account with a temporary password. Every
+    # web page redirects to the change-password screen until it is cleared, so
+    # an admin-chosen credential is never a usable long-lived password.
+    must_change_password = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
 
     objects = UserManager()
