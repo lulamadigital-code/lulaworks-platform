@@ -29,6 +29,15 @@ PERMISSIONS = [
     ("ai.generate", "ai", "Use AI features"),
     ("execution.manage", "execution", "Manage tasks, resources & allocations"),
     ("timesheet.approve", "execution", "Approve timesheets"),
+    # Work Management Engine (Module 8) — granular, on top of the execution.manage
+    # umbrella. Holding execution.manage implies all of these.
+    ("work.create", "work", "Create work"),
+    ("work.edit", "work", "Edit work"),
+    ("work.delete", "work", "Delete work"),
+    ("work.assign", "work", "Assign work & manage the team"),
+    ("work.approve", "work", "Approve work (quality / sign-off)"),
+    ("work.close", "work", "Close work"),
+    ("work.files", "work", "Upload & manage work files"),
 ]
 
 # role -> permission codenames ("*" = all)
@@ -38,15 +47,19 @@ ROLES = {
     "Operations Manager": ["projects.create", "projects.view", "rfq.upload",
                             "rfq.approve", "quotes.create", "procurement.manage",
                             "estimating.manage", "compliance.manage", "execution.manage",
-                            "timesheet.approve", "ai.generate"],
+                            "timesheet.approve", "ai.generate", "work.create", "work.edit",
+                            "work.delete", "work.assign", "work.approve", "work.close",
+                            "work.files"],
     "Finance Manager": ["finance.view_money", "finance.manage", "invoices.approve",
                         "billing.manage", "po.approve", "estimating.approve", "projects.view"],
     "Estimator": ["estimating.manage", "finance.view_money", "quotes.create",
                   "projects.view", "ai.generate"],
     "Procurement Officer": ["procurement.manage", "finance.view_money", "projects.view"],
     "Safety Officer": ["compliance.manage", "compliance.override", "projects.view"],
-    "Supervisor": ["projects.view", "execution.manage", "timesheet.approve", "ai.generate"],
-    "Worker": ["projects.view"],
+    "Supervisor": ["projects.view", "execution.manage", "timesheet.approve", "ai.generate",
+                   "work.create", "work.edit", "work.assign", "work.approve",
+                   "work.close", "work.files"],
+    "Worker": ["projects.view", "work.edit", "work.files"],
 }
 
 PLANS = [

@@ -18,7 +18,11 @@ def logo_static_name() -> str:
 _SECTIONS = {
     "dashboard": "dashboard",
     "work": "work", "work_new": "work", "work_detail": "work",
-    "work_start": "work", "work_complete": "work",
+    "work_start": "work", "work_complete": "work", "work_transition": "work",
+    "work_subtask_add": "work", "work_checklist_add": "work",
+    "work_checklist_toggle": "work", "work_comment_add": "work",
+    "work_file_add": "work", "work_member": "work", "work_link": "work",
+    "notifications": "notifications",
     "rfq": "rfq", "rfq_detail": "rfq", "rfq_upload": "rfq", "rfq_approve": "rfq",
     "quotations": "quotations", "quotation_detail": "quotations",
     "quotation_edit": "quotations", "quotation_pdf": "quotations",
@@ -36,8 +40,16 @@ _SECTIONS = {
 
 def nav_flags(request):
     user = getattr(request, "user", None)
-    can = bool(user and user.is_authenticated and user.has_perm_code("finance.view_money"))
+    signed_in = bool(user and user.is_authenticated)
+    can = bool(signed_in and user.has_perm_code("finance.view_money"))
     rm = getattr(request, "resolver_match", None)
     section = _SECTIONS.get(rm.url_name, "") if rm else ""
+
+    unread = 0
+    if signed_in:
+        from apps.execution.services import unread_count
+        unread = unread_count(user)
+
     return {"perms_money": can, "has_logo": has_logo_file(),
-            "logo_static": logo_static_name(), "nav_section": section}
+            "logo_static": logo_static_name(), "nav_section": section,
+            "unread_notifications": unread}

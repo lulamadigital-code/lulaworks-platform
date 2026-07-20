@@ -21,7 +21,13 @@ Session-authenticated (email/password via Django's `ModelBackend`), separate fro
 | `/estimates/`, `/estimates/<id>/` | **estimates** list + detail (cost sections/lines, margin, risk — finance-gated); **approve** action (`estimating.approve`) |
 | `/suppliers/`, `/purchase-orders/`, `/purchase-orders/<id>/` | **procurement** — suppliers by performance, POs, PO detail with **3-way match** panel + **approve** (`po.approve`) |
 | `/commercial/` | **commercial** — portfolio money, aging buckets, retention, loss-making, invoices (`finance.view_money`) |
-| `/lulama/` | **Lulama** — ask → one consolidated draft (grounded agent cards + confidence + governance proposals) (`ai.generate`) |
+| `/work/?view=…` | **Work Management Engine** (Module 8) — one dataset, five lenses: List · Board · Table · Calendar · Workload |
+| `/work/new/` | **Universal New Work wizard** — every origin (RFQ, manual, project, customer request, recurring, internal, breakdown, preventative) through one front door |
+| `/work/<id>/` | **Per-work dashboard** — progress, computed blockers, subtasks/checklist, team by role, typed dependencies, conversation, files, compliance |
+| `/notifications/` | **Inbox** — in-app notifications, unread badge in the sidebar |
+| `/lulama/` | **LulaAI** — ask → one consolidated draft (grounded agent cards + confidence + governance proposals) (`ai.generate`) |
+
+See [MODULE8.md](MODULE8.md) for the engine itself.
 
 ## Guarantees (reused, not re-implemented)
 - **Financial Golden Rule** — the commercial/profitability blocks are computed and rendered only for users with `finance.view_money`. Test-enforced (`GoldenRuleTests`): an ops user gets the operational view; a finance user additionally sees the money.

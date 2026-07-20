@@ -20,16 +20,36 @@ from apps.procurement.services import create_purchase_order
 from apps.projects.services import award_quotation
 from apps.quotes.models import Quotation
 
-from .models import Resource, Task, TaskStatus
+from .models import (
+    Assignment,
+    AutomationRule,
+    Notification,
+    Resource,
+    Task,
+    TaskDependency,
+    TaskStatus,
+    WorkOrigin,
+)
 from .services import (
     AllocationError,
+    add_checklist_item,
+    add_subtask,
     allocate_resource,
+    can_modify,
     capture_project_actuals,
     complete_task,
     compute_task_readiness,
+    create_work,
     daily_progress_report,
+    ensure_default_phases,
+    link_tasks,
+    next_statuses,
+    portfolio_report,
     project_health,
+    refresh_task_status,
     start_task,
+    toggle_checklist_item,
+    transition,
 )
 
 
@@ -77,12 +97,12 @@ class TaskReadinessTests(APITestCase):
             project = award_ready_project(c)
             a = Task.objects.create(company=c, project=project, name="A", blocks_on_compliance=False)
             b = Task.objects.create(company=c, project=project, name="B", blocks_on_compliance=False)
-            b.predecessors.add(a)
+            link_tasks(a, b)
             s_blocked, reason = compute_task_readiness(b)
             complete_task(a, None)
             s_ready, _ = compute_task_readiness(b)
         self.assertEqual(s_blocked, TaskStatus.BLOCKED)
-        self.assertIn("predecessor", reason)
+        self.assertIn("waiting for A to finish", reason)
         self.assertEqual(s_ready, TaskStatus.READY)
 
     def test_material_po_blocks_until_received(self):
@@ -242,3 +262,203 @@ class ExecutionAPITests(APITestCase):
         self.client.force_authenticate(rival)
         resp = self.client.get(f"/api/v1/tasks/{task.id}/")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 8 — Work Management Engine
+# ══════════════════════════════════════════════════════════════════════════════
+
+class WorkEngineTests(APITestCase):
+    """One engine for every origin: hierarchy roll-up, typed dependencies, the
+    team model, the lifecycle, notifications and automations."""
+
+    def _user(self, company, email="lead@lulama.co.za"):
+        user = User.objects.create_user(email, "x", active_company=company)
+        Membership.objects.create(user=user, company=company,
+                                  role=Role.objects.create(name=email, is_system=True))
+        return user
+
+    def test_standalone_work_needs_no_project_or_compliance(self):
+        """A two-person shop logging "replace a valve" must not be gated by a
+        project compliance file it will never have."""
+        c = make_company()
+        with tenant_scope(c.id):
+            task = create_work(c, None, name="Replace valve", origin=WorkOrigin.BREAKDOWN)
+            status_, reason = compute_task_readiness(task)
+            self.assertTrue(task.is_standalone)
+            self.assertFalse(task.blocks_on_compliance)
+            self.assertEqual(status_, TaskStatus.READY)
+            self.assertEqual(reason, "")
+
+    def test_every_origin_flows_through_one_engine(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            for origin, _label in WorkOrigin.choices:
+                task = create_work(c, None, name=f"Work via {origin}", origin=origin)
+                self.assertEqual(task.origin, origin)
+                # Same lifecycle, same computed readiness, regardless of the door.
+                self.assertIn(task.status, (TaskStatus.READY, TaskStatus.BLOCKED))
+            self.assertEqual(Task.objects.count(), len(WorkOrigin.choices))
+
+    def test_checklist_ticks_roll_up_to_task_progress(self):
+        """Progress is DERIVED from what the crew ticked off — never typed in."""
+        c = make_company()
+        with tenant_scope(c.id):
+            task = create_work(c, None, name="Service gearbox")
+            a = add_checklist_item(task, None, label="Drain oil")
+            add_checklist_item(task, None, label="Replace seals")
+            self.assertEqual(task.progress_pct, 0)
+
+            toggle_checklist_item(a, None, done=True)
+            task.refresh_from_db()
+            self.assertEqual(task.progress_pct, 50)
+
+    def test_subtask_completes_when_its_checklist_is_done(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            task = create_work(c, None, name="Install pump")
+            sub = add_subtask(task, None, name="Mechanical")
+            one = add_checklist_item(task, None, label="Align", subtask=sub)
+            two = add_checklist_item(task, None, label="Grout", subtask=sub)
+
+            toggle_checklist_item(one, None, done=True)
+            sub.refresh_from_db()
+            self.assertFalse(sub.is_done)
+
+            toggle_checklist_item(two, None, done=True)
+            sub.refresh_from_db()
+            self.assertTrue(sub.is_done)
+
+    def test_typed_dependency_explains_itself(self):
+        """The blocked reason must name the real-world wait, not just "blocked"."""
+        c = make_company()
+        with tenant_scope(c.id):
+            a = create_work(c, None, name="Supplier delivery")
+            b = create_work(c, None, name="Install")
+            link_tasks(a, b, kind=TaskDependency.Kind.WAITING_DELIVERY)
+
+            status_, reason = compute_task_readiness(b)
+            self.assertEqual(status_, TaskStatus.BLOCKED)
+            self.assertIn("waiting for delivery on Supplier delivery", reason)
+
+            complete_task(a, None)
+            status_after, _ = compute_task_readiness(b)
+            self.assertEqual(status_after, TaskStatus.READY)
+
+    def test_start_to_start_dependency_clears_once_predecessor_starts(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            a = create_work(c, None, name="Scaffold")
+            b = create_work(c, None, name="Paint")
+            link_tasks(a, b, kind=TaskDependency.Kind.START_TO_START)
+            blocked, _ = compute_task_readiness(b)
+
+            start_task(a, None)
+            ready, _ = compute_task_readiness(b)
+            self.assertEqual(blocked, TaskStatus.BLOCKED)
+            self.assertEqual(ready, TaskStatus.READY)
+
+    def test_circular_dependency_is_refused(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            a = create_work(c, None, name="A")
+            b = create_work(c, None, name="B")
+            link_tasks(a, b)
+            with self.assertRaises(ValueError):
+                link_tasks(b, a)
+
+    def test_work_carries_a_team_not_one_assignee(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            owner = self._user(c, "owner@lulama.co.za")
+            hand = self._user(c, "hand@lulama.co.za")
+            watcher = self._user(c, "watch@lulama.co.za")
+            task = create_work(c, owner, name="Shutdown prep", owner=owner,
+                               executors=[hand], watchers=[watcher])
+
+            self.assertEqual(task.owner, owner)
+            self.assertIn(hand, task.team(Assignment.Role.EXECUTOR))
+            self.assertIn(watcher, task.team(Assignment.Role.WATCHER))
+            # Watchers are read-only; the execution team is not.
+            self.assertFalse(can_modify(task, watcher))
+            self.assertTrue(can_modify(task, hand))
+
+    def test_team_is_notified_but_the_actor_is_not(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            owner = self._user(c, "o@lulama.co.za")
+            hand = self._user(c, "h@lulama.co.za")
+            task = create_work(c, owner, name="Callout", owner=owner, executors=[hand])
+            Notification.objects.all().delete()
+
+            complete_task(task, owner)
+            recipients = set(Notification.objects.values_list("user_id", flat=True))
+            self.assertIn(hand.id, recipients)
+            self.assertNotIn(owner.id, recipients)   # you don't notify yourself
+
+    def test_lifecycle_transition_and_next_steps(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            task = create_work(c, None, name="Weld repair")
+            self.assertEqual(task.status, TaskStatus.READY)
+
+            transition(task, None, to_status=TaskStatus.QUALITY_CHECK)
+            task.refresh_from_db()
+            self.assertEqual(task.status, TaskStatus.QUALITY_CHECK)
+            # A human deliberately parked it here — the engine must not overrule.
+            refresh_task_status(task)
+            task.refresh_from_db()
+            self.assertEqual(task.status, TaskStatus.QUALITY_CHECK)
+            self.assertIn(TaskStatus.CLIENT_SIGNOFF, next_statuses(task))
+
+    def test_automation_notifies_approvers_on_completion(self):
+        """Automations move information — they never approve anything."""
+        c = make_company()
+        with tenant_scope(c.id):
+            approver = self._user(c, "app@lulama.co.za")
+            task = create_work(c, None, name="Panel build", approvers=[approver])
+            AutomationRule.objects.create(
+                company=c, name="Tell the approvers",
+                trigger=AutomationRule.Trigger.TASK_COMPLETED,
+                action=AutomationRule.Action.NOTIFY_APPROVERS,
+            )
+            Notification.objects.all().delete()
+
+            complete_task(task, None)
+            rows = Notification.objects.filter(user=approver)
+            self.assertTrue(rows.exists())
+            # Completion still required a human — nothing self-approved.
+            self.assertEqual(rows.first().verb, "approval_required")
+
+    def test_project_work_still_honours_the_compliance_gate(self):
+        """The unified engine must not weaken the hard gate for project work."""
+        c = make_company()
+        with tenant_scope(c.id):
+            project = award_ready_project(c, compliant=False)
+            task = create_work(c, None, name="Mobilise crew", project=project)
+            status_, reason = compute_task_readiness(task)
+            self.assertEqual(status_, TaskStatus.BLOCKED)
+            self.assertIn("compliance", reason)
+
+    def test_default_phases_seed_once(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            project = award_ready_project(c)
+            first = ensure_default_phases(project, None)
+            again = ensure_default_phases(project, None)
+            self.assertEqual(len(first), 7)
+            self.assertEqual(len(again), 7)
+            self.assertEqual(project.phases.count(), 7)
+
+    def test_portfolio_report_counts_blocked_and_overdue(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            done = create_work(c, None, name="Done")
+            complete_task(done, None)
+            late = create_work(c, None, name="Late",
+                               due_date=date.today() - timedelta(days=3))
+            report = portfolio_report()
+            self.assertEqual(report["total"], 2)
+            self.assertEqual(report["completed"], 1)
+            self.assertEqual(report["completion_pct"], 50)
+            self.assertIn(late, report["overdue"])

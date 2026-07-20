@@ -1,0 +1,31 @@
+{% extends "web/base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Notifications</h1>
+    <p class="sub" style="margin:0;">{{ unread }} unread</p>
+  </div>
+  {% if unread %}
+  <form method="post">{% csrf_token %}
+    <button class="btn ghost" type="submit">Mark all read</button></form>
+  {% endif %}
+</div>
+
+<div class="card" style="padding:0;">
+  {% for n in rows %}
+  <a class="workrow {% if not n.is_read %}unread{% endif %}"
+     href="{% if n.task %}{% url 'web:work_detail' n.task.id %}{% else %}{% url 'web:work' %}{% endif %}">
+    <span class="wr-main">
+      <strong>{{ n.title }}</strong>
+      {% if n.body %}<span class="muted">{{ n.body }}</span>{% endif %}
+    </span>
+    <span class="muted" style="font-size:12px;">{{ n.created_at|date:"d M H:i" }}</span>
+    {% if not n.is_read %}<span class="chip info">New</span>{% endif %}
+  </a>
+  {% empty %}
+  <p class="muted" style="padding:22px;">Nothing yet — you'll be told when work you're
+    on is assigned, blocked, commented on or completed.</p>
+  {% endfor %}
+</div>
+{% endblock %}

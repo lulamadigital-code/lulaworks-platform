@@ -26,13 +26,40 @@ from apps.compliance.services import approve_item, recompute_readiness
 from apps.compliance.services import override as override_gate
 from apps.estimating.models import Estimate, EstimateStatus
 from apps.estimating.services import approve_estimate, create_revision
-from apps.execution.models import Task, WorkOrigin
+from apps.execution.models import (
+    Assignment,
+    ChecklistItem,
+    Phase,
+    RiskLevel,
+    Subtask,
+    Task,
+    TaskDependency,
+    TaskPriority,
+    TaskStatus,
+    WorkOrigin,
+)
 from apps.execution.services import (
+    add_attachment,
+    add_checklist_item,
+    add_comment,
+    add_member,
+    add_phase,
+    add_subtask,
     complete_task,
     compute_task_readiness,
     create_work,
+    ensure_default_phases,
+    has_work_perm,
+    link_tasks,
+    mark_notifications_read,
+    portfolio_report,
     project_health,
+    remove_member,
     start_task,
+    toggle_checklist_item,
+    transition,
+    unread_count,
+    work_dashboard,
 )
 from apps.finance.models import Invoice
 from apps.finance.services import (
@@ -80,15 +107,21 @@ def _can_view_money(user) -> bool:
 
 
 _STATUS_META = {
-    "draft": ("#c4c7d0", "Draft"), "planned": ("#c4c7d0", "Planned"),
-    "ready": ("#fdab3d", "Ready"), "in_progress": ("#579bfc", "In progress"),
-    "on_hold": ("#a25ddc", "On hold"), "blocked": ("#e2445c", "Blocked"),
-    "awaiting_inspection": ("#a25ddc", "Quality check"), "completed": ("#00c875", "Completed"),
-    "cancelled": ("#c4c7d0", "Cancelled"),
+    "draft": ("#c4c7d0", "Draft"), "ready": ("#579bfc", "Ready"),
+    "assigned": ("#579bfc", "Assigned"), "accepted": ("#a25ddc", "Accepted"),
+    "in_progress": ("#fdab3d", "In progress"), "waiting": ("#fdab3d", "Waiting"),
+    "blocked": ("#e2445c", "Blocked"), "quality_check": ("#a25ddc", "Quality check"),
+    "client_signoff": ("#a25ddc", "Client sign-off"), "completed": ("#00c875", "Completed"),
+    "closed": ("#676879", "Closed"), "cancelled": ("#c4c7d0", "Cancelled"),
 }
 _ORIGIN_META = {
-    "rfq": ("#a25ddc", "RFQ / Tender"), "manual": ("#579bfc", "Manual"),
-    "recurring": ("#00c875", "Recurring"), "customer_request": ("#fdab3d", "Customer request"),
+    "rfq": ("#a25ddc", "RFQ / Tender"), "manual": ("#579bfc", "Manual work"),
+    "project": ("#17a2b8", "Project"),
+    "customer_request": ("#fdab3d", "Customer request"),
+    "recurring": ("#00c875", "Recurring maintenance"),
+    "internal": ("#676879", "Internal work"),
+    "breakdown": ("#e2445c", "Breakdown / callout"),
+    "preventative": ("#0e7c8c", "Preventative maintenance"),
 }
 
 
@@ -185,91 +218,399 @@ def readiness_partial(request, pk):
                   {"project": project, "readiness": recompute_readiness(project)})
 
 
-# ── Work (the unified engine: RFQ / manual / recurring — all one Work list) ───
+# ══════════════════════════════════════════════════════════════════════════════
+# Work Management Engine (MODULE 8) — one engine, many views
+# ══════════════════════════════════════════════════════════════════════════════
 
-@login_required
-def work_list(request):
-    """Every unit of work, whatever its origin — project tasks and standalone
-    jobs in one list (the unified Work engine)."""
-    qs = Task.objects.all().select_related("project", "assignee")
-    origin = request.GET.get("origin")
-    if origin:
-        qs = qs.filter(origin=origin)
-    scope = request.GET.get("scope")
+#: Board columns — the lifecycle collapsed into the lanes a manager works in.
+BOARD_LANES = [
+    ("draft", "Draft", [TaskStatus.DRAFT]),
+    ("ready", "Ready", [TaskStatus.READY, TaskStatus.ASSIGNED, TaskStatus.ACCEPTED]),
+    ("active", "In progress", [TaskStatus.IN_PROGRESS]),
+    ("stuck", "Stuck", [TaskStatus.BLOCKED, TaskStatus.WAITING]),
+    ("review", "Review", [TaskStatus.QUALITY_CHECK, TaskStatus.CLIENT_SIGNOFF]),
+    ("done", "Done", [TaskStatus.COMPLETED, TaskStatus.CLOSED]),
+]
+
+STATUS_TONE = {
+    TaskStatus.COMPLETED: "ok", TaskStatus.CLOSED: "ok",
+    TaskStatus.BLOCKED: "bad", TaskStatus.WAITING: "warn",
+    TaskStatus.IN_PROGRESS: "warn",
+    TaskStatus.QUALITY_CHECK: "purple", TaskStatus.CLIENT_SIGNOFF: "purple",
+}
+
+PRIORITY_TONE = {"critical": "bad", "high": "warn", "medium": "info",
+                 "low": "", "planning": ""}
+
+
+def _filtered_work(request):
+    """One filter pipeline feeding every view — changing the view must never
+    change the data."""
+    qs = (Task.objects.all()
+          .select_related("project", "phase", "assignee", "workspace")
+          .prefetch_related("assignments__user"))
+    f = request.GET
+    if f.get("origin"):
+        qs = qs.filter(origin=f["origin"])
+    if f.get("status"):
+        qs = qs.filter(status=f["status"])
+    if f.get("priority"):
+        qs = qs.filter(priority=f["priority"])
+    if f.get("project"):
+        qs = qs.filter(project_id=f["project"])
+    if f.get("q"):
+        qs = qs.filter(name__icontains=f["q"])
+    scope = f.get("scope")
     if scope == "standalone":
         qs = qs.filter(project__isnull=True)
     elif scope == "project":
         qs = qs.filter(project__isnull=False)
-    return render(request, "web/work.html", {
-        "tasks": qs, "origins": WorkOrigin.choices,
-        "origin": origin, "scope": scope,
-        "can_manage": request.user.has_perm_code("execution.manage"),
-    })
+    if f.get("mine"):
+        qs = qs.filter(assignments__user=request.user).distinct()
+    return qs
+
+
+@login_required
+def work_list(request):
+    """Every unit of work, whatever its origin — one dataset, six lenses.
+    The `view` parameter changes presentation only; filters are shared."""
+    view = request.GET.get("view", "list")
+    tasks = list(_filtered_work(request))
+
+    ctx = {
+        "tasks": tasks, "view": view,
+        "origins": WorkOrigin.choices, "statuses": TaskStatus.choices,
+        "priorities": TaskPriority.choices,
+        "projects": Project.objects.all(),
+        "f": request.GET,
+        "status_tone": STATUS_TONE, "priority_tone": PRIORITY_TONE,
+        "can_manage": has_work_perm(request.user, "work.edit"),
+        "report": portfolio_report(),
+    }
+
+    if view == "board":
+        ctx["lanes"] = [
+            {"key": key, "label": label,
+             "tasks": [t for t in tasks if t.status in members]}
+            for key, label, members in BOARD_LANES
+        ]
+    elif view == "calendar":
+        buckets = {}
+        for t in tasks:
+            if t.due_date:
+                buckets.setdefault(t.due_date, []).append(t)
+        ctx["calendar"] = sorted(buckets.items())
+        ctx["undated"] = [t for t in tasks if not t.due_date]
+    elif view == "workload":
+        load = {}
+        for t in tasks:
+            for a in t.assignments.all():
+                if a.role == Assignment.Role.WATCHER:
+                    continue
+                row = load.setdefault(a.user, {"user": a.user, "open": 0, "overdue": 0,
+                                               "hours": Decimal("0")})
+                if t.is_open:
+                    row["open"] += 1
+                    row["hours"] += t.estimated_hours or Decimal("0")
+                if t.is_overdue:
+                    row["overdue"] += 1
+        rows = sorted(load.values(), key=lambda r: -r["open"])
+        peak = max([r["open"] for r in rows], default=0) or 1
+        for r in rows:
+            r["pct"] = round(100 * r["open"] / peak)
+        ctx["workload"] = rows
+        ctx["unassigned"] = [t for t in tasks if t.is_open and not t.assignments.all()]
+
+    return render(request, "web/work.html", ctx)
 
 
 @login_required
 def work_new(request):
-    if not request.user.has_perm_code("execution.manage"):
+    """The universal New Work wizard — the same front door for every origin."""
+    if not has_work_perm(request.user, "work.create"):
         messages.error(request, "You do not have permission to create work.")
         return redirect("web:work")
+
+    company = request.user.active_company
     if request.method == "POST":
         project = None
         if request.POST.get("project"):
             project = get_object_or_404(Project.objects.all(), pk=request.POST["project"])
+        phase = None
+        if request.POST.get("phase"):
+            phase = get_object_or_404(Phase.objects.all(), pk=request.POST["phase"])
+
+        owner = _user_or_none(request.POST.get("owner"))
+        executors = [_user_or_none(u) for u in request.POST.getlist("executors")]
+        watchers = [_user_or_none(u) for u in request.POST.getlist("watchers")]
+        approvers = [_user_or_none(u) for u in request.POST.getlist("approvers")]
+        labels = [s.strip() for s in request.POST.get("labels", "").split(",") if s.strip()]
+
         task = create_work(
-            request.user.active_company, request.user,
+            company, request.user,
             name=request.POST.get("name", "").strip() or "Untitled work",
             description=request.POST.get("description", "").strip(),
             origin=request.POST.get("origin") or WorkOrigin.MANUAL,
-            project=project,
+            project=project, phase=phase,
+            priority=request.POST.get("priority") or TaskPriority.MEDIUM,
+            risk_level=request.POST.get("risk_level") or RiskLevel.LOW,
+            site=request.POST.get("site", "").strip(),
+            department=request.POST.get("department", "").strip(),
+            due_date=request.POST.get("due_date") or None,
+            estimated_hours=_decimal_or_none(request.POST.get("estimated_hours")),
+            labels=labels,
             is_billable=bool(request.POST.get("is_billable")),
             client_name=request.POST.get("client_name", "").strip(),
+            owner=owner or request.user,
+            executors=executors, watchers=watchers, approvers=approvers,
         )
+        for line in request.POST.get("checklist", "").splitlines():
+            if line.strip():
+                add_checklist_item(task, request.user, label=line.strip())
+        for f in request.FILES.getlist("attachments"):
+            add_attachment(task, request.user, uploaded_file=f)
+
         messages.success(request, f"Work created: {task.name}.")
         return redirect("web:work_detail", pk=task.id)
+
     return render(request, "web/work_new.html", {
         "origins": WorkOrigin.choices,
+        "priorities": TaskPriority.choices,
+        "risks": RiskLevel.choices,
         "projects": Project.objects.all(),
+        "people": _company_users(request.user),
     })
 
 
 @login_required
 def work_detail(request, pk):
+    """The work item's own dashboard — progress, blockers, team, hierarchy,
+    conversation and files in one place."""
     task = get_object_or_404(
-        Task.objects.all().select_related("project", "assignee"), pk=pk)
-    status, reason = compute_task_readiness(task)
-    return render(request, "web/work_detail.html", {
-        "task": task, "readiness_status": status, "readiness_reason": reason,
-        "can_manage": request.user.has_perm_code("execution.manage"),
+        Task.objects.all().select_related("project", "phase", "assignee"), pk=pk)
+    ctx = work_dashboard(task, request.user)
+    ctx.update({
+        "can_manage": has_work_perm(request.user, "work.edit"),
+        "people": _company_users(request.user),
+        "roles": Assignment.Role.choices,
+        "dep_kinds": TaskDependency.Kind.choices,
+        "status_tone": STATUS_TONE, "priority_tone": PRIORITY_TONE,
+        "sibling_tasks": Task.objects.all().exclude(pk=task.pk)[:100],
+        "subtasks": task.subtasks.prefetch_related("checklist_items"),
+        "loose_checklist": task.checklist_items.filter(subtask__isnull=True),
     })
+    return render(request, "web/work_detail.html", ctx)
+
+
+def _work_guard(request, pk, code="work.edit"):
+    """Shared permission gate for the work action endpoints. Each action names
+    the granular permission it needs; `execution.manage` covers them all."""
+    task = get_object_or_404(Task.objects.all(), pk=pk)
+    if not has_work_perm(request.user, code):
+        messages.error(request, "You do not have permission.")
+        return task, False
+    return task, True
 
 
 @login_required
 @require_POST
 def work_start(request, pk):
-    if not request.user.has_perm_code("execution.manage"):
-        messages.error(request, "You do not have permission.")
-        return redirect("web:work_detail", pk=pk)
-    task = get_object_or_404(Task.objects.all(), pk=pk)
-    try:
-        start_task(task, request.user)
-    except ValueError as exc:
-        messages.error(request, str(exc))
-    else:
-        messages.success(request, f"Started: {task.name}.")
+    task, allowed = _work_guard(request, pk)
+    if allowed:
+        try:
+            start_task(task, request.user)
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, f"Started: {task.name}.")
     return redirect("web:work_detail", pk=pk)
 
 
 @login_required
 @require_POST
 def work_complete(request, pk):
-    if not request.user.has_perm_code("execution.manage"):
-        messages.error(request, "You do not have permission.")
-        return redirect("web:work_detail", pk=pk)
-    task = get_object_or_404(Task.objects.all(), pk=pk)
-    complete_task(task, request.user, actual_hours=request.POST.get("actual_hours") or None)
-    messages.success(request, f"Completed: {task.name}.")
+    task, allowed = _work_guard(request, pk)
+    if allowed:
+        complete_task(task, request.user,
+                      actual_hours=request.POST.get("actual_hours") or None)
+        messages.success(request, f"Completed: {task.name}.")
     return redirect("web:work_detail", pk=pk)
+
+
+#: Lifecycle moves that are more than an edit — they need their own permission.
+_TRANSITION_PERM = {
+    TaskStatus.QUALITY_CHECK: "work.approve",
+    TaskStatus.CLIENT_SIGNOFF: "work.approve",
+    TaskStatus.CLOSED: "work.close",
+}
+
+
+@login_required
+@require_POST
+def work_transition(request, pk):
+    """Move the work through the lifecycle. Sign-off and closure are held to a
+    higher permission than an ordinary edit."""
+    target = request.POST.get("status")
+    task, allowed = _work_guard(request, pk, _TRANSITION_PERM.get(target, "work.edit"))
+    if allowed:
+        if target not in dict(TaskStatus.choices):
+            messages.error(request, "Unknown status.")
+        else:
+            try:
+                transition(task, request.user, to_status=target,
+                           note=request.POST.get("note", ""))
+            except ValueError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(request, f"{task.name} → {task.get_status_display()}.")
+    return redirect("web:work_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def work_subtask_add(request, pk):
+    task, allowed = _work_guard(request, pk)
+    if allowed and request.POST.get("name", "").strip():
+        add_subtask(task, request.user, name=request.POST["name"].strip(),
+                    assignee=_user_or_none(request.POST.get("assignee")),
+                    due_date=request.POST.get("due_date") or None)
+    return redirect("web:work_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def work_checklist_add(request, pk):
+    task, allowed = _work_guard(request, pk)
+    if allowed and request.POST.get("label", "").strip():
+        subtask = None
+        if request.POST.get("subtask"):
+            subtask = get_object_or_404(Subtask.objects.all(), pk=request.POST["subtask"])
+        add_checklist_item(task, request.user, label=request.POST["label"].strip(),
+                           subtask=subtask)
+    return redirect("web:work_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def work_checklist_toggle(request, pk, item_id):
+    """Ticking an item rolls progress up the hierarchy — anyone on the work may
+    do it (that is the point of a checklist), watchers excepted."""
+    task = get_object_or_404(Task.objects.all(), pk=pk)
+    item = get_object_or_404(ChecklistItem.objects.filter(task=task), pk=item_id)
+    from apps.execution.services import can_modify
+    if can_modify(task, request.user):
+        toggle_checklist_item(item, request.user)
+    else:
+        messages.error(request, "You do not have permission.")
+    return redirect("web:work_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def work_comment_add(request, pk):
+    task = get_object_or_404(Task.objects.all(), pk=pk)
+    body = request.POST.get("body", "").strip()
+    if body:
+        parent = None
+        if request.POST.get("parent"):
+            parent = task.comments.filter(pk=request.POST["parent"]).first()
+        add_comment(task, request.user, body=body, parent=parent,
+                    is_internal=not request.POST.get("customer_visible"))
+    for f in request.FILES.getlist("files"):
+        add_attachment(task, request.user, uploaded_file=f)
+    return redirect("web:work_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def work_file_add(request, pk):
+    task, allowed = _work_guard(request, pk, "work.files")
+    if allowed:
+        for f in request.FILES.getlist("files"):
+            add_attachment(task, request.user, uploaded_file=f,
+                           kind=request.POST.get("kind", "document"))
+    return redirect("web:work_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def work_member(request, pk):
+    task, allowed = _work_guard(request, pk, "work.assign")
+    if allowed:
+        user = _user_or_none(request.POST.get("user"))
+        role = request.POST.get("role")
+        if user and role in dict(Assignment.Role.choices):
+            if request.POST.get("remove"):
+                remove_member(task, user, role)
+            else:
+                add_member(task, user, role)
+    return redirect("web:work_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def work_link(request, pk):
+    task, allowed = _work_guard(request, pk)
+    if allowed:
+        other = Task.objects.filter(pk=request.POST.get("from_task")).first()
+        if other:
+            try:
+                link_tasks(other, task, kind=request.POST.get("kind") or None)
+            except ValueError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(request, "Dependency added.")
+    return redirect("web:work_detail", pk=pk)
+
+
+@login_required
+def notifications(request):
+    from apps.execution.models import Notification
+    rows = Notification.objects.filter(user=request.user).select_related("task")[:100]
+    if request.method == "POST":
+        mark_notifications_read(request.user)
+        return redirect("web:notifications")
+    return render(request, "web/notifications.html",
+                  {"rows": rows, "unread": unread_count(request.user)})
+
+
+@login_required
+@require_POST
+def project_phase_add(request, pk):
+    project = get_object_or_404(Project.objects.all(), pk=pk)
+    if not has_work_perm(request.user, "work.edit"):
+        messages.error(request, "You do not have permission.")
+    elif request.POST.get("seed"):
+        ensure_default_phases(project, request.user)
+        messages.success(request, "Default phases added.")
+    elif request.POST.get("name", "").strip():
+        add_phase(project, request.user, name=request.POST["name"].strip())
+        messages.success(request, "Phase added.")
+    return redirect("web:project_detail", pk=pk)
+
+
+# ── Small helpers for the work forms ──────────────────────────────────────────
+
+def _company_users(user):
+    """Everyone in the acting user's company — the pool the team pickers offer."""
+    from apps.identity.models import User
+    return User.objects.filter(memberships__company=user.active_company).distinct()
+
+
+def _user_or_none(value):
+    if not value:
+        return None
+    from apps.identity.models import User
+    return User.objects.filter(pk=value).first()
+
+
+def _decimal_or_none(value):
+    if not value:
+        return None
+    try:
+        return Decimal(value)
+    except (InvalidOperation, TypeError):
+        return None
 
 
 # ── Quotations (view · review · edit · download PDF) ──────────────────────────

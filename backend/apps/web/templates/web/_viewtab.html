@@ -1,0 +1,4 @@
+{% comment %}One tab in the view switcher — keeps every active filter in the query
+string, so switching the lens never changes the data. Params: key, label.{% endcomment %}
+<a class="viewtab {% if view == key %}active{% endif %}"
+   href="?view={{ key }}{% if f.q %}&q={{ f.q|urlencode }}{% endif %}{% if f.origin %}&origin={{ f.origin }}{% endif %}{% if f.status %}&status={{ f.status }}{% endif %}{% if f.priority %}&priority={{ f.priority }}{% endif %}{% if f.scope %}&scope={{ f.scope }}{% endif %}{% if f.mine %}&mine=1{% endif %}">{{ label }}</a>

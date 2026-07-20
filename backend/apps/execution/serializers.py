@@ -21,11 +21,17 @@ class TaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = ["id", "project", "work_package", "name", "description", "priority",
-                  "status", "predecessors", "blocks_on_compliance", "material_po",
-                  "assignee", "planned_start", "planned_end", "estimated_hours",
-                  "actual_hours", "progress_pct", "blocked_reason", "readiness"]
-        read_only_fields = ["id", "status", "blocked_reason", "actual_hours"]
+        fields = ["id", "workspace", "project", "phase", "parent", "origin",
+                  "work_package", "name", "description", "priority", "status",
+                  "risk_level", "labels", "site", "department", "client_name",
+                  "is_billable", "predecessors", "blocks_on_compliance", "material_po",
+                  "assignee", "planned_start", "planned_end", "due_date",
+                  "started_at", "completed_at", "estimated_hours", "actual_hours",
+                  "progress_pct", "blocked_reason", "readiness"]
+        # `predecessors` routes through TaskDependency (typed links) — it is set via
+        # the dependency endpoints/services, never by writing the list directly.
+        read_only_fields = ["id", "status", "blocked_reason", "actual_hours",
+                            "predecessors", "started_at", "completed_at"]
 
     def get_readiness(self, obj):
         status, reason = compute_task_readiness(obj)

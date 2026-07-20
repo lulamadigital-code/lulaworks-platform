@@ -1,39 +1,140 @@
 {% extends "web/base.html" %}
-{% block title %}New work{% endblock %}
+{% block title %}New Work{% endblock %}
 {% block content %}
 <p class="sub"><a href="{% url 'web:work' %}">← Work</a></p>
-<h1>New work</h1>
-<p class="sub">Create a task. Leave the project blank for standalone work
-  (e.g. "Replace faulty DB board") — no RFQ, no quotation, just work.</p>
+<h1>New Work</h1>
+<p class="sub">One front door for every kind of work. Pick where it came from —
+  the engine handles the rest. Leave the project blank for standalone work.</p>
 
-<form method="post" action="{% url 'web:work_new' %}">
+<form method="post" enctype="multipart/form-data">
   {% csrf_token %}
+
   <div class="card">
-    <label>What needs doing?</label>
-    <input type="text" name="name" placeholder="e.g. Replace faulty DB board" required autofocus>
-    <label>Details (optional)</label>
-    <input type="text" name="description" placeholder="Notes, location, scope…">
-    <div class="grid" style="grid-template-columns:1fr 1fr; margin-top:8px;">
+    <h2 style="margin:0 0 4px;">1 · What is it?</h2>
+    <p class="muted" style="margin:0 0 14px;font-size:13px;">The origin is the only
+      real difference between jobs — everything after this is the same engine.</p>
+
+    <label>Work origin</label>
+    <div class="originpick">
+      {% for value, label in origins %}
+      <label class="opt">
+        <input type="radio" name="origin" value="{{ value }}" {% if forloop.first %}checked{% endif %}>
+        <span>{{ label }}</span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <label>Name</label>
+    <input type="text" name="name" required placeholder="e.g. Replace conveyor drive coupling">
+
+    <label>Description</label>
+    <textarea name="description" rows="3" placeholder="Scope, access notes, anything the crew needs"></textarea>
+  </div>
+
+  <div class="card">
+    <h2 style="margin:0 0 14px;">2 · Where does it sit?</h2>
+    <div class="two">
       <div>
-        <label>Origin</label>
-        <select name="origin" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;">
-          {% for value, label in origins %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+        <label>Project (optional — blank means standalone)</label>
+        <select name="project">
+          <option value="">Standalone work</option>
+          {% for p in projects %}<option value="{{ p.id }}">{{ p.number }} — {{ p.client_name }}</option>{% endfor %}
         </select>
       </div>
       <div>
-        <label>Project (optional — leave blank for standalone)</label>
-        <select name="project" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;">
-          <option value="">Standalone (no project)</option>
-          {% for p in projects %}<option value="{{ p.id }}">{{ p.number }} · {{ p.client_name }}</option>{% endfor %}
+        <label>Department</label>
+        <input type="text" name="department" placeholder="e.g. Mechanical">
+      </div>
+      <div>
+        <label>Customer</label>
+        <input type="text" name="client_name" placeholder="Client name">
+      </div>
+      <div>
+        <label>Site</label>
+        <input type="text" name="site" placeholder="e.g. Plant 2, Rustenburg">
+      </div>
+    </div>
+    <label class="inline" style="margin-top:14px;">
+      <input type="checkbox" name="is_billable" value="1"> Billable work</label>
+  </div>
+
+  <div class="card">
+    <h2 style="margin:0 0 14px;">3 · How urgent, how risky, by when?</h2>
+    <div class="two">
+      <div>
+        <label>Priority</label>
+        <select name="priority">
+          {% for value, label in priorities %}
+          <option value="{{ value }}" {% if value == 'medium' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Risk level</label>
+        <select name="risk_level">
+          {% for value, label in risks %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Due date</label>
+        <input type="date" name="due_date">
+      </div>
+      <div>
+        <label>Estimated hours</label>
+        <input type="number" step="0.25" min="0" name="estimated_hours" placeholder="0">
+      </div>
+    </div>
+    <label>Labels (comma separated)</label>
+    <input type="text" name="labels" placeholder="shutdown, night-shift">
+  </div>
+
+  <div class="card">
+    <h2 style="margin:0 0 4px;">4 · Who is on it?</h2>
+    <p class="muted" style="margin:0 0 14px;font-size:13px;">Work is a team sport.
+      One owner is accountable; watchers get told without being able to change anything.</p>
+    <div class="two">
+      <div>
+        <label>Owner (accountable)</label>
+        <select name="owner">
+          <option value="">— me —</option>
+          {% for u in people %}<option value="{{ u.id }}">{{ u }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Execution team (ctrl/cmd-click for several)</label>
+        <select name="executors" multiple size="4">
+          {% for u in people %}<option value="{{ u.id }}">{{ u }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Approvers</label>
+        <select name="approvers" multiple size="4">
+          {% for u in people %}<option value="{{ u.id }}">{{ u }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Watchers</label>
+        <select name="watchers" multiple size="4">
+          {% for u in people %}<option value="{{ u.id }}">{{ u }}</option>{% endfor %}
         </select>
       </div>
     </div>
-    <label style="display:flex; align-items:center; gap:8px; margin-top:12px;">
-      <input type="checkbox" name="is_billable" style="width:auto;"> Billable work
-    </label>
-    <label>Client (for billable standalone work)</label>
-    <input type="text" name="client_name" placeholder="Client name">
   </div>
-  <button class="btn" type="submit">Create work</button>
+
+  <div class="card">
+    <h2 style="margin:0 0 14px;">5 · Checklist &amp; files</h2>
+    <label>Checklist — one item per line</label>
+    <textarea name="checklist" rows="4" placeholder="Isolate and lock out&#10;Remove guard&#10;Fit new coupling&#10;Torque to spec&#10;Re-fit guard and test run"></textarea>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0;">Progress is derived from
+      what the crew actually ticks off — nobody types a percentage.</p>
+
+    <label style="margin-top:16px;">Attachments</label>
+    <input type="file" name="attachments" multiple>
+  </div>
+
+  <div class="row">
+    <button class="btn" type="submit">Create work</button>
+    <a href="{% url 'web:work' %}" class="muted" style="margin-left:14px;">Cancel</a>
+  </div>
 </form>
 {% endblock %}

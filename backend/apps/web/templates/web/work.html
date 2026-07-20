@@ -1,47 +1,184 @@
 {% extends "web/base.html" %}
 {% block title %}Work{% endblock %}
 {% block content %}
-<div class="row">
-  <h1 style="margin:0;">Work</h1>
-  <span class="sp" style="flex:1;"></span>
-  {% if can_manage %}<a class="btn" href="{% url 'web:work_new' %}">+ New work</a>{% endif %}
-</div>
-<p class="sub">Everything is Work — RFQ tenders, manual tasks, recurring schedules — one engine.
-  The only difference is how it started.</p>
 
-<div class="row" style="gap:8px; margin-bottom:14px;">
-  <a class="chip {% if not scope and not origin %}ok{% endif %}" href="{% url 'web:work' %}"
-     style="text-decoration:none;">All</a>
-  <a class="chip {% if scope == 'standalone' %}ok{% endif %}" href="?scope=standalone"
-     style="text-decoration:none;">Standalone</a>
-  <a class="chip {% if scope == 'project' %}ok{% endif %}" href="?scope=project"
-     style="text-decoration:none;">Project</a>
-  {% for value, label in origins %}
-  <a class="chip {% if origin == value %}ok{% endif %}" href="?origin={{ value }}"
-     style="text-decoration:none;">{{ label }}</a>
+<div class="pagehead">
+  <div>
+    <h1>Work</h1>
+    <p class="sub" style="margin:0;">Everything is Work — the only difference is how it started.</p>
+  </div>
+  {% if can_manage %}<a class="btn" href="{% url 'web:work_new' %}">+ New Work</a>{% endif %}
+</div>
+
+<div class="grid">
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▦</div>
+    <div class="n">{{ report.total }}</div><div class="l">Total work</div></div>
+  <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">▶</div>
+    <div class="n">{{ report.open }}</div><div class="l">Open</div></div>
+  <div class="tile"><div class="ic" style="background:var(--red-t);color:#c22a41;">!</div>
+    <div class="n">{{ report.blocked|length }}</div><div class="l">Blocked</div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div>
+    <div class="n">{{ report.completion_pct }}%</div><div class="l">Completion</div></div>
+</div>
+
+{# One dataset, five lenses — the view changes presentation, never the data. #}
+<div class="viewbar">
+  {% include "web/_viewtab.html" with key='list' label='List' %}
+  {% include "web/_viewtab.html" with key='board' label='Board' %}
+  {% include "web/_viewtab.html" with key='table' label='Table' %}
+  {% include "web/_viewtab.html" with key='calendar' label='Calendar' %}
+  {% include "web/_viewtab.html" with key='workload' label='Workload' %}
+</div>
+
+<form method="get" class="filterbar">
+  <input type="hidden" name="view" value="{{ view }}">
+  <input type="search" name="q" value="{{ f.q|default:'' }}" placeholder="Search work…" style="flex:2;min-width:150px;">
+  <select name="origin">
+    <option value="">All origins</option>
+    {% for value, label in origins %}
+    <option value="{{ value }}" {% if f.origin == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="status">
+    <option value="">All statuses</option>
+    {% for value, label in statuses %}
+    <option value="{{ value }}" {% if f.status == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="priority">
+    <option value="">Any priority</option>
+    {% for value, label in priorities %}
+    <option value="{{ value }}" {% if f.priority == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="scope">
+    <option value="">Project + standalone</option>
+    <option value="project" {% if f.scope == 'project' %}selected{% endif %}>Project work</option>
+    <option value="standalone" {% if f.scope == 'standalone' %}selected{% endif %}>Standalone</option>
+  </select>
+  <label class="inline"><input type="checkbox" name="mine" value="1" {% if f.mine %}checked{% endif %}> Mine</label>
+  <button class="btn ghost" type="submit">Filter</button>
+</form>
+
+{% if view == 'list' %}
+<div class="card" style="padding:0;">
+  {% for t in tasks %}
+  <a class="workrow" href="{% url 'web:work_detail' t.id %}">
+    <span class="prio {{ t.priority }}" title="{{ t.get_priority_display }}"></span>
+    <span class="wr-main">
+      <strong>{{ t.name }}</strong>
+      <span class="muted">{% if t.project %}{{ t.project.number }}{% else %}Standalone{% endif %}
+        · {{ t.get_origin_display }}{% if t.client_name %} · {{ t.client_name }}{% endif %}</span>
+    </span>
+    <span class="wr-prog">
+      <span class="bar-track"><span class="bar-fill" style="width:{{ t.progress_pct }}%;"></span></span>
+      <span class="muted" style="font-size:12px;">{{ t.progress_pct }}%</span>
+    </span>
+    {% if t.is_overdue %}<span class="chip bad">Overdue</span>{% endif %}
+    {% include "web/_statuschip.html" with s=t %}
+  </a>
+  {% empty %}
+  <p class="muted" style="padding:22px;">No work matches these filters.</p>
   {% endfor %}
 </div>
 
-<div class="card" style="padding:0;">
+{% elif view == 'board' %}
+<div class="board">
+  {% for lane in lanes %}
+  <div class="lane">
+    <div class="lane-head lane-{{ lane.key }}">{{ lane.label }}
+      <span class="lane-n">{{ lane.tasks|length }}</span></div>
+    {% for t in lane.tasks %}
+    <a class="kcard p-{{ t.priority }}" href="{% url 'web:work_detail' t.id %}">
+      <strong>{{ t.name }}</strong>
+      <span class="muted">{% if t.project %}{{ t.project.number }}{% else %}Standalone{% endif %}</span>
+      <span class="bar-track" style="margin-top:9px;"><span class="bar-fill" style="width:{{ t.progress_pct }}%;"></span></span>
+      <span class="kmeta">
+        {% if t.due_date %}<span class="chip {% if t.is_overdue %}bad{% endif %}">{{ t.due_date|date:"d M" }}</span>{% endif %}
+        {% if t.blocked_reason %}<span class="chip bad" title="{{ t.blocked_reason }}">blocked</span>{% endif %}
+      </span>
+    </a>
+    {% empty %}<p class="lane-empty">—</p>{% endfor %}
+  </div>
+  {% endfor %}
+</div>
+
+{% elif view == 'table' %}
+<div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Work</th><th>Origin</th><th>Belongs to</th><th>Assignee</th><th>Status</th></tr>
+    <tr><th>Work</th><th>Origin</th><th>Project</th><th>Owner</th><th>Priority</th>
+        <th>Due</th><th>Progress</th><th>Status</th></tr>
     {% for t in tasks %}
     <tr>
-      <td><a href="{% url 'web:work_detail' t.id %}">{{ t.name }}</a>
-        {% if t.is_billable %}<span class="chip" style="margin-left:6px;">billable</span>{% endif %}</td>
+      <td><a href="{% url 'web:work_detail' t.id %}"><strong>{{ t.name }}</strong></a></td>
       <td class="muted">{{ t.get_origin_display }}</td>
-      <td class="muted">{% if t.project %}<a href="{% url 'web:project_detail' t.project.id %}">{{ t.project.number }}</a>{% else %}Standalone{% endif %}</td>
-      <td class="muted">{{ t.assignee.name|default:"—" }}</td>
-      <td>
-        {% if t.status == 'completed' %}<span class="chip ok">Completed</span>
-        {% elif t.status == 'in_progress' %}<span class="chip ok">In progress</span>
-        {% elif t.status == 'blocked' %}<span class="chip bad">Blocked</span>
-        {% elif t.status == 'ready' %}<span class="chip warn">Ready</span>
-        {% else %}<span class="chip">{{ t.get_status_display }}</span>{% endif %}
+      <td class="muted">{% if t.project %}{{ t.project.number }}{% else %}—{% endif %}</td>
+      <td class="muted">{{ t.owner|default:"—" }}</td>
+      <td><span class="chip {% if t.priority == 'critical' %}bad{% elif t.priority == 'high' %}warn{% endif %}">{{ t.get_priority_display }}</span></td>
+      <td class="muted">{% if t.due_date %}{{ t.due_date|date:"d M Y" }}{% else %}—{% endif %}</td>
+      <td style="min-width:120px;">
+        <div class="bar-track"><div class="bar-fill" style="width:{{ t.progress_pct }}%;"></div></div>
       </td>
+      <td>{% include "web/_statuschip.html" with s=t %}</td>
     </tr>
-    {% empty %}<tr><td colspan="5" class="muted" style="padding:20px;">No work yet — create some.</td></tr>
-    {% endfor %}
+    {% empty %}<tr><td colspan="8" class="muted" style="padding:20px;">No work matches these filters.</td></tr>{% endfor %}
   </table>
 </div>
+
+{% elif view == 'calendar' %}
+{% for day, items in calendar %}
+<div class="card">
+  <h2 style="margin:0 0 12px;">{{ day|date:"l, d F Y" }}</h2>
+  {% for t in items %}
+  <a class="workrow flush" href="{% url 'web:work_detail' t.id %}">
+    <span class="prio {{ t.priority }}"></span>
+    <span class="wr-main"><strong>{{ t.name }}</strong>
+      <span class="muted">{% if t.project %}{{ t.project.number }}{% else %}Standalone{% endif %}</span></span>
+    {% if t.is_overdue %}<span class="chip bad">Overdue</span>{% endif %}
+    {% include "web/_statuschip.html" with s=t %}
+  </a>
+  {% endfor %}
+</div>
+{% empty %}
+<div class="card"><p class="muted" style="margin:0;">Nothing scheduled — no work has a due date yet.</p></div>
+{% endfor %}
+{% if undated %}
+<h2>No due date ({{ undated|length }})</h2>
+<div class="card" style="padding:0;">
+  {% for t in undated %}
+  <a class="workrow" href="{% url 'web:work_detail' t.id %}">
+    <span class="prio {{ t.priority }}"></span>
+    <span class="wr-main"><strong>{{ t.name }}</strong></span>
+    {% include "web/_statuschip.html" with s=t %}
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% elif view == 'workload' %}
+<div class="card">
+  <h2 style="margin:0 0 16px;">Who is carrying what</h2>
+  {% for r in workload %}
+  <div class="barrow">
+    <span class="cap">{{ r.user }}</span>
+    <div class="track"><div class="fill" style="width:{{ r.pct }}%;background:{% if r.overdue %}var(--red){% else %}var(--primary){% endif %};">{{ r.open }}</div></div>
+    <span class="muted" style="width:120px;font-size:12.5px;">{{ r.hours }}h est.
+      {% if r.overdue %}· <span style="color:var(--red);">{{ r.overdue }} late</span>{% endif %}</span>
+  </div>
+  {% empty %}<p class="muted" style="margin:0;">Nobody is assigned to open work yet.</p>{% endfor %}
+</div>
+{% if unassigned %}
+<div class="card" style="border-color:var(--orange-t);">
+  <h2 style="margin:0 0 10px;color:#b9711a;">Unassigned open work ({{ unassigned|length }})</h2>
+  {% for t in unassigned %}
+  <a class="workrow flush" href="{% url 'web:work_detail' t.id %}">
+    <span class="prio {{ t.priority }}"></span>
+    <span class="wr-main"><strong>{{ t.name }}</strong></span>
+    <span class="chip warn">Needs an owner</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endif %}
+
 {% endblock %}

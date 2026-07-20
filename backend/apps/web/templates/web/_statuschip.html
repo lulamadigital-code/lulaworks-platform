@@ -1,0 +1,2 @@
+{% comment %}Status pill, toned by lifecycle category. Param: s (a Task).{% endcomment %}
+<span class="chip {% if s.status == 'blocked' %}bad{% elif s.status == 'completed' or s.status == 'closed' %}ok{% elif s.status == 'in_progress' or s.status == 'waiting' %}warn{% elif s.status == 'quality_check' or s.status == 'client_signoff' %}purple{% elif s.status == 'draft' or s.status == 'cancelled' %}{% else %}info{% endif %}">{{ s.get_status_display }}</span>
