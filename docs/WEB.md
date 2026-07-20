@@ -34,6 +34,19 @@ See [MODULE8.md](MODULE8.md) for the engine itself.
 - **Tenant isolation** — a project from another company `404`s (the fail-closed manager). Test-enforced.
 - **One source of truth** — views call `recompute_readiness`, `project_health`, `profitability`, `profit_forecast`, `budget_vs_actual`, `commercial_dashboard` — the same services the API and Flutter app use.
 
+## Scrolling & small screens
+- `scroll-behavior: smooth` with a `prefers-reduced-motion` opt-out.
+- Scrollbars are styled thin-but-visible, so a long page *looks* scrollable.
+- `overscroll-behavior: contain` on the Kanban board, the nav strip and the
+  filter bar — a sideways-scrolling pane must never swallow the page's vertical
+  scroll.
+- **Back to top** on long pages: a plain `#top` anchor (works with JS disabled);
+  `web/app.js` only fades it in past 400px on pages long enough to warrant it.
+  It deliberately avoids `requestAnimationFrame`, which is throttled in
+  background/headless tabs and would leave the control stuck hidden.
+- **Under 820px the sidebar used to be `display:none`, leaving phones with no
+  navigation at all.** It is now a sticky, horizontally-scrollable top strip.
+
 ## Frontend deps
 - **htmx** is **vendored** (`apps/web/static/web/htmx.min.js`, served by WhiteNoise) — no runtime CDN, consistent with container-first / CSP.
 - Styling is a small hand-written CSS design system embedded in `base.html` — zero external requests.
