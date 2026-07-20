@@ -22,6 +22,7 @@ _SECTIONS = {
     "work_subtask_add": "work", "work_checklist_add": "work",
     "work_checklist_toggle": "work", "work_comment_add": "work",
     "work_file_add": "work", "work_member": "work", "work_link": "work",
+    "work_decompose": "work", "work_decompose_apply": "work",
     "notifications": "notifications",
     "rfq": "rfq", "rfq_detail": "rfq", "rfq_upload": "rfq", "rfq_approve": "rfq",
     "quotations": "quotations", "quotation_detail": "quotations",

@@ -36,6 +36,9 @@ urlpatterns = [
     path("work/<uuid:pk>/files/", views.work_file_add, name="work_file_add"),
     path("work/<uuid:pk>/team/", views.work_member, name="work_member"),
     path("work/<uuid:pk>/link/", views.work_link, name="work_link"),
+    path("work/<uuid:pk>/decompose/", views.work_decompose, name="work_decompose"),
+    path("work/<uuid:pk>/decompose/apply/", views.work_decompose_apply,
+         name="work_decompose_apply"),
     path("notifications/", views.notifications, name="notifications"),
     path("projects/<uuid:pk>/phases/", views.project_phase_add, name="project_phase_add"),
     # RFQ (front door)

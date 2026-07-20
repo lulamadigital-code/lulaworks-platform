@@ -71,6 +71,19 @@
 <div class="two-col">
   <div>
     {# ── Hierarchy: subtasks → checklist ─────────────────────────────────── #}
+    {% if not checklist_total %}
+    <div class="card ai-panel">
+      <div class="row" style="gap:10px;">
+        <strong>No breakdown yet</strong>
+        <span class="sp"></span>
+        <a class="btn ghost" href="{% url 'web:work_decompose' task.id %}">Break it down with LulaAI</a>
+      </div>
+      <p class="muted" style="margin:10px 0 0;font-size:13px;">LulaAI drafts the
+        checklist, estimate and risks from jobs like this one you have already
+        finished. It proposes — you tick what is right before anything is created.</p>
+    </div>
+    {% endif %}
+
     <h2>Subtasks &amp; checklist</h2>
     <div class="card">
       {% for st in subtasks %}
@@ -116,6 +129,8 @@
           <input type="text" name="name" placeholder="Add subtask" style="flex:1;">
           <button class="btn ghost" type="submit">+ Subtask</button>
         </form>
+        <p style="margin:12px 0 0;font-size:12.5px;">
+          <a href="{% url 'web:work_decompose' task.id %}">Ask LulaAI for more steps →</a></p>
       </div>
       {% endif %}
     </div>

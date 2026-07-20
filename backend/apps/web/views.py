@@ -20,6 +20,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from apps.ai_platform.decomposition import (
+    apply_decomposition,
+    propose_decomposition,
+    record_proposal,
+)
 from apps.ai_platform.orchestrator import orchestrate
 from apps.compliance.models import ComplianceItem
 from apps.compliance.services import approve_item, recompute_readiness
@@ -560,6 +565,67 @@ def work_link(request, pk):
                 messages.error(request, str(exc))
             else:
                 messages.success(request, "Dependency added.")
+    return redirect("web:work_detail", pk=pk)
+
+
+@login_required
+def work_decompose(request, pk):
+    """LulaAI proposes a breakdown for this work. Read-only: computing a proposal
+    writes nothing, so a manager can ask as often as they like and only what they
+    tick ever becomes real."""
+    task = get_object_or_404(Task.objects.all(), pk=pk)
+    if not request.user.has_perm_code("ai.generate"):
+        messages.error(request, "You do not have permission to use LulaAI.")
+        return redirect("web:work_detail", pk=pk)
+
+    draft = propose_decomposition(
+        request.user.active_company, request.user,
+        name=task.name, description=task.description,
+        origin=task.origin, project=task.project,
+    )
+    record_proposal(request.user.active_company, request.user, task, draft)
+    return render(request, "web/work_decompose.html", {
+        "task": task, "draft": draft,
+        "existing_checklist": {c.label.lower() for c in task.checklist_items.all()},
+        "can_manage": has_work_perm(request.user, "work.edit"),
+    })
+
+
+@login_required
+@require_POST
+def work_decompose_apply(request, pk):
+    """Create ONLY the ticked items. The draft is recomputed (it is deterministic)
+    and the posted indexes select from it — nothing is trusted from the client
+    except which items the human approved."""
+    task, allowed = _work_guard(request, pk)
+    if not allowed:
+        return redirect("web:work_detail", pk=pk)
+    if not request.user.has_perm_code("ai.generate"):
+        messages.error(request, "You do not have permission to use LulaAI.")
+        return redirect("web:work_detail", pk=pk)
+
+    draft = propose_decomposition(
+        request.user.active_company, request.user,
+        name=task.name, description=task.description,
+        origin=task.origin, project=task.project, enrich=False,
+    )
+    checklist_indexes = {int(i) for i in request.POST.getlist("checklist") if i.isdigit()}
+    phase_indexes = {int(i) for i in request.POST.getlist("phases") if i.isdigit()}
+    applied = apply_decomposition(
+        task, request.user, draft,
+        checklist_indexes=checklist_indexes, phase_indexes=phase_indexes,
+        apply_hours=bool(request.POST.get("apply_hours")),
+    )
+    record_proposal(request.user.active_company, request.user, task, draft, applied=applied)
+
+    if applied["checklist"] or applied["phases"] or applied["hours_set"]:
+        messages.success(
+            request,
+            f"Added {applied['checklist']} checklist item(s)"
+            f"{', ' + str(applied['phases']) + ' phase(s)' if applied['phases'] else ''}"
+            f"{', set the estimate' if applied['hours_set'] else ''}.")
+    else:
+        messages.error(request, "Nothing selected — nothing was created.")
     return redirect("web:work_detail", pk=pk)
 
 

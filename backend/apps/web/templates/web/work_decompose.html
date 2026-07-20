@@ -1,0 +1,108 @@
+{% extends "web/base.html" %}
+{% block title %}LulaAI breakdown{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:work_detail' task.id %}">← {{ task.name }}</a></p>
+
+<div class="pagehead">
+  <div>
+    <h1>LulaAI proposes a breakdown</h1>
+    <p class="sub" style="margin:0;">Nothing here exists yet. Tick what you want and
+      LulaAI creates only that — everything else is discarded.</p>
+  </div>
+  <span class="chip {% if draft.confidence >= 0.8 %}ok{% elif draft.confidence >= 0.6 %}warn{% else %}bad{% endif %}">
+    {{ draft.confidence }} confidence</span>
+</div>
+
+{# Provenance first — an estimate you can't trace is an estimate you shouldn't accept. #}
+<div class="card" style="border-left:4px solid var(--primary);border-radius:0 var(--r) var(--r) 0;">
+  <div class="row" style="gap:10px;flex-wrap:wrap;">
+    <strong>{{ draft.work_type }}</strong>
+    {% if draft.source == 'history' %}<span class="chip ok">Grounded in your own history</span>
+    {% elif draft.source == 'library' %}<span class="chip info">Standard method</span>
+    {% else %}<span class="chip warn">Generic — no close match</span>{% endif %}
+    {% if draft.provider %}<span class="chip purple">{{ draft.provider }} added suggestions</span>{% endif %}
+  </div>
+  <ul style="margin:12px 0 0;padding-left:20px;font-size:13.5px;">
+    {% for g in draft.grounded_in %}<li>{{ g }}</li>{% endfor %}
+  </ul>
+  {% if draft.briefing %}
+  <p style="margin:12px 0 0;padding-top:12px;border-top:1px solid var(--line);">{{ draft.briefing }}</p>
+  {% endif %}
+</div>
+
+{% if not can_manage %}
+<div class="card"><p class="muted" style="margin:0;">You can review this proposal but
+  not apply it — that needs the work-edit permission.</p></div>
+{% endif %}
+
+<form method="post" action="{% url 'web:work_decompose_apply' task.id %}">
+  {% csrf_token %}
+
+  <h2>Checklist — {{ draft.checklist|length }} proposed step(s)</h2>
+  <div class="card">
+    <p class="muted" style="margin:0 0 14px;font-size:13px;">These become tickable items
+      on the job. Progress is derived from them, so only include steps the crew will
+      genuinely tick.</p>
+    {% for step in draft.checklist %}
+    <label class="proprow">
+      <input type="checkbox" name="checklist" value="{{ forloop.counter0 }}"
+             {% if step|lower not in existing_checklist %}checked{% endif %}>
+      <span>{{ step }}</span>
+      {% if step|lower in existing_checklist %}<span class="chip">already on this job</span>{% endif %}
+    </label>
+    {% endfor %}
+  </div>
+
+  {% if draft.phases %}
+  <h2>Phases</h2>
+  <div class="card">
+    <p class="muted" style="margin:0 0 14px;font-size:13px;">Phases group work on the
+      parent project. Existing phases are never duplicated.</p>
+    {% for phase in draft.phases %}
+    <label class="proprow">
+      <input type="checkbox" name="phases" value="{{ forloop.counter0 }}">
+      <span>{{ phase }}</span>
+    </label>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <h2>Estimate</h2>
+  <div class="card">
+    <label class="proprow">
+      <input type="checkbox" name="apply_hours" value="1">
+      <span>Set the estimate to <strong>{{ draft.estimated_hours }} hours</strong>
+        (about {{ draft.duration_days }} day{{ draft.duration_days|pluralize }})</span>
+    </label>
+    <p class="muted" style="margin:10px 0 0;font-size:12.5px;">
+      Current estimate on this job: {{ task.estimated_hours }}h.</p>
+  </div>
+
+  <div class="row" style="margin-bottom:26px;">
+    {% if can_manage %}<button class="btn" type="submit">Create the selected items</button>{% endif %}
+    <a href="{% url 'web:work_detail' task.id %}" class="muted" style="margin-left:14px;">Discard</a>
+  </div>
+</form>
+
+{# Advisory only — these are things to go and check, not records to create. #}
+<div class="two-col">
+  <div>
+    <h2>Compliance to expect</h2>
+    <div class="card">
+      {% for c in draft.compliance %}<div class="deprow">· {{ c }}</div>{% empty %}
+      <p class="muted" style="margin:0;">Nothing specific flagged.</p>{% endfor %}
+      <p class="muted" style="margin:12px 0 0;font-size:12.5px;">Advisory. LulaAI never
+        creates or approves a compliance record — that stays with a person.</p>
+    </div>
+  </div>
+  <div>
+    <h2>Risks &amp; resources</h2>
+    <div class="card">
+      {% for r in draft.risks %}<div class="deprow"><span class="chip warn">risk</span> {{ r }}</div>{% endfor %}
+      {% for r in draft.resources %}<div class="deprow"><span class="chip info">needs</span> {{ r }}</div>{% endfor %}
+      {% if not draft.risks and not draft.resources %}
+      <p class="muted" style="margin:0;">Nothing flagged.</p>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
