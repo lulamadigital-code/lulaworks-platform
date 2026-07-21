@@ -1,0 +1,227 @@
+{% extends "web/base.html" %}
+{% block title %}{{ customer.display_name }}{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:customers' %}">← Customers</a></p>
+
+<div class="pagehead">
+  <div>
+    <h1 style="margin:0 0 4px;">{{ customer.display_name }}</h1>
+    <p class="sub" style="margin:0;">{{ customer.code }}
+      {% if customer.industry %} · {{ customer.industry }}{% endif %}
+      {% if customer.city %} · {{ customer.city }}{% endif %}
+      · {{ customer.payment_terms_days }}-day terms</p>
+  </div>
+  {% if customer.status == 'active' %}<span class="chip ok">Active</span>
+  {% elif customer.status == 'blacklisted' %}<span class="chip bad">Blacklisted</span>
+  {% else %}<span class="chip warn">{{ customer.get_status_display }}</span>{% endif %}
+</div>
+
+<div class="grid">
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">◫</div>
+    <div class="n">{{ stats.contacts }}</div><div class="l">Contacts</div></div>
+  <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">⌗</div>
+    <div class="n">{{ stats.departments }}</div><div class="l">Departments</div></div>
+  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">▣</div>
+    <div class="n">{{ stats.sites }}</div><div class="l">Sites</div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">▤</div>
+    <div class="n">{{ stats.open_projects }}</div><div class="l">Open projects</div></div>
+</div>
+
+{# ── The reason the module exists ───────────────────────────────────────── #}
+<h2>Who gets what</h2>
+<div class="card">
+  <p class="muted" style="margin:0 0 14px;font-size:13px;">Resolved from what each
+    person is empowered to do, not from their job title — so it keeps working at a
+    customer whose finance manager is called something else. Nothing is sent
+    automatically; this tells you who to address.</p>
+  {% for r in routing %}
+  <div class="routerow">
+    <span class="chip info" style="width:130px;justify-content:center;">{{ r.kind|cut:"_"|capfirst }}</span>
+    <span style="flex:1;">
+      {% if r.to %}
+        <strong>To:</strong>
+        {% for c in r.to %}<a href="{% url 'web:customer_contact_detail' c.id %}">{{ c.full_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+        {% if r.cc %}<br><span class="muted" style="font-size:12.5px;"><strong>CC:</strong>
+          {% for c in r.cc %}{{ c.full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% endif %}
+      {% else %}<span class="muted">—</span>{% endif %}
+      {% if r.fallback %}<br><span class="chip warn" style="margin-top:6px;">{{ r.fallback }}</span>{% endif %}
+    </span>
+  </div>
+  {% endfor %}
+</div>
+
+{# Gaps are the useful part of a responsibility matrix. #}
+{% with missing=matrix|dictsort:"covered" %}
+<div class="card">
+  <strong>Responsibility coverage</strong>
+  <div style="margin-top:12px;">
+    {% for row in matrix %}
+    <div class="deprow">
+      {% if row.covered %}<span class="chip ok">✓</span>
+      {% else %}<span class="chip bad">gap</span>{% endif %}
+      <span style="flex:1;">{{ row.label }}</span>
+      <span class="muted" style="font-size:12.5px;">
+        {% for c in row.contacts %}{{ c.full_name }}{% if not forloop.last %}, {% endif %}{% empty %}nobody{% endfor %}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="muted" style="margin:12px 0 0;font-size:12.5px;">An unassigned
+    "approves invoices" is why a payment sits unactioned for a month.</p>
+</div>
+{% endwith %}
+
+{# ── The org chart ──────────────────────────────────────────────────────── #}
+<h2>Departments &amp; people</h2>
+{% for group in grouped %}
+<div class="card">
+  <div class="row" style="gap:10px;">
+    <strong>{{ group.department.name }}</strong>
+    {% if group.department.email %}<span class="muted" style="font-size:12.5px;">{{ group.department.email }}</span>{% endif %}
+    <span class="sp"></span>
+    <span class="chip">{{ group.contacts|length }}</span>
+  </div>
+  <table style="margin-top:10px;">
+    <tr><th>Name</th><th>Title</th><th>Responsibilities</th><th>Reach</th></tr>
+    {% for c in group.contacts %}
+    <tr {% if c.status != 'active' %}class="dim"{% endif %}>
+      <td><a href="{% url 'web:customer_contact_detail' c.id %}"><strong>{{ c.full_name }}</strong></a>
+        {% if c.is_primary %} <span class="chip ok">Primary</span>{% endif %}</td>
+      <td class="muted">{{ c.job_title|default:"—" }}</td>
+      <td>{% for r in c.responsibility_labels %}<span class="chip info">{{ r }}</span> {% empty %}<span class="muted">—</span>{% endfor %}</td>
+      <td class="muted">{{ c.reach|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% empty %}
+<div class="card"><p class="muted" style="margin:0;">No contacts filed under a
+  department yet — add people below and LulaWorks can start routing documents.</p></div>
+{% endfor %}
+
+{% if unassigned %}
+<div class="card">
+  <strong>Not in a department</strong>
+  <table style="margin-top:10px;">
+    {% for c in unassigned %}
+    <tr><td><a href="{% url 'web:customer_contact_detail' c.id %}">{{ c.full_name }}</a></td>
+      <td class="muted">{{ c.job_title|default:"—" }}</td>
+      <td class="muted">{{ c.reach }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{% if can_manage %}
+<h2>Add a person</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:customer_contact_save' customer.id %}">
+    {% csrf_token %}
+    <div class="two">
+      <div><label>Full name</label><input type="text" name="full_name" required></div>
+      <div><label>Job title</label><input type="text" name="job_title" placeholder="Project Engineer"></div>
+      <div><label>Department</label>
+        <select name="department">
+          <option value="">— none —</option>
+          {% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+        </select></div>
+      <div><label>Email</label><input type="email" name="email"></div>
+      <div><label>Telephone</label><input type="text" name="telephone"></div>
+      <div><label>Mobile</label><input type="text" name="mobile"></div>
+      <div><label>Extension</label><input type="text" name="extension"></div>
+      <div><label>WhatsApp</label><input type="text" name="whatsapp"></div>
+      <div><label>Preferred contact method</label>
+        <select name="preferred_method">
+          {% for v, l in methods %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+        </select></div>
+    </div>
+
+    <label style="margin-top:16px;">Roles (what they are called)</label>
+    <div class="pickgrid">
+      {% for role in roles %}
+      <label class="opt"><input type="checkbox" name="roles" value="{{ role }}"> <span>{{ role }}</span></label>
+      {% endfor %}
+    </div>
+
+    <label style="margin-top:16px;">Responsibilities (what they may do — this drives routing)</label>
+    <div class="pickgrid">
+      {% for key, label in responsibilities %}
+      <label class="opt"><input type="checkbox" name="responsibilities" value="{{ key }}"> <span>{{ label }}</span></label>
+      {% endfor %}
+    </div>
+
+    <label class="inline" style="margin-top:14px;">
+      <input type="checkbox" name="is_primary" value="1"> Primary contact for this customer</label>
+    <br><button class="btn" type="submit" style="margin-top:16px;">Add contact</button>
+  </form>
+</div>
+{% endif %}
+
+{# ── Places ─────────────────────────────────────────────────────────────── #}
+{% if customer.branches.all or customer.sites.all %}
+<h2>Branches &amp; sites</h2>
+<div class="two-col">
+  <div>
+    <div class="card">
+      <strong>Branches</strong>
+      <table style="margin-top:10px;">
+        {% for b in customer.branches.all %}
+        <tr><td><strong>{{ b.name }}</strong></td>
+          <td class="muted">{{ b.city }}{% if b.manager_name %} · {{ b.manager_name }}{% endif %}</td></tr>
+        {% empty %}<tr><td class="muted">No branches.</td></tr>{% endfor %}
+      </table>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <strong>Sites</strong>
+      <p class="muted" style="margin:6px 0 0;font-size:12.5px;">Projects are assigned
+        to a specific place, not to the client in general.</p>
+      <table style="margin-top:10px;">
+        {% for s in customer.sites.all %}
+        <tr><td>{{ s.full_path }}</td></tr>
+        {% empty %}<tr><td class="muted">No sites.</td></tr>{% endfor %}
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Commercial history ─────────────────────────────────────────────────── #}
+<h2>Work for this customer</h2>
+<div class="two-col">
+  <div>
+    <div class="card" style="padding:0;">
+      <table>
+        <tr><th>Quotation</th><th>Status</th></tr>
+        {% for q in quotations %}
+        <tr><td><a href="{% url 'web:quotation_detail' q.id %}">{{ q.number }}</a></td>
+          <td class="muted">{{ q.get_status_display }}</td></tr>
+        {% empty %}<tr><td colspan="2" class="muted" style="padding:16px;">None yet.</td></tr>{% endfor %}
+      </table>
+    </div>
+  </div>
+  <div>
+    <div class="card" style="padding:0;">
+      <table>
+        <tr><th>Project</th><th>Status</th></tr>
+        {% for p in projects %}
+        <tr><td><a href="{% url 'web:project_detail' p.id %}">{{ p.number }}</a></td>
+          <td class="muted">{{ p.get_status_display }}</td></tr>
+        {% empty %}<tr><td colspan="2" class="muted" style="padding:16px;">None yet.</td></tr>{% endfor %}
+      </table>
+    </div>
+  </div>
+</div>
+
+{% if can_manage %}
+<h2>Departments</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:customer_department' customer.id %}" class="row" style="gap:8px;">
+    {% csrf_token %}
+    <input type="text" name="name" placeholder="Department name" style="flex:1;" required>
+    <input type="email" name="email" placeholder="Department email" style="flex:1;">
+    <button class="btn ghost" type="submit">Add department</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

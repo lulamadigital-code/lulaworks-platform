@@ -1,0 +1,67 @@
+{% extends "web/base.html" %}
+{% block title %}Customers{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>Customers</h1>
+    <p class="sub" style="margin:0;">Client organisations — not names in a text field.
+      Each one holds its own branches, sites, departments and the people who
+      actually release RFQs, approve quotations and pay invoices.</p>
+  </div>
+</div>
+
+<form method="get" class="filterbar">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search customers…" style="flex:2;min-width:160px;">
+  <select name="status">
+    <option value="">Any status</option>
+    {% for value, label in statuses %}
+    <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn ghost" type="submit">Filter</button>
+</form>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Customer</th><th>Code</th><th>Contacts</th><th>Departments</th>
+        <th>Quotations</th><th>Projects</th><th>Terms</th><th>Status</th></tr>
+    {% for r in rows %}
+    <tr>
+      <td><a href="{% url 'web:customer_detail' r.customer.id %}"><strong>{{ r.customer.display_name }}</strong></a>
+        {% if r.customer.industry %}<br><span class="muted" style="font-size:12.5px;">{{ r.customer.industry }}</span>{% endif %}</td>
+      <td class="muted">{{ r.customer.code }}</td>
+      <td>{{ r.stats.contacts }}</td>
+      <td class="muted">{{ r.stats.departments }}</td>
+      <td class="muted">{{ r.stats.quotations }}</td>
+      <td class="muted">{{ r.stats.open_projects }} open</td>
+      <td class="muted">{{ r.customer.payment_terms_days }} days</td>
+      <td>{% if r.customer.status == 'active' %}<span class="chip ok">Active</span>
+        {% elif r.customer.status == 'blacklisted' %}<span class="chip bad">Blacklisted</span>
+        {% else %}<span class="chip">{{ r.customer.get_status_display }}</span>{% endif %}</td>
+    </tr>
+    {% empty %}<tr><td colspan="8" class="muted" style="padding:20px;">No customers yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% if can_manage %}
+<h2>Add a customer</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:customer_create' %}">{% csrf_token %}
+    <div class="two">
+      <div><label>Registered company name</label><input type="text" name="name" required
+             placeholder="Harmony Mining"></div>
+      <div><label>Industry</label><input type="text" name="industry" placeholder="Gold mining"></div>
+      <div><label>General email</label><input type="email" name="email"></div>
+      <div><label>Main telephone</label><input type="text" name="telephone"></div>
+      <div><label>City</label><input type="text" name="city"></div>
+    </div>
+    <button class="btn" type="submit" style="margin-top:16px;">Add customer</button>
+    <p class="muted" style="margin:10px 0 0;font-size:12.5px;">A standard department
+      structure (Engineering, Maintenance, Procurement, Finance…) is created so you
+      can file contacts immediately. Remove any you don't need.</p>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

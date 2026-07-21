@@ -9,6 +9,16 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     path("password/", views.change_password, name="change_password"),
     path("profile/", views.profile, name="profile"),
+    # Customers — client organisations, departments, contacts
+    path("customers/", views.customers_list, name="customers"),
+    path("customers/new/", views.customer_create, name="customer_create"),
+    path("customers/<uuid:pk>/", views.customer_detail, name="customer_detail"),
+    path("customers/<uuid:pk>/contacts/", views.customer_contact_save,
+         name="customer_contact_save"),
+    path("customers/<uuid:pk>/departments/", views.customer_department,
+         name="customer_department"),
+    path("contacts/<uuid:pk>/", views.customer_contact_detail,
+         name="customer_contact_detail"),
     # Company profile — the identity every other module reads from
     path("company/", views.company_profile, name="company_profile"),
     path("company/hours/", views.company_hours_page, name="company_hours_page"),

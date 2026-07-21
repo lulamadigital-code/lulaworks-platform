@@ -234,6 +234,19 @@
       .totop{right:14px;bottom:14px}
     }
 
+    /* ---- Customers ---- */
+    .routerow{display:flex;align-items:flex-start;gap:12px;padding:11px 0;
+              border-bottom:1px solid var(--line)}
+    .routerow:last-child{border-bottom:0}
+    .pickgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+              gap:6px;margin-top:6px}
+    .pickgrid .opt{display:flex;align-items:center;gap:8px;border:1px solid var(--line);
+                   border-radius:9px;padding:8px 11px;cursor:pointer;margin:0;
+                   font-size:13px;font-weight:500;color:var(--ink)}
+    .pickgrid .opt:has(input:checked){border-color:var(--primary);
+                                      background:var(--primary-t);color:var(--primary-d)}
+    .pickgrid input{width:auto;flex:0 0 auto}
+
     /* ---- Avatars & people ---- */
     .av{border-radius:50%;object-fit:cover;flex:0 0 auto;display:inline-flex;
         align-items:center;justify-content:center;background:#eef0f5}
@@ -289,6 +302,7 @@
       {% include "web/_navlink.html" with url='web:work' key='work' label='Work' icon='check' %}
       {% include "web/_navlink.html" with url='web:rfq' key='rfq' label='RFQ' icon='inbox' %}
       {% include "web/_navlink.html" with url='web:quotations' key='quotations' label='Quotations' icon='doc' %}
+      {% include "web/_navlink.html" with url='web:customers' key='customers' label='Customers' icon='org' %}
       {% include "web/_navlink.html" with url='web:projects' key='projects' label='Projects' icon='folder' %}
       {% include "web/_navlink.html" with url='web:estimates' key='estimates' label='Estimates' icon='calc' %}
       {% include "web/_navlink.html" with url='web:purchase_orders' key='procurement' label='Procurement' icon='cart' %}

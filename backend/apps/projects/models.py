@@ -30,6 +30,10 @@ class Project(TenantBaseModel):
     )
     title = models.CharField(max_length=255, blank=True)
     client_name = models.CharField(max_length=255)
+    customer = models.ForeignKey(
+        "customers.Customer", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="projects",
+    )
     site = models.CharField(max_length=255, blank=True)
     mine = models.CharField(max_length=255, blank=True)
     work_type = models.CharField(max_length=120, blank=True)

@@ -32,6 +32,21 @@ class RFQDocument(TenantBaseModel):
     quotation = models.ForeignKey(
         "quotes.Quotation", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
+    # An RFQ comes FROM someone, in a department, at a customer. Recording only
+    # the company loses the person who can answer questions about it.
+    customer = models.ForeignKey(
+        "customers.Customer", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="rfqs",
+    )
+    department = models.ForeignKey(
+        "customers.CustomerDepartment", on_delete=models.SET_NULL, null=True,
+        blank=True, related_name="rfqs",
+    )
+    released_by = models.ForeignKey(
+        "customers.CustomerContact", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="rfqs_released",
+    )
+    customer_reference = models.CharField(max_length=64, blank=True)
     approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )

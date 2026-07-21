@@ -1683,3 +1683,188 @@ def invoice_payment(request, pk):
                    reference=request.POST.get("reference", ""))
     messages.success(request, f"Payment of R{amount} recorded on {invoice.number}.")
     return redirect("web:commercial")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Customers — client ORGANISATIONS, not names in a text field
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def customers_list(request):
+    from apps.customers.models import Customer
+    from apps.customers.services import customer_overview
+
+    query = request.GET.get("q", "").strip()
+    customers = Customer.objects.all().prefetch_related("contacts", "departments")
+    if query:
+        customers = customers.filter(name__icontains=query)
+    status = request.GET.get("status")
+    if status:
+        customers = customers.filter(status=status)
+
+    rows = [{"customer": c, "stats": customer_overview(c)} for c in customers]
+    return render(request, "web/customers.html", {
+        "rows": rows, "q": query, "status": status,
+        "statuses": Customer._meta.get_field("status").choices,
+        "can_manage": request.user.has_perm_code("projects.create"),
+    })
+
+
+@login_required
+def customer_detail(request, pk):
+    from apps.customers.models import Customer, CustomerContact, RESPONSIBILITIES
+    from apps.customers.services import (
+        customer_overview,
+        responsibility_matrix,
+        route_document,
+    )
+    from apps.projects.models import Project
+    from apps.quotes.models import Quotation
+
+    customer = get_object_or_404(
+        Customer.objects.prefetch_related("departments", "branches", "sites",
+                                          "contacts", "contracts"), pk=pk)
+
+    # Contacts grouped by department — an org chart, not a flat list.
+    grouped, unassigned = [], []
+    for dept in customer.departments.all():
+        people = [c for c in customer.contacts.all() if c.department_id == dept.id]
+        if people:
+            grouped.append({"department": dept, "contacts": people})
+    unassigned = [c for c in customer.contacts.all() if c.department_id is None]
+
+    return render(request, "web/customer_detail.html", {
+        "customer": customer,
+        "stats": customer_overview(customer),
+        "grouped": grouped,
+        "unassigned": unassigned,
+        "departments": customer.departments.all(),
+        "matrix": responsibility_matrix(customer),
+        "routing": [route_document(customer, k) for k in
+                    ("quotation", "invoice", "progress_report", "safety_file")],
+        "roles": __import__("apps.customers.models", fromlist=["CONTACT_ROLES"]).CONTACT_ROLES,
+        "responsibilities": RESPONSIBILITIES.items(),
+        "methods": CustomerContact.Method.choices,
+        "quotations": Quotation.objects.filter(customer=customer)[:10],
+        "projects": Project.objects.filter(customer=customer)[:10],
+        "can_manage": request.user.has_perm_code("projects.create"),
+    })
+
+
+@login_required
+@require_POST
+def customer_create(request):
+    from apps.customers.services import create_customer
+    if not request.user.has_perm_code("projects.create"):
+        messages.error(request, "You do not have permission to add customers.")
+        return redirect("web:customers")
+    name = request.POST.get("name", "").strip()
+    if not name:
+        messages.error(request, "A company name is required.")
+        return redirect("web:customers")
+    customer = create_customer(
+        request.user.active_company, request.user, name=name,
+        industry=request.POST.get("industry", "").strip(),
+        email=request.POST.get("email", "").strip(),
+        telephone=request.POST.get("telephone", "").strip(),
+        city=request.POST.get("city", "").strip(),
+    )
+    messages.success(request, f"{customer.name} added ({customer.code}) with a "
+                              "standard department structure.")
+    return redirect("web:customer_detail", pk=customer.id)
+
+
+@login_required
+@require_POST
+def customer_contact_save(request, pk):
+    """Add or update a person at the customer, with their roles and — the part
+    that matters — what they are empowered to do."""
+    from apps.customers.models import Customer, CustomerContact, CustomerDepartment
+    customer = get_object_or_404(Customer.objects.all(), pk=pk)
+    if not request.user.has_perm_code("projects.create"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:customer_detail", pk=pk)
+
+    action = request.POST.get("action", "add")
+    if action == "delete":
+        contact = get_object_or_404(
+            CustomerContact.objects.filter(customer=customer),
+            pk=request.POST.get("contact"))
+        contact.delete()
+        messages.success(request, "Contact removed.")
+        return redirect("web:customer_detail", pk=pk)
+
+    department = None
+    if request.POST.get("department"):
+        department = CustomerDepartment.objects.filter(
+            customer=customer, pk=request.POST["department"]).first()
+
+    fields = {
+        "full_name": request.POST.get("full_name", "").strip(),
+        "job_title": request.POST.get("job_title", "").strip(),
+        "email": request.POST.get("email", "").strip(),
+        "telephone": request.POST.get("telephone", "").strip(),
+        "mobile": request.POST.get("mobile", "").strip(),
+        "extension": request.POST.get("extension", "").strip(),
+        "whatsapp": request.POST.get("whatsapp", "").strip(),
+        "preferred_method": request.POST.get("preferred_method", "email"),
+        "department": department,
+        "roles": request.POST.getlist("roles"),
+        "responsibilities": request.POST.getlist("responsibilities"),
+    }
+    if action == "update":
+        contact = get_object_or_404(
+            CustomerContact.objects.filter(customer=customer),
+            pk=request.POST.get("contact"))
+        for key, value in fields.items():
+            setattr(contact, key, value)
+        contact.status = request.POST.get("status", contact.status)
+        contact.is_primary = bool(request.POST.get("is_primary"))
+        contact.save()
+        messages.success(request, f"{contact.full_name} updated.")
+    else:
+        if not fields["full_name"]:
+            messages.error(request, "A name is required.")
+            return redirect("web:customer_detail", pk=pk)
+        CustomerContact.objects.create(
+            company=request.user.active_company, customer=customer,
+            is_primary=bool(request.POST.get("is_primary")),
+            created_by=request.user, updated_by=request.user, **fields)
+        messages.success(request, f"{fields['full_name']} added.")
+    return redirect("web:customer_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def customer_department(request, pk):
+    from apps.customers.models import Customer, CustomerDepartment
+    customer = get_object_or_404(Customer.objects.all(), pk=pk)
+    if not request.user.has_perm_code("projects.create"):
+        messages.error(request, "You do not have permission.")
+    elif request.POST.get("action") == "delete":
+        dept = get_object_or_404(CustomerDepartment.objects.filter(customer=customer),
+                                 pk=request.POST.get("department"))
+        dept.delete()
+        messages.success(request, "Department removed.")
+    elif request.POST.get("name", "").strip():
+        CustomerDepartment.objects.create(
+            company=request.user.active_company, customer=customer,
+            name=request.POST["name"].strip(),
+            email=request.POST.get("email", "").strip(),
+            created_by=request.user, updated_by=request.user)
+        messages.success(request, "Department added.")
+    return redirect("web:customer_detail", pk=pk)
+
+
+@login_required
+def customer_contact_detail(request, pk):
+    from apps.customers.models import CustomerContact
+    from apps.customers.services import contact_timeline
+
+    contact = get_object_or_404(
+        CustomerContact.objects.select_related("customer", "department"), pk=pk)
+    return render(request, "web/customer_contact.html", {
+        "contact": contact,
+        "customer": contact.customer,
+        "timeline": contact_timeline(contact),
+    })

@@ -1,0 +1,82 @@
+{% extends "web/base.html" %}
+{% block title %}{{ contact.full_name }}{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:customer_detail' customer.id %}">← {{ customer.display_name }}</a></p>
+
+<div class="pagehead">
+  <div>
+    <h1 style="margin:0 0 4px;">{{ contact.full_name }}</h1>
+    <p class="sub" style="margin:0;">{{ contact.job_title|default:"—" }}
+      {% if contact.department %} · {{ contact.department.name }}{% endif %}
+      · {{ customer.display_name }}</p>
+  </div>
+  {% if contact.status == 'active' %}<span class="chip ok">Active</span>
+  {% else %}<span class="chip bad">{{ contact.get_status_display }}</span>{% endif %}
+</div>
+
+<div class="two-col">
+  <div>
+    <h2 style="margin-top:0;">What they do here</h2>
+    <div class="card">
+      {% if timeline.responsibilities %}
+      {% for r in timeline.responsibilities %}
+      <div class="deprow"><span class="chip ok">✓</span> {{ r }}</div>
+      {% endfor %}
+      {% else %}
+      <p class="muted" style="margin:0;">No responsibilities recorded — LulaWorks
+        cannot route any document to this person yet.</p>
+      {% endif %}
+      {% if contact.roles %}
+      <p class="muted" style="margin:14px 0 6px;font-size:12.5px;">Roles</p>
+      {% for role in contact.roles %}<span class="chip info">{{ role }}</span> {% endfor %}
+      {% endif %}
+    </div>
+
+    <h2>History</h2>
+    <div class="card" style="padding:0;">
+      <table>
+        <tr><th>What</th><th>Reference</th><th>When</th></tr>
+        {% for r in timeline.rfqs %}
+        <tr><td><span class="chip purple">RFQ released</span></td>
+          <td><a href="{% url 'web:rfq_detail' r.id %}">{{ r.original_name|default:"RFQ" }}</a></td>
+          <td class="muted">{{ r.created_at|date:"d M Y" }}</td></tr>
+        {% endfor %}
+        {% for q in timeline.quotations %}
+        <tr><td><span class="chip info">Quotation</span></td>
+          <td><a href="{% url 'web:quotation_detail' q.id %}">{{ q.number }}</a></td>
+          <td class="muted">{{ q.created_at|date:"d M Y" }}</td></tr>
+        {% endfor %}
+        {% for p in timeline.projects %}
+        <tr><td><span class="chip ok">Project</span></td>
+          <td><a href="{% url 'web:project_detail' p.id %}">{{ p.number }}</a></td>
+          <td class="muted">{{ p.created_at|date:"d M Y" }}</td></tr>
+        {% endfor %}
+        {% if not timeline.rfqs and not timeline.quotations and not timeline.projects %}
+        <tr><td colspan="3" class="muted" style="padding:20px;">
+          Nothing recorded against this person yet.</td></tr>
+        {% endif %}
+      </table>
+      <p class="muted" style="padding:14px 16px;margin:0;font-size:12.5px;">
+        Read from the real RFQ, quotation and project records — not a separate
+        activity log that could disagree with them.</p>
+    </div>
+  </div>
+
+  <div>
+    <h2 style="margin-top:0;">Reach them</h2>
+    <div class="card">
+      <table class="kv">
+        <tr><td class="muted">Prefers</td><td>{{ contact.get_preferred_method_display }}</td></tr>
+        <tr><td class="muted">Email</td><td>{{ contact.email|default:"—" }}</td></tr>
+        <tr><td class="muted">Telephone</td><td>{{ contact.telephone|default:"—" }}{% if contact.extension %} ext {{ contact.extension }}{% endif %}</td></tr>
+        <tr><td class="muted">Mobile</td><td>{{ contact.mobile|default:"—" }}</td></tr>
+        <tr><td class="muted">WhatsApp</td><td>{{ contact.whatsapp|default:"—" }}</td></tr>
+      </table>
+    </div>
+    {% if contact.notes %}
+    <h2>Notes</h2>
+    <div class="card"><p style="margin:0;white-space:pre-wrap;">{{ contact.notes }}</p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

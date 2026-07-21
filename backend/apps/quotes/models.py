@@ -22,6 +22,10 @@ class Quotation(TenantBaseModel):
     number = models.CharField(max_length=32)
     title = models.CharField(max_length=255, blank=True)
     client_name = models.CharField(max_length=255)
+    customer = models.ForeignKey(
+        "customers.Customer", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="quotations",
+    )
     site = models.CharField(max_length=255, blank=True)
     status = models.CharField(
         max_length=16, choices=QuotationStatus.choices, default=QuotationStatus.DRAFT
