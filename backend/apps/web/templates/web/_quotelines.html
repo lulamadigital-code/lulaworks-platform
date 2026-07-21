@@ -20,7 +20,15 @@ from the parent context.{% endcomment %}
     {% endif %}
     {% if can_edit %}
     <td class="right nowrap">
-      <form method="post" action="{% url 'web:quotation_line' quote.id %}"
+      <form method="post" action="{% url 'web:quotation_line_move' quote.id %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="line" value="{{ l.id }}">
+        <input type="hidden" name="direction" value="up">
+        <button class="btn ghost" type="submit" title="Move up">↑</button></form>
+      <form method="post" action="{% url 'web:quotation_line_move' quote.id %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="line" value="{{ l.id }}">
+        <input type="hidden" name="direction" value="down">
+        <button class="btn ghost" type="submit" title="Move down">↓</button></form>
+      <form method="post" action="{% url 'web:quotation_line' quote.id %}" style="display:inline;"
             data-confirm="Remove &quot;{{ l.description|escapejs }}&quot;?">
         {% csrf_token %}<input type="hidden" name="action" value="delete">
         <input type="hidden" name="line" value="{{ l.id }}">

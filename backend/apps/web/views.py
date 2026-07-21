@@ -1328,10 +1328,17 @@ def quotation_detail(request, pk):
         "customers": __import__("apps.customers.models",
                                 fromlist=["Customer"]).Customer.objects.all(),
     }
+    from apps.quotes.estimating_ai import pricing_review
+    from apps.quotes.services import quoted_vs_actual
+
+    # Free, deterministic, and reproducible — so it runs on every view rather
+    # than hiding behind a button nobody presses.
+    context["review"] = pricing_review(quote)
     if quote.status in ("accepted", "awarded"):
         context["award"] = award_summary(quote)
     if quote.status == "awarded":
         context["trace"] = traceability(quote)
+        context["actuals"] = quoted_vs_actual(quote)
     return render(request, "web/quotation_detail.html", context)
 
 
@@ -2216,3 +2223,88 @@ def quotation_award(request, pk):
         + (f" under {project.number}." if project else ".")
         + " This quotation is now read-only — changes are revisions.")
     return redirect("web:work_detail", pk=result["task"].id)
+
+
+@login_required
+def quotation_suggest(request, pk):
+    """LulaAI proposes lines this quotation may be missing. Read-only."""
+    from apps.quotes.estimating_ai import apply_suggestions, suggest_lines
+    from apps.quotes.services import QuotationError
+
+    quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+    if not request.user.has_perm_code("quotes.create"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:quotation_detail", pk=pk)
+
+    if request.method == "POST":
+        # Recomputed server-side; the browser is trusted only for which items
+        # were ticked.
+        suggestion = suggest_lines(quote, request.user, use_ai=False)
+        indexes = [i for i in request.POST.getlist("candidate") if i.isdigit()]
+        try:
+            created = apply_suggestions(quote, request.user, suggestion, indexes)
+        except QuotationError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, f"Added {created} line(s)." if created
+                             else "Nothing selected — nothing was added.")
+        return redirect("web:quotation_detail", pk=pk)
+
+    return render(request, "web/quotation_suggest.html", {
+        "quote": quote,
+        "suggestion": suggest_lines(quote, request.user),
+        "can_view_money": _can_view_money(request.user),
+    })
+
+
+@login_required
+@require_POST
+def quotation_template(request, pk):
+    """Adopt the sections a job of this type is normally priced in."""
+    from apps.quotes.services import apply_type_template
+    quote, allowed = _quote_guard(request, pk)
+    if allowed:
+        created = apply_type_template(quote, request.user)
+        messages.success(request, f"Added {created} section(s)." if created
+                         else "Nothing to add — those sections already exist.")
+    return redirect("web:quotation_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def quotation_line_move(request, pk):
+    from apps.quotes.models import QuotationLine
+    from apps.quotes.services import move_line
+    quote, allowed = _quote_guard(request, pk)
+    if allowed:
+        line = get_object_or_404(QuotationLine.objects.filter(quotation=quote),
+                                 pk=request.POST.get("line"))
+        move_line(line, direction=request.POST.get("direction", "up"))
+    return redirect("web:quotation_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def quotation_document(request, pk):
+    """Attach the RFQ, drawings, a BOQ — whatever the quotation was built from."""
+    from apps.quotes.models import QuotationDocument
+    quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+    if not request.user.has_perm_code("quotes.create"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:quotation_detail", pk=pk)
+
+    if request.POST.get("action") == "delete":
+        doc = get_object_or_404(QuotationDocument.objects.filter(quotation=quote),
+                                pk=request.POST.get("document"))
+        doc.delete()
+        messages.success(request, "Document removed.")
+    elif request.FILES.get("file"):
+        QuotationDocument.objects.create(
+            company=quote.company, quotation=quote, file=request.FILES["file"],
+            name=request.POST.get("name", "").strip() or request.FILES["file"].name,
+            doc_type=request.POST.get("doc_type", "").strip(),
+            created_by=request.user, updated_by=request.user)
+        messages.success(request, "Document attached.")
+    else:
+        messages.error(request, "Choose a file to attach.")
+    return redirect("web:quotation_detail", pk=pk)

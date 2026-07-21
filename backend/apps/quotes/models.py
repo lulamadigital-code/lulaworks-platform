@@ -75,16 +75,34 @@ class VatMode(models.TextChoices):
 
 #: Default quotation types. Each implies a different shape of work, which is why
 #: the type drives which fields an estimator is shown.
+#: (key, label, the sections this kind of job is usually priced in). The
+#: emphasis is what makes the type useful rather than decorative: a Plant Hire
+#: quote leads with mobilisation and standby, a Labour Hire one with rates and
+#: overtime, and neither should present the other's empty fields.
 DEFAULT_QUOTATION_TYPES = [
-    ("supply", "Supply"), ("labour_hire", "Labour Hire"), ("plant_hire", "Plant Hire"),
-    ("mechanical_repair", "Mechanical Repair"), ("electrical_repair", "Electrical Repair"),
-    ("maintenance", "Maintenance"), ("shutdown", "Shutdown Work"),
-    ("installation", "Installation"), ("construction", "Construction"),
-    ("fabrication", "Fabrication"), ("engineering", "Engineering Services"),
-    ("inspection", "Inspection"), ("project_management", "Project Management"),
-    ("consulting", "Consulting"), ("emergency", "Emergency Breakdown"),
-    ("preventative", "Preventative Maintenance"), ("rental", "Rental"),
-    ("transport", "Transportation"), ("other", "Other"),
+    ("supply", "Supply", ["Materials", "Delivery"]),
+    ("labour_hire", "Labour Hire", ["Labour", "Overtime", "Travel", "Accommodation"]),
+    ("plant_hire", "Plant Hire", ["Equipment", "Operator", "Mobilisation", "Standby"]),
+    ("mechanical_repair", "Mechanical Repair",
+     ["Labour", "Materials", "Consumables", "Equipment"]),
+    ("electrical_repair", "Electrical Repair", ["Labour", "Materials", "Testing"]),
+    ("maintenance", "Maintenance", ["Labour", "Consumables", "Callout"]),
+    ("shutdown", "Shutdown Work",
+     ["Labour", "Materials", "Equipment", "Project management", "Contingency"]),
+    ("installation", "Installation", ["Labour", "Materials", "Equipment", "Transport"]),
+    ("construction", "Construction",
+     ["Labour", "Materials", "Equipment", "Transport", "Preliminaries"]),
+    ("fabrication", "Fabrication", ["Labour", "Materials", "Consumables", "Coating"]),
+    ("engineering", "Engineering Services", ["Professional fees", "Disbursements"]),
+    ("inspection", "Inspection", ["Labour", "Equipment", "Reporting"]),
+    ("project_management", "Project Management",
+     ["Management fees", "Resources", "Disbursements"]),
+    ("consulting", "Consulting", ["Professional fees", "Disbursements"]),
+    ("emergency", "Emergency Breakdown", ["Callout", "Labour", "Materials"]),
+    ("preventative", "Preventative Maintenance", ["Labour", "Consumables"]),
+    ("rental", "Rental", ["Equipment", "Delivery", "Collection"]),
+    ("transport", "Transportation", ["Transport", "Loading"]),
+    ("other", "Other", []),
 ]
 
 

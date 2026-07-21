@@ -41,6 +41,8 @@ _SECTIONS = {
     "quotation_line": "quotations", "quotation_section": "quotations",
     "quotation_transition": "quotations", "quotation_revise": "quotations",
     "quotation_po": "quotations", "quotation_award": "quotations",
+    "quotation_suggest": "quotations", "quotation_template": "quotations",
+    "quotation_line_move": "quotations", "quotation_document": "quotations",
     "projects": "projects", "project_detail": "projects", "readiness_partial": "projects",
     "project_override": "projects", "project_progress_claim": "projects",
     "compliance_item_approve": "projects",

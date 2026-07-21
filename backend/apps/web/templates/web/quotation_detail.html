@@ -71,6 +71,34 @@
 {% endif %}
 {% endif %}
 
+{# ── What looks wrong. Deterministic, so it runs every time rather than
+     hiding behind a button nobody presses. ───────────────────────────────── #}
+{% if review.findings %}
+<div class="card" style="border-left:4px solid var(--orange);border-radius:0 var(--r) var(--r) 0;">
+  <strong style="color:#b9711a;">{{ review.summary }}</strong>
+  <div style="margin-top:12px;">
+    {% for f in review.findings %}
+    <div class="deprow" style="align-items:flex-start;">
+      <span class="chip {% if f.severity == 'high' %}bad{% elif f.severity == 'medium' %}warn{% endif %}"
+            style="min-width:64px;justify-content:center;">{{ f.severity }}</span>
+      <span style="flex:1;">
+        <strong>{{ f.title }}</strong>
+        <br><span class="muted" style="font-size:12.5px;">{{ f.detail }}</span>
+        {% if f.items %}<ul style="margin:6px 0 0;padding-left:18px;font-size:12.5px;">
+          {% for i in f.items %}<li>{{ i }}</li>{% endfor %}</ul>{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="muted" style="margin:12px 0 0;font-size:12.5px;">Checked against your own
+    numbers — no AI, no credits. Disagree and send it anyway; these are questions,
+    not blocks.</p>
+</div>
+{% elif review.checked %}
+<div class="card"><span class="chip ok">✓</span>
+  <span class="muted" style="margin-left:8px;">Pricing review: {{ review.summary }}</span></div>
+{% endif %}
+
 {# ── Lifecycle ──────────────────────────────────────────────────────────── #}
 {% if next_statuses and can_edit or next_statuses and can_award %}
 <div class="card">
@@ -164,7 +192,22 @@
     </div>
   </div>
   <div>
-    <h2 style="margin-top:0;">Add a section</h2>
+    <h2 style="margin-top:0;">Help me price it</h2>
+    <div class="card ai-panel">
+      <a class="btn ghost" href="{% url 'web:quotation_suggest' quote.id %}">What might be missing?</a>
+      <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Looks at what you
+        quoted on comparable jobs. You tick what belongs — nothing is added on your
+        behalf.</p>
+      {% if quote.quotation_type and quote.quotation_type.emphasis %}
+      <form method="post" action="{% url 'web:quotation_template' quote.id %}"
+            style="margin-top:12px;">{% csrf_token %}
+        <button class="btn ghost" type="submit">Add the usual
+          {{ quote.quotation_type.label|lower }} sections</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <h2>Add a section</h2>
     <div class="card">
       <form method="post" action="{% url 'web:quotation_section' quote.id %}" class="row" style="gap:8px;">
         {% csrf_token %}
@@ -312,6 +355,77 @@
     <tr><td class="muted">Invoiced</td><td>R{{ trace.invoiced }}</td></tr>
     {% endif %}
   </table>
+</div>
+{% endif %}
+
+{% if actuals %}
+<h2>Quoted vs actual</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Category</th>{% if can_view_money %}<th class="right">Quoted cost</th>
+        <th class="right">Actual</th><th class="right">Variance</th>{% endif %}
+        <th>Source</th></tr>
+    {% for r in actuals.rows %}
+    <tr>
+      <td><strong>{{ r.label }}</strong></td>
+      {% if can_view_money %}
+      <td class="right">R{{ r.quoted_cost }}</td>
+      <td class="right">{% if r.captured %}R{{ r.actual_cost }}{% else %}<span class="muted">not captured</span>{% endif %}</td>
+      <td class="right">{% if r.variance is None %}<span class="muted">—</span>
+        {% elif r.variance > 0 %}<span class="chip bad">+R{{ r.variance }}</span>
+        {% else %}<span class="chip ok">R{{ r.variance }}</span>{% endif %}</td>
+      {% endif %}
+      <td class="muted" style="font-size:12.5px;">{{ r.source }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+<div class="card">
+  <table class="kv" style="max-width:420px;">
+    <tr><td class="muted">Labour hours booked</td><td>{{ actuals.labour_hours }}</td></tr>
+    {% if actuals.unapproved_hours %}
+    <tr><td class="muted">Hours not yet approved</td>
+        <td>{{ actuals.unapproved_hours }} <span class="chip warn">excluded</span></td></tr>
+    {% endif %}
+    {% if can_view_money %}
+    <tr><td class="muted">Actual margin</td>
+        <td>{% if actuals.actual_margin_pct is None %}<span class="muted">—</span>
+            {% else %}{{ actuals.actual_margin_pct }}%{% endif %}</td></tr>
+    {% endif %}
+  </table>
+  {% if actuals.caveat %}
+  <p class="muted" style="margin:12px 0 0;font-size:12.5px;">{{ actuals.caveat }}
+    Unapproved timesheets are claims, not costs, so they are left out.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<h2>Attached documents</h2>
+<div class="card" style="padding:0;">
+  <table>
+    {% for d in quote.documents.all %}
+    <tr><td><a href="{{ d.file.url }}">{{ d.name }}</a></td>
+      <td class="muted">{{ d.doc_type|default:"—" }}</td>
+      <td class="right">{% if can_edit %}
+        <form method="post" action="{% url 'web:quotation_document' quote.id %}"
+              data-confirm="Remove {{ d.name|escapejs }}?">{% csrf_token %}
+          <input type="hidden" name="action" value="delete">
+          <input type="hidden" name="document" value="{{ d.id }}">
+          <button class="btn ghost" type="submit">Remove</button></form>{% endif %}</td></tr>
+    {% empty %}<tr><td class="muted" style="padding:18px;">
+      Nothing attached — the RFQ, drawings, a BOQ, site photos all belong here.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% if can_edit %}
+<div class="card">
+  <form method="post" action="{% url 'web:quotation_document' quote.id %}"
+        enctype="multipart/form-data" class="row" style="gap:8px;">
+    {% csrf_token %}
+    <input type="file" name="file" required style="flex:1;">
+    <input type="text" name="name" placeholder="Name (optional)" style="flex:1;">
+    <button class="btn ghost" type="submit">Attach</button>
+  </form>
 </div>
 {% endif %}
 

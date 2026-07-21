@@ -1,0 +1,65 @@
+{% extends "web/base.html" %}
+{% block title %}Suggested lines{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:quotation_detail' quote.id %}">← {{ quote.display_number }}</a></p>
+
+<div class="pagehead">
+  <div>
+    <h1>What might be missing</h1>
+    <p class="sub" style="margin:0;">Nothing here exists yet. Tick what belongs and
+      only that is added — priced by you, not by the machine.</p>
+  </div>
+</div>
+
+<div class="card" style="border-left:4px solid var(--primary);border-radius:0 var(--r) var(--r) 0;">
+  {% if suggestion.grounded_in %}
+  <strong>Grounded in your own quoting</strong>
+  <ul style="margin:10px 0 0;padding-left:20px;font-size:13.5px;">
+    {% for g in suggestion.grounded_in %}<li>{{ g }}</li>{% endfor %}
+  </ul>
+  {% else %}
+  <strong>No comparable quotations of your own yet</strong>
+  <p class="muted" style="margin:8px 0 0;font-size:13px;">Suggestions below come
+    from general practice. They will get sharper as you quote more work like this.</p>
+  {% endif %}
+  {% if suggestion.ai_note %}
+  <p class="muted" style="margin:10px 0 0;font-size:12.5px;">{{ suggestion.ai_note }}</p>
+  {% endif %}
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="card" style="padding:0;">
+    <table>
+      <tr><th></th><th>Description</th><th>Category</th>
+          {% if can_view_money %}<th class="right">Cost</th><th class="right">Markup</th>{% endif %}
+          <th>Where it came from</th></tr>
+      {% for c in suggestion.candidates %}
+      <tr>
+        <td><input type="checkbox" name="candidate" value="{{ forloop.counter0 }}"
+                   style="width:auto;"></td>
+        <td><strong>{{ c.description }}</strong></td>
+        <td class="muted">{{ c.category }}</td>
+        {% if can_view_money %}
+        <td class="right muted">{% if c.unit_cost %}R{{ c.unit_cost }}{% else %}—{% endif %}</td>
+        <td class="right muted">{% if c.markup_pct %}{{ c.markup_pct }}%{% else %}—{% endif %}</td>
+        {% endif %}
+        <td class="muted" style="font-size:12.5px;">{{ c.source }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="muted" style="padding:22px;">
+        Nothing to suggest — this quotation already covers what comparable jobs did.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% if suggestion.candidates %}
+  <div class="row">
+    <button class="btn" type="submit">Add the ticked lines</button>
+    <a href="{% url 'web:quotation_detail' quote.id %}" class="muted" style="margin-left:14px;">Discard</a>
+  </div>
+  <p class="muted" style="margin:12px 0 0;font-size:12.5px;">Lines carried over from
+    a past quotation bring that job's cost and markup with them — check they still
+    hold. Lines suggested by the model arrive unpriced on purpose.</p>
+  {% endif %}
+</form>
+{% endblock %}

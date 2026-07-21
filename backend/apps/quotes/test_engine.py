@@ -302,3 +302,225 @@ class TypeCatalogueTests(TestCase):
             second = ensure_quotation_types(c)
             self.assertEqual(first, 19)
             self.assertEqual(second, 0)
+
+
+class PricingReviewTests(TestCase):
+    """Deterministic, so the same quotation always raises the same questions."""
+
+    def test_uncosted_lines_are_flagged_as_high(self):
+        from .estimating_ai import pricing_review
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            add_line(c, quote, price=500, description="No cost captured")
+            findings = pricing_review(quote)["findings"]
+            titles = " ".join(f["title"] for f in findings)
+            self.assertIn("no cost", titles)
+            self.assertTrue(any(f["severity"] == "high" for f in findings))
+
+    def test_thin_margin_is_flagged(self):
+        from .estimating_ai import pricing_review
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            add_line(c, quote, qty=1, cost=100, markup=5)   # ~4.8% margin
+            titles = " ".join(f["title"] for f in pricing_review(quote)["findings"])
+            self.assertIn("Margin is", titles)
+
+    def test_a_line_priced_below_cost_is_flagged_with_the_numbers(self):
+        from .estimating_ai import pricing_review
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            add_line(c, quote, qty=1, cost=1000, price=400, description="Loss maker")
+            finding = next(f for f in pricing_review(quote)["findings"]
+                           if "below cost" in f["title"])
+            self.assertTrue(any("Loss maker" in item for item in finding["items"]))
+
+    def test_a_healthy_quotation_raises_only_minor_questions(self):
+        from .estimating_ai import pricing_review
+        from datetime import date
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            quote.validity_date = date(2030, 1, 1)
+            quote.save()
+            add_line(c, quote, qty=1, cost=100, markup=40)
+            findings = pricing_review(quote)["findings"]
+            self.assertFalse([f for f in findings if f["severity"] == "high"])
+
+    def test_an_empty_quotation_says_so_rather_than_passing(self):
+        from .estimating_ai import pricing_review
+        c = make_company()
+        with tenant_scope(c.id):
+            result = pricing_review(make_quote(c))
+            self.assertFalse(result["ok"])
+            self.assertIn("no lines", result["summary"])
+
+
+class SuggestionTests(TestCase):
+    """Grounded in the company's own quoting; proposes, never writes."""
+
+    def test_suggestions_come_from_your_own_comparable_quotations(self):
+        from .estimating_ai import suggest_lines
+        c = make_company()
+        with tenant_scope(c.id):
+            past = make_quote(c, number="QT-OLD", status=QuotationStatus.AWARDED)
+            past.title = "Conveyor gearbox replacement"
+            past.save()
+            add_line(c, past, qty=1, cost=500, markup=20,
+                     description="Alignment with dial gauge")
+
+            current = make_quote(c, number="QT-NEW")
+            current.title = "Conveyor gearbox replacement CV-9"
+            current.save()
+
+            result = suggest_lines(current, use_ai=False)
+            descriptions = [c["description"] for c in result["candidates"]]
+            self.assertIn("Alignment with dial gauge", descriptions)
+            self.assertTrue(result["grounded_in"])
+
+    def test_suggesting_writes_nothing(self):
+        from .estimating_ai import suggest_lines
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            quote.title = "Pump repair"
+            quote.save()
+            before = QuotationLine.objects.count()
+            suggest_lines(quote, use_ai=False)
+            self.assertEqual(QuotationLine.objects.count(), before)
+
+    def test_lines_already_quoted_are_not_suggested_again(self):
+        from .estimating_ai import suggest_lines
+        c = make_company()
+        with tenant_scope(c.id):
+            past = make_quote(c, number="QT-OLD", status=QuotationStatus.AWARDED)
+            past.title = "Pump seal replacement"
+            past.save()
+            add_line(c, past, description="Isolate and lock out")
+
+            current = make_quote(c, number="QT-NEW")
+            current.title = "Pump seal replacement P-204"
+            current.save()
+            add_line(c, current, description="Isolate and lock out")
+
+            result = suggest_lines(current, use_ai=False)
+            self.assertNotIn("Isolate and lock out",
+                             [x["description"] for x in result["candidates"]])
+
+    def test_applying_creates_only_ticked_lines(self):
+        from .estimating_ai import apply_suggestions, suggest_lines
+        c = make_company()
+        with tenant_scope(c.id):
+            past = make_quote(c, number="QT-OLD", status=QuotationStatus.AWARDED)
+            past.title = "Gearbox job"
+            past.save()
+            add_line(c, past, description="Step one")
+            add_line(c, past, description="Step two")
+
+            current = make_quote(c, number="QT-NEW")
+            current.title = "Gearbox job again"
+            current.save()
+
+            suggestion = suggest_lines(current, use_ai=False)
+            created = apply_suggestions(current, None, suggestion, {0})
+            self.assertEqual(created, 1)
+            self.assertEqual(current.lines.count(), 1)
+
+    def test_suggestions_cannot_be_applied_to_a_locked_quotation(self):
+        from .estimating_ai import apply_suggestions
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c, status=QuotationStatus.AWARDED)
+            with self.assertRaises(QuotationError):
+                apply_suggestions(quote, None, {"candidates": []}, {0})
+
+
+class TypeTemplateTests(TestCase):
+    def test_a_type_seeds_the_sections_that_kind_of_job_needs(self):
+        from .models import QuotationType
+        from .services import apply_type_template
+        c = make_company()
+        with tenant_scope(c.id):
+            ensure_quotation_types(c)
+            quote = make_quote(c)
+            quote.quotation_type = QuotationType.objects.get(key="plant_hire")
+            quote.save()
+            created = apply_type_template(quote, None)
+            names = set(quote.sections.values_list("name", flat=True))
+            self.assertEqual(created, 4)
+            self.assertIn("Mobilisation", names)
+            self.assertIn("Standby", names)
+
+    def test_applying_a_template_twice_adds_nothing(self):
+        from .models import QuotationType
+        from .services import apply_type_template
+        c = make_company()
+        with tenant_scope(c.id):
+            ensure_quotation_types(c)
+            quote = make_quote(c)
+            quote.quotation_type = QuotationType.objects.get(key="labour_hire")
+            quote.save()
+            apply_type_template(quote, None)
+            self.assertEqual(apply_type_template(quote, None), 0)
+
+
+class LineOrderingTests(TestCase):
+    def test_moving_a_line_up_swaps_it_with_its_neighbour(self):
+        from .services import move_line
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            first = add_line(c, quote, description="First")
+            second = add_line(c, quote, description="Second")
+            first.position, second.position = 1, 2
+            first.save(); second.save()
+
+            move_line(second, direction="up")
+            order = list(quote.lines.values_list("description", flat=True))
+            self.assertEqual(order, ["Second", "First"])
+
+    def test_moving_past_the_end_does_nothing(self):
+        from .services import move_line
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            only = add_line(c, quote, description="Only")
+            move_line(only, direction="up")
+            move_line(only, direction="down")
+            self.assertEqual(quote.lines.count(), 1)
+
+
+class QuotedVsActualTests(TestCase):
+    """Missing data must never read as a saving."""
+
+    def test_uncaptured_costs_are_reported_as_gaps_not_zeros(self):
+        from .services import quoted_vs_actual
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c, status=QuotationStatus.AWARDED)
+            add_line(c, quote, qty=10, cost=100, markup=20)
+            result = quoted_vs_actual(quote)
+
+            row = result["rows"][0]
+            self.assertFalse(row["captured"])
+            self.assertIsNone(row["variance"])       # not 0, not a saving
+            self.assertIsNone(result["actual_margin_pct"])
+            self.assertIn("floor", result["caveat"])
+
+    def test_quoted_costs_are_grouped_by_category(self):
+        from .services import quoted_vs_actual
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c, status=QuotationStatus.AWARDED)
+            labour = add_line(c, quote, qty=10, cost=100, markup=20)
+            labour.category = "labour"
+            labour.save()
+            material = add_line(c, quote, qty=1, cost=5000, markup=15)
+            material.category = "material"
+            material.save()
+
+            rows = {r["category"]: r for r in quoted_vs_actual(quote)["rows"]}
+            self.assertEqual(rows["labour"]["quoted_cost"], Decimal("1000.00"))
+            self.assertEqual(rows["material"]["quoted_cost"], Decimal("5000.00"))

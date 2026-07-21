@@ -1,6 +1,7 @@
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
+from django.db.models import Sum
 
 from apps.administration.services import next_number
 from apps.core.events import publish
@@ -84,6 +85,9 @@ def update_quotation(quote, user, *, title=None, client_name=None, site=None,
 
 from django.utils import timezone as _tz
 
+#: Money rounding, matching the models.
+TWO = Decimal("0.01")
+
 from .models import (
     APPROVAL_CHAIN,
     DEFAULT_QUOTATION_TYPES,
@@ -106,12 +110,53 @@ def ensure_quotation_types(company) -> int:
     existing = set(QuotationType.objects.filter(company=company)
                    .values_list("key", flat=True))
     created = 0
-    for position, (key, label) in enumerate(DEFAULT_QUOTATION_TYPES):
+    for position, (key, label, emphasis) in enumerate(DEFAULT_QUOTATION_TYPES):
         if key not in existing:
             QuotationType.objects.create(company=company, key=key, label=label,
-                                         position=position)
+                                         emphasis=emphasis, position=position)
             created += 1
     return created
+
+
+def apply_type_template(quote, user) -> int:
+    """Create the sections a job of this type is normally priced in.
+
+    A blank quotation is a blank page; the type knows the shape the estimator
+    is about to build. Existing sections are never duplicated, and nothing is
+    removed — the template is a starting point, not a rule.
+    """
+    if not quote.quotation_type_id or not quote.quotation_type.emphasis:
+        return 0
+    existing = {s.name.lower() for s in quote.sections.all()}
+    created = 0
+    for position, name in enumerate(quote.quotation_type.emphasis,
+                                    start=quote.sections.count() + 1):
+        if name.lower() in existing:
+            continue
+        QuotationSection.objects.create(company=quote.company, quotation=quote,
+                                        name=name, position=position,
+                                        created_by=user, updated_by=user)
+        created += 1
+    return created
+
+
+def move_line(line, *, direction) -> None:
+    """Reorder by swapping with the neighbour. No drag-and-drop, no JavaScript,
+    and it works on a phone in a workshop."""
+    siblings = list(line.quotation.lines.all())
+    index = next((i for i, row in enumerate(siblings) if row.pk == line.pk), None)
+    if index is None:
+        return
+    target = index - 1 if direction == "up" else index + 1
+    if not 0 <= target < len(siblings):
+        return
+    other = siblings[target]
+    line.position, other.position = other.position, line.position
+    # Positions can collide on legacy rows; renumber the pair definitively.
+    if line.position == other.position:
+        line.position, other.position = target + 1, index + 1
+    line.save(update_fields=["position"])
+    other.save(update_fields=["position"])
 
 
 def record_event(quote, *, verb, note="", actor=None, from_status="", to_status="",
@@ -442,4 +487,106 @@ def pipeline(company=None) -> dict:
         "awaiting_approval": approval,
         "expired": [q for q in quotes if q.is_expired],
         "win_rate": round(100 * len(won) / decided) if decided else None,
+    }
+
+
+# ── Quoted vs actual: the post-project question ──────────────────────────────
+
+#: Which quotation line categories each actual source answers for.
+_ACTUAL_SOURCES = {
+    "labour": "Approved timesheets",
+    "material": "Supplier invoices",
+    "consumable": "Supplier invoices",
+    "equipment": "Supplier invoices",
+    "subcontractor": "Supplier invoices",
+}
+
+
+def quoted_vs_actual(quote) -> dict:
+    """What we said it would cost, against what it did.
+
+    Deliberately honest about coverage: labour actuals come from APPROVED
+    timesheets and material actuals from supplier invoices, so anything not yet
+    captured shows as a gap rather than as a saving. A variance report that
+    counts missing data as profit is worse than none.
+    """
+    from apps.execution.models import Timesheet
+    from apps.procurement.models import SupplierInvoice
+    from apps.projects.models import Project
+
+    projects = list(Project.objects.filter(quotation=quote))
+
+    quoted = {}
+    for line in quote.lines.all():
+        row = quoted.setdefault(line.category, {"cost": Decimal("0"),
+                                                "price": Decimal("0")})
+        row["cost"] += line.total_cost
+        row["price"] += line.line_total
+
+    # ── Actual labour: approved timesheets only. Unapproved hours are claims,
+    # not costs, and counting them would move the number every time someone
+    # keys a sheet in.
+    labour_cost, labour_hours, unapproved_hours = Decimal("0"), Decimal("0"), Decimal("0")
+    if projects:
+        for sheet in Timesheet.objects.filter(task__project__in=projects):
+            if sheet.approved:
+                labour_cost += sheet.labour_cost
+                labour_hours += sheet.total_hours
+            else:
+                unapproved_hours += sheet.total_hours
+
+    # ── Actual materials/equipment: what suppliers have actually invoiced.
+    material_cost = Decimal("0")
+    if quote.pk:
+        material_cost = SupplierInvoice.objects.filter(
+            purchase_order__quotation=quote
+        ).aggregate(t=Sum("total_excl"))["t"] or Decimal("0")
+
+    rows = []
+    for category, values in sorted(quoted.items()):
+        if category == "labour":
+            actual = labour_cost
+            source = _ACTUAL_SOURCES["labour"]
+            captured = bool(labour_cost) or bool(labour_hours)
+        elif category in ("material", "consumable", "equipment", "subcontractor"):
+            # Supplier invoices are not split by our quotation categories, so
+            # they are reported once against materials rather than guessed apart.
+            actual = material_cost if category == "material" else Decimal("0")
+            source = _ACTUAL_SOURCES.get(category, "")
+            captured = bool(actual)
+        else:
+            actual, source, captured = Decimal("0"), "not tracked", False
+
+        rows.append({
+            "category": category,
+            "label": dict(LineCategory.choices).get(category, category.title()),
+            "quoted_cost": values["cost"].quantize(TWO),
+            "quoted_price": values["price"].quantize(TWO),
+            "actual_cost": Decimal(actual).quantize(TWO),
+            "variance": (Decimal(actual) - values["cost"]).quantize(TWO)
+                        if captured else None,
+            "source": source,
+            "captured": captured,
+        })
+
+    total_actual = labour_cost + material_cost
+    fully_captured = all(row["captured"] for row in rows) if rows else False
+
+    return {
+        "quotation": quote,
+        "rows": rows,
+        "quoted_cost": quote.total_cost,
+        "quoted_price": quote.total,
+        "actual_cost": total_actual.quantize(TWO),
+        "labour_hours": labour_hours,
+        "unapproved_hours": unapproved_hours,
+        # None while anything is uncaptured — see the docstring.
+        "actual_margin_pct": (
+            ((quote.total - quote.vat_amount - total_actual)
+             / (quote.total - quote.vat_amount) * 100).quantize(TWO)
+            if fully_captured and quote.total > quote.vat_amount else None),
+        "fully_captured": fully_captured,
+        "caveat": None if fully_captured else (
+            "Some costs are not captured yet, so the actual figure is a floor, "
+            "not a total."),
     }
