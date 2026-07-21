@@ -24,13 +24,14 @@
 
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Customer</th><th>Code</th><th>Contacts</th><th>Departments</th>
+    <tr><th>Customer</th><th>Code</th><th>Vendor no.</th><th>Contacts</th><th>Departments</th>
         <th>Quotations</th><th>Projects</th><th>Terms</th><th>Status</th></tr>
     {% for r in rows %}
     <tr>
       <td><a href="{% url 'web:customer_detail' r.customer.id %}"><strong>{{ r.customer.display_name }}</strong></a>
         {% if r.customer.industry %}<br><span class="muted" style="font-size:12.5px;">{{ r.customer.industry }}</span>{% endif %}</td>
       <td class="muted">{{ r.customer.code }}</td>
+      <td class="muted">{{ r.customer.vendor_number|default:"—" }}</td>
       <td>{{ r.stats.contacts }}</td>
       <td class="muted">{{ r.stats.departments }}</td>
       <td class="muted">{{ r.stats.quotations }}</td>
@@ -40,7 +41,7 @@
         {% elif r.customer.status == 'blacklisted' %}<span class="chip bad">Blacklisted</span>
         {% else %}<span class="chip">{{ r.customer.get_status_display }}</span>{% endif %}</td>
     </tr>
-    {% empty %}<tr><td colspan="8" class="muted" style="padding:20px;">No customers yet.</td></tr>
+    {% empty %}<tr><td colspan="9" class="muted" style="padding:20px;">No customers yet.</td></tr>
     {% endfor %}
   </table>
 </div>
@@ -56,6 +57,11 @@
       <div><label>General email</label><input type="email" name="email"></div>
       <div><label>Main telephone</label><input type="text" name="telephone"></div>
       <div><label>City</label><input type="text" name="city"></div>
+      <div><label>Our vendor number with them</label>
+        <input type="text" name="vendor_number" placeholder="TRL0086">
+        <p class="muted" style="margin:6px 0 0;font-size:12px;">The code they use
+          for you in their system. It goes on every quotation and invoice you
+          send them.</p></div>
     </div>
     <button class="btn" type="submit" style="margin-top:16px;">Add customer</button>
     <p class="muted" style="margin:10px 0 0;font-size:12.5px;">A standard department

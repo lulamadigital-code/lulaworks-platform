@@ -13,25 +13,33 @@
     <div class="card">
       <form method="post">{% csrf_token %}
         <input type="hidden" name="method" value="blank">
-        <label>Customer</label>
+        <label>What kind of job is this?</label>
+        <select name="quotation_type" required>
+          <option value="">Choose the type…</option>
+          {% for t in types %}<option value="{{ t.id }}">{{ t.label }}</option>{% endfor %}
+        </select>
+        <p class="muted" style="margin:6px 0 0;font-size:12.5px;">The type decides the
+          shape of the quotation — a plant hire job is priced in mobilisation and
+          standby, a labour hire one in rates and overtime. Its sections are created
+          for you.</p>
+
+        <label style="margin-top:16px;">Customer</label>
         <select name="customer" required>
           <option value="">Choose a customer…</option>
-          {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}</option>{% endfor %}
+          {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}{% if c.vendor_number %} · vendor {{ c.vendor_number }}{% endif %}</option>{% endfor %}
         </select>
         <div class="two">
           <div><label>Title</label><input type="text" name="title"
                  placeholder="Conveyor CV-102 gearbox replacement"></div>
-          <div><label>Site</label><input type="text" name="site"></div>
-          <div><label>Quotation type</label>
-            <select name="quotation_type">
-              <option value="">—</option>
-              {% for t in types %}<option value="{{ t.id }}">{{ t.label }}</option>{% endfor %}
-            </select></div>
+          <div><label>Site — where the work happens</label>
+            <input type="text" name="site" placeholder="K4 Shaft, Plant 1"></div>
           <div><label>VAT</label>
             <select name="vat_mode">
               {% for v, l in vat_modes %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
             </select></div>
-          <div><label>Their reference</label><input type="text" name="customer_reference"></div>
+          <div><label>Their reference</label>
+            <input type="text" name="customer_reference" placeholder="their RFQ or requisition no.">
+            </div>
         </div>
         <label>Scope of work</label>
         <textarea name="scope_of_work" rows="4"

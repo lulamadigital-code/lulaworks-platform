@@ -82,6 +82,10 @@ def quotation_pdf_bytes(quote) -> bytes:
         Spacer(1, 6 * mm),
     ]
 
+    # Their vendor code and their own reference go in the meta block: it is how
+    # the person receiving this matches it to what they asked for, and how their
+    # accounts payable system finds us. A quotation missing them can sit
+    # unmatched for weeks.
     meta = [
         [Paragraph("<b>Quotation</b>", small), quote.number,
          Paragraph("<b>Date</b>", small), quote.created_at.strftime("%Y-%m-%d")],
@@ -89,8 +93,14 @@ def quotation_pdf_bytes(quote) -> bytes:
          Paragraph("<b>Valid until</b>", small),
          quote.validity_date.strftime("%Y-%m-%d") if quote.validity_date else "—"],
         [Paragraph("<b>Project</b>", small), quote.title or "—",
-         Paragraph("<b>Site</b>", small), quote.site or "—"],
+         Paragraph("<b>Site</b>", small),
+         str(quote.customer_site) if quote.customer_site_id else (quote.site or "—")],
     ]
+    if quote.vendor_number or quote.customer_reference:
+        meta.append([
+            Paragraph("<b>Vendor no.</b>", small), quote.vendor_number or "—",
+            Paragraph("<b>Your ref.</b>", small), quote.customer_reference or "—",
+        ])
     meta_tbl = Table(meta, colWidths=[26 * mm, 62 * mm, 26 * mm, 60 * mm])
     meta_tbl.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),

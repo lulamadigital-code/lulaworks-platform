@@ -7,6 +7,7 @@
   <div>
     <h1 style="margin:0 0 4px;">{{ customer.display_name }}</h1>
     <p class="sub" style="margin:0;">{{ customer.code }}
+      {% if customer.vendor_number %} · we are vendor <strong>{{ customer.vendor_number }}</strong> to them{% endif %}
       {% if customer.industry %} · {{ customer.industry }}{% endif %}
       {% if customer.city %} · {{ customer.city }}{% endif %}
       · {{ customer.payment_terms_days }}-day terms</p>

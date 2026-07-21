@@ -221,6 +221,47 @@
 </div>
 {% endif %}
 
+{% if can_edit %}
+<h2>Add many items at once</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:quotation_lines_bulk' quote.id %}">
+    {% csrf_token %}
+    <label>Paste from a spreadsheet or a BOQ</label>
+    <textarea name="pasted" rows="5"
+              placeholder="Description	Qty	Unit	Cost	Markup%&#10;Lip channel 100x50x20x2mm galv 6m	12	each	485	25&#10;Bearing 6203-2RS SKF	40	each	62.50	30"></textarea>
+    <p class="muted" style="margin:8px 0 0;font-size:12.5px;">Copy straight out of
+      Excel and paste. Tabs, commas or wide spaces all work; only the description is
+      required. "1 234,56" is read the South African way.</p>
+
+    <p class="muted" style="margin:16px 0 6px;font-size:12.5px;">…or type them in:</p>
+    <div style="overflow-x:auto;">
+      <table>
+        <tr><th>Description</th><th>Qty</th><th>Unit</th>
+            <th>Unit cost</th><th>Markup %</th></tr>
+        {% for row in "12345"|make_list %}
+        <tr>
+          <td><input type="text" name="g_description" placeholder="Item description"></td>
+          <td><input type="number" step="0.01" name="g_qty" placeholder="1" style="width:90px;"></td>
+          <td><input type="text" name="g_unit" placeholder="each" style="width:90px;"></td>
+          <td><input type="number" step="0.01" name="g_unit_cost" style="width:120px;"></td>
+          <td><input type="number" step="0.01" name="g_markup" style="width:100px;"></td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div class="row" style="margin-top:14px;gap:10px;">
+      <select name="section" style="width:auto;min-width:170px;">
+        <option value="">No section</option>
+        {% for g in grouped %}<option value="{{ g.section.id }}">{{ g.section.name }}</option>{% endfor %}
+      </select>
+      <button class="btn" type="submit">Add these items</button>
+    </div>
+    <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Blank rows are ignored,
+      so leave the spare ones alone.</p>
+  </form>
+</div>
+{% endif %}
+
 {# ── Scope, terms, header ───────────────────────────────────────────────── #}
 {% if can_edit %}
 <h2>Header &amp; scope</h2>
@@ -266,7 +307,12 @@
         </select></div>
       <div><label>VAT rate %</label><input type="number" step="0.01" name="vat_rate" value="{{ quote.vat_rate }}"></div>
       <div><label>Valid until</label><input type="date" name="validity_date" value="{{ quote.validity_date|date:'Y-m-d' }}"></div>
-      <div><label>Their reference</label><input type="text" name="customer_reference" value="{{ quote.customer_reference }}"></div>
+      <div><label>Their reference</label>
+        <input type="text" name="customer_reference" value="{{ quote.customer_reference }}"
+               placeholder="their RFQ or requisition no."></div>
+      <div><label>Our vendor number with them</label>
+        <input type="text" name="vendor_number" value="{{ quote.vendor_number }}"
+               placeholder="{{ quote.customer.vendor_number|default:'e.g. TRL0086' }}"></div>
     </div>
     <label>Scope of work</label>
     <textarea name="scope_of_work" rows="5">{{ quote.scope_of_work }}</textarea>

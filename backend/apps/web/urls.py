@@ -60,6 +60,8 @@ urlpatterns = [
          name="quotation_suggest"),
     path("quotations/<uuid:pk>/template/", views.quotation_template,
          name="quotation_template"),
+    path("quotations/<uuid:pk>/lines/bulk/", views.quotation_lines_bulk,
+         name="quotation_lines_bulk"),
     path("quotations/<uuid:pk>/lines/move/", views.quotation_line_move,
          name="quotation_line_move"),
     path("quotations/<uuid:pk>/documents/", views.quotation_document,

@@ -89,6 +89,15 @@ class Customer(TenantBaseModel):
     website = models.URLField(blank=True)
 
     # Commercial
+    #: The code THIS customer uses for US in their system — "TRL0086" on a
+    #: Western Platinum PO. Every client assigns a different one, it is how
+    #: their AP clerk finds you, and a quotation without it can sit unmatched
+    #: for weeks. It belongs to the relationship, not to us, which is why it
+    #: lives here and not on the company profile.
+    vendor_number = models.CharField(max_length=64, blank=True)
+    vendor_portal = models.CharField(max_length=120, blank=True)  # Coupa, Ariba…
+    vendor_note = models.CharField(max_length=255, blank=True)
+
     payment_terms_days = models.PositiveSmallIntegerField(default=30)
     payment_terms_note = models.CharField(max_length=120, blank=True)
     credit_limit = models.DecimalField(max_digits=14, decimal_places=2, null=True,

@@ -613,3 +613,100 @@ class RetiredEditorTests(TestCase):
         response = client.get(f"/quotations/{quote.id}/edit/")
         self.assertEqual(response.status_code, 302)
         self.assertIn(str(quote.id), response["Location"])
+
+
+class PastedLineTests(TestCase):
+    """Estimators live in spreadsheets. Meet them there."""
+
+    def test_tab_separated_from_excel(self):
+        from .services import parse_pasted_lines
+        rows = parse_pasted_lines(
+            "Lip channel 6m\t12\teach\t485\t25\n"
+            "Bearing 6203-2RS\t40\teach\t62.50\t30")
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["description"], "Lip channel 6m")
+        self.assertEqual(rows[0]["qty"], Decimal("12"))
+        self.assertEqual(rows[0]["unit_cost"], Decimal("485"))
+        self.assertEqual(rows[1]["markup_pct"], Decimal("30"))
+
+    def test_south_african_number_format(self):
+        """"1 500,00" is fifteen hundred here, not one and a half."""
+        from .services import parse_pasted_lines
+        rows = parse_pasted_lines("Transportation\t1\teach\t1 500,00\t10")
+        self.assertEqual(rows[0]["unit_cost"], Decimal("1500.00"))
+
+    def test_a_header_row_is_not_priced(self):
+        from .services import parse_pasted_lines
+        rows = parse_pasted_lines(
+            "Description\tQty\tUnit\tCost\nReal item\t2\teach\t100")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["description"], "Real item")
+
+    def test_a_bare_list_of_descriptions_works(self):
+        from .services import parse_pasted_lines
+        rows = parse_pasted_lines("Strip gearbox\nReplace bearings")
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["qty"], Decimal("1"))
+        self.assertEqual(rows[0]["unit"], "each")
+
+    def test_bulk_add_creates_the_lines_and_respects_locking(self):
+        from .services import add_lines_bulk, parse_pasted_lines
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            rows = parse_pasted_lines("Item A\t2\teach\t100\t25\nItem B\t1\tset\t50\t10")
+            self.assertEqual(add_lines_bulk(quote, None, rows), 2)
+            self.assertEqual(quote.lines.count(), 2)
+            first = quote.lines.first()
+            self.assertEqual(first.unit_cost, Decimal("100"))
+            self.assertEqual(first.effective_unit_price, Decimal("125.00"))
+
+            locked = make_quote(c, number="QT-LOCKED",
+                                status=QuotationStatus.AWARDED)
+            with self.assertRaises(QuotationError):
+                add_lines_bulk(locked, None, rows)
+
+
+class VendorNumberTests(TestCase):
+    """The code the CUSTOMER uses for US. Different for every client."""
+
+    def test_it_lives_on_the_customer_because_it_is_per_relationship(self):
+        from apps.customers.services import create_customer
+        c = make_company()
+        with tenant_scope(c.id):
+            harmony = create_customer(c, None, name="Harmony Mining",
+                                      seed_departments=False,
+                                      vendor_number="TRL0086")
+            sasol = create_customer(c, None, name="Sasol", seed_departments=False,
+                                    vendor_number="SAS99120")
+            self.assertNotEqual(harmony.vendor_number, sasol.vendor_number)
+
+    def test_it_is_snapshotted_onto_the_quotation(self):
+        """A quotation issued last year keeps the code it was issued under."""
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            quote.vendor_number = "TRL0086"
+            quote.save()
+            quote.refresh_from_db()
+            self.assertEqual(quote.vendor_number, "TRL0086")
+
+    def test_it_prints_on_the_quotation_pdf(self):
+        import io
+
+        import pdfplumber
+
+        from apps.quotes.pdf import quotation_pdf_bytes
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            quote.vendor_number = "TRL0086"
+            quote.customer_reference = "REQ-88214"
+            quote.save()
+            add_line(c, quote, qty=1, price=100)
+            pdf = quotation_pdf_bytes(quote)
+
+        with pdfplumber.open(io.BytesIO(pdf)) as doc:
+            text = doc.pages[0].extract_text()
+        self.assertIn("TRL0086", text)
+        self.assertIn("REQ-88214", text)

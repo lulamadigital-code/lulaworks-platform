@@ -191,6 +191,9 @@ class Quotation(TenantBaseModel):
     payment_terms_days = models.PositiveSmallIntegerField(null=True, blank=True)
 
     # ── References that let a customer find this in their own system
+    #: Snapshotted from the customer at creation. A quotation issued last year
+    #: keeps the vendor code it was issued under even if they re-register you.
+    vendor_number = models.CharField(max_length=64, blank=True)
     customer_reference = models.CharField(max_length=64, blank=True)
     rfq_reference = models.CharField(max_length=64, blank=True)
     project_reference = models.CharField(max_length=64, blank=True)

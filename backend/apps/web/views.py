@@ -1796,6 +1796,7 @@ def customer_create(request):
         email=request.POST.get("email", "").strip(),
         telephone=request.POST.get("telephone", "").strip(),
         city=request.POST.get("city", "").strip(),
+        vendor_number=request.POST.get("vendor_number", "").strip(),
     )
     messages.success(request, f"{customer.name} added ({customer.code}) with a "
                               "standard department structure.")
@@ -1970,10 +1971,21 @@ def quotation_new(request):
         quote.vat_mode = request.POST.get("vat_mode", VatMode.EXCLUSIVE)
         quote.scope_of_work = request.POST.get("scope_of_work", "").strip()
         quote.customer_reference = request.POST.get("customer_reference", "").strip()
+        # Snapshot the vendor code we trade under with THIS customer.
+        quote.vendor_number = customer.vendor_number
         quote.prepared_by = request.user
         _apply_customer_hierarchy(quote, request)
         quote.save()
-        messages.success(request, f"Quotation {quote.number} created.")
+
+        # The type decides the shape of the quotation, so its sections are
+        # seeded now rather than left for the estimator to remember.
+        from apps.quotes.services import apply_type_template
+        seeded = apply_type_template(quote, request.user)
+        messages.success(
+            request,
+            f"Quotation {quote.number} created"
+            + (f" with {seeded} section(s) for a "
+               f"{quote.quotation_type.label.lower()} job." if seeded else "."))
         return redirect("web:quotation_detail", pk=quote.id)
 
     return render(request, "web/quotation_new.html", {
@@ -2016,8 +2028,8 @@ def quotation_header(request, pk):
     from apps.quotes.models import QuotationType
 
     for field in ("title", "site", "customer_reference", "rfq_reference",
-                  "project_reference", "scope_of_work", "exclusions",
-                  "assumptions", "notes"):
+                  "project_reference", "vendor_number", "scope_of_work",
+                  "exclusions", "assumptions", "notes"):
         if field in request.POST:
             setattr(quote, field, request.POST.get(field, "").strip())
     if request.POST.get("customer"):
@@ -2281,4 +2293,57 @@ def quotation_document(request, pk):
         messages.success(request, "Document attached.")
     else:
         messages.error(request, "Choose a file to attach.")
+    return redirect("web:quotation_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def quotation_lines_bulk(request, pk):
+    """Add many items at once — typed into a grid, or pasted from a spreadsheet."""
+    from apps.quotes.models import QuotationSection
+    from apps.quotes.services import QuotationError, add_lines_bulk, parse_pasted_lines
+
+    quote, allowed = _quote_guard(request, pk)
+    if not allowed:
+        return redirect("web:quotation_detail", pk=pk)
+
+    section = QuotationSection.objects.filter(
+        quotation=quote, pk=request.POST.get("section")).first()
+
+    pasted = request.POST.get("pasted", "").strip()
+    if pasted:
+        rows = parse_pasted_lines(pasted)
+    else:
+        # Parallel arrays from the grid; blank descriptions are dropped, so an
+        # estimator can leave spare rows empty without thinking about it.
+        rows = []
+        descriptions = request.POST.getlist("g_description")
+        qtys = request.POST.getlist("g_qty")
+        units = request.POST.getlist("g_unit")
+        costs = request.POST.getlist("g_unit_cost")
+        markups = request.POST.getlist("g_markup")
+        for index, description in enumerate(descriptions):
+            if not description.strip():
+                continue
+            rows.append({
+                "description": description,
+                "qty": _decimal_or_none(qtys[index] if index < len(qtys) else "")
+                       or Decimal("1"),
+                "unit": (units[index] if index < len(units) else "each") or "each",
+                "unit_cost": _decimal_or_none(
+                    costs[index] if index < len(costs) else "") or Decimal("0"),
+                "markup_pct": _decimal_or_none(
+                    markups[index] if index < len(markups) else "") or Decimal("0"),
+            })
+
+    if not rows:
+        messages.error(request, "Nothing to add — every row was blank.")
+        return redirect("web:quotation_detail", pk=pk)
+
+    try:
+        created = add_lines_bulk(quote, request.user, rows, section=section)
+    except QuotationError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"Added {created} item(s).")
     return redirect("web:quotation_detail", pk=pk)

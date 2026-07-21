@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
@@ -609,3 +610,88 @@ def quoted_vs_actual(quote) -> dict:
             "Some costs are not captured yet, so the actual figure is a floor, "
             "not a total."),
     }
+
+
+# ── Bulk line entry ──────────────────────────────────────────────────────────
+
+def parse_pasted_lines(text: str) -> list[dict]:
+    """Parse rows pasted from a spreadsheet or a BOQ.
+
+    Accepts tab-separated (what you get pasting from Excel), comma-separated,
+    or two-or-more spaces. Column order is the one estimators actually use:
+
+        description | qty | unit | unit cost | markup%
+
+    Anything after the description is optional, so a bare list of descriptions
+    works too. Rows that are clearly a header are skipped rather than priced.
+    """
+    rows = []
+    for raw in (text or "").splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        if "\t" in line:
+            cells = [c.strip() for c in line.split("\t")]
+        elif "," in line and not re.match(r"^[^,]+,\d", line):
+            cells = [c.strip() for c in line.split(",")]
+        else:
+            cells = [c.strip() for c in re.split(r"\s{2,}", line)]
+
+        cells = [c for c in cells if c != ""]
+        if not cells:
+            continue
+        description = cells[0]
+        # A header row prices nothing.
+        if description.lower() in ("description", "item", "item description",
+                                   "desc", "particulars"):
+            continue
+
+        def number(index, default="0"):
+            if len(cells) <= index:
+                return Decimal(default)
+            cleaned = re.sub(r"[^\d.,-]", "", cells[index]).replace(" ", "")
+            # SA formatting: "1 234,56" → comma is the decimal separator.
+            if "," in cleaned and "." not in cleaned:
+                cleaned = cleaned.replace(",", ".")
+            else:
+                cleaned = cleaned.replace(",", "")
+            try:
+                return Decimal(cleaned or default)
+            except InvalidOperation:
+                return Decimal(default)
+
+        rows.append({
+            "description": description[:500],
+            "qty": number(1, "1") or Decimal("1"),
+            "unit": (cells[2] if len(cells) > 2 and not cells[2][:1].isdigit()
+                     else "each")[:32],
+            "unit_cost": number(3),
+            "markup_pct": number(4),
+        })
+    return rows
+
+
+@transaction.atomic
+def add_lines_bulk(quote, user, rows, *, section=None) -> int:
+    """Add many priced lines at once. Blank descriptions are skipped."""
+    guard_editable(quote)
+    position = quote.lines.count()
+    created = 0
+    for row in rows:
+        description = (row.get("description") or "").strip()
+        if not description:
+            continue
+        position += 1
+        QuotationLine.objects.create(
+            company=quote.company, quotation=quote, section=section,
+            position=position, description=description[:500],
+            category=row.get("category", "other"),
+            qty=row.get("qty") or Decimal("1"),
+            unit=row.get("unit") or "each",
+            unit_cost=row.get("unit_cost") or Decimal("0"),
+            markup_pct=row.get("markup_pct") or Decimal("0"),
+            unit_price=row.get("unit_price") or Decimal("0"),
+            created_by=user, updated_by=user,
+        )
+        created += 1
+    return created
