@@ -1,28 +1,88 @@
 {% extends "web/base.html" %}
 {% block title %}Quotations{% endblock %}
 {% block content %}
-<h1>Quotations</h1>
-<p class="sub">The customer-facing price documents. View, review, edit a draft, or download the PDF.</p>
-<div class="card" style="padding:0;">
+
+<div class="pagehead">
+  <div>
+    <h1>Quotations</h1>
+    <p class="sub" style="margin:0;">The commercial gateway between sales and
+      operations. Every awarded quotation becomes the contract execution traces
+      back to.</p>
+  </div>
+  {% if can_create %}<a class="btn" href="{% url 'web:quotation_new' %}">+ New quotation</a>{% endif %}
+</div>
+
+<div class="grid">
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▤</div>
+    <div class="n">{{ pipeline.open|length }}</div><div class="l">Open</div></div>
+  <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">⏳</div>
+    <div class="n">{{ pipeline.awaiting_customer|length }}</div><div class="l">With the customer</div></div>
+  <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">✎</div>
+    <div class="n">{{ pipeline.awaiting_approval|length }}</div><div class="l">Awaiting approval</div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div>
+    <div class="n">{% if pipeline.win_rate is None %}—{% else %}{{ pipeline.win_rate }}%{% endif %}</div>
+    <div class="l">Win rate</div></div>
+</div>
+
+{% if can_view_money %}
+<div class="two-col">
+  <div><div class="card"><strong>Open pipeline value</strong>
+    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ pipeline.open_value }}</p>
+    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">Across {{ pipeline.open|length }} live quotation(s)</p>
+  </div></div>
+  <div><div class="card"><strong>Won</strong>
+    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ pipeline.won_value }}</p>
+    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{{ pipeline.won|length }} awarded</p>
+  </div></div>
+</div>
+{% endif %}
+
+{% if pipeline.expired %}
+<div class="card" style="border-left:4px solid var(--orange);border-radius:0 var(--r) var(--r) 0;">
+  <strong style="color:#b9711a;">{{ pipeline.expired|length }} quotation(s) past their validity date</strong>
+  <p class="muted" style="margin:8px 0 0;font-size:13px;">Still showing as open. Follow
+    them up or mark them expired — a stale pipeline flatters your forecast.</p>
+</div>
+{% endif %}
+
+<form method="get" class="filterbar">
+  <input type="search" name="q" value="{{ f.q|default:'' }}" placeholder="Quotation number…" style="flex:2;min-width:150px;">
+  <select name="status">
+    <option value="">Any status</option>
+    {% for value, label in statuses %}
+    <option value="{{ value }}" {% if f.status == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="customer">
+    <option value="">Any customer</option>
+    {% for c in customers %}
+    <option value="{{ c.id }}" {% if f.customer == c.id|stringformat:'s' %}selected{% endif %}>{{ c.display_name }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn ghost" type="submit">Filter</button>
+</form>
+
+<div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Number</th><th>Client</th><th>Title</th><th>Status</th>
-      {% if can_view_money %}<th class="right">Total</th>{% endif %}<th></th></tr>
+    <tr><th>Quotation</th><th>Customer</th><th>Type</th><th>Status</th>
+        {% if can_view_money %}<th class="right">Value</th><th class="right">Margin</th>{% endif %}
+        <th>Valid until</th></tr>
     {% for q in quotations %}
     <tr>
-      <td><a href="{% url 'web:quotation_detail' q.id %}">{{ q.number }}</a></td>
-      <td class="muted">{{ q.client_name }}</td>
-      <td class="muted">{{ q.title|default:"—" }}</td>
-      <td>{% if q.status == 'awarded' %}<span class="chip ok">Awarded</span>
-        {% elif q.status == 'lost' %}<span class="chip bad">Lost</span>
-        {% elif q.status == 'sent' %}<span class="chip warn">Sent</span>
-        {% else %}<span class="chip">Draft</span>{% endif %}</td>
-      {% if can_view_money %}<td class="right">R{{ q.total }}</td>{% endif %}
-      <td class="right">
-        <a href="{% url 'web:quotation_detail' q.id %}">View</a> ·
-        <a href="{% url 'web:quotation_pdf' q.id %}">PDF</a>
-      </td>
+      <td><a href="{% url 'web:quotation_detail' q.id %}"><strong>{{ q.display_number }}</strong></a>
+        {% if q.title %}<br><span class="muted" style="font-size:12.5px;">{{ q.title }}</span>{% endif %}</td>
+      <td class="muted">{% if q.customer %}<a href="{% url 'web:customer_detail' q.customer.id %}">{{ q.customer.display_name }}</a>{% else %}{{ q.client_name }}{% endif %}</td>
+      <td class="muted">{{ q.quotation_type.label|default:"—" }}</td>
+      <td>{% include "web/_quotechip.html" with q=q %}</td>
+      {% if can_view_money %}
+      <td class="right">R{{ q.total }}</td>
+      <td class="right">{% if q.margin_pct is None %}<span class="muted" title="Some lines have no cost captured">—</span>
+        {% else %}{{ q.margin_pct }}%{% endif %}</td>
+      {% endif %}
+      <td class="muted">{% if q.validity_date %}{{ q.validity_date|date:"d M Y" }}
+        {% if q.is_expired %}<span class="chip bad">expired</span>{% endif %}{% else %}—{% endif %}</td>
     </tr>
-    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">No quotations yet — approve an RFQ to create one.</td></tr>
+    {% empty %}<tr><td colspan="7" class="muted" style="padding:20px;">No quotations yet.</td></tr>
     {% endfor %}
   </table>
 </div>

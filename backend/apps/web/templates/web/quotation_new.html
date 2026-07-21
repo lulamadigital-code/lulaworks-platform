@@ -1,0 +1,67 @@
+{% extends "web/base.html" %}
+{% block title %}New quotation{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:quotations' %}">← Quotations</a></p>
+<h1>New quotation</h1>
+<p class="sub">Start from nothing, or copy one you have already priced. A quotation
+  raised from an RFQ is created by approving that RFQ, so it keeps the source
+  document attached.</p>
+
+<div class="two-col">
+  <div>
+    <h2 style="margin-top:0;">Start from scratch</h2>
+    <div class="card">
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="method" value="blank">
+        <label>Customer</label>
+        <select name="customer" required>
+          <option value="">Choose a customer…</option>
+          {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}</option>{% endfor %}
+        </select>
+        <div class="two">
+          <div><label>Title</label><input type="text" name="title"
+                 placeholder="Conveyor CV-102 gearbox replacement"></div>
+          <div><label>Site</label><input type="text" name="site"></div>
+          <div><label>Quotation type</label>
+            <select name="quotation_type">
+              <option value="">—</option>
+              {% for t in types %}<option value="{{ t.id }}">{{ t.label }}</option>{% endfor %}
+            </select></div>
+          <div><label>VAT</label>
+            <select name="vat_mode">
+              {% for v, l in vat_modes %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+            </select></div>
+          <div><label>Their reference</label><input type="text" name="customer_reference"></div>
+        </div>
+        <label>Scope of work</label>
+        <textarea name="scope_of_work" rows="4"
+                  placeholder="What is being quoted, in the words the customer used."></textarea>
+        <button class="btn" type="submit" style="margin-top:16px;">Create quotation</button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <h2 style="margin-top:0;">Copy an existing one</h2>
+    <div class="card">
+      <p class="muted" style="margin:0 0 14px;font-size:13px;">For recurring work.
+        Creates a NEW quotation with its own number — not a revision.</p>
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="method" value="copy">
+        <label>Copy from</label>
+        <select name="source" required>
+          {% for q in recent %}
+          <option value="{{ q.id }}">{{ q.display_number }} — {{ q.client_name }}{% if q.title %} · {{ q.title }}{% endif %}</option>
+          {% endfor %}
+        </select>
+        <label>For customer (optional — leave blank to keep the same one)</label>
+        <select name="customer">
+          <option value="">— same customer —</option>
+          {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}</option>{% endfor %}
+        </select>
+        <button class="btn ghost" type="submit" style="margin-top:16px;">Copy quotation</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

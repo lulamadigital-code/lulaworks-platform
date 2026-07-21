@@ -1271,21 +1271,68 @@ def _decimal_or_none(value):
 
 @login_required
 def quotations_list(request):
+    """The commercial pipeline, not just a list of documents."""
+    from apps.quotes.services import pipeline
+
+    quotes = Quotation.objects.all().prefetch_related("lines", "customer_pos")
+    status = request.GET.get("status")
+    if status:
+        quotes = quotes.filter(status=status)
+    if request.GET.get("q"):
+        quotes = quotes.filter(number__icontains=request.GET["q"])
+    if request.GET.get("customer"):
+        quotes = quotes.filter(customer_id=request.GET["customer"])
+
+    from apps.customers.models import Customer
     return render(request, "web/quotations.html", {
-        "quotations": Quotation.objects.all().prefetch_related("lines"),
+        "quotations": quotes,
+        "pipeline": pipeline(),
+        "statuses": QuotationStatus.choices,
+        "customers": Customer.objects.all(),
+        "f": request.GET,
         "can_view_money": _can_view_money(request.user),
+        "can_create": request.user.has_perm_code("quotes.create"),
     })
 
 
 @login_required
 def quotation_detail(request, pk):
-    quote = get_object_or_404(Quotation.objects.all().prefetch_related("lines"), pk=pk)
-    return render(request, "web/quotation_detail.html", {
+    """The builder: header, sections, priced lines, margin, lifecycle, award."""
+    from apps.quotes.models import LineCategory, QuotationType, VatMode
+    from apps.quotes.services import award_summary, next_statuses, traceability
+
+    quote = get_object_or_404(
+        Quotation.objects.all().prefetch_related(
+            "lines__section", "sections", "customer_pos", "events", "documents"),
+        pk=pk)
+
+    grouped, ungrouped = [], []
+    for section in quote.sections.all():
+        rows = [line for line in quote.lines.all() if line.section_id == section.id]
+        grouped.append({"section": section, "lines": rows})
+    ungrouped = [line for line in quote.lines.all() if line.section_id is None]
+
+    can_edit = (not quote.is_locked
+                and request.user.has_perm_code("quotes.create"))
+    context = {
         "quote": quote,
+        "grouped": grouped,
+        "ungrouped": ungrouped,
+        "categories": LineCategory.choices,
+        "vat_modes": VatMode.choices,
+        "types": QuotationType.objects.all(),
+        "next_statuses": next_statuses(quote),
         "can_view_money": _can_view_money(request.user),
-        "can_edit": (quote.status == QuotationStatus.DRAFT
-                     and request.user.has_perm_code("quotes.create")),
-    })
+        "can_edit": can_edit,
+        "can_award": request.user.has_perm_code("projects.create"),
+        "customers": __import__("apps.customers.models",
+                                fromlist=["Customer"]).Customer.objects.all(),
+    }
+    if quote.status in ("accepted", "awarded"):
+        context["award"] = award_summary(quote)
+    if quote.status == "awarded":
+        context["trace"] = traceability(quote)
+    return render(request, "web/quotation_detail.html", context)
 
 
 @login_required
@@ -1868,3 +1915,304 @@ def customer_contact_detail(request, pk):
         "customer": contact.customer,
         "timeline": contact_timeline(contact),
     })
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Quotation builder — the commercial gateway's screens
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _quote_guard(request, pk):
+    """Fetch the quotation and refuse edits it should not accept.
+
+    Locking is enforced in the service too; this is the polite version that
+    redirects with a message instead of raising.
+    """
+    from apps.quotes.services import QuotationError, guard_editable
+    quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+    if not request.user.has_perm_code("quotes.create"):
+        messages.error(request, "You do not have permission to edit quotations.")
+        return quote, False
+    try:
+        guard_editable(quote)
+    except QuotationError as exc:
+        messages.error(request, str(exc))
+        return quote, False
+    return quote, True
+
+
+@login_required
+def quotation_new(request):
+    """The creation routes: blank, or copied from an existing quotation.
+
+    RFQ-sourced quotations are created by approving an RFQ, which already links
+    the source document — duplicating that route here would give two ways to do
+    the same thing with different provenance.
+    """
+    from apps.customers.models import Customer
+    from apps.quotes.models import QuotationType, VatMode
+    from apps.quotes.services import duplicate, ensure_quotation_types
+
+    if not request.user.has_perm_code("quotes.create"):
+        messages.error(request, "You do not have permission to create quotations.")
+        return redirect("web:quotations")
+
+    company = request.user.active_company
+    ensure_quotation_types(company)
+
+    if request.method == "POST":
+        method = request.POST.get("method", "blank")
+
+        if method == "copy":
+            source = get_object_or_404(Quotation.objects.all(),
+                                       pk=request.POST.get("source"))
+            customer = Customer.objects.filter(
+                pk=request.POST.get("customer")).first()
+            new = duplicate(source, request.user, customer=customer)
+            messages.success(request, f"Copied {source.display_number} → "
+                                      f"{new.display_number}.")
+            return redirect("web:quotation_detail", pk=new.id)
+
+        customer = Customer.objects.filter(pk=request.POST.get("customer")).first()
+        if customer is None:
+            messages.error(request, "Choose the customer this quotation is for.")
+            return redirect("web:quotation_new")
+
+        quote = create_quotation(
+            company, request.user,
+            client_name=customer.name,
+            title=request.POST.get("title", "").strip(),
+            site=request.POST.get("site", "").strip(),
+        )
+        quote.customer = customer
+        quote.quotation_type = QuotationType.objects.filter(
+            pk=request.POST.get("quotation_type")).first()
+        quote.vat_mode = request.POST.get("vat_mode", VatMode.EXCLUSIVE)
+        quote.scope_of_work = request.POST.get("scope_of_work", "").strip()
+        quote.customer_reference = request.POST.get("customer_reference", "").strip()
+        quote.prepared_by = request.user
+        _apply_customer_hierarchy(quote, request)
+        quote.save()
+        messages.success(request, f"Quotation {quote.number} created.")
+        return redirect("web:quotation_detail", pk=quote.id)
+
+    return render(request, "web/quotation_new.html", {
+        "customers": Customer.objects.all(),
+        "types": QuotationType.objects.all(),
+        "vat_modes": VatMode.choices,
+        "recent": Quotation.objects.all()[:20],
+    })
+
+
+def _apply_customer_hierarchy(quote, request):
+    """Customer → branch → site → department → contact, as far as it was given."""
+    from apps.customers.models import (
+        CustomerBranch,
+        CustomerContact,
+        CustomerDepartment,
+        CustomerSite,
+    )
+    if not quote.customer_id:
+        return
+    quote.branch = CustomerBranch.objects.filter(
+        customer=quote.customer, pk=request.POST.get("branch")).first()
+    quote.customer_site = CustomerSite.objects.filter(
+        customer=quote.customer, pk=request.POST.get("customer_site")).first()
+    quote.department = CustomerDepartment.objects.filter(
+        customer=quote.customer, pk=request.POST.get("department")).first()
+    quote.contact = CustomerContact.objects.filter(
+        customer=quote.customer, pk=request.POST.get("contact")).first()
+
+
+@login_required
+@require_POST
+def quotation_header(request, pk):
+    """Save the header — terms, references, scope, and who it goes to."""
+    quote, allowed = _quote_guard(request, pk)
+    if not allowed:
+        return redirect("web:quotation_detail", pk=pk)
+
+    from apps.customers.models import Customer
+    from apps.quotes.models import QuotationType
+
+    for field in ("title", "site", "customer_reference", "rfq_reference",
+                  "project_reference", "scope_of_work", "exclusions",
+                  "assumptions", "notes"):
+        if field in request.POST:
+            setattr(quote, field, request.POST.get(field, "").strip())
+    if request.POST.get("customer"):
+        customer = Customer.objects.filter(pk=request.POST["customer"]).first()
+        if customer:
+            quote.customer = customer
+            quote.client_name = customer.name
+    _apply_customer_hierarchy(quote, request)
+    if request.POST.get("vat_mode"):
+        quote.vat_mode = request.POST["vat_mode"]
+    if request.POST.get("vat_rate"):
+        quote.vat_rate = _decimal_or_none(request.POST["vat_rate"]) or quote.vat_rate
+    if request.POST.get("quotation_type"):
+        quote.quotation_type = QuotationType.objects.filter(
+            pk=request.POST["quotation_type"]).first()
+    quote.validity_date = request.POST.get("validity_date") or None
+    quote.updated_by = request.user
+    quote.save()
+    messages.success(request, "Quotation updated.")
+    return redirect("web:quotation_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def quotation_line(request, pk):
+    """Add, edit or remove a priced line."""
+    from apps.quotes.models import QuotationLine, QuotationSection
+
+    quote, allowed = _quote_guard(request, pk)
+    if not allowed:
+        return redirect("web:quotation_detail", pk=pk)
+
+    action = request.POST.get("action", "add")
+    if action == "delete":
+        line = get_object_or_404(QuotationLine.objects.filter(quotation=quote),
+                                 pk=request.POST.get("line"))
+        line.delete()
+        messages.success(request, "Line removed.")
+        return redirect("web:quotation_detail", pk=pk)
+
+    section = QuotationSection.objects.filter(
+        quotation=quote, pk=request.POST.get("section")).first()
+    values = {
+        "description": request.POST.get("description", "").strip(),
+        "category": request.POST.get("category", "other"),
+        "qty": _decimal_or_none(request.POST.get("qty")) or Decimal("1"),
+        "unit": request.POST.get("unit", "each").strip() or "each",
+        "unit_cost": _decimal_or_none(request.POST.get("unit_cost")) or Decimal("0"),
+        "markup_pct": _decimal_or_none(request.POST.get("markup_pct")) or Decimal("0"),
+        "discount_pct": _decimal_or_none(request.POST.get("discount_pct")) or Decimal("0"),
+        "unit_price": _decimal_or_none(request.POST.get("unit_price")) or Decimal("0"),
+        "notes": request.POST.get("notes", "").strip(),
+    }
+
+    if action == "update":
+        line = get_object_or_404(QuotationLine.objects.filter(quotation=quote),
+                                 pk=request.POST.get("line"))
+        for key, value in values.items():
+            setattr(line, key, value)
+        line.section = section
+        line.updated_by = request.user
+        line.save()
+        messages.success(request, "Line updated.")
+    else:
+        if not values["description"]:
+            messages.error(request, "A description is required.")
+        else:
+            QuotationLine.objects.create(
+                company=quote.company, quotation=quote, section=section,
+                position=quote.lines.count() + 1,
+                created_by=request.user, updated_by=request.user, **values)
+            messages.success(request, "Line added.")
+    return redirect("web:quotation_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def quotation_section(request, pk):
+    from apps.quotes.models import QuotationSection
+    quote, allowed = _quote_guard(request, pk)
+    if not allowed:
+        return redirect("web:quotation_detail", pk=pk)
+    if request.POST.get("action") == "delete":
+        section = get_object_or_404(QuotationSection.objects.filter(quotation=quote),
+                                    pk=request.POST.get("section"))
+        section.delete()          # lines survive, they just lose their grouping
+        messages.success(request, "Section removed — its lines were kept.")
+    elif request.POST.get("name", "").strip():
+        QuotationSection.objects.create(
+            company=quote.company, quotation=quote,
+            name=request.POST["name"].strip(),
+            position=quote.sections.count() + 1,
+            created_by=request.user, updated_by=request.user)
+        messages.success(request, "Section added.")
+    return redirect("web:quotation_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def quotation_transition(request, pk):
+    from apps.quotes.services import QuotationError, transition as move
+    quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+    if not request.user.has_perm_code("quotes.create"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:quotation_detail", pk=pk)
+    try:
+        move(quote, request.user, to_status=request.POST.get("status"),
+             note=request.POST.get("note", ""))
+    except QuotationError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"{quote.display_number} → "
+                                  f"{quote.get_status_display()}.")
+    return redirect("web:quotation_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def quotation_revise(request, pk):
+    from apps.quotes.services import create_revision
+    quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+    if not request.user.has_perm_code("quotes.create"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:quotation_detail", pk=pk)
+    revised = create_revision(quote, request.user,
+                              reason=request.POST.get("reason", ""))
+    messages.success(request, f"Revision {revised.revision} created. The issued "
+                              "version is unchanged.")
+    return redirect("web:quotation_detail", pk=revised.id)
+
+
+@login_required
+@require_POST
+def quotation_po(request, pk):
+    """Capture the customer's purchase order."""
+    from apps.quotes.services import QuotationError, record_purchase_order
+    quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+    if not request.user.has_perm_code("quotes.create"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:quotation_detail", pk=pk)
+    try:
+        po = record_purchase_order(
+            quote, request.user,
+            po_number=request.POST.get("po_number", ""),
+            value=_decimal_or_none(request.POST.get("value")),
+            po_date=request.POST.get("po_date") or None,
+            document=request.FILES.get("document"),
+            notes=request.POST.get("notes", "").strip(),
+        )
+    except QuotationError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"PO {po.po_number} recorded.")
+    return redirect("web:quotation_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def quotation_award(request, pk):
+    """Hand the quotation to execution. Not reversible, so it is confirmed."""
+    from apps.quotes.services import QuotationError, award_to_work
+    quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+    if not request.user.has_perm_code("projects.create"):
+        messages.error(request, "You do not have permission to award work.")
+        return redirect("web:quotation_detail", pk=pk)
+    try:
+        result = award_to_work(quote, request.user,
+                               work_name=request.POST.get("work_name", "").strip())
+    except QuotationError as exc:
+        messages.error(request, str(exc))
+        return redirect("web:quotation_detail", pk=pk)
+
+    project = result["project"]
+    messages.success(
+        request,
+        f"Awarded. Work '{result['task'].name}' created"
+        + (f" under {project.number}." if project else ".")
+        + " This quotation is now read-only — changes are revisions.")
+    return redirect("web:work_detail", pk=result["task"].id)

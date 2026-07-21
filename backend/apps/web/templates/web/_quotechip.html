@@ -1,0 +1,2 @@
+{% comment %}Quotation status pill. Param: q (a Quotation).{% endcomment %}
+<span class="chip {% if q.status == 'awarded' or q.status == 'accepted' %}ok{% elif q.status == 'rejected' or q.status == 'lost' %}bad{% elif q.status == 'issued' or q.status == 'sent' %}info{% elif q.status == 'expired' %}bad{% elif q.status == 'draft' %}{% else %}warn{% endif %}">{{ q.get_status_display }}</span>

@@ -1,44 +1,333 @@
 {% extends "web/base.html" %}
-{% block title %}{{ quote.number }}{% endblock %}
+{% block title %}{{ quote.display_number }}{% endblock %}
 {% block content %}
 <p class="sub"><a href="{% url 'web:quotations' %}">← Quotations</a></p>
-<div class="row">
-  <h1 style="margin:0;">{{ quote.title|default:quote.client_name }}</h1>
-  <span class="sp" style="flex:1;"></span>
-  {% if quote.status == 'awarded' %}<span class="chip ok">Awarded</span>
-  {% elif quote.status == 'sent' %}<span class="chip warn">Sent</span>
-  {% else %}<span class="chip">Draft</span>{% endif %}
-</div>
-<p class="sub">{{ quote.number }} · {{ quote.client_name }}
-  {% if quote.site %} · {{ quote.site }}{% endif %}
-  {% if quote.validity_date %} · valid until {{ quote.validity_date }}{% endif %}</p>
 
-<div class="row" style="gap:10px; margin-bottom:16px;">
-  <a class="btn" href="{% url 'web:quotation_pdf' quote.id %}">⬇ Download PDF</a>
-  {% if can_edit %}<a class="btn" style="background:var(--brand-d);" href="{% url 'web:quotation_edit' quote.id %}">Edit</a>{% endif %}
+<div class="pagehead">
+  <div>
+    <h1 style="margin:0 0 4px;">{{ quote.display_number }}</h1>
+    <p class="sub" style="margin:0;">
+      {% if quote.customer %}<a href="{% url 'web:customer_detail' quote.customer.id %}">{{ quote.customer.display_name }}</a>{% else %}{{ quote.client_name }}{% endif %}
+      {% if quote.contact %} · {{ quote.contact.full_name }}{% endif %}
+      {% if quote.quotation_type %} · {{ quote.quotation_type.label }}{% endif %}
+      {% if quote.title %} · {{ quote.title }}{% endif %}
+    </p>
+  </div>
+  <div class="row" style="gap:8px;flex-wrap:wrap;">
+    {% include "web/_quotechip.html" with q=quote %}
+    {% if quote.is_expired %}<span class="chip bad">Past validity</span>{% endif %}
+    <a class="btn ghost" href="{% url 'web:quotation_pdf' quote.id %}">Download PDF</a>
+  </div>
 </div>
 
+{% if quote.is_locked %}
+<div class="card" style="border-left:4px solid var(--primary);border-radius:0 var(--r) var(--r) 0;">
+  <strong>This quotation is read-only</strong>
+  <p class="muted" style="margin:8px 0 0;font-size:13px;">
+    It is {{ quote.get_status_display|lower }} — this is what was contracted, so it
+    cannot be edited. Changes are a revision, which supersedes this version and
+    leaves it exactly as it was sent.</p>
+  {% if can_edit or perms_money %}
+  <form method="post" action="{% url 'web:quotation_revise' quote.id %}" class="row"
+        style="gap:8px;margin-top:12px;"
+        data-confirm="Create revision {{ quote.revision|add:1 }}?&#10;&#10;This version stays exactly as it is; the new one starts as a draft.">
+    {% csrf_token %}
+    <input type="text" name="reason" placeholder="Why is it being revised?" style="flex:1;">
+    <button class="btn ghost" type="submit">Create revision</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if quote.supersedes %}
+<p class="muted" style="font-size:12.5px;">Supersedes
+  <a href="{% url 'web:quotation_detail' quote.supersedes.id %}">{{ quote.supersedes.display_number }}</a>.</p>
+{% endif %}
+
+{# ── Money ──────────────────────────────────────────────────────────────── #}
+{% if can_view_money %}
+<div class="grid">
+  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">R</div>
+    <div class="n">R{{ quote.total }}</div>
+    <div class="l">{% if quote.vat_mode == 'inclusive' %}Total (VAT incl.){% else %}Total incl. VAT{% endif %}</div></div>
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">Σ</div>
+    <div class="n">R{{ quote.net_total }}</div><div class="l">Net of discounts</div></div>
+  <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">C</div>
+    <div class="n">R{{ quote.total_cost }}</div><div class="l">Cost</div></div>
+  <div class="tile"><div class="ic" style="background:{% if quote.margin_pct is None %}#eef0f5;color:var(--muted){% else %}var(--green-t);color:#0a8f57{% endif %};">%</div>
+    <div class="n">{% if quote.margin_pct is None %}—{% else %}{{ quote.margin_pct }}%{% endif %}</div>
+    <div class="l">Margin</div></div>
+</div>
+
+{% if quote.uncosted_lines %}
+<div class="card" style="border-left:4px solid var(--orange);border-radius:0 var(--r) var(--r) 0;">
+  <strong style="color:#b9711a;">Margin is unknown, not zero</strong>
+  <p style="margin:8px 0 0;">{{ quote.uncosted_lines|length }} line(s) have no cost
+    captured, so this quotation's margin cannot be computed:</p>
+  <ul style="margin:8px 0 0;padding-left:20px;">
+    {% for l in quote.uncosted_lines %}<li>{{ l.description }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endif %}
+
+{# ── Lifecycle ──────────────────────────────────────────────────────────── #}
+{% if next_statuses and can_edit or next_statuses and can_award %}
+<div class="card">
+  <h2 style="margin:0 0 12px;">Move it along</h2>
+  <div class="row" style="flex-wrap:wrap;gap:8px;">
+    {% for s in next_statuses %}
+    <form method="post" action="{% url 'web:quotation_transition' quote.id %}" class="row" style="gap:6px;">
+      {% csrf_token %}
+      <input type="hidden" name="status" value="{{ s }}">
+      {% if s == 'rejected' or s == 'lost' %}
+      <input type="text" name="note" placeholder="Reason" style="width:150px;">
+      {% endif %}
+      <button class="btn {% if s == 'issued' or s == 'accepted' %}{% else %}ghost{% endif %}" type="submit">
+        {{ s|cut:"_"|capfirst }}</button>
+    </form>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ── Lines ──────────────────────────────────────────────────────────────── #}
+<h2>Priced items</h2>
+{% for group in grouped %}
+<div class="card" style="padding:0;">
+  <div class="row" style="padding:14px 16px;gap:10px;border-bottom:1px solid var(--line);">
+    <strong>{{ group.section.name }}</strong>
+    <span class="sp"></span>
+    {% if can_view_money %}<span class="muted">R{{ group.section.net_total }}</span>{% endif %}
+    {% if can_edit %}
+    <form method="post" action="{% url 'web:quotation_section' quote.id %}"
+          data-confirm="Remove the {{ group.section.name|escapejs }} section?&#10;&#10;Its lines are kept — they just lose their grouping.">
+      {% csrf_token %}<input type="hidden" name="action" value="delete">
+      <input type="hidden" name="section" value="{{ group.section.id }}">
+      <button class="btn ghost" type="submit">Remove</button></form>
+    {% endif %}
+  </div>
+  {% include "web/_quotelines.html" with lines=group.lines %}
+</div>
+{% endfor %}
+
+{% if ungrouped or not grouped %}
+<div class="card" style="padding:0;">
+  {% if grouped %}<div class="row" style="padding:14px 16px;border-bottom:1px solid var(--line);">
+    <strong class="muted">Not in a section</strong></div>{% endif %}
+  {% include "web/_quotelines.html" with lines=ungrouped %}
+</div>
+{% endif %}
+
+{% if can_view_money %}
+<div class="card">
+  <table class="kv" style="max-width:360px;margin-left:auto;">
+    <tr><td class="muted">Net</td><td class="right">R{{ quote.net_total }}</td></tr>
+    <tr><td class="muted">VAT ({{ quote.vat_rate }}%{% if quote.vat_mode == 'inclusive' %}, included{% endif %})</td>
+        <td class="right">R{{ quote.vat_amount }}</td></tr>
+    <tr><td><strong>Total</strong></td><td class="right"><strong>R{{ quote.total }}</strong></td></tr>
+  </table>
+</div>
+{% endif %}
+
+{% if can_edit %}
+<div class="two-col">
+  <div>
+    <h2 style="margin-top:0;">Add a line</h2>
+    <div class="card">
+      <form method="post" action="{% url 'web:quotation_line' quote.id %}">{% csrf_token %}
+        <label>Description</label>
+        <input type="text" name="description" required placeholder="Supply and fit SEW K87 gearbox">
+        <div class="two">
+          <div><label>Section</label>
+            <select name="section">
+              <option value="">— none —</option>
+              {% for g in grouped %}<option value="{{ g.section.id }}">{{ g.section.name }}</option>{% endfor %}
+            </select></div>
+          <div><label>Category</label>
+            <select name="category">
+              {% for v, l in categories %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+            </select></div>
+          <div><label>Quantity</label><input type="number" step="0.01" name="qty" value="1"></div>
+          <div><label>Unit</label><input type="text" name="unit" value="each"></div>
+          <div><label>Unit cost</label><input type="number" step="0.01" name="unit_cost" placeholder="what it costs you"></div>
+          <div><label>Markup %</label><input type="number" step="0.01" name="markup_pct"></div>
+          <div><label>Discount %</label><input type="number" step="0.01" name="discount_pct"></div>
+          <div><label>Unit price (overrides cost + markup)</label>
+            <input type="number" step="0.01" name="unit_price"></div>
+        </div>
+        <button class="btn" type="submit" style="margin-top:16px;">Add line</button>
+        <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Enter a cost and a
+          markup and the price is worked out. Enter a price directly and it is used
+          as given — but margin stays unknown until a cost is captured.</p>
+      </form>
+    </div>
+  </div>
+  <div>
+    <h2 style="margin-top:0;">Add a section</h2>
+    <div class="card">
+      <form method="post" action="{% url 'web:quotation_section' quote.id %}" class="row" style="gap:8px;">
+        {% csrf_token %}
+        <input type="text" name="name" placeholder="Labour, Materials, Equipment…" style="flex:1;" required>
+        <button class="btn ghost" type="submit">Add</button>
+      </form>
+      <p class="muted" style="margin:12px 0 0;font-size:12.5px;">Contractors price in
+        sections and customers read them that way.</p>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Scope, terms, header ───────────────────────────────────────────────── #}
+{% if can_edit %}
+<h2>Header &amp; scope</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:quotation_header' quote.id %}">{% csrf_token %}
+    <div class="two">
+      <div><label>Customer</label>
+        <select name="customer">
+          {% for c in customers %}
+          <option value="{{ c.id }}" {% if c.id == quote.customer_id %}selected{% endif %}>{{ c.display_name }}</option>
+          {% endfor %}
+        </select></div>
+      <div><label>Contact</label>
+        <select name="contact">
+          <option value="">—</option>
+          {% if quote.customer %}{% for c in quote.customer.contacts.all %}
+          <option value="{{ c.id }}" {% if c.id == quote.contact_id %}selected{% endif %}>{{ c.full_name }}{% if c.job_title %} · {{ c.job_title }}{% endif %}</option>
+          {% endfor %}{% endif %}
+        </select></div>
+      <div><label>Department</label>
+        <select name="department">
+          <option value="">—</option>
+          {% if quote.customer %}{% for d in quote.customer.departments.all %}
+          <option value="{{ d.id }}" {% if d.id == quote.department_id %}selected{% endif %}>{{ d.name }}</option>
+          {% endfor %}{% endif %}
+        </select></div>
+      <div><label>Site</label>
+        <select name="customer_site">
+          <option value="">—</option>
+          {% if quote.customer %}{% for s in quote.customer.sites.all %}
+          <option value="{{ s.id }}" {% if s.id == quote.customer_site_id %}selected{% endif %}>{{ s.full_path }}</option>
+          {% endfor %}{% endif %}
+        </select></div>
+      <div><label>Title</label><input type="text" name="title" value="{{ quote.title }}"></div>
+      <div><label>Quotation type</label>
+        <select name="quotation_type">
+          <option value="">—</option>
+          {% for t in types %}<option value="{{ t.id }}" {% if t.id == quote.quotation_type_id %}selected{% endif %}>{{ t.label }}</option>{% endfor %}
+        </select></div>
+      <div><label>VAT treatment</label>
+        <select name="vat_mode">
+          {% for v, l in vat_modes %}<option value="{{ v }}" {% if v == quote.vat_mode %}selected{% endif %}>{{ l }}</option>{% endfor %}
+        </select></div>
+      <div><label>VAT rate %</label><input type="number" step="0.01" name="vat_rate" value="{{ quote.vat_rate }}"></div>
+      <div><label>Valid until</label><input type="date" name="validity_date" value="{{ quote.validity_date|date:'Y-m-d' }}"></div>
+      <div><label>Their reference</label><input type="text" name="customer_reference" value="{{ quote.customer_reference }}"></div>
+    </div>
+    <label>Scope of work</label>
+    <textarea name="scope_of_work" rows="5">{{ quote.scope_of_work }}</textarea>
+    <div class="two">
+      <div><label>Exclusions</label><textarea name="exclusions" rows="3">{{ quote.exclusions }}</textarea></div>
+      <div><label>Assumptions</label><textarea name="assumptions" rows="3">{{ quote.assumptions }}</textarea></div>
+    </div>
+    <button class="btn" type="submit" style="margin-top:16px;">Save header</button>
+  </form>
+</div>
+{% elif quote.scope_of_work %}
+<h2>Scope of work</h2>
+<div class="card"><p style="margin:0;white-space:pre-wrap;">{{ quote.scope_of_work }}</p></div>
+{% endif %}
+
+{# ── The award ──────────────────────────────────────────────────────────── #}
+<h2>Customer purchase orders</h2>
 <div class="card" style="padding:0;">
   <table>
-    <tr><th>#</th><th>Description</th><th class="right">Qty</th><th>Unit</th>
-      {% if can_view_money %}<th class="right">Unit price</th><th class="right">Line total</th>{% endif %}</tr>
-    {% for l in quote.lines.all %}
-    <tr><td class="muted">{{ l.position }}</td><td>{{ l.description }}</td>
-      <td class="right">{{ l.qty }}</td><td class="muted">{{ l.unit }}</td>
-      {% if can_view_money %}<td class="right">R{{ l.unit_price }}</td><td class="right">R{{ l.line_total }}</td>{% endif %}</tr>
-    {% empty %}<tr><td colspan="6" class="muted" style="padding:16px;">No line items. {% if can_edit %}<a href="{% url 'web:quotation_edit' quote.id %}">Add some →</a>{% endif %}</td></tr>
+    <tr><th>PO number</th><th>Date</th>{% if can_view_money %}<th class="right">Value</th>{% endif %}<th>Status</th></tr>
+    {% for po in quote.customer_pos.all %}
+    <tr><td><strong>{{ po.po_number }}</strong></td>
+      <td class="muted">{{ po.po_date|date:"d M Y"|default:"—" }}</td>
+      {% if can_view_money %}<td class="right">R{{ po.value }}</td>{% endif %}
+      <td><span class="chip">{{ po.get_status_display }}</span></td></tr>
+    {% empty %}<tr><td colspan="4" class="muted" style="padding:18px;">
+      No purchase order yet. Work cannot be awarded without one — there would be
+      nothing to invoice against.</td></tr>
     {% endfor %}
   </table>
 </div>
 
-{% if can_view_money %}
-<div class="card" style="max-width:340px; margin-left:auto;">
-  <div class="row"><span class="muted" style="flex:1;">Subtotal</span><span>R{{ quote.subtotal }}</span></div>
-  <div class="row"><span class="muted" style="flex:1;">VAT ({{ quote.vat_rate }}%)</span><span>R{{ quote.vat_amount }}</span></div>
-  <div class="row" style="border-top:1px solid var(--line); margin-top:6px; padding-top:8px; font-weight:700;">
-    <span style="flex:1;">Total</span><span>R{{ quote.total }}</span></div>
+{% if can_award %}
+<div class="two-col">
+  <div>
+    <div class="card">
+      <strong>Record a purchase order</strong>
+      <form method="post" action="{% url 'web:quotation_po' quote.id %}"
+            enctype="multipart/form-data" style="margin-top:10px;">
+        {% csrf_token %}
+        <div class="two">
+          <div><label>PO number</label><input type="text" name="po_number" required></div>
+          <div><label>PO date</label><input type="date" name="po_date"></div>
+          <div><label>Value</label><input type="number" step="0.01" name="value"
+                 placeholder="{{ quote.total }}"></div>
+          <div><label>PO document</label><input type="file" name="document"></div>
+        </div>
+        <button class="btn ghost" type="submit" style="margin-top:14px;">Record PO</button>
+        <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Several may be
+          recorded — large work is often awarded in stages.</p>
+      </form>
+    </div>
+  </div>
+  <div>
+    {% if quote.customer_pos.all and quote.status != 'awarded' %}
+    <div class="card" style="border-left:4px solid var(--green);border-radius:0 var(--r) var(--r) 0;">
+      <strong>Award and create work</strong>
+      <p class="muted" style="margin:8px 0 12px;font-size:13px;">
+        Moves the customer, site, contact, scope and value into a project and a work
+        item in one step. This quotation becomes read-only.</p>
+      <form method="post" action="{% url 'web:quotation_award' quote.id %}"
+            data-confirm="Award {{ quote.display_number|escapejs }} and create the work?&#10;&#10;This is not reversible. The quotation becomes read-only and any later change is a revision or a variation.">
+        {% csrf_token %}
+        <input type="text" name="work_name" placeholder="Name for the work (optional)">
+        <button class="btn" type="submit" style="margin-top:12px;">Award → create work</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
 </div>
 {% endif %}
 
-{% if quote.notes %}<h2>Notes</h2><div class="card muted">{{ quote.notes }}</div>{% endif %}
+{% if trace %}
+<h2>Traceability</h2>
+<div class="card">
+  <p class="muted" style="margin:0 0 12px;font-size:13px;">Everything that traces
+    back to this quotation — the claim that it is the commercial source of truth,
+    made checkable.</p>
+  <table class="kv">
+    <tr><td class="muted">Projects</td><td>{{ trace.projects|length }}</td></tr>
+    <tr><td class="muted">Work items</td><td>{{ trace.tasks|length }}</td></tr>
+    <tr><td class="muted">Supplier POs</td><td>{{ trace.supplier_pos|length }}</td></tr>
+    <tr><td class="muted">Labour hours</td><td>{{ trace.labour_hours }}</td></tr>
+    {% if can_view_money %}
+    <tr><td class="muted">Quoted</td><td>R{{ trace.quoted_value }}</td></tr>
+    <tr><td class="muted">Invoiced</td><td>R{{ trace.invoiced }}</td></tr>
+    {% endif %}
+  </table>
+</div>
+{% endif %}
+
+{# ── History ────────────────────────────────────────────────────────────── #}
+<h2>History</h2>
+<div class="card" style="padding:0;">
+  <table>
+    {% for e in quote.events.all %}
+    <tr>
+      <td><span class="chip">{{ e.verb|cut:"_"|capfirst }}</span></td>
+      <td class="muted">{% if e.from_status %}{{ e.from_status }} → {{ e.to_status }}{% else %}{{ e.note }}{% endif %}</td>
+      <td class="muted">{{ e.actor|default:"—" }}</td>
+      <td class="muted right">{{ e.created_at|date:"d M Y H:i" }}</td>
+    </tr>
+    {% empty %}<tr><td class="muted" style="padding:18px;">Nothing recorded yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
 {% endblock %}

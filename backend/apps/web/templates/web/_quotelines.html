@@ -1,0 +1,34 @@
+{% comment %}Priced lines. Params: lines, plus quote/can_edit/can_view_money/categories
+from the parent context.{% endcomment %}
+<table>
+  <tr><th>Description</th><th>Qty</th>
+      {% if can_view_money %}<th class="right">Cost</th><th class="right">Price</th>
+      <th class="right">Total</th><th class="right">Margin</th>{% endif %}
+      {% if can_edit %}<th></th>{% endif %}</tr>
+  {% for l in lines %}
+  <tr>
+    <td><strong>{{ l.description }}</strong>
+      <br><span class="muted" style="font-size:12px;">{{ l.get_category_display }}
+      {% if l.ai_suggested %}· <span class="chip purple">LulaAI</span>{% endif %}</span></td>
+    <td class="muted">{{ l.qty }} {{ l.unit }}</td>
+    {% if can_view_money %}
+    <td class="right muted">{% if l.has_cost %}R{{ l.unit_cost }}{% else %}—{% endif %}</td>
+    <td class="right">R{{ l.effective_unit_price }}</td>
+    <td class="right"><strong>R{{ l.line_total }}</strong></td>
+    <td class="right">{% if l.margin_pct is None %}<span class="muted" title="No cost captured">—</span>
+      {% else %}{{ l.margin_pct }}%{% endif %}</td>
+    {% endif %}
+    {% if can_edit %}
+    <td class="right nowrap">
+      <form method="post" action="{% url 'web:quotation_line' quote.id %}"
+            data-confirm="Remove &quot;{{ l.description|escapejs }}&quot;?">
+        {% csrf_token %}<input type="hidden" name="action" value="delete">
+        <input type="hidden" name="line" value="{{ l.id }}">
+        <button class="btn ghost" type="submit">Remove</button></form>
+    </td>
+    {% endif %}
+  </tr>
+  {% empty %}
+  <tr><td colspan="7" class="muted" style="padding:18px;">No lines here yet.</td></tr>
+  {% endfor %}
+</table>
