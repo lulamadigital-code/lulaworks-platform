@@ -160,6 +160,18 @@ def complete_task(task, user, *, actual_hours=None) -> Task:
     return task
 
 
+def due_date_from_duration(company, days, start=None):
+    """Turn "this takes N days" into a real deadline using the company calendar.
+
+    Calendar arithmetic promises clients dates the gate is locked. This walks
+    the configured week and the public-holiday list instead, so a five-day job
+    started on a Thursday lands the following Thursday rather than on Tuesday.
+    """
+    from apps.administration.hours import add_working_days
+    from django.utils import timezone
+    return add_working_days(company, start or timezone.localdate(), days)
+
+
 def default_workspace(company):
     """Every company has one — created on demand so a two-person business never
     has to think about workspaces."""

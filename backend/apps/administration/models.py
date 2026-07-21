@@ -49,6 +49,11 @@ class CompanySettings(PlatformBaseModel):
     business_hours = models.JSONField(default=dict, blank=True)
     working_days = models.JSONField(default=list, blank=True)
     public_holidays = models.JSONField(default=list, blank=True)
+    # Breakdown work does not respect business hours — this records whether the
+    # company answers out-of-hours, and on what number.
+    emergency_support = models.BooleanField(default=False)
+    emergency_hours = models.CharField(max_length=80, blank=True)  # "24/7", "18:00-06:00"
+    emergency_note = models.CharField(max_length=200, blank=True)
     tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=15)
     approval_rules = models.JSONField(default=dict, blank=True)
     compliance_defaults = models.JSONField(default=dict, blank=True)

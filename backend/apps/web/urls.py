@@ -11,6 +11,8 @@ urlpatterns = [
     path("profile/", views.profile, name="profile"),
     # Company profile — the identity every other module reads from
     path("company/", views.company_profile, name="company_profile"),
+    path("company/hours/", views.company_hours_page, name="company_hours_page"),
+    path("company/hours/save/", views.company_hours, name="company_hours"),
     path("company/bank/", views.company_bank, name="company_bank"),
     path("company/contacts/", views.company_contact, name="company_contact"),
     path("company/documents/", views.company_document, name="company_document"),

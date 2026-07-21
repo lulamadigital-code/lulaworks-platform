@@ -835,6 +835,106 @@ def _save_defaults(request, company):
 
 @login_required
 @require_POST
+def company_hours(request):
+    """The company calendar: the week, lunch, emergency cover, and holidays.
+
+    This is not decoration — `add_working_days` reads it, so a change here
+    changes what "due in 5 days" means everywhere.
+    """
+    from apps.administration.hours import (
+        DAYS,
+        add_holiday,
+        ensure_statutory_holidays,
+        remove_holiday,
+        save_week,
+    )
+    company = request.user.active_company
+    if not request.user.has_perm_code("company.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:company_hours_page")
+
+    action = request.POST.get("action", "week")
+    if action == "week":
+        week = {}
+        for key in DAYS:
+            week[key] = {
+                "closed": not request.POST.get(f"{key}_enabled"),
+                "open": request.POST.get(f"{key}_open", "").strip(),
+                "close": request.POST.get(f"{key}_close", "").strip(),
+                "lunch_start": request.POST.get(f"{key}_lunch_start", "").strip(),
+                "lunch_end": request.POST.get(f"{key}_lunch_end", "").strip(),
+            }
+        save_week(company, week)
+
+        from apps.administration.models import CompanySettings
+        row = CompanySettings.objects.get(company=company)
+        row.emergency_support = bool(request.POST.get("emergency_support"))
+        row.emergency_hours = request.POST.get("emergency_hours", "").strip()
+        row.emergency_note = request.POST.get("emergency_note", "").strip()
+        row.save(update_fields=["emergency_support", "emergency_hours", "emergency_note"])
+        messages.success(request, "Working hours updated.")
+
+    elif action == "seed_holidays":
+        year = int(request.POST.get("year") or timezone.localdate().year)
+        added = ensure_statutory_holidays(company, year)
+        messages.success(
+            request,
+            f"Added {added} public holiday(s) for {year}." if added
+            else f"{year} already has every statutory holiday.")
+
+    elif action == "add_holiday":
+        day, name = request.POST.get("date"), request.POST.get("name", "").strip()
+        if not day or not name:
+            messages.error(request, "A date and a name are required.")
+        else:
+            add_holiday(company, day=day, name=name)
+            messages.success(request, "Closure added.")
+
+    elif action == "remove_holiday":
+        remove_holiday(company, request.POST.get("date"))
+        messages.success(request, "Removed.")
+
+    return redirect("web:company_hours_page")
+
+
+@login_required
+def company_hours_page(request):
+    from apps.administration.hours import (
+        DAY_LABELS,
+        DAYS,
+        get_week,
+        holidays,
+        is_open,
+        weekly_hours,
+    )
+    from apps.administration.models import CompanySettings
+    from apps.execution.services import due_date_from_duration
+
+    company = request.user.active_company
+    week = get_week(company)
+    today = timezone.localdate()
+
+    return render(request, "web/company_hours.html", {
+        "company": company,
+        "settings": CompanySettings.objects.get_or_create(company=company)[0],
+        "days": [{"key": k, "label": DAY_LABELS[k], **week[k]} for k in DAYS],
+        "status": is_open(company),
+        "weekly_hours": weekly_hours(company),
+        "holidays": holidays(company, today.year),
+        "next_year": today.year + 1,
+        "this_year": today.year,
+        # Proof the calendar is load-bearing rather than decorative.
+        "example": {
+            "days": 5,
+            "calendar": today + timezone.timedelta(days=5),
+            "working": due_date_from_duration(company, 5, today),
+        },
+        "can_edit": request.user.has_perm_code("company.manage"),
+    })
+
+
+@login_required
+@require_POST
 def company_bank(request):
     """Add, default, or remove a bank account. These print on invoices, so the
     action is deliberately explicit rather than inline-editable."""

@@ -29,6 +29,7 @@ _SECTIONS = {
     "profile": "profile",
     "company_profile": "company", "company_bank": "company",
     "company_contact": "company", "company_document": "company",
+    "company_hours_page": "company", "company_hours": "company",
     "rfq": "rfq", "rfq_detail": "rfq", "rfq_upload": "rfq", "rfq_approve": "rfq",
     "rfq_line": "rfq",
     "quotations": "quotations", "quotation_detail": "quotations",

@@ -1,0 +1,141 @@
+{% extends "web/base.html" %}
+{% block title %}Working hours{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:company_profile' %}">← Company profile</a></p>
+
+<div class="pagehead">
+  <div>
+    <h1>Working hours</h1>
+    <p class="sub" style="margin:0;">The company calendar. Due dates, lead times and
+      turnaround reporting all count these days — change it here and "due in five days"
+      changes everywhere.</p>
+  </div>
+  <span class="chip {% if status.open %}ok{% else %}bad{% endif %}">
+    {% if status.open %}Open now{% else %}Closed{% endif %}</span>
+</div>
+
+<div class="grid">
+  <div class="tile"><div class="ic" style="background:{% if status.open %}var(--green-t);color:#0a8f57{% else %}var(--red-t);color:#c22a41{% endif %};">
+      {% if status.open %}✓{% else %}✕{% endif %}</div>
+    <div class="n" style="font-size:16px;">{{ status.reason }}</div>
+    <div class="l">Right now{% if status.next_open and not status.open %} · next open {{ status.next_open|date:"D d M, H:i" }}{% endif %}</div></div>
+  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">h</div>
+    <div class="n">{{ weekly_hours }}</div><div class="l">Hours a full week</div></div>
+  <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">◷</div>
+    <div class="n">{{ holidays|length }}</div><div class="l">Closures in {{ this_year }}</div></div>
+  <div class="tile"><div class="ic" style="background:{% if settings.emergency_support %}var(--orange-t);color:#b9711a{% else %}#eef0f5;color:var(--muted){% endif %};">!</div>
+    <div class="n" style="font-size:16px;">{% if settings.emergency_support %}{{ settings.emergency_hours|default:"On call" }}{% else %}None{% endif %}</div>
+    <div class="l">Emergency cover</div></div>
+</div>
+
+{# The calendar is load-bearing, so show what it actually changes. #}
+<div class="card" style="border-left:4px solid var(--primary);border-radius:0 var(--r) var(--r) 0;">
+  <strong>Why this matters</strong>
+  <p style="margin:10px 0 0;">A {{ example.days }}-day job starting today is due
+    <strong>{{ example.working|date:"D d M Y" }}</strong> using your calendar —
+    not {{ example.calendar|date:"D d M Y" }}, which is what plain date arithmetic
+    would have promised the client.</p>
+  <p class="muted" style="margin:8px 0 0;font-size:12.5px;">Closed days and public
+    holidays are skipped automatically.</p>
+</div>
+
+<h2>The week</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:company_hours' %}">
+    {% csrf_token %}<input type="hidden" name="action" value="week">
+    <div style="overflow-x:auto;">
+      <table>
+        <tr><th>Day</th><th>Open</th><th>Opens</th><th>Closes</th>
+            <th>Lunch from</th><th>Lunch to</th></tr>
+        {% for d in days %}
+        <tr>
+          <td><strong>{{ d.label }}</strong></td>
+          <td><input type="checkbox" name="{{ d.key }}_enabled" value="1"
+                     {% if not d.closed %}checked{% endif %} style="width:auto;"></td>
+          <td><input type="time" name="{{ d.key }}_open" value="{{ d.open }}" style="width:110px;"></td>
+          <td><input type="time" name="{{ d.key }}_close" value="{{ d.close }}" style="width:110px;"></td>
+          <td><input type="time" name="{{ d.key }}_lunch_start" value="{{ d.lunch_start }}" style="width:110px;"></td>
+          <td><input type="time" name="{{ d.key }}_lunch_end" value="{{ d.lunch_end }}" style="width:110px;"></td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <h3 style="font-size:14px;margin:22px 0 8px;">Emergency support</h3>
+    <label class="inline"><input type="checkbox" name="emergency_support" value="1"
+           {% if settings.emergency_support %}checked{% endif %}> We answer breakdowns outside business hours</label>
+    <div class="two" style="margin-top:12px;">
+      <div><label>Emergency hours</label>
+        <input type="text" name="emergency_hours" value="{{ settings.emergency_hours }}"
+               placeholder="24/7 or 17:00–07:00"></div>
+      <div><label>Note / number</label>
+        <input type="text" name="emergency_note" value="{{ settings.emergency_note }}"
+               placeholder="Callout line +27 …"></div>
+    </div>
+    <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Breakdown and emergency
+      callout work does not respect business hours — this records whether you answer,
+      and on what number.</p>
+
+    {% if can_edit %}<button class="btn" type="submit" style="margin-top:18px;">Save working hours</button>{% endif %}
+  </form>
+</div>
+
+<h2>Public holidays &amp; closures — {{ this_year }}</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Date</th><th>Day</th><th>Name</th><th>Source</th><th></th></tr>
+    {% for h in holidays %}
+    <tr>
+      <td>{{ h.date }}</td>
+      <td class="muted">{{ h.date|date:"D" }}</td>
+      <td>{{ h.name }}</td>
+      <td>{% if h.source == 'statutory' %}<span class="chip">Statutory</span>
+          {% else %}<span class="chip info">Company</span>{% endif %}</td>
+      <td class="right">{% if can_edit %}
+        <form method="post" action="{% url 'web:company_hours' %}">{% csrf_token %}
+          <input type="hidden" name="action" value="remove_holiday">
+          <input type="hidden" name="date" value="{{ h.date }}">
+          <button class="btn ghost" type="submit">Remove</button></form>{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="muted" style="padding:20px;">
+      No holidays loaded — due dates will treat public holidays as working days.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% if can_edit %}
+<div class="two-col">
+  <div>
+    <div class="card">
+      <strong>Load South African public holidays</strong>
+      <p class="muted" style="margin:8px 0 14px;font-size:12.5px;">Computed, including
+        Good Friday and Family Day, and the rule that a holiday falling on a Sunday
+        moves to the Monday. Your own closures are never touched.</p>
+      <form method="post" action="{% url 'web:company_hours' %}" class="row" style="gap:8px;">
+        {% csrf_token %}<input type="hidden" name="action" value="seed_holidays">
+        <select name="year" style="width:auto;">
+          <option value="{{ this_year }}">{{ this_year }}</option>
+          <option value="{{ next_year }}">{{ next_year }}</option>
+        </select>
+        <button class="btn ghost" type="submit">Load holidays</button>
+      </form>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <strong>Add a company closure</strong>
+      <p class="muted" style="margin:8px 0 6px;font-size:12.5px;">Shutdown weeks,
+        stocktake days, anything your gates are shut for.</p>
+      <form method="post" action="{% url 'web:company_hours' %}">
+        {% csrf_token %}<input type="hidden" name="action" value="add_holiday">
+        <label>Date</label><input type="date" name="date" required>
+        <label>Name</label><input type="text" name="name" required
+               placeholder="December shutdown">
+        <button class="btn ghost" type="submit" style="margin-top:14px;">Add closure</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
