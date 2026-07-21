@@ -453,3 +453,116 @@ class UnifiedWorkTests(TestCase):
             create_work(c, mgr, name="Standalone job", origin="manual")
         self.client.force_login(mgr)
         self.assertContains(self.client.get("/work/"), "Standalone job")
+
+
+class EveryPageLoadsTests(TestCase):
+    """Smoke-test every GET page in the manager web.
+
+    Added after a NameError shipped on the main quotation-creation route: an
+    import was removed while retiring a different view, and 321 passing tests
+    said nothing because none of them opened that page. A missing import, a
+    renamed field or a broken template is a 500, and this catches all three for
+    the cost of one test.
+
+    It asserts "not a server error" rather than "200" — a redirect is a
+    legitimate answer for a permission gate or a retired route.
+    """
+
+    def setUp(self):
+        from apps.customers.services import create_customer
+        from apps.execution.services import create_work
+        from apps.quotes.services import ensure_quotation_types
+
+        self.company = make_company()
+        # A user holding everything, so pages are exercised rather than bounced.
+        self.user = user_with(self.company, [
+            "projects.view", "projects.create", "quotes.create", "rfq.upload",
+            "rfq.approve", "estimating.manage", "estimating.approve",
+            "procurement.manage", "po.approve", "finance.view_money",
+            "finance.manage", "execution.manage", "compliance.manage",
+            "compliance.override", "ai.generate", "users.invite", "company.manage",
+        ], email="everything@lulama.co.za")
+
+        with tenant_scope(self.company.id):
+            ensure_quotation_types(self.company)
+            self.customer = create_customer(self.company, self.user,
+                                            name="Harmony Mining")
+            self.contact = self.customer.contacts.create(
+                company=self.company, full_name="Sarah Brown",
+                email="sarah@harmony.co.za")
+            self.quote = Quotation.objects.create(
+                company=self.company, number="QT-SMOKE", client_name="Harmony Mining",
+                customer=self.customer)
+            self.quote.lines.create(company=self.company, position=1,
+                                    description="A line", qty=1, unit_price=100)
+            self.task = create_work(self.company, self.user, name="Smoke test work")
+        self.membership = Membership.objects.get(company=self.company, user=self.user)
+        self.client.force_login(self.user)
+
+    def _urls(self):
+        from django.urls import reverse
+        simple = ["dashboard", "work", "work_new", "rfq", "quotations",
+                  "quotation_new", "projects", "estimates", "suppliers",
+                  "purchase_orders", "commercial", "lulama", "people",
+                  "company_profile", "company_hours_page", "customers",
+                  "notifications", "profile", "change_password"]
+        urls = [(name, reverse(f"web:{name}")) for name in simple]
+
+        with_pk = [
+            ("quotation_detail", self.quote.id),
+            ("quotation_edit", self.quote.id),        # retired → redirect
+            ("quotation_suggest", self.quote.id),
+            ("customer_detail", self.customer.id),
+            ("customer_contact_detail", self.contact.id),
+            ("work_detail", self.task.id),
+            ("work_decompose", self.task.id),
+            ("person_detail", self.membership.id),
+        ]
+        urls += [(name, reverse(f"web:{name}", args=[pk])) for name, pk in with_pk]
+        return urls
+
+    def test_no_page_raises_a_server_error(self):
+        broken = []
+        for name, url in self._urls():
+            response = self.client.get(url)
+            if response.status_code >= 500:
+                broken.append(f"{name} ({url}) → {response.status_code}")
+        self.assertEqual(broken, [], f"pages returning a server error: {broken}")
+
+    def test_creating_a_blank_quotation_works(self):
+        """The exact route that broke: a blank quotation, end to end."""
+        from apps.quotes.models import Quotation, QuotationType
+
+        with tenant_scope(self.company.id):
+            qtype = QuotationType.objects.get(key="plant_hire")
+            before = Quotation.objects.count()
+
+        response = self.client.post("/quotations/new/", {
+            "method": "blank",
+            "customer": str(self.customer.id),
+            "quotation_type": str(qtype.id),
+            "title": "Crane hire",
+            "site": "Plant 1",
+            "vat_mode": "exclusive",
+        })
+        self.assertEqual(response.status_code, 302)
+
+        with tenant_scope(self.company.id):
+            self.assertEqual(Quotation.objects.count(), before + 1)
+            created = Quotation.objects.order_by("-created_at").first()
+            self.assertEqual(created.customer_id, self.customer.id)
+            self.assertEqual(created.quotation_type_id, qtype.id)
+            # The type seeds its sections, so the estimator starts with a shape.
+            self.assertTrue(created.sections.exists())
+
+    def test_copying_a_quotation_works(self):
+        from apps.quotes.models import Quotation
+
+        with tenant_scope(self.company.id):
+            before = Quotation.objects.count()
+        response = self.client.post("/quotations/new/", {
+            "method": "copy", "source": str(self.quote.id),
+        })
+        self.assertEqual(response.status_code, 302)
+        with tenant_scope(self.company.id):
+            self.assertEqual(Quotation.objects.count(), before + 1)

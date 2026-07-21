@@ -1932,7 +1932,11 @@ def quotation_new(request):
     """
     from apps.customers.models import Customer
     from apps.quotes.models import QuotationType, VatMode
-    from apps.quotes.services import duplicate, ensure_quotation_types
+    from apps.quotes.services import (
+        create_quotation,
+        duplicate,
+        ensure_quotation_types,
+    )
 
     if not request.user.has_perm_code("quotes.create"):
         messages.error(request, "You do not have permission to create quotations.")
