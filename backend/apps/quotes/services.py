@@ -5,7 +5,7 @@ from django.db import transaction
 from apps.administration.services import next_number
 from apps.core.events import publish
 
-from .models import Quotation
+from .models import Quotation, QuotationLine, QuotationSource
 
 
 def create_quotation(company, user, *, client_name, title="", site="", lines=None) -> Quotation:
@@ -71,3 +71,375 @@ def update_quotation(quote, user, *, title=None, client_name=None, site=None,
     publish("QuotationUpdated", company=quote.company, subject=quote, actor=user,
             payload={"number": quote.number})
     return quote
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE 5 — the commercial gateway
+#
+# The quotation is the contract. Once awarded it is the single source of truth
+# execution traces back to, which means two rules hold everywhere below:
+#   * a locked quotation cannot be edited — only revised
+#   * every state change is recorded, so "who approved this?" always answers
+# ══════════════════════════════════════════════════════════════════════════════
+
+from django.utils import timezone as _tz
+
+from .models import (
+    APPROVAL_CHAIN,
+    DEFAULT_QUOTATION_TYPES,
+    CustomerPurchaseOrder,
+    LineCategory,
+    QuotationEvent,
+    QuotationSection,
+    QuotationStatus,
+    QuotationType,
+    VatMode,
+)
+
+
+class QuotationError(ValueError):
+    """A refusal with a reason a person can act on."""
+
+
+def ensure_quotation_types(company) -> int:
+    """Seed the default type catalogue. Idempotent; never removes custom types."""
+    existing = set(QuotationType.objects.filter(company=company)
+                   .values_list("key", flat=True))
+    created = 0
+    for position, (key, label) in enumerate(DEFAULT_QUOTATION_TYPES):
+        if key not in existing:
+            QuotationType.objects.create(company=company, key=key, label=label,
+                                         position=position)
+            created += 1
+    return created
+
+
+def record_event(quote, *, verb, note="", actor=None, from_status="", to_status="",
+                 customer_contact=None) -> QuotationEvent:
+    return QuotationEvent.objects.create(
+        company=quote.company, quotation=quote, verb=verb, note=note[:500],
+        actor=actor, from_status=from_status, to_status=to_status,
+        customer_contact=customer_contact,
+    )
+
+
+def guard_editable(quote) -> None:
+    """Raise unless the quotation may still be changed.
+
+    Called by every mutating path. An awarded quotation is what was contracted;
+    changing it silently would break the audit trail that the whole module
+    exists to provide.
+    """
+    if quote.is_locked:
+        raise QuotationError(
+            f"{quote.display_number} is {quote.get_status_display().lower()} and "
+            "cannot be edited. Create a revision instead.")
+
+
+# ── Lifecycle ────────────────────────────────────────────────────────────────
+
+def next_statuses(quote) -> list:
+    """The sensible next steps — what the UI offers as buttons."""
+    status = quote.status
+    if status in (QuotationStatus.SENT, QuotationStatus.ISSUED):
+        return [QuotationStatus.ACCEPTED, QuotationStatus.REVISION_REQUESTED,
+                QuotationStatus.REJECTED, QuotationStatus.EXPIRED]
+    if status == QuotationStatus.ACCEPTED:
+        return [QuotationStatus.AWARDED]
+    if status == QuotationStatus.REVISION_REQUESTED:
+        return [QuotationStatus.DRAFT]
+    from .models import LOCKED_STATUSES
+    if status in LOCKED_STATUSES:
+        return []                        # the outcome is already recorded
+    try:
+        index = APPROVAL_CHAIN.index(status)
+    except ValueError:
+        return []
+    return [APPROVAL_CHAIN[index + 1]] if index + 1 < len(APPROVAL_CHAIN) else []
+
+
+@transaction.atomic
+def transition(quote, user, *, to_status, note="", customer_contact=None):
+    """Move the quotation through its lifecycle, recording why.
+
+    Refuses to issue a quotation with no lines — an empty quotation reaching a
+    customer is worse than a late one.
+    """
+    from .models import LOCKED_STATUSES
+
+    if quote.status == to_status:
+        return quote
+    if quote.status in LOCKED_STATUSES and to_status != QuotationStatus.AWARDED:
+        raise QuotationError(
+            f"{quote.display_number} is {quote.get_status_display().lower()} — "
+            "its outcome is already recorded.")
+    if to_status in (QuotationStatus.ISSUED, QuotationStatus.SENT) \
+            and not quote.lines.exists():
+        raise QuotationError("This quotation has no line items yet.")
+
+    previous = quote.status
+    quote.status = to_status
+    fields = ["status", "updated_at"]
+
+    if to_status in (QuotationStatus.ISSUED, QuotationStatus.SENT):
+        quote.issued_at = _tz.now()
+        fields.append("issued_at")
+    if to_status in (QuotationStatus.ACCEPTED, QuotationStatus.REJECTED,
+                     QuotationStatus.LOST, QuotationStatus.AWARDED):
+        quote.decided_at = _tz.now()
+        fields.append("decided_at")
+    if to_status in (QuotationStatus.REJECTED, QuotationStatus.LOST) and note:
+        quote.lost_reason = note[:255]
+        fields.append("lost_reason")
+    if user is not None:
+        quote.updated_by = user
+        fields.append("updated_by")
+
+    quote.save(update_fields=fields)
+    record_event(quote, verb="status_changed", note=note, actor=user,
+                 from_status=previous, to_status=to_status,
+                 customer_contact=customer_contact)
+    publish("QuotationStatusChanged", company=quote.company, subject=quote, actor=user,
+            payload={"quotation": quote.number, "from": previous, "to": to_status})
+    return quote
+
+
+@transaction.atomic
+def create_revision(quote, user, *, reason=""):
+    """A new version that SUPERSEDES rather than overwrites.
+
+    The customer asked for a change; the previously issued numbers must remain
+    exactly as they were sent, so the revision is a new row pointing back.
+    """
+    new = Quotation.objects.create(
+        company=quote.company, number=quote.number, revision=quote.revision + 1,
+        supersedes=quote, title=quote.title, client_name=quote.client_name,
+        customer=quote.customer, branch=quote.branch, customer_site=quote.customer_site,
+        department=quote.department, contact=quote.contact, site=quote.site,
+        quotation_type=quote.quotation_type, source=quote.source,
+        source_rfq=quote.source_rfq, scope_of_work=quote.scope_of_work,
+        vat_mode=quote.vat_mode, vat_rate=quote.vat_rate, currency=quote.currency,
+        validity_date=quote.validity_date, payment_terms_days=quote.payment_terms_days,
+        customer_reference=quote.customer_reference, rfq_reference=quote.rfq_reference,
+        project_reference=quote.project_reference, prepared_by=user,
+        exclusions=quote.exclusions, assumptions=quote.assumptions, notes=quote.notes,
+        status=QuotationStatus.DRAFT, created_by=user, updated_by=user,
+    )
+    _copy_contents(quote, new, user)
+    record_event(new, verb="revised", note=reason, actor=user,
+                 from_status=quote.status, to_status=QuotationStatus.DRAFT)
+    record_event(quote, verb="superseded", note=f"Revision {new.revision} created",
+                 actor=user)
+    return new
+
+
+@transaction.atomic
+def duplicate(quote, user, *, number=None, customer=None):
+    """Copy an existing quotation for recurring work — a fresh quotation, not a
+    revision, because it is a different job."""
+    from apps.administration.services import next_number
+
+    new = Quotation.objects.create(
+        company=quote.company, number=number or next_number(quote.company, "quotation"),
+        title=quote.title, client_name=(customer.name if customer else quote.client_name),
+        customer=customer or quote.customer,
+        branch=None if customer else quote.branch,
+        customer_site=None if customer else quote.customer_site,
+        department=None if customer else quote.department,
+        contact=None if customer else quote.contact,
+        site=quote.site, quotation_type=quote.quotation_type,
+        source=QuotationSource.COPY, scope_of_work=quote.scope_of_work,
+        vat_mode=quote.vat_mode, vat_rate=quote.vat_rate, currency=quote.currency,
+        exclusions=quote.exclusions, assumptions=quote.assumptions,
+        prepared_by=user, status=QuotationStatus.DRAFT,
+        created_by=user, updated_by=user,
+    )
+    _copy_contents(quote, new, user)
+    record_event(new, verb="copied", note=f"Copied from {quote.display_number}",
+                 actor=user)
+    return new
+
+
+def _copy_contents(source, target, user):
+    """Sections and lines, preserving grouping and order."""
+    section_map = {}
+    for section in source.sections.all():
+        section_map[section.id] = QuotationSection.objects.create(
+            company=target.company, quotation=target, name=section.name,
+            position=section.position, notes=section.notes,
+            created_by=user, updated_by=user,
+        )
+    for line in source.lines.all():
+        QuotationLine.objects.create(
+            company=target.company, quotation=target,
+            section=section_map.get(line.section_id),
+            position=line.position, item_no=line.item_no, description=line.description,
+            category=line.category, qty=line.qty, unit=line.unit,
+            unit_cost=line.unit_cost, markup_pct=line.markup_pct,
+            discount_pct=line.discount_pct, unit_price=line.unit_price,
+            supplier=line.supplier, labour_category=line.labour_category,
+            equipment=line.equipment, notes=line.notes,
+            created_by=user, updated_by=user,
+        )
+
+
+# ── The award: where a quotation becomes work ────────────────────────────────
+
+@transaction.atomic
+def record_purchase_order(quote, user, *, po_number, value=None, po_date=None,
+                          issued_by=None, department=None, document=None, notes=""):
+    """Capture the customer's PO. Several may arrive against one quotation when
+    work is awarded in stages."""
+    if not po_number.strip():
+        raise QuotationError("A PO number is required.")
+    po = CustomerPurchaseOrder.objects.create(
+        company=quote.company, quotation=quote, po_number=po_number.strip(),
+        value=value if value is not None else quote.total, po_date=po_date,
+        issued_by=issued_by or quote.contact, department=department or quote.department,
+        document=document, notes=notes, created_by=user, updated_by=user,
+    )
+    record_event(quote, verb="po_received", actor=user,
+                 note=f"PO {po.po_number} for {po.value}")
+    publish("CustomerPOReceived", company=quote.company, subject=quote, actor=user,
+            payload={"quotation": quote.number, "po": po.po_number,
+                     "value": str(po.value)})
+    return po
+
+
+def award_summary(quote) -> dict:
+    """What awarding this quotation would hand over to execution — shown to a
+    human BEFORE anything is created, because creating work is not reversible."""
+    lines = list(quote.lines.all())
+    by_category = {}
+    for line in lines:
+        by_category.setdefault(line.get_category_display(), []).append(line)
+    return {
+        "quotation": quote,
+        "customer": quote.customer,
+        "site": quote.customer_site or quote.site,
+        "contact": quote.contact,
+        "line_count": len(lines),
+        "by_category": by_category,
+        "value": quote.total,
+        "cost": quote.total_cost,
+        "margin_pct": quote.margin_pct,
+        "customer_pos": list(quote.customer_pos.all()),
+        "has_po": quote.customer_pos.exists(),
+        "scope_of_work": quote.scope_of_work,
+    }
+
+
+@transaction.atomic
+def award_to_work(quote, user, *, create_project=True, work_name=""):
+    """Turn an awarded quotation into executable work.
+
+    This is the handover the module exists for: customer, site, contact, scope
+    and the priced items all move across in one step, so nobody retypes them and
+    everything downstream traces back to this quotation.
+
+    The quotation LOCKS on award. From here changes are revisions or variations.
+    """
+    from apps.execution.services import create_work
+    from apps.projects.services import award_quotation
+
+    if not quote.customer_pos.exists():
+        raise QuotationError(
+            "Record the customer's purchase order first — work created without "
+            "one cannot be invoiced against anything.")
+
+    project = None
+    if create_project:
+        project = award_quotation(
+            quote.company, user, quotation=quote,
+            work_type=(quote.quotation_type.label if quote.quotation_type else ""),
+            site=str(quote.customer_site) if quote.customer_site else quote.site,
+        )
+        if quote.customer_id and not project.customer_id:
+            project.customer = quote.customer
+            project.save(update_fields=["customer"])
+
+    task = create_work(
+        quote.company, user,
+        name=work_name or quote.title or f"Work for {quote.display_number}",
+        description=quote.scope_of_work,
+        origin="rfq" if quote.source_rfq_id else "project",
+        project=project,
+        is_billable=True,
+        client_name=quote.client_name,
+        site=str(quote.customer_site) if quote.customer_site else quote.site,
+        owner=user,
+    )
+
+    if quote.status != QuotationStatus.AWARDED:
+        transition(quote, user, to_status=QuotationStatus.AWARDED,
+                   note="Awarded and handed to execution")
+    record_event(quote, verb="work_created", actor=user,
+                 note=f"Work '{task.name}' created"
+                      + (f" under {project.number}" if project else ""))
+    return {"project": project, "task": task, "quotation": quote}
+
+
+def traceability(quote) -> dict:
+    """Everything that traces back to this quotation.
+
+    The architectural claim of the module is that after award, every task,
+    material, hour, invoice and payment leads back here. This is the query that
+    makes the claim checkable rather than aspirational.
+    """
+    from apps.execution.models import Task, Timesheet
+    from apps.finance.models import Invoice
+    from apps.procurement.models import PurchaseOrder
+    from apps.projects.models import Project
+
+    projects = list(Project.objects.filter(quotation=quote))
+    tasks = list(Task.objects.filter(project__in=projects)) if projects else []
+    supplier_pos = list(PurchaseOrder.objects.filter(quotation=quote))
+    invoices = list(Invoice.objects.filter(project__in=projects)) if projects else []
+    timesheets = list(Timesheet.objects.filter(task__in=tasks)) if tasks else []
+
+    labour_hours = sum((t.total_hours for t in timesheets), Decimal("0"))
+    invoiced = sum((i.total for i in invoices), Decimal("0"))
+
+    return {
+        "quotation": quote,
+        "customer_pos": list(quote.customer_pos.all()),
+        "projects": projects,
+        "tasks": tasks,
+        "supplier_pos": supplier_pos,
+        "invoices": invoices,
+        "labour_hours": labour_hours,
+        "invoiced": invoiced,
+        "quoted_value": quote.total,
+        "quoted_cost": quote.total_cost,
+        # Quoted vs actual — the post-project question every contractor asks.
+        "variance": (invoiced - quote.total).quantize(TWO) if invoices else None,
+    }
+
+
+def pipeline(company=None) -> dict:
+    """The quotation dashboard: what is open, what was won, and how often."""
+    quotes = list(Quotation.objects.all().prefetch_related("lines"))
+    won = [q for q in quotes if q.status == QuotationStatus.AWARDED]
+    lost = [q for q in quotes if q.status in (QuotationStatus.REJECTED,
+                                              QuotationStatus.LOST)]
+    open_quotes = [q for q in quotes if q.is_open]
+    decided = len(won) + len(lost)
+
+    awaiting = [q for q in quotes if q.status in
+                (QuotationStatus.ISSUED, QuotationStatus.SENT)]
+    approval = [q for q in quotes if q.status in
+                (QuotationStatus.REVIEW, QuotationStatus.MANAGER_APPROVAL,
+                 QuotationStatus.COMMERCIAL_APPROVAL)]
+
+    return {
+        "total": len(quotes),
+        "open": open_quotes,
+        "open_value": sum((q.total for q in open_quotes), Decimal("0")).quantize(TWO),
+        "won": won,
+        "won_value": sum((q.total for q in won), Decimal("0")).quantize(TWO),
+        "lost": lost,
+        "awaiting_customer": awaiting,
+        "awaiting_approval": approval,
+        "expired": [q for q in quotes if q.is_expired],
+        "win_rate": round(100 * len(won) / decided) if decided else None,
+    }

@@ -136,9 +136,25 @@ class QuotationGenerationTests(APITestCase):
             self.assertIsInstance(quote, Quotation)
             # The external quotation total == the estimate's selling price…
             self.assertEqual(quote.subtotal, est.selling_price)
-            # …and the Quotation model structurally has NO cost/markup/margin fields.
-            for leaked in ("markup_pct", "total_cost", "margin_amount", "direct_cost"):
-                self.assertFalse(hasattr(quote, leaked))
+
+            # …and nothing CUSTOMER-FACING carries cost or margin.
+            #
+            # This used to assert the Quotation model had no cost attributes at
+            # all. Module 5 changed that deliberately: a quotation now holds
+            # unit cost and markup so an estimator can see margin while pricing,
+            # and so quoted-vs-actual profit is answerable for quotations that
+            # never came from an Estimate. The Golden Rule was never about where
+            # a number is STORED — it is about who may SEE it, which is enforced
+            # at the serializer, the view and the PDF. So the test now checks
+            # those three, which is the invariant that actually protects a
+            # customer from seeing your margin.
+            from apps.quotes.serializers import QuotationSerializer
+            payload = QuotationSerializer(quote).data
+            for leaked in ("unit_cost", "markup_pct", "total_cost", "gross_profit",
+                           "margin_pct", "discount_pct"):
+                self.assertNotIn(leaked, payload)
+                for line in payload.get("lines", []):
+                    self.assertNotIn(leaked, line)
 
 
 class PricingIntelligenceTests(APITestCase):
