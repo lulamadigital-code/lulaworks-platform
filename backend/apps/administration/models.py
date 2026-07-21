@@ -53,6 +53,31 @@ class CompanySettings(PlatformBaseModel):
     approval_rules = models.JSONField(default=dict, blank=True)
     compliance_defaults = models.JSONField(default=dict, blank=True)
 
+    # ── Locale & financial defaults ───────────────────────────────────────
+    # Currency and timezone live on Company (they identify the tenant); these
+    # are presentation and accounting choices that documents and reports read.
+    date_format = models.CharField(max_length=24, default="d M Y")
+    number_format = models.CharField(max_length=16, default="1 234,56")  # SA default
+    language = models.CharField(max_length=8, default="en")
+    financial_year_start_month = models.PositiveSmallIntegerField(default=3)  # SA: March
+    week_starts_on = models.PositiveSmallIntegerField(default=0)   # 0=Monday
+
+    # ── AI configuration ──────────────────────────────────────────────────
+    # Per-company control over what LulaAI may do. The human-approval boundary
+    # is NOT configurable — these switch features on and off, they never grant
+    # the AI authority to approve, award, send or pay.
+    ai_provider = models.CharField(max_length=16, blank=True)   # blank = platform default
+    ai_language = models.CharField(max_length=8, default="en")
+    ai_response_style = models.CharField(max_length=16, default="concise")
+    ai_suggestions_enabled = models.BooleanField(default=True)
+    ai_summaries_enabled = models.BooleanField(default=True)
+    ai_cost_estimation_enabled = models.BooleanField(default=True)
+    ai_task_generation_enabled = models.BooleanField(default=True)
+    ai_compliance_detection_enabled = models.BooleanField(default=True)
+
+    # ── Document templates (which layout each document type uses) ─────────
+    document_templates = models.JSONField(default=dict, blank=True)
+
     class Meta:
         verbose_name_plural = "company settings"
 

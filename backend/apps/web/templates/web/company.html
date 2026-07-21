@@ -1,0 +1,463 @@
+{% extends "web/base.html" %}
+{% block title %}Company{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>Company profile</h1>
+    <p class="sub" style="margin:0;">Your identity inside LulaWorks. Entered once here,
+      then read by every quotation, invoice, purchase order and generated document —
+      nothing asks you for it twice.</p>
+  </div>
+  <span class="chip {% if score.overall >= 80 %}ok{% elif score.overall >= 40 %}warn{% else %}bad{% endif %}">
+    {{ score.overall }}% complete</span>
+</div>
+
+{% if score.blocks %}
+<div class="card" style="border-left:4px solid var(--red);border-radius:0 var(--r) var(--r) 0;">
+  <strong style="color:#c22a41;">What is missing actually costs you</strong>
+  <ul style="margin:10px 0 0;padding-left:20px;">
+    {% for b in score.blocks %}<li>{{ b }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% if expiring %}
+<div class="card" style="border-left:4px solid var(--orange);border-radius:0 var(--r) var(--r) 0;">
+  <strong style="color:#b9711a;">Registrations lapsing</strong>
+  <ul style="margin:10px 0 0;padding-left:20px;">
+    {% for e in expiring %}
+    <li>{{ e.name }} — {% if e.expired %}<strong>expired</strong>{% else %}expires{% endif %}
+      {{ e.expires|date:"d M Y" }}</li>
+    {% endfor %}
+  </ul>
+  <p class="muted" style="margin:10px 0 0;font-size:12.5px;">These quietly disqualify
+    you from tenders if nobody is watching.</p>
+</div>
+{% endif %}
+
+{# Section completeness — a number alone tells nobody what to do next. #}
+<div class="card">
+  {% for s in score.sections %}
+  <div class="barrow">
+    <span class="cap">{{ s.label }}</span>
+    <div class="track"><div class="fill" style="width:{{ s.pct }}%;background:{% if s.pct == 100 %}var(--green){% elif s.pct >= 50 %}var(--orange){% else %}var(--red){% endif %};">{{ s.pct }}%</div></div>
+    <span class="muted" style="flex:1;font-size:12.5px;">
+      {% if s.missing %}{{ s.missing|join:", " }}{% else %}complete{% endif %}</span>
+  </div>
+  {% endfor %}
+</div>
+
+{% if not can_edit %}
+<div class="card"><p class="muted" style="margin:0;">You can view the company profile
+  but not change it — that needs the company-manage permission.</p></div>
+{% endif %}
+
+{# ── 1 · Identity ───────────────────────────────────────────────────────── #}
+<h2>Company identity</h2>
+<div class="card">
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="section" value="identity">
+    <div class="two">
+      <div><label>Registered company name</label>
+        <input type="text" name="name" value="{{ company.name }}" required></div>
+      <div><label>Trading name</label>
+        <input type="text" name="trading_name" value="{{ company.trading_name }}"></div>
+      <div><label>Company registration number</label>
+        <input type="text" name="registration_no" value="{{ company.registration_no }}"
+               placeholder="2019/123456/07"></div>
+      <div><label>Tax reference number</label>
+        <input type="text" name="tax_reference_no" value="{{ company.tax_reference_no }}"></div>
+      <div><label>VAT number</label>
+        <input type="text" name="vat_no" value="{{ company.vat_no }}" placeholder="4123456789"></div>
+      <div><label>Company type</label>
+        <select name="company_type">
+          {% for t in "Pty Ltd,CC,Sole Proprietor,Partnership,Trust,NPC,Public Company"|slice:":0" %}{% endfor %}
+          <option value="">—</option>
+          <option value="Pty Ltd" {% if company.company_type == 'Pty Ltd' %}selected{% endif %}>(Pty) Ltd</option>
+          <option value="CC" {% if company.company_type == 'CC' %}selected{% endif %}>Close Corporation</option>
+          <option value="Sole Proprietor" {% if company.company_type == 'Sole Proprietor' %}selected{% endif %}>Sole Proprietor</option>
+          <option value="Partnership" {% if company.company_type == 'Partnership' %}selected{% endif %}>Partnership</option>
+          <option value="Trust" {% if company.company_type == 'Trust' %}selected{% endif %}>Trust</option>
+          <option value="NPC" {% if company.company_type == 'NPC' %}selected{% endif %}>Non-Profit Company</option>
+        </select></div>
+      <div><label>Industry</label>
+        <input type="text" name="industry" value="{{ company.industry }}"
+               placeholder="Mechanical contracting"></div>
+      <div><label>Year established</label>
+        <input type="number" name="year_established" min="1800" max="2100"
+               value="{{ company.year_established|default_if_none:'' }}"></div>
+    </div>
+    {% if can_edit %}<button class="btn" type="submit" style="margin-top:16px;">Save identity</button>{% endif %}
+  </form>
+</div>
+
+{# ── 2 · Contact ────────────────────────────────────────────────────────── #}
+<h2>Contact details</h2>
+<div class="card">
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="section" value="contact">
+    <div class="two">
+      <div><label>Primary email</label>
+        <input type="email" name="email" value="{{ company.email }}"></div>
+      <div><label>Primary phone</label>
+        <input type="text" name="phone" value="{{ company.phone }}"></div>
+      <div><label>Secondary phone</label>
+        <input type="text" name="phone_secondary" value="{{ company.phone_secondary }}"></div>
+      <div><label>Mobile</label>
+        <input type="text" name="mobile" value="{{ company.mobile }}"></div>
+      <div><label>WhatsApp</label>
+        <input type="text" name="whatsapp" value="{{ company.whatsapp }}"></div>
+      <div><label>Emergency / after-hours</label>
+        <input type="text" name="emergency_phone" value="{{ company.emergency_phone }}"></div>
+      <div><label>Website</label>
+        <input type="url" name="website" value="{{ company.website }}"></div>
+      <div><label>LinkedIn</label>
+        <input type="text" name="linkedin" value="{{ company.linkedin }}"></div>
+      <div><label>Facebook</label>
+        <input type="text" name="facebook" value="{{ company.facebook }}"></div>
+      <div><label>X (Twitter)</label>
+        <input type="text" name="twitter" value="{{ company.twitter }}"></div>
+    </div>
+    {% if can_edit %}<button class="btn" type="submit" style="margin-top:16px;">Save contact details</button>{% endif %}
+  </form>
+</div>
+
+{# ── 3 · Addresses ──────────────────────────────────────────────────────── #}
+<h2>Physical address</h2>
+<div class="card">
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="section" value="address">
+    <label>Street address</label>
+    <input type="text" name="street_address" value="{{ company.street_address }}">
+    <div class="two">
+      <div><label>Suburb</label><input type="text" name="suburb" value="{{ company.suburb }}"></div>
+      <div><label>City</label><input type="text" name="city" value="{{ company.city }}"></div>
+      <div><label>Province / State</label><input type="text" name="province" value="{{ company.province }}"></div>
+      <div><label>Postal code</label><input type="text" name="postal_code" value="{{ company.postal_code }}"></div>
+      <div><label>Country</label><input type="text" name="country" value="{{ company.country }}"></div>
+    </div>
+    {% if can_edit %}<button class="btn" type="submit" style="margin-top:16px;">Save address</button>{% endif %}
+  </form>
+</div>
+
+<h2>Postal address</h2>
+<div class="card">
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="section" value="postal">
+    <label class="inline"><input type="checkbox" name="postal_same_as_physical" value="1"
+           {% if company.postal_same_as_physical %}checked{% endif %}> Same as physical address</label>
+    <p class="muted" style="margin:8px 0 0;font-size:12.5px;">When ticked, documents use
+      the physical address and nothing is stored twice.</p>
+    <div class="two" style="margin-top:12px;">
+      <div><label>Postal address</label><input type="text" name="postal_address" value="{{ company.postal_address }}"></div>
+      <div><label>City</label><input type="text" name="postal_city" value="{{ company.postal_city }}"></div>
+      <div><label>Postal code</label><input type="text" name="postal_code_postal" value="{{ company.postal_code_postal }}"></div>
+      <div><label>Country</label><input type="text" name="postal_country" value="{{ company.postal_country }}"></div>
+    </div>
+    {% if can_edit %}<button class="btn" type="submit" style="margin-top:16px;">Save postal address</button>{% endif %}
+  </form>
+</div>
+
+{# ── 4 · Banking ────────────────────────────────────────────────────────── #}
+<h2>Banking</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Bank</th><th>Account name</th><th>Number</th><th>Branch code</th>
+        <th>Currency</th><th>Default</th><th></th></tr>
+    {% for a in bank_accounts %}
+    <tr>
+      <td><strong>{{ a.bank_name }}</strong>{% if a.label %}<br><span class="muted" style="font-size:12px;">{{ a.label }}</span>{% endif %}</td>
+      <td class="muted">{{ a.account_name }}</td>
+      <td class="muted">{{ a.masked_number }}</td>
+      <td class="muted">{{ a.branch_code|default:"—" }}</td>
+      <td class="muted">{{ a.currency }}</td>
+      <td>{% if a.is_default %}<span class="chip ok">Default</span>{% endif %}</td>
+      <td class="right nowrap">
+        {% if can_edit %}
+        {% if not a.is_default %}
+        <form method="post" action="{% url 'web:company_bank' %}" style="display:inline;">
+          {% csrf_token %}<input type="hidden" name="action" value="default">
+          <input type="hidden" name="account" value="{{ a.id }}">
+          <button class="btn ghost" type="submit">Make default</button></form>
+        {% endif %}
+        <form method="post" action="{% url 'web:company_bank' %}" style="display:inline;"
+              data-confirm="Remove {{ a.bank_name|escapejs }} {{ a.masked_number|escapejs }}?&#10;&#10;Invoices using this account for payment details will lose them.">
+          {% csrf_token %}<input type="hidden" name="action" value="delete">
+          <input type="hidden" name="account" value="{{ a.id }}">
+          <button class="btn ghost" type="submit">Remove</button></form>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" class="muted" style="padding:20px;">
+      No bank account yet — invoices will go out with no way for a client to pay you.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% if can_edit %}
+<div class="card">
+  <form method="post" action="{% url 'web:company_bank' %}">{% csrf_token %}
+    <div class="two">
+      <div><label>Bank name</label><input type="text" name="bank_name" required></div>
+      <div><label>Account name</label><input type="text" name="account_name" placeholder="{{ company.name }}"></div>
+      <div><label>Account number</label><input type="text" name="account_number" required></div>
+      <div><label>Branch code</label><input type="text" name="branch_code"></div>
+      <div><label>Branch name</label><input type="text" name="branch_name"></div>
+      <div><label>Account type</label>
+        <select name="account_type">
+          <option value="cheque">Cheque / Current</option>
+          <option value="savings">Savings</option>
+          <option value="transmission">Transmission</option>
+          <option value="foreign">Foreign currency</option>
+        </select></div>
+      <div><label>Currency</label><input type="text" name="currency" value="{{ company.currency }}"></div>
+      <div><label>SWIFT code</label><input type="text" name="swift_code"></div>
+      <div><label>Label</label><input type="text" name="label" placeholder="Operational"></div>
+    </div>
+    <button class="btn" type="submit" style="margin-top:16px;">Add bank account</button>
+    <p class="muted" style="margin:10px 0 0;font-size:12.5px;">The first account added
+      becomes the default automatically. The default is what documents print.</p>
+  </form>
+</div>
+{% endif %}
+
+{# ── 5 · Company contacts ───────────────────────────────────────────────── #}
+<h2>Company contacts</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Prefers</th><th></th></tr>
+    {% for c in contacts %}
+    <tr>
+      <td><strong>{{ c.full_name }}</strong>
+        {% if c.is_primary %} <span class="chip ok">Primary</span>{% endif %}</td>
+      <td class="muted">{{ c.job_title|default:"—" }}</td>
+      <td class="muted">{{ c.email|default:"—" }}</td>
+      <td class="muted">{{ c.phone|default:c.mobile|default:"—" }}{% if c.extension %} x{{ c.extension }}{% endif %}</td>
+      <td class="muted">{{ c.get_preferred_method_display }}</td>
+      <td class="right nowrap">
+        {% if can_edit %}
+        {% if not c.is_primary %}
+        <form method="post" action="{% url 'web:company_contact' %}" style="display:inline;">
+          {% csrf_token %}<input type="hidden" name="action" value="primary">
+          <input type="hidden" name="contact" value="{{ c.id }}">
+          <button class="btn ghost" type="submit">Make primary</button></form>
+        {% endif %}
+        <form method="post" action="{% url 'web:company_contact' %}" style="display:inline;"
+              data-confirm="Remove {{ c.full_name|escapejs }} from the company contacts?">
+          {% csrf_token %}<input type="hidden" name="action" value="delete">
+          <input type="hidden" name="contact" value="{{ c.id }}">
+          <button class="btn ghost" type="submit">Remove</button></form>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">
+      No contacts yet. The primary contact is printed on outgoing documents.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% if can_edit %}
+<div class="card">
+  <form method="post" action="{% url 'web:company_contact' %}">{% csrf_token %}
+    <div class="two">
+      <div><label>Full name</label><input type="text" name="full_name" required></div>
+      <div><label>Job title</label><input type="text" name="job_title" placeholder="Finance Manager"></div>
+      <div><label>Email</label><input type="email" name="email"></div>
+      <div><label>Phone</label><input type="text" name="phone"></div>
+      <div><label>Mobile</label><input type="text" name="mobile"></div>
+      <div><label>Extension</label><input type="text" name="extension"></div>
+      <div><label>Preferred contact method</label>
+        <select name="preferred_method">
+          <option value="email">Email</option><option value="phone">Phone</option>
+          <option value="mobile">Mobile</option><option value="whatsapp">WhatsApp</option>
+        </select></div>
+    </div>
+    <button class="btn" type="submit" style="margin-top:16px;">Add contact</button>
+    <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Contacts are not logins —
+      your finance contact may never sign in. Add people who use the system under
+      <a href="{% url 'web:people' %}">People</a>.</p>
+  </form>
+</div>
+{% endif %}
+
+{# ── 6 · Statutory ──────────────────────────────────────────────────────── #}
+<h2>Statutory registrations</h2>
+<div class="card">
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="section" value="compliance">
+    <label class="inline"><input type="checkbox" name="vat_registered" value="1"
+           {% if compliance.vat_registered %}checked{% endif %}> VAT registered</label>
+    <div class="two" style="margin-top:12px;">
+      <div><label>Income tax number</label><input type="text" name="income_tax_no" value="{{ compliance.income_tax_no }}"></div>
+      <div><label>PAYE number</label><input type="text" name="paye_no" value="{{ compliance.paye_no }}"></div>
+      <div><label>UIF number</label><input type="text" name="uif_no" value="{{ compliance.uif_no }}"></div>
+      <div><label>COIDA registration</label><input type="text" name="coida_no" value="{{ compliance.coida_no }}"></div>
+      <div><label>COIDA expiry</label><input type="date" name="coida_expiry" value="{{ compliance.coida_expiry|date:'Y-m-d' }}"></div>
+      <div><label>B-BBEE level</label><input type="text" name="bbbee_level" value="{{ compliance.bbbee_level }}" placeholder="Level 1"></div>
+      <div><label>B-BBEE expiry</label><input type="date" name="bbbee_expiry" value="{{ compliance.bbbee_expiry|date:'Y-m-d' }}"></div>
+      <div><label>CSD supplier number</label><input type="text" name="csd_supplier_no" value="{{ compliance.csd_supplier_no }}"></div>
+      <div><label>CIDB grading</label><input type="text" name="cidb_grading" value="{{ compliance.cidb_grading }}" placeholder="3CE"></div>
+    </div>
+    <label>ISO certifications (comma separated)</label>
+    <input type="text" name="iso_certifications" value="{{ compliance.iso_certifications|join:', ' }}"
+           placeholder="ISO 9001, ISO 45001">
+    <label>Industry certifications (comma separated)</label>
+    <input type="text" name="industry_certifications" value="{{ compliance.industry_certifications|join:', ' }}">
+    {% if can_edit %}<button class="btn" type="submit" style="margin-top:16px;">Save statutory details</button>{% endif %}
+  </form>
+</div>
+
+<h3 style="font-size:14px;margin:18px 0 10px;">Supporting documents</h3>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Document</th><th>Type</th><th>Expires</th><th></th></tr>
+    {% for d in documents %}
+    <tr>
+      <td><a href="{{ d.file.url }}">{{ d.name }}</a></td>
+      <td class="muted">{{ d.doc_type|default:"—" }}</td>
+      <td>{% if d.expires_on %}{% if d.is_expired %}<span class="chip bad">expired {{ d.expires_on|date:"d M Y" }}</span>
+        {% else %}<span class="muted">{{ d.expires_on|date:"d M Y" }}</span>{% endif %}
+        {% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="right">{% if can_edit %}
+        <form method="post" action="{% url 'web:company_document' %}"
+              data-confirm="Remove {{ d.name|escapejs }}?">{% csrf_token %}
+          <input type="hidden" name="action" value="delete">
+          <input type="hidden" name="document" value="{{ d.id }}">
+          <button class="btn ghost" type="submit">Remove</button></form>{% endif %}</td>
+    </tr>
+    {% empty %}<tr><td colspan="4" class="muted" style="padding:18px;">
+      No documents yet — CIPC certificate, tax clearance, B-BBEE affidavit, letter of good standing.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% if can_edit %}
+<div class="card">
+  <form method="post" action="{% url 'web:company_document' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="two">
+      <div><label>File</label><input type="file" name="file" required></div>
+      <div><label>Name</label><input type="text" name="name" placeholder="Tax clearance certificate"></div>
+      <div><label>Type</label><input type="text" name="doc_type" placeholder="tax"></div>
+      <div><label>Expires on</label><input type="date" name="expires_on"></div>
+    </div>
+    <button class="btn" type="submit" style="margin-top:16px;">Upload document</button>
+  </form>
+</div>
+{% endif %}
+
+{# ── 7 · Business profile ───────────────────────────────────────────────── #}
+<h2>Business profile</h2>
+<div class="card">
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="section" value="business">
+    <label>Business description</label>
+    <textarea name="description" rows="4" placeholder="What the business does, in the words you would use on a company profile.">{{ company.description }}</textarea>
+    <label>Services offered (comma separated)</label>
+    <input type="text" name="services_offered" value="{{ company.services_offered|join:', ' }}"
+           placeholder="Mechanical maintenance, Conveyor installation, Shutdowns">
+    <label>Specialisations (comma separated)</label>
+    <input type="text" name="specialisations" value="{{ company.specialisations|join:', ' }}">
+    <label>Industries served (comma separated)</label>
+    <input type="text" name="industries_served" value="{{ company.industries_served|join:', ' }}"
+           placeholder="Mining, Petrochemical">
+    <div class="two" style="margin-top:4px;">
+      <div><label>Employees</label><input type="number" name="employee_count" min="0" value="{{ company.employee_count|default_if_none:'' }}"></div>
+      <div><label>Vehicles</label><input type="number" name="vehicle_count" min="0" value="{{ company.vehicle_count|default_if_none:'' }}"></div>
+      <div><label>Sites</label><input type="number" name="site_count" min="0" value="{{ company.site_count|default_if_none:'' }}"></div>
+    </div>
+    <label>Operating provinces (comma separated)</label>
+    <input type="text" name="operating_provinces" value="{{ company.operating_provinces|join:', ' }}"
+           placeholder="Gauteng, Mpumalanga, North West">
+    <label>Operating countries (comma separated)</label>
+    <input type="text" name="operating_countries" value="{{ company.operating_countries|join:', ' }}">
+    {% if can_edit %}<button class="btn" type="submit" style="margin-top:16px;">Save business profile</button>{% endif %}
+  </form>
+</div>
+
+{# ── 8 · Branding ───────────────────────────────────────────────────────── #}
+<h2>Branding</h2>
+<div class="card">
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    <input type="hidden" name="section" value="branding">
+    <div class="avatar-edit">
+      {% if company.logo %}<img src="{{ company.logo.url }}" alt="Logo"
+           style="max-height:80px;max-width:200px;">{% endif %}
+      <div style="flex:1;min-width:220px;">
+        <label style="margin-top:0;">Company logo</label>
+        <input type="file" name="logo" accept="image/*">
+        <p class="muted" style="margin:8px 0 0;font-size:12.5px;">Used on quotations and
+          invoices, and as the fallback wherever a specific asset is not set.</p>
+      </div>
+    </div>
+    <div class="two" style="margin-top:14px;">
+      <div><label>Invoice logo</label><input type="file" name="invoice_logo" accept="image/*"></div>
+      <div><label>Report logo</label><input type="file" name="report_logo" accept="image/*"></div>
+      <div><label>Email logo</label><input type="file" name="email_logo" accept="image/*"></div>
+      <div><label>Letterhead</label><input type="file" name="letterhead" accept="image/*"></div>
+      <div><label>Stamp</label><input type="file" name="stamp" accept="image/*"></div>
+      <div><label>Digital signature</label><input type="file" name="signature" accept="image/*"></div>
+      <div><label>Company seal</label><input type="file" name="seal" accept="image/*"></div>
+      <div><label>Brand colour</label><input type="text" name="brand_primary" value="{{ company.brand_primary }}" placeholder="#17a2b8"></div>
+    </div>
+    {% if can_edit %}<button class="btn" type="submit" style="margin-top:16px;">Save branding</button>{% endif %}
+  </form>
+</div>
+
+{# ── 9 · Defaults & AI ──────────────────────────────────────────────────── #}
+<h2>Defaults</h2>
+<div class="card">
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="section" value="defaults">
+    <div class="two">
+      <div><label>Currency</label><input type="text" name="currency" value="{{ company.currency }}"></div>
+      <div><label>Time zone</label><input type="text" name="timezone" value="{{ company.timezone }}"></div>
+      <div><label>Date format</label><input type="text" name="date_format" value="{{ settings.date_format }}"></div>
+      <div><label>Number format</label><input type="text" name="number_format" value="{{ settings.number_format }}"></div>
+      <div><label>Language</label><input type="text" name="language" value="{{ settings.language }}"></div>
+      <div><label>Default tax rate (%)</label><input type="number" step="0.01" name="tax_rate" value="{{ settings.tax_rate }}"></div>
+      <div><label>Financial year starts (month)</label>
+        <input type="number" name="financial_year_start_month" min="1" max="12" value="{{ settings.financial_year_start_month }}"></div>
+      <div><label>Week starts on (0 = Monday)</label>
+        <input type="number" name="week_starts_on" min="0" max="6" value="{{ settings.week_starts_on }}"></div>
+    </div>
+    <p class="muted" style="margin:14px 0 0;font-size:12.5px;">Document number prefixes
+      are configured per document type under numbering rules — quotations, invoices,
+      projects and purchase orders each have their own format.</p>
+    {% if can_edit %}<button class="btn" type="submit" style="margin-top:16px;">Save defaults</button>{% endif %}
+  </form>
+</div>
+
+<h2>LulaAI</h2>
+<div class="card">
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="section" value="defaults">
+    <div class="two">
+      <div><label>AI provider</label>
+        <select name="ai_provider">
+          <option value="" {% if not settings.ai_provider %}selected{% endif %}>Platform default</option>
+          <option value="gemini" {% if settings.ai_provider == 'gemini' %}selected{% endif %}>Gemini</option>
+          <option value="claude" {% if settings.ai_provider == 'claude' %}selected{% endif %}>Claude</option>
+          <option value="openai" {% if settings.ai_provider == 'openai' %}selected{% endif %}>OpenAI</option>
+        </select></div>
+      <div><label>Response style</label>
+        <select name="ai_response_style">
+          <option value="concise" {% if settings.ai_response_style == 'concise' %}selected{% endif %}>Concise</option>
+          <option value="detailed" {% if settings.ai_response_style == 'detailed' %}selected{% endif %}>Detailed</option>
+        </select></div>
+    </div>
+    <div style="margin-top:14px;">
+      <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_suggestions_enabled" value="1" {% if settings.ai_suggestions_enabled %}checked{% endif %}> AI suggestions</label>
+      <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_summaries_enabled" value="1" {% if settings.ai_summaries_enabled %}checked{% endif %}> AI summaries</label>
+      <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_cost_estimation_enabled" value="1" {% if settings.ai_cost_estimation_enabled %}checked{% endif %}> AI cost estimation</label>
+      <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_task_generation_enabled" value="1" {% if settings.ai_task_generation_enabled %}checked{% endif %}> AI task generation</label>
+      <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_compliance_detection_enabled" value="1" {% if settings.ai_compliance_detection_enabled %}checked{% endif %}> AI compliance detection</label>
+    </div>
+    <p class="muted" style="margin:12px 0 0;font-size:12.5px;">These switch features on
+      and off. They do not change the approval boundary — LulaAI never approves, awards,
+      sends or pays, whatever is enabled here.</p>
+    {% if can_edit %}<button class="btn" type="submit" style="margin-top:16px;">Save AI settings</button>{% endif %}
+  </form>
+</div>
+{% endblock %}

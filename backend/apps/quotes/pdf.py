@@ -46,9 +46,38 @@ def quotation_pdf_bytes(quote) -> bytes:
     muted = styles["BodyText"].clone("muted")
     muted.textColor = colors.HexColor("#5b6b6a")
 
+    # Every company fact on this page comes from the Company Profile — the one
+    # place it is entered. Adding a field to the letterhead is a change there,
+    # not here, and never a re-typing job for the user.
+    from apps.identity.profile import document_header
+    header = document_header(company, kind="invoice")
+
     logo = _logo_flowable()
+    # With no logo the name already stands in for it on the left, so repeating
+    # it at the top of the identity block prints the company name twice.
+    identity = [Paragraph(f"<b>{header['display_name']}</b>", small)] if logo else []
+    if header["registration_no"]:
+        identity.append(Paragraph(f"Reg. {header['registration_no']}", muted))
+    if header["vat_no"]:
+        identity.append(Paragraph(f"VAT {header['vat_no']}", muted))
+    for line in header["address_lines"]:
+        identity.append(Paragraph(line, muted))
+    reach = " · ".join(x for x in (header["phone"], header["email"],
+                                   header["website"]) if x)
+    if reach:
+        identity.append(Paragraph(reach, muted))
+
+    head_tbl = Table(
+        [[logo if logo is not None else Paragraph(header["display_name"], h), identity]],
+        colWidths=[80 * mm, 94 * mm])
+    head_tbl.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+    ]))
+
     story = [
-        logo if logo is not None else Paragraph(company.name, h),
+        head_tbl,
+        Spacer(1, 4 * mm),
         Paragraph("QUOTATION", styles["Heading2"]),
         Spacer(1, 6 * mm),
     ]
@@ -115,6 +144,26 @@ def quotation_pdf_bytes(quote) -> bytes:
 
     if quote.notes:
         story += [Paragraph("<b>Notes</b>", small), Paragraph(quote.notes, muted),
+                  Spacer(1, 6 * mm)]
+
+    # Banking — a quotation a client cannot pay from is an unfinished document.
+    bank = header["bank"]
+    if bank:
+        rows = [
+            ["Bank", bank["bank_name"], "Account name", bank["account_name"]],
+            ["Account", bank["account_number"], "Branch code", bank["branch_code"] or "—"],
+        ]
+        if bank["swift_code"]:
+            rows.append(["SWIFT", bank["swift_code"], "Currency", bank["currency"]])
+        bank_tbl = Table(rows, colWidths=[24 * mm, 58 * mm, 26 * mm, 58 * mm])
+        bank_tbl.setStyle(TableStyle([
+            ("FONTSIZE", (0, 0), (-1, -1), 8.5),
+            ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#5b6b6a")),
+            ("TEXTCOLOR", (2, 0), (2, -1), colors.HexColor("#5b6b6a")),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        story += [Paragraph("<b>Banking details</b>", small), bank_tbl,
                   Spacer(1, 6 * mm)]
     story.append(Paragraph(
         "Prices exclude items not listed above. E&amp;OE. "

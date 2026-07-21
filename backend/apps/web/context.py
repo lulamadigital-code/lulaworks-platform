@@ -27,6 +27,8 @@ _SECTIONS = {
     "people": "people", "people_add": "people", "people_role": "people",
     "people_status": "people", "person_detail": "people",
     "profile": "profile",
+    "company_profile": "company", "company_bank": "company",
+    "company_contact": "company", "company_document": "company",
     "rfq": "rfq", "rfq_detail": "rfq", "rfq_upload": "rfq", "rfq_approve": "rfq",
     "rfq_line": "rfq",
     "quotations": "quotations", "quotation_detail": "quotations",

@@ -66,7 +66,21 @@ from apps.execution.services import (
     unread_count,
     work_dashboard,
 )
-from apps.identity.models import Membership, Role
+from apps.identity.models import (
+    CompanyBankAccount,
+    CompanyContact,
+    CompanyDocument,
+    Membership,
+    Role,
+)
+from apps.identity.profile import (
+    add_bank_account,
+    add_contact,
+    completeness,
+    default_bank_account,
+    get_profile,
+    set_default_bank_account,
+)
 from apps.identity.services import (
     MemberError,
     assignable_users,
@@ -674,6 +688,252 @@ def project_phase_add(request, pk):
         add_phase(project, request.user, name=request.POST["name"].strip())
         messages.success(request, "Phase added.")
     return redirect("web:project_detail", pk=pk)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Company profile — the identity every other module reads from
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Which POSTed fields each section owns. Saving a section touches only its own
+#: fields, so two people editing different sections cannot clobber each other.
+_PROFILE_SECTIONS = {
+    "identity": ["name", "trading_name", "registration_no", "tax_reference_no",
+                 "vat_no", "company_type", "industry", "year_established"],
+    "contact": ["email", "phone", "phone_secondary", "mobile", "whatsapp",
+                "emergency_phone", "website", "facebook", "linkedin", "twitter"],
+    "address": ["country", "province", "city", "suburb", "street_address",
+                "postal_code"],
+    "postal": ["postal_same_as_physical", "postal_address", "postal_city",
+               "postal_code_postal", "postal_country"],
+    "business": ["description", "employee_count", "vehicle_count", "site_count"],
+}
+
+#: Comma-separated inputs stored as lists.
+_LIST_FIELDS = {"business": ["services_offered", "specialisations",
+                             "industries_served", "operating_provinces",
+                             "operating_countries"]}
+_INT_FIELDS = {"year_established", "employee_count", "vehicle_count", "site_count"}
+
+
+@login_required
+def company_profile(request):
+    """One page, many sections. Everything here is read by quotations, invoices,
+    purchase orders and every generated PDF — it is entered once, here."""
+    company = get_profile(request.user.active_company)
+    can_edit = request.user.has_perm_code("company.manage")
+
+    if request.method == "POST":
+        if not can_edit:
+            messages.error(request, "You do not have permission to edit the company profile.")
+            return redirect("web:company_profile")
+        section = request.POST.get("section", "")
+        if section in _PROFILE_SECTIONS:
+            _save_profile_section(request, company, section)
+            messages.success(request, "Company profile updated.")
+        elif section == "compliance":
+            _save_compliance(request, company)
+            messages.success(request, "Statutory details updated.")
+        elif section == "branding":
+            _save_branding(request, company)
+            messages.success(request, "Branding updated.")
+        elif section == "defaults":
+            _save_defaults(request, company)
+            messages.success(request, "Defaults updated.")
+        else:
+            messages.error(request, "Unknown section.")
+        return redirect("web:company_profile")
+
+    from apps.administration.models import CompanySettings
+    return render(request, "web/company.html", {
+        "company": company,
+        "compliance": company.compliance,
+        "branding": company.branding,
+        "settings": CompanySettings.objects.get(company=company),
+        "bank_accounts": company.bank_accounts.all(),
+        "contacts": company.contacts.all(),
+        "documents": company.documents.all(),
+        "score": completeness(company),
+        "default_bank": default_bank_account(company),
+        "expiring": company.compliance.expiring(),
+        "can_edit": can_edit,
+    })
+
+
+def _save_profile_section(request, company, section):
+    for field in _PROFILE_SECTIONS[section]:
+        if field not in request.POST and field != "postal_same_as_physical":
+            continue
+        value = request.POST.get(field, "").strip()
+        if field == "postal_same_as_physical":
+            setattr(company, field, bool(request.POST.get(field)))
+        elif field in _INT_FIELDS:
+            setattr(company, field, int(value) if value.isdigit() else None)
+        else:
+            setattr(company, field, value)
+    for field in _LIST_FIELDS.get(section, []):
+        raw = request.POST.get(field, "")
+        setattr(company, field, [v.strip() for v in raw.split(",") if v.strip()])
+    company.save()
+
+
+def _save_compliance(request, company):
+    c = company.compliance
+    c.vat_registered = bool(request.POST.get("vat_registered"))
+    for field in ("income_tax_no", "paye_no", "uif_no", "coida_no",
+                  "bbbee_level", "csd_supplier_no", "cidb_grading"):
+        setattr(c, field, request.POST.get(field, "").strip())
+    for field in ("coida_expiry", "bbbee_expiry"):
+        setattr(c, field, request.POST.get(field) or None)
+    for field in ("iso_certifications", "industry_certifications"):
+        raw = request.POST.get(field, "")
+        setattr(c, field, [v.strip() for v in raw.split(",") if v.strip()])
+    c.save()
+
+
+def _save_branding(request, company):
+    if request.FILES.get("logo"):
+        company.logo = request.FILES["logo"]
+        company.save(update_fields=["logo"])
+    branding = company.branding
+    changed = []
+    for slot in ("email_logo", "invoice_logo", "report_logo", "letterhead",
+                 "stamp", "signature", "seal"):
+        if request.FILES.get(slot):
+            setattr(branding, slot, request.FILES[slot])
+            changed.append(slot)
+    for colour in ("brand_primary", "brand_secondary"):
+        if colour in request.POST:
+            setattr(company, colour, request.POST.get(colour, "").strip())
+    company.save(update_fields=["brand_primary", "brand_secondary"])
+    if changed:
+        branding.save(update_fields=changed)
+
+
+def _save_defaults(request, company):
+    from apps.administration.models import CompanySettings
+    settings_row = CompanySettings.objects.get(company=company)
+    for field in ("date_format", "number_format", "language", "ai_provider",
+                  "ai_language", "ai_response_style"):
+        if field in request.POST:
+            setattr(settings_row, field, request.POST.get(field, "").strip())
+    for field in ("financial_year_start_month", "week_starts_on"):
+        value = request.POST.get(field, "")
+        if value.isdigit():
+            setattr(settings_row, field, int(value))
+    if request.POST.get("tax_rate"):
+        settings_row.tax_rate = _decimal_or_none(request.POST["tax_rate"]) or settings_row.tax_rate
+    for flag in ("ai_suggestions_enabled", "ai_summaries_enabled",
+                 "ai_cost_estimation_enabled", "ai_task_generation_enabled",
+                 "ai_compliance_detection_enabled"):
+        setattr(settings_row, flag, bool(request.POST.get(flag)))
+    settings_row.save()
+    for field in ("currency", "timezone"):
+        if field in request.POST:
+            setattr(company, field, request.POST.get(field, "").strip())
+    company.save(update_fields=["currency", "timezone"])
+
+
+@login_required
+@require_POST
+def company_bank(request):
+    """Add, default, or remove a bank account. These print on invoices, so the
+    action is deliberately explicit rather than inline-editable."""
+    company = request.user.active_company
+    if not request.user.has_perm_code("company.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:company_profile")
+
+    action = request.POST.get("action", "add")
+    if action == "add":
+        if not request.POST.get("bank_name") or not request.POST.get("account_number"):
+            messages.error(request, "Bank name and account number are required.")
+        else:
+            add_bank_account(
+                company,
+                bank_name=request.POST["bank_name"].strip(),
+                account_name=request.POST.get("account_name", "").strip() or company.name,
+                account_number=request.POST["account_number"].strip(),
+                branch_name=request.POST.get("branch_name", "").strip(),
+                branch_code=request.POST.get("branch_code", "").strip(),
+                account_type=request.POST.get("account_type", "cheque"),
+                swift_code=request.POST.get("swift_code", "").strip(),
+                currency=request.POST.get("currency", "").strip() or company.currency,
+                label=request.POST.get("label", "").strip(),
+            )
+            messages.success(request, "Bank account added.")
+    else:
+        account = get_object_or_404(
+            CompanyBankAccount.objects.filter(company=company),
+            pk=request.POST.get("account"))
+        if action == "default":
+            set_default_bank_account(account)
+            messages.success(request, f"{account.bank_name} is now the default account.")
+        elif action == "delete":
+            account.delete()
+            messages.success(request, "Bank account removed.")
+    return redirect("web:company_profile")
+
+
+@login_required
+@require_POST
+def company_contact(request):
+    company = request.user.active_company
+    if not request.user.has_perm_code("company.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:company_profile")
+
+    action = request.POST.get("action", "add")
+    if action == "add":
+        if not request.POST.get("full_name"):
+            messages.error(request, "A name is required.")
+        else:
+            add_contact(
+                company,
+                full_name=request.POST["full_name"].strip(),
+                job_title=request.POST.get("job_title", "").strip(),
+                email=request.POST.get("email", "").strip(),
+                phone=request.POST.get("phone", "").strip(),
+                mobile=request.POST.get("mobile", "").strip(),
+                extension=request.POST.get("extension", "").strip(),
+                preferred_method=request.POST.get("preferred_method", "email"),
+            )
+            messages.success(request, "Contact added.")
+    else:
+        contact = get_object_or_404(
+            CompanyContact.objects.filter(company=company), pk=request.POST.get("contact"))
+        if action == "primary":
+            contact.is_primary = True
+            contact.save()
+            messages.success(request, f"{contact.full_name} is now the primary contact.")
+        elif action == "delete":
+            contact.delete()
+            messages.success(request, "Contact removed.")
+    return redirect("web:company_profile")
+
+
+@login_required
+@require_POST
+def company_document(request):
+    company = request.user.active_company
+    if not request.user.has_perm_code("company.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:company_profile")
+    if request.POST.get("action") == "delete":
+        doc = get_object_or_404(CompanyDocument.objects.filter(company=company),
+                                pk=request.POST.get("document"))
+        doc.delete()
+        messages.success(request, "Document removed.")
+    elif request.FILES.get("file"):
+        CompanyDocument.objects.create(
+            company=company, file=request.FILES["file"],
+            name=request.POST.get("name", "").strip() or request.FILES["file"].name,
+            doc_type=request.POST.get("doc_type", "").strip(),
+            expires_on=request.POST.get("expires_on") or None,
+        )
+        messages.success(request, "Document uploaded.")
+    else:
+        messages.error(request, "Choose a file to upload.")
+    return redirect("web:company_profile")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -9,6 +9,11 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     path("password/", views.change_password, name="change_password"),
     path("profile/", views.profile, name="profile"),
+    # Company profile — the identity every other module reads from
+    path("company/", views.company_profile, name="company_profile"),
+    path("company/bank/", views.company_bank, name="company_bank"),
+    path("company/contacts/", views.company_contact, name="company_contact"),
+    path("company/documents/", views.company_document, name="company_document"),
     # People — the company's own members, and the pool every work picker reads
     path("people/", views.people, name="people"),
     path("people/add/", views.people_add, name="people_add"),

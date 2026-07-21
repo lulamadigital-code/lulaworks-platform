@@ -39,6 +39,49 @@ class Company(PlatformBaseModel):
     brand_primary = models.CharField(max_length=9, blank=True)
     brand_secondary = models.CharField(max_length=9, blank=True)
 
+    # ── Statutory identity ────────────────────────────────────────────────
+    # These appear on every quotation, invoice and tender submission. SARS
+    # requires the VAT number on a tax invoice, and most mines will not load a
+    # supplier without a CSD number.
+    tax_reference_no = models.CharField(max_length=32, blank=True)
+    company_type = models.CharField(max_length=40, blank=True)   # Pty Ltd, CC, Sole Prop…
+    year_established = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    # ── Contact ───────────────────────────────────────────────────────────
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=32, blank=True)
+    phone_secondary = models.CharField(max_length=32, blank=True)
+    mobile = models.CharField(max_length=32, blank=True)
+    whatsapp = models.CharField(max_length=32, blank=True)
+    emergency_phone = models.CharField(max_length=32, blank=True)
+    website = models.URLField(blank=True)
+    facebook = models.CharField(max_length=200, blank=True)
+    linkedin = models.CharField(max_length=200, blank=True)
+    twitter = models.CharField(max_length=200, blank=True)
+
+    # ── Physical address (country/province/city are above) ────────────────
+    suburb = models.CharField(max_length=120, blank=True)
+    street_address = models.CharField(max_length=255, blank=True)
+    postal_code = models.CharField(max_length=16, blank=True)
+
+    # ── Postal address ────────────────────────────────────────────────────
+    postal_same_as_physical = models.BooleanField(default=True)
+    postal_address = models.CharField(max_length=255, blank=True)
+    postal_city = models.CharField(max_length=120, blank=True)
+    postal_code_postal = models.CharField(max_length=16, blank=True)
+    postal_country = models.CharField(max_length=64, blank=True)
+
+    # ── Business profile (what you tell a client you do) ──────────────────
+    description = models.TextField(blank=True)
+    services_offered = models.JSONField(default=list, blank=True)
+    specialisations = models.JSONField(default=list, blank=True)
+    industries_served = models.JSONField(default=list, blank=True)
+    employee_count = models.PositiveIntegerField(null=True, blank=True)
+    vehicle_count = models.PositiveIntegerField(null=True, blank=True)
+    site_count = models.PositiveIntegerField(null=True, blank=True)
+    operating_countries = models.JSONField(default=list, blank=True)
+    operating_provinces = models.JSONField(default=list, blank=True)
+
     subscription_status = models.CharField(
         max_length=16, choices=SubscriptionStatus.choices, default=SubscriptionStatus.TRIAL
     )
@@ -184,3 +227,195 @@ class Membership(PlatformBaseModel):
 
     def __str__(self):
         return f"{self.user} @ {self.company} ({self.role})"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Company profile — the single source of truth every other module reads from.
+#
+# The rule this module exists to enforce: company identity is entered ONCE.
+# Quotations, invoices, purchase orders, RFQs, delivery notes, safety files and
+# PDF headers all read from here. Nothing re-asks for a VAT number.
+#
+# These hang off Company (a platform table, not a tenant table) so they are
+# scoped by their FK rather than by the ambient tenant manager.
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class CompanyBankAccount(PlatformBaseModel):
+    """Banking detail printed on invoices so a client can actually pay you.
+
+    Multiple accounts are normal — operational, payroll, and a foreign-currency
+    account for cross-border work. Exactly one is the default; that is the one
+    documents use unless told otherwise.
+    """
+
+    class AccountType(models.TextChoices):
+        CHEQUE = "cheque", "Cheque / Current"
+        SAVINGS = "savings", "Savings"
+        TRANSMISSION = "transmission", "Transmission"
+        FOREIGN = "foreign", "Foreign currency"
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE,
+                                related_name="bank_accounts")
+    bank_name = models.CharField(max_length=120)
+    account_name = models.CharField(max_length=160)
+    account_number = models.CharField(max_length=40)
+    branch_name = models.CharField(max_length=120, blank=True)
+    branch_code = models.CharField(max_length=20, blank=True)
+    account_type = models.CharField(max_length=16, choices=AccountType.choices,
+                                    default=AccountType.CHEQUE)
+    swift_code = models.CharField(max_length=16, blank=True)
+    currency = models.CharField(max_length=8, default="ZAR")
+    is_default = models.BooleanField(default=False)
+    label = models.CharField(max_length=60, blank=True)   # "Operational", "Payroll"
+
+    class Meta:
+        ordering = ["-is_default", "bank_name"]
+
+    def __str__(self):
+        return f"{self.bank_name} · {self.masked_number}"
+
+    @property
+    def masked_number(self) -> str:
+        """Account numbers are shown masked in lists — the full number belongs
+        on the invoice, not on a screen someone is sharing."""
+        digits = (self.account_number or "").strip()
+        return f"••••{digits[-4:]}" if len(digits) > 4 else digits
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Exactly one default per company — setting one clears the rest.
+        if self.is_default:
+            CompanyBankAccount.objects.filter(company_id=self.company_id).exclude(
+                pk=self.pk).update(is_default=False)
+
+
+class CompanyContact(PlatformBaseModel):
+    """A named person a client or supplier deals with — separate from platform
+    Users, because the finance contact on your invoices may not have a login."""
+
+    class Method(models.TextChoices):
+        EMAIL = "email", "Email"
+        PHONE = "phone", "Phone"
+        MOBILE = "mobile", "Mobile"
+        WHATSAPP = "whatsapp", "WhatsApp"
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE,
+                                related_name="contacts")
+    full_name = models.CharField(max_length=160)
+    job_title = models.CharField(max_length=120, blank=True)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=32, blank=True)
+    mobile = models.CharField(max_length=32, blank=True)
+    extension = models.CharField(max_length=12, blank=True)
+    preferred_method = models.CharField(max_length=10, choices=Method.choices,
+                                        default=Method.EMAIL)
+    # The contact printed on outgoing documents when no other is specified.
+    is_primary = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-is_primary", "full_name"]
+
+    def __str__(self):
+        return f"{self.full_name} ({self.job_title})" if self.job_title else self.full_name
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.is_primary:
+            CompanyContact.objects.filter(company_id=self.company_id).exclude(
+                pk=self.pk).update(is_primary=False)
+
+
+class CompanyCompliance(PlatformBaseModel):
+    """Statutory registrations. In South African contracting these decide whether
+    you may even bid: no CSD number, no state work; no CIDB grading, no
+    construction tender above threshold; B-BBEE level moves your scorecard."""
+
+    company = models.OneToOneField(Company, on_delete=models.CASCADE,
+                                   related_name="compliance")
+    vat_registered = models.BooleanField(default=False)
+    income_tax_no = models.CharField(max_length=32, blank=True)
+    paye_no = models.CharField(max_length=32, blank=True)
+    uif_no = models.CharField(max_length=32, blank=True)
+    coida_no = models.CharField(max_length=32, blank=True)       # Workmen's comp
+    coida_expiry = models.DateField(null=True, blank=True)
+    bbbee_level = models.CharField(max_length=16, blank=True)
+    bbbee_expiry = models.DateField(null=True, blank=True)
+    csd_supplier_no = models.CharField(max_length=32, blank=True)
+    cidb_grading = models.CharField(max_length=16, blank=True)
+    industry_certifications = models.JSONField(default=list, blank=True)
+    iso_certifications = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        verbose_name_plural = "company compliance"
+
+    def __str__(self):
+        return f"Compliance: {self.company}"
+
+    def expiring(self, within_days=60):
+        """Registrations lapsing soon — the ones that quietly disqualify you
+        from a tender if nobody is watching."""
+        from datetime import timedelta
+
+        from django.utils import timezone
+        horizon = timezone.localdate() + timedelta(days=within_days)
+        out = []
+        for label, value in (("COIDA letter of good standing", self.coida_expiry),
+                             ("B-BBEE certificate", self.bbbee_expiry)):
+            if value and value <= horizon:
+                out.append({"name": label, "expires": value,
+                            "expired": value < timezone.localdate()})
+        return out
+
+
+class CompanyDocument(PlatformBaseModel):
+    """Supporting statutory documents — the pack a client asks for during
+    vendor onboarding (CIPC certificate, tax clearance, B-BBEE affidavit…)."""
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE,
+                                related_name="documents")
+    name = models.CharField(max_length=160)
+    doc_type = models.CharField(max_length=40, blank=True)
+    file = models.FileField(upload_to="company_docs/%Y/")
+    issued_on = models.DateField(null=True, blank=True)
+    expires_on = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_expired(self) -> bool:
+        from django.utils import timezone
+        return bool(self.expires_on and self.expires_on < timezone.localdate())
+
+
+class CompanyBranding(PlatformBaseModel):
+    """The visual assets documents are built from. Separate images because a
+    letterhead, an email signature logo and a report cover are different shapes —
+    forcing one file to serve all three is why generated documents look wrong."""
+
+    company = models.OneToOneField(Company, on_delete=models.CASCADE,
+                                   related_name="branding")
+    email_logo = models.ImageField(upload_to="branding/", blank=True, null=True)
+    invoice_logo = models.ImageField(upload_to="branding/", blank=True, null=True)
+    report_logo = models.ImageField(upload_to="branding/", blank=True, null=True)
+    letterhead = models.ImageField(upload_to="branding/", blank=True, null=True)
+    stamp = models.ImageField(upload_to="branding/", blank=True, null=True)
+    signature = models.ImageField(upload_to="branding/", blank=True, null=True)
+    seal = models.ImageField(upload_to="branding/", blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = "company branding"
+
+    def __str__(self):
+        return f"Branding: {self.company}"
+
+    def for_document(self, kind: str):
+        """The right logo for a document, falling back to the main company logo
+        so a document is never logo-less just because one slot is empty."""
+        chosen = {"invoice": self.invoice_logo, "report": self.report_logo,
+                  "email": self.email_logo}.get(kind)
+        return chosen or self.company.logo
