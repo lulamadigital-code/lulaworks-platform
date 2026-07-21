@@ -57,18 +57,37 @@ def update_quotation(quote, user, *, title=None, client_name=None, site=None,
     quote.save()
 
     if lines is not None:
-        quote.lines.all().delete()
-        pos = 0
-        for line in lines:
-            desc = (line.get("description") or "").strip()
+        # Wholesale replacement PRESERVES costing. This used to delete every
+        # line and recreate it from description/qty/unit/price alone, which
+        # silently discarded cost, markup, discount, category and section — a
+        # quotation with a real margin came back with an unknown one. Existing
+        # lines are matched by description and updated in place instead.
+        existing = {line.description.strip().lower(): line
+                    for line in quote.lines.all()}
+        keep, pos = set(), 0
+        for row in lines:
+            desc = (row.get("description") or "").strip()
             if not desc:
                 continue
             pos += 1
-            quote.lines.create(
-                company=quote.company, position=pos, description=desc,
-                qty=_dec(line.get("qty"), "1"), unit=line.get("unit") or "each",
-                unit_price=_dec(line.get("unit_price"), "0"),
-            )
+            line = existing.get(desc.lower())
+            if line is not None:
+                line.position = pos
+                line.qty = _dec(row.get("qty"), "1")
+                line.unit = row.get("unit") or "each"
+                line.unit_price = _dec(row.get("unit_price"), "0")
+                line.save(update_fields=["position", "qty", "unit", "unit_price",
+                                         "updated_at"])
+                keep.add(line.pk)
+            else:
+                created = quote.lines.create(
+                    company=quote.company, position=pos, description=desc,
+                    qty=_dec(row.get("qty"), "1"), unit=row.get("unit") or "each",
+                    unit_price=_dec(row.get("unit_price"), "0"),
+                )
+                keep.add(created.pk)
+        # Only lines the caller actually dropped are removed.
+        quote.lines.exclude(pk__in=keep).delete()
     publish("QuotationUpdated", company=quote.company, subject=quote, actor=user,
             payload={"number": quote.number})
     return quote

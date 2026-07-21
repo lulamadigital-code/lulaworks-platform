@@ -524,3 +524,92 @@ class QuotedVsActualTests(TestCase):
             rows = {r["category"]: r for r in quoted_vs_actual(quote)["rows"]}
             self.assertEqual(rows["labour"]["quoted_cost"], Decimal("1000.00"))
             self.assertEqual(rows["material"]["quoted_cost"], Decimal("5000.00"))
+
+
+class CostPreservationTests(TestCase):
+    """Regression: the legacy editor silently destroyed costing.
+
+    It rebuilt the whole line set from description/qty/unit/price, so saving it
+    deleted every line and recreated it with no cost, markup, discount,
+    category or section. Margin went from a real number to unknown, and nothing
+    said so.
+    """
+
+    def _quote_with_costing(self, company):
+        quote = make_quote(company)
+        section = QuotationSection.objects.create(company=company, quotation=quote,
+                                                  name="Labour")
+        line = add_line(company, quote, qty=10, cost=100, markup=25,
+                        description="Millwright", section=section)
+        line.category = "labour"
+        line.save()
+        return quote, line
+
+    def test_updating_lines_keeps_cost_markup_and_section(self):
+        from .services import update_quotation
+        c = make_company()
+        with tenant_scope(c.id):
+            quote, line = self._quote_with_costing(c)
+            self.assertEqual(quote.margin_pct, Decimal("20.00"))
+
+            update_quotation(quote, None, lines=[
+                {"description": "Millwright", "qty": "12", "unit": "hour",
+                 "unit_price": ""},
+            ])
+
+            line.refresh_from_db()
+            self.assertEqual(line.unit_cost, Decimal("100.00"))   # survived
+            self.assertEqual(line.markup_pct, Decimal("25.00"))   # survived
+            self.assertEqual(line.category, "labour")             # survived
+            self.assertIsNotNone(line.section_id)                 # survived
+            self.assertEqual(line.qty, Decimal("12.00"))          # updated
+            self.assertIsNotNone(quote.margin_pct)                # still knowable
+
+    def test_a_line_the_caller_dropped_is_still_removed(self):
+        from .services import update_quotation
+        c = make_company()
+        with tenant_scope(c.id):
+            quote, _ = self._quote_with_costing(c)
+            add_line(c, quote, qty=1, cost=50, markup=10, description="Rigger")
+            self.assertEqual(quote.lines.count(), 2)
+
+            update_quotation(quote, None, lines=[
+                {"description": "Millwright", "qty": "10", "unit": "hour"},
+            ])
+            self.assertEqual(
+                list(quote.lines.values_list("description", flat=True)), ["Millwright"])
+
+    def test_a_new_line_is_still_added(self):
+        from .services import update_quotation
+        c = make_company()
+        with tenant_scope(c.id):
+            quote, _ = self._quote_with_costing(c)
+            update_quotation(quote, None, lines=[
+                {"description": "Millwright", "qty": "10", "unit": "hour"},
+                {"description": "Brand new", "qty": "1", "unit": "each",
+                 "unit_price": "500"},
+            ])
+            self.assertEqual(quote.lines.count(), 2)
+
+
+class RetiredEditorTests(TestCase):
+    def test_the_old_edit_url_redirects_to_the_builder(self):
+        """Kept alive so old bookmarks land somewhere useful rather than 404."""
+        from django.test import Client
+
+        from apps.identity.models import Membership, Permission, Role, User
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+        role = Role.objects.create(name="R", is_system=True)
+        perm, _ = Permission.objects.get_or_create(
+            codename="quotes.create", defaults={"module": "x", "label": "x"})
+        role.permissions.add(perm)
+        user = User.objects.create_user("e@lulama.co.za", "x", active_company=c)
+        Membership.objects.create(user=user, company=c, role=role)
+
+        client = Client()
+        client.force_login(user)
+        response = client.get(f"/quotations/{quote.id}/edit/")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(str(quote.id), response["Location"])

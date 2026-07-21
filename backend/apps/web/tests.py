@@ -381,26 +381,27 @@ class QuotationTests(TestCase):
         no_perm = user_with(c, ["projects.view"], email="np@lulama.co.za")
         editor = user_with(c, ["projects.view", "quotes.create"], email="ed@lulama.co.za")
 
-        # no permission → edit page redirects, no change
-        self.client.force_login(no_perm)
-        self.assertEqual(self.client.get(f"/quotations/{q.id}/edit/").status_code, 302)
+        # The standalone editor is RETIRED — it rebuilt the line set from
+        # description/qty/unit/price and so destroyed cost, markup, discount,
+        # category and section on save. Both users now land on the builder.
+        for who in (no_perm, editor):
+            self.client.force_login(who)
+            response = self.client.get(f"/quotations/{q.id}/edit/")
+            self.assertEqual(response.status_code, 302)
+            self.assertIn(str(q.id), response["Location"])
 
-        # editor → change a line + add one
+        # Editing happens on the builder, one line at a time.
         self.client.force_login(editor)
-        self.assertEqual(self.client.get(f"/quotations/{q.id}/edit/").status_code, 200)
-        self.client.post(f"/quotations/{q.id}/edit/", {
-            "client_name": "Sasol Secunda", "title": "Pump overhaul", "site": "Secunda",
-            "vat_rate": "15", "notes": "",
-            "description": ["Steel lip channel", "Bearing kit"],
-            "qty": ["10", "4"], "unit": ["m", "set"], "unit_price": ["500", "1200"],
+        self.client.post(f"/quotations/{q.id}/lines/", {
+            "description": "Bearing kit", "qty": "4", "unit": "set",
+            "unit_cost": "800", "markup_pct": "50",
         })
         with tenant_scope(c.id):
             q.refresh_from_db()
-            self.assertEqual(q.client_name, "Sasol Secunda")
-            lines = list(QuotationLine.objects.filter(quotation=q).order_by("position"))
-            self.assertEqual(len(lines), 2)
-            self.assertEqual(lines[0].description, "Steel lip channel")
-            self.assertEqual(lines[1].unit_price, Decimal("1200"))
+            line = QuotationLine.objects.get(quotation=q, description="Bearing kit")
+            self.assertEqual(line.qty, Decimal("4"))
+            self.assertEqual(line.unit_cost, Decimal("800"))      # costing kept
+            self.assertEqual(line.effective_unit_price, Decimal("1200.00"))
 
 
 

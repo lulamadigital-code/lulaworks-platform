@@ -108,7 +108,6 @@ from apps.procurement.services import three_way_match
 from apps.projects.models import Project, ProjectStatus
 from apps.quotes.models import Quotation, QuotationStatus
 from apps.quotes.pdf import quotation_pdf_bytes
-from apps.quotes.services import update_quotation
 from apps.rfq.models import RFQDocument
 from apps.rfq.models import RFQLineItem
 from apps.rfq.services import (
@@ -1344,41 +1343,16 @@ def quotation_detail(request, pk):
 
 @login_required
 def quotation_edit(request, pk):
-    quote = get_object_or_404(Quotation.objects.all().prefetch_related("lines"), pk=pk)
-    if not request.user.has_perm_code("quotes.create"):
-        messages.error(request, "You do not have permission to edit quotations.")
-        return redirect("web:quotation_detail", pk=pk)
-    if quote.status != QuotationStatus.DRAFT:
-        messages.error(request, "Only draft quotations can be edited.")
-        return redirect("web:quotation_detail", pk=pk)
+    """Retired. The builder on the detail page replaced this.
 
-    if request.method == "POST":
-        # Rebuild lines from the posted rows (parallel arrays); blank rows dropped.
-        descriptions = request.POST.getlist("description")
-        qtys = request.POST.getlist("qty")
-        units = request.POST.getlist("unit")
-        prices = request.POST.getlist("unit_price")
-        lines = [
-            {"description": d, "qty": q, "unit": u, "unit_price": p}
-            for d, q, u, p in zip(descriptions, qtys, units, prices, strict=False)
-        ]
-        update_quotation(
-            quote, request.user,
-            title=request.POST.get("title", ""),
-            client_name=request.POST.get("client_name", ""),
-            site=request.POST.get("site", ""),
-            vat_rate=request.POST.get("vat_rate"),
-            validity_date=request.POST.get("validity_date") or None,
-            notes=request.POST.get("notes", ""),
-            lines=lines,
-        )
-        messages.success(request, f"Quotation {quote.number} saved.")
-        return redirect("web:quotation_detail", pk=pk)
+    The old editor rebuilt the whole line set from a form carrying only
+    description/qty/unit/price — so saving it DELETED every line and recreated
+    them without cost, markup, discount, category or section. A quotation with
+    a real margin came back with an unknown one, silently.
 
-    # a couple of blank rows so the manager can add lines
-    return render(request, "web/quotation_edit.html", {
-        "quote": quote, "blank_rows": range(3),
-    })
+    The URL is kept so old bookmarks land somewhere useful rather than 404.
+    """
+    return redirect("web:quotation_detail", pk=pk)
 
 
 @login_required
