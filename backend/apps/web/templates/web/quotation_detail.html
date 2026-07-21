@@ -71,8 +71,10 @@
 {% endif %}
 {% endif %}
 
-{# ── What looks wrong. Deterministic, so it runs every time rather than
-     hiding behind a button nobody presses. ───────────────────────────────── #}
+{% comment %} ── What looks wrong. Deterministic, so it runs every time rather
+   than hiding behind a button nobody presses. ─────────────────────────────
+   {# #} only comments out ONE line — a wrapped one leaks onto the page.
+{% endcomment %}
 {% if review.findings %}
 <div class="card" style="border-left:4px solid var(--orange);border-radius:0 var(--r) var(--r) 0;">
   <strong style="color:#b9711a;">{{ review.summary }}</strong>

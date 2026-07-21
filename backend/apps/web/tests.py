@@ -529,6 +529,25 @@ class EveryPageLoadsTests(TestCase):
                 broken.append(f"{name} ({url}) → {response.status_code}")
         self.assertEqual(broken, [], f"pages returning a server error: {broken}")
 
+    def test_no_page_leaks_template_syntax(self):
+        """A wrapped {# #} comment renders as literal text on the page.
+
+        It happened twice — once in the sidebar, once on the quotation detail
+        page — and both times a human had to spot it in a screenshot. Django
+        gives no warning, so the only thing that catches it is looking at the
+        output, which is what this does.
+        """
+        leaking = []
+        for name, url in self._urls():
+            response = self.client.get(url)
+            if response.status_code != 200:
+                continue
+            body = response.content.decode()
+            for token in ("{#", "#}", "{%", "%}", "{{"):
+                if token in body:
+                    leaking.append(f"{name} leaks {token!r}")
+        self.assertEqual(leaking, [], f"unrendered template syntax: {leaking}")
+
     def test_creating_a_blank_quotation_works(self):
         """The exact route that broke: a blank quotation, end to end."""
         from apps.quotes.models import Quotation, QuotationType
