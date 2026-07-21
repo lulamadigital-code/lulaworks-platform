@@ -56,6 +56,9 @@
     .nav a svg{width:18px;height:18px;flex:0 0 18px}
     .navbadge{margin-left:auto;background:var(--red);color:#fff;border-radius:20px;
               padding:1px 7px;font-size:11px;font-weight:800}
+    .nav-group{display:block;padding:16px 12px 5px;font-size:10.5px;font-weight:800;
+               letter-spacing:.09em;text-transform:uppercase;color:#9aa0b0}
+    .nav-group:first-child{padding-top:6px}
     .side-foot{margin-top:auto;padding:14px 16px;border-top:1px solid var(--line);
                display:flex;align-items:center;gap:10px}
     .side-foot .who{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;flex:1}
@@ -227,6 +230,7 @@
            scrollbar-width:none}
       .nav::-webkit-scrollbar{display:none}
       .nav a{white-space:nowrap;padding:8px 12px}
+      .nav-group{display:none}
       .nav a.active::before{display:none}
       .side-foot{display:none}
       .content{padding:22px 16px 80px}
@@ -297,20 +301,35 @@
       {% if has_logo %}<img src="{% static logo_static %}" class="brand-img" alt="LulaWorks">
       {% else %}{% include "web/_mark.svg" %}<span>lulaworks</span>{% endif %}
     </a>
+    {% comment %}Ordered by the way the money actually moves: win it, deliver it,
+    get paid. Thirteen flat links were impossible to scan; the headings give the
+    eye somewhere to land and put related screens next to each other.
+
+    Note: {# #} is single-line only in Django — a multi-line one renders as
+    literal text in the sidebar, which is exactly what happened here.
+    {% endcomment %}
     <nav class="nav">
       {% include "web/_navlink.html" with url='web:dashboard' key='dashboard' label='Dashboard' icon='grid' %}
-      {% include "web/_navlink.html" with url='web:work' key='work' label='Work' icon='check' %}
-      {% include "web/_navlink.html" with url='web:rfq' key='rfq' label='RFQ' icon='inbox' %}
-      {% include "web/_navlink.html" with url='web:quotations' key='quotations' label='Quotations' icon='doc' %}
+      {% include "web/_navlink.html" with url='web:notifications' key='notifications' label='Inbox' icon='bell' badge=unread_notifications %}
+      {% include "web/_navlink.html" with url='web:lulama' key='lulama' label='LulaAI' icon='spark' %}
+
+      <span class="nav-group">Win work</span>
       {% include "web/_navlink.html" with url='web:customers' key='customers' label='Customers' icon='org' %}
-      {% include "web/_navlink.html" with url='web:projects' key='projects' label='Projects' icon='folder' %}
+      {% include "web/_navlink.html" with url='web:rfq' key='rfq' label='RFQ' icon='inbox' %}
       {% include "web/_navlink.html" with url='web:estimates' key='estimates' label='Estimates' icon='calc' %}
+      {% include "web/_navlink.html" with url='web:quotations' key='quotations' label='Quotations' icon='doc' %}
+
+      <span class="nav-group">Deliver</span>
+      {% include "web/_navlink.html" with url='web:work' key='work' label='Work' icon='check' %}
+      {% include "web/_navlink.html" with url='web:projects' key='projects' label='Projects' icon='folder' %}
+
+      <span class="nav-group">Money</span>
       {% include "web/_navlink.html" with url='web:purchase_orders' key='procurement' label='Procurement' icon='cart' %}
       {% if perms_money %}{% include "web/_navlink.html" with url='web:commercial' key='commercial' label='Commercial' icon='cash' %}{% endif %}
-      {% include "web/_navlink.html" with url='web:lulama' key='lulama' label='LulaAI' icon='spark' %}
+
+      <span class="nav-group">Setup</span>
       {% include "web/_navlink.html" with url='web:people' key='people' label='People' icon='users' %}
       {% include "web/_navlink.html" with url='web:company_profile' key='company' label='Company' icon='building' %}
-      {% include "web/_navlink.html" with url='web:notifications' key='notifications' label='Inbox' icon='bell' badge=unread_notifications %}
     </nav>
     <div class="side-foot">
       <a class="me" href="{% url 'web:profile' %}" title="My profile">
