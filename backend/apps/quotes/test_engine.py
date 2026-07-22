@@ -945,6 +945,10 @@ class CommercialDocumentTests(TestCase):
         self.assertIn("TAX INVOICE", itext)
         self.assertIn("LPS845192", itext)          # quotation ref inherited
         self.assertIn("R2,300.00", itext)          # 2000 net + 15% VAT
+        self.assertIn("Bill to:", itext)           # not "Client :"
+        self.assertIn("PO45821", itext)            # the submitted PO number
+        self.assertIn("Invoice Compiled By:", itext)
+        self.assertIn("BANKING DETAILS", itext)
         self.assertIn("DELIVERY NOTE", dtext)
         self.assertIn("Outstanding", dtext)        # operational columns
         self.assertNotIn("R2,000", dtext)          # a delivery note shows no prices

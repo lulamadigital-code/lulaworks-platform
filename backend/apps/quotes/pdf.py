@@ -90,6 +90,50 @@ def _customer_address(customer) -> str:
     return ", ".join(p for p in parts if p)
 
 
+def _signoff_banking_boxes(header, brand, small, muted, *, compiled_label,
+                           prep_name, today,
+                           received_label="Received in Good Order By:"):
+    """The two bordered boxes at the foot of a commercial document: a sign-off
+    (compiled by, then received by) on the left and BANKING DETAILS on the right.
+    Shared by the quotation and the tax invoice so they look identical."""
+    def M(t):
+        return Paragraph(escape(str(t)), muted)
+
+    signoff = [
+        Paragraph(f"<b>{escape(compiled_label)}</b>", small), Spacer(1, 1.5 * mm),
+        Paragraph(f"Initials &amp; Surname: <b>{escape(prep_name)}</b>"
+                  f"&nbsp;&nbsp;&nbsp;&nbsp;Date: <b>{escape(today)}</b>", small),
+        Spacer(1, 6 * mm),
+        Paragraph(f"<b>{escape(received_label)}</b>", small), Spacer(1, 1.5 * mm),
+        Paragraph("Initials &amp; Surname: ________________"
+                  "&nbsp;&nbsp;&nbsp;Date: ____________", muted),
+    ]
+    bank = header["bank"]
+    title = Paragraph("<b>BANKING DETAILS</b>", small)
+    if bank:
+        bank_rows = [title, Spacer(1, 1.5 * mm),
+                     M(f"Account Holder: {bank['account_name']}"),
+                     M(f"Bank Name: {bank['bank_name']}"
+                       + (f" ({bank['account_type']})" if bank['account_type'] else "")),
+                     M(f"Account No: {bank['account_number']}"),
+                     M(f"Branch Code: {bank['branch_code'] or '—'}")]
+    else:
+        bank_rows = [title, Spacer(1, 1.5 * mm),
+                     M("Add a bank account in the Company Profile.")]
+
+    footer = Table([[signoff, "", bank_rows]], colWidths=[104 * mm, 6 * mm, 76 * mm])
+    footer.setStyle(TableStyle([
+        ("BOX", (0, 0), (0, 0), 1, brand), ("BOX", (2, 0), (2, 0), 1, brand),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (0, 0), 9), ("RIGHTPADDING", (0, 0), (0, 0), 9),
+        ("TOPPADDING", (0, 0), (0, 0), 9), ("BOTTOMPADDING", (0, 0), (0, 0), 9),
+        ("LEFTPADDING", (2, 0), (2, 0), 9), ("RIGHTPADDING", (2, 0), (2, 0), 9),
+        ("TOPPADDING", (2, 0), (2, 0), 9), ("BOTTOMPADDING", (2, 0), (2, 0), 9),
+        ("LEFTPADDING", (1, 0), (1, 0), 0), ("RIGHTPADDING", (1, 0), (1, 0), 0),
+    ]))
+    return footer
+
+
 def quotation_pdf_bytes(quote) -> bytes:
     company = quote.company
     buf = BytesIO()
@@ -246,48 +290,13 @@ def quotation_pdf_bytes(quote) -> bytes:
     if quote.exclusions or quote.assumptions:
         story.append(Spacer(1, 4 * mm))
 
-    # ── Sign-off and banking — two separate boxes with a gap between them ────
-    # "Compiled by" fills itself in (who prepared it, shown as initials +
-    # surname, and today's date). "Received in good order" is left blank for the
-    # customer to sign. Each keeps Initials & Surname and Date on one line.
+    # ── Sign-off and banking — two separate boxes. "Compiled by" fills itself
+    # in; "received in good order" is left blank for the customer to sign.
     prep_name = _initials_surname(prep.get_full_name()) if prep and prep.get_full_name() \
         else (prep.email if prep else "")
-    today = quote.created_at.strftime("%d/%m/%Y")
-    signoff = [
-        Paragraph("<b>Quotation Compiled By:</b>", small), Spacer(1, 1.5 * mm),
-        Paragraph(f"Initials &amp; Surname: <b>{escape(prep_name)}</b>"
-                  f"&nbsp;&nbsp;&nbsp;&nbsp;Date: <b>{today}</b>", small),
-        Spacer(1, 6 * mm),
-        Paragraph("<b>Received in Good Order By:</b>", small), Spacer(1, 1.5 * mm),
-        Paragraph("Initials &amp; Surname: ________________"
-                  "&nbsp;&nbsp;&nbsp;Date: ____________", muted),
-    ]
-
-    bank = header["bank"]
-    banking_title = Paragraph("<b>BANKING DETAILS</b>", small)
-    if bank:
-        bank_rows = [banking_title, Spacer(1, 1.5 * mm),
-                     P(f"Account Holder: {bank['account_name']}", muted),
-                     P(f"Bank Name: {bank['bank_name']}"
-                       + (f" ({bank['account_type']})" if bank['account_type'] else ""), muted),
-                     P(f"Account No: {bank['account_number']}", muted),
-                     P(f"Branch Code: {bank['branch_code'] or '—'}", muted)]
-    else:
-        bank_rows = [banking_title, Spacer(1, 1.5 * mm),
-                     P("Add a bank account in the Company Profile.", muted)]
-
-    # Two bordered cells with an empty spacer column between them.
-    footer = Table([[signoff, "", bank_rows]], colWidths=[104 * mm, 6 * mm, 76 * mm])
-    box_pad = [
-        ("BOX", (0, 0), (0, 0), 1, brand), ("BOX", (2, 0), (2, 0), 1, brand),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("LEFTPADDING", (0, 0), (0, 0), 9), ("RIGHTPADDING", (0, 0), (0, 0), 9),
-        ("TOPPADDING", (0, 0), (0, 0), 9), ("BOTTOMPADDING", (0, 0), (0, 0), 9),
-        ("LEFTPADDING", (2, 0), (2, 0), 9), ("RIGHTPADDING", (2, 0), (2, 0), 9),
-        ("TOPPADDING", (2, 0), (2, 0), 9), ("BOTTOMPADDING", (2, 0), (2, 0), 9),
-        ("LEFTPADDING", (1, 0), (1, 0), 0), ("RIGHTPADDING", (1, 0), (1, 0), 0),
-    ]
-    footer.setStyle(TableStyle(box_pad))
+    footer = _signoff_banking_boxes(
+        header, brand, small, muted, compiled_label="Quotation Compiled By:",
+        prep_name=prep_name, today=quote.created_at.strftime("%d/%m/%Y"))
     story += [footer, Spacer(1, 6 * mm)]
 
     story.append(P(f"Please use document number ({quote.number}) for reference "
@@ -362,7 +371,7 @@ def invoice_pdf_bytes(doc) -> bytes:
     story = _letterhead(company, brand, header, coname, small, muted, title, "TAX INVOICE")
 
     po = doc.purchase_order
-    left = [L("Client :", quote.client_name)]
+    left = [L("Bill to:", quote.client_name)]
     addr = _customer_address(quote.customer)
     if addr:
         left.append(P(f"Address: {addr}", muted))
@@ -375,7 +384,8 @@ def invoice_pdf_bytes(doc) -> bytes:
              L("Invoice No:", doc.number),
              P(f"Date: {doc.created_at:%d/%m/%Y}", small),
              L("Quotation ref:", quote.number)]
-    if po:
+    # The PO number the customer submitted — the invoice references their order.
+    if po and po.po_number:
         right.append(L("PO Number:", po.po_number))
     meta = Table([[left, right]], colWidths=[100 * mm, 86 * mm])
     meta.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
@@ -408,16 +418,17 @@ def invoice_pdf_bytes(doc) -> bytes:
         ("TEXTCOLOR", (0, -1), (-1, -1), brand)]))
     story += [tot, Spacer(1, 8 * mm)]
 
-    bank = header["bank"]
-    if bank:
-        story += [Paragraph("<b>BANKING DETAILS</b>", small),
-                  P(f"Account Holder: {bank['account_name']}", muted),
-                  P(f"Bank Name: {bank['bank_name']}"
-                    + (f" ({bank['account_type']})" if bank['account_type'] else ""), muted),
-                  P(f"Account No: {bank['account_number']}", muted),
-                  P(f"Branch Code: {bank['branch_code'] or '—'}", muted), Spacer(1, 4 * mm)]
-    story.append(P(f"Please use invoice number ({doc.number}) as the payment "
-                   "reference. E&amp;OE.", muted))
+    # Same boxed sign-off + banking as the quotation, worded for an invoice.
+    prep = quote.prepared_by
+    prep_name = _initials_surname(prep.get_full_name()) if prep and prep.get_full_name() \
+        else (prep.email if prep else "")
+    footer = _signoff_banking_boxes(
+        header, brand, small, muted, compiled_label="Invoice Compiled By:",
+        prep_name=prep_name, today=doc.created_at.strftime("%d/%m/%Y"),
+        received_label="Received By:")
+    story += [footer, Spacer(1, 6 * mm),
+              P(f"Please use invoice number ({doc.number}) as the payment "
+                "reference. E&amp;OE.", muted)]
     pdf.build(story)
     return buf.getvalue()
 
