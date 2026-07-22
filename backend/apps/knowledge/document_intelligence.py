@@ -15,10 +15,12 @@ a human to accept, edit or ignore; nothing here writes anything.
 """
 
 import io
+import json
+import re
 import zipfile
 from email import message_from_bytes
 
-from apps.rfq.extraction import parse_loose_lines, parse_rfq_text
+from apps.rfq.extraction import parse_loose_lines, parse_rfq_text, to_decimal
 from apps.rfq.extraction import extract_text as _pdf_text
 
 #: What the upload control accepts. Extensions we can read to some degree; an
@@ -161,12 +163,19 @@ _TYPE_UNIT = {"labour_hire": "hour", "plant_hire": "day",
               "project_management": "unit", "maintenance": "service"}
 
 
-def extract_items(text: str, *, type_key: str | None = None) -> list[dict]:
+def extract_items(text: str, *, type_key: str | None = None,
+                  company=None, user=None, use_ai: bool = False) -> list[dict]:
     """Candidate line items from text — the structured table first (rigid,
     high-confidence), then loose prose ("20 conveyor rollers"), de-duplicated by
     description. Returns plain dicts the estimator's grid fills in; the price is
     left blank unless the document actually stated one, because an invented price
-    is worse than a blank."""
+    is worse than a blank.
+
+    Deterministic-first. When ``use_ai`` and a provider is configured, Gemini is
+    asked for the items the pattern parser missed (prose that is not in a tidy
+    "N unit item" shape); it only *adds* descriptions, never overwrites, and
+    never invents a price. AI is metered, so it runs on a deliberate action (a
+    document upload), not on every keystroke."""
     if not text or not text.strip():
         return []
 
@@ -174,25 +183,131 @@ def extract_items(text: str, *, type_key: str | None = None) -> list[dict]:
     default_unit = _TYPE_UNIT.get(type_key or "", "each")
 
     items, seen = [], set()
-    for ln in lines:
-        desc = (ln.description or "").strip()
-        key = desc.lower()
-        if len(desc) < 3 or key in seen:
-            continue
+
+    def _add(desc, qty, unit, price):
+        key = (desc or "").strip().lower()
+        if len(key) < 3 or key in seen:
+            return
         seen.add(key)
-        # The loose parser falls back to "each" when the text gave no unit; for
-        # a labour or plant job that really means "unspecified", so let the type
-        # default win. A unit the text stated explicitly is always kept.
-        unit = ln.unit or default_unit
-        if unit == "each" and default_unit != "each":
-            unit = default_unit
-        items.append({
-            "description": desc,
-            "qty": f"{ln.qty:g}" if ln.qty else "1",
-            "unit": unit,
-            "unit_price": f"{ln.unit_price:g}" if ln.unit_price else "",
-        })
+        # The loose parser falls back to "each" when the text gave no unit; for a
+        # labour or plant job that really means "unspecified", so the type
+        # default wins. A unit the text stated explicitly is always kept.
+        u = unit or default_unit
+        if u == "each" and default_unit != "each":
+            u = default_unit
+        items.append({"description": desc.strip(), "qty": qty or "1",
+                      "unit": u, "unit_price": price or ""})
+
+    for ln in lines:
+        _add(ln.description, f"{ln.qty:g}" if ln.qty else "1", ln.unit,
+             f"{ln.unit_price:g}" if ln.unit_price else "")
+
+    if use_ai:
+        ai = _ai_json(company, user, _ITEMS_PROMPT, text, agent="quote_items")
+        for ln in ai.get("lines", []) if isinstance(ai, dict) else []:
+            price = ln.get("unit_price")
+            _add(str(ln.get("description", "")),
+                 f"{to_decimal(ln.get('qty', 1)) or 1:g}",
+                 str(ln.get("unit", "") or ""),
+                 f"{to_decimal(price):g}" if price not in (None, "", 0) else "")
     return items
+
+
+# ── AI enrichment (Gemini via the metered gateway) ────────────────────────────
+#
+# Deterministic parsing is free and runs always; the model is the fallback for
+# the shapes a regex cannot catch. Gated by ai_configured(), so with no key the
+# whole platform still works — it simply extracts less.
+
+_ITEMS_PROMPT = (
+    "From this scope of work, list the quotable line items as strict JSON: "
+    '{"lines":[{"description","qty","unit","unit_price"}]}. Use unit_price only '
+    "if the text states a price; otherwise omit it. Do not invent items. "
+    "Text:\n\n{text}"
+)
+_PO_PROMPT = (
+    "Extract this customer purchase order as strict JSON with keys: po_number, "
+    "po_date (YYYY-MM-DD), value (number), contact, site, payment_terms, "
+    'delivery, and lines (array of {description, qty, unit, unit_price}). Use '
+    "null for anything not present. Text:\n\n{text}"
+)
+
+
+def _ai_json(company, user, prompt_template: str, text: str, *, agent: str) -> dict:
+    """Run one metered AI call and parse its JSON, tolerating ```json fences.
+    Returns {} on any failure — a missing key, a provider error, unparseable
+    output — so the caller always has its deterministic result to fall back to."""
+    if not text.strip():
+        return {}
+    try:
+        from apps.ai_platform.gateway import run_metered
+        from apps.ai_platform.providers import ai_configured, get_provider
+    except ImportError:
+        return {}
+    if company is None or user is None or not ai_configured():
+        return {}
+    try:
+        provider = get_provider()
+        prompt = prompt_template.replace("{text}", text[:12000])
+        resp = run_metered(company, user, provider, prompt, agent=agent)
+        m = re.search(r"\{.*\}", resp.text, re.DOTALL)
+        return json.loads(m.group(0)) if m else {}
+    except Exception:
+        return {}
+
+
+#: Deterministic PO patterns beyond what parse_rfq_text already finds.
+_VALUE_RE = re.compile(r"(?:total|order\s+value|po\s+value|grand\s+total)\s*:?\s*"
+                       r"(R?\s?[\d][\d\s]*[.,]\d{2})", re.IGNORECASE)
+_TERMS_RE = re.compile(r"(?:payment\s+terms?|terms)\s*:?\s*([^\n]{2,60})", re.IGNORECASE)
+_DELIVERY_RE = re.compile(r"(?:delivery|deliver\s+to|ship\s+to)\s*:?\s*([^\n]{2,80})",
+                          re.IGNORECASE)
+
+
+def extract_po_fields(text: str, *, company=None, user=None,
+                      use_ai: bool = False) -> dict:
+    """Read a customer purchase order into the fields the PO form needs, so the
+    estimator confirms rather than retypes. Deterministic-first (the same parser
+    the RFQ front door uses), then Gemini fills what the patterns missed. Every
+    value is a suggestion the user may correct before saving."""
+    out = {"po_number": "", "po_date": "", "value": "", "contact": "",
+           "site": "", "payment_terms": "", "delivery": "", "lines": []}
+    if not text or not text.strip():
+        return out
+
+    fields = parse_rfq_text(text).fields
+    if "po_number" in fields:
+        out["po_number"] = fields["po_number"].value
+    if "order_date" in fields:
+        out["po_date"] = fields["order_date"].value.replace("/", "-")
+    if "contact" in fields:
+        out["contact"] = fields["contact"].value
+    if "ship_to" in fields:
+        out["site"] = fields["ship_to"].value
+    if m := _VALUE_RE.search(text):
+        out["value"] = f"{to_decimal(m.group(1)):.2f}"
+    if m := _TERMS_RE.search(text):
+        out["payment_terms"] = m.group(1).strip()
+    if m := _DELIVERY_RE.search(text):
+        out["delivery"] = m.group(1).strip()
+    out["lines"] = extract_items(text)
+
+    if use_ai:
+        ai = _ai_json(company, user, _PO_PROMPT, text, agent="po_extraction")
+        for key in ("po_number", "po_date", "value", "contact", "site",
+                    "payment_terms", "delivery"):
+            if not out[key] and ai.get(key):
+                out[key] = str(ai[key])
+        if not out["lines"] and isinstance(ai.get("lines"), list):
+            out["lines"] = [
+                {"description": str(x.get("description", "")),
+                 "qty": f"{to_decimal(x.get('qty', 1)) or 1:g}",
+                 "unit": str(x.get("unit", "") or "each"),
+                 "unit_price": (f"{to_decimal(x.get('unit_price')):g}"
+                                if x.get("unit_price") else "")}
+                for x in ai["lines"] if x.get("description")
+            ]
+    return out
 
 
 # ── Related-item suggestions (§7) ─────────────────────────────────────────────

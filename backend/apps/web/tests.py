@@ -361,12 +361,14 @@ class QuotationTests(TestCase):
         c = make_company()
         with tenant_scope(c.id):
             q = self._quote(c)
-        user = user_with(c, ["projects.view", "finance.view_money"])
+        user = user_with(c, ["projects.view", "finance.view_money", "quotes.create"])
         self.client.force_login(user)
+        # The review page shows the number; the line items live in the PDF
+        # preview and, in text, on the edit page.
         detail = self.client.get(f"/quotations/{q.id}/")
         self.assertEqual(detail.status_code, 200)
         self.assertContains(detail, q.number)
-        self.assertContains(detail, "Steel")
+        self.assertContains(self.client.get(f"/quotations/{q.id}/?edit=1"), "Steel")
         # PDF download
         pdf = self.client.get(f"/quotations/{q.id}/pdf/")
         self.assertEqual(pdf.status_code, 200)
@@ -696,3 +698,107 @@ class QuotationCreationWorkflowTests(TestCase):
         self.client.force_login(outsider)
         resp = self.client.post("/quotations/extract/", {"scope": "10 gaskets"})
         self.assertEqual(resp.status_code, 403)
+
+
+class QuotationReviewWorkflowTests(TestCase):
+    """Module 5 details refactor: the detail page is a review workspace, the
+    editor lives behind ?edit=1, finalize locks editing, and a PO is attached
+    once the quotation is out with the customer."""
+
+    def setUp(self):
+        from apps.customers.services import create_customer
+        from apps.quotes.services import create_quotation, ensure_quotation_types
+
+        self.company = make_company(name="Harmony Works")
+        self.user = user_with(self.company, [
+            "quotes.create", "finance.view_money", "company.manage",
+            "projects.create"], email="mgr@harmony.co.za")
+        with tenant_scope(self.company.id):
+            ensure_quotation_types(self.company)
+            self.customer = create_customer(self.company, self.user, name="Sasol",
+                                            vendor_number="V-1")
+            self.quote = create_quotation(self.company, self.user,
+                                          client_name="Sasol", title="Crane hire")
+            self.quote.customer = self.customer
+            self.quote.save()
+            self.quote.lines.create(company=self.company, position=1,
+                                    description="Crane", qty=1, unit_price=1000)
+        self.client.force_login(self.user)
+
+    def _url(self, suffix=""):
+        return f"/quotations/{self.quote.id}/{suffix}"
+
+    def _set_status(self, status):
+        with tenant_scope(self.company.id):
+            self.quote.status = status
+            self.quote.save(update_fields=["status"])
+
+    def test_review_is_the_default_and_shows_actions_not_editors(self):
+        resp = self.client.get(self._url())
+        self.assertContains(resp, "Quotation preview")     # the PDF-style review
+        self.assertContains(resp, "Approve")               # a lifecycle action
+        self.assertNotContains(resp, "Add a line")         # editor lives elsewhere
+        self.assertNotContains(resp, "Add many items at once")
+
+    def test_edit_mode_shows_the_builder(self):
+        resp = self.client.get(self._url("?edit=1"))
+        self.assertContains(resp, "Editing")
+        self.assertContains(resp, "Add a line")
+
+    def test_finalize_locks_editing(self):
+        self._set_status("approved")
+        self.client.post(self._url("status/"), {"status": "issued"})
+        with tenant_scope(self.company.id):
+            self.quote.refresh_from_db()
+        self.assertTrue(self.quote.is_finalized)
+        self.assertFalse(self.quote.is_editable)
+        # ?edit=1 no longer yields the builder — it falls back to review.
+        resp = self.client.get(self._url("?edit=1"))
+        self.assertNotContains(resp, "Add a line")
+        # And a direct edit POST is refused by the guard.
+        self.client.post(self._url("lines/"), {"action": "add", "description": "Sneak"})
+        with tenant_scope(self.company.id):
+            self.assertEqual(self.quote.lines.count(), 1)   # unchanged
+
+    def test_create_revision_leaves_the_original_untouched(self):
+        self._set_status("issued")
+        before = self._count_quotes()
+        resp = self.client.post(self._url("revise/"), {"reason": "price change"})
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(self.company.id):
+            self.quote.refresh_from_db()
+        self.assertEqual(self.quote.status, "issued")       # original is as it was
+        self.assertEqual(self._count_quotes(), before + 1)
+
+    def _count_quotes(self):
+        with tenant_scope(self.company.id):
+            return Quotation.objects.count()
+
+    def test_excel_export_returns_a_spreadsheet(self):
+        resp = self.client.get(self._url("excel/"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("spreadsheetml", resp["Content-Type"])
+        self.assertTrue(resp["Content-Disposition"].endswith('.xlsx"'))
+
+    def test_po_section_appears_only_once_finalized(self):
+        self.assertContains(self.client.get(self._url()),
+                            "Available once the quotation is")
+        self.assertNotContains(self.client.get(self._url()), "Attach a purchase order")
+        self._set_status("issued")
+        self.assertContains(self.client.get(self._url()), "Attach a purchase order")
+
+    @NO_AI
+    def test_po_extraction_reads_the_document_deterministically(self):
+        po = SimpleUploadedFile(
+            "po.txt", b"PO NUMBER: 4500123456\nDATE 2026-07-20\nTotal: R 12 000,00")
+        resp = self.client.post(self._url("po/extract/"), {"document": po})
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["po_number"], "4500123456")
+        self.assertEqual(data["value"], "12000.00")
+
+    def test_pdf_preview_may_be_framed(self):
+        resp = self.client.get(self._url("pdf/?inline=1"))
+        self.assertEqual(resp["Content-Disposition"][:6], "inline")
+        # Not DENY, so the same-origin review page can iframe it.
+        self.assertNotEqual(resp.get("X-Frame-Options"), "DENY")

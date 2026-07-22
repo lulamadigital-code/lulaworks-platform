@@ -37,6 +37,7 @@ _SECTIONS = {
     "rfq_line": "rfq",
     "quotations": "quotations", "quotation_detail": "quotations",
     "quotation_edit": "quotations", "quotation_pdf": "quotations",
+    "quotation_excel": "quotations", "quotation_po_extract": "quotations",
     "quotation_new": "quotations", "quotation_header": "quotations",
     "quotation_extract": "quotations",
     "quotation_line": "quotations", "quotation_section": "quotations",

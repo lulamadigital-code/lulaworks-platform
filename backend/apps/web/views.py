@@ -18,6 +18,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_POST
 
 from apps.ai_platform.decomposition import (
@@ -1294,50 +1295,108 @@ def quotations_list(request):
     })
 
 
+def _edit_url(pk) -> str:
+    """The builder is the detail page in edit mode; every editing action returns
+    here so the estimator keeps working rather than bouncing to the review."""
+    from django.urls import reverse
+    return reverse("web:quotation_detail", args=[pk]) + "?edit=1"
+
+
 @login_required
 def quotation_detail(request, pk):
-    """The builder: header, sections, priced lines, margin, lifecycle, award."""
-    from apps.quotes.models import LineCategory, QuotationType, VatMode
-    from apps.quotes.services import award_summary, next_statuses, traceability
-
+    """Two faces of one URL. By default this is the review workspace — the
+    quotation as the customer will see it, with the actions that move it through
+    its commercial life. With ``?edit=1`` (and while the quotation is still
+    editable) it is the builder. Creating and estimating happen in edit mode;
+    reviewing, approving, finalizing and issuing happen in the default view.
+    """
     quote = get_object_or_404(
         Quotation.objects.all().prefetch_related(
-            "lines__section", "sections", "customer_pos", "events", "documents"),
+            "lines__section", "sections", "customer_pos", "events",
+            "documents", "revisions"),
         pk=pk)
 
-    grouped, ungrouped = [], []
+    editing = bool(request.GET.get("edit")) and quote.is_editable \
+        and request.user.has_perm_code("quotes.create")
+    if editing:
+        return _quotation_build(request, quote)
+    return _quotation_review(request, quote)
+
+
+def _quotation_build(request, quote):
+    """Edit mode: header, sections, priced lines, margin, the estimating helpers.
+    Reachable only while the quotation is editable (the detail view guards it)."""
+    from apps.quotes.estimating_ai import pricing_review
+    from apps.quotes.models import LineCategory, QuotationType, VatMode
+
+    grouped = []
     for section in quote.sections.all():
         rows = [line for line in quote.lines.all() if line.section_id == section.id]
         grouped.append({"section": section, "lines": rows})
     ungrouped = [line for line in quote.lines.all() if line.section_id is None]
 
-    can_edit = (not quote.is_locked
-                and request.user.has_perm_code("quotes.create"))
-    context = {
+    from apps.customers.models import Customer
+
+    return render(request, "web/quotation_build.html", {
         "quote": quote,
         "grouped": grouped,
         "ungrouped": ungrouped,
         "categories": LineCategory.choices,
         "vat_modes": VatMode.choices,
         "types": QuotationType.objects.all(),
-        "next_statuses": next_statuses(quote),
+        "customers": Customer.objects.all(),
         "can_view_money": _can_view_money(request.user),
-        "can_edit": can_edit,
-        "can_award": request.user.has_perm_code("projects.create"),
-        "customers": __import__("apps.customers.models",
-                                fromlist=["Customer"]).Customer.objects.all(),
-    }
-    from apps.quotes.estimating_ai import pricing_review
-    from apps.quotes.services import quoted_vs_actual
+        # Deterministic and free, so the estimator sees it while building.
+        "review": pricing_review(quote),
+    })
 
-    # Free, deterministic, and reproducible — so it runs on every view rather
-    # than hiding behind a button nobody presses.
-    context["review"] = pricing_review(quote)
-    if quote.status in ("accepted", "awarded"):
-        context["award"] = award_summary(quote)
+
+#: The commercial life of a quotation, for the informational timeline. Each step
+#: is (key, label); the current one and everything before it read as done.
+_LIFECYCLE_STEPS = [
+    ("draft", "Draft"), ("approved", "Approved"), ("issued", "Finalized"),
+    ("sent", "Sent"), ("accepted", "Accepted"), ("awarded", "Awarded"),
+    ("work", "Work created"), ("invoiced", "Invoiced"), ("paid", "Paid"),
+]
+#: Where the current status sits on that line (so later steps show as pending).
+_STATUS_STAGE = {
+    "draft": 0, "review": 0, "manager_approval": 1, "commercial_approval": 1,
+    "approved": 1, "issued": 2, "sent": 3, "revision_requested": 2,
+    "accepted": 4, "awarded": 5, "rejected": 3, "lost": 3, "expired": 3,
+}
+
+
+def _quotation_review(request, quote):
+    """Review mode: the document as the customer will see it, plus the actions
+    that move it through approval, finalize, issue and award — and the single
+    Purchase Orders section once it is out with the customer."""
+    from apps.identity.profile import document_header
+    from apps.quotes.services import traceability
+
+    can_quote = request.user.has_perm_code("quotes.create")
+    stage = _STATUS_STAGE.get(quote.status, 0)
+    timeline = [{"label": label, "done": i <= stage, "current": i == stage}
+                for i, (_key, label) in enumerate(_LIFECYCLE_STEPS)]
+
+    context = {
+        "quote": quote,
+        "header": document_header(quote.company, kind="quotation"),
+        "can_view_money": _can_view_money(request.user),
+        "can_edit": quote.is_editable and can_quote,
+        "can_approve": can_quote and quote.status in (
+            "draft", "review", "manager_approval", "commercial_approval"),
+        "can_finalize": can_quote and quote.status == "approved",
+        "can_send": can_quote and quote.status in ("issued",),
+        "can_revise": can_quote and quote.is_finalized,
+        "can_award": request.user.has_perm_code("projects.create"),
+        # A PO only makes sense once the customer has the quotation in hand.
+        "po_active": quote.is_finalized,
+        "purchase_orders": list(quote.customer_pos.all()),
+        "revisions": quote.revisions.order_by("revision"),
+        "timeline": timeline,
+    }
     if quote.status == "awarded":
         context["trace"] = traceability(quote)
-        context["actuals"] = quoted_vs_actual(quote)
     return render(request, "web/quotation_detail.html", context)
 
 
@@ -1356,12 +1415,83 @@ def quotation_edit(request, pk):
 
 
 @login_required
+@xframe_options_sameorigin  # so the review page can preview it in an <iframe>
 def quotation_pdf(request, pk):
     quote = get_object_or_404(Quotation.objects.all().prefetch_related("lines"), pk=pk)
     pdf = quotation_pdf_bytes(quote)
     resp = HttpResponse(pdf, content_type="application/pdf")
-    resp["Content-Disposition"] = f'attachment; filename="{quote.number}.pdf"'
+    # inline for the on-screen preview iframe; attachment for the Download button.
+    disposition = "inline" if request.GET.get("inline") else "attachment"
+    resp["Content-Disposition"] = f'{disposition}; filename="{quote.number}.pdf"'
     return resp
+
+
+@login_required
+def quotation_excel(request, pk):
+    """Export the quotation's items to a real .xlsx — the line table plus totals,
+    for a customer or buyer who wants to work with the numbers in a spreadsheet.
+    Selling price only: cost and margin never leave the building (Golden Rule)."""
+    import io
+
+    import openpyxl
+    from openpyxl.styles import Font
+
+    quote = get_object_or_404(Quotation.objects.all().prefetch_related("lines"), pk=pk)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Quotation"
+
+    ws.append([f"Quotation {quote.number}"])
+    ws["A1"].font = Font(bold=True, size=14)
+    ws.append([quote.client_name, "", "", "", quote.title])
+    ws.append([])
+    header = ["#", "Description", "Qty", "Unit", "Unit price", "Line total"]
+    ws.append(header)
+    for cell in ws[ws.max_row]:
+        cell.font = Font(bold=True)
+    for ln in quote.lines.all():
+        ws.append([ln.position, ln.description, float(ln.qty), ln.unit,
+                   float(ln.unit_price), float(ln.line_total)])
+    ws.append([])
+    ws.append(["", "", "", "", "Subtotal", float(quote.subtotal)])
+    ws.append(["", "", "", "", f"VAT ({quote.vat_rate:g}%)", float(quote.vat_amount)])
+    total_row = ["", "", "", "", "Total", float(quote.total)]
+    ws.append(total_row)
+    for cell in ws[ws.max_row]:
+        cell.font = Font(bold=True)
+    for col, width in {"A": 6, "B": 48, "C": 8, "D": 10, "E": 14, "F": 14}.items():
+        ws.column_dimensions[col].width = width
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    resp = HttpResponse(
+        buf.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    resp["Content-Disposition"] = f'attachment; filename="{quote.number}.xlsx"'
+    return resp
+
+
+@login_required
+@require_POST
+def quotation_po_extract(request, pk):
+    """Read an uploaded purchase order and return its fields as JSON so the PO
+    form fills itself in — the estimator confirms rather than retypes. Reuses the
+    shared Document Intelligence service; Gemini fills what the patterns miss.
+    Stateless — it reads the file, it saves nothing."""
+    quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+    if not request.user.has_perm_code("quotes.create"):
+        return JsonResponse({}, status=403)
+    from apps.knowledge.document_intelligence import (
+        extract_po_fields,
+        extract_text_from_upload,
+    )
+    f = request.FILES.get("document")
+    text = extract_text_from_upload(f) if f else ""
+    fields = extract_po_fields(text, company=quote.company, user=request.user,
+                               use_ai=True)
+    if not fields.get("value") and quote.total:
+        fields["value"] = f"{quote.total:.2f}"     # sensible default: the quote total
+    return JsonResponse(fields)
 
 
 # ── RFQ (the front door: upload → extract → review → approve → quotation) ─────
@@ -2065,13 +2195,21 @@ def quotation_extract(request):
     )
 
     type_key = request.POST.get("type_key", "").strip() or None
+    files = request.FILES.getlist("documents")
     parts = [request.POST.get("scope", "")]
-    for f in request.FILES.getlist("documents"):
+    for f in files:
         parts.append(extract_text_from_upload(f))
     text = "\n".join(p for p in parts if p)
 
+    # A document upload is a deliberate action, so it is worth a metered AI pass
+    # (Gemini) for the lines the pattern parser misses. Live typing stays
+    # deterministic — instant and free — so it never bills a keystroke.
+    use_ai = bool(files)
+
     return JsonResponse({
-        "items": extract_items(text, type_key=type_key),
+        "items": extract_items(text, type_key=type_key,
+                               company=request.user.active_company,
+                               user=request.user, use_ai=use_ai),
         "suggestions": suggest_related_items(text, request.POST.getlist("existing")),
     })
 
@@ -2102,7 +2240,7 @@ def quotation_header(request, pk):
     """Save the header — terms, references, scope, and who it goes to."""
     quote, allowed = _quote_guard(request, pk)
     if not allowed:
-        return redirect("web:quotation_detail", pk=pk)
+        return redirect(_edit_url(pk))
 
     from apps.customers.models import Customer
     from apps.quotes.models import QuotationType
@@ -2129,7 +2267,7 @@ def quotation_header(request, pk):
     quote.updated_by = request.user
     quote.save()
     messages.success(request, "Quotation updated.")
-    return redirect("web:quotation_detail", pk=pk)
+    return redirect(_edit_url(pk))
 
 
 @login_required
@@ -2140,7 +2278,7 @@ def quotation_line(request, pk):
 
     quote, allowed = _quote_guard(request, pk)
     if not allowed:
-        return redirect("web:quotation_detail", pk=pk)
+        return redirect(_edit_url(pk))
 
     action = request.POST.get("action", "add")
     if action == "delete":
@@ -2148,7 +2286,7 @@ def quotation_line(request, pk):
                                  pk=request.POST.get("line"))
         line.delete()
         messages.success(request, "Line removed.")
-        return redirect("web:quotation_detail", pk=pk)
+        return redirect(_edit_url(pk))
 
     section = QuotationSection.objects.filter(
         quotation=quote, pk=request.POST.get("section")).first()
@@ -2182,7 +2320,7 @@ def quotation_line(request, pk):
                 position=quote.lines.count() + 1,
                 created_by=request.user, updated_by=request.user, **values)
             messages.success(request, "Line added.")
-    return redirect("web:quotation_detail", pk=pk)
+    return redirect(_edit_url(pk))
 
 
 @login_required
@@ -2191,7 +2329,7 @@ def quotation_section(request, pk):
     from apps.quotes.models import QuotationSection
     quote, allowed = _quote_guard(request, pk)
     if not allowed:
-        return redirect("web:quotation_detail", pk=pk)
+        return redirect(_edit_url(pk))
     if request.POST.get("action") == "delete":
         section = get_object_or_404(QuotationSection.objects.filter(quotation=quote),
                                     pk=request.POST.get("section"))
@@ -2204,7 +2342,7 @@ def quotation_section(request, pk):
             position=quote.sections.count() + 1,
             created_by=request.user, updated_by=request.user)
         messages.success(request, "Section added.")
-    return redirect("web:quotation_detail", pk=pk)
+    return redirect(_edit_url(pk))
 
 
 @login_required
@@ -2300,7 +2438,7 @@ def quotation_suggest(request, pk):
     quote = get_object_or_404(Quotation.objects.all(), pk=pk)
     if not request.user.has_perm_code("quotes.create"):
         messages.error(request, "You do not have permission.")
-        return redirect("web:quotation_detail", pk=pk)
+        return redirect(_edit_url(pk))
 
     if request.method == "POST":
         # Recomputed server-side; the browser is trusted only for which items
@@ -2314,7 +2452,7 @@ def quotation_suggest(request, pk):
         else:
             messages.success(request, f"Added {created} line(s)." if created
                              else "Nothing selected — nothing was added.")
-        return redirect("web:quotation_detail", pk=pk)
+        return redirect(_edit_url(pk))
 
     return render(request, "web/quotation_suggest.html", {
         "quote": quote,
@@ -2333,7 +2471,7 @@ def quotation_template(request, pk):
         created = apply_type_template(quote, request.user)
         messages.success(request, f"Added {created} section(s)." if created
                          else "Nothing to add — those sections already exist.")
-    return redirect("web:quotation_detail", pk=pk)
+    return redirect(_edit_url(pk))
 
 
 @login_required
@@ -2346,7 +2484,7 @@ def quotation_line_move(request, pk):
         line = get_object_or_404(QuotationLine.objects.filter(quotation=quote),
                                  pk=request.POST.get("line"))
         move_line(line, direction=request.POST.get("direction", "up"))
-    return redirect("web:quotation_detail", pk=pk)
+    return redirect(_edit_url(pk))
 
 
 @login_required
@@ -2357,7 +2495,7 @@ def quotation_document(request, pk):
     quote = get_object_or_404(Quotation.objects.all(), pk=pk)
     if not request.user.has_perm_code("quotes.create"):
         messages.error(request, "You do not have permission.")
-        return redirect("web:quotation_detail", pk=pk)
+        return redirect(_edit_url(pk))
 
     if request.POST.get("action") == "delete":
         doc = get_object_or_404(QuotationDocument.objects.filter(quotation=quote),
@@ -2373,7 +2511,7 @@ def quotation_document(request, pk):
         messages.success(request, "Document attached.")
     else:
         messages.error(request, "Choose a file to attach.")
-    return redirect("web:quotation_detail", pk=pk)
+    return redirect(_edit_url(pk))
 
 
 @login_required
@@ -2385,7 +2523,7 @@ def quotation_lines_bulk(request, pk):
 
     quote, allowed = _quote_guard(request, pk)
     if not allowed:
-        return redirect("web:quotation_detail", pk=pk)
+        return redirect(_edit_url(pk))
 
     section = QuotationSection.objects.filter(
         quotation=quote, pk=request.POST.get("section")).first()
@@ -2418,7 +2556,7 @@ def quotation_lines_bulk(request, pk):
 
     if not rows:
         messages.error(request, "Nothing to add — every row was blank.")
-        return redirect("web:quotation_detail", pk=pk)
+        return redirect(_edit_url(pk))
 
     try:
         created = add_lines_bulk(quote, request.user, rows, section=section)
@@ -2426,4 +2564,4 @@ def quotation_lines_bulk(request, pk):
         messages.error(request, str(exc))
     else:
         messages.success(request, f"Added {created} item(s).")
-    return redirect("web:quotation_detail", pk=pk)
+    return redirect(_edit_url(pk))

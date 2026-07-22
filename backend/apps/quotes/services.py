@@ -269,11 +269,11 @@ def record_event(quote, *, verb, note="", actor=None, from_status="", to_status=
 def guard_editable(quote) -> None:
     """Raise unless the quotation may still be changed.
 
-    Called by every mutating path. An awarded quotation is what was contracted;
-    changing it silently would break the audit trail that the whole module
-    exists to provide.
+    Called by every mutating path. A finalized quotation is the document the
+    customer was sent; changing it silently would break the audit trail that the
+    whole module exists to provide. Past finalize, a change is a new revision.
     """
-    if quote.is_locked:
+    if quote.is_finalized:
         raise QuotationError(
             f"{quote.display_number} is {quote.get_status_display().lower()} and "
             "cannot be edited. Create a revision instead.")

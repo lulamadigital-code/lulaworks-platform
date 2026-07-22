@@ -63,6 +63,11 @@ APPROVAL_CHAIN = [
 LOCKED_STATUSES = {QuotationStatus.AWARDED, QuotationStatus.ACCEPTED,
                    QuotationStatus.REJECTED, QuotationStatus.LOST,
                    QuotationStatus.EXPIRED}
+#: Finalized: issued to the customer or beyond. The document is now the
+#: commercial source of truth, so the editor is closed — a change is a new
+#: revision, never an overwrite. Wider than LOCKED_STATUSES (which is only the
+#: customer's final answer) because "finalize" locks editing before sending.
+FINALIZED_STATUSES = LOCKED_STATUSES | {QuotationStatus.ISSUED, QuotationStatus.SENT}
 #: Statuses that count as "still in play" for the pipeline.
 OPEN_STATUSES = set(APPROVAL_CHAIN) | {QuotationStatus.SENT,
                                        QuotationStatus.REVISION_REQUESTED}
@@ -305,6 +310,17 @@ class Quotation(TenantBaseModel):
         """Awarded or decided: the commercial terms are fixed. Editing now would
         change what was contracted without leaving a trace."""
         return self.status in LOCKED_STATUSES
+
+    @property
+    def is_finalized(self) -> bool:
+        """Issued to the customer or beyond — the editor is closed. A change from
+        here is a new revision, never an overwrite of the sent document."""
+        return self.status in FINALIZED_STATUSES
+
+    @property
+    def is_editable(self) -> bool:
+        """Still in internal preparation, so the estimator may edit it."""
+        return self.status not in FINALIZED_STATUSES
 
     @property
     def is_open(self) -> bool:
