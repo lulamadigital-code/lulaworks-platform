@@ -258,10 +258,12 @@
     });
     const rate = 0.15, inclusive = vatSel.value === "inclusive";
     const vat = inclusive ? subtotal - subtotal / (1 + rate) : subtotal * rate;
-    const grand = inclusive ? subtotal : subtotal + vat;
+    // Exclusive: VAT is NOT added to the quotation total — it goes on the tax
+    // invoice. The grand total is the sum of the line prices either way.
     $("t-subtotal").textContent = money(inclusive ? subtotal - vat : subtotal);
     $("t-vat").textContent = money(vat);
-    $("t-grand").textContent = money(grand);
+    $("t-vat-label").textContent = inclusive ? "VAT (15% incl.)" : "VAT (15%, on invoice)";
+    $("t-grand").textContent = money(subtotal);
   }
 
   function currentDescriptions() {

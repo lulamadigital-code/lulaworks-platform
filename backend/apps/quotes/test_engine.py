@@ -124,14 +124,15 @@ class MarginHonestyTests(TestCase):
 class VatModeTests(TestCase):
     """VAT added on top, or extracted from within — same line prices."""
 
-    def test_exclusive_adds_vat_on_top(self):
+    def test_exclusive_defers_vat_to_the_invoice(self):
         c = make_company()
         with tenant_scope(c.id):
             quote = make_quote(c, vat_mode=VatMode.EXCLUSIVE)
             add_line(c, quote, qty=1, price=1000)
             self.assertEqual(quote.net_total, Decimal("1000.00"))
-            self.assertEqual(quote.vat_amount, Decimal("150.00"))
-            self.assertEqual(quote.total, Decimal("1150.00"))
+            self.assertEqual(quote.vat_amount, Decimal("150.00"))    # memo
+            self.assertEqual(quote.total, Decimal("1000.00"))        # VAT not added here
+            self.assertEqual(quote.invoice_total, Decimal("1150.00"))
 
     def test_inclusive_extracts_vat_from_within(self):
         c = make_company()
@@ -852,3 +853,98 @@ class CommercialNumberingTests(TestCase):
         self.assertEqual(commercial_ref(q, "delivery"), "DN-LPS845192-01")
         self.assertEqual(commercial_ref(q, "payment", 2), "PAY-LPS845192-02")
         self.assertEqual(commercial_ref(q, "credit"), "CN-LPS845192-01")
+
+
+class VatDeferralTests(TestCase):
+    """A VAT-exclusive quotation does not add VAT to its total — VAT is applied
+    on the tax invoice."""
+
+    def test_exclusive_total_excludes_vat(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, vat_mode=VatMode.EXCLUSIVE)
+            add_line(c, q, qty=1, price=1000)
+            self.assertEqual(q.total, Decimal("1000.00"))          # no VAT on the quote
+            self.assertEqual(q.vat_amount, Decimal("150.00"))      # memo
+            self.assertEqual(q.invoice_total, Decimal("1150.00"))  # VAT added on invoice
+
+    def test_inclusive_total_unchanged(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, vat_mode=VatMode.INCLUSIVE)
+            add_line(c, q, qty=1, price=1150)
+            self.assertEqual(q.total, Decimal("1150.00"))
+            self.assertEqual(q.invoice_total, Decimal("1150.00"))
+
+
+class CommercialDocumentTests(TestCase):
+    """Invoice and delivery note may be raised only once a PO matching the
+    quotation price is linked, and they inherit the quotation reference."""
+
+    def _quote_with_line(self, c, price=1000):
+        q = make_quote(c, number="LPS845192", vat_mode=VatMode.EXCLUSIVE)
+        add_line(c, q, qty=2, price=price)
+        return q
+
+    def test_no_documents_without_a_matching_po(self):
+        from apps.quotes.services import (
+            QuotationError, can_generate_documents, create_invoice_document,
+        )
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._quote_with_line(c)
+            self.assertFalse(can_generate_documents(q))
+            with self.assertRaises(QuotationError):
+                create_invoice_document(q, None)
+
+    def test_documents_generate_once_po_matches(self):
+        from apps.quotes.services import (
+            can_generate_documents, create_delivery_document,
+            create_invoice_document, record_purchase_order,
+        )
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._quote_with_line(c)                 # 2 × 1000 = 2000 net
+            record_purchase_order(q, None, po_number="PO45821", value=q.invoice_total)
+            self.assertTrue(can_generate_documents(q))
+            inv = create_invoice_document(q, None)
+            dn = create_delivery_document(q, None, delivery_address="K4 Shaft")
+        self.assertEqual(inv.number, "INV-LPS845192-01")
+        self.assertEqual(dn.number, "DN-LPS845192-01")
+        self.assertEqual(inv.purchase_order.po_number, "PO45821")
+
+    def test_pos_that_do_not_match_price_do_not_unlock(self):
+        from apps.quotes.services import can_generate_documents, record_purchase_order
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._quote_with_line(c)
+            record_purchase_order(q, None, po_number="PO1", value=Decimal("50.00"))
+            self.assertFalse(can_generate_documents(q))
+
+    def test_invoice_and_delivery_pdfs_render(self):
+        import io
+
+        import pdfplumber
+
+        from apps.quotes.pdf import delivery_note_pdf_bytes, invoice_pdf_bytes
+        from apps.quotes.services import (
+            create_delivery_document, create_invoice_document, record_purchase_order,
+        )
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._quote_with_line(c)
+            record_purchase_order(q, None, po_number="PO45821", value=q.invoice_total)
+            inv = create_invoice_document(q, None)
+            dn = create_delivery_document(q, None)
+            inv_pdf = invoice_pdf_bytes(inv)
+            dn_pdf = delivery_note_pdf_bytes(dn)
+        with pdfplumber.open(io.BytesIO(inv_pdf)) as d:
+            itext = d.pages[0].extract_text()
+        with pdfplumber.open(io.BytesIO(dn_pdf)) as d:
+            dtext = d.pages[0].extract_text()
+        self.assertIn("TAX INVOICE", itext)
+        self.assertIn("LPS845192", itext)          # quotation ref inherited
+        self.assertIn("R2,300.00", itext)          # 2000 net + 15% VAT
+        self.assertIn("DELIVERY NOTE", dtext)
+        self.assertIn("Outstanding", dtext)        # operational columns
+        self.assertNotIn("R2,000", dtext)          # a delivery note shows no prices

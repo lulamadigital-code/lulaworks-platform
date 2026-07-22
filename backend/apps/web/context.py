@@ -44,6 +44,8 @@ _SECTIONS = {
     "quotation_line": "quotations", "quotation_section": "quotations",
     "quotation_transition": "quotations", "quotation_revise": "quotations",
     "quotation_po": "quotations", "quotation_award": "quotations",
+    "quotation_create_invoice": "quotations", "quotation_create_delivery": "quotations",
+    "commercial_document_pdf": "quotations",
     "quotation_suggest": "quotations", "quotation_template": "quotations",
     "quotation_line_move": "quotations", "quotation_document": "quotations",
     "quotation_lines_bulk": "quotations",

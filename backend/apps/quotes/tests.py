@@ -51,7 +51,8 @@ class QuotationSliceTests(APITestCase):
         # Numbers are two letters then six digits (e.g. LU000001) — short enough
         # to quote over the phone, unique for the life of the company.
         self.assertRegex(resp.data["number"], r"^[A-Z]{2,4}\d{6}$")
-        self.assertEqual(Decimal(resp.data["total"]), Decimal("6693.00"))  # 12*485 *1.15
+        # Exclusive quote → total is the net (VAT is added on the tax invoice).
+        self.assertEqual(Decimal(resp.data["total"]), Decimal("5820.00"))  # 12 × 485
 
     def test_create_emits_domain_event(self):
         self._create_quote()

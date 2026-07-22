@@ -218,10 +218,16 @@ def quotation_pdf_bytes(quote) -> bytes:
     ]))
     story += [tbl]
 
-    # ── Totals (right-aligned, matching SUBTOTAL / VAT@15% / TOTAL) ───────────
-    totals = [["SUBTOTAL", f"R{quote.subtotal:,.2f}"],
-              [f"VAT@{quote.vat_rate:g}%", f"R{quote.vat_amount:,.2f}"],
-              ["TOTAL", f"R{quote.total:,.2f}"]]
+    # ── Totals. On an exclusive quote VAT is a memo (added on the tax invoice),
+    # so it is not part of the quotation total.
+    if quote.vat_mode == "inclusive":
+        totals = [["SUBTOTAL", f"R{quote.subtotal:,.2f}"],
+                  [f"VAT@{quote.vat_rate:g}% (incl.)", f"R{quote.vat_amount:,.2f}"],
+                  ["TOTAL", f"R{quote.total:,.2f}"]]
+    else:
+        totals = [["SUBTOTAL", f"R{quote.subtotal:,.2f}"],
+                  [f"VAT@{quote.vat_rate:g}% (added on invoice)", f"R{quote.vat_amount:,.2f}"],
+                  ["TOTAL (excl. VAT)", f"R{quote.total:,.2f}"]]
     tot = Table(totals, colWidths=[45 * mm, 33.5 * mm], hAlign="RIGHT")
     tot.setStyle(TableStyle([
         ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
@@ -288,4 +294,202 @@ def quotation_pdf_bytes(quote) -> bytes:
                    "when making payments.", muted))
 
     doc.build(story)
+    return buf.getvalue()
+
+
+# ── Tax invoice and delivery note, generated from the quotation ───────────────
+#
+# Both reuse the quotation's letterhead helpers and its data, so nothing is
+# re-keyed and every document carries the parent commercial reference.
+
+def _letterhead(company, brand, header, coname, small, muted, title, title_text):
+    """The shared top of every commercial document: company identity, big logo,
+    the bold rule, and the document title in the right column."""
+    esc = escape
+    ident = [Paragraph(f"<b>{esc(header['display_name'])}</b>", coname)]
+    for line in header["address_lines"]:
+        ident.append(Paragraph(esc(line), muted))
+    if header["phone"]:
+        ident.append(Paragraph(esc(header["phone"]), muted))
+    if header["email"]:
+        ident.append(Paragraph(f"Email {esc(header['email'])}", muted))
+    if header["tax_reference_no"]:
+        ident.append(Paragraph(f"Tax No: {esc(header['tax_reference_no'])}", muted))
+    if header["vat_no"]:
+        ident.append(Paragraph(f"Vat No: {esc(header['vat_no'])}", muted))
+    if header["registration_no"]:
+        ident.append(Paragraph(f"Company Reg: {esc(header['registration_no'])}", muted))
+
+    logo = _logo_flowable(header)
+    head = Table([[ident, logo or ""]], colWidths=[110 * mm, 76 * mm])
+    head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
+                              ("ALIGN", (1, 0), (1, 0), "RIGHT")]))
+    return [head, Spacer(1, 3 * mm),
+            HRFlowable(width="100%", thickness=2.2, color=brand, spaceBefore=2, spaceAfter=6)]
+
+
+def _doc_styles(brand):
+    styles = getSampleStyleSheet()
+    small = styles["BodyText"].clone("small"); small.fontSize = 9; small.leading = 11.5
+    muted = small.clone("muted"); muted.textColor = MUTED
+    title = styles["Heading1"].clone("dtitle")
+    title.textColor = brand; title.alignment = 0; title.fontSize = 20
+    coname = small.clone("coname"); coname.fontSize = 15; coname.leading = 18
+    return small, muted, title, coname
+
+
+def invoice_pdf_bytes(doc) -> bytes:
+    """A tax invoice built from the quotation: same items and prices, VAT added
+    (an exclusive quote defers VAT to here), the parent reference and the PO."""
+    from apps.identity.profile import document_header
+
+    quote = doc.quotation
+    company = quote.company
+    brand = _brand_color(company)
+    header = document_header(company, kind="invoice")
+    small, muted, title, coname = _doc_styles(brand)
+
+    def P(t, s=small):
+        return Paragraph(escape(str(t)), s)
+
+    def L(label, value, s=small):
+        return Paragraph(f"<b>{escape(label)}</b> {escape(str(value))}", s)
+
+    buf = BytesIO()
+    pdf = SimpleDocTemplate(buf, pagesize=A4, topMargin=14 * mm, bottomMargin=12 * mm,
+                            leftMargin=12 * mm, rightMargin=12 * mm,
+                            title=f"Tax invoice {doc.number}")
+    story = _letterhead(company, brand, header, coname, small, muted, title, "TAX INVOICE")
+
+    po = doc.purchase_order
+    left = [L("Client :", quote.client_name)]
+    addr = _customer_address(quote.customer)
+    if addr:
+        left.append(P(f"Address: {addr}", muted))
+    if quote.customer_id and quote.customer.vat_no:
+        left.append(P(f"VAT No: {quote.customer.vat_no}", muted))
+    if quote.contact:
+        left.append(P(f"Contact Person: {quote.contact.full_name}", small))
+
+    right = [Paragraph("TAX INVOICE", title), Spacer(1, 2 * mm),
+             L("Invoice No:", doc.number),
+             P(f"Date: {doc.created_at:%d/%m/%Y}", small),
+             L("Quotation ref:", quote.number)]
+    if po:
+        right.append(L("PO Number:", po.po_number))
+    meta = Table([[left, right]], colWidths=[100 * mm, 86 * mm])
+    meta.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    story += [meta, Spacer(1, 6 * mm)]
+
+    cell = small.clone("cell")
+    rows = [["Item", "Description", "Qty", "Unit", "Unit Price", "Amount"]]
+    for ln in quote.lines.all():
+        rows.append([str(ln.position), Paragraph(escape(ln.description), cell),
+                     f"{ln.qty:g}", ln.unit, f"R{ln.effective_unit_price:,.2f}",
+                     f"R{ln.line_total:,.2f}"])
+    tbl = Table(rows, colWidths=[14 * mm, 85 * mm, 20 * mm, 20 * mm, 23.5 * mm, 23.5 * mm],
+                repeatRows=1)
+    tbl.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), brand), ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 9), ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
+        ("ALIGN", (0, 0), (0, -1), "CENTER"), ("GRID", (0, 0), (-1, -1), 0.4, LINE),
+        ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5)]))
+    story += [tbl]
+
+    # VAT is added here (deferred from an exclusive quotation).
+    totals = [["SUBTOTAL", f"R{quote.net_total:,.2f}"],
+              [f"VAT@{quote.vat_rate:g}%", f"R{quote.vat_amount:,.2f}"],
+              ["TOTAL", f"R{quote.invoice_total:,.2f}"]]
+    tot = Table(totals, colWidths=[45 * mm, 33.5 * mm], hAlign="RIGHT")
+    tot.setStyle(TableStyle([
+        ("ALIGN", (0, 0), (-1, -1), "RIGHT"), ("FONTSIZE", (0, 0), (-1, -1), 9.5),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+        ("LINEABOVE", (0, -1), (-1, -1), 0.8, brand), ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("TEXTCOLOR", (0, -1), (-1, -1), brand)]))
+    story += [tot, Spacer(1, 8 * mm)]
+
+    bank = header["bank"]
+    if bank:
+        story += [Paragraph("<b>BANKING DETAILS</b>", small),
+                  P(f"Account Holder: {bank['account_name']}", muted),
+                  P(f"Bank Name: {bank['bank_name']}"
+                    + (f" ({bank['account_type']})" if bank['account_type'] else ""), muted),
+                  P(f"Account No: {bank['account_number']}", muted),
+                  P(f"Branch Code: {bank['branch_code'] or '—'}", muted), Spacer(1, 4 * mm)]
+    story.append(P(f"Please use invoice number ({doc.number}) as the payment "
+                   "reference. E&amp;OE.", muted))
+    pdf.build(story)
+    return buf.getvalue()
+
+
+def delivery_note_pdf_bytes(doc) -> bytes:
+    """A delivery note built from the quotation — operational quantities, never
+    prices. Ordered comes from the quotation; Delivered/Outstanding are filled
+    in on delivery."""
+    from apps.identity.profile import document_header
+
+    quote = doc.quotation
+    company = quote.company
+    brand = _brand_color(company)
+    header = document_header(company, kind="report")
+    small, muted, title, coname = _doc_styles(brand)
+
+    def P(t, s=small):
+        return Paragraph(escape(str(t)), s)
+
+    def L(label, value, s=small):
+        return Paragraph(f"<b>{escape(label)}</b> {escape(str(value))}", s)
+
+    buf = BytesIO()
+    pdf = SimpleDocTemplate(buf, pagesize=A4, topMargin=14 * mm, bottomMargin=12 * mm,
+                            leftMargin=12 * mm, rightMargin=12 * mm,
+                            title=f"Delivery note {doc.number}")
+    story = _letterhead(company, brand, header, coname, small, muted, title, "DELIVERY NOTE")
+
+    po = doc.purchase_order
+    ship_to = doc.delivery_address or (
+        str(quote.customer_site) if quote.customer_site_id else quote.site)
+    left = [L("Client :", quote.client_name)]
+    if ship_to:
+        left.append(P(f"Deliver to: {ship_to}", muted))
+    if quote.contact:
+        left.append(P(f"Contact: {quote.contact.full_name}", small))
+
+    right = [Paragraph("DELIVERY NOTE", title), Spacer(1, 2 * mm),
+             L("Delivery note:", doc.number),
+             P(f"Date: {doc.created_at:%d/%m/%Y}", small),
+             L("Quotation ref:", quote.number)]
+    if po:
+        right.append(L("PO Number:", po.po_number))
+    if doc.delivery_date:
+        right.append(L("Delivery date:", f"{doc.delivery_date:%d/%m/%Y}"))
+    if doc.driver:
+        right.append(L("Driver:", doc.driver))
+    meta = Table([[left, right]], colWidths=[100 * mm, 86 * mm])
+    meta.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    story += [meta, Spacer(1, 6 * mm)]
+
+    cell = small.clone("cell")
+    rows = [["Item", "Description", "Ordered", "Delivered", "Outstanding", "Unit"]]
+    for ln in quote.lines.all():
+        rows.append([str(ln.position), Paragraph(escape(ln.description), cell),
+                     f"{ln.qty:g}", "", "", ln.unit])
+    tbl = Table(rows, colWidths=[14 * mm, 78 * mm, 24 * mm, 24 * mm, 26 * mm, 20 * mm],
+                repeatRows=1)
+    tbl.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), brand), ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 9), ("ALIGN", (2, 0), (-1, -1), "CENTER"),
+        ("ALIGN", (0, 0), (0, -1), "CENTER"), ("GRID", (0, 0), (-1, -1), 0.4, LINE),
+        ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
+    story += [tbl, Spacer(1, 8 * mm)]
+
+    if doc.delivery_notes:
+        story += [L("Delivery notes:", doc.delivery_notes, muted), Spacer(1, 4 * mm)]
+
+    receiver = doc.receiver_name or "____________________"
+    story += [Paragraph("<b>Received in good order</b>", small), Spacer(1, 2 * mm),
+              P(f"Receiver name: {receiver}", muted), Spacer(1, 4 * mm),
+              P("Signature: ____________________"
+                "&nbsp;&nbsp;&nbsp;Date: ____________", muted)]
+    pdf.build(story)
     return buf.getvalue()

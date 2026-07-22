@@ -1401,9 +1401,17 @@ def _commercial_timeline(quote):
     rows.append({"label": "Purchase order received", "done": bool(po),
                  "date": (po.po_date or po.created_at) if po else None,
                  "user": po.created_by if po else None})
-    # These become live once invoice/delivery-note generation is built.
-    for label in ("Tax invoice created", "Delivery note created", "Payment received"):
-        rows.append({"label": label, "done": False, "date": None, "user": None})
+
+    docs = list(quote.commercial_documents.all())
+    inv = next((d for d in docs if d.kind == "invoice"), None)
+    dn = next((d for d in docs if d.kind == "delivery"), None)
+    rows.append({"label": "Tax invoice created", "done": bool(inv),
+                 "date": inv.created_at if inv else None,
+                 "user": inv.created_by if inv else None})
+    rows.append({"label": "Delivery note created", "done": bool(dn),
+                 "date": dn.created_at if dn else None,
+                 "user": dn.created_by if dn else None})
+    rows.append({"label": "Payment received", "done": False, "date": None, "user": None})
     return rows
 
 
@@ -1412,9 +1420,14 @@ def _quotation_review(request, quote):
     that move it through approval, finalize, issue and award — and the single
     Purchase Orders section once it is out with the customer."""
     from apps.identity.profile import document_header
-    from apps.quotes.services import traceability
+    from apps.quotes.services import (
+        can_generate_documents,
+        matching_purchase_order,
+        traceability,
+    )
 
     can_quote = request.user.has_perm_code("quotes.create")
+    matched_po = matching_purchase_order(quote)
     context = {
         "quote": quote,
         "header": document_header(quote.company, kind="quotation"),
@@ -1432,6 +1445,10 @@ def _quotation_review(request, quote):
         # The PO section is hidden until the quotation has been sent.
         "po_active": quote.status in ("sent", "accepted", "awarded"),
         "purchase_orders": list(quote.customer_pos.all()),
+        # Invoice / delivery note may be raised once a price-matching PO is linked.
+        "can_generate_docs": can_quote and can_generate_documents(quote),
+        "matched_po": matched_po,
+        "commercial_documents": list(quote.commercial_documents.all()),
         "revisions": quote.revisions.order_by("revision"),
         "timeline": _commercial_timeline(quote),
     }
@@ -2512,6 +2529,68 @@ def quotation_award(request, pk):
         + (f" under {project.number}." if project else ".")
         + " This quotation is now read-only — changes are revisions.")
     return redirect("web:work_detail", pk=result["task"].id)
+
+
+@login_required
+@require_POST
+def quotation_create_invoice(request, pk):
+    """Raise a tax invoice from the quotation once a matching PO is linked."""
+    from apps.quotes.services import QuotationError, create_invoice_document
+    quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+    if not request.user.has_perm_code("quotes.create"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:quotation_detail", pk=pk)
+    try:
+        doc = create_invoice_document(quote, request.user)
+    except QuotationError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"Tax invoice {doc.number} created from "
+                                  f"{quote.number}.")
+    return redirect("web:quotation_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def quotation_create_delivery(request, pk):
+    """Raise a delivery note from the quotation once a matching PO is linked."""
+    from apps.quotes.services import QuotationError, create_delivery_document
+    quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+    if not request.user.has_perm_code("quotes.create"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:quotation_detail", pk=pk)
+    try:
+        doc = create_delivery_document(
+            quote, request.user,
+            delivery_date=request.POST.get("delivery_date", ""),
+            delivery_address=request.POST.get("delivery_address", ""),
+            driver=request.POST.get("driver", ""),
+            receiver_name=request.POST.get("receiver_name", ""),
+            delivery_notes=request.POST.get("delivery_notes", ""))
+    except QuotationError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"Delivery note {doc.number} created from "
+                                  f"{quote.number}.")
+    return redirect("web:quotation_detail", pk=pk)
+
+
+@login_required
+@xframe_options_sameorigin
+def commercial_document_pdf(request, pk):
+    """Serve a generated tax invoice or delivery note PDF."""
+    from apps.quotes.models import CommercialDocument
+    from apps.quotes.pdf import delivery_note_pdf_bytes, invoice_pdf_bytes
+
+    doc = get_object_or_404(CommercialDocument.objects.all(), pk=pk)
+    if doc.kind == CommercialDocument.Kind.INVOICE:
+        pdf = invoice_pdf_bytes(doc)
+    else:
+        pdf = delivery_note_pdf_bytes(doc)
+    resp = HttpResponse(pdf, content_type="application/pdf")
+    disposition = "inline" if request.GET.get("inline") else "attachment"
+    resp["Content-Disposition"] = f'{disposition}; filename="{doc.number}.pdf"'
+    return resp
 
 
 @login_required

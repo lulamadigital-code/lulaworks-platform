@@ -256,7 +256,9 @@ class Quotation(TenantBaseModel):
 
     @property
     def vat_amount(self) -> Decimal:
-        """VAT added on top (exclusive) or extracted from within (inclusive)."""
+        """The VAT figure. On an inclusive quote it is extracted from within the
+        prices. On an exclusive quote it is a MEMO — the VAT that will be added
+        when the tax invoice is raised, not added to the quotation itself."""
         if self.vat_mode == VatMode.INCLUSIVE:
             gross = self.net_total
             return (gross - gross / (1 + self.vat_rate / Decimal("100"))).quantize(TWO)
@@ -264,9 +266,18 @@ class Quotation(TenantBaseModel):
 
     @property
     def total(self) -> Decimal:
-        """What the customer pays."""
+        """The quotation total is the sum of its line prices. A VAT-exclusive
+        quotation does NOT add VAT here — VAT is applied on the tax invoice — so
+        the total equals the net either way (VAT is already inside the prices on
+        an inclusive quote)."""
+        return self.net_total
+
+    @property
+    def invoice_total(self) -> Decimal:
+        """What the tax invoice will come to — the quotation total plus VAT when
+        the quote is exclusive (inclusive already contains it)."""
         if self.vat_mode == VatMode.INCLUSIVE:
-            return self.net_total          # VAT already inside the line prices
+            return self.net_total
         return (self.net_total + self.vat_amount).quantize(TWO)
 
     @property
@@ -553,3 +564,40 @@ class QuotationDocument(TenantBaseModel):
 
     def __str__(self):
         return self.name
+
+
+class CommercialDocument(TenantBaseModel):
+    """A tax invoice or delivery note generated FROM a quotation. It carries the
+    quotation's reference (INV-<ref>-01, DN-<ref>-01), so the whole commercial
+    chain — quotation → PO → invoice → delivery note — stays tied to one number
+    and nothing is re-keyed. The PDF is generated on demand from the quotation."""
+
+    class Kind(models.TextChoices):
+        INVOICE = "invoice", "Tax invoice"
+        DELIVERY = "delivery", "Delivery note"
+
+    quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE,
+                                  related_name="commercial_documents")
+    kind = models.CharField(max_length=12, choices=Kind.choices)
+    number = models.CharField(max_length=48)
+    purchase_order = models.ForeignKey(
+        CustomerPurchaseOrder, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="commercial_documents")
+
+    # Delivery-note operational fields (a delivery note carries no prices).
+    delivery_date = models.DateField(null=True, blank=True)
+    delivery_address = models.CharField(max_length=255, blank=True)
+    driver = models.CharField(max_length=120, blank=True)
+    receiver_name = models.CharField(max_length=120, blank=True)
+    delivery_notes = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["company", "number"],
+                                    name="unique_commercial_doc_number"),
+        ]
+
+    def __str__(self):
+        return self.number

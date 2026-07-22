@@ -6,7 +6,12 @@ from django.db.models import Sum
 
 from apps.core.events import publish
 
-from .models import Quotation, QuotationLine, QuotationSource
+from .models import (
+    CommercialDocument,
+    Quotation,
+    QuotationLine,
+    QuotationSource,
+)
 
 #: A quotation reference is the company's document prefix (2–4 letters) then six
 #: random digits, e.g. LPS845192. It is the parent reference every downstream
@@ -56,6 +61,67 @@ def commercial_ref(quote, kind: str, seq: int = 1) -> str:
     to the single commercial reference while keeping it identifiable by type."""
     prefix = COMMERCIAL_DOC_PREFIXES.get(kind, kind.upper()[:3])
     return f"{prefix}-{quote.number}-{seq:02d}"
+
+
+#: How close a PO value must be to count as "matching" the quotation (rounding).
+_PO_MATCH_TOLERANCE = Decimal("1.00")
+
+
+def matching_purchase_order(quote):
+    """The customer PO whose value matches this quotation's price — either the
+    net total or the VAT-inclusive invoice total, since a customer may raise a
+    PO for either. None if no PO matches, which is what gates invoicing."""
+    targets = {quote.total, quote.invoice_total}
+    for po in quote.customer_pos.all():
+        if po.value and any(abs(po.value - t) <= _PO_MATCH_TOLERANCE for t in targets):
+            return po
+    return None
+
+
+def can_generate_documents(quote) -> bool:
+    """A tax invoice or delivery note may be raised once a PO that matches the
+    quotation's price has been linked — never before the customer has committed
+    at the agreed number."""
+    return matching_purchase_order(quote) is not None
+
+
+@transaction.atomic
+def create_invoice_document(quote, user):
+    """Raise a tax invoice from the quotation — number inherited from the parent
+    reference, PO linked. The figures come from the quotation; nothing is typed."""
+    if not can_generate_documents(quote):
+        raise QuotationError("A purchase order matching the quotation's price must "
+                             "be linked before a tax invoice can be raised.")
+    seq = quote.commercial_documents.filter(kind=CommercialDocument.Kind.INVOICE).count() + 1
+    doc = CommercialDocument.objects.create(
+        company=quote.company, quotation=quote, kind=CommercialDocument.Kind.INVOICE,
+        number=commercial_ref(quote, "invoice", seq),
+        purchase_order=matching_purchase_order(quote),
+        created_by=user, updated_by=user)
+    record_event(quote, verb="invoice_created", actor=user, note=doc.number)
+    return doc
+
+
+@transaction.atomic
+def create_delivery_document(quote, user, **fields):
+    """Raise a delivery note from the quotation. Carries operational quantities,
+    never prices."""
+    if not can_generate_documents(quote):
+        raise QuotationError("A purchase order matching the quotation's price must "
+                             "be linked before a delivery note can be raised.")
+    seq = quote.commercial_documents.filter(kind=CommercialDocument.Kind.DELIVERY).count() + 1
+    doc = CommercialDocument.objects.create(
+        company=quote.company, quotation=quote, kind=CommercialDocument.Kind.DELIVERY,
+        number=commercial_ref(quote, "delivery", seq),
+        purchase_order=matching_purchase_order(quote),
+        delivery_date=fields.get("delivery_date") or None,
+        delivery_address=fields.get("delivery_address", "").strip(),
+        driver=fields.get("driver", "").strip(),
+        receiver_name=fields.get("receiver_name", "").strip(),
+        delivery_notes=fields.get("delivery_notes", "").strip(),
+        created_by=user, updated_by=user)
+    record_event(quote, verb="delivery_created", actor=user, note=doc.number)
+    return doc
 
 
 def quotation_number_available(company, number: str, *, exclude=None) -> bool:
