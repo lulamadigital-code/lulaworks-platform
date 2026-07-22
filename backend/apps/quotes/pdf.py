@@ -47,7 +47,7 @@ def _brand_color(company):
     return DEFAULT_BRAND
 
 
-def _logo_flowable(header, max_h=30 * mm, max_w=48 * mm):
+def _logo_flowable(header, max_h=60 * mm, max_w=70 * mm):
     """The company's uploaded logo (Company Profile → branding, falling back to
     the main logo), else the bundled static mark, else None (the caller prints
     the company name as text instead). Sized to fill the letterhead — big and
@@ -94,6 +94,7 @@ def quotation_pdf_bytes(quote) -> bytes:
     title = styles["Heading1"].clone("qtitle")
     title.textColor = brand; title.alignment = 0     # left, aligned with the meta
     title.fontSize = 20; title.spaceAfter = 2
+    coname = small.clone("coname"); coname.fontSize = 15; coname.leading = 18
 
     # Every company fact comes from the Company Profile — one place, never re-typed.
     from apps.identity.profile import document_header
@@ -108,7 +109,7 @@ def quotation_pdf_bytes(quote) -> bytes:
         return Paragraph(f"<b>{escape(label)}</b> {escape(str(value))}", style)
 
     # ── Company identity (top-left) + logo (top-right) ───────────────────────
-    ident = [Paragraph(f"<b>{escape(header['display_name'])}</b>", small)]
+    ident = [Paragraph(f"<b>{escape(header['display_name'])}</b>", coname)]
     for line in header["address_lines"]:
         ident.append(P(line, muted))
     if header["phone"]:
@@ -130,17 +131,9 @@ def quotation_pdf_bytes(quote) -> bytes:
         who = quote.customer.display_name if quote.customer_id else quote.client_name
         ident.append(P(f"{who} Supplier No: {vendor}", small))
 
-    # Logo and the QUOTATION title sit on the same level, top-right, with the
-    # title to the left of the (large) logo.
+    # Big logo, top-right; the company identity fills the left.
     logo = _logo_flowable(header)
-    title.alignment = 2  # right, so it reads up against the logo
-    right_head = Table([[Paragraph("QUOTATION", title), logo or ""]],
-                       colWidths=[40 * mm, 50 * mm])
-    right_head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                                    ("ALIGN", (1, 0), (1, 0), "RIGHT"),
-                                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                                    ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
-    head = Table([[ident, right_head]], colWidths=[88 * mm, 90 * mm])
+    head = Table([[ident, logo or ""]], colWidths=[105 * mm, 73 * mm])
     head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
                               ("ALIGN", (1, 0), (1, 0), "RIGHT")]))
     # A bold brand-coloured rule separates the letterhead from the client block.
@@ -170,7 +163,8 @@ def quotation_pdf_bytes(quote) -> bytes:
             left.append(P(f"Email: {contact.email}", muted))
 
     prep = quote.prepared_by
-    right = [L("Quotation No:", quote.number),
+    right = [Paragraph("QUOTATION", title), Spacer(1, 2 * mm),
+             L("Quotation No:", quote.number),
              P(f"Date: {quote.created_at:%d/%m/%Y}", small)]
     if prep:
         right.append(P(f"Prepared by: {prep.get_full_name() or prep.email}", small))
@@ -235,32 +229,46 @@ def quotation_pdf_bytes(quote) -> bytes:
     if quote.exclusions or quote.assumptions:
         story.append(Spacer(1, 4 * mm))
 
-    # ── Sign-off (left) + banking (right) ────────────────────────────────────
-    def sigblock(heading):
-        return [Paragraph(f"<b>{heading}</b>", small), Spacer(1, 2 * mm),
-                P("Initials & Surname: ______________________", muted),
-                Spacer(1, 1 * mm), P("Date: ______________________", muted),
-                Spacer(1, 3 * mm)]
-
-    signoff = (sigblock("Quotation Compiled By:")
-               + sigblock("Received in Good Order By:"))
+    # ── Sign-off (left) + banking (right), inside one bordered box ───────────
+    # "Compiled by" is filled in for us — who prepared it and today's date. The
+    # "received" line is left blank for the customer to sign. Each keeps its
+    # Initials & Surname and Date on a single line.
+    prep_name = (prep.get_full_name() or prep.email) if prep else ""
+    today = quote.created_at.strftime("%d/%m/%Y")
+    signoff = [
+        Paragraph("<b>Quotation Compiled By:</b>", small), Spacer(1, 1.5 * mm),
+        Paragraph(f"Initials &amp; Surname: <b>{escape(prep_name)}</b>"
+                  f"&nbsp;&nbsp;&nbsp;&nbsp;Date: <b>{today}</b>", small),
+        Spacer(1, 5 * mm),
+        Paragraph("<b>Received in Good Order By:</b>", small), Spacer(1, 1.5 * mm),
+        Paragraph("Initials &amp; Surname: ____________________"
+                  "&nbsp;&nbsp;&nbsp;Date: ____________", muted),
+    ]
 
     bank = header["bank"]
     banking_title = Paragraph("<b>BANKING DETAILS</b>", small)
     if bank:
-        bank_rows = [banking_title,
+        bank_rows = [banking_title, Spacer(1, 1.5 * mm),
                      P(f"Account Holder: {bank['account_name']}", muted),
                      P(f"Bank Name: {bank['bank_name']}"
                        + (f" ({bank['account_type']})" if bank['account_type'] else ""), muted),
                      P(f"Account No: {bank['account_number']}", muted),
                      P(f"Branch Code: {bank['branch_code'] or '—'}", muted)]
     else:
-        bank_rows = [banking_title,
+        bank_rows = [banking_title, Spacer(1, 1.5 * mm),
                      P("Add a bank account in the Company Profile.", muted)]
 
-    footer = Table([[signoff, bank_rows]], colWidths=[96 * mm, 82 * mm])
-    footer.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
-    story += [footer, Spacer(1, 6 * mm)]
+    signbox = Table([[signoff, bank_rows]], colWidths=[100 * mm, 78 * mm])
+    signbox.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("BOX", (0, 0), (-1, -1), 1, brand),
+        ("LINEBEFORE", (1, 0), (1, 0), 0.6, LINE),
+        ("LEFTPADDING", (0, 0), (-1, -1), 9),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 9),
+        ("TOPPADDING", (0, 0), (-1, -1), 9),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
+    ]))
+    story += [signbox, Spacer(1, 6 * mm)]
 
     story.append(P(f"Please use document number ({quote.number}) for reference "
                    "when making payments.", muted))
