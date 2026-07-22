@@ -107,3 +107,68 @@ class AggregateKAnonymityTests(TestCase):
         set_contribution(c, False)
         record_aggregate(c, metric_key="m", bucket="b", value=Decimal("5"))
         self.assertIsNone(query_aggregate("m", "b", min_n=1))  # no sample recorded
+
+
+class DocumentIntelligenceTests(TestCase):
+    """The one shared extraction service the RFQ and Quotation modules both use.
+
+    It reuses apps.rfq.extraction for the actual parsing; these tests pin the
+    parts this module adds — reading text out of several file shapes, mapping
+    parsed lines to plain item dicts, and suggesting related items.
+    """
+
+    def test_items_come_out_of_prose(self):
+        from apps.knowledge.document_intelligence import extract_items
+
+        text = "20 conveyor rollers\n40 bearings\n2 days installation labour"
+        items = extract_items(text)
+        descs = [i["description"].lower() for i in items]
+        self.assertIn("conveyor rollers", descs)
+        self.assertIn("bearings", descs)
+        # A price is never invented — blank unless the text stated one.
+        self.assertTrue(all(i["unit_price"] == "" for i in items))
+
+    def test_type_key_defaults_the_unit(self):
+        from apps.knowledge.document_intelligence import extract_items
+
+        # "5 fitters" has no unit word; a labour-hire quote prices in hours.
+        items = extract_items("5 fitters", type_key="labour_hire")
+        self.assertEqual(items[0]["unit"], "hour")
+
+    def test_related_items_are_suggested_and_exclude_what_you_have(self):
+        from apps.knowledge.document_intelligence import suggest_related_items
+
+        s = suggest_related_items("Supply and install conveyor rollers",
+                                  existing=["bearings"])
+        self.assertIn("Installation labour", s)
+        self.assertNotIn("Bearings", s)        # already on the quotation
+
+    def test_reads_text_files_and_zips(self):
+        import io
+        import zipfile
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from apps.knowledge.document_intelligence import (
+            extract_text_from_upload,
+        )
+
+        txt = SimpleUploadedFile("scope.txt", b"10 gaskets\n2 pumps")
+        self.assertIn("gaskets", extract_text_from_upload(txt))
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("a.txt", "5 valves")
+            zf.writestr("b.txt", "3 flanges")
+        z = SimpleUploadedFile("pack.zip", buf.getvalue())
+        body = extract_text_from_upload(z)
+        self.assertIn("valves", body)
+        self.assertIn("flanges", body)
+
+    def test_a_broken_file_yields_no_text_not_an_error(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from apps.knowledge.document_intelligence import extract_text_from_upload
+
+        junk = SimpleUploadedFile("broken.pdf", b"\x00\x01not a pdf")
+        self.assertEqual(extract_text_from_upload(junk), "")

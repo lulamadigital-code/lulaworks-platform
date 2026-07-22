@@ -673,3 +673,26 @@ class QuotationCreationWorkflowTests(TestCase):
         # The contact map is embedded so the page can filter without a round trip.
         self.assertContains(resp, "Thabo Nkosi")
         self.assertContains(resp, str(self.contact.id))
+
+    def test_live_extraction_endpoint_returns_items_and_suggestions(self):
+        """The create page reads the scope as the estimator types via this
+        stateless endpoint — items to fill the grid, related items to suggest."""
+        resp = self.client.post("/quotations/extract/", {
+            "scope": "Supply and install 20 conveyor rollers\n40 bearings",
+            "type_key": "supply",
+        })
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        descs = [i["description"].lower() for i in data["items"]]
+        self.assertIn("bearings", descs)
+        self.assertIn("Installation labour", data["suggestions"])
+        # Stateless — nothing was written.
+        with tenant_scope(self.company.id):
+            self.assertEqual(Quotation.objects.count(), 0)
+
+    def test_live_extraction_requires_the_create_permission(self):
+        outsider = user_with(self.company, ["projects.view"],
+                             email="nope@harmony.co.za")
+        self.client.force_login(outsider)
+        resp = self.client.post("/quotations/extract/", {"scope": "10 gaskets"})
+        self.assertEqual(resp.status_code, 403)

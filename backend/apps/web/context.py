@@ -38,6 +38,7 @@ _SECTIONS = {
     "quotations": "quotations", "quotation_detail": "quotations",
     "quotation_edit": "quotations", "quotation_pdf": "quotations",
     "quotation_new": "quotations", "quotation_header": "quotations",
+    "quotation_extract": "quotations",
     "quotation_line": "quotations", "quotation_section": "quotations",
     "quotation_transition": "quotations", "quotation_revise": "quotations",
     "quotation_po": "quotations", "quotation_award": "quotations",

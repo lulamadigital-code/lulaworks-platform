@@ -12,45 +12,57 @@
   <input type="hidden" name="method" value="blank">
   <input type="hidden" name="pasted_items" id="pasted_items">
 
-  {# ── Parties, job and commercial — tight, label-light ─────────────────── #}
+  {# ── Parties, job and commercial ──────────────────────────────────────── #}
   <div class="card qcard">
     <div class="qrow r-parties">
-      <select name="customer" id="customer-select" required>
-        <option value="">Search customer…</option>
-        {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}{% if c.vendor_number %} · vendor {{ c.vendor_number }}{% endif %}</option>{% endfor %}
-      </select>
-      <select name="contact" id="contact-select" disabled>
-        <option value="">Select contact…</option>
-      </select>
+      <div class="qcell"><label>Customer</label>
+        <select name="customer" id="customer-select" required>
+          <option value="">Search customer…</option>
+          {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}{% if c.vendor_number %} · vendor {{ c.vendor_number }}{% endif %}</option>{% endfor %}
+        </select></div>
+      <div class="qcell"><label>Contact person</label>
+        <select name="contact" id="contact-select" disabled>
+          <option value="">Select contact…</option>
+        </select></div>
     </div>
 
     <div class="qrow r-job">
-      <select name="quotation_type" id="type-select" required>
-        <option value="">Job type…</option>
-        {% for t in types %}<option value="{{ t.id }}" data-key="{{ t.key }}">{{ t.label }}</option>{% endfor %}
-      </select>
-      <input type="text" name="title" placeholder="Title — e.g. Supply conveyor rollers" required>
-      <input type="text" name="site" placeholder="Site — e.g. Plant 4">
+      <div class="qcell"><label>Job type</label>
+        <select name="quotation_type" id="type-select" required>
+          <option value="">Choose…</option>
+          {% for t in types %}<option value="{{ t.id }}" data-key="{{ t.key }}">{{ t.label }}</option>{% endfor %}
+        </select></div>
+      <div class="qcell"><label>Title</label>
+        <input type="text" name="title" placeholder="e.g. Supply conveyor rollers" required></div>
+      <div class="qcell"><label>Site</label>
+        <input type="text" name="site" placeholder="e.g. Plant 4"></div>
     </div>
 
     <div class="qrow r-comm">
-      <select name="vat_mode" id="vat-mode">
-        {% for v, l in vat_modes %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
-      </select>
-      <input type="text" name="customer_reference" placeholder="Reference — your or their internal ref">
+      <div class="qcell"><label>VAT</label>
+        <select name="vat_mode" id="vat-mode">
+          {% for v, l in vat_modes %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+        </select></div>
+      <div class="qcell"><label>Reference</label>
+        <input type="text" name="customer_reference" placeholder="your or their internal ref"></div>
     </div>
   </div>
 
-  {# ── Scope + one upload control, side by side ─────────────────────────── #}
+  {# ── Scope + one upload control ────────────────────────────────────────── #}
   <div class="card qcard">
     <div class="qrow r-scope">
-      <textarea name="scope_of_work" rows="5" placeholder="Scope of work"></textarea>
-      <label class="drop">
-        <input type="file" name="documents" multiple
-               accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.zip,.eml,.msg">
-        <span class="dropface"><strong>Attach documents</strong><br>
-          <span class="muted" style="font-size:12px;">scope, drawings, BOQ, photos</span></span>
-      </label>
+      <div class="qcell"><label>Scope of work
+          <span id="ai-status" class="aistatus"></span></label>
+        <textarea name="scope_of_work" id="scope" rows="5"
+                  placeholder="Type or paste the scope — LulaAI reads it as you write and fills the table below."></textarea></div>
+      <div class="qcell"><label>Attach documents</label>
+        <label class="drop">
+          <input type="file" name="documents" id="docinput" multiple
+                 accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.png,.jpg,.jpeg,.tif,.zip,.eml">
+          <span class="dropface"><strong>Upload</strong><br>
+            <span class="muted" style="font-size:12px;">PDF, Word, Excel, image, email, zip</span></span>
+        </label>
+        <div id="doclist" class="muted" style="font-size:12px;margin-top:6px;"></div></div>
     </div>
   </div>
 
@@ -64,6 +76,8 @@
     <div style="overflow-x:auto;">
       <table class="ietable" id="item-grid"><thead></thead><tbody></tbody></table>
     </div>
+
+    <div id="suggestions" class="chips"></div>
 
     <div class="totals">
       <div><span>Subtotal</span><span id="t-subtotal">R 0.00</span></div>
@@ -84,15 +98,17 @@
   <form method="post" style="margin-top:12px;">{% csrf_token %}
     <input type="hidden" name="method" value="copy">
     <div class="qrow r-parties">
-      <select name="source" required>
-        {% for q in recent %}
-        <option value="{{ q.id }}">{{ q.display_number }} — {{ q.client_name }}{% if q.title %} · {{ q.title }}{% endif %}</option>
-        {% endfor %}
-      </select>
-      <select name="customer">
-        <option value="">— same customer —</option>
-        {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}</option>{% endfor %}
-      </select>
+      <div class="qcell"><label>Copy from</label>
+        <select name="source" required>
+          {% for q in recent %}
+          <option value="{{ q.id }}">{{ q.display_number }} — {{ q.client_name }}{% if q.title %} · {{ q.title }}{% endif %}</option>
+          {% endfor %}
+        </select></div>
+      <div class="qcell"><label>For customer</label>
+        <select name="customer">
+          <option value="">— same customer —</option>
+          {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}</option>{% endfor %}
+        </select></div>
     </div>
     <button class="btn ghost" type="submit" style="margin-top:12px;">Copy quotation</button>
   </form>
@@ -104,16 +120,19 @@
 
 <style>
   .qcard { margin-bottom:12px; padding:14px 16px; }
-  .qrow { display:grid; gap:10px; align-items:start; }
-  .qrow + .qrow { margin-top:10px; }
+  .qrow { display:grid; gap:12px; align-items:start; }
+  .qrow + .qrow { margin-top:12px; }
+  .qcell { display:flex; flex-direction:column; gap:4px; }
+  .qcell > label { margin:0; font-size:12px; font-weight:600; color:var(--muted-c,#5b6b6a); }
+  .qcell select, .qcell input, .qcell textarea { margin:0; }
   .r-parties { grid-template-columns:1fr 1fr; }
   .r-job     { grid-template-columns:1.1fr 2fr 1.1fr; }
   .r-comm    { grid-template-columns:1fr 1fr; }
   .r-scope   { grid-template-columns:1.5fr 1fr; }
-  .qrow select, .qrow input, .qrow textarea { margin:0; }
+  .aistatus { font-weight:500; color:var(--primary-d); font-size:11.5px; margin-left:8px; }
   .drop { display:flex; align-items:center; justify-content:center; text-align:center;
     border:1.5px dashed var(--line); border-radius:var(--r); cursor:pointer;
-    padding:10px; min-height:96px; }
+    padding:10px; min-height:84px; }
   .drop input { position:absolute; width:1px; height:1px; opacity:0; }
   .drop:hover { border-color:var(--primary); background:var(--primary-t); }
 
@@ -125,9 +144,20 @@
   table.ietable input { margin:0; padding:6px 8px; font-size:13px; width:100%; box-sizing:border-box; }
   table.ietable td.amount { font-variant-numeric:tabular-nums; white-space:nowrap;
     overflow:hidden; text-overflow:ellipsis; }
+  table.ietable tr.ai input { background:#fffbe9; border-color:#f0d98a; }
+  table.ietable tr.ai .idx::after { content:"AI"; font-size:8.5px; font-weight:700;
+    color:#b8860b; margin-left:3px; vertical-align:super; }
   table.ietable .rmline { border:none; background:none; color:#c0392b; cursor:pointer;
     font-size:16px; line-height:1; padding:0 4px; }
   .btn.sm { padding:6px 12px; font-size:13px; }
+
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .chips:empty { display:none; }
+  .chips .chiplabel { font-size:12px; color:var(--muted-c,#5b6b6a); align-self:center; }
+  .chips button { border:1px dashed var(--primary); background:var(--primary-t);
+    color:var(--primary-d); border-radius:20px; padding:4px 12px; font-size:12.5px;
+    cursor:pointer; }
+  .chips button:hover { background:var(--primary); color:#fff; }
 
   .totals { margin:14px 0 0; margin-left:auto; max-width:320px; }
   .totals > div { display:flex; justify-content:space-between; padding:5px 0;
@@ -146,22 +176,19 @@
 (function () {
   const contacts = JSON.parse(document.getElementById("contacts-data").textContent);
   const vendors  = JSON.parse(document.getElementById("vendor-data").textContent);
-  const custSel  = document.getElementById("customer-select");
-  const contSel  = document.getElementById("contact-select");
-  const typeSel  = document.getElementById("type-select");
-  const vatSel   = document.getElementById("vat-mode");
+  const $ = id => document.getElementById(id);
+  const custSel = $("customer-select"), contSel = $("contact-select");
+  const typeSel = $("type-select"), vatSel = $("vat-mode");
+  const scopeEl = $("scope"), docInput = $("docinput");
+  const csrf = document.querySelector("#qform [name=csrfmiddlewaretoken]").value;
 
   // ── Contacts follow the chosen customer ──────────────────────────────────
   function fillContacts() {
     const list = contacts[custSel.value] || [];
     contSel.innerHTML = "";
-    if (!custSel.value) {
-      contSel.disabled = true;
-      contSel.append(new Option("Select contact…", ""));
-    } else if (!list.length) {
-      contSel.disabled = true;
-      contSel.append(new Option("No contacts on file", ""));
-    } else {
+    if (!custSel.value) { contSel.disabled = true; contSel.append(new Option("Select contact…", "")); }
+    else if (!list.length) { contSel.disabled = true; contSel.append(new Option("No contacts on file", "")); }
+    else {
       contSel.disabled = false;
       contSel.append(new Option("Select contact…", ""));
       list.forEach(c => contSel.append(new Option(c.role ? c.name + " — " + c.role : c.name, c.id)));
@@ -170,50 +197,47 @@
   custSel.addEventListener("change", fillContacts);
 
   // ── The item grid, whose columns depend on the job type ──────────────────
-  // Every layout still resolves to the same four stored fields
+  // Every layout resolves to the same four stored fields
   // (description, qty, unit, unit_price), so the backend is unchanged.
   const GRIDS = {
-    supply:             {unit: "each", cols: [["description","Description",1],["qty","Qty"],["unit","Unit"],["unit_price","Unit price",0,1]]},
-    labour_hire:        {unit: "hour", cols: [["description","Trade / description",1],["qty","Hours"],["unit_price","Rate / hour",0,1]]},
-    plant_hire:         {unit: "day",  cols: [["description","Equipment",1],["qty","Days"],["unit_price","Rate / day",0,1]]},
-    project_management: {unit: "unit", cols: [["description","Deliverable",1],["qty","Duration"],["unit_price","Rate",0,1]]},
-    _default:           {unit: "each", cols: [["description","Description",1],["qty","Qty"],["unit","Unit"],["unit_price","Unit price",0,1]]},
+    supply:             {unit: "each",    cols: [["description","Description",1],["qty","Qty"],["unit","Unit"],["unit_price","Unit price",0,1]]},
+    labour_hire:        {unit: "hour",    cols: [["description","Trade / description",1],["qty","Hours"],["unit_price","Hourly rate",0,1]]},
+    plant_hire:         {unit: "day",     cols: [["description","Equipment",1],["qty","Days"],["unit_price","Rate / day",0,1]]},
+    maintenance:        {unit: "service", cols: [["description","Activity",1],["unit","Frequency"],["qty","Qty"],["unit_price","Unit rate",0,1]]},
+    project_management: {unit: "unit",    cols: [["description","Deliverable",1],["unit","Milestone",1],["unit_price","Rate",0,1]]},
+    _default:           {unit: "each",    cols: [["description","Description",1],["qty","Qty"],["unit","Unit"],["unit_price","Unit price",0,1]]},
   };
   function spec() {
     const opt = typeSel.selectedOptions[0];
     return GRIDS[opt && opt.dataset.key] || GRIDS._default;
   }
+  function typeKey() { const o = typeSel.selectedOptions[0]; return (o && o.dataset.key) || ""; }
 
-  const grid = document.getElementById("item-grid");
-  const thead = grid.querySelector("thead");
-  const tbody = grid.querySelector("tbody");
+  const grid = $("item-grid"), thead = grid.querySelector("thead"), tbody = grid.querySelector("tbody");
 
-  // A column is numeric when it holds money or a quantity-like value; that
-  // decides both its alignment and a narrower fixed width.
   function isNumeric(c) { return c[3] || c[0] === "qty"; }
   function colWidth(c) {
-    if (c[2]) return "";                       // description — takes the slack
-    if (c[3]) return "width:120px";            // money
-    if (c[0] === "unit") return "width:90px";
-    return "width:92px";                        // qty / hours / days / duration
+    if (c[2]) return "";
+    if (c[3]) return "width:120px";
+    if (c[0] === "unit") return "width:110px";
+    return "width:92px";
   }
-
   function renderHead() {
-    let h = "<tr><th style='width:36px' class='num'>#</th>";
-    spec().cols.forEach(c => {
-      h += `<th class='${isNumeric(c) ? "num" : ""}' style='${colWidth(c)}'>${c[1]}</th>`;
-    });
+    let h = "<tr><th style='width:40px' class='num'>#</th>";
+    spec().cols.forEach(c => { h += `<th class='${isNumeric(c) ? "num" : ""}' style='${colWidth(c)}'>${c[1]}</th>`; });
     h += "<th class='num' style='width:120px'>Amount</th><th style='width:34px'></th></tr>";
     thead.innerHTML = h;
   }
-
-  function newRow() {
+  function newRow(values, ai) {
     const tr = document.createElement("tr");
+    if (ai) tr.className = "ai";
     let html = "<td class='num idx'></td>";
     spec().cols.forEach(c => {
       const numeric = isNumeric(c);
+      const v = values ? (values[c[0]] || "") : "";
       html += `<td class='${numeric ? "num" : ""}'><input data-k='${c[0]}'
-                 ${numeric ? "inputmode='decimal'" : ""} placeholder='${numeric ? "0" : ""}'></td>`;
+                 ${numeric ? "inputmode='decimal'" : ""} value="${String(v).replace(/"/g, "&quot;")}"
+                 placeholder='${numeric ? "0" : ""}'></td>`;
     });
     html += "<td class='amount'>R 0.00</td><td><button type='button' class='rmline' title='Delete line'>×</button></td>";
     tr.innerHTML = html;
@@ -221,44 +245,49 @@
     renumber();
     return tr;
   }
-
-  function renumber() {
-    [...tbody.children].forEach((tr, i) => tr.querySelector(".idx").textContent = i + 1);
-  }
-
+  function renumber() { [...tbody.children].forEach((tr, i) => tr.querySelector(".idx").textContent = i + 1); }
   function money(n) { return "R " + (n || 0).toLocaleString("en-ZA", {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
   function recompute() {
     let subtotal = 0;
     [...tbody.children].forEach(tr => {
-      const q = parseFloat(tr.querySelector("[data-k=qty]")?.value) || 0;
+      const qEl = tr.querySelector("[data-k=qty]");
+      const q = qEl ? (parseFloat(qEl.value) || 0) : 1;   // no qty column ⇒ one
       const p = parseFloat(tr.querySelector("[data-k=unit_price]")?.value) || 0;
       const amt = q * p;
       subtotal += amt;
       tr.querySelector(".amount").textContent = money(amt);
     });
-    const rate = 0.15;
-    const inclusive = vatSel.value === "inclusive";
+    const rate = 0.15, inclusive = vatSel.value === "inclusive";
     const vat = inclusive ? subtotal - subtotal / (1 + rate) : subtotal * rate;
     const grand = inclusive ? subtotal : subtotal + vat;
-    document.getElementById("t-subtotal").textContent = money(inclusive ? subtotal - vat : subtotal);
-    document.getElementById("t-vat").textContent = money(vat);
-    document.getElementById("t-grand").textContent = money(grand);
+    $("t-subtotal").textContent = money(inclusive ? subtotal - vat : subtotal);
+    $("t-vat").textContent = money(vat);
+    $("t-grand").textContent = money(grand);
   }
 
-  function rebuild() {
-    document.getElementById("grid-title").textContent =
-      (typeSel.selectedOptions[0]?.textContent || "Items") + " items";
+  function currentDescriptions() {
+    return [...tbody.querySelectorAll("[data-k=description]")]
+      .map(i => i.value.trim().toLowerCase()).filter(Boolean);
+  }
+
+  function rebuild(keepAsk) {
+    $("grid-title").textContent = (typeSel.selectedOptions[0]?.textContent || "Items") + " items";
     renderHead();
     tbody.innerHTML = "";
     newRow(); newRow();
     recompute();
+    if (keepAsk && scopeEl.value.trim()) scheduleExtract();  // re-read for the new type
   }
 
-  typeSel.addEventListener("change", rebuild);
+  typeSel.addEventListener("change", () => rebuild(true));
   vatSel.addEventListener("change", recompute);
-  document.getElementById("add-line").addEventListener("click", () => newRow());
-  grid.addEventListener("input", e => { if (e.target.matches("input")) recompute(); });
+  $("add-line").addEventListener("click", () => newRow());
+  grid.addEventListener("input", e => {
+    if (!e.target.matches("input")) return;
+    e.target.closest("tr").classList.remove("ai");   // an edited row is the estimator's
+    recompute();
+  });
   grid.addEventListener("click", e => {
     if (e.target.classList.contains("rmline")) {
       if (tbody.children.length > 1) e.target.closest("tr").remove();
@@ -267,18 +296,102 @@
     }
   });
 
+  // ── Live extraction — reuses the RFQ intelligence via /quotations/extract/ ─
+  const dismissed = new Set();  // items the estimator removed; do not re-add
+
+  function firstEmptyRow() {
+    return [...tbody.children].find(tr => !tr.querySelector("[data-k=description]").value.trim());
+  }
+  function addItem(item, ai) {
+    const row = ai ? (firstEmptyRow() || newRow(null, true)) : (firstEmptyRow() || newRow());
+    if (ai) row.classList.add("ai");
+    spec().cols.forEach(c => {
+      const inp = row.querySelector(`[data-k=${c[0]}]`);
+      if (inp && item[c[0]] != null && item[c[0]] !== "") inp.value = item[c[0]];
+    });
+    renumber();
+  }
+
+  function mergeItems(items) {
+    let added = 0;
+    items.forEach(it => {
+      const key = (it.description || "").trim().toLowerCase();
+      if (!key || dismissed.has(key) || currentDescriptions().includes(key)) return;
+      addItem(it, true);
+      added++;
+    });
+    if (added) recompute();
+    return added;
+  }
+
+  function renderSuggestions(list) {
+    const box = $("suggestions");
+    box.innerHTML = "";
+    // Never suggest something already on the quotation — including rows the
+    // same extraction just added, which the server could not have known about.
+    const have = currentDescriptions();
+    const show = (list || []).filter(n => !have.includes(n.trim().toLowerCase()));
+    if (!show.length) return;
+    const label = document.createElement("span");
+    label.className = "chiplabel"; label.textContent = "Also consider:";
+    box.appendChild(label);
+    show.forEach(name => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = "+ " + name;
+      b.addEventListener("click", () => { addItem({description: name}, false); b.remove(); recompute(); });
+      box.appendChild(b);
+    });
+  }
+
+  let timer = null, seq = 0;
+  function scheduleExtract() { clearTimeout(timer); timer = setTimeout(runExtract, 700); }
+
+  async function runExtract(withFiles) {
+    const scope = scopeEl.value.trim();
+    const files = docInput.files;
+    if (!scope && !(withFiles && files.length)) return;
+    const mine = ++seq;
+    $("ai-status").textContent = "· reading…";
+    const fd = new FormData();
+    fd.append("scope", scope);
+    fd.append("type_key", typeKey());
+    currentDescriptions().forEach(d => fd.append("existing", d));
+    if (withFiles) for (const f of files) fd.append("documents", f);
+    try {
+      const res = await fetch("{% url 'web:quotation_extract' %}",
+        {method: "POST", headers: {"X-CSRFToken": csrf}, body: fd});
+      const data = await res.json();
+      if (mine !== seq) return;            // a newer request already answered
+      const n = mergeItems(data.items || []);
+      renderSuggestions(data.suggestions || []);
+      $("ai-status").textContent = n ? `· added ${n} item${n > 1 ? "s" : ""}` : "";
+    } catch (_) { $("ai-status").textContent = ""; }
+  }
+
+  scopeEl.addEventListener("input", scheduleExtract);
+  docInput.addEventListener("change", () => {
+    $("doclist").textContent = [...docInput.files].map(f => f.name).join(", ");
+    runExtract(true);
+  });
+  // Track deletions so a re-read does not resurrect a row the estimator removed.
+  grid.addEventListener("click", e => {
+    if (e.target.classList.contains("rmline")) {
+      const d = e.target.closest("tr").querySelector("[data-k=description]").value.trim().toLowerCase();
+      if (d) dismissed.add(d);
+    }
+  });
+
   // ── Serialise the grid into the hidden field the backend already parses ──
-  document.getElementById("qform").addEventListener("submit", () => {
+  $("qform").addEventListener("submit", () => {
     const fixedUnit = spec().unit;
     const lines = [];
     [...tbody.children].forEach(tr => {
       const get = k => (tr.querySelector(`[data-k=${k}]`)?.value || "").trim();
       const desc = get("description");
       if (!desc) return;
-      const unit = get("unit") || fixedUnit;
-      lines.push([desc, get("qty") || "1", unit, get("unit_price") || "0"].join("\t"));
+      lines.push([desc, get("qty") || "1", get("unit") || fixedUnit, get("unit_price") || "0"].join("\t"));
     });
-    document.getElementById("pasted_items").value = lines.join("\n");
+    $("pasted_items").value = lines.join("\n");
   });
 
   rebuild();

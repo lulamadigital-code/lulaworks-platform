@@ -15,7 +15,7 @@ from decimal import Decimal, InvalidOperation
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -2040,6 +2040,39 @@ def quotation_new(request):
         # Passed as objects, not strings — json_script serialises them safely.
         "contacts_json": contacts_by_customer,
         "vendor_json": vendor_by_customer,
+    })
+
+
+@login_required
+@require_POST
+def quotation_extract(request):
+    """Live extraction for the create page. Given scope text and/or uploaded
+    documents, return candidate line items and related-item suggestions as JSON.
+
+    The page calls this as the estimator types and when a file is dropped, so it
+    is deliberately stateless — it reads, it never writes. Nothing here lands on
+    a quotation; the estimator accepts what they want in the grid. It reuses the
+    one shared Document Intelligence service, the same engine the RFQ front door
+    reads with.
+    """
+    if not request.user.has_perm_code("quotes.create"):
+        return JsonResponse({"items": [], "suggestions": []}, status=403)
+
+    from apps.knowledge.document_intelligence import (
+        extract_items,
+        extract_text_from_upload,
+        suggest_related_items,
+    )
+
+    type_key = request.POST.get("type_key", "").strip() or None
+    parts = [request.POST.get("scope", "")]
+    for f in request.FILES.getlist("documents"):
+        parts.append(extract_text_from_upload(f))
+    text = "\n".join(p for p in parts if p)
+
+    return JsonResponse({
+        "items": extract_items(text, type_key=type_key),
+        "suggestions": suggest_related_items(text, request.POST.getlist("existing")),
     })
 
 

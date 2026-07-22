@@ -44,6 +44,7 @@ urlpatterns = [
     # Quotations (view · review · edit · PDF)
     path("quotations/", views.quotations_list, name="quotations"),
     path("quotations/new/", views.quotation_new, name="quotation_new"),
+    path("quotations/extract/", views.quotation_extract, name="quotation_extract"),
     path("quotations/<uuid:pk>/", views.quotation_detail, name="quotation_detail"),
     path("quotations/<uuid:pk>/edit/", views.quotation_edit, name="quotation_edit"),
     path("quotations/<uuid:pk>/pdf/", views.quotation_pdf, name="quotation_pdf"),
