@@ -72,6 +72,16 @@ def _logo_flowable(header, max_h=60 * mm, max_w=70 * mm):
         return None
 
 
+def _initials_surname(full_name: str) -> str:
+    """"Ronny Maluleke" → "R. Maluleke"; "Ronny James Maluleke" → "R.J. Maluleke".
+    The sign-off line asks for initials and surname, so that is what it shows."""
+    parts = (full_name or "").split()
+    if len(parts) < 2:
+        return full_name or ""
+    initials = "".join(p[0].upper() + "." for p in parts[:-1])
+    return f"{initials} {parts[-1]}"
+
+
 def _customer_address(customer) -> str:
     if not customer:
         return ""
@@ -83,8 +93,9 @@ def _customer_address(customer) -> str:
 def quotation_pdf_bytes(quote) -> bytes:
     company = quote.company
     buf = BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=16 * mm, bottomMargin=14 * mm,
-                            leftMargin=16 * mm, rightMargin=16 * mm,
+    # Narrow margins so the content fills the page width (usable width ≈ 186mm).
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=14 * mm, bottomMargin=12 * mm,
+                            leftMargin=12 * mm, rightMargin=12 * mm,
                             title=f"Quotation {quote.number}")
     brand = _brand_color(company)
     styles = getSampleStyleSheet()
@@ -133,7 +144,7 @@ def quotation_pdf_bytes(quote) -> bytes:
 
     # Big logo, top-right; the company identity fills the left.
     logo = _logo_flowable(header)
-    head = Table([[ident, logo or ""]], colWidths=[105 * mm, 73 * mm])
+    head = Table([[ident, logo or ""]], colWidths=[110 * mm, 76 * mm])
     head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
                               ("ALIGN", (1, 0), (1, 0), "RIGHT")]))
     # A bold brand-coloured rule separates the letterhead from the client block.
@@ -176,7 +187,7 @@ def quotation_pdf_bytes(quote) -> bytes:
         right.append(Spacer(1, 1 * mm))
         right.append(L("Scope of Work:", quote.scope_of_work))
 
-    meta = Table([[left, right]], colWidths=[96 * mm, 82 * mm])
+    meta = Table([[left, right]], colWidths=[100 * mm, 86 * mm])
     meta.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
     story += [meta, Spacer(1, 6 * mm)]
 
@@ -191,7 +202,7 @@ def quotation_pdf_bytes(quote) -> bytes:
                      f"R{ln.line_total:,.2f}"])
     if len(rows) == 1:
         rows.append(["", Paragraph("No line items.", cell), "", "", "", ""])
-    tbl = Table(rows, colWidths=[14 * mm, 79 * mm, 20 * mm, 18 * mm, 23.5 * mm, 23.5 * mm],
+    tbl = Table(rows, colWidths=[14 * mm, 85 * mm, 20 * mm, 20 * mm, 23.5 * mm, 23.5 * mm],
                 repeatRows=1)
     tbl.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), brand),
@@ -229,19 +240,20 @@ def quotation_pdf_bytes(quote) -> bytes:
     if quote.exclusions or quote.assumptions:
         story.append(Spacer(1, 4 * mm))
 
-    # ── Sign-off (left) + banking (right), inside one bordered box ───────────
-    # "Compiled by" is filled in for us — who prepared it and today's date. The
-    # "received" line is left blank for the customer to sign. Each keeps its
-    # Initials & Surname and Date on a single line.
-    prep_name = (prep.get_full_name() or prep.email) if prep else ""
+    # ── Sign-off and banking — two separate boxes with a gap between them ────
+    # "Compiled by" fills itself in (who prepared it, shown as initials +
+    # surname, and today's date). "Received in good order" is left blank for the
+    # customer to sign. Each keeps Initials & Surname and Date on one line.
+    prep_name = _initials_surname(prep.get_full_name()) if prep and prep.get_full_name() \
+        else (prep.email if prep else "")
     today = quote.created_at.strftime("%d/%m/%Y")
     signoff = [
         Paragraph("<b>Quotation Compiled By:</b>", small), Spacer(1, 1.5 * mm),
         Paragraph(f"Initials &amp; Surname: <b>{escape(prep_name)}</b>"
                   f"&nbsp;&nbsp;&nbsp;&nbsp;Date: <b>{today}</b>", small),
-        Spacer(1, 5 * mm),
+        Spacer(1, 6 * mm),
         Paragraph("<b>Received in Good Order By:</b>", small), Spacer(1, 1.5 * mm),
-        Paragraph("Initials &amp; Surname: ____________________"
+        Paragraph("Initials &amp; Surname: ________________"
                   "&nbsp;&nbsp;&nbsp;Date: ____________", muted),
     ]
 
@@ -258,17 +270,19 @@ def quotation_pdf_bytes(quote) -> bytes:
         bank_rows = [banking_title, Spacer(1, 1.5 * mm),
                      P("Add a bank account in the Company Profile.", muted)]
 
-    signbox = Table([[signoff, bank_rows]], colWidths=[100 * mm, 78 * mm])
-    signbox.setStyle(TableStyle([
+    # Two bordered cells with an empty spacer column between them.
+    footer = Table([[signoff, "", bank_rows]], colWidths=[104 * mm, 6 * mm, 76 * mm])
+    box_pad = [
+        ("BOX", (0, 0), (0, 0), 1, brand), ("BOX", (2, 0), (2, 0), 1, brand),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("BOX", (0, 0), (-1, -1), 1, brand),
-        ("LINEBEFORE", (1, 0), (1, 0), 0.6, LINE),
-        ("LEFTPADDING", (0, 0), (-1, -1), 9),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 9),
-        ("TOPPADDING", (0, 0), (-1, -1), 9),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
-    ]))
-    story += [signbox, Spacer(1, 6 * mm)]
+        ("LEFTPADDING", (0, 0), (0, 0), 9), ("RIGHTPADDING", (0, 0), (0, 0), 9),
+        ("TOPPADDING", (0, 0), (0, 0), 9), ("BOTTOMPADDING", (0, 0), (0, 0), 9),
+        ("LEFTPADDING", (2, 0), (2, 0), 9), ("RIGHTPADDING", (2, 0), (2, 0), 9),
+        ("TOPPADDING", (2, 0), (2, 0), 9), ("BOTTOMPADDING", (2, 0), (2, 0), 9),
+        ("LEFTPADDING", (1, 0), (1, 0), 0), ("RIGHTPADDING", (1, 0), (1, 0), 0),
+    ]
+    footer.setStyle(TableStyle(box_pad))
+    story += [footer, Spacer(1, 6 * mm)]
 
     story.append(P(f"Please use document number ({quote.number}) for reference "
                    "when making payments.", muted))
