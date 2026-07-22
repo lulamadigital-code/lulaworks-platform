@@ -2,74 +2,232 @@
 {% block title %}New quotation{% endblock %}
 {% block content %}
 <p class="sub"><a href="{% url 'web:quotations' %}">← Quotations</a></p>
-<h1>New quotation</h1>
-<p class="sub">Start from nothing, or copy one you have already priced. A quotation
-  raised from an RFQ is created by approving that RFQ, so it keeps the source
-  document attached.</p>
+<h1 style="margin:0 0 4px;">New quotation</h1>
+<p class="sub" style="margin:0 0 20px;">Fill it in top to bottom. Only the customer,
+  a job type and a title are needed — everything else is there when the job calls
+  for it. A quotation raised from an RFQ is created by approving that RFQ instead.</p>
 
-<div class="two-col">
-  <div>
-    <h2 style="margin-top:0;">Start from scratch</h2>
-    <div class="card">
-      <form method="post">{% csrf_token %}
-        <input type="hidden" name="method" value="blank">
-        <label>What kind of job is this?</label>
-        <select name="quotation_type" required>
-          <option value="">Choose the type…</option>
-          {% for t in types %}<option value="{{ t.id }}">{{ t.label }}</option>{% endfor %}
-        </select>
-        <p class="muted" style="margin:6px 0 0;font-size:12.5px;">The type decides the
-          shape of the quotation — a plant hire job is priced in mobilisation and
-          standby, a labour hire one in rates and overtime. Its sections are created
-          for you.</p>
+{# One form, one page. Multipart because the scope and supporting files ride along. #}
+<form method="post" enctype="multipart/form-data" class="qform">{% csrf_token %}
+  <input type="hidden" name="method" value="blank">
 
-        <label style="margin-top:16px;">Customer</label>
-        <select name="customer" required>
-          <option value="">Choose a customer…</option>
-          {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}{% if c.vendor_number %} · vendor {{ c.vendor_number }}{% endif %}</option>{% endfor %}
-        </select>
-        <div class="two">
-          <div><label>Title</label><input type="text" name="title"
-                 placeholder="Conveyor CV-102 gearbox replacement"></div>
-          <div><label>Site — where the work happens</label>
-            <input type="text" name="site" placeholder="K4 Shaft, Plant 1"></div>
-          <div><label>VAT</label>
-            <select name="vat_mode">
-              {% for v, l in vat_modes %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
-            </select></div>
-          <div><label>Their reference</label>
-            <input type="text" name="customer_reference" placeholder="their RFQ or requisition no.">
-            </div>
-        </div>
-        <label>Scope of work</label>
-        <textarea name="scope_of_work" rows="4"
-                  placeholder="What is being quoted, in the words the customer used."></textarea>
-        <button class="btn" type="submit" style="margin-top:16px;">Create quotation</button>
-      </form>
+  {# ── 1 · Customer ─────────────────────────────────────────────────────── #}
+  <section class="card step">
+    <div class="stephead"><span class="stepno">1</span><strong>Who is it for?</strong></div>
+    <label>Customer</label>
+    <select name="customer" id="customer-select" required>
+      <option value="">Choose a customer…</option>
+      {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}{% if c.vendor_number %} · vendor {{ c.vendor_number }}{% endif %}</option>{% endfor %}
+    </select>
+    <p class="muted hint">Start typing to search. The vendor number we trade under
+      with them is attached to the quotation automatically.</p>
+    <p id="vendor-note" class="chip info" style="display:none;margin-top:8px;"></p>
+    {% if not customers %}
+    <p class="muted hint">No customers yet — <a href="{% url 'web:customers' %}">add one first</a>.</p>
+    {% endif %}
+  </section>
+
+  {# ── 2 · Contact person ───────────────────────────────────────────────── #}
+  <section class="card step">
+    <div class="stephead"><span class="stepno">2</span><strong>Who is the recipient?</strong></div>
+    <label>Contact person</label>
+    <select name="contact" id="contact-select" disabled>
+      <option value="">Choose a customer first…</option>
+    </select>
+    <p class="muted hint">The person the quotation is addressed to. Their name,
+      department, email and phone are pulled onto the document.</p>
+    <div id="contact-detail" class="muted" style="display:none;margin-top:8px;font-size:12.5px;"></div>
+  </section>
+
+  {# ── 3 · Job type ─────────────────────────────────────────────────────── #}
+  <section class="card step">
+    <div class="stephead"><span class="stepno">3</span><strong>What kind of job?</strong></div>
+    <label>Job type</label>
+    <select name="quotation_type" id="type-select" required>
+      <option value="">Choose the type…</option>
+      {% for t in types %}<option value="{{ t.id }}" data-emphasis="{{ t.emphasis|join:', ' }}">{{ t.label }}</option>{% endfor %}
+    </select>
+    <p class="muted hint">The type decides the shape of the quotation — plant hire is
+      priced in mobilisation and standby, labour hire in rates and overtime.</p>
+    <p id="template-note" class="chip ok" style="display:none;margin-top:8px;"></p>
+  </section>
+
+  {# ── 4 · The basics ───────────────────────────────────────────────────── #}
+  <section class="card step">
+    <div class="stephead"><span class="stepno">4</span><strong>The basics</strong></div>
+    <div class="two">
+      <div><label>Title</label>
+        <input type="text" name="title" placeholder="Replace conveyor rollers" required></div>
+      <div><label>Site — where the work happens</label>
+        <input type="text" name="site" placeholder="Plant 3, Crusher Section"></div>
+      <div><label>VAT</label>
+        <select name="vat_mode">
+          {% for v, l in vat_modes %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+        </select></div>
+      <div><label>Customer reference <span class="muted">(optional)</span></label>
+        <input type="text" name="customer_reference" placeholder="their PO / RFQ / tender no."></div>
     </div>
-  </div>
 
-  <div>
-    <h2 style="margin-top:0;">Copy an existing one</h2>
-    <div class="card">
-      <p class="muted" style="margin:0 0 14px;font-size:13px;">For recurring work.
-        Creates a NEW quotation with its own number — not a revision.</p>
-      <form method="post">{% csrf_token %}
-        <input type="hidden" name="method" value="copy">
-        <label>Copy from</label>
+    <label style="margin-top:16px;">Quotation number</label>
+    {% if can_override %}
+    <input type="text" name="number" placeholder="{{ number_prefix }}000123 — leave blank to auto-number"
+           pattern="[A-Za-z]{2}[0-9]{6}" maxlength="8" style="max-width:280px;text-transform:uppercase;">
+    <p class="muted hint">Two letters then six digits. Leave it blank and the next
+      free number is assigned for you — that is the safe default.</p>
+    {% else %}
+    <p class="muted hint" style="margin-top:0;">Assigned automatically when you create
+      it — the next free number in the form <strong>{{ number_prefix }}000123</strong>.</p>
+    {% endif %}
+  </section>
+
+  {# ── 5 · Scope of work ────────────────────────────────────────────────── #}
+  <section class="card step">
+    <div class="stephead"><span class="stepno">5</span><strong>Scope of work</strong>
+      <span class="muted" style="font-size:12px;font-weight:normal;">the most important part</span></div>
+    <label>Type it, paste it, or attach the document you were sent</label>
+    <textarea name="scope_of_work" rows="6"
+              placeholder="What is being quoted, in the words the customer used. Paste an email or an RFQ straight in here."></textarea>
+    <div class="two" style="margin-top:12px;">
+      <div><label>Attach the scope document <span class="muted">(optional)</span></label>
+        <input type="file" name="scope_file"
+               accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.zip,.eml,.msg"></div>
+    </div>
+    <label class="inline" style="margin-top:14px;">
+      <input type="checkbox" name="ai_extract" value="1">
+      Let LulaAI read the scope and suggest line items — you approve each one</label>
+    <p class="muted hint">Nothing is priced or added without your approval. Turn this
+      off to build the quotation yourself below.</p>
+  </section>
+
+  {# ── 6/7 · Items ──────────────────────────────────────────────────────── #}
+  <section class="card step">
+    <div class="stephead"><span class="stepno">6</span><strong>Items</strong>
+      <span class="muted" style="font-size:12px;font-weight:normal;">optional — you can price after creating</span></div>
+    <p class="muted hint" style="margin-top:0;">Paste rows straight from Excel:
+      one item per line, columns separated by tabs or commas —
+      <em>description, quantity, unit, unit price</em>. Fine editing (discounts,
+      reordering, sections) continues on the full builder after you create.</p>
+    <textarea name="pasted_items" rows="5" class="mono"
+              placeholder="Supply 30t mobile crane&#9;1&#9;day&#9;18500&#10;Rigging crew&#9;2&#9;shift&#9;4200&#10;Mobilisation&#9;1&#9;lot&#9;9500"></textarea>
+  </section>
+
+  {# ── 8 · Supporting documents ─────────────────────────────────────────── #}
+  <section class="card step">
+    <div class="stephead"><span class="stepno">7</span><strong>Supporting documents</strong>
+      <span class="muted" style="font-size:12px;font-weight:normal;">optional</span></div>
+    <label>Drawings, a BOQ, specifications, photos, inspection reports</label>
+    <input type="file" name="supporting_files" multiple
+           accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.zip,.dwg,.mp4">
+    <p class="muted hint">Kept attached to the quotation so they are findable next year.</p>
+  </section>
+
+  {# ── 9 · Create ───────────────────────────────────────────────────────── #}
+  <div class="createbar">
+    <button class="btn" type="submit">Create quotation</button>
+    <span class="muted" style="font-size:12.5px;">Validates, allocates the number,
+      builds the template and opens the quotation.</span>
+  </div>
+</form>
+
+{# Copy an existing one — the one alternative route, out of the way. #}
+{% if recent %}
+<details class="card" style="margin-top:20px;">
+  <summary style="cursor:pointer;font-weight:600;">Or copy an existing quotation</summary>
+  <p class="muted" style="margin:12px 0 14px;font-size:13px;">For recurring work.
+    Creates a NEW quotation with its own number — not a revision.</p>
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="method" value="copy">
+    <div class="two">
+      <div><label>Copy from</label>
         <select name="source" required>
           {% for q in recent %}
           <option value="{{ q.id }}">{{ q.display_number }} — {{ q.client_name }}{% if q.title %} · {{ q.title }}{% endif %}</option>
           {% endfor %}
-        </select>
-        <label>For customer (optional — leave blank to keep the same one)</label>
+        </select></div>
+      <div><label>For customer <span class="muted">(optional)</span></label>
         <select name="customer">
           <option value="">— same customer —</option>
           {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}</option>{% endfor %}
-        </select>
-        <button class="btn ghost" type="submit" style="margin-top:16px;">Copy quotation</button>
-      </form>
+        </select></div>
     </div>
-  </div>
-</div>
+    <button class="btn ghost" type="submit" style="margin-top:16px;">Copy quotation</button>
+  </form>
+</details>
+{% endif %}
+
+{{ contacts_json|json_script:"contacts-data" }}
+{{ vendor_json|json_script:"vendor-data" }}
+
+<style>
+  .qform .step { margin-bottom:16px; }
+  .stephead { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .stepno { display:inline-flex; align-items:center; justify-content:center;
+    width:26px; height:26px; border-radius:50%; background:var(--primary-t);
+    color:var(--primary-d); font-weight:700; font-size:13px; flex:none; }
+  .qform .hint { margin:6px 0 0; font-size:12.5px; }
+  .qform textarea.mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; }
+  .createbar { display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    position:sticky; bottom:0; background:var(--bg); padding:16px 0;
+    border-top:1px solid var(--line); margin-top:4px; }
+</style>
+
+<script>
+(function () {
+  const contacts = JSON.parse(document.getElementById("contacts-data").textContent);
+  const vendors  = JSON.parse(document.getElementById("vendor-data").textContent);
+  const custSel  = document.getElementById("customer-select");
+  const contSel  = document.getElementById("contact-select");
+  const contDet  = document.getElementById("contact-detail");
+  const vendNote = document.getElementById("vendor-note");
+  const typeSel  = document.getElementById("type-select");
+  const tplNote  = document.getElementById("template-note");
+
+  function fillContacts() {
+    const list = contacts[custSel.value] || [];
+    contSel.innerHTML = "";
+    if (!custSel.value) {
+      contSel.disabled = true;
+      contSel.append(new Option("Choose a customer first…", ""));
+    } else if (!list.length) {
+      contSel.disabled = true;
+      contSel.append(new Option("No contacts on file — add them on the customer", ""));
+    } else {
+      contSel.disabled = false;
+      contSel.append(new Option("Choose a contact…", ""));
+      list.forEach(function (c) {
+        const label = c.role ? (c.name + " — " + c.role) : c.name;
+        contSel.append(new Option(label, c.id));
+      });
+    }
+    contDet.style.display = "none";
+
+    const v = vendors[custSel.value];
+    if (v) { vendNote.textContent = "We are vendor " + v + " to them";
+             vendNote.style.display = "inline-flex"; }
+    else   { vendNote.style.display = "none"; }
+  }
+
+  function showContact() {
+    const list = contacts[custSel.value] || [];
+    const c = list.find(function (x) { return x.id === contSel.value; });
+    if (!c) { contDet.style.display = "none"; return; }
+    const bits = [c.email, c.phone].filter(Boolean).join(" · ");
+    contDet.textContent = bits || "No email or phone on file for this contact.";
+    contDet.style.display = "block";
+  }
+
+  function showTemplate() {
+    const opt = typeSel.selectedOptions[0];
+    const emph = opt ? (opt.dataset.emphasis || "") : "";
+    if (typeSel.value && emph) {
+      tplNote.textContent = "Sections created for you: " + emph;
+      tplNote.style.display = "inline-flex";
+    } else { tplNote.style.display = "none"; }
+  }
+
+  custSel.addEventListener("change", fillContacts);
+  contSel.addEventListener("change", showContact);
+  typeSel.addEventListener("change", showTemplate);
+})();
+</script>
 {% endblock %}

@@ -1924,18 +1924,27 @@ def _quote_guard(request, pk):
 
 @login_required
 def quotation_new(request):
-    """The creation routes: blank, or copied from an existing quotation.
+    """One guided page, top to bottom, in the order an estimator actually works:
+    customer → contact → job type → the basics → scope → items → attachments →
+    create. Everything past the basics is optional, so a quick quotation is a
+    customer, a type and a title; the depth is there when the job needs it.
 
-    RFQ-sourced quotations are created by approving an RFQ, which already links
-    the source document — duplicating that route here would give two ways to do
-    the same thing with different provenance.
+    RFQ-sourced quotations are created by approving an RFQ (which links the
+    source document), so that route lives on the RFQ screen, not here. Copying
+    an existing quotation is the one alternative offered, tucked below the fold.
     """
     from apps.customers.models import Customer
     from apps.quotes.models import QuotationType, VatMode
     from apps.quotes.services import (
+        QUOTATION_NUMBER_RE,
+        add_lines_bulk,
+        apply_type_template,
         create_quotation,
         duplicate,
         ensure_quotation_types,
+        parse_pasted_lines,
+        quotation_number_available,
+        quotation_prefix_for,
     )
 
     if not request.user.has_perm_code("quotes.create"):
@@ -1944,6 +1953,9 @@ def quotation_new(request):
 
     company = request.user.active_company
     ensure_quotation_types(company)
+    # Only an administrator may hand out a number by hand; everyone else gets the
+    # next one automatically, which is what keeps them unique.
+    can_override = request.user.has_perm_code("company.manage")
 
     if request.method == "POST":
         method = request.POST.get("method", "blank")
@@ -1958,16 +1970,34 @@ def quotation_new(request):
                                       f"{new.display_number}.")
             return redirect("web:quotation_detail", pk=new.id)
 
+        # Step 1 is not optional: a quotation is always for a customer.
         customer = Customer.objects.filter(pk=request.POST.get("customer")).first()
         if customer is None:
             messages.error(request, "Choose the customer this quotation is for.")
             return redirect("web:quotation_new")
+
+        # A manual number, only if the user may set one and it is well-formed
+        # and free. Anything wrong falls back to auto rather than failing the
+        # whole creation — the estimator's work is not lost to a typo.
+        number = None
+        raw_number = request.POST.get("number", "").strip().upper()
+        if raw_number and can_override:
+            if not QUOTATION_NUMBER_RE.match(raw_number):
+                messages.error(request, "A quotation number is two letters then "
+                                        "six digits, e.g. LP000731. Using an "
+                                        "auto-generated one instead.")
+            elif not quotation_number_available(company, raw_number):
+                messages.error(request, f"{raw_number} is already in use. Using "
+                                        "an auto-generated number instead.")
+            else:
+                number = raw_number
 
         quote = create_quotation(
             company, request.user,
             client_name=customer.name,
             title=request.POST.get("title", "").strip(),
             site=request.POST.get("site", "").strip(),
+            number=number,
         )
         quote.customer = customer
         quote.quotation_type = QuotationType.objects.filter(
@@ -1983,20 +2013,66 @@ def quotation_new(request):
 
         # The type decides the shape of the quotation, so its sections are
         # seeded now rather than left for the estimator to remember.
-        from apps.quotes.services import apply_type_template
         seeded = apply_type_template(quote, request.user)
-        messages.success(
-            request,
-            f"Quotation {quote.number} created"
-            + (f" with {seeded} section(s) for a "
-               f"{quote.quotation_type.label.lower()} job." if seeded else "."))
+
+        # Attach everything the estimator brought: the scope document and any
+        # supporting files (drawings, a BOQ, photos), each kept for next year.
+        scope_doc = request.FILES.get("scope_file")
+        if scope_doc:
+            quote.documents.create(company=company, name=scope_doc.name,
+                                   doc_type="scope", file=scope_doc)
+        for f in request.FILES.getlist("supporting_files"):
+            quote.documents.create(company=company, name=f.name,
+                                   doc_type="supporting", file=f)
+
+        # The estimator-driven path: items pasted straight from a spreadsheet.
+        pasted = request.POST.get("pasted_items", "").strip()
+        added = 0
+        if pasted:
+            rows = parse_pasted_lines(pasted)
+            if rows:
+                added = add_lines_bulk(quote, request.user, rows)
+
+        parts = [f"Quotation {quote.number} created"]
+        if seeded:
+            parts.append(f"{seeded} section(s) for a "
+                         f"{quote.quotation_type.label.lower()} job")
+        if added:
+            parts.append(f"{added} item(s) added")
+        messages.success(request, ". ".join(parts) + ".")
+
+        # Document-driven path: hand the scope to LulaAI on the suggestion
+        # screen, where the estimator approves each proposed line. AI never
+        # writes a priced line unasked.
+        if request.POST.get("ai_extract") and quote.scope_of_work:
+            return redirect("web:quotation_suggest", pk=quote.id)
         return redirect("web:quotation_detail", pk=quote.id)
+
+    # Contacts depend on the chosen customer, so the page filters them client
+    # side from this map rather than making a round trip on every selection.
+    contacts_by_customer = {}
+    vendor_by_customer = {}
+    for c in Customer.objects.all():
+        vendor_by_customer[str(c.id)] = c.vendor_number
+        contacts_by_customer[str(c.id)] = [
+            {"id": str(ct.id), "name": ct.full_name,
+             "role": ct.job_title or (ct.department.name if ct.department_id else ""),
+             "email": ct.email, "phone": ct.telephone or ct.mobile}
+            for ct in c.contacts.filter(status="active")
+        ]
 
     return render(request, "web/quotation_new.html", {
         "customers": Customer.objects.all(),
         "types": QuotationType.objects.all(),
         "vat_modes": VatMode.choices,
         "recent": Quotation.objects.all()[:20],
+        # Passed as objects, not strings — json_script serialises them safely.
+        "contacts_json": contacts_by_customer,
+        "vendor_json": vendor_by_customer,
+        "can_override": can_override,
+        # The pattern, not a live number — allocating one here would burn a
+        # sequence value on a page the estimator might just close.
+        "number_prefix": quotation_prefix_for(company),
     })
 
 

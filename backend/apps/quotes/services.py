@@ -4,20 +4,87 @@ from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.db.models import Sum
 
+from apps.administration.models import NumberingRule
 from apps.administration.services import next_number
 from apps.core.events import publish
 
 from .models import Quotation, QuotationLine, QuotationSource
 
+#: A quotation number is two letters then six digits, e.g. LP000731. The letters
+#: identify the issuer; the six digits are a running, zero-padded count. Kept
+#: short because it has to be quoted over the phone and written on a delivery note.
+QUOTATION_NUMBER_RE = re.compile(r"^[A-Za-z]{2}\d{6}$")
 
-def create_quotation(company, user, *, client_name, title="", site="", lines=None) -> Quotation:
+#: {seq:06d} — six digits, and no yearly reset, because the number must stay
+#: unique for the life of the company; a reset would hand out AA000001 twice.
+_QUOTATION_FMT = "{prefix}{seq:06d}"
+_LEGACY_FMT = "{prefix}-{yyyy}-{seq:06d}"
+
+
+def quotation_prefix_for(company) -> str:
+    """Two alphabetic characters for the number, taken from the company name so
+    a Harmony quote reads HA000012 rather than the generic QT. Falls back to QT
+    when the name has fewer than two letters (rare, but a company called '4x4'
+    exists)."""
+    letters = [c for c in (company.name or "") if c.isalpha()]
+    return ("".join(letters[:2]).upper() + "QT")[:2]
+
+
+def ensure_quotation_numbering(company) -> NumberingRule:
+    """Make the company's quotation numbering produce AA000000, self-healingly.
+
+    Called on every visit to the create page (via ensure_quotation_types), so a
+    company created before this format existed is migrated the first time an
+    estimator opens the screen — no data migration, no manual step. A prefix an
+    administrator has deliberately set is left alone; only the default shape is
+    upgraded."""
+    rule, created = NumberingRule.objects.get_or_create(
+        company=company, doc_type="quotation",
+        defaults={"prefix": quotation_prefix_for(company),
+                  "fmt": _QUOTATION_FMT, "reset_yearly": False},
+    )
+    if created:
+        return rule
+
+    changed = []
+    # Only rewrite a rule still on a default format — never one an admin tuned.
+    if rule.fmt in (_LEGACY_FMT, "{prefix}-{yyyy}-{seq:06d}", "{prefix}-{yyyy}-{seq:05d}"):
+        rule.fmt, rule.reset_yearly = _QUOTATION_FMT, False
+        changed += ["fmt", "reset_yearly"]
+    if not QUOTATION_NUMBER_RE.match(f"{rule.prefix}000000"):
+        rule.prefix = quotation_prefix_for(company)
+        changed.append("prefix")
+    if changed:
+        rule.save(update_fields=changed)
+    return rule
+
+
+def quotation_number_available(company, number: str, *, exclude=None) -> bool:
+    """A number may be reused across revisions of the same quotation but never
+    across two different ones."""
+    qs = Quotation.objects.filter(company=company, number=number)
+    if exclude is not None:
+        qs = qs.exclude(pk=exclude)
+    return not qs.exists()
+
+
+def create_quotation(company, user, *, client_name, title="", site="", lines=None,
+                     number=None, source=None) -> Quotation:
     """Create a draft quotation: allocate a number (configurable engine), stamp
-    the tenant (ambient), and emit a domain event (outbox)."""
-    quote = Quotation.objects.create(
-        company=company, number=next_number(company, "quotation"),
+    the tenant (ambient), and emit a domain event (outbox).
+
+    `number` lets an authorised caller override the auto-allocated value (the
+    view is responsible for the permission check and for validating format and
+    uniqueness); when None the numbering engine allocates the next one."""
+    ensure_quotation_numbering(company)
+    fields = dict(
+        company=company, number=number or next_number(company, "quotation"),
         client_name=client_name, title=title, site=site,
         created_by=user, updated_by=user,
     )
+    if source is not None:
+        fields["source"] = source
+    quote = Quotation.objects.create(**fields)
     for position, line in enumerate(lines or [], start=1):
         quote.lines.create(
             company=company, position=position,
@@ -126,15 +193,26 @@ class QuotationError(ValueError):
 
 
 def ensure_quotation_types(company) -> int:
-    """Seed the default type catalogue. Idempotent; never removes custom types."""
-    existing = set(QuotationType.objects.filter(company=company)
-                   .values_list("key", flat=True))
+    """Seed the default type catalogue. Idempotent; never removes custom types.
+
+    Also self-heals the numbering rule to the AA000000 format, so the two things
+    the create page depends on — a type list and a number format — are both
+    guaranteed by the one call the view already makes."""
+    ensure_quotation_numbering(company)
+    by_key = {t.key: t for t in QuotationType.objects.filter(company=company)}
     created = 0
     for position, (key, label, emphasis) in enumerate(DEFAULT_QUOTATION_TYPES):
-        if key not in existing:
+        existing = by_key.get(key)
+        if existing is None:
             QuotationType.objects.create(company=company, key=key, label=label,
                                          emphasis=emphasis, position=position)
             created += 1
+        elif not existing.emphasis and emphasis:
+            # Backfill a type seeded before emphasis existed, so its template
+            # sections and the create-page hint start working — without
+            # touching one an administrator has customised.
+            existing.emphasis = emphasis
+            existing.save(update_fields=["emphasis"])
     return created
 
 

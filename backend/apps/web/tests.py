@@ -4,6 +4,7 @@ the HTML surface (money hidden from non-finance users), and tenant isolation."""
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 
 from apps.administration.models import NumberingRule
@@ -585,3 +586,104 @@ class EveryPageLoadsTests(TestCase):
         self.assertEqual(response.status_code, 302)
         with tenant_scope(self.company.id):
             self.assertEqual(Quotation.objects.count(), before + 1)
+
+
+class QuotationCreationWorkflowTests(TestCase):
+    """The guided create page (Module 5): the standard estimator workflow.
+
+    Customer → contact → job type → basics → scope → items → attachments →
+    create. These cover the parts a unit test can hold: the number format, the
+    contact and vendor snapshot, pasted items, attached files, and that only an
+    administrator may hand out a number by hand.
+    """
+
+    def setUp(self):
+        from apps.customers.services import create_customer
+        from apps.quotes.models import QuotationType
+        from apps.quotes.services import ensure_quotation_types
+
+        self.company = make_company(name="Harmony Works")
+        self.user = user_with(self.company, ["quotes.create"],
+                              email="estimator@harmony.co.za")
+        with tenant_scope(self.company.id):
+            ensure_quotation_types(self.company)
+            self.customer = create_customer(self.company, self.user,
+                                            name="Sasol", vendor_number="V-778")
+            self.contact = self.customer.contacts.create(
+                company=self.company, full_name="Thabo Nkosi",
+                job_title="Buyer", email="thabo@sasol.com", telephone="011 555 0100")
+            self.plant_hire = QuotationType.objects.get(company=self.company,
+                                                        key="plant_hire")
+        self.client.force_login(self.user)
+
+    def _post(self, **overrides):
+        data = {
+            "method": "blank",
+            "customer": str(self.customer.id),
+            "quotation_type": str(self.plant_hire.id),
+            "title": "Crane hire",
+            "site": "Plant 3",
+            "vat_mode": "exclusive",
+        }
+        data.update(overrides)
+        return self.client.post("/quotations/new/", data)
+
+    def _latest(self):
+        with tenant_scope(self.company.id):
+            return Quotation.objects.order_by("-created_at").first()
+
+    def test_number_is_two_letters_then_six_digits(self):
+        self.assertEqual(self._post().status_code, 302)
+        self.assertRegex(self._latest().number, r"^[A-Z]{2}\d{6}$")
+
+    def test_contact_and_vendor_are_captured(self):
+        self._post(contact=str(self.contact.id))
+        quote = self._latest()
+        self.assertEqual(quote.contact_id, self.contact.id)
+        self.assertEqual(quote.vendor_number, "V-778")  # snapshot from the customer
+
+    def test_pasted_items_become_lines(self):
+        self._post(pasted_items="Supply crane\t1\tday\t18500\nRigging\t2\tshift\t4200")
+        quote = self._latest()
+        with tenant_scope(self.company.id):
+            self.assertEqual(quote.lines.count(), 2)
+
+    def test_supporting_files_are_attached(self):
+        self._post(
+            scope_file=SimpleUploadedFile("scope.txt", b"replace the rollers"),
+            supporting_files=[
+                SimpleUploadedFile("drawing.pdf", b"%PDF-1.4 fake"),
+                SimpleUploadedFile("boq.txt", b"item,qty"),
+            ],
+        )
+        quote = self._latest()
+        with tenant_scope(self.company.id):
+            kinds = sorted(d.doc_type for d in quote.documents.all())
+        self.assertEqual(kinds, ["scope", "supporting", "supporting"])
+
+    def test_non_admin_cannot_hand_out_a_number(self):
+        """An estimator's typed number is ignored — uniqueness is not theirs to break."""
+        self._post(number="ZZ999999")
+        self.assertNotEqual(self._latest().number, "ZZ999999")
+
+    def test_admin_may_override_the_number(self):
+        admin = user_with(self.company, ["quotes.create", "company.manage"],
+                          email="admin@harmony.co.za")
+        self.client.force_login(admin)
+        self._post(number="AB123456")
+        self.assertEqual(self._latest().number, "AB123456")
+
+    def test_admin_override_rejects_a_bad_format_but_still_creates(self):
+        admin = user_with(self.company, ["quotes.create", "company.manage"],
+                          email="admin2@harmony.co.za")
+        self.client.force_login(admin)
+        resp = self._post(number="not-a-number")
+        self.assertEqual(resp.status_code, 302)          # creation is not lost
+        self.assertRegex(self._latest().number, r"^[A-Z]{2}\d{6}$")  # auto instead
+
+    def test_page_offers_contacts_for_each_customer(self):
+        resp = self.client.get("/quotations/new/")
+        self.assertEqual(resp.status_code, 200)
+        # The contact map is embedded so the page can filter without a round trip.
+        self.assertContains(resp, "Thabo Nkosi")
+        self.assertContains(resp, str(self.contact.id))

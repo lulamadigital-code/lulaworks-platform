@@ -48,8 +48,9 @@ class QuotationSliceTests(APITestCase):
     def test_create_allocates_number_and_totals(self):
         resp = self._create_quote()
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        year = __import__("datetime").date.today().year
-        self.assertEqual(resp.data["number"], f"QT-{year}-000001")
+        # Numbers are two letters then six digits (e.g. LU000001) — short enough
+        # to quote over the phone, unique for the life of the company.
+        self.assertRegex(resp.data["number"], r"^[A-Z]{2}\d{6}$")
         self.assertEqual(Decimal(resp.data["total"]), Decimal("6693.00"))  # 12*485 *1.15
 
     def test_create_emits_domain_event(self):
