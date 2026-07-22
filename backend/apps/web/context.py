@@ -31,6 +31,7 @@ _SECTIONS = {
     "company_contact": "company", "company_document": "company",
     "company_hours_page": "company", "company_hours": "company",
     "customers": "customers", "customer_detail": "customers",
+    "customer_edit": "customers",
     "customer_create": "customers", "customer_contact_save": "customers",
     "customer_department": "customers", "customer_contact_detail": "customers",
     "rfq": "rfq", "rfq_detail": "rfq", "rfq_upload": "rfq", "rfq_approve": "rfq",

@@ -1929,6 +1929,48 @@ def customer_detail(request, pk):
     })
 
 
+#: The customer fields the edit form may set — a whitelist, so a stray POST key
+#: can never write to something it shouldn't.
+_CUSTOMER_EDIT_FIELDS = (
+    "name", "trading_name", "registration_no", "vat_no", "tax_no", "industry",
+    "province", "city", "physical_address", "postal_address", "postal_code",
+    "telephone", "mobile", "email", "vendor_number", "vendor_portal",
+    "vendor_note", "payment_terms_note", "status",
+)
+
+
+@login_required
+def customer_edit(request, pk):
+    """Edit a customer's own details — identity, addresses, VAT/registration
+    numbers, the vendor number we trade under with them, and payment terms."""
+    from apps.customers.models import Customer, CustomerStatus
+
+    customer = get_object_or_404(Customer.objects.all(), pk=pk)
+    if not request.user.has_perm_code("projects.create"):
+        messages.error(request, "You do not have permission to edit customers.")
+        return redirect("web:customer_detail", pk=pk)
+
+    if request.method == "POST":
+        if not request.POST.get("name", "").strip():
+            messages.error(request, "A company name is required.")
+        else:
+            for field in _CUSTOMER_EDIT_FIELDS:
+                if field in request.POST:
+                    setattr(customer, field, request.POST.get(field, "").strip())
+            terms = request.POST.get("payment_terms_days", "").strip()
+            if terms.isdigit():
+                customer.payment_terms_days = int(terms)
+            customer.updated_by = request.user
+            customer.save()
+            messages.success(request, f"{customer.display_name} updated.")
+            return redirect("web:customer_detail", pk=pk)
+
+    return render(request, "web/customer_edit.html", {
+        "customer": customer,
+        "statuses": CustomerStatus.choices,
+    })
+
+
 @login_required
 @require_POST
 def customer_create(request):

@@ -825,3 +825,44 @@ class CompanyBrandingTests(TestCase):
         self.client.post("/company/", {"section": "branding", "brand_primary": "#A5127F"})
         with tenant_scope(self.company.id):
             self.assertEqual(Company.objects.get(id=self.company.id).brand_primary, "#a5127f")
+
+
+class CustomerEditTests(TestCase):
+    def setUp(self):
+        from apps.customers.services import create_customer
+        self.company = make_company()
+        self.admin = user_with(self.company, ["projects.view", "projects.create"],
+                               email="cm@lulama.co.za")
+        with tenant_scope(self.company.id):
+            self.customer = create_customer(self.company, self.admin, name="Harmony")
+        self.client.force_login(self.admin)
+
+    def test_edit_page_and_save(self):
+        from apps.customers.models import Customer
+        url = f"/customers/{self.customer.id}/edit/"
+        self.assertContains(self.client.get(url), "Edit customer")
+        resp = self.client.post(url, {
+            "name": "Harmony Mining", "vendor_number": "TRL0086",
+            "payment_terms_days": "60", "status": "active",
+        })
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(self.company.id):
+            c = Customer.objects.get(id=self.customer.id)
+        self.assertEqual(c.name, "Harmony Mining")
+        self.assertEqual(c.vendor_number, "TRL0086")
+        self.assertEqual(c.payment_terms_days, 60)
+
+    def test_edit_needs_permission(self):
+        outsider = user_with(self.company, ["projects.view"], email="no@lulama.co.za")
+        self.client.force_login(outsider)
+        resp = self.client.post(f"/customers/{self.customer.id}/edit/", {"name": "Hacked"})
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(self.company.id):
+            from apps.customers.models import Customer
+            self.assertEqual(Customer.objects.get(id=self.customer.id).name, "Harmony")
+
+    def test_detail_shows_edit_and_add_person(self):
+        resp = self.client.get(f"/customers/{self.customer.id}/")
+        self.assertContains(resp, "Edit")
+        self.assertContains(resp, "Add a person")
+        self.assertContains(resp, "Responsibility coverage")

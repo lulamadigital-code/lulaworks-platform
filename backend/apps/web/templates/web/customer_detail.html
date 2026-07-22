@@ -7,14 +7,18 @@
   <div>
     <h1 style="margin:0 0 4px;">{{ customer.display_name }}</h1>
     <p class="sub" style="margin:0;">{{ customer.code }}
-      {% if customer.vendor_number %} · we are vendor <strong>{{ customer.vendor_number }}</strong> to them{% endif %}
       {% if customer.industry %} · {{ customer.industry }}{% endif %}
-      {% if customer.city %} · {{ customer.city }}{% endif %}
-      · {{ customer.payment_terms_days }}-day terms</p>
+      {% if customer.city %} · {{ customer.city }}{% endif %}</p>
   </div>
-  {% if customer.status == 'active' %}<span class="chip ok">Active</span>
-  {% elif customer.status == 'blacklisted' %}<span class="chip bad">Blacklisted</span>
-  {% else %}<span class="chip warn">{{ customer.get_status_display }}</span>{% endif %}
+  <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;">
+    {% if customer.status == 'active' %}<span class="chip ok">Active</span>
+    {% elif customer.status == 'blacklisted' %}<span class="chip bad">Blacklisted</span>
+    {% else %}<span class="chip warn">{{ customer.get_status_display }}</span>{% endif %}
+    {% if can_manage %}
+    <a class="btn ghost" href="{% url 'web:customer_edit' customer.id %}">Edit</a>
+    <a class="btn" href="#addperson">+ Add a person</a>
+    {% endif %}
+  </div>
 </div>
 
 <div class="grid">
@@ -28,48 +32,71 @@
     <div class="n">{{ stats.open_projects }}</div><div class="l">Open projects</div></div>
 </div>
 
-{# ── The reason the module exists ───────────────────────────────────────── #}
-<h2>Who gets what</h2>
+{# ── Company details ────────────────────────────────────────────────────── #}
+<h2>Details</h2>
 <div class="card">
-  <p class="muted" style="margin:0 0 14px;font-size:13px;">Resolved from what each
-    person is empowered to do, not from their job title — so it keeps working at a
-    customer whose finance manager is called something else. Nothing is sent
-    automatically; this tells you who to address.</p>
-  {% for r in routing %}
-  <div class="routerow">
-    <span class="chip info" style="width:130px;justify-content:center;">{{ r.kind|cut:"_"|capfirst }}</span>
-    <span style="flex:1;">
-      {% if r.to %}
-        <strong>To:</strong>
-        {% for c in r.to %}<a href="{% url 'web:customer_contact_detail' c.id %}">{{ c.full_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
-        {% if r.cc %}<br><span class="muted" style="font-size:12.5px;"><strong>CC:</strong>
-          {% for c in r.cc %}{{ c.full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>{% endif %}
-      {% else %}<span class="muted">—</span>{% endif %}
-      {% if r.fallback %}<br><span class="chip warn" style="margin-top:6px;">{{ r.fallback }}</span>{% endif %}
-    </span>
+  <div class="kvgrid">
+    {% if customer.vendor_number %}<div class="kv-hi"><span class="k">Our vendor no. with them</span><span class="v"><strong>{{ customer.vendor_number }}</strong></span></div>{% endif %}
+    <div><span class="k">Registered name</span><span class="v">{{ customer.name }}</span></div>
+    {% if customer.trading_name %}<div><span class="k">Trading as</span><span class="v">{{ customer.trading_name }}</span></div>{% endif %}
+    {% if customer.registration_no %}<div><span class="k">Registration no.</span><span class="v">{{ customer.registration_no }}</span></div>{% endif %}
+    {% if customer.vat_no %}<div><span class="k">VAT no.</span><span class="v">{{ customer.vat_no }}</span></div>{% endif %}
+    {% if customer.tax_no %}<div><span class="k">Tax no.</span><span class="v">{{ customer.tax_no }}</span></div>{% endif %}
+    {% if customer.physical_address %}<div><span class="k">Physical address</span><span class="v">{{ customer.physical_address }}</span></div>{% endif %}
+    {% if customer.postal_address %}<div><span class="k">Postal address</span><span class="v">{{ customer.postal_address }}</span></div>{% endif %}
+    {% if customer.city or customer.province %}<div><span class="k">City / Province</span><span class="v">{{ customer.city }}{% if customer.province %}, {{ customer.province }}{% endif %}</span></div>{% endif %}
+    {% if customer.telephone %}<div><span class="k">Telephone</span><span class="v">{{ customer.telephone }}</span></div>{% endif %}
+    {% if customer.email %}<div><span class="k">Email</span><span class="v">{{ customer.email }}</span></div>{% endif %}
+    <div><span class="k">Payment terms</span><span class="v">{{ customer.payment_terms_days }} days{% if customer.payment_terms_note %} · {{ customer.payment_terms_note }}{% endif %}</span></div>
+    {% if customer.vendor_portal %}<div><span class="k">Vendor portal</span><span class="v">{{ customer.vendor_portal }}</span></div>{% endif %}
   </div>
-  {% endfor %}
 </div>
 
-{# Gaps are the useful part of a responsibility matrix. #}
-{% with missing=matrix|dictsort:"covered" %}
+{# ── Responsibility coverage — gaps are the useful part ─────────────────── #}
+<h2>Responsibility coverage</h2>
 <div class="card">
-  <strong>Responsibility coverage</strong>
-  <div style="margin-top:12px;">
+  <div class="covergrid">
     {% for row in matrix %}
-    <div class="deprow">
-      {% if row.covered %}<span class="chip ok">✓</span>
-      {% else %}<span class="chip bad">gap</span>{% endif %}
-      <span style="flex:1;">{{ row.label }}</span>
-      <span class="muted" style="font-size:12.5px;">
-        {% for c in row.contacts %}{{ c.full_name }}{% if not forloop.last %}, {% endif %}{% empty %}nobody{% endfor %}</span>
+    <div class="coverrow">
+      {% if row.covered %}<span class="chip ok">✓</span>{% else %}<span class="chip bad">gap</span>{% endif %}
+      <span class="cl">{{ row.label }}</span>
+      <span class="muted" style="font-size:12px;">{% for c in row.contacts %}{{ c.full_name }}{% if not forloop.last %}, {% endif %}{% empty %}nobody{% endfor %}</span>
     </div>
     {% endfor %}
   </div>
-  <p class="muted" style="margin:12px 0 0;font-size:12.5px;">An unassigned
-    "approves invoices" is why a payment sits unactioned for a month.</p>
+  <p class="muted" style="margin:10px 0 0;font-size:12px;">An unassigned "approves
+    invoices" is why a payment sits unactioned for a month.</p>
 </div>
-{% endwith %}
+
+{# ── Who gets what — compact ────────────────────────────────────────────── #}
+<h2>Who gets what</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th style="width:150px;">Document</th><th>To</th><th>CC</th></tr>
+    {% for r in routing %}
+    <tr>
+      <td><strong>{{ r.kind|cut:"_"|capfirst }}</strong></td>
+      <td>{% for c in r.to %}<a href="{% url 'web:customer_contact_detail' c.id %}">{{ c.full_name }}</a>{% if not forloop.last %}, {% endif %}{% empty %}<span class="muted">—</span>{% endfor %}
+        {% if r.fallback %} <span class="chip warn">{{ r.fallback }}</span>{% endif %}</td>
+      <td class="muted">{% for c in r.cc %}{{ c.full_name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+<p class="muted" style="font-size:12px;margin:6px 2px 0;">Resolved from what each
+  person may do, not their job title. Nothing is sent automatically.</p>
+
+<style>
+  .kvgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:2px 24px; }
+  .kvgrid > div { display:flex; justify-content:space-between; gap:12px; padding:7px 0;
+    border-bottom:1px solid var(--line); font-size:13.5px; }
+  .kvgrid .k { color:var(--muted-c,#5b6b6a); }
+  .kvgrid .v { text-align:right; }
+  .kvgrid .kv-hi .v strong { color:var(--primary-d); }
+  .covergrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:2px 20px; }
+  .coverrow { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--line); }
+  .coverrow .cl { flex:1; font-size:13px; }
+</style>
 
 {# ── The org chart ──────────────────────────────────────────────────────── #}
 <h2>Departments &amp; people</h2>
@@ -113,7 +140,7 @@
 {% endif %}
 
 {% if can_manage %}
-<h2>Add a person</h2>
+<h2 id="addperson" style="scroll-margin-top:20px;">Add a person</h2>
 <div class="card">
   <form method="post" action="{% url 'web:customer_contact_save' customer.id %}">
     {% csrf_token %}
