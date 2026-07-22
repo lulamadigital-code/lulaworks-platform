@@ -783,3 +783,39 @@ class QuotationPdfLayoutTests(TestCase):
         self.assertEqual(_brand_color(c).hexval(), "0x0e6e6e")   # default teal
         c.brand_primary = "#a5127f"
         self.assertEqual(_brand_color(c).hexval(), "0xa5127f")   # honoured
+
+
+class GridLineParsingTests(TestCase):
+    """The create-page grid's fourth column is a selling price, not a cost —
+    the bug behind a line that showed a zero unit price but a real amount."""
+
+    def test_grid_price_maps_to_unit_price_not_cost(self):
+        from apps.quotes.services import add_lines_bulk, parse_grid_lines
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            rows = parse_grid_lines("30t crane\t2\tday\t18500")
+            self.assertEqual(rows[0]["unit_price"], Decimal("18500"))
+            self.assertNotIn("unit_cost", rows[0])
+            add_lines_bulk(quote, None, rows)
+            line = quote.lines.first()
+            self.assertEqual(line.unit_price, Decimal("18500"))
+            self.assertEqual(line.unit_cost, Decimal("0"))
+            self.assertEqual(line.line_total, Decimal("37000.00"))
+
+    def test_pdf_unit_price_column_agrees_with_the_amount(self):
+        """Even a cost+markup line prints a unit price that matches its amount."""
+        import io
+
+        import pdfplumber
+
+        from apps.quotes.pdf import quotation_pdf_bytes
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            add_line(c, quote, qty=2, cost=17845, markup=0)   # price via cost
+            pdf = quotation_pdf_bytes(quote)
+        with pdfplumber.open(io.BytesIO(pdf)) as doc:
+            text = doc.pages[0].extract_text()
+        self.assertIn("R17,845.00", text)     # unit price column, not R0.00
+        self.assertIn("R35,690.00", text)     # amount

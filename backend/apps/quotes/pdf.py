@@ -88,7 +88,8 @@ def quotation_pdf_bytes(quote) -> bytes:
     small = body.clone("small"); small.fontSize = 9; small.leading = 11.5
     muted = small.clone("muted"); muted.textColor = MUTED
     title = styles["Heading1"].clone("qtitle")
-    title.textColor = brand; title.alignment = 2  # right
+    title.textColor = brand; title.alignment = 0     # left, aligned with the meta
+    title.fontSize = 20; title.spaceAfter = 2
 
     # Every company fact comes from the Company Profile — one place, never re-typed.
     from apps.identity.profile import document_header
@@ -174,8 +175,10 @@ def quotation_pdf_bytes(quote) -> bytes:
     cell = small.clone("cell")
     rows = [["Item No", "Description of job", "Quantity", "Unit", "Unit Price", "Amount"]]
     for ln in quote.lines.all():
+        # The price the customer actually pays — cost + markup when no explicit
+        # price was set — so the Unit Price column and the Amount agree.
         rows.append([str(ln.position), Paragraph(escape(ln.description), cell),
-                     f"{ln.qty:g}", ln.unit, f"R{ln.unit_price:,.2f}",
+                     f"{ln.qty:g}", ln.unit, f"R{ln.effective_unit_price:,.2f}",
                      f"R{ln.line_total:,.2f}"])
     if len(rows) == 1:
         rows.append(["", Paragraph("No line items.", cell), "", "", "", ""])

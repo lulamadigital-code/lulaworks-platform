@@ -45,6 +45,10 @@ services:
       sh -c "python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput &&
              gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60"
+    # Uploaded files (logos, PO documents) live on a named volume so a rebuild
+    # or --force-recreate does not wipe them.
+    volumes:
+      - media-data:/app/media
     ports:
       - "8000:8000"
     depends_on:
@@ -62,6 +66,8 @@ services:
     image: lulaworks/api:dev  # same image as api
     env_file: .env.docker
     command: celery -A config worker -l info
+    volumes:
+      - media-data:/app/media   # share uploads with the api container
     depends_on:
       redis:
         condition: service_healthy
@@ -82,3 +88,4 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  media-data:

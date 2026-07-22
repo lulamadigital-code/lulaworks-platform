@@ -2091,7 +2091,7 @@ def quotation_new(request):
         create_quotation,
         duplicate,
         ensure_quotation_types,
-        parse_pasted_lines,
+        parse_grid_lines,
     )
 
     if not request.user.has_perm_code("quotes.create"):
@@ -2151,10 +2151,13 @@ def quotation_new(request):
                                    doc_type="attachment", file=f)
 
         # Items come from the spreadsheet grid, serialised as tab-separated rows.
+        # The grid's fourth column is a SELLING price, so use the price-based
+        # parser (not the cost+markup one) — otherwise the price lands in
+        # unit_cost and the line prints a zero unit price.
         pasted = request.POST.get("pasted_items", "").strip()
         added = 0
         if pasted:
-            rows = parse_pasted_lines(pasted)
+            rows = parse_grid_lines(pasted)
             if rows:
                 added = add_lines_bulk(quote, request.user, rows)
 

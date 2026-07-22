@@ -749,6 +749,42 @@ def parse_pasted_lines(text: str) -> list[dict]:
     return rows
 
 
+def parse_grid_lines(text: str) -> list[dict]:
+    """Rows from the create-page item grid: description | qty | unit | unit price.
+
+    Unlike parse_pasted_lines (which reads a cost + markup% BOQ), the fourth
+    column here is the SELLING price the estimator typed, so it maps straight to
+    unit_price — not unit_cost. Getting this wrong is why a line could show a
+    zero unit price but a non-zero amount."""
+    rows = []
+    for raw in (text or "").splitlines():
+        cells = [c.strip() for c in raw.split("\t")]
+        cells = [c for c in cells if c != ""]
+        if not cells:
+            continue
+
+        def num(index):
+            if len(cells) <= index:
+                return Decimal("0")
+            cleaned = re.sub(r"[^\d.,-]", "", cells[index]).replace(" ", "")
+            if "," in cleaned and "." not in cleaned:
+                cleaned = cleaned.replace(",", ".")
+            else:
+                cleaned = cleaned.replace(",", "")
+            try:
+                return Decimal(cleaned or "0")
+            except InvalidOperation:
+                return Decimal("0")
+
+        rows.append({
+            "description": cells[0][:500],
+            "qty": num(1) or Decimal("1"),
+            "unit": (cells[2] if len(cells) > 2 else "each")[:32],
+            "unit_price": num(3),
+        })
+    return rows
+
+
 @transaction.atomic
 def add_lines_bulk(quote, user, rows, *, section=None) -> int:
     """Add many priced lines at once. Blank descriptions are skipped."""
