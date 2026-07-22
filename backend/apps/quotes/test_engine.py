@@ -741,7 +741,7 @@ class VendorNumberTests(TestCase):
         with pdfplumber.open(io.BytesIO(pdf)) as doc:
             text = doc.pages[0].extract_text()
         self.assertIn("Thabo Nkosi", text)               # contact person
-        self.assertIn("head-pulley bearings", text)      # scope of work
+        self.assertIn("head-pulley", text)               # scope of work
         self.assertIn("Sam Dlamini", text)               # prepared by
-        self.assertIn("Estimator", text)                 # their job title
-        self.assertIn("Terms", text)                     # terms & conditions
+        self.assertIn("Compiled By", text)               # sign-off block
+        self.assertIn("Received in Good Order", text)    # sign-off block

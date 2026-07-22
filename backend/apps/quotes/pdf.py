@@ -1,7 +1,12 @@
-"""Quotation PDF — the customer-facing document (BUSINESS_WORKFLOW: quote sent to
-the client). Pure-Python ReportLab (no system libraries), so it renders inside the
-slim container. Selling price only — never cost or margin (Golden Rule at the
-document boundary)."""
+"""Quotation PDF — the customer-facing document, laid out to match the format
+LulaWorks contractors already issue (validated against a real Lulama Projects →
+Western Platinum quotation): company identity with tax/VAT/registration numbers
+and the customer's supplier number, a two-column client/quotation block, the
+priced item table, totals, sign-off lines, and banking details.
+
+Pure-Python ReportLab (no system libraries), so it renders inside the slim
+container. Selling price only — never cost or margin (the Financial Golden Rule
+at the document boundary)."""
 
 from io import BytesIO
 from xml.sax.saxutils import escape
@@ -21,6 +26,8 @@ from reportlab.platypus import (
 )
 
 BRAND = colors.HexColor("#0E6E6E")
+MUTED = colors.HexColor("#5b6b6a")
+LINE = colors.HexColor("#dfe6e6")
 
 
 def _logo_flowable(max_h=16 * mm):
@@ -34,119 +41,112 @@ def _logo_flowable(max_h=16 * mm):
     return Image(path, width=max_h * iw / ih, height=max_h)
 
 
+def _customer_address(customer) -> str:
+    if not customer:
+        return ""
+    parts = [customer.physical_address or customer.postal_address,
+             customer.city, customer.postal_code]
+    return ", ".join(p for p in parts if p)
+
+
 def quotation_pdf_bytes(quote) -> bytes:
     company = quote.company
     buf = BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=18 * mm, bottomMargin=18 * mm,
-                            leftMargin=18 * mm, rightMargin=18 * mm,
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=16 * mm, bottomMargin=14 * mm,
+                            leftMargin=16 * mm, rightMargin=16 * mm,
                             title=f"Quotation {quote.number}")
     styles = getSampleStyleSheet()
-    h = styles["Heading1"]
-    h.textColor = BRAND
-    small = styles["BodyText"]
-    muted = styles["BodyText"].clone("muted")
-    muted.textColor = colors.HexColor("#5b6b6a")
-    # A wrapping 9pt cell for meta values that can be long (a project title, a
-    # contact with a job title) — plain strings overflow a reportlab cell.
-    cell_meta = small.clone("cell_meta")
-    cell_meta.fontSize = 9
-    cell_meta.leading = 11
+    body = styles["BodyText"]
+    small = body.clone("small"); small.fontSize = 9; small.leading = 11.5
+    muted = small.clone("muted"); muted.textColor = MUTED
+    lbl = small.clone("lbl"); lbl.textColor = MUTED
+    title = styles["Heading1"].clone("qtitle")
+    title.textColor = BRAND; title.alignment = 2  # right
 
-    # Every company fact on this page comes from the Company Profile — the one
-    # place it is entered. Adding a field to the letterhead is a change there,
-    # not here, and never a re-typing job for the user.
+    # Every company fact comes from the Company Profile — one place, never re-typed.
     from apps.identity.profile import document_header
-    header = document_header(company, kind="invoice")
+    header = document_header(company, kind="quotation")
+
+    def P(text, style=small):
+        return Paragraph(escape(str(text)), style)
+
+    def L(label, value, style=small):
+        """A bold label with escaped free-text value — so the label markup is
+        honoured but the value can never inject tags."""
+        return Paragraph(f"<b>{escape(label)}</b> {escape(str(value))}", style)
+
+    # ── Company identity (top-left) + logo (top-right) ───────────────────────
+    ident = [Paragraph(f"<b>{escape(header['display_name'])}</b>", small)]
+    for line in header["address_lines"]:
+        ident.append(P(line, muted))
+    if header["phone"]:
+        ident.append(P(header["phone"], muted))
+    if header["email"]:
+        ident.append(P(f"Email {header['email']}", muted))
+    if header["tax_reference_no"]:
+        ident.append(P(f"Tax No: {header['tax_reference_no']}", muted))
+    if header["vat_no"]:
+        ident.append(P(f"Vat No: {header['vat_no']}", muted))
+    if header["registration_no"]:
+        ident.append(P(f"Company Reg: {header['registration_no']}", muted))
+    # The number THIS customer files us under — how their accounts payable finds
+    # us. Phrased as they phrase it on their own PO.
+    if quote.vendor_number:
+        who = quote.customer.display_name if quote.customer_id else quote.client_name
+        ident.append(P(f"{who} Supplier No: {quote.vendor_number}", small))
 
     logo = _logo_flowable()
-    # With no logo the name already stands in for it on the left, so repeating
-    # it at the top of the identity block prints the company name twice.
-    identity = [Paragraph(f"<b>{header['display_name']}</b>", small)] if logo else []
-    if header["registration_no"]:
-        identity.append(Paragraph(f"Reg. {header['registration_no']}", muted))
-    if header["vat_no"]:
-        identity.append(Paragraph(f"VAT {header['vat_no']}", muted))
-    for line in header["address_lines"]:
-        identity.append(Paragraph(line, muted))
-    reach = " · ".join(x for x in (header["phone"], header["email"],
-                                   header["website"]) if x)
-    if reach:
-        identity.append(Paragraph(reach, muted))
+    head = Table([[ident, logo or ""]], colWidths=[120 * mm, 58 * mm])
+    head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
+                              ("ALIGN", (1, 0), (1, 0), "RIGHT")]))
+    story = [head, Spacer(1, 6 * mm)]
 
-    head_tbl = Table(
-        [[logo if logo is not None else Paragraph(header["display_name"], h), identity]],
-        colWidths=[80 * mm, 94 * mm])
-    head_tbl.setStyle(TableStyle([
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
-    ]))
+    # ── Two-column client / quotation block ──────────────────────────────────
+    contact = quote.contact
+    left = [L("Client :", quote.client_name)]
+    addr = _customer_address(quote.customer)
+    if addr:
+        left.append(P(f"Address: {addr}", muted))
+    if quote.customer_id and quote.customer.vat_no:
+        left.append(P(f"VAT No: {quote.customer.vat_no}", muted))
+    if quote.department_id:
+        left.append(P(f"Department: {quote.department.name}", muted))
+    if contact:
+        left.append(P(f"Contact Person: {contact.full_name}", small))
+        tel = contact.telephone or contact.mobile
+        if tel:
+            left.append(P(f"Tel: {tel}", muted))
+        if contact.email:
+            left.append(P(f"Email: {contact.email}", muted))
 
-    story = [
-        head_tbl,
-        Spacer(1, 4 * mm),
-        Paragraph("QUOTATION", styles["Heading2"]),
-        Spacer(1, 6 * mm),
-    ]
-
-    # Their vendor code and their own reference go in the meta block: it is how
-    # the person receiving this matches it to what they asked for, and how their
-    # accounts payable system finds us. A quotation missing them can sit
-    # unmatched for weeks.
-    # The contact person is who the recipient's own team routes this to. A
-    # quotation addressed to "the company" rather than a named buyer is easy to
-    # lose in a shared inbox.
-    if quote.contact_id:
-        contact_bits = quote.contact.full_name
-        if quote.contact.job_title:
-            contact_bits += f", {quote.contact.job_title}"
-    else:
-        contact_bits = "—"
-
-    meta = [
-        [Paragraph("<b>Quotation</b>", small), quote.number,
-         Paragraph("<b>Date</b>", small), quote.created_at.strftime("%Y-%m-%d")],
-        [Paragraph("<b>Client</b>", small), quote.client_name,
-         Paragraph("<b>Valid until</b>", small),
-         quote.validity_date.strftime("%Y-%m-%d") if quote.validity_date else "—"],
-        [Paragraph("<b>Contact</b>", small), Paragraph(escape(contact_bits), cell_meta),
-         Paragraph("<b>Site</b>", small),
-         str(quote.customer_site) if quote.customer_site_id else (quote.site or "—")],
-        [Paragraph("<b>Project</b>", small), Paragraph(escape(quote.title or "—"), cell_meta),
-         "", ""],
-    ]
-    if quote.vendor_number or quote.customer_reference:
-        meta.append([
-            Paragraph("<b>Vendor no.</b>", small), quote.vendor_number or "—",
-            Paragraph("<b>Your ref.</b>", small), quote.customer_reference or "—",
-        ])
-    meta_tbl = Table(meta, colWidths=[26 * mm, 62 * mm, 26 * mm, 60 * mm])
-    meta_tbl.setStyle(TableStyle([
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-        ("FONTSIZE", (0, 0), (-1, -1), 9),
-    ]))
-    story += [meta_tbl, Spacer(1, 8 * mm)]
-
-    # Scope of work — what the price is actually for. The client reads this
-    # before the numbers, so it comes before the table.
+    prep = quote.prepared_by
+    right = [Paragraph("QUOTATION", title), Spacer(1, 2 * mm),
+             L("Quotation No:", quote.number),
+             P(f"Date: {quote.created_at:%d/%m/%Y}", small)]
+    if prep:
+        right.append(P(f"Prepared by: {prep.get_full_name() or prep.email}", small))
+    if quote.customer_reference:
+        right.append(P(f"Your reference: {quote.customer_reference}", small))
+    if quote.validity_date:
+        right.append(P(f"Valid until: {quote.validity_date:%d/%m/%Y}", small))
     if quote.scope_of_work:
-        scope_html = escape(quote.scope_of_work).replace("\n", "<br/>")
-        story += [Paragraph("<b>Scope of work</b>", small),
-                  Paragraph(scope_html, muted), Spacer(1, 6 * mm)]
+        right.append(Spacer(1, 1 * mm))
+        right.append(L("Scope of Work:", quote.scope_of_work))
 
-    # Description must wrap within its column → wrap it in a Paragraph (plain
-    # strings overflow reportlab table cells).
+    meta = Table([[left, right]], colWidths=[96 * mm, 82 * mm])
+    meta.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    story += [meta, Spacer(1, 6 * mm)]
+
+    # ── Item table ───────────────────────────────────────────────────────────
     cell = small.clone("cell")
-    cell.fontSize = 9
-    cell.leading = 11
-    rows = [["#", "Description", "Qty", "Unit", "Unit price", "Line total"]]
+    rows = [["Item No", "Description of job", "Quantity", "Unit", "Unit Price", "Amount"]]
     for ln in quote.lines.all():
-        rows.append([str(ln.position), Paragraph(ln.description, cell), f"{ln.qty:g}",
-                     ln.unit, f"R {ln.unit_price:,.2f}", f"R {ln.line_total:,.2f}"])
+        rows.append([str(ln.position), Paragraph(escape(ln.description), cell),
+                     f"{ln.qty:g}", ln.unit, f"R{ln.unit_price:,.2f}",
+                     f"R{ln.line_total:,.2f}"])
     if len(rows) == 1:
         rows.append(["", Paragraph("No line items.", cell), "", "", "", ""])
-
-    tbl = Table(rows, colWidths=[10 * mm, 78 * mm, 16 * mm, 18 * mm, 26 * mm, 26 * mm],
+    tbl = Table(rows, colWidths=[14 * mm, 79 * mm, 20 * mm, 18 * mm, 23.5 * mm, 23.5 * mm],
                 repeatRows=1)
     tbl.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), BRAND),
@@ -154,102 +154,65 @@ def quotation_pdf_bytes(quote) -> bytes:
         ("FONTSIZE", (0, 0), (-1, -1), 9),
         ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
         ("ALIGN", (0, 0), (0, -1), "CENTER"),
+        ("ALIGN", (2, 0), (3, 0), "CENTER"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f2f6f6")]),
-        ("LINEBELOW", (0, 0), (-1, -1), 0.4, colors.HexColor("#dfe6e6")),
+        ("GRID", (0, 0), (-1, -1), 0.4, LINE),
         ("TOPPADDING", (0, 0), (-1, -1), 5),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
     ]))
-    story += [tbl, Spacer(1, 6 * mm)]
+    story += [tbl]
 
-    totals = [
-        ["Subtotal", f"R {quote.subtotal:,.2f}"],
-        [f"VAT ({quote.vat_rate:g}%)", f"R {quote.vat_amount:,.2f}"],
-        ["Total", f"R {quote.total:,.2f}"],
-    ]
-    tot_tbl = Table(totals, colWidths=[52 * mm, 34 * mm], hAlign="RIGHT")
-    tot_tbl.setStyle(TableStyle([
+    # ── Totals (right-aligned, matching SUBTOTAL / VAT@15% / TOTAL) ───────────
+    totals = [["SUBTOTAL", f"R{quote.subtotal:,.2f}"],
+              [f"VAT@{quote.vat_rate:g}%", f"R{quote.vat_amount:,.2f}"],
+              ["TOTAL", f"R{quote.total:,.2f}"]]
+    tot = Table(totals, colWidths=[45 * mm, 33.5 * mm], hAlign="RIGHT")
+    tot.setStyle(TableStyle([
         ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
-        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("FONTSIZE", (0, 0), (-1, -1), 9.5),
+        ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
         ("LINEABOVE", (0, -1), (-1, -1), 0.8, BRAND),
-        ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
         ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("TEXTCOLOR", (0, -1), (-1, -1), BRAND),
     ]))
-    story += [tot_tbl, Spacer(1, 10 * mm)]
+    story += [tot, Spacer(1, 8 * mm)]
 
-    if quote.notes:
-        story += [Paragraph("<b>Notes</b>", small), Paragraph(quote.notes, muted),
-                  Spacer(1, 6 * mm)]
+    # Optional exclusions/assumptions, kept compact and only when present.
+    for label, text in (("Exclusions:", quote.exclusions), ("Assumptions:", quote.assumptions)):
+        if text:
+            story.append(L(label, text, muted))
+    if quote.exclusions or quote.assumptions:
+        story.append(Spacer(1, 4 * mm))
 
-    # Banking — a quotation a client cannot pay from is an unfinished document.
+    # ── Sign-off (left) + banking (right) ────────────────────────────────────
+    def sigblock(heading):
+        return [Paragraph(f"<b>{heading}</b>", small), Spacer(1, 2 * mm),
+                P("Initials & Surname: ______________________", muted),
+                Spacer(1, 1 * mm), P("Date: ______________________", muted),
+                Spacer(1, 3 * mm)]
+
+    signoff = (sigblock("Quotation Compiled By:")
+               + sigblock("Received in Good Order By:"))
+
     bank = header["bank"]
+    banking_title = Paragraph("<b>BANKING DETAILS</b>", small)
     if bank:
-        rows = [
-            ["Bank", bank["bank_name"], "Account name", bank["account_name"]],
-            ["Account", bank["account_number"], "Branch code", bank["branch_code"] or "—"],
-        ]
-        if bank["swift_code"]:
-            rows.append(["SWIFT", bank["swift_code"], "Currency", bank["currency"]])
-        bank_tbl = Table(rows, colWidths=[24 * mm, 58 * mm, 26 * mm, 58 * mm])
-        bank_tbl.setStyle(TableStyle([
-            ("FONTSIZE", (0, 0), (-1, -1), 8.5),
-            ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#5b6b6a")),
-            ("TEXTCOLOR", (2, 0), (2, -1), colors.HexColor("#5b6b6a")),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ]))
-        story += [Paragraph("<b>Banking details</b>", small), bank_tbl,
-                  Spacer(1, 6 * mm)]
+        bank_rows = [banking_title,
+                     P(f"Account Holder: {bank['account_name']}", muted),
+                     P(f"Bank Name: {bank['bank_name']}"
+                       + (f" ({bank['account_type']})" if bank['account_type'] else ""), muted),
+                     P(f"Account No: {bank['account_number']}", muted),
+                     P(f"Branch Code: {bank['branch_code'] or '—'}", muted)]
+    else:
+        bank_rows = [banking_title,
+                     P("Add a bank account in the Company Profile.", muted)]
 
-    # Terms & conditions — the commercial small print. Anything the estimator
-    # entered as assumptions or exclusions leads, then the standing terms.
-    vat_phrase = ("include VAT" if quote.vat_mode == "inclusive" else "exclude VAT")
-    valid_phrase = (f"valid until {quote.validity_date:%Y-%m-%d}"
-                    if quote.validity_date else "valid for 30 days from the date above")
-    terms = []
-    if quote.assumptions:
-        terms.append(Paragraph(f"<b>Assumptions.</b> {escape(quote.assumptions)}", muted))
-    if quote.exclusions:
-        terms.append(Paragraph(f"<b>Exclusions.</b> {escape(quote.exclusions)}", muted))
-    terms.append(Paragraph(
-        f"This quotation is {valid_phrase}. Prices are in {quote.currency} and "
-        f"{vat_phrase}. Work proceeds on receipt of a written order. E&amp;OE.", muted))
-    story += [Paragraph("<b>Terms &amp; conditions</b>", small), *terms,
-              Spacer(1, 8 * mm)]
+    footer = Table([[signoff, bank_rows]], colWidths=[96 * mm, 82 * mm])
+    footer.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    story += [footer, Spacer(1, 6 * mm)]
 
-    # Prepared by — a person, not a system. Name and job title from who they are
-    # in this company; contact details from their profile. Never re-typed.
-    prep = quote.prepared_by
-    if prep:
-        from apps.identity.models import Membership
-        membership = Membership.objects.filter(user=prep, company=company).first()
-        title = membership.job_title if membership and membership.job_title else ""
-        reach = " · ".join(x for x in (prep.email, prep.mobile) if x)
-        prep_lines = [Paragraph("<b>Prepared by</b>", small),
-                      Paragraph(escape(prep.get_full_name() or prep.email), small)]
-        if title:
-            prep_lines.append(Paragraph(escape(title), muted))
-        if reach:
-            prep_lines.append(Paragraph(escape(reach), muted))
-
-        # Signature image, only if the company has configured one.
-        sign_flowable = None
-        branding = getattr(company, "branding", None)
-        if branding and branding.signature:
-            try:
-                reader = utils.ImageReader(branding.signature.path)
-                iw, ih = reader.getSize()
-                sign_flowable = Image(branding.signature.path,
-                                      width=18 * mm * iw / ih, height=18 * mm)
-            except (OSError, ValueError):
-                sign_flowable = None
-
-        prep_tbl = Table([[prep_lines, sign_flowable or ""]],
-                         colWidths=[100 * mm, 74 * mm])
-        prep_tbl.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
-        story += [prep_tbl, Spacer(1, 6 * mm)]
-
-    story.append(Paragraph("Generated by LulaWorks.", muted))
+    story.append(P(f"Please use document number ({quote.number}) for reference "
+                   "when making payments.", muted))
 
     doc.build(story)
     return buf.getvalue()
