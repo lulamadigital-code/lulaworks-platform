@@ -399,7 +399,14 @@
       <div><label>Stamp</label><input type="file" name="stamp" accept="image/*"></div>
       <div><label>Digital signature</label><input type="file" name="signature" accept="image/*"></div>
       <div><label>Company seal</label><input type="file" name="seal" accept="image/*"></div>
-      <div><label>Brand colour</label><input type="text" name="brand_primary" value="{{ company.brand_primary }}" placeholder="#17a2b8"></div>
+      <div><label>Brand colour</label>
+        <input type="color" name="brand_primary" value="{{ company.brand_primary|default:'#0e6e6e' }}"
+               style="height:42px;padding:4px;">
+        <p class="muted" style="margin:4px 0 0;font-size:12px;">Used on the quotation
+          heading and item table.</p></div>
+      <div><label>Secondary colour</label>
+        <input type="color" name="brand_secondary" value="{{ company.brand_secondary|default:'#0e6e6e' }}"
+               style="height:42px;padding:4px;"></div>
     </div>
     {% if can_edit %}<button class="btn" type="submit" style="margin-top:16px;">Save branding</button>{% endif %}
   </form>

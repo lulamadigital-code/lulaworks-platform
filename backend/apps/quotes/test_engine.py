@@ -745,3 +745,41 @@ class VendorNumberTests(TestCase):
         self.assertIn("Sam Dlamini", text)               # prepared by
         self.assertIn("Compiled By", text)               # sign-off block
         self.assertIn("Received in Good Order", text)    # sign-off block
+
+
+class QuotationPdfLayoutTests(TestCase):
+    """The PDF matches the format contractors issue: the customer's supplier
+    number (even when only on the customer record), the ship-to site, and the
+    company's brand colour rather than a crash on a bad value."""
+
+    def test_supplier_number_falls_back_to_the_customer(self):
+        import io
+
+        import pdfplumber
+
+        from apps.customers.services import create_customer
+        from apps.quotes.pdf import quotation_pdf_bytes
+
+        c = make_company()
+        with tenant_scope(c.id):
+            customer = create_customer(c, None, name="Harmony", vendor_number="TRL0086")
+            quote = make_quote(c)
+            quote.customer = customer
+            quote.vendor_number = ""            # snapshot was empty at creation
+            quote.site = "K4 Shaft, Plant 1"
+            quote.save()
+            add_line(c, quote, qty=1, price=100)
+            pdf = quotation_pdf_bytes(quote)
+        with pdfplumber.open(io.BytesIO(pdf)) as doc:
+            text = doc.pages[0].extract_text()
+        self.assertIn("TRL0086", text)                 # supplier no, from the customer
+        self.assertIn("Supplier No", text)
+        self.assertIn("K4 Shaft", text)                # ship to / site
+
+    def test_a_bad_brand_colour_does_not_break_the_pdf(self):
+        from apps.quotes.pdf import _brand_color
+        c = make_company()
+        c.brand_primary = "this is not a colour"       # what the crash came from
+        self.assertEqual(_brand_color(c).hexval(), "0x0e6e6e")   # default teal
+        c.brand_primary = "#a5127f"
+        self.assertEqual(_brand_color(c).hexval(), "0xa5127f")   # honoured

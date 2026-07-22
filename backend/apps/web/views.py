@@ -10,6 +10,7 @@ whole request, so `Project.objects.all()` is already tenant-scoped here.
 Golden Rule: money is computed/shown only for users with `finance.view_money`.
 """
 
+import re
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
@@ -790,6 +791,20 @@ def _save_compliance(request, company):
     c.save()
 
 
+def _clean_hex_colour(raw):
+    """A valid #RRGGBB / #RRGGBBAA hex, '' to clear, or None if the value was
+    given but is not a colour — so a mistyped colour is skipped with a warning
+    rather than crashing the page (the field is only 9 characters wide)."""
+    s = (raw or "").strip()
+    if not s:
+        return ""
+    if not s.startswith("#"):
+        s = "#" + s
+    if re.fullmatch(r"#[0-9a-fA-F]{3}", s):          # #abc → #aabbcc
+        s = "#" + "".join(c * 2 for c in s[1:])
+    return s.lower() if re.fullmatch(r"#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})", s) else None
+
+
 def _save_branding(request, company):
     if request.FILES.get("logo"):
         company.logo = request.FILES["logo"]
@@ -803,7 +818,12 @@ def _save_branding(request, company):
             changed.append(slot)
     for colour in ("brand_primary", "brand_secondary"):
         if colour in request.POST:
-            setattr(company, colour, request.POST.get(colour, "").strip())
+            cleaned = _clean_hex_colour(request.POST.get(colour, ""))
+            if cleaned is None:
+                messages.warning(request, "Brand colour must be a hex value like "
+                                          "#0E6E6E — that entry was ignored.")
+            else:
+                setattr(company, colour, cleaned)
     company.save(update_fields=["brand_primary", "brand_secondary"])
     if changed:
         branding.save(update_fields=changed)

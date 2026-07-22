@@ -802,3 +802,26 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertEqual(resp["Content-Disposition"][:6], "inline")
         # Not DENY, so the same-origin review page can iframe it.
         self.assertNotEqual(resp.get("X-Frame-Options"), "DENY")
+
+
+class CompanyBrandingTests(TestCase):
+    def setUp(self):
+        self.company = make_company()
+        self.admin = user_with(self.company, ["company.manage"], email="a@lulama.co.za")
+        self.client.force_login(self.admin)
+
+    def test_an_overlong_brand_colour_is_rejected_not_a_500(self):
+        from apps.identity.models import Company
+        resp = self.client.post("/company/", {
+            "section": "branding",
+            "brand_primary": "way-too-long-not-a-hex-colour-value",
+        })
+        self.assertEqual(resp.status_code, 302)        # redirect, not a DataError
+        with tenant_scope(self.company.id):
+            self.assertEqual(Company.objects.get(id=self.company.id).brand_primary, "")
+
+    def test_a_valid_brand_colour_is_saved(self):
+        from apps.identity.models import Company
+        self.client.post("/company/", {"section": "branding", "brand_primary": "#A5127F"})
+        with tenant_scope(self.company.id):
+            self.assertEqual(Company.objects.get(id=self.company.id).brand_primary, "#a5127f")

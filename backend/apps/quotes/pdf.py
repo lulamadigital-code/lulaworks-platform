@@ -8,6 +8,8 @@ Pure-Python ReportLab (no system libraries), so it renders inside the slim
 container. Selling price only — never cost or margin (the Financial Golden Rule
 at the document boundary)."""
 
+import os
+import re
 from io import BytesIO
 from xml.sax.saxutils import escape
 
@@ -25,20 +27,45 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-BRAND = colors.HexColor("#0E6E6E")
+DEFAULT_BRAND = colors.HexColor("#0E6E6E")
 MUTED = colors.HexColor("#5b6b6a")
 LINE = colors.HexColor("#dfe6e6")
 
+_HEX = re.compile(r"#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
 
-def _logo_flowable(max_h=16 * mm):
-    """The real logo image if one has been dropped into static (web/logo.png);
-    else None (the caller falls back to the company name as text)."""
-    path = finders.find("web/logo.png")
+
+def _brand_color(company):
+    """The company's own brand colour if it set a valid one, else the LulaWorks
+    teal — so a bad or empty value never breaks the document."""
+    raw = (getattr(company, "brand_primary", "") or "").strip()
+    if _HEX.match(raw):
+        try:
+            return colors.HexColor(raw[:7])   # ignore any alpha for print
+        except ValueError:
+            pass
+    return DEFAULT_BRAND
+
+
+def _logo_flowable(header, max_h=18 * mm):
+    """The company's uploaded logo (Company Profile → branding, falling back to
+    the main logo), else the bundled static mark, else None (the caller prints
+    the company name as text instead)."""
+    path = None
+    logo = header.get("logo")
+    if logo:
+        try:
+            path = logo.path if os.path.exists(logo.path) else None
+        except (ValueError, NotImplementedError):
+            path = None
+    path = path or finders.find("web/logo.png")
     if not path:
         return None
-    reader = utils.ImageReader(path)
-    iw, ih = reader.getSize()
-    return Image(path, width=max_h * iw / ih, height=max_h)
+    try:
+        reader = utils.ImageReader(path)
+        iw, ih = reader.getSize()
+        return Image(path, width=max_h * iw / ih, height=max_h)
+    except Exception:
+        return None
 
 
 def _customer_address(customer) -> str:
@@ -55,13 +82,13 @@ def quotation_pdf_bytes(quote) -> bytes:
     doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=16 * mm, bottomMargin=14 * mm,
                             leftMargin=16 * mm, rightMargin=16 * mm,
                             title=f"Quotation {quote.number}")
+    brand = _brand_color(company)
     styles = getSampleStyleSheet()
     body = styles["BodyText"]
     small = body.clone("small"); small.fontSize = 9; small.leading = 11.5
     muted = small.clone("muted"); muted.textColor = MUTED
-    lbl = small.clone("lbl"); lbl.textColor = MUTED
     title = styles["Heading1"].clone("qtitle")
-    title.textColor = BRAND; title.alignment = 2  # right
+    title.textColor = brand; title.alignment = 2  # right
 
     # Every company fact comes from the Company Profile — one place, never re-typed.
     from apps.identity.profile import document_header
@@ -90,12 +117,15 @@ def quotation_pdf_bytes(quote) -> bytes:
     if header["registration_no"]:
         ident.append(P(f"Company Reg: {header['registration_no']}", muted))
     # The number THIS customer files us under — how their accounts payable finds
-    # us. Phrased as they phrase it on their own PO.
-    if quote.vendor_number:
+    # us. Snapshotted onto the quotation, but fall back to the customer record so
+    # it still prints if the snapshot was empty at creation.
+    vendor = quote.vendor_number or (
+        quote.customer.vendor_number if quote.customer_id else "")
+    if vendor:
         who = quote.customer.display_name if quote.customer_id else quote.client_name
-        ident.append(P(f"{who} Supplier No: {quote.vendor_number}", small))
+        ident.append(P(f"{who} Supplier No: {vendor}", small))
 
-    logo = _logo_flowable()
+    logo = _logo_flowable(header)
     head = Table([[ident, logo or ""]], colWidths=[120 * mm, 58 * mm])
     head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
                               ("ALIGN", (1, 0), (1, 0), "RIGHT")]))
@@ -109,6 +139,9 @@ def quotation_pdf_bytes(quote) -> bytes:
         left.append(P(f"Address: {addr}", muted))
     if quote.customer_id and quote.customer.vat_no:
         left.append(P(f"VAT No: {quote.customer.vat_no}", muted))
+    site = str(quote.customer_site) if quote.customer_site_id else quote.site
+    if site:
+        left.append(P(f"Ship to / Site: {site}", muted))
     if quote.department_id:
         left.append(P(f"Department: {quote.department.name}", muted))
     if contact:
@@ -149,7 +182,7 @@ def quotation_pdf_bytes(quote) -> bytes:
     tbl = Table(rows, colWidths=[14 * mm, 79 * mm, 20 * mm, 18 * mm, 23.5 * mm, 23.5 * mm],
                 repeatRows=1)
     tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), BRAND),
+        ("BACKGROUND", (0, 0), (-1, 0), brand),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
         ("FONTSIZE", (0, 0), (-1, -1), 9),
         ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
@@ -171,9 +204,9 @@ def quotation_pdf_bytes(quote) -> bytes:
         ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
         ("FONTSIZE", (0, 0), (-1, -1), 9.5),
         ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
-        ("LINEABOVE", (0, -1), (-1, -1), 0.8, BRAND),
+        ("LINEABOVE", (0, -1), (-1, -1), 0.8, brand),
         ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("TEXTCOLOR", (0, -1), (-1, -1), BRAND),
+        ("TEXTCOLOR", (0, -1), (-1, -1), brand),
     ]))
     story += [tot, Spacer(1, 8 * mm)]
 
