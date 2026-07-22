@@ -19,6 +19,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import (
+    HRFlowable,
     Image,
     Paragraph,
     SimpleDocTemplate,
@@ -46,10 +47,12 @@ def _brand_color(company):
     return DEFAULT_BRAND
 
 
-def _logo_flowable(header, max_h=18 * mm):
+def _logo_flowable(header, max_h=30 * mm, max_w=48 * mm):
     """The company's uploaded logo (Company Profile → branding, falling back to
     the main logo), else the bundled static mark, else None (the caller prints
-    the company name as text instead)."""
+    the company name as text instead). Sized to fill the letterhead — big and
+    visible — but capped in both height and width so a wide or tall logo keeps
+    its aspect ratio without overrunning the header."""
     path = None
     logo = header.get("logo")
     if logo:
@@ -63,7 +66,8 @@ def _logo_flowable(header, max_h=18 * mm):
     try:
         reader = utils.ImageReader(path)
         iw, ih = reader.getSize()
-        return Image(path, width=max_h * iw / ih, height=max_h)
+        scale = min(max_h / ih, max_w / iw)      # fit within both bounds
+        return Image(path, width=iw * scale, height=ih * scale)
     except Exception:
         return None
 
@@ -126,11 +130,23 @@ def quotation_pdf_bytes(quote) -> bytes:
         who = quote.customer.display_name if quote.customer_id else quote.client_name
         ident.append(P(f"{who} Supplier No: {vendor}", small))
 
+    # Logo and the QUOTATION title sit on the same level, top-right, with the
+    # title to the left of the (large) logo.
     logo = _logo_flowable(header)
-    head = Table([[ident, logo or ""]], colWidths=[120 * mm, 58 * mm])
+    title.alignment = 2  # right, so it reads up against the logo
+    right_head = Table([[Paragraph("QUOTATION", title), logo or ""]],
+                       colWidths=[40 * mm, 50 * mm])
+    right_head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                    ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+                                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                                    ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
+    head = Table([[ident, right_head]], colWidths=[88 * mm, 90 * mm])
     head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
                               ("ALIGN", (1, 0), (1, 0), "RIGHT")]))
-    story = [head, Spacer(1, 6 * mm)]
+    # A bold brand-coloured rule separates the letterhead from the client block.
+    story = [head, Spacer(1, 3 * mm),
+             HRFlowable(width="100%", thickness=2.2, color=brand,
+                        spaceBefore=2, spaceAfter=6)]
 
     # ── Two-column client / quotation block ──────────────────────────────────
     contact = quote.contact
@@ -154,8 +170,7 @@ def quotation_pdf_bytes(quote) -> bytes:
             left.append(P(f"Email: {contact.email}", muted))
 
     prep = quote.prepared_by
-    right = [Paragraph("QUOTATION", title), Spacer(1, 2 * mm),
-             L("Quotation No:", quote.number),
+    right = [L("Quotation No:", quote.number),
              P(f"Date: {quote.created_at:%d/%m/%Y}", small)]
     if prep:
         right.append(P(f"Prepared by: {prep.get_full_name() or prep.email}", small))
