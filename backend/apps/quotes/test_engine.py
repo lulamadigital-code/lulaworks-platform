@@ -710,3 +710,38 @@ class VendorNumberTests(TestCase):
             text = doc.pages[0].extract_text()
         self.assertIn("TRL0086", text)
         self.assertIn("REQ-88214", text)
+
+    def test_pdf_carries_contact_scope_and_preparer(self):
+        """§9–10: the document fills itself in — the recipient, the scope, and
+        who prepared it — from data already on file, never re-typed."""
+        import io
+
+        import pdfplumber
+
+        from apps.customers.services import create_customer
+        from apps.identity.models import Membership, User
+        from apps.quotes.pdf import quotation_pdf_bytes
+
+        c = make_company()
+        with tenant_scope(c.id):
+            preparer = User.objects.create_user("sam@lulama.co.za", "x",
+                                                first_name="Sam", last_name="Dlamini")
+            Membership.objects.create(user=preparer, company=c, job_title="Estimator")
+            customer = create_customer(c, preparer, name="Harmony Mining")
+            contact = customer.contacts.create(company=c, full_name="Thabo Nkosi",
+                                               job_title="Buyer")
+            quote = make_quote(c)
+            quote.contact = contact
+            quote.scope_of_work = "Replace the head-pulley bearings on conveyor CV-102."
+            quote.prepared_by = preparer
+            quote.save()
+            add_line(c, quote, qty=1, price=100)
+            pdf = quotation_pdf_bytes(quote)
+
+        with pdfplumber.open(io.BytesIO(pdf)) as doc:
+            text = doc.pages[0].extract_text()
+        self.assertIn("Thabo Nkosi", text)               # contact person
+        self.assertIn("head-pulley bearings", text)      # scope of work
+        self.assertIn("Sam Dlamini", text)               # prepared by
+        self.assertIn("Estimator", text)                 # their job title
+        self.assertIn("Terms", text)                     # terms & conditions

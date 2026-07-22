@@ -648,38 +648,24 @@ class QuotationCreationWorkflowTests(TestCase):
         with tenant_scope(self.company.id):
             self.assertEqual(quote.lines.count(), 2)
 
-    def test_supporting_files_are_attached(self):
-        self._post(
-            scope_file=SimpleUploadedFile("scope.txt", b"replace the rollers"),
-            supporting_files=[
-                SimpleUploadedFile("drawing.pdf", b"%PDF-1.4 fake"),
-                SimpleUploadedFile("boq.txt", b"item,qty"),
-            ],
-        )
+    def test_attached_documents_are_saved(self):
+        """One upload control takes the scope and any drawings/BOQ/photos."""
+        self._post(documents=[
+            SimpleUploadedFile("scope.txt", b"replace the rollers"),
+            SimpleUploadedFile("drawing.pdf", b"%PDF-1.4 fake"),
+        ])
         quote = self._latest()
         with tenant_scope(self.company.id):
-            kinds = sorted(d.doc_type for d in quote.documents.all())
-        self.assertEqual(kinds, ["scope", "supporting", "supporting"])
+            self.assertEqual(quote.documents.count(), 2)
+            self.assertTrue(all(d.doc_type == "attachment"
+                                for d in quote.documents.all()))
 
-    def test_non_admin_cannot_hand_out_a_number(self):
-        """An estimator's typed number is ignored — uniqueness is not theirs to break."""
+    def test_number_is_never_taken_from_the_form(self):
+        """The number is system-allocated; a value posted by hand is ignored."""
         self._post(number="ZZ999999")
-        self.assertNotEqual(self._latest().number, "ZZ999999")
-
-    def test_admin_may_override_the_number(self):
-        admin = user_with(self.company, ["quotes.create", "company.manage"],
-                          email="admin@harmony.co.za")
-        self.client.force_login(admin)
-        self._post(number="AB123456")
-        self.assertEqual(self._latest().number, "AB123456")
-
-    def test_admin_override_rejects_a_bad_format_but_still_creates(self):
-        admin = user_with(self.company, ["quotes.create", "company.manage"],
-                          email="admin2@harmony.co.za")
-        self.client.force_login(admin)
-        resp = self._post(number="not-a-number")
-        self.assertEqual(resp.status_code, 302)          # creation is not lost
-        self.assertRegex(self._latest().number, r"^[A-Z]{2}\d{6}$")  # auto instead
+        created = self._latest()
+        self.assertNotEqual(created.number, "ZZ999999")
+        self.assertRegex(created.number, r"^[A-Z]{2}\d{6}$")
 
     def test_page_offers_contacts_for_each_customer(self):
         resp = self.client.get("/quotations/new/")

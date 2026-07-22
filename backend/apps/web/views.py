@@ -1936,15 +1936,12 @@ def quotation_new(request):
     from apps.customers.models import Customer
     from apps.quotes.models import QuotationType, VatMode
     from apps.quotes.services import (
-        QUOTATION_NUMBER_RE,
         add_lines_bulk,
         apply_type_template,
         create_quotation,
         duplicate,
         ensure_quotation_types,
         parse_pasted_lines,
-        quotation_number_available,
-        quotation_prefix_for,
     )
 
     if not request.user.has_perm_code("quotes.create"):
@@ -1953,9 +1950,6 @@ def quotation_new(request):
 
     company = request.user.active_company
     ensure_quotation_types(company)
-    # Only an administrator may hand out a number by hand; everyone else gets the
-    # next one automatically, which is what keeps them unique.
-    can_override = request.user.has_perm_code("company.manage")
 
     if request.method == "POST":
         method = request.POST.get("method", "blank")
@@ -1976,28 +1970,13 @@ def quotation_new(request):
             messages.error(request, "Choose the customer this quotation is for.")
             return redirect("web:quotation_new")
 
-        # A manual number, only if the user may set one and it is well-formed
-        # and free. Anything wrong falls back to auto rather than failing the
-        # whole creation — the estimator's work is not lost to a typo.
-        number = None
-        raw_number = request.POST.get("number", "").strip().upper()
-        if raw_number and can_override:
-            if not QUOTATION_NUMBER_RE.match(raw_number):
-                messages.error(request, "A quotation number is two letters then "
-                                        "six digits, e.g. LP000731. Using an "
-                                        "auto-generated one instead.")
-            elif not quotation_number_available(company, raw_number):
-                messages.error(request, f"{raw_number} is already in use. Using "
-                                        "an auto-generated number instead.")
-            else:
-                number = raw_number
-
+        # The number is always system-allocated — never an editable field, so it
+        # cannot collide or be skipped.
         quote = create_quotation(
             company, request.user,
             client_name=customer.name,
             title=request.POST.get("title", "").strip(),
             site=request.POST.get("site", "").strip(),
-            number=number,
         )
         quote.customer = customer
         quote.quotation_type = QuotationType.objects.filter(
@@ -2015,17 +1994,13 @@ def quotation_new(request):
         # seeded now rather than left for the estimator to remember.
         seeded = apply_type_template(quote, request.user)
 
-        # Attach everything the estimator brought: the scope document and any
-        # supporting files (drawings, a BOQ, photos), each kept for next year.
-        scope_doc = request.FILES.get("scope_file")
-        if scope_doc:
-            quote.documents.create(company=company, name=scope_doc.name,
-                                   doc_type="scope", file=scope_doc)
-        for f in request.FILES.getlist("supporting_files"):
+        # One upload control handles the scope document and any drawings, BOQ or
+        # photos — all attached to the quotation, each kept for next year.
+        for f in request.FILES.getlist("documents"):
             quote.documents.create(company=company, name=f.name,
-                                   doc_type="supporting", file=f)
+                                   doc_type="attachment", file=f)
 
-        # The estimator-driven path: items pasted straight from a spreadsheet.
+        # Items come from the spreadsheet grid, serialised as tab-separated rows.
         pasted = request.POST.get("pasted_items", "").strip()
         added = 0
         if pasted:
@@ -2041,11 +2016,6 @@ def quotation_new(request):
             parts.append(f"{added} item(s) added")
         messages.success(request, ". ".join(parts) + ".")
 
-        # Document-driven path: hand the scope to LulaAI on the suggestion
-        # screen, where the estimator approves each proposed line. AI never
-        # writes a priced line unasked.
-        if request.POST.get("ai_extract") and quote.scope_of_work:
-            return redirect("web:quotation_suggest", pk=quote.id)
         return redirect("web:quotation_detail", pk=quote.id)
 
     # Contacts depend on the chosen customer, so the page filters them client
@@ -2065,14 +2035,11 @@ def quotation_new(request):
         "customers": Customer.objects.all(),
         "types": QuotationType.objects.all(),
         "vat_modes": VatMode.choices,
+        "vat_rate": 15,
         "recent": Quotation.objects.all()[:20],
         # Passed as objects, not strings — json_script serialises them safely.
         "contacts_json": contacts_by_customer,
         "vendor_json": vendor_by_customer,
-        "can_override": can_override,
-        # The pattern, not a live number — allocating one here would burn a
-        # sequence value on a page the estimator might just close.
-        "number_prefix": quotation_prefix_for(company),
     })
 
 

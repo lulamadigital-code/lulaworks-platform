@@ -1,156 +1,100 @@
 {% extends "web/base.html" %}
 {% block title %}New quotation{% endblock %}
 {% block content %}
-<p class="sub"><a href="{% url 'web:quotations' %}">← Quotations</a></p>
-<h1 style="margin:0 0 4px;">New quotation</h1>
-<p class="sub" style="margin:0 0 20px;">Fill it in top to bottom. Only the customer,
-  a job type and a title are needed — everything else is there when the job calls
-  for it. A quotation raised from an RFQ is created by approving that RFQ instead.</p>
+<div class="pagehead" style="margin-bottom:14px;">
+  <div>
+    <p class="sub" style="margin:0 0 2px;"><a href="{% url 'web:quotations' %}">← Quotations</a></p>
+    <h1 style="margin:0;">New quotation</h1>
+  </div>
+</div>
 
-{# One form, one page. Multipart because the scope and supporting files ride along. #}
-<form method="post" enctype="multipart/form-data" class="qform">{% csrf_token %}
+<form method="post" enctype="multipart/form-data" id="qform">{% csrf_token %}
   <input type="hidden" name="method" value="blank">
+  <input type="hidden" name="pasted_items" id="pasted_items">
 
-  {# ── 1 · Customer ─────────────────────────────────────────────────────── #}
-  <section class="card step">
-    <div class="stephead"><span class="stepno">1</span><strong>Who is it for?</strong></div>
-    <label>Customer</label>
-    <select name="customer" id="customer-select" required>
-      <option value="">Choose a customer…</option>
-      {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}{% if c.vendor_number %} · vendor {{ c.vendor_number }}{% endif %}</option>{% endfor %}
-    </select>
-    <p class="muted hint">Start typing to search. The vendor number we trade under
-      with them is attached to the quotation automatically.</p>
-    <p id="vendor-note" class="chip info" style="display:none;margin-top:8px;"></p>
-    {% if not customers %}
-    <p class="muted hint">No customers yet — <a href="{% url 'web:customers' %}">add one first</a>.</p>
-    {% endif %}
-  </section>
-
-  {# ── 2 · Contact person ───────────────────────────────────────────────── #}
-  <section class="card step">
-    <div class="stephead"><span class="stepno">2</span><strong>Who is the recipient?</strong></div>
-    <label>Contact person</label>
-    <select name="contact" id="contact-select" disabled>
-      <option value="">Choose a customer first…</option>
-    </select>
-    <p class="muted hint">The person the quotation is addressed to. Their name,
-      department, email and phone are pulled onto the document.</p>
-    <div id="contact-detail" class="muted" style="display:none;margin-top:8px;font-size:12.5px;"></div>
-  </section>
-
-  {# ── 3 · Job type ─────────────────────────────────────────────────────── #}
-  <section class="card step">
-    <div class="stephead"><span class="stepno">3</span><strong>What kind of job?</strong></div>
-    <label>Job type</label>
-    <select name="quotation_type" id="type-select" required>
-      <option value="">Choose the type…</option>
-      {% for t in types %}<option value="{{ t.id }}" data-emphasis="{{ t.emphasis|join:', ' }}">{{ t.label }}</option>{% endfor %}
-    </select>
-    <p class="muted hint">The type decides the shape of the quotation — plant hire is
-      priced in mobilisation and standby, labour hire in rates and overtime.</p>
-    <p id="template-note" class="chip ok" style="display:none;margin-top:8px;"></p>
-  </section>
-
-  {# ── 4 · The basics ───────────────────────────────────────────────────── #}
-  <section class="card step">
-    <div class="stephead"><span class="stepno">4</span><strong>The basics</strong></div>
-    <div class="two">
-      <div><label>Title</label>
-        <input type="text" name="title" placeholder="Replace conveyor rollers" required></div>
-      <div><label>Site — where the work happens</label>
-        <input type="text" name="site" placeholder="Plant 3, Crusher Section"></div>
-      <div><label>VAT</label>
-        <select name="vat_mode">
-          {% for v, l in vat_modes %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
-        </select></div>
-      <div><label>Customer reference <span class="muted">(optional)</span></label>
-        <input type="text" name="customer_reference" placeholder="their PO / RFQ / tender no."></div>
+  {# ── Parties, job and commercial — tight, label-light ─────────────────── #}
+  <div class="card qcard">
+    <div class="qrow r-parties">
+      <select name="customer" id="customer-select" required>
+        <option value="">Search customer…</option>
+        {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}{% if c.vendor_number %} · vendor {{ c.vendor_number }}{% endif %}</option>{% endfor %}
+      </select>
+      <select name="contact" id="contact-select" disabled>
+        <option value="">Select contact…</option>
+      </select>
     </div>
 
-    <label style="margin-top:16px;">Quotation number</label>
-    {% if can_override %}
-    <input type="text" name="number" placeholder="{{ number_prefix }}000123 — leave blank to auto-number"
-           pattern="[A-Za-z]{2}[0-9]{6}" maxlength="8" style="max-width:280px;text-transform:uppercase;">
-    <p class="muted hint">Two letters then six digits. Leave it blank and the next
-      free number is assigned for you — that is the safe default.</p>
-    {% else %}
-    <p class="muted hint" style="margin-top:0;">Assigned automatically when you create
-      it — the next free number in the form <strong>{{ number_prefix }}000123</strong>.</p>
-    {% endif %}
-  </section>
-
-  {# ── 5 · Scope of work ────────────────────────────────────────────────── #}
-  <section class="card step">
-    <div class="stephead"><span class="stepno">5</span><strong>Scope of work</strong>
-      <span class="muted" style="font-size:12px;font-weight:normal;">the most important part</span></div>
-    <label>Type it, paste it, or attach the document you were sent</label>
-    <textarea name="scope_of_work" rows="6"
-              placeholder="What is being quoted, in the words the customer used. Paste an email or an RFQ straight in here."></textarea>
-    <div class="two" style="margin-top:12px;">
-      <div><label>Attach the scope document <span class="muted">(optional)</span></label>
-        <input type="file" name="scope_file"
-               accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.zip,.eml,.msg"></div>
+    <div class="qrow r-job">
+      <select name="quotation_type" id="type-select" required>
+        <option value="">Job type…</option>
+        {% for t in types %}<option value="{{ t.id }}" data-key="{{ t.key }}">{{ t.label }}</option>{% endfor %}
+      </select>
+      <input type="text" name="title" placeholder="Title — e.g. Supply conveyor rollers" required>
+      <input type="text" name="site" placeholder="Site — e.g. Plant 4">
     </div>
-    <label class="inline" style="margin-top:14px;">
-      <input type="checkbox" name="ai_extract" value="1">
-      Let LulaAI read the scope and suggest line items — you approve each one</label>
-    <p class="muted hint">Nothing is priced or added without your approval. Turn this
-      off to build the quotation yourself below.</p>
-  </section>
 
-  {# ── 6/7 · Items ──────────────────────────────────────────────────────── #}
-  <section class="card step">
-    <div class="stephead"><span class="stepno">6</span><strong>Items</strong>
-      <span class="muted" style="font-size:12px;font-weight:normal;">optional — you can price after creating</span></div>
-    <p class="muted hint" style="margin-top:0;">Paste rows straight from Excel:
-      one item per line, columns separated by tabs or commas —
-      <em>description, quantity, unit, unit price</em>. Fine editing (discounts,
-      reordering, sections) continues on the full builder after you create.</p>
-    <textarea name="pasted_items" rows="5" class="mono"
-              placeholder="Supply 30t mobile crane&#9;1&#9;day&#9;18500&#10;Rigging crew&#9;2&#9;shift&#9;4200&#10;Mobilisation&#9;1&#9;lot&#9;9500"></textarea>
-  </section>
+    <div class="qrow r-comm">
+      <select name="vat_mode" id="vat-mode">
+        {% for v, l in vat_modes %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+      </select>
+      <input type="text" name="customer_reference" placeholder="Reference — your or their internal ref">
+    </div>
+  </div>
 
-  {# ── 8 · Supporting documents ─────────────────────────────────────────── #}
-  <section class="card step">
-    <div class="stephead"><span class="stepno">7</span><strong>Supporting documents</strong>
-      <span class="muted" style="font-size:12px;font-weight:normal;">optional</span></div>
-    <label>Drawings, a BOQ, specifications, photos, inspection reports</label>
-    <input type="file" name="supporting_files" multiple
-           accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.zip,.dwg,.mp4">
-    <p class="muted hint">Kept attached to the quotation so they are findable next year.</p>
-  </section>
+  {# ── Scope + one upload control, side by side ─────────────────────────── #}
+  <div class="card qcard">
+    <div class="qrow r-scope">
+      <textarea name="scope_of_work" rows="5" placeholder="Scope of work"></textarea>
+      <label class="drop">
+        <input type="file" name="documents" multiple
+               accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.zip,.eml,.msg">
+        <span class="dropface"><strong>Attach documents</strong><br>
+          <span class="muted" style="font-size:12px;">scope, drawings, BOQ, photos</span></span>
+      </label>
+    </div>
+  </div>
 
-  {# ── 9 · Create ───────────────────────────────────────────────────────── #}
+  {# ── Dynamic, per-type item grid ──────────────────────────────────────── #}
+  <div class="card qcard">
+    <div class="row" style="align-items:center;gap:10px;margin-bottom:10px;">
+      <strong id="grid-title">Items</strong>
+      <span class="sp"></span>
+      <button type="button" class="btn ghost sm" id="add-line">+ Add line</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="ietable" id="item-grid"><thead></thead><tbody></tbody></table>
+    </div>
+
+    <div class="totals">
+      <div><span>Subtotal</span><span id="t-subtotal">R 0.00</span></div>
+      <div><span>Discount</span><span id="t-discount">R 0.00</span></div>
+      <div><span id="t-vat-label">VAT (15%)</span><span id="t-vat">R 0.00</span></div>
+      <div class="grand"><span>Grand total</span><span id="t-grand">R 0.00</span></div>
+    </div>
+  </div>
+
   <div class="createbar">
     <button class="btn" type="submit">Create quotation</button>
-    <span class="muted" style="font-size:12.5px;">Validates, allocates the number,
-      builds the template and opens the quotation.</span>
   </div>
 </form>
 
-{# Copy an existing one — the one alternative route, out of the way. #}
 {% if recent %}
-<details class="card" style="margin-top:20px;">
-  <summary style="cursor:pointer;font-weight:600;">Or copy an existing quotation</summary>
-  <p class="muted" style="margin:12px 0 14px;font-size:13px;">For recurring work.
-    Creates a NEW quotation with its own number — not a revision.</p>
-  <form method="post">{% csrf_token %}
+<details class="card" style="margin-top:16px;">
+  <summary style="cursor:pointer;font-weight:600;">Copy an existing quotation</summary>
+  <form method="post" style="margin-top:12px;">{% csrf_token %}
     <input type="hidden" name="method" value="copy">
-    <div class="two">
-      <div><label>Copy from</label>
-        <select name="source" required>
-          {% for q in recent %}
-          <option value="{{ q.id }}">{{ q.display_number }} — {{ q.client_name }}{% if q.title %} · {{ q.title }}{% endif %}</option>
-          {% endfor %}
-        </select></div>
-      <div><label>For customer <span class="muted">(optional)</span></label>
-        <select name="customer">
-          <option value="">— same customer —</option>
-          {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}</option>{% endfor %}
-        </select></div>
+    <div class="qrow r-parties">
+      <select name="source" required>
+        {% for q in recent %}
+        <option value="{{ q.id }}">{{ q.display_number }} — {{ q.client_name }}{% if q.title %} · {{ q.title }}{% endif %}</option>
+        {% endfor %}
+      </select>
+      <select name="customer">
+        <option value="">— same customer —</option>
+        {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}</option>{% endfor %}
+      </select>
     </div>
-    <button class="btn ghost" type="submit" style="margin-top:16px;">Copy quotation</button>
+    <button class="btn ghost" type="submit" style="margin-top:12px;">Copy quotation</button>
   </form>
 </details>
 {% endif %}
@@ -159,16 +103,43 @@
 {{ vendor_json|json_script:"vendor-data" }}
 
 <style>
-  .qform .step { margin-bottom:16px; }
-  .stephead { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-  .stepno { display:inline-flex; align-items:center; justify-content:center;
-    width:26px; height:26px; border-radius:50%; background:var(--primary-t);
-    color:var(--primary-d); font-weight:700; font-size:13px; flex:none; }
-  .qform .hint { margin:6px 0 0; font-size:12.5px; }
-  .qform textarea.mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; }
-  .createbar { display:flex; align-items:center; gap:16px; flex-wrap:wrap;
-    position:sticky; bottom:0; background:var(--bg); padding:16px 0;
-    border-top:1px solid var(--line); margin-top:4px; }
+  .qcard { margin-bottom:12px; padding:14px 16px; }
+  .qrow { display:grid; gap:10px; align-items:start; }
+  .qrow + .qrow { margin-top:10px; }
+  .r-parties { grid-template-columns:1fr 1fr; }
+  .r-job     { grid-template-columns:1.1fr 2fr 1.1fr; }
+  .r-comm    { grid-template-columns:1fr 1fr; }
+  .r-scope   { grid-template-columns:1.5fr 1fr; }
+  .qrow select, .qrow input, .qrow textarea { margin:0; }
+  .drop { display:flex; align-items:center; justify-content:center; text-align:center;
+    border:1.5px dashed var(--line); border-radius:var(--r); cursor:pointer;
+    padding:10px; min-height:96px; }
+  .drop input { position:absolute; width:1px; height:1px; opacity:0; }
+  .drop:hover { border-color:var(--primary); background:var(--primary-t); }
+
+  table.ietable { width:100%; border-collapse:collapse; font-size:13px; table-layout:fixed; }
+  table.ietable th { text-align:left; font-size:11px; text-transform:uppercase;
+    letter-spacing:.03em; color:var(--muted-c,#5b6b6a); padding:0 6px 6px; font-weight:600; }
+  table.ietable th.num, table.ietable td.num, table.ietable td.amount { text-align:right; }
+  table.ietable td { padding:3px 6px; }
+  table.ietable input { margin:0; padding:6px 8px; font-size:13px; width:100%; box-sizing:border-box; }
+  table.ietable td.amount { font-variant-numeric:tabular-nums; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; }
+  table.ietable .rmline { border:none; background:none; color:#c0392b; cursor:pointer;
+    font-size:16px; line-height:1; padding:0 4px; }
+  .btn.sm { padding:6px 12px; font-size:13px; }
+
+  .totals { margin:14px 0 0; margin-left:auto; max-width:320px; }
+  .totals > div { display:flex; justify-content:space-between; padding:5px 0;
+    font-variant-numeric:tabular-nums; }
+  .totals .grand { border-top:2px solid var(--primary); margin-top:4px; padding-top:8px;
+    font-weight:700; font-size:16px; }
+
+  .createbar { position:sticky; bottom:0; background:var(--bg); padding:14px 0;
+    border-top:1px solid var(--line); }
+  @media (max-width:820px) {
+    .r-job, .r-comm, .r-scope, .r-parties { grid-template-columns:1fr; }
+  }
 </style>
 
 <script>
@@ -177,57 +148,140 @@
   const vendors  = JSON.parse(document.getElementById("vendor-data").textContent);
   const custSel  = document.getElementById("customer-select");
   const contSel  = document.getElementById("contact-select");
-  const contDet  = document.getElementById("contact-detail");
-  const vendNote = document.getElementById("vendor-note");
   const typeSel  = document.getElementById("type-select");
-  const tplNote  = document.getElementById("template-note");
+  const vatSel   = document.getElementById("vat-mode");
 
+  // ── Contacts follow the chosen customer ──────────────────────────────────
   function fillContacts() {
     const list = contacts[custSel.value] || [];
     contSel.innerHTML = "";
     if (!custSel.value) {
       contSel.disabled = true;
-      contSel.append(new Option("Choose a customer first…", ""));
+      contSel.append(new Option("Select contact…", ""));
     } else if (!list.length) {
       contSel.disabled = true;
-      contSel.append(new Option("No contacts on file — add them on the customer", ""));
+      contSel.append(new Option("No contacts on file", ""));
     } else {
       contSel.disabled = false;
-      contSel.append(new Option("Choose a contact…", ""));
-      list.forEach(function (c) {
-        const label = c.role ? (c.name + " — " + c.role) : c.name;
-        contSel.append(new Option(label, c.id));
-      });
+      contSel.append(new Option("Select contact…", ""));
+      list.forEach(c => contSel.append(new Option(c.role ? c.name + " — " + c.role : c.name, c.id)));
     }
-    contDet.style.display = "none";
-
-    const v = vendors[custSel.value];
-    if (v) { vendNote.textContent = "We are vendor " + v + " to them";
-             vendNote.style.display = "inline-flex"; }
-    else   { vendNote.style.display = "none"; }
   }
-
-  function showContact() {
-    const list = contacts[custSel.value] || [];
-    const c = list.find(function (x) { return x.id === contSel.value; });
-    if (!c) { contDet.style.display = "none"; return; }
-    const bits = [c.email, c.phone].filter(Boolean).join(" · ");
-    contDet.textContent = bits || "No email or phone on file for this contact.";
-    contDet.style.display = "block";
-  }
-
-  function showTemplate() {
-    const opt = typeSel.selectedOptions[0];
-    const emph = opt ? (opt.dataset.emphasis || "") : "";
-    if (typeSel.value && emph) {
-      tplNote.textContent = "Sections created for you: " + emph;
-      tplNote.style.display = "inline-flex";
-    } else { tplNote.style.display = "none"; }
-  }
-
   custSel.addEventListener("change", fillContacts);
-  contSel.addEventListener("change", showContact);
-  typeSel.addEventListener("change", showTemplate);
+
+  // ── The item grid, whose columns depend on the job type ──────────────────
+  // Every layout still resolves to the same four stored fields
+  // (description, qty, unit, unit_price), so the backend is unchanged.
+  const GRIDS = {
+    supply:             {unit: "each", cols: [["description","Description",1],["qty","Qty"],["unit","Unit"],["unit_price","Unit price",0,1]]},
+    labour_hire:        {unit: "hour", cols: [["description","Trade / description",1],["qty","Hours"],["unit_price","Rate / hour",0,1]]},
+    plant_hire:         {unit: "day",  cols: [["description","Equipment",1],["qty","Days"],["unit_price","Rate / day",0,1]]},
+    project_management: {unit: "unit", cols: [["description","Deliverable",1],["qty","Duration"],["unit_price","Rate",0,1]]},
+    _default:           {unit: "each", cols: [["description","Description",1],["qty","Qty"],["unit","Unit"],["unit_price","Unit price",0,1]]},
+  };
+  function spec() {
+    const opt = typeSel.selectedOptions[0];
+    return GRIDS[opt && opt.dataset.key] || GRIDS._default;
+  }
+
+  const grid = document.getElementById("item-grid");
+  const thead = grid.querySelector("thead");
+  const tbody = grid.querySelector("tbody");
+
+  // A column is numeric when it holds money or a quantity-like value; that
+  // decides both its alignment and a narrower fixed width.
+  function isNumeric(c) { return c[3] || c[0] === "qty"; }
+  function colWidth(c) {
+    if (c[2]) return "";                       // description — takes the slack
+    if (c[3]) return "width:120px";            // money
+    if (c[0] === "unit") return "width:90px";
+    return "width:92px";                        // qty / hours / days / duration
+  }
+
+  function renderHead() {
+    let h = "<tr><th style='width:36px' class='num'>#</th>";
+    spec().cols.forEach(c => {
+      h += `<th class='${isNumeric(c) ? "num" : ""}' style='${colWidth(c)}'>${c[1]}</th>`;
+    });
+    h += "<th class='num' style='width:120px'>Amount</th><th style='width:34px'></th></tr>";
+    thead.innerHTML = h;
+  }
+
+  function newRow() {
+    const tr = document.createElement("tr");
+    let html = "<td class='num idx'></td>";
+    spec().cols.forEach(c => {
+      const numeric = isNumeric(c);
+      html += `<td class='${numeric ? "num" : ""}'><input data-k='${c[0]}'
+                 ${numeric ? "inputmode='decimal'" : ""} placeholder='${numeric ? "0" : ""}'></td>`;
+    });
+    html += "<td class='amount'>R 0.00</td><td><button type='button' class='rmline' title='Delete line'>×</button></td>";
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+    renumber();
+    return tr;
+  }
+
+  function renumber() {
+    [...tbody.children].forEach((tr, i) => tr.querySelector(".idx").textContent = i + 1);
+  }
+
+  function money(n) { return "R " + (n || 0).toLocaleString("en-ZA", {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+  function recompute() {
+    let subtotal = 0;
+    [...tbody.children].forEach(tr => {
+      const q = parseFloat(tr.querySelector("[data-k=qty]")?.value) || 0;
+      const p = parseFloat(tr.querySelector("[data-k=unit_price]")?.value) || 0;
+      const amt = q * p;
+      subtotal += amt;
+      tr.querySelector(".amount").textContent = money(amt);
+    });
+    const rate = 0.15;
+    const inclusive = vatSel.value === "inclusive";
+    const vat = inclusive ? subtotal - subtotal / (1 + rate) : subtotal * rate;
+    const grand = inclusive ? subtotal : subtotal + vat;
+    document.getElementById("t-subtotal").textContent = money(inclusive ? subtotal - vat : subtotal);
+    document.getElementById("t-vat").textContent = money(vat);
+    document.getElementById("t-grand").textContent = money(grand);
+  }
+
+  function rebuild() {
+    document.getElementById("grid-title").textContent =
+      (typeSel.selectedOptions[0]?.textContent || "Items") + " items";
+    renderHead();
+    tbody.innerHTML = "";
+    newRow(); newRow();
+    recompute();
+  }
+
+  typeSel.addEventListener("change", rebuild);
+  vatSel.addEventListener("change", recompute);
+  document.getElementById("add-line").addEventListener("click", () => newRow());
+  grid.addEventListener("input", e => { if (e.target.matches("input")) recompute(); });
+  grid.addEventListener("click", e => {
+    if (e.target.classList.contains("rmline")) {
+      if (tbody.children.length > 1) e.target.closest("tr").remove();
+      else e.target.closest("tr").querySelectorAll("input").forEach(i => i.value = "");
+      renumber(); recompute();
+    }
+  });
+
+  // ── Serialise the grid into the hidden field the backend already parses ──
+  document.getElementById("qform").addEventListener("submit", () => {
+    const fixedUnit = spec().unit;
+    const lines = [];
+    [...tbody.children].forEach(tr => {
+      const get = k => (tr.querySelector(`[data-k=${k}]`)?.value || "").trim();
+      const desc = get("description");
+      if (!desc) return;
+      const unit = get("unit") || fixedUnit;
+      lines.push([desc, get("qty") || "1", unit, get("unit_price") || "0"].join("\t"));
+    });
+    document.getElementById("pasted_items").value = lines.join("\n");
+  });
+
+  rebuild();
 })();
 </script>
 {% endblock %}
