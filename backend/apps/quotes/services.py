@@ -4,59 +4,58 @@ from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.db.models import Sum
 
-from apps.administration.models import NumberingRule
-from apps.administration.services import next_number
 from apps.core.events import publish
 
 from .models import Quotation, QuotationLine, QuotationSource
 
-#: A quotation number is two letters then six digits, e.g. LP000731. The letters
-#: identify the issuer; the six digits are a running, zero-padded count. Kept
-#: short because it has to be quoted over the phone and written on a delivery note.
-QUOTATION_NUMBER_RE = re.compile(r"^[A-Za-z]{2}\d{6}$")
+#: A quotation reference is the company's document prefix (2–4 letters) then six
+#: random digits, e.g. LPS845192. It is the parent reference every downstream
+#: commercial document (invoice, delivery note, payment) is built from.
+QUOTATION_NUMBER_RE = re.compile(r"^[A-Za-z]{2,4}\d{6}$")
 
-#: {seq:06d} — six digits, and no yearly reset, because the number must stay
-#: unique for the life of the company; a reset would hand out AA000001 twice.
-_QUOTATION_FMT = "{prefix}{seq:06d}"
-_LEGACY_FMT = "{prefix}-{yyyy}-{seq:06d}"
+#: Per-document-type prefixes, applied to the quotation reference so every child
+#: document is visually identifiable but stays tied to the one commercial ref:
+#: INV-LPS845192-01, DN-LPS845192-01, PAY-LPS845192-01, CN-LPS845192-01.
+COMMERCIAL_DOC_PREFIXES = {
+    "invoice": "INV", "delivery": "DN", "payment": "PAY",
+    "credit": "CN", "purchase_order": "PO",
+}
 
 
 def quotation_prefix_for(company) -> str:
-    """Two alphabetic characters for the number, taken from the company name so
-    a Harmony quote reads HA000012 rather than the generic QT. Falls back to QT
-    when the name has fewer than two letters (rare, but a company called '4x4'
-    exists)."""
+    """The company's document prefix — its own two-to-four letters that begin
+    every reference. Uses the configured Company.document_prefix when set, else
+    derives from the company name, falling back to QT."""
+    configured = "".join(c for c in (getattr(company, "document_prefix", "") or "")
+                         if c.isalpha()).upper()[:4]
+    if len(configured) >= 2:
+        return configured
     letters = [c for c in (company.name or "") if c.isalpha()]
-    return ("".join(letters[:2]).upper() + "QT")[:2]
+    return ("".join(letters[:3]).upper() + "QT")[:max(2, len(letters[:3]))] or "QT"
 
 
-def ensure_quotation_numbering(company) -> NumberingRule:
-    """Make the company's quotation numbering produce AA000000, self-healingly.
+def next_quotation_number(company) -> str:
+    """Prefix + six RANDOM digits, guaranteed unique and never reused: a value
+    already handed out stays in the table forever, so the uniqueness check that
+    rejects a collision also prevents reuse. Random (not sequential) so a
+    competitor cannot count how many quotations we issue."""
+    import secrets
 
-    Called on every visit to the create page (via ensure_quotation_types), so a
-    company created before this format existed is migrated the first time an
-    estimator opens the screen — no data migration, no manual step. A prefix an
-    administrator has deliberately set is left alone; only the default shape is
-    upgraded."""
-    rule, created = NumberingRule.objects.get_or_create(
-        company=company, doc_type="quotation",
-        defaults={"prefix": quotation_prefix_for(company),
-                  "fmt": _QUOTATION_FMT, "reset_yearly": False},
-    )
-    if created:
-        return rule
+    prefix = quotation_prefix_for(company)
+    for _ in range(50):
+        number = f"{prefix}{secrets.randbelow(1_000_000):06d}"
+        if not Quotation.all_objects.filter(company=company, number=number).exists():
+            return number
+    # Astronomically unlikely; fall back to a longer random tail rather than loop.
+    return f"{prefix}{secrets.randbelow(1_000_000):06d}{secrets.randbelow(10)}"
 
-    changed = []
-    # Only rewrite a rule still on a default format — never one an admin tuned.
-    if rule.fmt in (_LEGACY_FMT, "{prefix}-{yyyy}-{seq:06d}", "{prefix}-{yyyy}-{seq:05d}"):
-        rule.fmt, rule.reset_yearly = _QUOTATION_FMT, False
-        changed += ["fmt", "reset_yearly"]
-    if not QUOTATION_NUMBER_RE.match(f"{rule.prefix}000000"):
-        rule.prefix = quotation_prefix_for(company)
-        changed.append("prefix")
-    if changed:
-        rule.save(update_fields=changed)
-    return rule
+
+def commercial_ref(quote, kind: str, seq: int = 1) -> str:
+    """The reference for a document generated from this quotation — e.g.
+    commercial_ref(q, "invoice") → "INV-LPS845192-01". Ties every child document
+    to the single commercial reference while keeping it identifiable by type."""
+    prefix = COMMERCIAL_DOC_PREFIXES.get(kind, kind.upper()[:3])
+    return f"{prefix}-{quote.number}-{seq:02d}"
 
 
 def quotation_number_available(company, number: str, *, exclude=None) -> bool:
@@ -76,9 +75,8 @@ def create_quotation(company, user, *, client_name, title="", site="", lines=Non
     `number` lets an authorised caller override the auto-allocated value (the
     view is responsible for the permission check and for validating format and
     uniqueness); when None the numbering engine allocates the next one."""
-    ensure_quotation_numbering(company)
     fields = dict(
-        company=company, number=number or next_number(company, "quotation"),
+        company=company, number=number or next_quotation_number(company),
         client_name=client_name, title=title, site=site,
         created_by=user, updated_by=user,
     )
@@ -193,12 +191,7 @@ class QuotationError(ValueError):
 
 
 def ensure_quotation_types(company) -> int:
-    """Seed the default type catalogue. Idempotent; never removes custom types.
-
-    Also self-heals the numbering rule to the AA000000 format, so the two things
-    the create page depends on — a type list and a number format — are both
-    guaranteed by the one call the view already makes."""
-    ensure_quotation_numbering(company)
+    """Seed the default type catalogue. Idempotent; never removes custom types."""
     by_key = {t.key: t for t in QuotationType.objects.filter(company=company)}
     created = 0
     for position, (key, label, emphasis) in enumerate(DEFAULT_QUOTATION_TYPES):
@@ -380,10 +373,8 @@ def create_revision(quote, user, *, reason=""):
 def duplicate(quote, user, *, number=None, customer=None):
     """Copy an existing quotation for recurring work — a fresh quotation, not a
     revision, because it is a different job."""
-    from apps.administration.services import next_number
-
     new = Quotation.objects.create(
-        company=quote.company, number=number or next_number(quote.company, "quotation"),
+        company=quote.company, number=number or next_quotation_number(quote.company),
         title=quote.title, client_name=(customer.name if customer else quote.client_name),
         customer=customer or quote.customer,
         branch=None if customer else quote.branch,

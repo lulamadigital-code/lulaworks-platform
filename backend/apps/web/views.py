@@ -824,7 +824,15 @@ def _save_branding(request, company):
                                           "#0E6E6E — that entry was ignored.")
             else:
                 setattr(company, colour, cleaned)
-    company.save(update_fields=["brand_primary", "brand_secondary"])
+    # The document prefix — letters only, uppercased, at most four. Begins every
+    # commercial reference (quotation, and from it invoices and delivery notes).
+    saved_fields = ["brand_primary", "brand_secondary"]
+    if "document_prefix" in request.POST:
+        prefix = "".join(c for c in request.POST.get("document_prefix", "")
+                         if c.isalpha()).upper()[:4]
+        company.document_prefix = prefix
+        saved_fields.append("document_prefix")
+    company.save(update_fields=saved_fields)
     if changed:
         branding.save(update_fields=changed)
 
@@ -1371,19 +1379,32 @@ def _quotation_build(request, quote):
     })
 
 
-#: The commercial life of a quotation, for the informational timeline. Each step
-#: is (key, label); the current one and everything before it read as done.
-_LIFECYCLE_STEPS = [
-    ("draft", "Draft"), ("approved", "Approved"), ("issued", "Finalized"),
-    ("sent", "Sent"), ("accepted", "Accepted"), ("awarded", "Awarded"),
-    ("work", "Work created"), ("invoiced", "Invoiced"), ("paid", "Paid"),
-]
-#: Where the current status sits on that line (so later steps show as pending).
-_STATUS_STAGE = {
-    "draft": 0, "review": 0, "manager_approval": 1, "commercial_approval": 1,
-    "approved": 1, "issued": 2, "sent": 3, "revision_requested": 2,
-    "accepted": 4, "awarded": 5, "rejected": 3, "lost": 3, "expired": 3,
-}
+def _commercial_timeline(quote):
+    """The commercial life of the quotation, each stage with its date and the
+    person responsible — read from the quotation's own event history and its
+    linked documents. Invoice/delivery/payment stages read as pending until
+    those documents exist."""
+    events = list(quote.events.all())
+
+    def when(status):
+        e = next((e for e in events if e.to_status == status), None)
+        return (e.created_at, e.actor) if e else (None, None)
+
+    rows = [{"label": "Quotation created", "done": True,
+             "date": quote.created_at, "user": quote.created_by}]
+    for label, status in (("Approved", "approved"), ("Finalized", "issued"),
+                          ("Sent to customer", "sent")):
+        dt, user = when(status)
+        rows.append({"label": label, "done": bool(dt), "date": dt, "user": user})
+
+    po = quote.customer_pos.all().first()
+    rows.append({"label": "Purchase order received", "done": bool(po),
+                 "date": (po.po_date or po.created_at) if po else None,
+                 "user": po.created_by if po else None})
+    # These become live once invoice/delivery-note generation is built.
+    for label in ("Tax invoice created", "Delivery note created", "Payment received"):
+        rows.append({"label": label, "done": False, "date": None, "user": None})
+    return rows
 
 
 def _quotation_review(request, quote):
@@ -1394,26 +1415,25 @@ def _quotation_review(request, quote):
     from apps.quotes.services import traceability
 
     can_quote = request.user.has_perm_code("quotes.create")
-    stage = _STATUS_STAGE.get(quote.status, 0)
-    timeline = [{"label": label, "done": i <= stage, "current": i == stage}
-                for i, (_key, label) in enumerate(_LIFECYCLE_STEPS)]
-
     context = {
         "quote": quote,
         "header": document_header(quote.company, kind="quotation"),
         "can_view_money": _can_view_money(request.user),
+        # Before finalize: edit / approve / finalize. The customer-facing outputs
+        # (PDF, Excel, Send) appear only once it is finalized and read-only.
         "can_edit": quote.is_editable and can_quote,
         "can_approve": can_quote and quote.status in (
             "draft", "review", "manager_approval", "commercial_approval"),
         "can_finalize": can_quote and quote.status == "approved",
-        "can_send": can_quote and quote.status in ("issued",),
+        "can_download": quote.is_finalized,
+        "can_send": can_quote and quote.status == "issued",
         "can_revise": can_quote and quote.is_finalized,
         "can_award": request.user.has_perm_code("projects.create"),
-        # A PO only makes sense once the customer has the quotation in hand.
-        "po_active": quote.is_finalized,
+        # The PO section is hidden until the quotation has been sent.
+        "po_active": quote.status in ("sent", "accepted", "awarded"),
         "purchase_orders": list(quote.customer_pos.all()),
         "revisions": quote.revisions.order_by("revision"),
-        "timeline": timeline,
+        "timeline": _commercial_timeline(quote),
     }
     if quote.status == "awarded":
         context["trace"] = traceability(quote)

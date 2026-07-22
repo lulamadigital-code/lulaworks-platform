@@ -819,3 +819,36 @@ class GridLineParsingTests(TestCase):
             text = doc.pages[0].extract_text()
         self.assertIn("R17,845.00", text)     # unit price column, not R0.00
         self.assertIn("R35,690.00", text)     # amount
+
+
+class CommercialNumberingTests(TestCase):
+    """The quotation reference is the parent from which child documents inherit."""
+
+    def test_number_uses_the_company_document_prefix(self):
+        from apps.quotes.services import next_quotation_number
+        c = make_company()
+        c.document_prefix = "LPS"
+        c.save(update_fields=["document_prefix"])
+        with tenant_scope(c.id):
+            n = next_quotation_number(c)
+        self.assertRegex(n, r"^LPS\d{6}$")
+
+    def test_two_quotations_get_different_numbers(self):
+        from apps.quotes.services import create_quotation
+        c = make_company()
+        c.document_prefix = "ENG"; c.save(update_fields=["document_prefix"])
+        with tenant_scope(c.id):
+            a = create_quotation(c, None, client_name="A")
+            b = create_quotation(c, None, client_name="B")
+        self.assertNotEqual(a.number, b.number)
+        self.assertTrue(a.number.startswith("ENG") and b.number.startswith("ENG"))
+
+    def test_child_document_references_inherit_the_quotation(self):
+        from apps.quotes.services import commercial_ref
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, number="LPS845192")
+        self.assertEqual(commercial_ref(q, "invoice"), "INV-LPS845192-01")
+        self.assertEqual(commercial_ref(q, "delivery"), "DN-LPS845192-01")
+        self.assertEqual(commercial_ref(q, "payment", 2), "PAY-LPS845192-02")
+        self.assertEqual(commercial_ref(q, "credit"), "CN-LPS845192-01")

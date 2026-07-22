@@ -51,13 +51,15 @@
     {% csrf_token %}<input type="hidden" name="status" value="issued">
     <button class="btn" type="submit">Finalize</button></form>
   {% endif %}
+  {% if can_download %}
+  <a class="btn ghost" href="{% url 'web:quotation_pdf' quote.id %}">Download PDF</a>
+  <a class="btn ghost" href="{% url 'web:quotation_excel' quote.id %}">Export Excel</a>
+  {% endif %}
   {% if can_send %}
   <form method="post" action="{% url 'web:quotation_transition' quote.id %}">{% csrf_token %}
     <input type="hidden" name="status" value="sent">
-    <button class="btn" type="submit">Mark as sent</button></form>
+    <button class="btn" type="submit">Send to customer</button></form>
   {% endif %}
-  <a class="btn ghost" href="{% url 'web:quotation_pdf' quote.id %}">Download PDF</a>
-  <a class="btn ghost" href="{% url 'web:quotation_excel' quote.id %}">Export Excel</a>
   {% if can_revise %}
   <form method="post" action="{% url 'web:quotation_revise' quote.id %}"
         data-confirm="Create revision {{ quote.revision|add:1 }}? This version stays exactly as it is.">
@@ -65,11 +67,16 @@
   {% endif %}
 </div>
 
-{# ── Lifecycle timeline — informational ────────────────────────────────────── #}
-<div class="timeline">
+{# ── Commercial timeline — informational (status · date · who) ─────────────── #}
+<h2>Commercial timeline</h2>
+<div class="card ctl">
   {% for step in timeline %}
-  <div class="tl-step {% if step.done %}done{% endif %} {% if step.current %}now{% endif %}">
-    <span class="tl-dot"></span><span class="tl-label">{{ step.label }}</span>
+  <div class="ctl-row {% if step.done %}done{% endif %}">
+    <span class="ctl-dot"></span>
+    <span class="ctl-label">{{ step.label }}</span>
+    <span class="ctl-meta">
+      {% if step.done %}{{ step.date|date:"d M Y" }}{% if step.user %} · {{ step.user }}{% endif %}
+      {% else %}<span class="muted">pending</span>{% endif %}</span>
   </div>
   {% endfor %}
 </div>
@@ -202,16 +209,17 @@
   .actionbar { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; align-items:center; }
   .actionbar form { margin:0; }
 
-  .timeline { display:flex; flex-wrap:wrap; gap:4px 0; margin:4px 0 8px; }
-  .tl-step { display:flex; align-items:center; gap:6px; padding-right:6px; }
-  .tl-step::after { content:"›"; color:var(--line); margin-left:2px; }
-  .tl-step:last-child::after { content:""; }
-  .tl-dot { width:9px; height:9px; border-radius:50%; background:var(--line); flex:none; }
-  .tl-label { font-size:12px; color:var(--muted-c,#8a94a6); white-space:nowrap; }
-  .tl-step.done .tl-dot { background:var(--primary); }
-  .tl-step.done .tl-label { color:var(--ink,#2a3242); }
-  .tl-step.now .tl-dot { box-shadow:0 0 0 3px var(--primary-t); }
-  .tl-step.now .tl-label { font-weight:700; color:var(--primary-d); }
+  .ctl { padding:6px 4px; }
+  .ctl-row { display:flex; align-items:center; gap:12px; padding:8px 10px;
+    position:relative; }
+  .ctl-row:not(:last-child)::before { content:""; position:absolute; left:15px; top:26px;
+    bottom:-8px; width:2px; background:var(--line); }
+  .ctl-dot { width:11px; height:11px; border-radius:50%; background:#fff;
+    border:2px solid var(--line); flex:none; z-index:1; }
+  .ctl-row.done .ctl-dot { background:var(--primary); border-color:var(--primary); }
+  .ctl-label { flex:1; font-size:13.5px; color:var(--muted-c,#8a94a6); }
+  .ctl-row.done .ctl-label { color:var(--ink,#2a3242); font-weight:600; }
+  .ctl-meta { font-size:12.5px; color:var(--muted-c,#5b6b6a); text-align:right; }
 
   .pdfframe { width:100%; height:820px; border:0; display:block; background:#f4f5f7; }
   .aistatus { font-weight:500; color:var(--primary-d); font-size:11px; margin-left:6px; }

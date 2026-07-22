@@ -38,6 +38,9 @@ class Company(PlatformBaseModel):
     logo = models.ImageField(upload_to="company_logos/", blank=True, null=True)
     brand_primary = models.CharField(max_length=9, blank=True)
     brand_secondary = models.CharField(max_length=9, blank=True)
+    # Up to four letters that begin every commercial document reference — the
+    # quotation number and, from it, invoice/delivery-note references. Uppercase.
+    document_prefix = models.CharField(max_length=4, blank=True)
 
     # ── Statutory identity ────────────────────────────────────────────────
     # These appear on every quotation, invoice and tender submission. SARS

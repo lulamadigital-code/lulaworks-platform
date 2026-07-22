@@ -636,7 +636,7 @@ class QuotationCreationWorkflowTests(TestCase):
 
     def test_number_is_two_letters_then_six_digits(self):
         self.assertEqual(self._post().status_code, 302)
-        self.assertRegex(self._latest().number, r"^[A-Z]{2}\d{6}$")
+        self.assertRegex(self._latest().number, r"^[A-Z]{2,4}\d{6}$")
 
     def test_contact_and_vendor_are_captured(self):
         self._post(contact=str(self.contact.id))
@@ -667,7 +667,7 @@ class QuotationCreationWorkflowTests(TestCase):
         self._post(number="ZZ999999")
         created = self._latest()
         self.assertNotEqual(created.number, "ZZ999999")
-        self.assertRegex(created.number, r"^[A-Z]{2}\d{6}$")
+        self.assertRegex(created.number, r"^[A-Z]{2,4}\d{6}$")
 
     def test_page_offers_contacts_for_each_customer(self):
         resp = self.client.get("/quotations/new/")
@@ -780,12 +780,33 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertIn("spreadsheetml", resp["Content-Type"])
         self.assertTrue(resp["Content-Disposition"].endswith('.xlsx"'))
 
-    def test_po_section_appears_only_once_finalized(self):
-        self.assertContains(self.client.get(self._url()),
-                            "Available once the quotation is")
+    def test_po_section_appears_only_once_sent(self):
+        # Hidden while draft AND while merely finalized — only after it is sent.
         self.assertNotContains(self.client.get(self._url()), "Attach a purchase order")
         self._set_status("issued")
+        self.assertNotContains(self.client.get(self._url()), "Attach a purchase order")
+        self._set_status("sent")
         self.assertContains(self.client.get(self._url()), "Attach a purchase order")
+
+    def test_download_and_excel_hidden_until_finalized(self):
+        # Draft: approve/finalize but no customer-facing outputs.
+        draft = self.client.get(self._url())
+        self.assertNotContains(draft, "Download PDF")
+        self.assertNotContains(draft, "Export Excel")
+        self.assertContains(draft, "Finalize")
+        # Finalized: the outputs appear, and Send.
+        self._set_status("issued")
+        final = self.client.get(self._url())
+        self.assertContains(final, "Download PDF")
+        self.assertContains(final, "Export Excel")
+        self.assertContains(final, "Send to customer")
+
+    def test_commercial_timeline_is_shown_with_stages(self):
+        resp = self.client.get(self._url())
+        self.assertContains(resp, "Commercial timeline")
+        self.assertContains(resp, "Quotation created")
+        self.assertContains(resp, "Purchase order received")
+        self.assertContains(resp, "Payment received")
 
     @NO_AI
     def test_po_extraction_reads_the_document_deterministically(self):

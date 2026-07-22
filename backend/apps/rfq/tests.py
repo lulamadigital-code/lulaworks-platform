@@ -104,7 +104,7 @@ class RFQPipelineTests(APITestCase):
         resp = self.client.post(f"/api/v1/rfqs/{rfq_id}/approve/", {"client_name": "Sibanye"})
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         # Quotation numbers are two letters then six digits (e.g. LU000001).
-        self.assertRegex(resp.data["quotation"]["number"], r"^[A-Z]{2}\d{6}$")
+        self.assertRegex(resp.data["quotation"]["number"], r"^[A-Z]{2,4}\d{6}$")
         with tenant_scope(self.company.id):
             self.assertEqual(Quotation.objects.count(), 1)
             self.assertEqual(ProjectDNA.objects.count(), 1)

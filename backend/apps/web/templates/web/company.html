@@ -407,6 +407,13 @@
       <div><label>Secondary colour</label>
         <input type="color" name="brand_secondary" value="{{ company.brand_secondary|default:'#0e6e6e' }}"
                style="height:42px;padding:4px;"></div>
+      <div><label>Document prefix</label>
+        <input type="text" name="document_prefix" value="{{ company.document_prefix }}"
+               maxlength="4" placeholder="e.g. LPS"
+               style="text-transform:uppercase;max-width:140px;letter-spacing:.08em;">
+        <p class="muted" style="margin:4px 0 0;font-size:12px;">Up to 4 letters. Begins
+          every reference: a quotation reads <strong>{{ company.document_prefix|default:'LPS' }}845192</strong>,
+          its invoice INV-{{ company.document_prefix|default:'LPS' }}845192-01.</p></div>
     </div>
     {% if can_edit %}<button class="btn" type="submit" style="margin-top:16px;">Save branding</button>{% endif %}
   </form>
