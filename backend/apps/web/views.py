@@ -1510,8 +1510,10 @@ def quotation_excel(request, pk):
         ws.append([ln.position, ln.description, float(ln.qty), ln.unit,
                    float(ln.unit_price), float(ln.line_total)])
     ws.append([])
+    # On an exclusive quotation VAT is added on the invoice, so it reads 0 here.
+    vat_on_quote = quote.vat_amount if quote.vat_mode == "inclusive" else 0
     ws.append(["", "", "", "", "Subtotal", float(quote.subtotal)])
-    ws.append(["", "", "", "", f"VAT ({quote.vat_rate:g}%)", float(quote.vat_amount)])
+    ws.append(["", "", "", "", "VAT", float(vat_on_quote)])
     total_row = ["", "", "", "", "Total", float(quote.total)]
     ws.append(total_row)
     for cell in ws[ws.max_row]:
@@ -2544,10 +2546,9 @@ def quotation_create_invoice(request, pk):
         doc = create_invoice_document(quote, request.user)
     except QuotationError as exc:
         messages.error(request, str(exc))
-    else:
-        messages.success(request, f"Tax invoice {doc.number} created from "
-                                  f"{quote.number}.")
-    return redirect("web:quotation_detail", pk=pk)
+        return redirect("web:quotation_detail", pk=pk)
+    messages.success(request, f"Tax invoice {doc.number} created from {quote.number}.")
+    return redirect("web:commercial_document_detail", pk=doc.id)
 
 
 @login_required
@@ -2569,10 +2570,9 @@ def quotation_create_delivery(request, pk):
             delivery_notes=request.POST.get("delivery_notes", ""))
     except QuotationError as exc:
         messages.error(request, str(exc))
-    else:
-        messages.success(request, f"Delivery note {doc.number} created from "
-                                  f"{quote.number}.")
-    return redirect("web:quotation_detail", pk=pk)
+        return redirect("web:quotation_detail", pk=pk)
+    messages.success(request, f"Delivery note {doc.number} created from {quote.number}.")
+    return redirect("web:commercial_document_detail", pk=doc.id)
 
 
 @login_required
@@ -2590,6 +2590,111 @@ def commercial_document_pdf(request, pk):
     resp = HttpResponse(pdf, content_type="application/pdf")
     disposition = "inline" if request.GET.get("inline") else "attachment"
     resp["Content-Disposition"] = f'{disposition}; filename="{doc.number}.pdf"'
+    return resp
+
+
+#: The commercial life of an invoice / delivery note, for its timeline.
+_COMDOC_STEPS = ["Draft", "Approved", "Finalized", "Sent"]
+_COMDOC_STAGE = {"draft": 0, "approved": 1, "finalized": 2, "sent": 3}
+
+
+@login_required
+def commercial_document_detail(request, pk):
+    """Review workspace for a tax invoice or delivery note — the same interface
+    as the quotation: PDF preview, status banner, timeline, lifecycle actions,
+    read-only once finalized."""
+    from apps.quotes.models import CommercialDocument
+    from apps.quotes.services import commercial_document_next_statuses
+
+    doc = get_object_or_404(
+        CommercialDocument.objects.select_related("quotation", "purchase_order"), pk=pk)
+    can_quote = request.user.has_perm_code("quotes.create")
+    stage = _COMDOC_STAGE.get(doc.status, 0)
+    timeline = [{"label": label, "done": i <= stage, "current": i == stage}
+                for i, label in enumerate(_COMDOC_STEPS)]
+
+    return render(request, "web/commercial_document_detail.html", {
+        "doc": doc,
+        "quote": doc.quotation,
+        "is_invoice": doc.kind == CommercialDocument.Kind.INVOICE,
+        "can_view_money": _can_view_money(request.user),
+        "can_approve": can_quote and doc.status == "draft",
+        "can_finalize": can_quote and doc.status in ("draft", "approved"),
+        "can_download": doc.is_finalized,
+        "can_send": can_quote and doc.status == "finalized",
+        "next_statuses": commercial_document_next_statuses(doc),
+        "timeline": timeline,
+    })
+
+
+@login_required
+@require_POST
+def commercial_document_transition(request, pk):
+    from apps.quotes.models import CommercialDocument
+    from apps.quotes.services import QuotationError, transition_commercial_document
+    doc = get_object_or_404(CommercialDocument.objects.all(), pk=pk)
+    if not request.user.has_perm_code("quotes.create"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:commercial_document_detail", pk=pk)
+    try:
+        transition_commercial_document(doc, request.user,
+                                       request.POST.get("status"))
+    except QuotationError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"{doc.number} → {doc.get_status_display()}.")
+    return redirect("web:commercial_document_detail", pk=pk)
+
+
+@login_required
+def commercial_document_excel(request, pk):
+    """Export a generated document's items to .xlsx — an invoice with prices, a
+    delivery note with ordered quantities and no prices."""
+    import io
+
+    import openpyxl
+    from openpyxl.styles import Font
+
+    from apps.quotes.models import CommercialDocument
+    doc = get_object_or_404(CommercialDocument.objects.select_related("quotation"), pk=pk)
+    quote = doc.quotation
+    is_invoice = doc.kind == CommercialDocument.Kind.INVOICE
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Invoice" if is_invoice else "Delivery note"
+    ws.append([f"{doc.get_kind_display()} {doc.number}"])
+    ws["A1"].font = Font(bold=True, size=14)
+    ws.append([quote.client_name, "", "", f"Quotation {quote.number}"])
+    ws.append([])
+    if is_invoice:
+        ws.append(["#", "Description", "Qty", "Unit", "Unit price", "Line total"])
+    else:
+        ws.append(["#", "Description", "Ordered", "Delivered", "Outstanding", "Unit"])
+    for cell in ws[ws.max_row]:
+        cell.font = Font(bold=True)
+    for ln in quote.lines.all():
+        if is_invoice:
+            ws.append([ln.position, ln.description, float(ln.qty), ln.unit,
+                       float(ln.effective_unit_price), float(ln.line_total)])
+        else:
+            ws.append([ln.position, ln.description, float(ln.qty), "", "", ln.unit])
+    if is_invoice:
+        ws.append([])
+        ws.append(["", "", "", "", "Subtotal", float(quote.net_total)])
+        ws.append(["", "", "", "", f"VAT ({quote.vat_rate:g}%)", float(quote.vat_amount)])
+        ws.append(["", "", "", "", "Total", float(quote.invoice_total)])
+        for cell in ws[ws.max_row]:
+            cell.font = Font(bold=True)
+    for col, width in {"A": 6, "B": 48, "C": 12, "D": 12, "E": 14, "F": 14}.items():
+        ws.column_dimensions[col].width = width
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    resp = HttpResponse(
+        buf.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    resp["Content-Disposition"] = f'attachment; filename="{doc.number}.xlsx"'
     return resp
 
 

@@ -55,6 +55,12 @@
   <a class="btn ghost" href="{% url 'web:quotation_pdf' quote.id %}">Download PDF</a>
   <a class="btn ghost" href="{% url 'web:quotation_excel' quote.id %}">Export Excel</a>
   {% endif %}
+  {% if can_generate_docs %}
+  <form method="post" action="{% url 'web:quotation_create_invoice' quote.id %}">{% csrf_token %}
+    <button class="btn" type="submit">Create tax invoice</button></form>
+  <form method="post" action="{% url 'web:quotation_create_delivery' quote.id %}">{% csrf_token %}
+    <button class="btn" type="submit">Create delivery note</button></form>
+  {% endif %}
   {% if can_send %}
   <form method="post" action="{% url 'web:quotation_transition' quote.id %}">{% csrf_token %}
     <input type="hidden" name="status" value="sent">
@@ -80,6 +86,12 @@
   </div>
   {% endfor %}
 </div>
+
+{# ── Scope of work, exactly as entered ─────────────────────────────────────── #}
+{% if quote.scope_of_work %}
+<h2>Scope of Work</h2>
+<div class="card"><div style="white-space:pre-wrap;margin:0;">{{ quote.scope_of_work }}</div></div>
+{% endif %}
 
 {# ── The document, as the customer will see it ─────────────────────────────── #}
 <h2>Quotation preview</h2>
@@ -152,41 +164,20 @@
   finalized and out with the customer — a PO is their instruction to proceed.</p></div>
 {% endif %}
 
-{# ── Commercial documents — invoice & delivery note from the quotation ─────── #}
-{% if po_active %}
+{# ── Commercial documents generated from this quotation ────────────────────── #}
+{% if commercial_documents %}
 <h2>Commercial documents</h2>
-<div class="card">
-  {% if can_generate_docs %}
-  <p class="muted" style="margin:0 0 12px;font-size:12.5px;">PO
-    <strong>{{ matched_po.po_number }}</strong> matches the quotation price — you can
-    raise a tax invoice or a delivery note. Both inherit the quotation reference and
-    the numbers already captured; nothing is re-entered.</p>
-  <div class="row" style="gap:8px;flex-wrap:wrap;">
-    <form method="post" action="{% url 'web:quotation_create_invoice' quote.id %}">{% csrf_token %}
-      <button class="btn" type="submit">Create tax invoice</button></form>
-    <form method="post" action="{% url 'web:quotation_create_delivery' quote.id %}">{% csrf_token %}
-      <button class="btn ghost" type="submit">Create delivery note</button></form>
-  </div>
-  {% elif purchase_orders %}
-  <p class="muted" style="margin:0;">A tax invoice or delivery note can be raised once a
-    purchase order <strong>matching the quotation price</strong> is linked. The PO on
-    file does not match the quotation total yet.</p>
-  {% else %}
-  <p class="muted" style="margin:0;">Attach a matching purchase order above to raise a
-    tax invoice or a delivery note.</p>
-  {% endif %}
-
-  {% if commercial_documents %}
-  <table style="margin-top:14px;">
-    <tr><th>Document</th><th>Number</th><th>Date</th><th></th></tr>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Document</th><th>Number</th><th>Status</th><th>Date</th><th></th></tr>
     {% for d in commercial_documents %}
     <tr><td>{{ d.get_kind_display }}</td>
-      <td><strong>{{ d.number }}</strong></td>
+      <td><a href="{% url 'web:commercial_document_detail' d.id %}"><strong>{{ d.number }}</strong></a></td>
+      <td><span class="chip">{{ d.get_status_display }}</span></td>
       <td class="muted">{{ d.created_at|date:"d M Y" }}</td>
-      <td class="right"><a href="{% url 'web:commercial_document_pdf' d.id %}">Download PDF</a></td></tr>
+      <td class="right"><a href="{% url 'web:commercial_document_detail' d.id %}">Open</a></td></tr>
     {% endfor %}
   </table>
-  {% endif %}
 </div>
 {% endif %}
 

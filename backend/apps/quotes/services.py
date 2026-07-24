@@ -79,24 +79,30 @@ def matching_purchase_order(quote):
 
 
 def can_generate_documents(quote) -> bool:
-    """A tax invoice or delivery note may be raised once a PO that matches the
-    quotation's price has been linked — never before the customer has committed
-    at the agreed number."""
-    return matching_purchase_order(quote) is not None
+    """A tax invoice or delivery note may be raised once the quotation is
+    finalized. A purchase order is optional — many smaller contractors work from
+    an approved quotation, an email or a phone instruction, so a PO must never
+    block invoicing. When a PO IS on file it is linked automatically."""
+    return quote.is_finalized
+
+
+def _po_for_document(quote):
+    """The PO to reference on a generated document, if any — prefer one whose
+    value matches the quotation, else the first on file, else none."""
+    return matching_purchase_order(quote) or quote.customer_pos.first()
 
 
 @transaction.atomic
 def create_invoice_document(quote, user):
     """Raise a tax invoice from the quotation — number inherited from the parent
-    reference, PO linked. The figures come from the quotation; nothing is typed."""
+    reference, any PO linked. The figures come from the quotation; nothing is
+    typed."""
     if not can_generate_documents(quote):
-        raise QuotationError("A purchase order matching the quotation's price must "
-                             "be linked before a tax invoice can be raised.")
+        raise QuotationError("Finalize the quotation before raising a tax invoice.")
     seq = quote.commercial_documents.filter(kind=CommercialDocument.Kind.INVOICE).count() + 1
     doc = CommercialDocument.objects.create(
         company=quote.company, quotation=quote, kind=CommercialDocument.Kind.INVOICE,
-        number=commercial_ref(quote, "invoice", seq),
-        purchase_order=matching_purchase_order(quote),
+        number=commercial_ref(quote, "invoice", seq), purchase_order=_po_for_document(quote),
         created_by=user, updated_by=user)
     record_event(quote, verb="invoice_created", actor=user, note=doc.number)
     return doc
@@ -105,15 +111,13 @@ def create_invoice_document(quote, user):
 @transaction.atomic
 def create_delivery_document(quote, user, **fields):
     """Raise a delivery note from the quotation. Carries operational quantities,
-    never prices."""
+    never prices. A PO is optional."""
     if not can_generate_documents(quote):
-        raise QuotationError("A purchase order matching the quotation's price must "
-                             "be linked before a delivery note can be raised.")
+        raise QuotationError("Finalize the quotation before raising a delivery note.")
     seq = quote.commercial_documents.filter(kind=CommercialDocument.Kind.DELIVERY).count() + 1
     doc = CommercialDocument.objects.create(
         company=quote.company, quotation=quote, kind=CommercialDocument.Kind.DELIVERY,
-        number=commercial_ref(quote, "delivery", seq),
-        purchase_order=matching_purchase_order(quote),
+        number=commercial_ref(quote, "delivery", seq), purchase_order=_po_for_document(quote),
         delivery_date=fields.get("delivery_date") or None,
         delivery_address=fields.get("delivery_address", "").strip(),
         driver=fields.get("driver", "").strip(),
@@ -121,6 +125,29 @@ def create_delivery_document(quote, user, **fields):
         delivery_notes=fields.get("delivery_notes", "").strip(),
         created_by=user, updated_by=user)
     record_event(quote, verb="delivery_created", actor=user, note=doc.number)
+    return doc
+
+
+#: The lifecycle a generated document walks: draft → approved → finalized → sent.
+#: Finalized (and beyond) is read-only.
+_COMDOC_NEXT = {"draft": ["approved", "finalized"], "approved": ["finalized"],
+                "finalized": ["sent"], "sent": []}
+
+
+def commercial_document_next_statuses(doc) -> list:
+    return _COMDOC_NEXT.get(doc.status, [])
+
+
+def transition_commercial_document(doc, user, to_status):
+    """Advance a tax invoice or delivery note through its lifecycle. Finalizing
+    locks it — thereafter it is the commercial record."""
+    if to_status not in _COMDOC_NEXT.get(doc.status, []):
+        raise QuotationError(
+            f"A {doc.get_status_display().lower()} document cannot move to "
+            f"'{to_status}'.")
+    doc.status = to_status
+    doc.updated_by = user
+    doc.save(update_fields=["status", "updated_by"])
     return doc
 
 

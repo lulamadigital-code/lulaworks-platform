@@ -808,6 +808,36 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertContains(resp, "Purchase order received")
         self.assertContains(resp, "Payment received")
 
+    def test_invoice_and_delivery_buttons_appear_after_finalize_without_a_po(self):
+        # A PO is optional — finalizing is enough to raise documents.
+        self.assertNotContains(self.client.get(self._url()), "Create tax invoice")
+        self._set_status("issued")
+        final = self.client.get(self._url())
+        self.assertContains(final, "Create tax invoice")
+        self.assertContains(final, "Create delivery note")
+
+    def test_creating_an_invoice_opens_its_detail_page(self):
+        with tenant_scope(self.company.id):
+            self.quote.lines.create(company=self.company, position=2,
+                                    description="Bolt", qty=4, unit_price=25)
+        self._set_status("issued")
+        resp = self.client.post(self._url("invoice/"))
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/commercial-documents/", resp.url)
+        detail = self.client.get(resp.url)
+        self.assertContains(detail, "Tax invoice")
+        self.assertContains(detail, "INV-")
+        self.assertContains(detail, "Finalize")            # lifecycle action
+        self.assertContains(detail, "preview")             # PDF preview
+
+    def test_scope_of_work_shows_on_the_review_page(self):
+        with tenant_scope(self.company.id):
+            self.quote.scope_of_work = "Replace the head-pulley bearings."
+            self.quote.save(update_fields=["scope_of_work"])
+        resp = self.client.get(self._url())
+        self.assertContains(resp, "Scope of Work")
+        self.assertContains(resp, "head-pulley bearings")
+
     @NO_AI
     def test_po_extraction_reads_the_document_deterministically(self):
         po = SimpleUploadedFile(

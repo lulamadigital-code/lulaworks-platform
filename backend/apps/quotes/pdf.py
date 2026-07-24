@@ -262,16 +262,12 @@ def quotation_pdf_bytes(quote) -> bytes:
     ]))
     story += [tbl]
 
-    # ── Totals. On an exclusive quote VAT is a memo (added on the tax invoice),
-    # so it is not part of the quotation total.
-    if quote.vat_mode == "inclusive":
-        totals = [["SUBTOTAL", f"R{quote.subtotal:,.2f}"],
-                  [f"VAT@{quote.vat_rate:g}% (incl.)", f"R{quote.vat_amount:,.2f}"],
-                  ["TOTAL", f"R{quote.total:,.2f}"]]
-    else:
-        totals = [["SUBTOTAL", f"R{quote.subtotal:,.2f}"],
-                  [f"VAT@{quote.vat_rate:g}% (added on invoice)", f"R{quote.vat_amount:,.2f}"],
-                  ["TOTAL (excl. VAT)", f"R{quote.total:,.2f}"]]
+    # ── Totals. On an exclusive quote VAT is not part of the quotation total
+    # (it is added on the tax invoice), so the VAT line reads R0.00.
+    vat_on_quote = quote.vat_amount if quote.vat_mode == "inclusive" else 0
+    totals = [["SUBTOTAL", f"R{quote.subtotal:,.2f}"],
+              ["VAT", f"R{vat_on_quote:,.2f}"],
+              ["TOTAL", f"R{quote.total:,.2f}"]]
     tot = Table(totals, colWidths=[45 * mm, 33.5 * mm], hAlign="RIGHT")
     tot.setStyle(TableStyle([
         ("ALIGN", (0, 0), (-1, -1), "RIGHT"),

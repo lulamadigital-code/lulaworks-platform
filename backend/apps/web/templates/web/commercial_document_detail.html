@@ -1,0 +1,97 @@
+{% extends "web/base.html" %}
+{% block title %}{{ doc.number }}{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:quotation_detail' quote.id %}">← {{ quote.number }}</a></p>
+
+{# ── Status banner ────────────────────────────────────────────────────────── #}
+<div class="statusbanner
+  {% if doc.status == 'sent' %}sb-good{% elif doc.status == 'finalized' %}sb-issued
+  {% elif doc.status == 'approved' %}sb-approved{% else %}sb-draft{% endif %}">
+  <div>
+    <span class="sb-label">{{ doc.get_status_display }}</span>
+    {% if doc.is_finalized %}<span class="sb-note">Read-only — the commercial record</span>{% endif %}
+  </div>
+  <span class="sb-rev">{{ doc.get_kind_display }}</span>
+</div>
+
+<div class="pagehead" style="margin-top:14px;">
+  <div>
+    <h1 style="margin:0 0 4px;">{{ doc.number }}</h1>
+    <p class="sub" style="margin:0;">{{ doc.get_kind_display }} ·
+      from <a href="{% url 'web:quotation_detail' quote.id %}">{{ quote.number }}</a>
+      {% if quote.customer %} · {{ quote.customer.display_name }}{% endif %}
+      {% if doc.purchase_order %} · PO {{ doc.purchase_order.po_number }}{% endif %}</p>
+  </div>
+</div>
+
+{# ── Actions ──────────────────────────────────────────────────────────────── #}
+<div class="actionbar">
+  {% if can_approve %}
+  <form method="post" action="{% url 'web:commercial_document_transition' doc.id %}">{% csrf_token %}
+    <input type="hidden" name="status" value="approved">
+    <button class="btn" type="submit">Approve</button></form>
+  {% endif %}
+  {% if can_finalize %}
+  <form method="post" action="{% url 'web:commercial_document_transition' doc.id %}"
+        data-confirm="Finalize {{ doc.number|escapejs }}? It becomes the read-only commercial record.">
+    {% csrf_token %}<input type="hidden" name="status" value="finalized">
+    <button class="btn" type="submit">Finalize</button></form>
+  {% endif %}
+  {% if can_download %}
+  <a class="btn ghost" href="{% url 'web:commercial_document_pdf' doc.id %}">Download PDF</a>
+  <a class="btn ghost" href="{% url 'web:commercial_document_excel' doc.id %}">Export Excel</a>
+  {% endif %}
+  {% if can_send %}
+  <form method="post" action="{% url 'web:commercial_document_transition' doc.id %}">{% csrf_token %}
+    <input type="hidden" name="status" value="sent">
+    <button class="btn" type="submit">Send to customer</button></form>
+  {% endif %}
+</div>
+
+{# ── Timeline ─────────────────────────────────────────────────────────────── #}
+<h2>{{ doc.get_kind_display }} timeline</h2>
+<div class="card ctl">
+  {% for step in timeline %}
+  <div class="ctl-row {% if step.done %}done{% endif %}">
+    <span class="ctl-dot"></span><span class="ctl-label">{{ step.label }}</span>
+    <span class="ctl-meta">{% if step.current %}current{% elif step.done %}✓{% else %}<span class="muted">pending</span>{% endif %}</span>
+  </div>
+  {% endfor %}
+</div>
+
+{# ── PDF preview ──────────────────────────────────────────────────────────── #}
+<h2>{{ doc.get_kind_display }} preview</h2>
+<div class="card" style="padding:0;overflow:hidden;">
+  <iframe title="{{ doc.get_kind_display }} PDF preview" class="pdfframe"
+          src="{% url 'web:commercial_document_pdf' doc.id %}?inline=1"></iframe>
+</div>
+<p class="muted" style="font-size:12.5px;margin-top:6px;">Generated from
+  <a href="{% url 'web:quotation_detail' quote.id %}">{{ quote.number }}</a> — the
+  customer, items{% if is_invoice %}, prices and VAT{% else %} and quantities{% endif %}
+  come from the quotation, nothing re-entered.</p>
+
+<style>
+  .statusbanner { display:flex; align-items:center; justify-content:space-between;
+    gap:12px; padding:14px 18px; border-radius:var(--r); }
+  .sb-label { font-weight:700; font-size:16px; }
+  .sb-note { margin-left:12px; font-size:12.5px; opacity:.8; }
+  .sb-rev { font-size:12.5px; font-weight:600; opacity:.85; }
+  .sb-draft { background:#eef0f5; color:#3a4356; }
+  .sb-approved { background:var(--blue-t,#e7f0fb); color:#2f6fd0; }
+  .sb-issued { background:var(--primary-t); color:var(--primary-d); }
+  .sb-good { background:var(--green-t,#e4f6ee); color:#0a8f57; }
+  .actionbar { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; align-items:center; }
+  .actionbar form { margin:0; }
+  .ctl { padding:6px 4px; }
+  .ctl-row { display:flex; align-items:center; gap:12px; padding:8px 10px; position:relative; }
+  .ctl-row:not(:last-child)::before { content:""; position:absolute; left:15px; top:26px;
+    bottom:-8px; width:2px; background:var(--line); }
+  .ctl-dot { width:11px; height:11px; border-radius:50%; background:#fff;
+    border:2px solid var(--line); flex:none; z-index:1; }
+  .ctl-row.done .ctl-dot { background:var(--primary); border-color:var(--primary); }
+  .ctl-label { flex:1; font-size:13.5px; color:var(--muted-c,#8a94a6); }
+  .ctl-row.done .ctl-label { color:var(--ink,#2a3242); font-weight:600; }
+  .ctl-meta { font-size:12.5px; color:var(--muted-c,#5b6b6a); }
+  .pdfframe { width:100%; height:820px; border:0; display:block; background:#f4f5f7; }
+</style>
+{% endblock %}

@@ -576,10 +576,18 @@ class CommercialDocument(TenantBaseModel):
         INVOICE = "invoice", "Tax invoice"
         DELIVERY = "delivery", "Delivery note"
 
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        APPROVED = "approved", "Approved"
+        FINALIZED = "finalized", "Finalized"
+        SENT = "sent", "Sent"
+
     quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE,
                                   related_name="commercial_documents")
     kind = models.CharField(max_length=12, choices=Kind.choices)
     number = models.CharField(max_length=48)
+    status = models.CharField(max_length=12, choices=Status.choices,
+                              default=Status.DRAFT)
     purchase_order = models.ForeignKey(
         CustomerPurchaseOrder, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="commercial_documents")
@@ -601,3 +609,7 @@ class CommercialDocument(TenantBaseModel):
 
     def __str__(self):
         return self.number
+
+    @property
+    def is_finalized(self) -> bool:
+        return self.status in (self.Status.FINALIZED, self.Status.SENT)

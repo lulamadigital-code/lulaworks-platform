@@ -878,48 +878,65 @@ class VatDeferralTests(TestCase):
 
 
 class CommercialDocumentTests(TestCase):
-    """Invoice and delivery note may be raised only once a PO matching the
-    quotation price is linked, and they inherit the quotation reference."""
+    """Invoice and delivery note are raised from a FINALIZED quotation — a PO is
+    optional (linked when present) — and inherit the quotation reference."""
 
-    def _quote_with_line(self, c, price=1000):
-        q = make_quote(c, number="LPS845192", vat_mode=VatMode.EXCLUSIVE)
+    def _finalized_quote(self, c, price=1000):
+        q = make_quote(c, number="LPS845192", vat_mode=VatMode.EXCLUSIVE,
+                       status=QuotationStatus.ISSUED)
         add_line(c, q, qty=2, price=price)
         return q
 
-    def test_no_documents_without_a_matching_po(self):
+    def test_cannot_generate_before_finalize(self):
         from apps.quotes.services import (
             QuotationError, can_generate_documents, create_invoice_document,
         )
         c = make_company()
         with tenant_scope(c.id):
-            q = self._quote_with_line(c)
+            q = make_quote(c, status=QuotationStatus.DRAFT)
+            add_line(c, q, qty=1, price=100)
             self.assertFalse(can_generate_documents(q))
             with self.assertRaises(QuotationError):
                 create_invoice_document(q, None)
 
-    def test_documents_generate_once_po_matches(self):
+    def test_generate_without_a_po(self):
+        """A PO is optional — a finalized quotation goes straight to documents."""
         from apps.quotes.services import (
-            can_generate_documents, create_delivery_document,
-            create_invoice_document, record_purchase_order,
+            can_generate_documents, create_delivery_document, create_invoice_document,
         )
         c = make_company()
         with tenant_scope(c.id):
-            q = self._quote_with_line(c)                 # 2 × 1000 = 2000 net
-            record_purchase_order(q, None, po_number="PO45821", value=q.invoice_total)
+            q = self._finalized_quote(c)
             self.assertTrue(can_generate_documents(q))
+            self.assertFalse(q.customer_pos.exists())
             inv = create_invoice_document(q, None)
             dn = create_delivery_document(q, None, delivery_address="K4 Shaft")
         self.assertEqual(inv.number, "INV-LPS845192-01")
         self.assertEqual(dn.number, "DN-LPS845192-01")
-        self.assertEqual(inv.purchase_order.po_number, "PO45821")
+        self.assertIsNone(inv.purchase_order)      # none on file, so none linked
 
-    def test_pos_that_do_not_match_price_do_not_unlock(self):
-        from apps.quotes.services import can_generate_documents, record_purchase_order
+    def test_links_po_when_one_is_on_file(self):
+        from apps.quotes.services import create_invoice_document, record_purchase_order
         c = make_company()
         with tenant_scope(c.id):
-            q = self._quote_with_line(c)
-            record_purchase_order(q, None, po_number="PO1", value=Decimal("50.00"))
-            self.assertFalse(can_generate_documents(q))
+            q = self._finalized_quote(c)
+            record_purchase_order(q, None, po_number="PO45821", value=q.invoice_total)
+            inv = create_invoice_document(q, None)
+        self.assertEqual(inv.purchase_order.po_number, "PO45821")
+
+    def test_finalizing_a_document_locks_it(self):
+        from apps.quotes.services import (
+            QuotationError, create_invoice_document, transition_commercial_document,
+        )
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._finalized_quote(c)
+            inv = create_invoice_document(q, None)
+            self.assertFalse(inv.is_finalized)
+            transition_commercial_document(inv, None, "finalized")
+            self.assertTrue(inv.is_finalized)
+            with self.assertRaises(QuotationError):     # cannot go back to draft
+                transition_commercial_document(inv, None, "draft")
 
     def test_invoice_and_delivery_pdfs_render(self):
         import io
@@ -932,7 +949,7 @@ class CommercialDocumentTests(TestCase):
         )
         c = make_company()
         with tenant_scope(c.id):
-            q = self._quote_with_line(c)
+            q = self._finalized_quote(c)
             record_purchase_order(q, None, po_number="PO45821", value=q.invoice_total)
             inv = create_invoice_document(q, None)
             dn = create_delivery_document(q, None)
