@@ -223,13 +223,14 @@ def quotation_pdf_bytes(quote) -> bytes:
              P(f"Date: {quote.created_at:%d/%m/%Y}", small)]
     if prep:
         right.append(P(f"Prepared by: {prep.get_full_name() or prep.email}", small))
+    # Scope of work sits directly below Prepared by.
+    if quote.scope_of_work:
+        right.append(Spacer(1, 1 * mm))
+        right.append(L("Scope of Work:", quote.scope_of_work))
     if quote.customer_reference:
         right.append(P(f"Your reference: {quote.customer_reference}", small))
     if quote.validity_date:
         right.append(P(f"Valid until: {quote.validity_date:%d/%m/%Y}", small))
-    if quote.scope_of_work:
-        right.append(Spacer(1, 1 * mm))
-        right.append(L("Scope of Work:", quote.scope_of_work))
 
     meta = Table([[left, right]], colWidths=[100 * mm, 86 * mm])
     meta.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
@@ -383,6 +384,13 @@ def invoice_pdf_bytes(doc) -> bytes:
     # The PO number the customer submitted — the invoice references their order.
     if po and po.po_number:
         right.append(L("PO Number:", po.po_number))
+    prep = quote.prepared_by
+    if prep:
+        right.append(P(f"Prepared by: {prep.get_full_name() or prep.email}", small))
+    # Scope of work sits directly below Prepared by, as on the quotation.
+    if quote.scope_of_work:
+        right.append(Spacer(1, 1 * mm))
+        right.append(L("Scope of Work:", quote.scope_of_work))
     meta = Table([[left, right]], colWidths=[100 * mm, 86 * mm])
     meta.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
     story += [meta, Spacer(1, 6 * mm)]
