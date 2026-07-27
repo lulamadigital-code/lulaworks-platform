@@ -98,9 +98,9 @@ def _scope_text(quote) -> str:
 
 def _prepared_by_lines(quote, small):
     """The 'Prepared By' block — the logged-in estimator who owns the document:
-    full name, position, cell and email, each shown only when present. Reads the
-    person's job title from their membership in this company. Shared by the
-    quotation, invoice and delivery note so the block is identical everywhere."""
+    full name and position only (cell and email are omitted). Reads the person's
+    job title from their membership in this company. Shared by the quotation,
+    invoice and delivery note so the block is identical everywhere."""
     prep = quote.prepared_by
     if not prep:
         return []
@@ -111,10 +111,6 @@ def _prepared_by_lines(quote, small):
     m = Membership.objects.filter(user=prep, company_id=quote.company_id).first()
     if m and m.job_title:
         lines.append(Paragraph(f"Position: {esc(m.job_title)}", small))
-    if getattr(prep, "mobile", ""):
-        lines.append(Paragraph(f"Cell: {esc(prep.mobile)}", small))
-    if prep.email:
-        lines.append(Paragraph(f"Email: {esc(prep.email)}", small))
     return lines
 
 

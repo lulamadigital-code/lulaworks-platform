@@ -1007,7 +1007,7 @@ class CommercialDocumentContentTests(TestCase):
         row.delivery_terms = "Goods received in good order unless noted."
         row.save()
 
-    def test_prepared_by_block_shows_name_position_cell_email(self):
+    def test_prepared_by_block_shows_name_and_position_only(self):
         from apps.quotes.pdf import quotation_pdf_bytes
         c = make_company()
         with tenant_scope(c.id):
@@ -1016,8 +1016,9 @@ class CommercialDocumentContentTests(TestCase):
         self.assertIn("Prepared By:", text)
         self.assertIn("Ronny Maluleke", text)
         self.assertIn("Senior Estimator", text)      # position from membership
-        self.assertIn("082 555 1234", text)           # cell
-        self.assertIn("estimator@lula.co", text)      # email
+        # Cell and email are deliberately omitted from the Prepared By block.
+        self.assertNotIn("082 555 1234", text)
+        self.assertNotIn("Email: estimator@lula.co", text)
 
     def test_terms_auto_inserted_from_company_settings(self):
         from apps.quotes.pdf import (
