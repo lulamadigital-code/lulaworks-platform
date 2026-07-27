@@ -1038,6 +1038,20 @@ class CommercialDocumentContentTests(TestCase):
         self.assertIn("Payment due within 30 days.", inv)
         self.assertIn("Goods received in good order", dn)
 
+    def test_scope_of_work_falls_back_to_the_quotation_title(self):
+        # The quotation title IS its scope of work — used when the dedicated
+        # scope field is left empty.
+        from apps.quotes.pdf import quotation_pdf_bytes
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, number="LPS777888", status=QuotationStatus.ISSUED)
+            q.title = "3 in 1 Mediloo Including bucket"
+            q.scope_of_work = ""
+            q.save()
+            add_line(c, q, qty=1, price=500)
+            text = self._text(quotation_pdf_bytes(q))
+        self.assertRegex(text, r"Scope of Work:\s*3 in 1 Mediloo Including bucket")
+
     def test_delivery_quantities_default_to_full_delivery(self):
         from apps.quotes.pdf import delivery_note_pdf_bytes
         from apps.quotes.services import create_delivery_document

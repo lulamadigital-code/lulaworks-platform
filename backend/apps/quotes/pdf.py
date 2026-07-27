@@ -90,6 +90,12 @@ def _customer_address(customer) -> str:
     return ", ".join(p for p in parts if p)
 
 
+def _scope_text(quote) -> str:
+    """The Scope of Work shown below Prepared By. The quotation's title *is* its
+    scope of work, so it is used when the dedicated scope field is left empty."""
+    return (quote.scope_of_work or "").strip() or (quote.title or "").strip()
+
+
 def _prepared_by_lines(quote, small):
     """The 'Prepared By' block — the logged-in estimator who owns the document:
     full name, position, cell and email, each shown only when present. Reads the
@@ -263,10 +269,12 @@ def quotation_pdf_bytes(quote) -> bytes:
              L("Quotation No:", quote.number),
              P(f"Date: {quote.created_at:%d/%m/%Y}", small)]
     right.extend(_prepared_by_lines(quote, small))
-    # Scope of work sits directly below Prepared by.
-    if quote.scope_of_work:
+    # Scope of work sits directly below Prepared by — the quotation title when no
+    # separate scope was entered.
+    scope = _scope_text(quote)
+    if scope:
         right.append(Spacer(1, 1 * mm))
-        right.append(L("Scope of Work:", quote.scope_of_work))
+        right.append(L("Scope of Work:", scope))
     if quote.customer_reference:
         right.append(P(f"Your reference: {quote.customer_reference}", small))
     if quote.validity_date:
@@ -431,9 +439,10 @@ def invoice_pdf_bytes(doc) -> bytes:
         right.append(L("PO Number:", po.po_number))
     right.extend(_prepared_by_lines(quote, small))
     # Scope of work sits directly below Prepared by, as on the quotation.
-    if quote.scope_of_work:
+    scope = _scope_text(quote)
+    if scope:
         right.append(Spacer(1, 1 * mm))
-        right.append(L("Scope of Work:", quote.scope_of_work))
+        right.append(L("Scope of Work:", scope))
     meta = Table([[left, right]], colWidths=[100 * mm, 86 * mm])
     meta.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
     story += [meta, Spacer(1, 6 * mm)]
@@ -528,9 +537,10 @@ def delivery_note_pdf_bytes(doc) -> bytes:
         right.append(L("Driver:", doc.driver))
     right.extend(_prepared_by_lines(quote, small))
     # Scope of work sits directly below Prepared by, as on the other documents.
-    if quote.scope_of_work:
+    scope = _scope_text(quote)
+    if scope:
         right.append(Spacer(1, 1 * mm))
-        right.append(L("Scope of Work:", quote.scope_of_work))
+        right.append(L("Scope of Work:", scope))
     meta = Table([[left, right]], colWidths=[100 * mm, 86 * mm])
     meta.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
     story += [meta, Spacer(1, 6 * mm)]
