@@ -41,11 +41,6 @@
   <a class="btn ghost" href="{% url 'web:commercial_document_pdf' doc.id %}">Download PDF</a>
   <a class="btn ghost" href="{% url 'web:commercial_document_excel' doc.id %}">Export Excel</a>
   {% endif %}
-  {% if can_send %}
-  <form method="post" action="{% url 'web:commercial_document_transition' doc.id %}">{% csrf_token %}
-    <input type="hidden" name="status" value="sent">
-    <button class="btn" type="submit">Send to customer</button></form>
-  {% endif %}
 </div>
 
 {# ── Timeline ─────────────────────────────────────────────────────────────── #}

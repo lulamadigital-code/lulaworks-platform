@@ -780,12 +780,12 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertIn("spreadsheetml", resp["Content-Type"])
         self.assertTrue(resp["Content-Disposition"].endswith('.xlsx"'))
 
-    def test_po_section_appears_only_once_sent(self):
-        # Hidden while draft AND while merely finalized — only after it is sent.
+    def test_po_section_appears_once_finalized(self):
+        # Hidden while draft; the optional PO section opens once finalized (a
+        # customer may return a PO, but it is no longer required, and there is
+        # no separate "sent" step to reach first).
         self.assertNotContains(self.client.get(self._url()), "Attach a purchase order")
         self._set_status("issued")
-        self.assertNotContains(self.client.get(self._url()), "Attach a purchase order")
-        self._set_status("sent")
         self.assertContains(self.client.get(self._url()), "Attach a purchase order")
 
     def test_download_and_excel_hidden_until_finalized(self):
@@ -794,12 +794,12 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertNotContains(draft, "Download PDF")
         self.assertNotContains(draft, "Export Excel")
         self.assertContains(draft, "Finalize")
-        # Finalized: the outputs appear, and Send.
+        # Finalized: the outputs appear. "Send to customer" was removed (V4).
         self._set_status("issued")
         final = self.client.get(self._url())
         self.assertContains(final, "Download PDF")
         self.assertContains(final, "Export Excel")
-        self.assertContains(final, "Send to customer")
+        self.assertNotContains(final, "Send to customer")
 
     def test_commercial_timeline_is_shown_with_stages(self):
         resp = self.client.get(self._url())

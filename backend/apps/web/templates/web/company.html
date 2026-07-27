@@ -456,6 +456,28 @@
   </form>
 </div>
 
+{# ── Commercial document settings ────────────────────────────────────────── #}
+<h2>Commercial document settings</h2>
+<div class="card">
+  <p class="muted" style="margin:0 0 14px;font-size:13px;">Your standard terms &amp;
+    conditions for each document type. Entered once here, they are inserted
+    automatically into every quotation, invoice and delivery note — nobody has to
+    copy them in. One point per line.</p>
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="section" value="commercial">
+    <label>Quotation terms &amp; conditions</label>
+    <textarea name="quotation_terms" rows="4"
+      placeholder="e.g. Prices valid for 30 days. 50% deposit required to commence.">{{ settings.quotation_terms }}</textarea>
+    <label style="margin-top:14px;display:block;">Invoice terms &amp; conditions</label>
+    <textarea name="invoice_terms" rows="4"
+      placeholder="e.g. Payment due within 30 days of invoice date. E&amp;OE.">{{ settings.invoice_terms }}</textarea>
+    <label style="margin-top:14px;display:block;">Delivery note terms &amp; conditions</label>
+    <textarea name="delivery_terms" rows="4"
+      placeholder="e.g. Goods received in good order unless noted above at delivery.">{{ settings.delivery_terms }}</textarea>
+    {% if can_edit %}<button class="btn" type="submit" style="margin-top:16px;">Save document settings</button>{% endif %}
+  </form>
+</div>
+
 <h2>LulaAI</h2>
 <div class="card">
   <form method="post">{% csrf_token %}

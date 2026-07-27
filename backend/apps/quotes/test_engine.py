@@ -969,3 +969,83 @@ class CommercialDocumentTests(TestCase):
         self.assertIn("DELIVERY NOTE", dtext)
         self.assertIn("Outstanding", dtext)        # operational columns
         self.assertNotIn("R2,000", dtext)          # a delivery note shows no prices
+        # Consistency (V4): the delivery note carries banking like the others.
+        self.assertIn("BANKING DETAILS", dtext)
+
+
+class CommercialDocumentContentTests(TestCase):
+    """V4 document consistency: standard terms auto-inserted from the company
+    profile, a Prepared By block, and delivery quantities that default to a full
+    delivery — across quotation, invoice and delivery note."""
+
+    def _text(self, pdf_bytes):
+        import io
+
+        import pdfplumber
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as d:
+            return "\n".join(p.extract_text() or "" for p in d.pages)
+
+    def _prepared_quote(self, c):
+        from apps.identity.models import Membership, User
+        u = User.objects.create_user("estimator@lula.co", "x",
+                                     first_name="Ronny", last_name="Maluleke",
+                                     mobile="082 555 1234")
+        Membership.objects.create(user=u, company=c, job_title="Senior Estimator")
+        q = make_quote(c, number="LPS845192", vat_mode=VatMode.EXCLUSIVE,
+                       status=QuotationStatus.ISSUED)
+        q.prepared_by = u
+        q.scope_of_work = "Supply and install conveyor idlers at K4 shaft."
+        q.save()
+        add_line(c, q, qty=20, price=100)
+        return q
+
+    def _set_terms(self, c):
+        from apps.administration.models import CompanySettings
+        row, _ = CompanySettings.objects.get_or_create(company=c)
+        row.quotation_terms = "Prices valid for 30 days.\n50% deposit required."
+        row.invoice_terms = "Payment due within 30 days. E&OE."
+        row.delivery_terms = "Goods received in good order unless noted."
+        row.save()
+
+    def test_prepared_by_block_shows_name_position_cell_email(self):
+        from apps.quotes.pdf import quotation_pdf_bytes
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._prepared_quote(c)
+            text = self._text(quotation_pdf_bytes(q))
+        self.assertIn("Prepared By:", text)
+        self.assertIn("Ronny Maluleke", text)
+        self.assertIn("Senior Estimator", text)      # position from membership
+        self.assertIn("082 555 1234", text)           # cell
+        self.assertIn("estimator@lula.co", text)      # email
+
+    def test_terms_auto_inserted_from_company_settings(self):
+        from apps.quotes.pdf import (
+            delivery_note_pdf_bytes, invoice_pdf_bytes, quotation_pdf_bytes,
+        )
+        from apps.quotes.services import (
+            create_delivery_document, create_invoice_document,
+        )
+        c = make_company()
+        with tenant_scope(c.id):
+            self._set_terms(c)
+            q = self._prepared_quote(c)
+            qt = self._text(quotation_pdf_bytes(q))
+            inv = self._text(invoice_pdf_bytes(create_invoice_document(q, None)))
+            dn = self._text(delivery_note_pdf_bytes(create_delivery_document(q, None)))
+        self.assertIn("Terms & Conditions", qt)
+        self.assertIn("50% deposit required.", qt)
+        self.assertIn("Payment due within 30 days.", inv)
+        self.assertIn("Goods received in good order", dn)
+
+    def test_delivery_quantities_default_to_full_delivery(self):
+        from apps.quotes.pdf import delivery_note_pdf_bytes
+        from apps.quotes.services import create_delivery_document
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._prepared_quote(c)          # a line of qty 20
+            dn = create_delivery_document(q, None)
+            text = self._text(delivery_note_pdf_bytes(dn))
+        # Ordered 20, Delivered 20, Outstanding 0 — the normal full delivery.
+        self.assertIn("Outstanding", text)
+        self.assertRegex(text, r"20(?:\.00)?\s+20(?:\.00)?\s+0\b")

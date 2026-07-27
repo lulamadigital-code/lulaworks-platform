@@ -65,6 +65,23 @@ def postal_address_lines(company) -> list[str]:
     return [p for p in parts if p]
 
 
+def document_terms(company, *, kind="quotation") -> str:
+    """The standard Terms & Conditions the company configured for this document
+    type (Company Profile → Commercial Document Settings). Auto-inserted into
+    generated documents so nobody copies wording into individual quotations,
+    invoices or delivery notes. Returns "" when nothing is configured.
+    """
+    from apps.administration.models import CompanySettings
+    row = CompanySettings.objects.filter(company=company).first()
+    if not row:
+        return ""
+    return {
+        "quotation": row.quotation_terms,
+        "invoice": row.invoice_terms,
+        "delivery": row.delivery_terms,
+    }.get(kind, "")
+
+
 def document_header(company, *, kind="invoice") -> dict:
     """Everything a generated business document needs about *us*, in one call.
 

@@ -90,6 +90,45 @@ def _customer_address(customer) -> str:
     return ", ".join(p for p in parts if p)
 
 
+def _prepared_by_lines(quote, small):
+    """The 'Prepared By' block — the logged-in estimator who owns the document:
+    full name, position, cell and email, each shown only when present. Reads the
+    person's job title from their membership in this company. Shared by the
+    quotation, invoice and delivery note so the block is identical everywhere."""
+    prep = quote.prepared_by
+    if not prep:
+        return []
+    esc = escape
+    lines = [Paragraph(
+        f"<b>Prepared By:</b> {esc(prep.get_full_name() or prep.email)}", small)]
+    from apps.identity.models import Membership
+    m = Membership.objects.filter(user=prep, company_id=quote.company_id).first()
+    if m and m.job_title:
+        lines.append(Paragraph(f"Position: {esc(m.job_title)}", small))
+    if getattr(prep, "mobile", ""):
+        lines.append(Paragraph(f"Cell: {esc(prep.mobile)}", small))
+    if prep.email:
+        lines.append(Paragraph(f"Email: {esc(prep.email)}", small))
+    return lines
+
+
+def _terms_flowables(company, kind, small, muted):
+    """The company's standard Terms & Conditions for this document type, pulled
+    from Company Profile → Commercial Document Settings and auto-inserted. Each
+    non-blank line of the stored text becomes a paragraph. Empty when unset."""
+    from apps.identity.profile import document_terms
+    text = document_terms(company, kind=kind)
+    if not text:
+        return []
+    out = [Paragraph("<b>Terms &amp; Conditions</b>", small), Spacer(1, 1.5 * mm)]
+    for para in text.splitlines():
+        para = para.strip()
+        if para:
+            out.append(Paragraph(escape(para), muted))
+    out.append(Spacer(1, 5 * mm))
+    return out
+
+
 def _signoff_banking_boxes(header, brand, small, muted, *, compiled_label,
                            prep_name, today,
                            received_label="Received in Good Order By:"):
@@ -168,7 +207,9 @@ def quotation_pdf_bytes(quote) -> bytes:
     for line in header["address_lines"]:
         ident.append(P(line, muted))
     if header["phone"]:
-        ident.append(P(header["phone"], muted))
+        ident.append(P(f"Tel {header['phone']}", muted))
+    if header["mobile"]:
+        ident.append(P(f"Cell {header['mobile']}", muted))
     if header["email"]:
         ident.append(P(f"Email {header['email']}", muted))
     if header["tax_reference_no"]:
@@ -221,8 +262,7 @@ def quotation_pdf_bytes(quote) -> bytes:
     right = [Paragraph("QUOTATION", title), Spacer(1, 2 * mm),
              L("Quotation No:", quote.number),
              P(f"Date: {quote.created_at:%d/%m/%Y}", small)]
-    if prep:
-        right.append(P(f"Prepared by: {prep.get_full_name() or prep.email}", small))
+    right.extend(_prepared_by_lines(quote, small))
     # Scope of work sits directly below Prepared by.
     if quote.scope_of_work:
         right.append(Spacer(1, 1 * mm))
@@ -287,6 +327,9 @@ def quotation_pdf_bytes(quote) -> bytes:
     if quote.exclusions or quote.assumptions:
         story.append(Spacer(1, 4 * mm))
 
+    # Standard terms & conditions, configured once per company and inserted here.
+    story += _terms_flowables(company, "quotation", small, muted)
+
     # ── Sign-off and banking — two separate boxes. "Compiled by" fills itself
     # in; "received in good order" is left blank for the customer to sign.
     prep_name = _initials_surname(prep.get_full_name()) if prep and prep.get_full_name() \
@@ -316,7 +359,9 @@ def _letterhead(company, brand, header, coname, small, muted, title, title_text)
     for line in header["address_lines"]:
         ident.append(Paragraph(esc(line), muted))
     if header["phone"]:
-        ident.append(Paragraph(esc(header["phone"]), muted))
+        ident.append(Paragraph(f"Tel {esc(header['phone'])}", muted))
+    if header["mobile"]:
+        ident.append(Paragraph(f"Cell {esc(header['mobile'])}", muted))
     if header["email"]:
         ident.append(Paragraph(f"Email {esc(header['email'])}", muted))
     if header["tax_reference_no"]:
@@ -384,9 +429,7 @@ def invoice_pdf_bytes(doc) -> bytes:
     # The PO number the customer submitted — the invoice references their order.
     if po and po.po_number:
         right.append(L("PO Number:", po.po_number))
-    prep = quote.prepared_by
-    if prep:
-        right.append(P(f"Prepared by: {prep.get_full_name() or prep.email}", small))
+    right.extend(_prepared_by_lines(quote, small))
     # Scope of work sits directly below Prepared by, as on the quotation.
     if quote.scope_of_work:
         right.append(Spacer(1, 1 * mm))
@@ -421,6 +464,9 @@ def invoice_pdf_bytes(doc) -> bytes:
         ("LINEABOVE", (0, -1), (-1, -1), 0.8, brand), ("TOPPADDING", (0, 0), (-1, -1), 4),
         ("TEXTCOLOR", (0, -1), (-1, -1), brand)]))
     story += [tot, Spacer(1, 8 * mm)]
+
+    # Standard invoice terms, configured once per company and inserted here.
+    story += _terms_flowables(company, "invoice", small, muted)
 
     # Same boxed sign-off + banking as the quotation, worded for an invoice.
     prep = quote.prepared_by
@@ -480,15 +526,23 @@ def delivery_note_pdf_bytes(doc) -> bytes:
         right.append(L("Delivery date:", f"{doc.delivery_date:%d/%m/%Y}"))
     if doc.driver:
         right.append(L("Driver:", doc.driver))
+    right.extend(_prepared_by_lines(quote, small))
+    # Scope of work sits directly below Prepared by, as on the other documents.
+    if quote.scope_of_work:
+        right.append(Spacer(1, 1 * mm))
+        right.append(L("Scope of Work:", quote.scope_of_work))
     meta = Table([[left, right]], colWidths=[100 * mm, 86 * mm])
     meta.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
     story += [meta, Spacer(1, 6 * mm)]
 
+    # Ordered comes from the quotation. Delivered defaults to the full ordered
+    # quantity and Outstanding to zero (Ordered − Delivered) — the normal case,
+    # a complete delivery; the driver strikes through and adjusts for a partial.
     cell = small.clone("cell")
     rows = [["Item", "Description", "Ordered", "Delivered", "Outstanding", "Unit"]]
     for ln in quote.lines.all():
         rows.append([str(ln.position), Paragraph(escape(ln.description), cell),
-                     f"{ln.qty:g}", "", "", ln.unit])
+                     f"{ln.qty:g}", f"{ln.qty:g}", "0", ln.unit])
     tbl = Table(rows, colWidths=[14 * mm, 78 * mm, 24 * mm, 24 * mm, 26 * mm, 20 * mm],
                 repeatRows=1)
     tbl.setStyle(TableStyle([
@@ -501,10 +555,16 @@ def delivery_note_pdf_bytes(doc) -> bytes:
     if doc.delivery_notes:
         story += [L("Delivery notes:", doc.delivery_notes, muted), Spacer(1, 4 * mm)]
 
-    receiver = doc.receiver_name or "____________________"
-    story += [Paragraph("<b>Received in good order</b>", small), Spacer(1, 2 * mm),
-              P(f"Receiver name: {receiver}", muted), Spacer(1, 4 * mm),
-              P("Signature: ____________________"
-                "&nbsp;&nbsp;&nbsp;Date: ____________", muted)]
+    # Standard delivery terms, then the same boxed sign-off + banking layout the
+    # quotation and invoice use — only the title differs, for a consistent set.
+    story += _terms_flowables(company, "delivery", small, muted)
+    prep = quote.prepared_by
+    prep_name = _initials_surname(prep.get_full_name()) if prep and prep.get_full_name() \
+        else (prep.email if prep else "")
+    footer = _signoff_banking_boxes(
+        header, brand, small, muted, compiled_label="Delivery Compiled By:",
+        prep_name=prep_name, today=doc.created_at.strftime("%d/%m/%Y"),
+        received_label="Received in Good Order By:")
+    story += [footer]
     pdf.build(story)
     return buf.getvalue()

@@ -83,6 +83,15 @@ class CompanySettings(PlatformBaseModel):
     # ── Document templates (which layout each document type uses) ─────────
     document_templates = models.JSONField(default=dict, blank=True)
 
+    # ── Commercial document terms & conditions ────────────────────────────
+    # The standard wording each company configures once and has auto-inserted
+    # into every generated document, so nobody copies terms into individual
+    # quotations, invoices or delivery notes. Stored as plain text; each line
+    # becomes a paragraph on the PDF.
+    quotation_terms = models.TextField(blank=True)
+    invoice_terms = models.TextField(blank=True)
+    delivery_terms = models.TextField(blank=True)
+
     class Meta:
         verbose_name_plural = "company settings"
 

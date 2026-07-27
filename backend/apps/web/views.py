@@ -740,6 +740,9 @@ def company_profile(request):
         elif section == "defaults":
             _save_defaults(request, company)
             messages.success(request, "Defaults updated.")
+        elif section == "commercial":
+            _save_commercial(request, company)
+            messages.success(request, "Commercial document settings updated.")
         else:
             messages.error(request, "Unknown section.")
         return redirect("web:company_profile")
@@ -859,6 +862,18 @@ def _save_defaults(request, company):
         if field in request.POST:
             setattr(company, field, request.POST.get(field, "").strip())
     company.save(update_fields=["currency", "timezone"])
+
+
+def _save_commercial(request, company):
+    """Standard terms & conditions per document type — configured once, then
+    auto-inserted into every quotation, invoice and delivery note."""
+    from apps.administration.models import CompanySettings
+    settings_row = CompanySettings.objects.get(company=company)
+    for field in ("quotation_terms", "invoice_terms", "delivery_terms"):
+        if field in request.POST:
+            setattr(settings_row, field, request.POST.get(field, "").strip())
+    settings_row.save(update_fields=["quotation_terms", "invoice_terms",
+                                     "delivery_terms", "updated_at"])
 
 
 @login_required
@@ -1439,11 +1454,11 @@ def _quotation_review(request, quote):
             "draft", "review", "manager_approval", "commercial_approval"),
         "can_finalize": can_quote and quote.status == "approved",
         "can_download": quote.is_finalized,
-        "can_send": can_quote and quote.status == "issued",
         "can_revise": can_quote and quote.is_finalized,
         "can_award": request.user.has_perm_code("projects.create"),
-        # The PO section is hidden until the quotation has been sent.
-        "po_active": quote.status in ("sent", "accepted", "awarded"),
+        # The optional PO section opens once the quotation is finalised (the
+        # customer may send one back, but it is not required to invoice).
+        "po_active": quote.is_finalized,
         "purchase_orders": list(quote.customer_pos.all()),
         # Invoice / delivery note may be raised once a price-matching PO is linked.
         "can_generate_docs": can_quote and can_generate_documents(quote),
