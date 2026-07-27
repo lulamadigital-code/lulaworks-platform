@@ -425,6 +425,11 @@ def invoice_pdf_bytes(doc) -> bytes:
         left.append(P(f"VAT No: {quote.customer.vat_no}", muted))
     if quote.contact:
         left.append(P(f"Contact Person: {quote.contact.full_name}", small))
+        tel = quote.contact.telephone or quote.contact.mobile
+        if tel:
+            left.append(P(f"Tel: {tel}", muted))
+        if quote.contact.email:
+            left.append(P(f"Email: {quote.contact.email}", muted))
 
     right = [Paragraph("TAX INVOICE", title), Spacer(1, 2 * mm),
              L("Invoice No:", doc.number),
@@ -519,7 +524,12 @@ def delivery_note_pdf_bytes(doc) -> bytes:
     if ship_to:
         left.append(P(f"Deliver to: {ship_to}", muted))
     if quote.contact:
-        left.append(P(f"Contact: {quote.contact.full_name}", small))
+        left.append(P(f"Contact Person: {quote.contact.full_name}", small))
+        tel = quote.contact.telephone or quote.contact.mobile
+        if tel:
+            left.append(P(f"Tel: {tel}", muted))
+        if quote.contact.email:
+            left.append(P(f"Email: {quote.contact.email}", muted))
 
     right = [Paragraph("DELIVERY NOTE", title), Spacer(1, 2 * mm),
              L("Delivery note:", doc.number),

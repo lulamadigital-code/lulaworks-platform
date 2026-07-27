@@ -1039,6 +1039,33 @@ class CommercialDocumentContentTests(TestCase):
         self.assertIn("Payment due within 30 days.", inv)
         self.assertIn("Goods received in good order", dn)
 
+    def test_contact_tel_and_email_appear_on_invoice_and_delivery(self):
+        # The contact person's Tel and Email show on the invoice and delivery
+        # note, just like on the quotation.
+        from apps.customers.models import Customer, CustomerContact
+        from apps.quotes.pdf import delivery_note_pdf_bytes, invoice_pdf_bytes
+        from apps.quotes.services import (
+            create_delivery_document, create_invoice_document,
+        )
+        c = make_company()
+        with tenant_scope(c.id):
+            cust = Customer.objects.create(company=c, name="Harmony Mining")
+            contact = CustomerContact.objects.create(
+                company=c, customer=cust, full_name="Thabo Nkosi",
+                telephone="011 999 1234", email="thabo@harmony.co")
+            q = make_quote(c, number="LPS900111", vat_mode=VatMode.EXCLUSIVE,
+                           status=QuotationStatus.ISSUED)
+            q.customer = cust
+            q.contact = contact
+            q.save()
+            add_line(c, q, qty=1, price=500)
+            inv = self._text(invoice_pdf_bytes(create_invoice_document(q, None)))
+            dn = self._text(delivery_note_pdf_bytes(create_delivery_document(q, None)))
+        for text in (inv, dn):
+            self.assertIn("Thabo Nkosi", text)
+            self.assertIn("011 999 1234", text)
+            self.assertIn("thabo@harmony.co", text)
+
     def test_scope_of_work_falls_back_to_the_quotation_title(self):
         # The quotation title IS its scope of work — used when the dedicated
         # scope field is left empty.
