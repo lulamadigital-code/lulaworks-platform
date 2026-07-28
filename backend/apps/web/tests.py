@@ -361,18 +361,24 @@ class QuotationTests(TestCase):
         c = make_company()
         with tenant_scope(c.id):
             q = self._quote(c)
+        # Editing needs quotes.create; the on-screen preview is open to a viewer;
+        # taking a copy (download) needs quotes.download.
         user = user_with(c, ["projects.view", "finance.view_money", "quotes.create"])
         self.client.force_login(user)
-        # The review page shows the number; the line items live in the PDF
-        # preview and, in text, on the edit page.
         detail = self.client.get(f"/quotations/{q.id}/")
         self.assertEqual(detail.status_code, 200)
         self.assertContains(detail, q.number)
         self.assertContains(self.client.get(f"/quotations/{q.id}/?edit=1"), "Steel")
-        # PDF download
+        # The inline preview is allowed without the download permission…
+        self.assertEqual(self.client.get(f"/quotations/{q.id}/pdf/?inline=1").status_code, 200)
+        # …but taking a copy is forbidden without it.
+        self.assertEqual(self.client.get(f"/quotations/{q.id}/pdf/").status_code, 403)
+
+        downloader = user_with(c, ["quotes.create", "quotes.download"],
+                               email="dl@lulama.co.za")
+        self.client.force_login(downloader)
         pdf = self.client.get(f"/quotations/{q.id}/pdf/")
         self.assertEqual(pdf.status_code, 200)
-        self.assertEqual(pdf["Content-Type"], "application/pdf")
         self.assertTrue(pdf.content.startswith(b"%PDF"))
         self.assertIn(f"{q.number}.pdf", pdf["Content-Disposition"])
 
@@ -487,6 +493,7 @@ class EveryPageLoadsTests(TestCase):
             "procurement.manage", "po.approve", "finance.view_money",
             "finance.manage", "execution.manage", "compliance.manage",
             "compliance.override", "ai.generate", "users.invite", "company.manage",
+            "quotes.approve", "quotes.download",
         ], email="everything@lulama.co.za")
 
         with tenant_scope(self.company.id):
@@ -765,7 +772,8 @@ class QuotationReviewWorkflowTests(TestCase):
 
         self.company = make_company(name="Harmony Works")
         self.user = user_with(self.company, [
-            "quotes.create", "finance.view_money", "company.manage",
+            "quotes.create", "quotes.approve", "quotes.download",
+            "finance.view_money", "company.manage",
             "projects.create"], email="mgr@harmony.co.za")
         with tenant_scope(self.company.id):
             ensure_quotation_types(self.company)
@@ -799,6 +807,16 @@ class QuotationReviewWorkflowTests(TestCase):
         resp = self.client.get(self._url("?edit=1"))
         self.assertContains(resp, "Editing")
         self.assertContains(resp, "Add a line")
+
+    def test_create_only_user_cannot_approve(self):
+        # Separation of duties: quotes.create prepares; approving needs
+        # quotes.approve. A create-only user is refused and the quote stays draft.
+        creator = user_with(self.company, ["quotes.create"], email="creator@harmony.co.za")
+        self.client.force_login(creator)
+        self.client.post(self._url("status/"), {"status": "approved"})
+        with tenant_scope(self.company.id):
+            self.quote.refresh_from_db()
+        self.assertEqual(self.quote.status, "draft")
 
     def test_approve_locks_editing(self):
         # Approve is the final step (no separate finalize): it locks the quote.

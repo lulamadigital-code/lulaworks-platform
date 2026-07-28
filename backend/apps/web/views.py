@@ -16,7 +16,7 @@ from decimal import Decimal, InvalidOperation
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_sameorigin
@@ -1461,20 +1461,20 @@ def _quotation_review(request, quote):
     )
 
     can_quote = request.user.has_perm_code("quotes.create")
+    can_approve = request.user.has_perm_code("quotes.approve")
+    can_download = request.user.has_perm_code("quotes.download")
     matched_po = matching_purchase_order(quote)
     context = {
         "quote": quote,
         "header": document_header(quote.company, kind="quotation"),
         "can_view_money": _can_view_money(request.user),
-        # Before finalize: edit / approve / finalize. The customer-facing outputs
-        # (PDF, Excel, Send) appear only once it is finalized and read-only.
+        # Editing a draft needs create; approving is a separate, authorised step.
         "can_edit": quote.is_editable and can_quote,
         # Approve is the single, final step — it locks the quotation and turns on
-        # the outputs (PDF, Excel, Create invoice/delivery). There is no separate
-        # finalize or send.
-        "can_approve": can_quote and quote.status in (
+        # the outputs (PDF, Excel, Create invoice/delivery).
+        "can_approve": can_approve and quote.status in (
             "draft", "review", "manager_approval", "commercial_approval"),
-        "can_download": quote.is_finalized,
+        "can_download": quote.is_finalized and can_download,
         "can_revise": can_quote and quote.is_finalized,
         "can_award": request.user.has_perm_code("projects.create"),
         # The optional PO section opens once the quotation is finalised (the
@@ -1501,9 +1501,13 @@ def _quotation_review(request, quote):
 def quotation_pdf(request, pk):
     quote = get_object_or_404(Quotation.objects.all().prefetch_related("lines"), pk=pk)
     pdf = quotation_pdf_bytes(quote)
-    resp = HttpResponse(pdf, content_type="application/pdf")
-    # inline for the on-screen preview iframe; attachment for the Download button.
+    # The on-screen preview (inline) is available to anyone who may view the
+    # quotation; taking a copy (attachment) needs the download permission.
     inline = bool(request.GET.get("inline"))
+    if not inline and not request.user.has_perm_code("quotes.download"):
+        return HttpResponseForbidden("You do not have permission to download this.")
+    pdf = quotation_pdf_bytes(quote)
+    resp = HttpResponse(pdf, content_type="application/pdf")
     disposition = "inline" if inline else "attachment"
     resp["Content-Disposition"] = f'{disposition}; filename="{quote.number}.pdf"'
     if not inline:                       # log real downloads, not preview renders
@@ -1522,6 +1526,8 @@ def quotation_excel(request, pk):
     import openpyxl
     from openpyxl.styles import Font
 
+    if not request.user.has_perm_code("quotes.download"):
+        return HttpResponseForbidden("You do not have permission to export this.")
     quote = get_object_or_404(Quotation.objects.all().prefetch_related("lines"), pk=pk)
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -2559,8 +2565,8 @@ def quotation_section(request, pk):
 def quotation_transition(request, pk):
     from apps.quotes.services import QuotationError, transition as move
     quote = get_object_or_404(Quotation.objects.all(), pk=pk)
-    if not request.user.has_perm_code("quotes.create"):
-        messages.error(request, "You do not have permission.")
+    if not request.user.has_perm_code("quotes.approve"):
+        messages.error(request, "You do not have permission to approve quotations.")
         return redirect("web:quotation_detail", pk=pk)
     to_status = request.POST.get("status")
     try:
@@ -2732,12 +2738,14 @@ def commercial_document_pdf(request, pk):
     from apps.quotes.pdf import delivery_note_pdf_bytes, invoice_pdf_bytes
 
     doc = get_object_or_404(CommercialDocument.objects.all(), pk=pk)
+    inline = bool(request.GET.get("inline"))
+    if not inline and not request.user.has_perm_code("quotes.download"):
+        return HttpResponseForbidden("You do not have permission to download this.")
     if doc.kind == CommercialDocument.Kind.INVOICE:
         pdf = invoice_pdf_bytes(doc)
     else:
         pdf = delivery_note_pdf_bytes(doc)
     resp = HttpResponse(pdf, content_type="application/pdf")
-    inline = bool(request.GET.get("inline"))
     disposition = "inline" if inline else "attachment"
     resp["Content-Disposition"] = f'{disposition}; filename="{doc.number}.pdf"'
     if not inline:
@@ -2775,8 +2783,8 @@ def commercial_document_detail(request, pk):
         "is_invoice": doc.kind == CommercialDocument.Kind.INVOICE,
         "can_view_money": _can_view_money(request.user),
         # Approve is the single, final step; there is no finalize or send.
-        "can_approve": can_quote and doc.status == "draft",
-        "can_download": doc.is_finalized,
+        "can_approve": request.user.has_perm_code("quotes.approve") and doc.status == "draft",
+        "can_download": doc.is_finalized and request.user.has_perm_code("quotes.download"),
         # From here you can also reach the sibling document off the same
         # quotation — view it if it exists, otherwise raise it.
         "can_generate_docs": can_quote and can_generate_documents(doc.quotation),
@@ -2795,8 +2803,8 @@ def commercial_document_transition(request, pk):
     from apps.quotes.models import CommercialDocument
     from apps.quotes.services import QuotationError, transition_commercial_document
     doc = get_object_or_404(CommercialDocument.objects.all(), pk=pk)
-    if not request.user.has_perm_code("quotes.create"):
-        messages.error(request, "You do not have permission.")
+    if not request.user.has_perm_code("quotes.approve"):
+        messages.error(request, "You do not have permission to approve documents.")
         return redirect("web:commercial_document_detail", pk=pk)
     try:
         transition_commercial_document(doc, request.user,
@@ -2818,6 +2826,8 @@ def commercial_document_excel(request, pk):
     from openpyxl.styles import Font
 
     from apps.quotes.models import CommercialDocument
+    if not request.user.has_perm_code("quotes.download"):
+        return HttpResponseForbidden("You do not have permission to export this.")
     doc = get_object_or_404(CommercialDocument.objects.select_related("quotation"), pk=pk)
     quote = doc.quotation
     is_invoice = doc.kind == CommercialDocument.Kind.INVOICE
