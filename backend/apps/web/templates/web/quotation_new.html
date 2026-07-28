@@ -83,7 +83,11 @@
       <div id="discount-row" style="display:none;"><span>Discount (−R)</span>
         <span><input type="number" step="0.01" min="0" name="discount_amount"
               id="discount_amount" value="0"
-              style="width:130px;text-align:right;"></span></div>
+              style="width:130px;text-align:right;">
+          <button type="button" id="remove-discount" title="Remove discount"
+                  aria-label="Remove discount"
+                  style="margin-left:8px;border:0;background:none;cursor:pointer;
+                         color:var(--muted);font-size:15px;">✕</button></span></div>
       <div><span id="t-vat-label">VAT (15%)</span><span id="t-vat">R 0.00</span></div>
       <div class="grand"><span>Grand total</span><span id="t-grand">R 0.00</span></div>
     </div>
@@ -299,6 +303,13 @@
     $("discount_amount").focus();
   });
   $("discount_amount").addEventListener("input", recompute);
+  // Cancel the discount: clear it, hide the row, bring the button back.
+  $("remove-discount").addEventListener("click", () => {
+    $("discount_amount").value = "0";
+    $("discount-row").style.display = "none";
+    $("add-discount").style.display = "";
+    recompute();
+  });
   grid.addEventListener("input", e => {
     if (!e.target.matches("input")) return;
     e.target.closest("tr").classList.remove("ai");   // an edited row is the estimator's
