@@ -61,14 +61,17 @@
   <form method="post" action="{% url 'web:quotation_create_delivery' quote.id %}">{% csrf_token %}
     <button class="btn" type="submit">Create delivery note</button></form>
   {% endif %}
-  {# Upload a customer PO — only after approval; details are read off the file. #}
+  {% comment %}Upload a customer PO — only after approval; details are read off
+  the file. A label opens the file picker natively (no JS) and the file input
+  submits the form the moment a file is chosen.{% endcomment %}
   {% if po_active and can_generate_docs %}
   <form method="post" action="{% url 'web:quotation_po' quote.id %}"
-        enctype="multipart/form-data" id="po-quick" style="margin:0;">{% csrf_token %}
-    <input type="file" name="document" id="po-quick-file" style="display:none"
-           accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.eml,.zip">
-    <button class="btn ghost" type="button"
-            onclick="document.getElementById('po-quick-file').click()">Upload purchase order</button>
+        enctype="multipart/form-data" style="margin:0;">{% csrf_token %}
+    <label class="btn ghost" style="margin:0;cursor:pointer;">Upload purchase order
+      <input type="file" name="document" onchange="this.form.submit()"
+             accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.eml,.zip"
+             style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">
+    </label>
   </form>
   {% endif %}
   {% if can_revise %}
@@ -240,15 +243,4 @@
   .pdfframe { width:100%; height:820px; border:0; display:block; background:#f4f5f7; }
   .aistatus { font-weight:500; color:var(--primary-d); font-size:11px; margin-left:6px; }
 </style>
-
-<script>
-// The action-bar PO button opens the file picker and submits as soon as a file
-// is chosen — the details are read off the document.
-(function () {
-  var f = document.getElementById("po-quick-file");
-  if (f) f.addEventListener("change", function () {
-    if (f.files.length) document.getElementById("po-quick").submit();
-  });
-})();
-</script>
 {% endblock %}
