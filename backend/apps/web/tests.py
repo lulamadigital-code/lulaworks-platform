@@ -860,6 +860,15 @@ class QuotationReviewWorkflowTests(TestCase):
         with tenant_scope(self.company.id):
             self.assertFalse(self.quote.customer_pos.exists())
 
+    def test_executable_po_upload_is_rejected(self):
+        # The server rejects a disallowed file type regardless of the browser.
+        self._set_status("approved")
+        evil = SimpleUploadedFile("payload.exe", b"MZ...", content_type="application/octet-stream")
+        resp = self.client.post(self._url("po/"), {"document": evil})
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(self.company.id):
+            self.assertFalse(self.quote.customer_pos.exists())   # nothing saved
+
     def test_upload_po_button_appears_on_the_action_bar_once_approved(self):
         # Hidden while draft; the "Upload purchase order" action appears once
         # approved, on the same line as Create tax invoice / delivery note.

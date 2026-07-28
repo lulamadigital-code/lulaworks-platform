@@ -1317,6 +1317,18 @@ def _positive_decimal(value):
     return d if d > 0 else Decimal("0")
 
 
+def _save_quotation_uploads(request, quote, company):
+    """Attach the uploaded documents to a quotation, keeping the valid ones and
+    warning about any rejected by the upload policy (type / size)."""
+    from apps.core.uploads import clean_uploads
+    accepted, rejected = clean_uploads(request.FILES.getlist("documents"))
+    for f in accepted:
+        quote.documents.create(company=company, name=f.name,
+                               doc_type="attachment", file=f)
+    for reason in rejected:
+        messages.warning(request, f"Skipped {reason}")
+
+
 # ── Quotations (view · review · edit · download PDF) ──────────────────────────
 
 @login_required
@@ -2251,9 +2263,7 @@ def quotation_new(request, pk=None):
             quote.vendor_number = customer.vendor_number
             _apply_customer_hierarchy(quote, request)
             quote.save()
-            for f in request.FILES.getlist("documents"):
-                quote.documents.create(company=company, name=f.name,
-                                       doc_type="attachment", file=f)
+            _save_quotation_uploads(request, quote, company)
             # The grid is the whole line set — replace it wholesale, same as the
             # create page builds it.
             pasted = request.POST.get("pasted_items", "").strip()
@@ -2293,9 +2303,7 @@ def quotation_new(request, pk=None):
 
         # One upload control handles the scope document and any drawings, BOQ or
         # photos — all attached to the quotation, each kept for next year.
-        for f in request.FILES.getlist("documents"):
-            quote.documents.create(company=company, name=f.name,
-                                   doc_type="attachment", file=f)
+        _save_quotation_uploads(request, quote, company)
 
         # Items come from the spreadsheet grid, serialised as tab-separated rows.
         # The grid's fourth column is a SELLING price, so use the price-based
@@ -2388,8 +2396,9 @@ def quotation_extract(request):
         suggest_related_items,
     )
 
+    from apps.core.uploads import clean_uploads
     type_key = request.POST.get("type_key", "").strip() or None
-    files = request.FILES.getlist("documents")
+    files, _ = clean_uploads(request.FILES.getlist("documents"))  # only valid types
     parts = [request.POST.get("scope", "")]
     for f in files:
         parts.append(extract_text_from_upload(f))
@@ -2591,6 +2600,14 @@ def quotation_po(request, pk):
     f = request.FILES.get("document")
     if not f:
         messages.error(request, "Attach the purchase order document to save it.")
+        return redirect("web:quotation_detail", pk=pk)
+    from django.core.exceptions import ValidationError
+
+    from apps.core.uploads import validate_upload
+    try:
+        validate_upload(f)
+    except ValidationError as exc:
+        messages.error(request, exc.messages[0])
         return redirect("web:quotation_detail", pk=pk)
 
     fields = extract_po_fields(extract_text_from_upload(f), company=quote.company,
