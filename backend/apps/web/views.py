@@ -1310,6 +1310,13 @@ def _decimal_or_none(value):
         return None
 
 
+def _positive_decimal(value):
+    """A non-negative Decimal (0 when missing or negative) — for amounts a client
+    must never be able to send negative, e.g. an overall discount."""
+    d = _decimal_or_none(value) or Decimal("0")
+    return d if d > 0 else Decimal("0")
+
+
 # ── Quotations (view · review · edit · download PDF) ──────────────────────────
 
 @login_required
@@ -2238,8 +2245,8 @@ def quotation_new(request, pk=None):
             quote.quotation_type = QuotationType.objects.filter(
                 pk=request.POST.get("quotation_type")).first()
             quote.vat_mode = request.POST.get("vat_mode", VatMode.EXCLUSIVE)
-            quote.discount_amount = _decimal_or_none(
-                request.POST.get("discount_amount")) or 0
+            quote.discount_amount = _positive_decimal(
+                request.POST.get("discount_amount"))
             quote.scope_of_work = request.POST.get("scope_of_work", "").strip()
             quote.vendor_number = customer.vendor_number
             _apply_customer_hierarchy(quote, request)
@@ -2270,8 +2277,8 @@ def quotation_new(request, pk=None):
         quote.quotation_type = QuotationType.objects.filter(
             pk=request.POST.get("quotation_type")).first()
         quote.vat_mode = request.POST.get("vat_mode", VatMode.EXCLUSIVE)
-        quote.discount_amount = _decimal_or_none(
-            request.POST.get("discount_amount")) or 0
+        quote.discount_amount = _positive_decimal(
+            request.POST.get("discount_amount"))
         quote.scope_of_work = request.POST.get("scope_of_work", "").strip()
         quote.customer_reference = request.POST.get("customer_reference", "").strip()
         # Snapshot the vendor code we trade under with THIS customer.

@@ -189,6 +189,18 @@ class LifecycleTests(TestCase):
             with self.assertRaises(QuotationError):
                 transition(quote, None, to_status=QuotationStatus.DRAFT)
 
+    def test_an_approved_quotation_cannot_be_moved_backwards(self):
+        # Approved is the finalized commercial record — it cannot be reopened to
+        # draft/review; a change is a revision, not a reversal.
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c, status=QuotationStatus.APPROVED)
+            add_line(c, quote, price=100)
+            for back in (QuotationStatus.DRAFT, QuotationStatus.REVIEW,
+                         QuotationStatus.MANAGER_APPROVAL):
+                with self.assertRaises(QuotationError):
+                    transition(quote, None, to_status=back)
+
     def test_losing_records_the_reason(self):
         c = make_company()
         with tenant_scope(c.id):
@@ -594,8 +606,8 @@ class CostPreservationTests(TestCase):
 
 
 class RetiredEditorTests(TestCase):
-    def test_the_old_edit_url_redirects_to_the_builder(self):
-        """Kept alive so old bookmarks land somewhere useful rather than 404."""
+    def test_the_edit_url_opens_the_creation_page(self):
+        """Editing reuses the guided creation page (edit == create)."""
         from django.test import Client
 
         from apps.identity.models import Membership, Permission, Role, User
@@ -612,8 +624,8 @@ class RetiredEditorTests(TestCase):
         client = Client()
         client.force_login(user)
         response = client.get(f"/quotations/{quote.id}/edit/")
-        self.assertEqual(response.status_code, 302)
-        self.assertIn(str(quote.id), response["Location"])
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Save changes")
 
 
 class PastedLineTests(TestCase):
@@ -1166,6 +1178,17 @@ class DiscountTests(TestCase):
             q.discount_amount = Decimal("900")     # more than the lines
             q.save()
             self.assertEqual(q.net_total, Decimal("0.00"))
+
+    def test_a_negative_discount_cannot_inflate_the_total(self):
+        # A crafted negative discount must not become a surcharge.
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, vat_mode=VatMode.EXCLUSIVE)
+            add_line(c, q, qty=1, price=500)
+            q.discount_amount = Decimal("-200")
+            q.save()
+            self.assertEqual(q.net_total, Decimal("500.00"))   # discount ignored
+            self.assertEqual(q.total, Decimal("500.00"))
 
     def test_discount_prints_on_the_quotation_pdf(self):
         import io

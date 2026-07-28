@@ -403,7 +403,13 @@ def transition(quote, user, *, to_status, note="", customer_contact=None):
     Refuses to issue a quotation with no lines — an empty quotation reaching a
     customer is worse than a late one.
     """
-    from .models import LOCKED_STATUSES
+    from .models import FINALIZED_STATUSES, LOCKED_STATUSES
+
+    # Lock the row for the length of the transition so two concurrent approvals
+    # (or any two racing transitions) cannot both proceed; re-read the status
+    # under the lock so a duplicate approve is caught by the equality check below.
+    Quotation.objects.select_for_update().filter(pk=quote.pk).exists()
+    quote.refresh_from_db(fields=["status"])
 
     if quote.status == to_status:
         return quote
@@ -411,6 +417,15 @@ def transition(quote, user, *, to_status, note="", customer_contact=None):
         raise QuotationError(
             f"{quote.display_number} is {quote.get_status_display().lower()} — "
             "its outcome is already recorded.")
+    # A finalized (approved+) quotation cannot be moved backwards through the
+    # approval chain — that would silently reopen a committed commercial
+    # document. A change is a new revision, never a reversal.
+    _BACKWARD = {QuotationStatus.DRAFT, QuotationStatus.REVIEW,
+                 QuotationStatus.MANAGER_APPROVAL, QuotationStatus.COMMERCIAL_APPROVAL}
+    if quote.status in FINALIZED_STATUSES and to_status in _BACKWARD:
+        raise QuotationError(
+            f"{quote.display_number} is {quote.get_status_display().lower()} and "
+            "cannot be reopened. Create a revision instead.")
     if to_status in (QuotationStatus.APPROVED, QuotationStatus.ISSUED,
                      QuotationStatus.SENT) and not quote.lines.exists():
         raise QuotationError("This quotation has no line items yet.")

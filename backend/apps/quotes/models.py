@@ -258,8 +258,13 @@ class Quotation(TenantBaseModel):
     @property
     def net_total(self) -> Decimal:
         """The value of the work, excluding VAT, after per-line discounts and the
-        overall quotation discount (never below zero)."""
-        net = self.lines_total - (self.discount_amount or Decimal("0.00"))
+        overall quotation discount. The discount is clamped to [0, subtotal] so a
+        negative value can never inflate the total and an over-discount can never
+        drive it below zero."""
+        discount = self.discount_amount or Decimal("0.00")
+        if discount < 0:
+            discount = Decimal("0.00")
+        net = self.lines_total - discount
         return (net if net > 0 else Decimal("0.00")).quantize(TWO)
 
     #: The subtotal shown above the discount line — the lines before the overall
