@@ -825,13 +825,18 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertContains(resp, "Purchase order received")
         self.assertContains(resp, "Payment received")
 
-    def test_invoice_and_delivery_buttons_appear_after_approval_without_a_po(self):
-        # A PO is optional — approval is enough to raise documents.
+    def test_invoice_appears_after_approval_delivery_only_after_invoice(self):
+        # A PO is optional — approval is enough to raise the tax invoice. The
+        # delivery note button stays hidden until the invoice exists.
         self.assertNotContains(self.client.get(self._url()), "Create tax invoice")
         self._set_status("approved")
-        final = self.client.get(self._url())
-        self.assertContains(final, "Create tax invoice")
-        self.assertContains(final, "Create delivery note")
+        approved = self.client.get(self._url())
+        self.assertContains(approved, "Create tax invoice")
+        self.assertNotContains(approved, "Create delivery note")
+        # Once the invoice is raised, the delivery note becomes available.
+        self.client.post(self._url("invoice/"))
+        after = self.client.get(self._url())
+        self.assertContains(after, "Create delivery note")
 
     def test_creating_an_invoice_opens_its_detail_page(self):
         with tenant_scope(self.company.id):
@@ -850,16 +855,19 @@ class QuotationReviewWorkflowTests(TestCase):
         # No delivery note yet → the sibling is offered as Create.
         self.assertContains(detail, "Create delivery note")
 
-    def test_delivery_note_page_offers_create_tax_invoice(self):
+    def test_delivery_note_page_links_to_its_invoice(self):
+        # A delivery note always has an invoice (invoice precedes it), so its
+        # sibling action is "View tax invoice", never "Create".
         with tenant_scope(self.company.id):
             self.quote.lines.create(company=self.company, position=2,
                                     description="Bolt", qty=4, unit_price=25)
         self._set_status("approved")
+        self.client.post(self._url("invoice/"))            # invoice first
         resp = self.client.post(self._url("delivery-note/"))
         detail = self.client.get(resp.url)
         self.assertContains(detail, "Delivery note")
-        self.assertContains(detail, "Create tax invoice")
-        self.assertNotContains(detail, "Create delivery note")
+        self.assertContains(detail, "View tax invoice")
+        self.assertNotContains(detail, "Create tax invoice")
 
     def test_existing_documents_show_view_not_create(self):
         # Once a document exists, its button becomes "View …" (on the quotation

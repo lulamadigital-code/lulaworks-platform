@@ -901,6 +901,21 @@ class CommercialDocumentTests(TestCase):
             with self.assertRaises(QuotationError):
                 create_invoice_document(q, None)
 
+    def test_delivery_note_requires_the_invoice_first(self):
+        # Ordering: approve → invoice → delivery note. A delivery note cannot be
+        # raised before the tax invoice exists.
+        from apps.quotes.services import (
+            QuotationError, create_delivery_document, create_invoice_document,
+        )
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._finalized_quote(c)
+            with self.assertRaises(QuotationError):
+                create_delivery_document(q, None)          # no invoice yet
+            create_invoice_document(q, None)
+            dn = create_delivery_document(q, None)         # now allowed
+        self.assertEqual(dn.kind, "delivery")
+
     def test_generate_without_a_po(self):
         """A PO is optional — a finalized quotation goes straight to documents."""
         from apps.quotes.services import (
@@ -1114,10 +1129,13 @@ class CommercialDocumentContentTests(TestCase):
 
     def test_delivery_quantities_default_to_full_delivery(self):
         from apps.quotes.pdf import delivery_note_pdf_bytes
-        from apps.quotes.services import create_delivery_document
+        from apps.quotes.services import (
+            create_delivery_document, create_invoice_document,
+        )
         c = make_company()
         with tenant_scope(c.id):
             q = self._prepared_quote(c)          # a line of qty 20
+            create_invoice_document(q, None)     # invoice precedes the delivery note
             dn = create_delivery_document(q, None)
             text = self._text(delivery_note_pdf_bytes(dn))
         # Ordered 20, Delivered 20, Outstanding 0 — the normal full delivery.

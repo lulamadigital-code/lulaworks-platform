@@ -98,7 +98,7 @@ def create_invoice_document(quote, user):
     reference, any PO linked. The figures come from the quotation; nothing is
     typed."""
     if not can_generate_documents(quote):
-        raise QuotationError("Finalize the quotation before raising a tax invoice.")
+        raise QuotationError("Approve the quotation before raising a tax invoice.")
     seq = quote.commercial_documents.filter(kind=CommercialDocument.Kind.INVOICE).count() + 1
     doc = CommercialDocument.objects.create(
         company=quote.company, quotation=quote, kind=CommercialDocument.Kind.INVOICE,
@@ -113,7 +113,12 @@ def create_delivery_document(quote, user, **fields):
     """Raise a delivery note from the quotation. Carries operational quantities,
     never prices. A PO is optional."""
     if not can_generate_documents(quote):
-        raise QuotationError("Finalize the quotation before raising a delivery note.")
+        raise QuotationError("Approve the quotation before raising a delivery note.")
+    # A delivery note follows the tax invoice — it may only be raised once the
+    # invoice for this quotation exists.
+    if not quote.commercial_documents.filter(
+            kind=CommercialDocument.Kind.INVOICE).exists():
+        raise QuotationError("Create the tax invoice before the delivery note.")
     seq = quote.commercial_documents.filter(kind=CommercialDocument.Kind.DELIVERY).count() + 1
     doc = CommercialDocument.objects.create(
         company=quote.company, quotation=quote, kind=CommercialDocument.Kind.DELIVERY,

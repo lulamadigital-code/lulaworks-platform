@@ -58,7 +58,7 @@
   {% endif %}
   {% if existing_delivery %}
   <a class="btn" href="{% url 'web:commercial_document_detail' existing_delivery.id %}">View delivery note</a>
-  {% elif can_generate_docs %}
+  {% elif can_generate_docs and existing_invoice %}
   <form method="post" action="{% url 'web:quotation_create_delivery' quote.id %}">{% csrf_token %}
     <button class="btn" type="submit">Create delivery note</button></form>
   {% endif %}
