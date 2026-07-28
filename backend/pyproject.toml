@@ -15,3 +15,17 @@ ignore = ["B008"]  # DRF/Django default-in-call patterns are idiomatic
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.dev"
 python_files = ["tests.py", "test_*.py"]
+
+# Coverage — the standing quality gate. Run e.g.:
+#   python -m coverage run --source=apps.quotes manage.py test apps.quotes apps.web
+#   python -m coverage report
+# Target: >=90% for the commercial module's business logic (models + services).
+[tool.coverage.run]
+# Line coverage is the gate (the 90% target); branch coverage is reported
+# separately when wanted via `--branch`.
+omit = ["*/migrations/*", "*/tests.py", "*/test_*.py", "*/__init__.py",
+        "manage.py", "*/config/*"]
+
+[tool.coverage.report]
+show_missing = true
+precision = 0

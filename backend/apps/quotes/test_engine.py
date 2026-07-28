@@ -1251,6 +1251,132 @@ class DiscountTests(TestCase):
         self.assertIn("850.00", text)          # the discounted total
 
 
+class AwardAndTraceabilityTests(TestCase):
+    """Award hands the quotation to execution; traceability is the query that
+    proves everything downstream leads back to it."""
+
+    def test_award_to_work_creates_standalone_work_and_locks_the_quote(self):
+        from apps.quotes.services import award_to_work, record_purchase_order
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, number="LPS500001", status=QuotationStatus.ISSUED)
+            q.title = "Conveyor overhaul"
+            q.save()
+            add_line(c, q, qty=2, price=1000)
+            record_purchase_order(q, None, po_number="PO7", value=q.total)
+            result = award_to_work(q, None, create_project=False)
+            q.refresh_from_db()
+        self.assertIsNone(result["project"])
+        self.assertIsNotNone(result["task"])
+        self.assertEqual(q.status, QuotationStatus.AWARDED)
+
+    def test_award_to_work_with_a_project_links_the_customer(self):
+        from apps.quotes.services import award_to_work, record_purchase_order
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, number="LPS500002", status=QuotationStatus.ISSUED)
+            q.title = "Shutdown"
+            q.save()
+            add_line(c, q, qty=1, price=500)
+            record_purchase_order(q, None, po_number="PO8", value=q.total)
+            result = award_to_work(q, None, create_project=True)
+        self.assertIsNotNone(result["project"])
+        self.assertEqual(result["project"].quotation_id, q.id)
+        self.assertEqual(result["project"].customer_id, q.customer_id)
+
+    def test_award_requires_a_purchase_order(self):
+        from apps.quotes.services import award_to_work
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, status=QuotationStatus.ISSUED)
+            add_line(c, q, qty=1, price=100)
+            with self.assertRaises(QuotationError):
+                award_to_work(q, None, create_project=False)
+
+    def test_traceability_returns_the_chain(self):
+        from apps.quotes.services import record_purchase_order, traceability
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, status=QuotationStatus.ISSUED)
+            add_line(c, q, qty=1, price=100)
+            record_purchase_order(q, None, po_number="PO9", value=q.total)
+            trace = traceability(q)
+        self.assertEqual(trace["quotation"], q)
+        self.assertEqual(len(trace["customer_pos"]), 1)
+        self.assertEqual(trace["projects"], [])
+        self.assertEqual(trace["invoiced"], Decimal("0"))
+
+    def test_award_summary_lists_what_would_be_handed_over(self):
+        from apps.quotes.services import award_summary
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, status=QuotationStatus.ISSUED)
+            add_line(c, q, qty=1, cost=100, markup=20, description="Fitter")
+            summary = award_summary(q)
+        self.assertEqual(summary["quotation"], q)
+        self.assertEqual(summary["customer"], q.customer)
+        self.assertIn("site", summary)
+
+    def test_next_statuses_for_the_post_approval_branches(self):
+        from apps.quotes.services import next_statuses
+        c = make_company()
+        with tenant_scope(c.id):
+            accepted = make_quote(c, number="LPS600001",
+                                  status=QuotationStatus.ACCEPTED)
+            self.assertEqual(next_statuses(accepted), [QuotationStatus.AWARDED])
+            revision = make_quote(c, number="LPS600002",
+                                  status=QuotationStatus.REVISION_REQUESTED)
+            self.assertEqual(next_statuses(revision), [QuotationStatus.DRAFT])
+            awarded = make_quote(c, number="LPS600003",
+                                 status=QuotationStatus.AWARDED)
+            self.assertEqual(next_statuses(awarded), [])   # outcome recorded
+
+
+class MoveLineTests(TestCase):
+    """Reorder a line by swapping with its neighbour; the ends are no-ops."""
+
+    def test_moving_down_swaps_and_the_top_edge_is_a_no_op(self):
+        from apps.quotes.services import move_line
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c)
+            a = add_line(c, q, description="A")
+            b = add_line(c, q, description="B")
+            a.position, b.position = 1, 2
+            a.save(update_fields=["position"])
+            b.save(update_fields=["position"])
+            move_line(a, direction="down")          # A and B swap
+            a.refresh_from_db()
+            b.refresh_from_db()
+            self.assertEqual((a.position, b.position), (2, 1))
+            move_line(b, direction="up")            # B now at the top → no-op
+            b.refresh_from_db()
+            self.assertEqual(b.position, 1)
+
+
+class DocumentGuardBranchTests(TestCase):
+    """The shared _guard_generatable preconditions on their own."""
+
+    def test_rejects_a_quotation_with_no_customer(self):
+        from apps.quotes.services import create_invoice_document
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, status=QuotationStatus.ISSUED)
+            add_line(c, q, qty=1, price=100)
+            q.customer = None
+            q.save()
+            with self.assertRaises(QuotationError):
+                create_invoice_document(q, None)
+
+    def test_rejects_a_quotation_with_no_line_items(self):
+        from apps.quotes.services import create_invoice_document
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, status=QuotationStatus.ISSUED)   # no lines
+            with self.assertRaises(QuotationError):
+                create_invoice_document(q, None)
+
+
 class LineValidationTests(TestCase):
     """A quotation line may not carry a negative quantity or price — bad data
     that would silently corrupt every total summed from the lines."""
