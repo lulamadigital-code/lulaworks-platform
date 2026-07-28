@@ -153,7 +153,7 @@ def _signoff_box(brand, small, muted, *, compiled_label, prep_name, today,
     signoff = _signoff_column(small, muted, compiled_label=compiled_label,
                               prep_name=prep_name, today=today,
                               received_label=received_label)
-    box = Table([[signoff]], colWidths=[width])
+    box = Table([[signoff]], colWidths=[width], hAlign="LEFT")
     box.setStyle(TableStyle([
         ("BOX", (0, 0), (0, 0), 1, brand), ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("LEFTPADDING", (0, 0), (0, 0), 9), ("RIGHTPADDING", (0, 0), (0, 0), 9),
@@ -605,7 +605,7 @@ def delivery_note_pdf_bytes(doc) -> bytes:
     footer = _signoff_box(
         brand, small, muted, compiled_label="Delivery Compiled By:",
         prep_name=prep_name, today=doc.created_at.strftime("%d/%m/%Y"),
-        received_label="Received in Good Order By:")
+        received_label="Received in Good Order By:", width=104 * mm)
     story += [footer]
     pdf.build(story)
     return buf.getvalue()
