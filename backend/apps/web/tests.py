@@ -859,12 +859,12 @@ class QuotationReviewWorkflowTests(TestCase):
         with tenant_scope(self.company.id):
             self.assertFalse(self.quote.customer_pos.exists())
 
-    def test_po_section_appears_once_approved(self):
-        # Hidden while draft; the optional PO section opens once approved (a
-        # customer may return a PO, but it is not required).
-        self.assertNotContains(self.client.get(self._url()), "Attach a purchase order")
+    def test_upload_po_button_appears_on_the_action_bar_once_approved(self):
+        # Hidden while draft; the "Upload purchase order" action appears once
+        # approved, on the same line as Create tax invoice / delivery note.
+        self.assertNotContains(self.client.get(self._url()), "Upload purchase order")
         self._set_status("approved")
-        self.assertContains(self.client.get(self._url()), "Attach a purchase order")
+        self.assertContains(self.client.get(self._url()), "Upload purchase order")
 
     def test_download_and_excel_hidden_until_approved(self):
         # Draft: Approve is offered, but no customer-facing outputs, and no

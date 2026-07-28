@@ -62,6 +62,16 @@
   <form method="post" action="{% url 'web:quotation_create_delivery' quote.id %}">{% csrf_token %}
     <button class="btn" type="submit">Create delivery note</button></form>
   {% endif %}
+  {# Upload a customer PO — only after approval; details are read off the file. #}
+  {% if po_active and can_generate_docs %}
+  <form method="post" action="{% url 'web:quotation_po' quote.id %}"
+        enctype="multipart/form-data" id="po-quick" style="margin:0;">{% csrf_token %}
+    <input type="file" name="document" id="po-quick-file" style="display:none"
+           accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.eml,.zip">
+    <button class="btn ghost" type="button"
+            onclick="document.getElementById('po-quick-file').click()">Upload purchase order</button>
+  </form>
+  {% endif %}
   {% if can_revise %}
   <form method="post" action="{% url 'web:quotation_revise' quote.id %}"
         data-confirm="Create revision {{ quote.revision|add:1 }}? This version stays exactly as it is.">
@@ -117,25 +127,12 @@
 {% endif %}
 
 {% if po_active %}
+{% if not purchase_orders %}
+<div class="card"><p class="muted" style="margin:0;">No purchase order attached yet.
+  Use <strong>Upload purchase order</strong> above — its number, date, value and
+  payment terms are read off the document.</p></div>
+{% endif %}
 {% if can_edit or can_award %}
-<div class="card">
-  <strong>Attach a purchase order</strong>
-  <p class="muted" style="margin:6px 0 12px;font-size:12.5px;">Attach the customer's PO
-    document and save — LulaAI reads the PO number, date, value and payment terms
-    straight off it, so there is nothing to type.</p>
-  <form method="post" action="{% url 'web:quotation_po' quote.id %}"
-        enctype="multipart/form-data" id="poform">{% csrf_token %}
-    <label>PO document</label>
-    <input type="file" name="document" id="po-file" required
-           accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.eml,.zip">
-    <div style="margin-top:14px;">
-      <button class="btn" type="submit">Save purchase order</button>
-    </div>
-    <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Several may be attached —
-      large work is often awarded in stages.</p>
-  </form>
-</div>
-
 {% if purchase_orders and can_award and quote.status != 'awarded' %}
 <div class="card" style="border-left:4px solid var(--green);border-radius:0 var(--r) var(--r) 0;">
   <strong>Award and create work</strong>
@@ -152,7 +149,7 @@
 {% endif %}
 {% else %}
 <div class="card"><p class="muted" style="margin:0;">Available once the quotation is
-  finalized and out with the customer — a PO is their instruction to proceed.</p></div>
+  approved — a PO is the customer's instruction to proceed.</p></div>
 {% endif %}
 
 {# ── Commercial documents generated from this quotation ────────────────────── #}
@@ -245,4 +242,14 @@
   .aistatus { font-weight:500; color:var(--primary-d); font-size:11px; margin-left:6px; }
 </style>
 
+<script>
+// The action-bar PO button opens the file picker and submits as soon as a file
+// is chosen — the details are read off the document.
+(function () {
+  var f = document.getElementById("po-quick-file");
+  if (f) f.addEventListener("change", function () {
+    if (f.files.length) document.getElementById("po-quick").submit();
+  });
+})();
+</script>
 {% endblock %}
