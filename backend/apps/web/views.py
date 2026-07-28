@@ -2265,6 +2265,18 @@ def quotation_new(request):
             parts.append(f"{added} item(s) added")
         messages.success(request, ". ".join(parts) + ".")
 
+        # Remind the estimator to set up standard terms — the quotation prints
+        # without a Terms & Conditions section until they do. The nudge stops on
+        # its own once terms are saved in the Company Profile.
+        from apps.identity.profile import document_terms
+        if not document_terms(company, kind="quotation").strip():
+            messages.warning(
+                request,
+                "No quotation terms & conditions are set, so this quotation "
+                "prints without them. Add your standard terms under Company "
+                "Profile → Commercial document settings and every quotation will "
+                "carry them automatically.")
+
         return redirect("web:quotation_detail", pk=quote.id)
 
     # Contacts depend on the chosen customer, so the page filters them client

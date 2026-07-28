@@ -618,7 +618,7 @@ class QuotationCreationWorkflowTests(TestCase):
                                                         key="plant_hire")
         self.client.force_login(self.user)
 
-    def _post(self, **overrides):
+    def _post(self, follow=False, **overrides):
         data = {
             "method": "blank",
             "customer": str(self.customer.id),
@@ -628,7 +628,7 @@ class QuotationCreationWorkflowTests(TestCase):
             "vat_mode": "exclusive",
         }
         data.update(overrides)
-        return self.client.post("/quotations/new/", data)
+        return self.client.post("/quotations/new/", data, follow=follow)
 
     def _latest(self):
         with tenant_scope(self.company.id):
@@ -668,6 +668,20 @@ class QuotationCreationWorkflowTests(TestCase):
         created = self._latest()
         self.assertNotEqual(created.number, "ZZ999999")
         self.assertRegex(created.number, r"^[A-Z]{2,4}\d{6}$")
+
+    def test_reminds_to_set_terms_when_none_are_configured(self):
+        # No quotation terms on file → the estimator is nudged to add them.
+        resp = self._post(follow=True)
+        self.assertContains(resp, "No quotation terms &amp; conditions are set")
+
+    def test_no_reminder_once_terms_are_configured(self):
+        from apps.administration.models import CompanySettings
+        with tenant_scope(self.company.id):
+            row, _ = CompanySettings.objects.get_or_create(company=self.company)
+            row.quotation_terms = "Prices valid for 30 days."
+            row.save()
+        resp = self._post(follow=True)
+        self.assertNotContains(resp, "No quotation terms &amp; conditions are set")
 
     def test_page_offers_contacts_for_each_customer(self):
         resp = self.client.get("/quotations/new/")
