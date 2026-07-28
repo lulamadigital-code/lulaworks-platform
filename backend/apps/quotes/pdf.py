@@ -21,6 +21,7 @@ from reportlab.lib.units import mm
 from reportlab.platypus import (
     HRFlowable,
     Image,
+    KeepInFrame,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -88,6 +89,16 @@ def _customer_address(customer) -> str:
     parts = [customer.physical_address or customer.postal_address,
              customer.city, customer.postal_code]
     return ", ".join(p for p in parts if p)
+
+
+def _build_one_page(doc, story):
+    """Build the document forced onto a single page: the whole story is wrapped
+    in a frame the size of the page's content area and shrunk to fit only if it
+    would otherwise overflow. A normal-length quotation, invoice or delivery note
+    is rendered untouched; an unusually long one is scaled down rather than
+    spilling onto a second page."""
+    frame = KeepInFrame(doc.width, doc.height, story, mode="shrink")
+    doc.build([frame])
 
 
 def _scope_text(quote) -> str:
@@ -371,7 +382,7 @@ def quotation_pdf_bytes(quote) -> bytes:
     story.append(P(f"Please use document number ({quote.number}) for reference "
                    "when making payments.", muted))
 
-    doc.build(story)
+    _build_one_page(doc, story)
     return buf.getvalue()
 
 
@@ -514,7 +525,7 @@ def invoice_pdf_bytes(doc) -> bytes:
     story += [footer, Spacer(1, 6 * mm),
               P(f"Please use invoice number ({doc.number}) as the payment "
                 "reference. E&amp;OE.", muted)]
-    pdf.build(story)
+    _build_one_page(pdf, story)
     return buf.getvalue()
 
 
@@ -607,5 +618,5 @@ def delivery_note_pdf_bytes(doc) -> bytes:
         prep_name=prep_name, today=doc.created_at.strftime("%d/%m/%Y"),
         received_label="Received in Good Order By:", width=104 * mm)
     story += [footer]
-    pdf.build(story)
+    _build_one_page(pdf, story)
     return buf.getvalue()

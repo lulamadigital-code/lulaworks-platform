@@ -1040,6 +1040,34 @@ class CommercialDocumentContentTests(TestCase):
         self.assertIn("Payment due within 30 days.", inv)
         self.assertIn("Goods received in good order", dn)
 
+    def test_documents_are_forced_onto_a_single_page(self):
+        # Even a long quotation (and its invoice and delivery note) stays on one
+        # page — the content is shrunk to fit rather than spilling over.
+        import io
+
+        import pdfplumber
+
+        from apps.quotes.pdf import (
+            delivery_note_pdf_bytes, invoice_pdf_bytes, quotation_pdf_bytes,
+        )
+        from apps.quotes.services import (
+            create_delivery_document, create_invoice_document,
+        )
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, number="LPS654321", vat_mode=VatMode.EXCLUSIVE,
+                           status=QuotationStatus.ISSUED)
+            q.scope_of_work = "A long job. " * 40
+            q.save()
+            for i in range(40):
+                add_line(c, q, qty=i + 1, price=100 + i)
+            pdfs = [quotation_pdf_bytes(q),
+                    invoice_pdf_bytes(create_invoice_document(q, None)),
+                    delivery_note_pdf_bytes(create_delivery_document(q, None))]
+        for b in pdfs:
+            with pdfplumber.open(io.BytesIO(b)) as d:
+                self.assertEqual(len(d.pages), 1)
+
     def test_contact_tel_and_email_appear_on_invoice_and_delivery(self):
         # The contact person's Tel and Email show on the invoice and delivery
         # note, just like on the quotation.
