@@ -1084,3 +1084,76 @@ class CustomerEditTests(TestCase):
         self.assertContains(resp, "Edit")
         self.assertContains(resp, "Add a person")
         self.assertContains(resp, "Responsibility coverage")
+
+
+class QuotationListPaginationTests(TestCase):
+    """Gate #17: the quotations list paginates (25 to a page) and renders a page
+    of rows in a constant number of queries — adding quotations must never add a
+    query per row (the customer / type FKs and line totals each row touches are
+    select_related / prefetched)."""
+
+    def _seed(self, company, count, start=0):
+        """Create `count` quotations, each with a customer, a type and a line —
+        the relations the table renders per row."""
+        from apps.customers.models import Customer
+        from apps.quotes.models import QuotationLine, QuotationType
+        with tenant_scope(company.id):
+            # get_or_create so seeding twice (short page, then a full one) reuses
+            # the same customer/type rather than tripping their unique constraints.
+            cust, _ = Customer.objects.get_or_create(
+                company=company, code="HG", defaults={"name": "Harmony Gold"})
+            qtype, _ = QuotationType.objects.get_or_create(
+                company=company, key="general", defaults={"label": "General"})
+            for i in range(start, start + count):
+                q = Quotation.objects.create(company=company, number=f"QT-{i:04d}",
+                                             client_name="Harmony", customer=cust,
+                                             quotation_type=qtype)
+                QuotationLine.objects.create(quotation=q, description="Steel",
+                                             qty=Decimal("2"), unit_price=Decimal("485"))
+
+    def test_page_is_bounded_and_second_page_holds_the_remainder(self):
+        c = make_company()
+        self._seed(c, 30)                                   # 25 + 5 across two pages
+        user = user_with(c, ["projects.view", "quotes.create"])
+        self.client.force_login(user)
+
+        first = self.client.get("/quotations/")
+        self.assertEqual(first.status_code, 200)
+        page = first.context["quotations"]
+        self.assertEqual(page.paginator.count, 30)
+        self.assertEqual(page.paginator.num_pages, 2)
+        self.assertEqual(len(page.object_list), 25)         # a page, not all 30
+
+        second = self.client.get("/quotations/?page=2")
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(len(second.context["quotations"].object_list), 5)
+
+    def test_filters_survive_page_links(self):
+        c = make_company()
+        self._seed(c, 30)
+        user = user_with(c, ["projects.view", "quotes.create"])
+        self.client.force_login(user)
+        resp = self.client.get("/quotations/?status=draft")
+        # The Next link carries the active filter alongside the page cursor.
+        self.assertContains(resp, "status=draft")
+        self.assertContains(resp, "page=2")
+
+    def test_rows_do_not_add_queries(self):
+        """A full page of 25 rows costs the same number of queries as a short
+        page of 5 — proof there is no per-row query."""
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        c = make_company()
+        user = user_with(c, ["projects.view", "quotes.create", "finance.view_money"])
+        self.client.force_login(user)
+
+        self._seed(c, 5)
+        with CaptureQueriesContext(connection) as small:
+            self.assertEqual(self.client.get("/quotations/").status_code, 200)
+
+        self._seed(c, 20, start=5)                          # now a full 25-row page
+        with CaptureQueriesContext(connection) as full:
+            resp = self.client.get("/quotations/")
+        self.assertEqual(len(resp.context["quotations"].object_list), 25)
+        self.assertEqual(len(full.captured_queries), len(small.captured_queries))

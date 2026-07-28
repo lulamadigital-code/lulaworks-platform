@@ -1335,8 +1335,14 @@ def _save_quotation_uploads(request, quote, company):
 def quotations_list(request):
     """The commercial pipeline, not just a list of documents."""
     from apps.quotes.services import pipeline
+    from django.core.paginator import Paginator
 
-    quotes = Quotation.objects.all().prefetch_related("lines", "customer_pos")
+    # select_related the FKs the table renders per row (customer, quotation type,
+    # preparer); prefetch the lines the total/margin roll up from — so a page of
+    # rows is a couple of queries, not one per quotation.
+    quotes = (Quotation.objects.all()
+              .select_related("customer", "quotation_type", "prepared_by")
+              .prefetch_related("lines", "customer_pos"))
     status = request.GET.get("status")
     if status:
         quotes = quotes.filter(status=status)
@@ -1345,9 +1351,15 @@ def quotations_list(request):
     if request.GET.get("customer"):
         quotes = quotes.filter(customer_id=request.GET["customer"])
 
+    page = Paginator(quotes, 25).get_page(request.GET.get("page"))
+    # Everything but the page cursor, so filters survive Previous/Next.
+    carried = request.GET.copy()
+    carried.pop("page", None)
+
     from apps.customers.models import Customer
     return render(request, "web/quotations.html", {
-        "quotations": quotes,
+        "quotations": page,
+        "carried": carried.urlencode(),
         "pipeline": pipeline(),
         "statuses": QuotationStatus.choices,
         "customers": Customer.objects.all(),

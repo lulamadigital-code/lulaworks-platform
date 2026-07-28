@@ -86,4 +86,16 @@
     {% endfor %}
   </table>
 </div>
+
+{% if quotations.paginator.num_pages > 1 %}
+<nav class="filterbar" aria-label="Quotation pages" style="justify-content:space-between;">
+  {% if quotations.has_previous %}
+  <a class="btn ghost" href="?page={{ quotations.previous_page_number }}{% if carried %}&{{ carried }}{% endif %}">← Previous</a>
+  {% else %}<span class="btn ghost" aria-disabled="true" style="opacity:.4;pointer-events:none;">← Previous</span>{% endif %}
+  <span class="muted">Page {{ quotations.number }} of {{ quotations.paginator.num_pages }}</span>
+  {% if quotations.has_next %}
+  <a class="btn ghost" href="?page={{ quotations.next_page_number }}{% if carried %}&{{ carried }}{% endif %}">Next →</a>
+  {% else %}<span class="btn ghost" aria-disabled="true" style="opacity:.4;pointer-events:none;">Next →</span>{% endif %}
+</nav>
+{% endif %}
 {% endblock %}
