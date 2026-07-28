@@ -350,9 +350,11 @@ def quotation_pdf_bytes(quote) -> bytes:
     # ── Totals. On an exclusive quote VAT is not part of the quotation total
     # (it is added on the tax invoice), so the VAT line reads R0.00.
     vat_on_quote = quote.vat_amount if quote.vat_mode == "inclusive" else 0
-    totals = [["SUBTOTAL", f"R{quote.subtotal:,.2f}"],
-              ["VAT", f"R{vat_on_quote:,.2f}"],
-              ["TOTAL", f"R{quote.total:,.2f}"]]
+    totals = [["SUBTOTAL", f"R{quote.subtotal:,.2f}"]]
+    if quote.discount_amount:
+        totals.append(["DISCOUNT", f"-R{quote.discount_amount:,.2f}"])
+    totals += [["VAT", f"R{vat_on_quote:,.2f}"],
+               ["TOTAL", f"R{quote.total:,.2f}"]]
     tot = Table(totals, colWidths=[45 * mm, 33.5 * mm], hAlign="RIGHT")
     tot.setStyle(TableStyle([
         ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
@@ -504,9 +506,11 @@ def invoice_pdf_bytes(doc) -> bytes:
     story += [tbl]
 
     # VAT is added here (deferred from an exclusive quotation).
-    totals = [["SUBTOTAL", f"R{quote.net_total:,.2f}"],
-              [f"VAT@{quote.vat_rate:g}%", f"R{quote.vat_amount:,.2f}"],
-              ["TOTAL", f"R{quote.invoice_total:,.2f}"]]
+    totals = [["SUBTOTAL", f"R{quote.subtotal:,.2f}"]]
+    if quote.discount_amount:
+        totals.append(["DISCOUNT", f"-R{quote.discount_amount:,.2f}"])
+    totals += [[f"VAT@{quote.vat_rate:g}%", f"R{quote.vat_amount:,.2f}"],
+               ["TOTAL", f"R{quote.invoice_total:,.2f}"]]
     tot = Table(totals, colWidths=[45 * mm, 33.5 * mm], hAlign="RIGHT")
     tot.setStyle(TableStyle([
         ("ALIGN", (0, 0), (-1, -1), "RIGHT"), ("FONTSIZE", (0, 0), (-1, -1), 9.5),

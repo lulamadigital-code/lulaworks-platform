@@ -2233,6 +2233,8 @@ def quotation_new(request):
         quote.quotation_type = QuotationType.objects.filter(
             pk=request.POST.get("quotation_type")).first()
         quote.vat_mode = request.POST.get("vat_mode", VatMode.EXCLUSIVE)
+        quote.discount_amount = _decimal_or_none(
+            request.POST.get("discount_amount")) or 0
         quote.scope_of_work = request.POST.get("scope_of_work", "").strip()
         quote.customer_reference = request.POST.get("customer_reference", "").strip()
         # Snapshot the vendor code we trade under with THIS customer.

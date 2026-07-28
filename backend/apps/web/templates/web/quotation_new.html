@@ -70,6 +70,7 @@
       <strong id="grid-title">Items</strong>
       <span class="sp"></span>
       <button type="button" class="btn ghost sm" id="add-line">+ Add line</button>
+      <button type="button" class="btn ghost sm" id="add-discount">+ Add discount</button>
     </div>
     <div style="overflow-x:auto;">
       <table class="ietable" id="item-grid"><thead></thead><tbody></tbody></table>
@@ -79,7 +80,10 @@
 
     <div class="totals">
       <div><span>Subtotal</span><span id="t-subtotal">R 0.00</span></div>
-      <div><span>Discount</span><span id="t-discount">R 0.00</span></div>
+      <div id="discount-row" style="display:none;"><span>Discount (−R)</span>
+        <span><input type="number" step="0.01" min="0" name="discount_amount"
+              id="discount_amount" value="0"
+              style="width:130px;text-align:right;"></span></div>
       <div><span id="t-vat-label">VAT (15%)</span><span id="t-vat">R 0.00</span></div>
       <div class="grand"><span>Grand total</span><span id="t-grand">R 0.00</span></div>
     </div>
@@ -257,13 +261,18 @@
       tr.querySelector(".amount").textContent = money(amt);
     });
     const rate = 0.15, inclusive = vatSel.value === "inclusive";
-    const vat = inclusive ? subtotal - subtotal / (1 + rate) : 0;
+    // The overall discount comes off the subtotal before VAT; never below zero.
+    const discEl = $("discount_amount");
+    let discount = discEl ? (parseFloat(discEl.value) || 0) : 0;
+    if (discount > subtotal) discount = subtotal;
+    const net = subtotal - discount;
+    const vat = inclusive ? net - net / (1 + rate) : 0;
     // Exclusive: VAT is NOT on the quotation (added on the tax invoice), so it
-    // reads R0.00. The grand total is the sum of the line prices either way.
-    $("t-subtotal").textContent = money(inclusive ? subtotal - vat : subtotal);
+    // reads R0.00. The grand total is the net of the line prices and discount.
+    $("t-subtotal").textContent = money(subtotal);
     $("t-vat").textContent = money(vat);
     $("t-vat-label").textContent = "VAT";
-    $("t-grand").textContent = money(subtotal);
+    $("t-grand").textContent = money(net);
   }
 
   function currentDescriptions() {
@@ -283,6 +292,13 @@
   typeSel.addEventListener("change", () => rebuild(true));
   vatSel.addEventListener("change", recompute);
   $("add-line").addEventListener("click", () => newRow());
+  // "Add discount" reveals the overall-discount field; it recalculates live.
+  $("add-discount").addEventListener("click", () => {
+    $("discount-row").style.display = "flex";
+    $("add-discount").style.display = "none";
+    $("discount_amount").focus();
+  });
+  $("discount_amount").addEventListener("input", recompute);
   grid.addEventListener("input", e => {
     if (!e.target.matches("input")) return;
     e.target.closest("tr").classList.remove("ai");   // an edited row is the estimator's

@@ -193,6 +193,10 @@ class Quotation(TenantBaseModel):
     vat_mode = models.CharField(max_length=10, choices=VatMode.choices,
                                 default=VatMode.EXCLUSIVE)
     vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("15.00"))
+    #: An overall discount on the whole quotation (in the quote currency), on top
+    #: of any per-line discounts. Subtracted from the subtotal before VAT.
+    discount_amount = models.DecimalField(max_digits=12, decimal_places=2,
+                                          default=Decimal("0.00"))
     currency = models.CharField(max_length=8, default="ZAR")
     validity_date = models.DateField(null=True, blank=True)
     payment_terms_days = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -246,15 +250,23 @@ class Quotation(TenantBaseModel):
     # surfaces in front of a customer.
 
     @property
-    def net_total(self) -> Decimal:
-        """The value of the work, excluding VAT, after discounts."""
+    def lines_total(self) -> Decimal:
+        """The sum of the line prices — before the overall quotation discount."""
         return sum((line.line_total for line in self.lines.all()),
                    Decimal("0.00")).quantize(TWO)
 
-    #: Kept for the existing PDF/API callers.
+    @property
+    def net_total(self) -> Decimal:
+        """The value of the work, excluding VAT, after per-line discounts and the
+        overall quotation discount (never below zero)."""
+        net = self.lines_total - (self.discount_amount or Decimal("0.00"))
+        return (net if net > 0 else Decimal("0.00")).quantize(TWO)
+
+    #: The subtotal shown above the discount line — the lines before the overall
+    #: discount. (Kept as the name existing PDF/API callers use.)
     @property
     def subtotal(self) -> Decimal:
-        return self.net_total
+        return self.lines_total
 
     @property
     def vat_amount(self) -> Decimal:

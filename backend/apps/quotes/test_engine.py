@@ -1141,3 +1141,47 @@ class CommercialDocumentContentTests(TestCase):
         # Ordered 20, Delivered 20, Outstanding 0 — the normal full delivery.
         self.assertIn("Outstanding", text)
         self.assertRegex(text, r"20(?:\.00)?\s+20(?:\.00)?\s+0\b")
+
+
+class DiscountTests(TestCase):
+    """An overall quotation discount comes off the subtotal before VAT."""
+
+    def test_overall_discount_reduces_net_and_total(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, vat_mode=VatMode.EXCLUSIVE)
+            add_line(c, q, qty=1, price=1000)
+            q.discount_amount = Decimal("150")
+            q.save()
+            self.assertEqual(q.subtotal, Decimal("1000.00"))    # lines, pre-discount
+            self.assertEqual(q.net_total, Decimal("850.00"))    # after discount
+            self.assertEqual(q.total, Decimal("850.00"))
+            self.assertEqual(q.invoice_total, Decimal("977.50"))  # 850 + 15% VAT
+
+    def test_discount_never_pushes_the_total_below_zero(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, vat_mode=VatMode.EXCLUSIVE)
+            add_line(c, q, qty=1, price=500)
+            q.discount_amount = Decimal("900")     # more than the lines
+            q.save()
+            self.assertEqual(q.net_total, Decimal("0.00"))
+
+    def test_discount_prints_on_the_quotation_pdf(self):
+        import io
+
+        import pdfplumber
+
+        from apps.quotes.pdf import quotation_pdf_bytes
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, number="LPS314159", vat_mode=VatMode.EXCLUSIVE,
+                           status=QuotationStatus.ISSUED)
+            add_line(c, q, qty=1, price=1000)
+            q.discount_amount = Decimal("150")
+            q.save()
+            with pdfplumber.open(io.BytesIO(quotation_pdf_bytes(q))) as d:
+                text = d.pages[0].extract_text()
+        self.assertIn("DISCOUNT", text)
+        self.assertIn("150.00", text)
+        self.assertIn("850.00", text)          # the discounted total
