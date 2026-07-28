@@ -41,8 +41,7 @@
 <div class="actionbar">
   {% if can_edit %}<a class="btn ghost" href="{% url 'web:quotation_edit' quote.id %}">Edit</a>{% endif %}
   {% if can_approve %}
-  <form method="post" action="{% url 'web:quotation_transition' quote.id %}"
-        data-confirm="Approve {{ quote.number|escapejs }}? It becomes read-only — further changes are revisions.">
+  <form method="post" action="{% url 'web:quotation_transition' quote.id %}">
     {% csrf_token %}<input type="hidden" name="status" value="approved">
     <button class="btn" type="submit">Approve</button></form>
   {% endif %}
