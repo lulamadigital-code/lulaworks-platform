@@ -5,12 +5,21 @@ are the ones proving a document reaches the right person, and that it degrades
 honestly when it cannot.
 """
 
-from django.test import TestCase
+from types import SimpleNamespace
+
+from django.test import SimpleTestCase, TestCase
 
 from apps.core.context import tenant_scope
 from apps.identity.models import Company
 
-from .models import Customer, CustomerBranch, CustomerContact, CustomerSite
+from .models import (
+    Customer,
+    CustomerBranch,
+    CustomerContact,
+    CustomerSite,
+    customer_doc_upload_path,
+    customer_logo_upload_path,
+)
 from .services import (
     contacts_with,
     create_customer,
@@ -33,6 +42,32 @@ def add_contact(company, customer, name, *, department=None, responsibilities=()
         responsibilities=list(responsibilities), status=status, is_primary=primary,
         email=email if email is not None else f"{name.split()[0].lower()}@client.co.za",
     )
+
+
+class UploadPathTests(SimpleTestCase):
+    """Uploads must land under the owning company's prefix. These are pure
+    functions of `instance.company_id`, so no file or DB row is needed — a stub
+    carrying the FK is enough."""
+
+    def test_logo_path_is_scoped_to_the_company(self):
+        obj = SimpleNamespace(company_id=42)
+        path = customer_logo_upload_path(obj, "logo.png")
+        self.assertTrue(path.startswith("c/42/"))
+        self.assertTrue(path.endswith("logo.png"))
+
+    def test_doc_path_is_scoped_to_the_company(self):
+        obj = SimpleNamespace(company_id=7)
+        path = customer_doc_upload_path(obj, "vendor_form.pdf")
+        self.assertTrue(path.startswith("c/7/"))
+        self.assertTrue(path.endswith("vendor_form.pdf"))
+
+    def test_a_different_tenant_gets_a_different_prefix(self):
+        """The whole point: one tenant's files never sit under another's prefix."""
+        one = customer_doc_upload_path(SimpleNamespace(company_id=1), "x.pdf")
+        two = customer_doc_upload_path(SimpleNamespace(company_id=2), "x.pdf")
+        self.assertNotEqual(one, two)
+        self.assertTrue(one.startswith("c/1/"))
+        self.assertTrue(two.startswith("c/2/"))
 
 
 class CustomerCodeTests(TestCase):

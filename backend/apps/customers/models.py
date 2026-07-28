@@ -58,6 +58,19 @@ RESPONSIBILITIES = {
 }
 
 
+#: Uploads are namespaced under the owning company. A path is not an access
+#: control, but keeping every tenant's files in their own `c/<id>/…` prefix means
+#: a stray URL or a misconfigured bucket policy leaks one tenant, not all of them
+#: — defence in depth for something that is cheap to get right at write time.
+#: These live at module level so migrations can serialise them by import path.
+def customer_logo_upload_path(instance, filename):
+    return f"c/{instance.company_id}/customer_logos/{filename}"
+
+
+def customer_doc_upload_path(instance, filename):
+    return f"c/{instance.company_id}/customer_docs/{filename}"
+
+
 class Customer(TenantBaseModel):
     """A client organisation. `code` is generated so people have something short
     to quote on paperwork; `client_name` fields elsewhere become a display
@@ -70,7 +83,7 @@ class Customer(TenantBaseModel):
     vat_no = models.CharField(max_length=32, blank=True)
     tax_no = models.CharField(max_length=32, blank=True)
     industry = models.CharField(max_length=120, blank=True)
-    logo = models.ImageField(upload_to="customer_logos/", blank=True, null=True)
+    logo = models.ImageField(upload_to=customer_logo_upload_path, blank=True, null=True)
 
     # Address
     country = models.CharField(max_length=64, default="South Africa")
@@ -329,7 +342,7 @@ class CustomerDocument(TenantBaseModel):
                                  related_name="documents")
     name = models.CharField(max_length=200)
     doc_type = models.CharField(max_length=48, blank=True)
-    file = models.FileField(upload_to="customer_docs/%Y/")
+    file = models.FileField(upload_to=customer_doc_upload_path)
     expires_on = models.DateField(null=True, blank=True)
 
     class Meta:
