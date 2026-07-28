@@ -61,18 +61,10 @@
   <form method="post" action="{% url 'web:quotation_create_delivery' quote.id %}">{% csrf_token %}
     <button class="btn" type="submit">Create delivery note</button></form>
   {% endif %}
-  {% comment %}Upload a customer PO — only after approval; details are read off
-  the file. A label opens the file picker natively (no JS) and the file input
-  submits the form the moment a file is chosen.{% endcomment %}
+  {% comment %}Upload a customer PO — the action-bar button jumps to the upload
+  card in the Purchase orders section below, where the file is chosen.{% endcomment %}
   {% if po_active and can_generate_docs %}
-  <form method="post" action="{% url 'web:quotation_po' quote.id %}"
-        enctype="multipart/form-data" style="margin:0;">{% csrf_token %}
-    <label class="btn ghost" style="margin:0;cursor:pointer;">Upload purchase order
-      <input type="file" name="document" onchange="this.form.submit()"
-             accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.eml,.zip"
-             style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">
-    </label>
-  </form>
+  <a class="btn ghost" href="#po-upload">Upload purchase order</a>
   {% endif %}
   {% if can_revise %}
   <form method="post" action="{% url 'web:quotation_revise' quote.id %}"
@@ -129,10 +121,21 @@
 {% endif %}
 
 {% if po_active %}
-{% if not purchase_orders %}
-<div class="card"><p class="muted" style="margin:0;">No purchase order attached yet.
-  Use <strong>Upload purchase order</strong> above — its number, date, value and
-  payment terms are read off the document.</p></div>
+{% if can_generate_docs %}
+<div class="card" id="po-upload">
+  <strong>Attach a purchase order</strong>
+  <p class="muted" style="margin:6px 0 12px;font-size:12.5px;">Attach the customer's PO
+    document — its number, date, value and payment terms are read straight off it,
+    so there is nothing to type. Several may be attached for staged work.</p>
+  <form method="post" action="{% url 'web:quotation_po' quote.id %}"
+        enctype="multipart/form-data" style="margin:0;">{% csrf_token %}
+    <label class="btn" style="margin:0;cursor:pointer;">Choose PO document
+      <input type="file" name="document" onchange="this.form.submit()"
+             accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.eml,.zip"
+             style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">
+    </label>
+  </form>
+</div>
 {% endif %}
 {% if can_edit or can_award %}
 {% if purchase_orders and can_award and quote.status != 'awarded' %}
