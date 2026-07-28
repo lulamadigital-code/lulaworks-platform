@@ -869,6 +869,23 @@ class QuotationReviewWorkflowTests(TestCase):
         with tenant_scope(self.company.id):
             self.assertFalse(self.quote.customer_pos.exists())   # nothing saved
 
+    def test_approval_and_download_are_audited_with_user_and_ip(self):
+        from apps.administration.models import AuditLog
+        # Approve, then download the PDF — both land in the immutable audit log.
+        self.client.post(self._url("status/"), {"status": "approved"})
+        self.client.get(self._url("pdf/"))                    # real download
+        self.client.get(self._url("pdf/") + "?inline=1")      # preview — not logged
+        with tenant_scope(self.company.id):
+            actions = list(AuditLog.objects.filter(
+                entity_id=self.quote.id).values_list("action", flat=True))
+            row = AuditLog.objects.filter(action="quotation.approved").first()
+        self.assertIn("quotation.approved", actions)
+        self.assertIn("quotation.pdf_downloaded", actions)
+        self.assertEqual(actions.count("quotation.pdf_downloaded"), 1)  # preview excluded
+        self.assertEqual(row.user_id, self.user.id)
+        self.assertEqual(row.company_id, self.company.id)
+        self.assertTrue(row.ip_address)
+
     def test_upload_po_button_appears_on_the_action_bar_once_approved(self):
         # Hidden while draft; the "Upload purchase order" action appears once
         # approved, on the same line as Create tax invoice / delivery note.

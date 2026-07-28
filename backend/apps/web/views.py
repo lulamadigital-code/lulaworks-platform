@@ -1503,8 +1503,12 @@ def quotation_pdf(request, pk):
     pdf = quotation_pdf_bytes(quote)
     resp = HttpResponse(pdf, content_type="application/pdf")
     # inline for the on-screen preview iframe; attachment for the Download button.
-    disposition = "inline" if request.GET.get("inline") else "attachment"
+    inline = bool(request.GET.get("inline"))
+    disposition = "inline" if inline else "attachment"
     resp["Content-Disposition"] = f'{disposition}; filename="{quote.number}.pdf"'
+    if not inline:                       # log real downloads, not preview renders
+        from apps.core.audit import audit
+        audit(request, "quotation.pdf_downloaded", entity=quote)
     return resp
 
 
@@ -1552,6 +1556,8 @@ def quotation_excel(request, pk):
         buf.getvalue(),
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     resp["Content-Disposition"] = f'attachment; filename="{quote.number}.xlsx"'
+    from apps.core.audit import audit
+    audit(request, "quotation.excel_exported", entity=quote)
     return resp
 
 
@@ -2556,12 +2562,15 @@ def quotation_transition(request, pk):
     if not request.user.has_perm_code("quotes.create"):
         messages.error(request, "You do not have permission.")
         return redirect("web:quotation_detail", pk=pk)
+    to_status = request.POST.get("status")
     try:
-        move(quote, request.user, to_status=request.POST.get("status"),
+        move(quote, request.user, to_status=to_status,
              note=request.POST.get("note", ""))
     except QuotationError as exc:
         messages.error(request, str(exc))
     else:
+        from apps.core.audit import audit
+        audit(request, f"quotation.{to_status}", entity=quote)
         messages.success(request, f"{quote.display_number} → "
                                   f"{quote.get_status_display()}.")
     return redirect("web:quotation_detail", pk=pk)
@@ -2628,6 +2637,8 @@ def quotation_po(request, pk):
     except QuotationError as exc:
         messages.error(request, str(exc))
     else:
+        from apps.core.audit import audit
+        audit(request, "purchase_order.uploaded", entity=po)
         messages.success(request, f"PO {po.po_number} saved — details read from "
                                   f"{f.name}.")
         # Warn (do not block) if the same PO number is on another of this
@@ -2681,6 +2692,8 @@ def quotation_create_invoice(request, pk):
     except QuotationError as exc:
         messages.error(request, str(exc))
         return redirect("web:quotation_detail", pk=pk)
+    from apps.core.audit import audit
+    audit(request, "invoice.created", entity=doc)
     messages.success(request, f"Tax invoice {doc.number} created from {quote.number}.")
     return redirect("web:commercial_document_detail", pk=doc.id)
 
@@ -2705,6 +2718,8 @@ def quotation_create_delivery(request, pk):
     except QuotationError as exc:
         messages.error(request, str(exc))
         return redirect("web:quotation_detail", pk=pk)
+    from apps.core.audit import audit
+    audit(request, "delivery_note.created", entity=doc)
     messages.success(request, f"Delivery note {doc.number} created from {quote.number}.")
     return redirect("web:commercial_document_detail", pk=doc.id)
 
@@ -2722,8 +2737,12 @@ def commercial_document_pdf(request, pk):
     else:
         pdf = delivery_note_pdf_bytes(doc)
     resp = HttpResponse(pdf, content_type="application/pdf")
-    disposition = "inline" if request.GET.get("inline") else "attachment"
+    inline = bool(request.GET.get("inline"))
+    disposition = "inline" if inline else "attachment"
     resp["Content-Disposition"] = f'{disposition}; filename="{doc.number}.pdf"'
+    if not inline:
+        from apps.core.audit import audit
+        audit(request, f"{doc.kind}.pdf_downloaded", entity=doc)
     return resp
 
 
@@ -2838,6 +2857,8 @@ def commercial_document_excel(request, pk):
         buf.getvalue(),
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     resp["Content-Disposition"] = f'attachment; filename="{doc.number}.xlsx"'
+    from apps.core.audit import audit
+    audit(request, f"{doc.kind}.excel_exported", entity=doc)
     return resp
 
 
