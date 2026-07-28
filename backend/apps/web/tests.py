@@ -847,7 +847,7 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertContains(detail, "Approve")             # lifecycle action
         self.assertNotContains(detail, "Finalize")         # removed
         self.assertContains(detail, "preview")             # PDF preview
-        # The sibling document can be raised from here too.
+        # No delivery note yet → the sibling is offered as Create.
         self.assertContains(detail, "Create delivery note")
 
     def test_delivery_note_page_offers_create_tax_invoice(self):
@@ -859,6 +859,25 @@ class QuotationReviewWorkflowTests(TestCase):
         detail = self.client.get(resp.url)
         self.assertContains(detail, "Delivery note")
         self.assertContains(detail, "Create tax invoice")
+        self.assertNotContains(detail, "Create delivery note")
+
+    def test_existing_documents_show_view_not_create(self):
+        # Once a document exists, its button becomes "View …" (on the quotation
+        # and on the sibling document page).
+        self._set_status("approved")
+        self.client.post(self._url("invoice/"))
+        self.client.post(self._url("delivery-note/"))
+        review = self.client.get(self._url())
+        self.assertContains(review, "View tax invoice")
+        self.assertContains(review, "View delivery note")
+        self.assertNotContains(review, "Create tax invoice")
+        self.assertNotContains(review, "Create delivery note")
+        # And the invoice page links to the existing delivery note, not Create.
+        with tenant_scope(self.company.id):
+            from apps.quotes.models import CommercialDocument
+            inv = CommercialDocument.objects.get(quotation=self.quote, kind="invoice")
+        detail = self.client.get(f"/commercial-documents/{inv.id}/")
+        self.assertContains(detail, "View delivery note")
         self.assertNotContains(detail, "Create delivery note")
 
     def test_scope_of_work_shows_on_the_review_page(self):

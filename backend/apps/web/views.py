@@ -1466,6 +1466,9 @@ def _quotation_review(request, quote):
         "can_generate_docs": can_quote and can_generate_documents(quote),
         "matched_po": matched_po,
         "commercial_documents": list(quote.commercial_documents.all()),
+        # Once a document exists, its button becomes "View …" instead of "Create".
+        "existing_invoice": quote.commercial_documents.filter(kind="invoice").first(),
+        "existing_delivery": quote.commercial_documents.filter(kind="delivery").first(),
         "revisions": quote.revisions.order_by("revision"),
         "timeline": _commercial_timeline(quote),
     }
@@ -2653,9 +2656,13 @@ def commercial_document_detail(request, pk):
         # Approve is the single, final step; there is no finalize or send.
         "can_approve": can_quote and doc.status == "draft",
         "can_download": doc.is_finalized,
-        # From here you can also raise the sibling document off the same
-        # quotation — a delivery note from an invoice, or vice versa.
+        # From here you can also reach the sibling document off the same
+        # quotation — view it if it exists, otherwise raise it.
         "can_generate_docs": can_quote and can_generate_documents(doc.quotation),
+        "existing_invoice": doc.quotation.commercial_documents.filter(
+            kind="invoice").first(),
+        "existing_delivery": doc.quotation.commercial_documents.filter(
+            kind="delivery").first(),
         "next_statuses": commercial_document_next_statuses(doc),
         "timeline": timeline,
     })
