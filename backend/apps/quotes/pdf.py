@@ -131,6 +131,37 @@ def _terms_flowables(company, kind, small, muted):
     return out
 
 
+def _signoff_column(small, muted, *, compiled_label, prep_name, today,
+                    received_label="Received in Good Order By:"):
+    """The sign-off content — compiled by (pre-filled) then received by (blank
+    for a signature). Shared by the two-box footer and the delivery note's
+    banking-free sign-off box."""
+    return [
+        Paragraph(f"<b>{escape(compiled_label)}</b>", small), Spacer(1, 1.5 * mm),
+        Paragraph(f"Initials &amp; Surname: <b>{escape(prep_name)}</b>"
+                  f"&nbsp;&nbsp;&nbsp;&nbsp;Date: <b>{escape(today)}</b>", small),
+        Spacer(1, 6 * mm),
+        Paragraph(f"<b>{escape(received_label)}</b>", small), Spacer(1, 1.5 * mm),
+        Paragraph("Initials &amp; Surname: ________________"
+                  "&nbsp;&nbsp;&nbsp;Date: ____________", muted),
+    ]
+
+
+def _signoff_box(brand, small, muted, *, compiled_label, prep_name, today,
+                 received_label="Received in Good Order By:", width=186 * mm):
+    """A single bordered sign-off box, no banking — used by the delivery note."""
+    signoff = _signoff_column(small, muted, compiled_label=compiled_label,
+                              prep_name=prep_name, today=today,
+                              received_label=received_label)
+    box = Table([[signoff]], colWidths=[width])
+    box.setStyle(TableStyle([
+        ("BOX", (0, 0), (0, 0), 1, brand), ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (0, 0), 9), ("RIGHTPADDING", (0, 0), (0, 0), 9),
+        ("TOPPADDING", (0, 0), (0, 0), 9), ("BOTTOMPADDING", (0, 0), (0, 0), 9),
+    ]))
+    return box
+
+
 def _signoff_banking_boxes(header, brand, small, muted, *, compiled_label,
                            prep_name, today,
                            received_label="Received in Good Order By:"):
@@ -140,15 +171,9 @@ def _signoff_banking_boxes(header, brand, small, muted, *, compiled_label,
     def M(t):
         return Paragraph(escape(str(t)), muted)
 
-    signoff = [
-        Paragraph(f"<b>{escape(compiled_label)}</b>", small), Spacer(1, 1.5 * mm),
-        Paragraph(f"Initials &amp; Surname: <b>{escape(prep_name)}</b>"
-                  f"&nbsp;&nbsp;&nbsp;&nbsp;Date: <b>{escape(today)}</b>", small),
-        Spacer(1, 6 * mm),
-        Paragraph(f"<b>{escape(received_label)}</b>", small), Spacer(1, 1.5 * mm),
-        Paragraph("Initials &amp; Surname: ________________"
-                  "&nbsp;&nbsp;&nbsp;Date: ____________", muted),
-    ]
+    signoff = _signoff_column(small, muted, compiled_label=compiled_label,
+                              prep_name=prep_name, today=today,
+                              received_label=received_label)
     bank = header["bank"]
     title = Paragraph("<b>BANKING DETAILS</b>", small)
     if bank:
@@ -555,11 +580,11 @@ def delivery_note_pdf_bytes(doc) -> bytes:
     # quantity and Outstanding to zero (Ordered − Delivered) — the normal case,
     # a complete delivery; the driver strikes through and adjusts for a partial.
     cell = small.clone("cell")
-    rows = [["Item", "Description", "Ordered", "Delivered", "Outstanding", "Unit"]]
+    rows = [["Item", "Description", "Ordered", "Delivered", "Outstanding"]]
     for ln in quote.lines.all():
         rows.append([str(ln.position), Paragraph(escape(ln.description), cell),
-                     f"{ln.qty:g}", f"{ln.qty:g}", "0", ln.unit])
-    tbl = Table(rows, colWidths=[14 * mm, 78 * mm, 24 * mm, 24 * mm, 26 * mm, 20 * mm],
+                     f"{ln.qty:g}", f"{ln.qty:g}", "0"])
+    tbl = Table(rows, colWidths=[14 * mm, 98 * mm, 24 * mm, 24 * mm, 26 * mm],
                 repeatRows=1)
     tbl.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), brand), ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
@@ -571,14 +596,14 @@ def delivery_note_pdf_bytes(doc) -> bytes:
     if doc.delivery_notes:
         story += [L("Delivery notes:", doc.delivery_notes, muted), Spacer(1, 4 * mm)]
 
-    # Standard delivery terms, then the same boxed sign-off + banking layout the
-    # quotation and invoice use — only the title differs, for a consistent set.
+    # Standard delivery terms, then a sign-off box only — a delivery note carries
+    # no banking details (nothing is paid against it).
     story += _terms_flowables(company, "delivery", small, muted)
     prep = quote.prepared_by
     prep_name = _initials_surname(prep.get_full_name()) if prep and prep.get_full_name() \
         else (prep.email if prep else "")
-    footer = _signoff_banking_boxes(
-        header, brand, small, muted, compiled_label="Delivery Compiled By:",
+    footer = _signoff_box(
+        brand, small, muted, compiled_label="Delivery Compiled By:",
         prep_name=prep_name, today=doc.created_at.strftime("%d/%m/%Y"),
         received_label="Received in Good Order By:")
     story += [footer]

@@ -969,8 +969,9 @@ class CommercialDocumentTests(TestCase):
         self.assertIn("DELIVERY NOTE", dtext)
         self.assertIn("Outstanding", dtext)        # operational columns
         self.assertNotIn("R2,000", dtext)          # a delivery note shows no prices
-        # Consistency (V4): the delivery note carries banking like the others.
-        self.assertIn("BANKING DETAILS", dtext)
+        # A delivery note carries no banking details and no Unit column.
+        self.assertNotIn("BANKING DETAILS", dtext)
+        self.assertNotIn("Unit", dtext)
 
 
 class CommercialDocumentContentTests(TestCase):
