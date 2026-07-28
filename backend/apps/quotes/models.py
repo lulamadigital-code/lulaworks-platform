@@ -21,14 +21,29 @@ Three things follow from that, and they shape this module:
    to disagree.
 """
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.core.models import TenantBaseModel
 
 TWO = Decimal("0.01")
+
+
+# ── Tenant-namespaced upload paths ────────────────────────────────────────────
+#
+# Uploaded files land under the owning company's own directory, never a shared
+# date bucket, so one tenant's storage can never be walked into from another's.
+# Module-level so migrations can reference them by import path.
+
+def po_upload_path(instance, filename):
+    return f"c/{instance.company_id}/customer_pos/{filename}"
+
+
+def quotation_doc_upload_path(instance, filename):
+    return f"c/{instance.company_id}/quotation_docs/{filename}"
 
 
 class QuotationStatus(models.TextChoices):
@@ -448,6 +463,33 @@ class QuotationLine(TenantBaseModel):
     def __str__(self):
         return self.description[:60]
 
+    def save(self, *args, **kwargs):
+        # A negative quantity or price is never a real line — it is bad data that
+        # would quietly corrupt every total that sums the lines. Reject it at the
+        # boundary rather than let it into the money. Coerce first: callers often
+        # assign strings ("20") that the DecimalField only converts on load, so
+        # compare against the numeric value, not the raw attribute.
+        def _num(field):
+            value = getattr(self, field)
+            if value is None or isinstance(value, Decimal):
+                return value
+            try:
+                return Decimal(str(value))
+            except (InvalidOperation, TypeError, ValueError):
+                raise ValidationError(f"{field.replace('_', ' ')} must be a number.")
+
+        for field in ("qty", "unit_cost", "unit_price", "discount_pct"):
+            setattr(self, field, _num(field))
+        if self.qty is not None and self.qty < 0:
+            raise ValidationError("Quantity cannot be negative.")
+        if self.unit_cost is not None and self.unit_cost < 0:
+            raise ValidationError("Unit cost cannot be negative.")
+        if self.unit_price is not None and self.unit_price < 0:
+            raise ValidationError("Unit price cannot be negative.")
+        if self.discount_pct is not None and not (0 <= self.discount_pct <= 100):
+            raise ValidationError("Discount percent must be between 0 and 100.")
+        super().save(*args, **kwargs)
+
     @property
     def computed_unit_price(self) -> Decimal:
         """Cost + markup − discount. What the price SHOULD be."""
@@ -518,7 +560,7 @@ class CustomerPurchaseOrder(TenantBaseModel):
     po_number = models.CharField(max_length=64)
     po_date = models.DateField(null=True, blank=True)
     value = models.DecimalField(max_digits=14, decimal_places=2, default=0)
-    document = models.FileField(upload_to="customer_pos/%Y/", blank=True, null=True)
+    document = models.FileField(upload_to=po_upload_path, blank=True, null=True)
     issued_by = models.ForeignKey(
         "customers.CustomerContact", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="purchase_orders_issued",
@@ -576,7 +618,7 @@ class QuotationDocument(TenantBaseModel):
                                   related_name="documents")
     name = models.CharField(max_length=200)
     doc_type = models.CharField(max_length=40, blank=True)
-    file = models.FileField(upload_to="quotation_docs/%Y/")
+    file = models.FileField(upload_to=quotation_doc_upload_path)
 
     class Meta:
         ordering = ["-created_at"]

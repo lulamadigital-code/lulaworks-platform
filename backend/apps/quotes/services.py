@@ -1,7 +1,7 @@
 import re
 from decimal import Decimal, InvalidOperation
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Sum
 
 from apps.core.events import publish
@@ -108,6 +108,37 @@ def _guard_generatable(quote):
         raise QuotationError("This quotation has no line items.")
 
 
+#: How many times to re-allocate a sequence number before giving up. Five is far
+#: beyond what any realistic contention needs — two callers racing collide once,
+#: not five times — but it costs nothing to be generous.
+_NUMBERING_ATTEMPTS = 5
+
+
+def _create_numbered_document(quote, kind, user, **extra):
+    """Allocate the next sequence for this kind of document and create it,
+    retrying on the (company, number) collision two racing callers can hit.
+
+    seq is derived from a count, so two callers can compute the same one and race
+    to insert it; the unique constraint lets exactly one win. Each attempt runs in
+    its own savepoint, so a loser's failed insert rolls back cleanly. The seq is
+    recomputed every pass — the fresh count picks up the number a winner just
+    committed, and the attempt offset guarantees forward progress past a number
+    that is already taken rather than re-trying the same one."""
+    last_error = None
+    for attempt in range(_NUMBERING_ATTEMPTS):
+        seq = quote.commercial_documents.filter(kind=kind).count() + 1 + attempt
+        try:
+            with transaction.atomic():
+                return CommercialDocument.objects.create(
+                    company=quote.company, quotation=quote, kind=kind,
+                    number=commercial_ref(quote, kind, seq),
+                    purchase_order=_po_for_document(quote),
+                    created_by=user, updated_by=user, **extra)
+        except IntegrityError as exc:
+            last_error = exc          # someone took this number first — re-count
+    raise last_error
+
+
 @transaction.atomic
 def create_invoice_document(quote, user):
     """Raise a tax invoice from the quotation — number inherited from the parent
@@ -118,11 +149,7 @@ def create_invoice_document(quote, user):
     _guard_generatable(quote)
     if quote.invoice_total <= 0:
         raise QuotationError("The invoice total is zero — there is nothing to invoice.")
-    seq = quote.commercial_documents.filter(kind=CommercialDocument.Kind.INVOICE).count() + 1
-    doc = CommercialDocument.objects.create(
-        company=quote.company, quotation=quote, kind=CommercialDocument.Kind.INVOICE,
-        number=commercial_ref(quote, "invoice", seq), purchase_order=_po_for_document(quote),
-        created_by=user, updated_by=user)
+    doc = _create_numbered_document(quote, CommercialDocument.Kind.INVOICE, user)
     record_event(quote, verb="invoice_created", actor=user, note=doc.number)
     return doc
 
@@ -146,16 +173,13 @@ def create_delivery_document(quote, user, **fields):
                    or quote.site)
     if not destination:
         raise QuotationError("A delivery site is required for a delivery note.")
-    seq = quote.commercial_documents.filter(kind=CommercialDocument.Kind.DELIVERY).count() + 1
-    doc = CommercialDocument.objects.create(
-        company=quote.company, quotation=quote, kind=CommercialDocument.Kind.DELIVERY,
-        number=commercial_ref(quote, "delivery", seq), purchase_order=_po_for_document(quote),
+    doc = _create_numbered_document(
+        quote, CommercialDocument.Kind.DELIVERY, user,
         delivery_date=fields.get("delivery_date") or None,
         delivery_address=fields.get("delivery_address", "").strip(),
         driver=fields.get("driver", "").strip(),
         receiver_name=fields.get("receiver_name", "").strip(),
-        delivery_notes=fields.get("delivery_notes", "").strip(),
-        created_by=user, updated_by=user)
+        delivery_notes=fields.get("delivery_notes", "").strip())
     record_event(quote, verb="delivery_created", actor=user, note=doc.number)
     return doc
 

@@ -1249,3 +1249,77 @@ class DiscountTests(TestCase):
         self.assertIn("DISCOUNT", text)
         self.assertIn("150.00", text)
         self.assertIn("850.00", text)          # the discounted total
+
+
+class LineValidationTests(TestCase):
+    """A quotation line may not carry a negative quantity or price — bad data
+    that would silently corrupt every total summed from the lines."""
+
+    def test_negative_qty_is_rejected(self):
+        from django.core.exceptions import ValidationError
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            with self.assertRaises(ValidationError):
+                add_line(c, quote, qty=-1, price=100)
+
+    def test_negative_unit_price_is_rejected(self):
+        from django.core.exceptions import ValidationError
+        c = make_company()
+        with tenant_scope(c.id):
+            quote = make_quote(c)
+            with self.assertRaises(ValidationError):
+                add_line(c, quote, qty=1, price=-5)
+
+
+class CommercialNumberingConcurrencyTests(TestCase):
+    """Two callers racing for the next document number must not 500 on the
+    unique-constraint collision — the loser re-allocates and gets a fresh one."""
+
+    def _finalized_quote(self, c):
+        q = make_quote(c, number="LPS845192", vat_mode=VatMode.EXCLUSIVE,
+                       status=QuotationStatus.ISSUED)
+        add_line(c, q, qty=2, price=1000)
+        return q
+
+    def test_invoice_number_collision_retries_to_a_fresh_number(self):
+        from apps.quotes.models import CommercialDocument
+        from apps.quotes.services import commercial_ref, create_invoice_document
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._finalized_quote(c)
+            # Occupy the number the first invoice seq would produce, so the
+            # creator's first insert collides on (company, number).
+            taken = commercial_ref(q, "invoice", 1)          # INV-LPS845192-01
+            CommercialDocument.objects.create(
+                company=c, quotation=q, kind=CommercialDocument.Kind.DELIVERY,
+                number=taken)
+            doc = create_invoice_document(q, None)            # must not raise
+            self.assertNotEqual(doc.number, taken)
+            self.assertEqual(doc.number, commercial_ref(q, "invoice", 2))
+            self.assertEqual(
+                CommercialDocument.objects.filter(
+                    company=c, number=doc.number).count(), 1)
+
+
+class TenantUploadPathTests(TestCase):
+    """Uploaded files are namespaced under the owning company, not a shared date
+    bucket — defence in depth against cross-tenant path traversal."""
+
+    def test_po_document_path_is_company_scoped(self):
+        from apps.quotes.models import po_upload_path
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c)
+            po = record_purchase_order(q, None, po_number="PO900")
+        path = po_upload_path(po, "order.pdf")
+        self.assertTrue(path.startswith(f"c/{c.id}/"))
+        self.assertEqual(path, f"c/{c.id}/customer_pos/order.pdf")
+
+    def test_quotation_document_path_is_company_scoped(self):
+        from apps.quotes.models import QuotationDocument, quotation_doc_upload_path
+        c = make_company()
+        instance = QuotationDocument(company_id=c.id)
+        path = quotation_doc_upload_path(instance, "boq.pdf")
+        self.assertTrue(path.startswith(f"c/{c.id}/"))
+        self.assertEqual(path, f"c/{c.id}/quotation_docs/boq.pdf")
