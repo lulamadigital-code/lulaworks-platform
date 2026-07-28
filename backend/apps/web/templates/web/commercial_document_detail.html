@@ -27,8 +27,7 @@
 {# ── Actions ──────────────────────────────────────────────────────────────── #}
 <div class="actionbar">
   {% if can_approve %}
-  <form method="post" action="{% url 'web:commercial_document_transition' doc.id %}"
-        data-confirm="Approve {{ doc.number|escapejs }}? It becomes the read-only commercial record.">
+  <form method="post" action="{% url 'web:commercial_document_transition' doc.id %}">
     {% csrf_token %}<input type="hidden" name="status" value="approved">
     <button class="btn" type="submit">Approve</button></form>
   {% endif %}
