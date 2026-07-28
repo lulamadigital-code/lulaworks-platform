@@ -384,17 +384,20 @@ class QuotationTests(TestCase):
         no_perm = user_with(c, ["projects.view"], email="np@lulama.co.za")
         editor = user_with(c, ["projects.view", "quotes.create"], email="ed@lulama.co.za")
 
-        # The standalone editor is RETIRED — it rebuilt the line set from
-        # description/qty/unit/price and so destroyed cost, markup, discount,
-        # category and section on save. Both users now land on the builder.
-        for who in (no_perm, editor):
-            self.client.force_login(who)
-            response = self.client.get(f"/quotations/{q.id}/edit/")
-            self.assertEqual(response.status_code, 302)
-            self.assertIn(str(q.id), response["Location"])
+        # Editing opens the guided create page (edit == create). It needs
+        # quotes.create: a viewer is bounced, an editor gets the prefilled page.
+        self.client.force_login(no_perm)
+        response = self.client.get(f"/quotations/{q.id}/edit/")
+        self.assertEqual(response.status_code, 302)
+        self.assertNotIn(str(q.id), response["Location"])     # sent to the list
 
-        # Editing happens on the builder, one line at a time.
         self.client.force_login(editor)
+        response = self.client.get(f"/quotations/{q.id}/edit/")
+        self.assertEqual(response.status_code, 200)            # the create-style editor
+        self.assertContains(response, "Save changes")
+
+        # Line-level costing (cost, markup) still lives on the HTMX builder
+        # endpoints, which remain available.
         self.client.post(f"/quotations/{q.id}/lines/", {
             "description": "Bearing kit", "qty": "4", "unit": "set",
             "unit_cost": "800", "markup_pct": "50",
@@ -661,6 +664,43 @@ class QuotationCreationWorkflowTests(TestCase):
             self.assertEqual(quote.documents.count(), 2)
             self.assertTrue(all(d.doc_type == "attachment"
                                 for d in quote.documents.all()))
+
+    def test_edit_uses_the_same_creation_page_prefilled(self):
+        # Editing a quotation opens the SAME guided create page, prefilled.
+        quote = self._post()  # returns 302; fetch the created one
+        q = self._latest()
+        resp = self.client.get(f"/quotations/{q.id}/edit/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, f"Edit {q.number}")     # same page, edit heading
+        self.assertContains(resp, "Save changes")         # not "Create quotation"
+        self.assertContains(resp, "Customer")             # the creation components
+        self.assertContains(resp, "Job type")
+        self.assertContains(resp, 'value="Crane hire"')   # title prefilled
+
+    def test_saving_the_edit_updates_the_quotation_in_place(self):
+        self._post(pasted_items="Old line\t1\tday\t100")
+        q = self._latest()
+        before = self._latest_count()
+        resp = self.client.post(f"/quotations/{q.id}/edit/", {
+            "method": "blank",
+            "customer": str(self.customer.id),
+            "quotation_type": str(self.plant_hire.id),
+            "title": "Crane hire REVISED",
+            "site": "Plant 9",
+            "vat_mode": "exclusive",
+            "pasted_items": "New line\t2\tday\t250",
+        })
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(self.company.id):
+            q.refresh_from_db()
+            self.assertEqual(q.title, "Crane hire REVISED")   # updated in place
+            self.assertEqual(q.lines.count(), 1)              # lines replaced
+            self.assertEqual(q.lines.first().description, "New line")
+        self.assertEqual(self._latest_count(), before)        # no new quotation
+
+    def _latest_count(self):
+        with tenant_scope(self.company.id):
+            return Quotation.objects.count()
 
     def test_number_is_never_taken_from_the_form(self):
         """The number is system-allocated; a value posted by hand is ignored."""

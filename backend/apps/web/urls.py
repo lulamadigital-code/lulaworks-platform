@@ -47,7 +47,7 @@ urlpatterns = [
     path("quotations/new/", views.quotation_new, name="quotation_new"),
     path("quotations/extract/", views.quotation_extract, name="quotation_extract"),
     path("quotations/<uuid:pk>/", views.quotation_detail, name="quotation_detail"),
-    path("quotations/<uuid:pk>/edit/", views.quotation_edit, name="quotation_edit"),
+    path("quotations/<uuid:pk>/edit/", views.quotation_new, name="quotation_edit"),
     path("quotations/<uuid:pk>/pdf/", views.quotation_pdf, name="quotation_pdf"),
     path("quotations/<uuid:pk>/excel/", views.quotation_excel, name="quotation_excel"),
     path("quotations/<uuid:pk>/po/extract/", views.quotation_po_extract,

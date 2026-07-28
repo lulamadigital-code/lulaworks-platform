@@ -1,10 +1,15 @@
 {% extends "web/base.html" %}
-{% block title %}New quotation{% endblock %}
+{% block title %}{% if editing %}Edit {{ quote.number }}{% else %}New quotation{% endif %}{% endblock %}
 {% block content %}
 <div class="pagehead" style="margin-bottom:14px;">
   <div>
+    {% if editing %}
+    <p class="sub" style="margin:0 0 2px;"><a href="{% url 'web:quotation_detail' quote.id %}">← {{ quote.number }}</a></p>
+    <h1 style="margin:0;">Edit {{ quote.number }}</h1>
+    {% else %}
     <p class="sub" style="margin:0 0 2px;"><a href="{% url 'web:quotations' %}">← Quotations</a></p>
     <h1 style="margin:0;">New quotation</h1>
+    {% endif %}
   </div>
 </div>
 
@@ -18,7 +23,7 @@
       <div class="qcell"><label>Customer</label>
         <select name="customer" id="customer-select" required>
           <option value="">Search customer…</option>
-          {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}{% if c.vendor_number %} · vendor {{ c.vendor_number }}{% endif %}</option>{% endfor %}
+          {% for c in customers %}<option value="{{ c.id }}"{% if quote and quote.customer_id == c.id %} selected{% endif %}>{{ c.display_name }}{% if c.vendor_number %} · vendor {{ c.vendor_number }}{% endif %}</option>{% endfor %}
         </select></div>
       <div class="qcell"><label>Contact person</label>
         <select name="contact" id="contact-select" disabled>
@@ -30,18 +35,20 @@
       <div class="qcell"><label>Job type</label>
         <select name="quotation_type" id="type-select" required>
           <option value="">Choose…</option>
-          {% for t in types %}<option value="{{ t.id }}" data-key="{{ t.key }}">{{ t.label }}</option>{% endfor %}
+          {% for t in types %}<option value="{{ t.id }}" data-key="{{ t.key }}"{% if quote and quote.quotation_type_id == t.id %} selected{% endif %}>{{ t.label }}</option>{% endfor %}
         </select></div>
       <div class="qcell"><label>Title</label>
-        <input type="text" name="title" placeholder="e.g. Supply conveyor rollers" required></div>
+        <input type="text" name="title" placeholder="e.g. Supply conveyor rollers" required
+               value="{{ quote.title|default:'' }}"></div>
       <div class="qcell"><label>Site</label>
-        <input type="text" name="site" placeholder="e.g. Plant 4"></div>
+        <input type="text" name="site" placeholder="e.g. Plant 4"
+               value="{{ quote.site|default:'' }}"></div>
     </div>
 
     <div class="qrow r-comm">
       <div class="qcell"><label>VAT</label>
         <select name="vat_mode" id="vat-mode">
-          {% for v, l in vat_modes %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+          {% for v, l in vat_modes %}<option value="{{ v }}"{% if quote and quote.vat_mode == v %} selected{% endif %}>{{ l }}</option>{% endfor %}
         </select></div>
     </div>
   </div>
@@ -52,7 +59,7 @@
       <div class="qcell"><label>Scope of work
           <span id="ai-status" class="aistatus"></span></label>
         <textarea name="scope_of_work" id="scope" rows="5"
-                  placeholder="Type or paste the scope — LulaAI reads it as you write and fills the table below."></textarea></div>
+                  placeholder="Type or paste the scope — LulaAI reads it as you write and fills the table below.">{{ quote.scope_of_work|default:'' }}</textarea></div>
       <div class="qcell"><label>Attach documents</label>
         <label class="drop">
           <input type="file" name="documents" id="docinput" multiple
@@ -94,11 +101,12 @@
   </div>
 
   <div class="createbar">
-    <button class="btn" type="submit">Create quotation</button>
+    <button class="btn" type="submit">{% if editing %}Save changes{% else %}Create quotation{% endif %}</button>
+    {% if editing %}<a class="btn ghost" href="{% url 'web:quotation_detail' quote.id %}">Cancel</a>{% endif %}
   </div>
 </form>
 
-{% if recent %}
+{% if recent and not editing %}
 <details class="card" style="margin-top:16px;">
   <summary style="cursor:pointer;font-weight:600;">Copy an existing quotation</summary>
   <form method="post" style="margin-top:12px;">{% csrf_token %}
@@ -123,6 +131,7 @@
 
 {{ contacts_json|json_script:"contacts-data" }}
 {{ vendor_json|json_script:"vendor-data" }}
+{{ seed_lines|json_script:"seed-lines" }}
 
 <style>
   .qcard { margin-bottom:12px; padding:14px 16px; }
@@ -182,6 +191,8 @@
 (function () {
   const contacts = JSON.parse(document.getElementById("contacts-data").textContent);
   const vendors  = JSON.parse(document.getElementById("vendor-data").textContent);
+  const seedEl = document.getElementById("seed-lines");
+  const SEED = seedEl ? JSON.parse(seedEl.textContent) : [];
   const $ = id => document.getElementById(id);
   const custSel = $("customer-select"), contSel = $("contact-select");
   const typeSel = $("type-select"), vatSel = $("vat-mode");
@@ -421,7 +432,24 @@
     $("pasted_items").value = lines.join("\n");
   });
 
+  // ── Editing: prefill the contact + discount, and seed the grid with the
+  //    quotation's existing lines — so editing is the same page as creating. ──
+  {% if editing %}
+  fillContacts();
+  {% if quote.contact_id %}contSel.value = "{{ quote.contact_id }}";{% endif %}
+  {% if quote.discount_amount %}
+  $("discount-row").style.display = "flex";
+  $("add-discount").style.display = "none";
+  $("discount_amount").value = "{{ quote.discount_amount }}";
+  {% endif %}
+  {% endif %}
+
   rebuild();
+  if (SEED.length) {
+    tbody.innerHTML = "";
+    SEED.forEach(v => newRow(v));
+    recompute();
+  }
 })();
 </script>
 {% endblock %}

@@ -1478,20 +1478,6 @@ def _quotation_review(request, quote):
 
 
 @login_required
-def quotation_edit(request, pk):
-    """Retired. The builder on the detail page replaced this.
-
-    The old editor rebuilt the whole line set from a form carrying only
-    description/qty/unit/price — so saving it DELETED every line and recreated
-    them without cost, markup, discount, category or section. A quotation with
-    a real margin came back with an unknown one, silently.
-
-    The URL is kept so old bookmarks land somewhere useful rather than 404.
-    """
-    return redirect("web:quotation_detail", pk=pk)
-
-
-@login_required
 @xframe_options_sameorigin  # so the review page can preview it in an <iframe>
 def quotation_pdf(request, pk):
     quote = get_object_or_404(Quotation.objects.all().prefetch_related("lines"), pk=pk)
@@ -2174,11 +2160,14 @@ def _quote_guard(request, pk):
 
 
 @login_required
-def quotation_new(request):
+def quotation_new(request, pk=None):
     """One guided page, top to bottom, in the order an estimator actually works:
     customer → contact → job type → the basics → scope → items → attachments →
     create. Everything past the basics is optional, so a quick quotation is a
     customer, a type and a title; the depth is there when the job needs it.
+
+    The SAME page edits an existing quotation (pk given): it is prefilled and
+    saving updates the quotation in place, so editing is identical to creating.
 
     RFQ-sourced quotations are created by approving an RFQ (which links the
     source document), so that route lives on the RFQ screen, not here. Copying
@@ -2187,11 +2176,13 @@ def quotation_new(request):
     from apps.customers.models import Customer
     from apps.quotes.models import QuotationType, VatMode
     from apps.quotes.services import (
+        QuotationError,
         add_lines_bulk,
         apply_type_template,
         create_quotation,
         duplicate,
         ensure_quotation_types,
+        guard_editable,
         parse_grid_lines,
     )
 
@@ -2202,10 +2193,21 @@ def quotation_new(request):
     company = request.user.active_company
     ensure_quotation_types(company)
 
+    editing = pk is not None
+    quote = None
+    if editing:
+        quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+        # A finalized (approved+) quotation is the commercial record — changing it
+        # is a revision, not an edit, so the editor is closed.
+        if quote.is_finalized:
+            messages.error(request, f"{quote.display_number} is read-only — "
+                                    "create a revision to change it.")
+            return redirect("web:quotation_detail", pk=pk)
+
     if request.method == "POST":
         method = request.POST.get("method", "blank")
 
-        if method == "copy":
+        if method == "copy" and not editing:
             source = get_object_or_404(Quotation.objects.all(),
                                        pk=request.POST.get("source"))
             customer = Customer.objects.filter(
@@ -2219,7 +2221,42 @@ def quotation_new(request):
         customer = Customer.objects.filter(pk=request.POST.get("customer")).first()
         if customer is None:
             messages.error(request, "Choose the customer this quotation is for.")
-            return redirect("web:quotation_new")
+            return redirect("web:quotation_edit", pk=pk) if editing \
+                else redirect("web:quotation_new")
+
+        # ── Edit: update the existing quotation in place ────────────────────
+        if editing:
+            try:
+                guard_editable(quote)
+            except QuotationError as exc:
+                messages.error(request, str(exc))
+                return redirect("web:quotation_detail", pk=quote.id)
+            quote.client_name = customer.name
+            quote.customer = customer
+            quote.title = request.POST.get("title", "").strip()
+            quote.site = request.POST.get("site", "").strip()
+            quote.quotation_type = QuotationType.objects.filter(
+                pk=request.POST.get("quotation_type")).first()
+            quote.vat_mode = request.POST.get("vat_mode", VatMode.EXCLUSIVE)
+            quote.discount_amount = _decimal_or_none(
+                request.POST.get("discount_amount")) or 0
+            quote.scope_of_work = request.POST.get("scope_of_work", "").strip()
+            quote.vendor_number = customer.vendor_number
+            _apply_customer_hierarchy(quote, request)
+            quote.save()
+            for f in request.FILES.getlist("documents"):
+                quote.documents.create(company=company, name=f.name,
+                                       doc_type="attachment", file=f)
+            # The grid is the whole line set — replace it wholesale, same as the
+            # create page builds it.
+            pasted = request.POST.get("pasted_items", "").strip()
+            quote.lines.all().delete()
+            if pasted:
+                rows = parse_grid_lines(pasted)
+                if rows:
+                    add_lines_bulk(quote, request.user, rows)
+            messages.success(request, f"Quotation {quote.number} updated.")
+            return redirect("web:quotation_detail", pk=quote.id)
 
         # The number is always system-allocated — never an editable field, so it
         # cannot collide or be skipped.
@@ -2299,6 +2336,15 @@ def quotation_new(request):
             for ct in c.contacts.filter(status="active")
         ]
 
+    # When editing, seed the grid with the existing lines (same four fields the
+    # grid stores), so the estimator edits exactly what is on the quotation.
+    seed_lines = []
+    if editing:
+        for ln in quote.lines.all():
+            seed_lines.append({"description": ln.description, "qty": f"{ln.qty:g}",
+                               "unit": ln.unit,
+                               "unit_price": f"{ln.effective_unit_price:.2f}"})
+
     return render(request, "web/quotation_new.html", {
         "customers": Customer.objects.all(),
         "types": QuotationType.objects.all(),
@@ -2308,6 +2354,9 @@ def quotation_new(request):
         # Passed as objects, not strings — json_script serialises them safely.
         "contacts_json": contacts_by_customer,
         "vendor_json": vendor_by_customer,
+        "editing": editing,
+        "quote": quote,
+        "seed_lines": seed_lines,
     })
 
 
