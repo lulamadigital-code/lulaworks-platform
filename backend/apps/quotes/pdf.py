@@ -29,16 +29,25 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+# The documents render in a single ink colour — no coloured title, secondary
+# text or totals. The item-table header is set off by a light-grey fill and bold
+# text rather than a second colour, so every character on the page is one colour.
+MONOCHROME = True
+INK = colors.black
 DEFAULT_BRAND = colors.HexColor("#0E6E6E")
-MUTED = colors.HexColor("#5b6b6a")
+MUTED = INK if MONOCHROME else colors.HexColor("#5b6b6a")
 LINE = colors.HexColor("#dfe6e6")
+HEADER_BG = colors.HexColor("#e6e6e6")
 
 _HEX = re.compile(r"#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
 
 
 def _brand_color(company):
-    """The company's own brand colour if it set a valid one, else the LulaWorks
-    teal — so a bad or empty value never breaks the document."""
+    """The accent colour used for the title, totals, rules and box borders. In
+    monochrome mode this is the single ink colour so the whole document is one
+    colour; otherwise the company's own brand colour, else the LulaWorks teal."""
+    if MONOCHROME:
+        return INK
     raw = (getattr(company, "brand_primary", "") or "").strip()
     if _HEX.match(raw):
         try:
@@ -330,8 +339,9 @@ def quotation_pdf_bytes(quote) -> bytes:
     tbl = Table(rows, colWidths=[14 * mm, 85 * mm, 20 * mm, 20 * mm, 23.5 * mm, 23.5 * mm],
                 repeatRows=1)
     tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), brand),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("BACKGROUND", (0, 0), (-1, 0), HEADER_BG),
+        ("TEXTCOLOR", (0, 0), (-1, 0), INK),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("FONTSIZE", (0, 0), (-1, -1), 9),
         ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
         ("ALIGN", (0, 0), (0, -1), "CENTER"),
@@ -493,7 +503,8 @@ def invoice_pdf_bytes(doc) -> bytes:
     tbl = Table(rows, colWidths=[14 * mm, 85 * mm, 20 * mm, 20 * mm, 23.5 * mm, 23.5 * mm],
                 repeatRows=1)
     tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), brand), ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("BACKGROUND", (0, 0), (-1, 0), HEADER_BG), ("TEXTCOLOR", (0, 0), (-1, 0), INK),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("FONTSIZE", (0, 0), (-1, -1), 9), ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
         ("ALIGN", (0, 0), (0, -1), "CENTER"), ("GRID", (0, 0), (-1, -1), 0.4, LINE),
         ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5)]))
@@ -598,7 +609,8 @@ def delivery_note_pdf_bytes(doc) -> bytes:
     tbl = Table(rows, colWidths=[14 * mm, 98 * mm, 24 * mm, 24 * mm, 26 * mm],
                 repeatRows=1)
     tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), brand), ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("BACKGROUND", (0, 0), (-1, 0), HEADER_BG), ("TEXTCOLOR", (0, 0), (-1, 0), INK),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("FONTSIZE", (0, 0), (-1, -1), 9), ("ALIGN", (2, 0), (-1, -1), "CENTER"),
         ("ALIGN", (0, 0), (0, -1), "CENTER"), ("GRID", (0, 0), (-1, -1), 0.4, LINE),
         ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))

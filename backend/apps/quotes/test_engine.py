@@ -777,13 +777,16 @@ class QuotationPdfLayoutTests(TestCase):
         self.assertIn("Supplier No", text)
         self.assertIn("K4 Shaft", text)                # ship to / site
 
-    def test_a_bad_brand_colour_does_not_break_the_pdf(self):
-        from apps.quotes.pdf import _brand_color
+    def test_documents_render_in_a_single_ink_colour(self):
+        # Every accent (title, totals, rules, table header) uses one ink colour;
+        # a bad — or any — company brand colour is ignored, so it can never break
+        # the PDF or introduce a second colour.
+        from apps.quotes.pdf import INK, _brand_color
         c = make_company()
         c.brand_primary = "this is not a colour"       # what the crash came from
-        self.assertEqual(_brand_color(c).hexval(), "0x0e6e6e")   # default teal
+        self.assertEqual(_brand_color(c).hexval(), INK.hexval())
         c.brand_primary = "#a5127f"
-        self.assertEqual(_brand_color(c).hexval(), "0xa5127f")   # honoured
+        self.assertEqual(_brand_color(c).hexval(), INK.hexval())
 
 
 class GridLineParsingTests(TestCase):
