@@ -2518,25 +2518,43 @@ def quotation_revise(request, pk):
 @login_required
 @require_POST
 def quotation_po(request, pk):
-    """Capture the customer's purchase order."""
+    """Capture the customer's purchase order from the uploaded document alone —
+    the PO number, date, value and payment terms are read off the file by the
+    shared Document Intelligence service, so nothing is typed."""
+    from apps.knowledge.document_intelligence import (
+        extract_po_fields,
+        extract_text_from_upload,
+    )
     from apps.quotes.services import QuotationError, record_purchase_order
     quote = get_object_or_404(Quotation.objects.all(), pk=pk)
     if not request.user.has_perm_code("quotes.create"):
         messages.error(request, "You do not have permission.")
         return redirect("web:quotation_detail", pk=pk)
+    f = request.FILES.get("document")
+    if not f:
+        messages.error(request, "Attach the purchase order document to save it.")
+        return redirect("web:quotation_detail", pk=pk)
+
+    fields = extract_po_fields(extract_text_from_upload(f), company=quote.company,
+                               user=request.user, use_ai=True)
+    f.seek(0)                       # reading consumed the file; rewind before saving
+    # If the number couldn't be read, fall back to a reference off the quotation
+    # so the document still saves rather than failing.
+    po_number = (fields.get("po_number") or "").strip() or f"PO-{quote.number}"
     try:
         po = record_purchase_order(
             quote, request.user,
-            po_number=request.POST.get("po_number", ""),
-            value=_decimal_or_none(request.POST.get("value")),
-            po_date=request.POST.get("po_date") or None,
-            document=request.FILES.get("document"),
-            notes=request.POST.get("notes", "").strip(),
+            po_number=po_number,
+            value=_decimal_or_none(fields.get("value")),
+            po_date=fields.get("po_date") or None,
+            document=f,
+            notes=(fields.get("payment_terms") or "").strip(),
         )
     except QuotationError as exc:
         messages.error(request, str(exc))
     else:
-        messages.success(request, f"PO {po.po_number} recorded.")
+        messages.success(request, f"PO {po.po_number} saved — details read from "
+                                  f"{f.name}.")
     return redirect("web:quotation_detail", pk=pk)
 
 

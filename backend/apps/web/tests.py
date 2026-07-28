@@ -795,6 +795,30 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertIn("spreadsheetml", resp["Content-Type"])
         self.assertTrue(resp["Content-Disposition"].endswith('.xlsx"'))
 
+    def test_po_is_saved_by_extracting_fields_from_the_document(self):
+        # The attach form is just a file + Save; the PO number/date/value/terms
+        # are read off the uploaded document, nothing typed.
+        self._set_status("approved")
+        po_doc = SimpleUploadedFile(
+            "po.txt",
+            b"PURCHASE ORDER\nPO Number: 4500123456\nDate: 2026-07-01\n"
+            b"Total: R1150.00\nPayment Terms: 30 days\n",
+            content_type="text/plain")
+        resp = self.client.post(self._url("po/"), {"document": po_doc})
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(self.company.id):
+            po = self.quote.customer_pos.first()
+        self.assertIsNotNone(po)
+        self.assertEqual(po.po_number, "4500123456")     # read off the document
+        self.assertTrue(po.document)                       # the file is stored
+
+    def test_attach_po_requires_a_document(self):
+        self._set_status("approved")
+        resp = self.client.post(self._url("po/"), {})     # no file
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(self.company.id):
+            self.assertFalse(self.quote.customer_pos.exists())
+
     def test_po_section_appears_once_approved(self):
         # Hidden while draft; the optional PO section opens once approved (a
         # customer may return a PO, but it is not required).

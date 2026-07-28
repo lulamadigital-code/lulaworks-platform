@@ -120,22 +120,17 @@
 {% if can_edit or can_award %}
 <div class="card">
   <strong>Attach a purchase order</strong>
-  <p class="muted" style="margin:6px 0 12px;font-size:12.5px;">Drop the customer's PO
-    and LulaAI reads the number, date, value and terms off it — check them and save.</p>
+  <p class="muted" style="margin:6px 0 12px;font-size:12.5px;">Attach the customer's PO
+    document and save — LulaAI reads the PO number, date, value and payment terms
+    straight off it, so there is nothing to type.</p>
   <form method="post" action="{% url 'web:quotation_po' quote.id %}"
         enctype="multipart/form-data" id="poform">{% csrf_token %}
-    <div class="two">
-      <div><label>PO document <span id="po-status" class="aistatus"></span></label>
-        <input type="file" name="document" id="po-file"
-               accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.eml,.zip"></div>
-      <div><label>PO number</label><input type="text" name="po_number" id="po_number" required></div>
-      <div><label>PO date</label><input type="date" name="po_date" id="po_date"></div>
-      <div><label>Value</label><input type="number" step="0.01" name="value" id="po_value"
-             placeholder="{{ quote.total }}"></div>
-      <div><label>Payment terms</label><input type="text" name="notes" id="po_notes"
-             placeholder="e.g. 30 days"></div>
+    <label>PO document</label>
+    <input type="file" name="document" id="po-file" required
+           accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.eml,.zip">
+    <div style="margin-top:14px;">
+      <button class="btn" type="submit">Save purchase order</button>
     </div>
-    <button class="btn" type="submit" style="margin-top:14px;">Save purchase order</button>
     <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Several may be attached —
       large work is often awarded in stages.</p>
   </form>
@@ -250,28 +245,4 @@
   .aistatus { font-weight:500; color:var(--primary-d); font-size:11px; margin-left:6px; }
 </style>
 
-{% if po_active and can_edit or po_active and can_award %}
-<script>
-(function () {
-  const file = document.getElementById("po-file");
-  if (!file) return;
-  const csrf = document.querySelector("#poform [name=csrfmiddlewaretoken]").value;
-  const set = (id, v) => { const el = document.getElementById(id); if (el && v && !el.value) el.value = v; };
-  file.addEventListener("change", async () => {
-    if (!file.files.length) return;
-    document.getElementById("po-status").textContent = "· reading…";
-    const fd = new FormData();
-    fd.append("document", file.files[0]);
-    try {
-      const res = await fetch("{% url 'web:quotation_po_extract' quote.id %}",
-        {method: "POST", headers: {"X-CSRFToken": csrf}, body: fd});
-      const d = await res.json();
-      set("po_number", d.po_number); set("po_date", d.po_date);
-      set("po_value", d.value); set("po_notes", d.payment_terms);
-      document.getElementById("po-status").textContent = d.po_number ? "· read — please check" : "· enter the details";
-    } catch (_) { document.getElementById("po-status").textContent = ""; }
-  });
-})();
-</script>
-{% endif %}
 {% endblock %}
