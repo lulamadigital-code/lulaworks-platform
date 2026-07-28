@@ -759,11 +759,12 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertContains(resp, "Editing")
         self.assertContains(resp, "Add a line")
 
-    def test_finalize_locks_editing(self):
-        self._set_status("approved")
-        self.client.post(self._url("status/"), {"status": "issued"})
+    def test_approve_locks_editing(self):
+        # Approve is the final step (no separate finalize): it locks the quote.
+        self.client.post(self._url("status/"), {"status": "approved"})
         with tenant_scope(self.company.id):
             self.quote.refresh_from_db()
+        self.assertEqual(self.quote.status, "approved")
         self.assertTrue(self.quote.is_finalized)
         self.assertFalse(self.quote.is_editable)
         # ?edit=1 no longer yields the builder — it falls back to review.
@@ -794,25 +795,27 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertIn("spreadsheetml", resp["Content-Type"])
         self.assertTrue(resp["Content-Disposition"].endswith('.xlsx"'))
 
-    def test_po_section_appears_once_finalized(self):
-        # Hidden while draft; the optional PO section opens once finalized (a
-        # customer may return a PO, but it is no longer required, and there is
-        # no separate "sent" step to reach first).
+    def test_po_section_appears_once_approved(self):
+        # Hidden while draft; the optional PO section opens once approved (a
+        # customer may return a PO, but it is not required).
         self.assertNotContains(self.client.get(self._url()), "Attach a purchase order")
-        self._set_status("issued")
+        self._set_status("approved")
         self.assertContains(self.client.get(self._url()), "Attach a purchase order")
 
-    def test_download_and_excel_hidden_until_finalized(self):
-        # Draft: approve/finalize but no customer-facing outputs.
+    def test_download_and_excel_hidden_until_approved(self):
+        # Draft: Approve is offered, but no customer-facing outputs, and no
+        # Finalize or Send (both removed — Approve is the final step).
         draft = self.client.get(self._url())
         self.assertNotContains(draft, "Download PDF")
         self.assertNotContains(draft, "Export Excel")
-        self.assertContains(draft, "Finalize")
-        # Finalized: the outputs appear. "Send to customer" was removed (V4).
-        self._set_status("issued")
+        self.assertContains(draft, "Approve")
+        self.assertNotContains(draft, "Finalize")
+        # Approved: the outputs appear; still no Finalize or Send.
+        self._set_status("approved")
         final = self.client.get(self._url())
         self.assertContains(final, "Download PDF")
         self.assertContains(final, "Export Excel")
+        self.assertNotContains(final, "Finalize")
         self.assertNotContains(final, "Send to customer")
 
     def test_commercial_timeline_is_shown_with_stages(self):
@@ -822,10 +825,10 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertContains(resp, "Purchase order received")
         self.assertContains(resp, "Payment received")
 
-    def test_invoice_and_delivery_buttons_appear_after_finalize_without_a_po(self):
-        # A PO is optional — finalizing is enough to raise documents.
+    def test_invoice_and_delivery_buttons_appear_after_approval_without_a_po(self):
+        # A PO is optional — approval is enough to raise documents.
         self.assertNotContains(self.client.get(self._url()), "Create tax invoice")
-        self._set_status("issued")
+        self._set_status("approved")
         final = self.client.get(self._url())
         self.assertContains(final, "Create tax invoice")
         self.assertContains(final, "Create delivery note")
@@ -834,14 +837,15 @@ class QuotationReviewWorkflowTests(TestCase):
         with tenant_scope(self.company.id):
             self.quote.lines.create(company=self.company, position=2,
                                     description="Bolt", qty=4, unit_price=25)
-        self._set_status("issued")
+        self._set_status("approved")
         resp = self.client.post(self._url("invoice/"))
         self.assertEqual(resp.status_code, 302)
         self.assertIn("/commercial-documents/", resp.url)
         detail = self.client.get(resp.url)
         self.assertContains(detail, "Tax invoice")
         self.assertContains(detail, "INV-")
-        self.assertContains(detail, "Finalize")            # lifecycle action
+        self.assertContains(detail, "Approve")             # lifecycle action
+        self.assertNotContains(detail, "Finalize")         # removed
         self.assertContains(detail, "preview")             # PDF preview
 
     def test_scope_of_work_shows_on_the_review_page(self):

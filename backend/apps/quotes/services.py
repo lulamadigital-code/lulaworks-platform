@@ -128,10 +128,12 @@ def create_delivery_document(quote, user, **fields):
     return doc
 
 
-#: The lifecycle a generated document walks: draft → approved → finalized → sent.
-#: Finalized (and beyond) is read-only.
-_COMDOC_NEXT = {"draft": ["approved", "finalized"], "approved": ["finalized"],
-                "finalized": ["sent"], "sent": []}
+#: The lifecycle a generated document walks: draft → approved. Approval is the
+#: final step and locks it — thereafter it is the read-only commercial record.
+#: (There is no separate finalize or send step.) FINALIZED/SENT remain terminal
+#: for any legacy rows.
+_COMDOC_NEXT = {"draft": ["approved"], "approved": [],
+                "finalized": [], "sent": []}
 
 
 def commercial_document_next_statuses(doc) -> list:
@@ -139,8 +141,8 @@ def commercial_document_next_statuses(doc) -> list:
 
 
 def transition_commercial_document(doc, user, to_status):
-    """Advance a tax invoice or delivery note through its lifecycle. Finalizing
-    locks it — thereafter it is the commercial record."""
+    """Advance a tax invoice or delivery note through its lifecycle. Approving
+    locks it — thereafter it is the read-only commercial record."""
     if to_status not in _COMDOC_NEXT.get(doc.status, []):
         raise QuotationError(
             f"A {doc.get_status_display().lower()} document cannot move to "
@@ -370,7 +372,9 @@ def guard_editable(quote) -> None:
 def next_statuses(quote) -> list:
     """The sensible next steps — what the UI offers as buttons."""
     status = quote.status
-    if status in (QuotationStatus.SENT, QuotationStatus.ISSUED):
+    # Approval is the final commercial version; from there the customer decides.
+    if status in (QuotationStatus.APPROVED, QuotationStatus.SENT,
+                  QuotationStatus.ISSUED):
         return [QuotationStatus.ACCEPTED, QuotationStatus.REVISION_REQUESTED,
                 QuotationStatus.REJECTED, QuotationStatus.EXPIRED]
     if status == QuotationStatus.ACCEPTED:
@@ -402,15 +406,18 @@ def transition(quote, user, *, to_status, note="", customer_contact=None):
         raise QuotationError(
             f"{quote.display_number} is {quote.get_status_display().lower()} — "
             "its outcome is already recorded.")
-    if to_status in (QuotationStatus.ISSUED, QuotationStatus.SENT) \
-            and not quote.lines.exists():
+    if to_status in (QuotationStatus.APPROVED, QuotationStatus.ISSUED,
+                     QuotationStatus.SENT) and not quote.lines.exists():
         raise QuotationError("This quotation has no line items yet.")
 
     previous = quote.status
     quote.status = to_status
     fields = ["status", "updated_at"]
 
-    if to_status in (QuotationStatus.ISSUED, QuotationStatus.SENT):
+    # Approval is the final commercial version, so it stamps the issued date the
+    # validity period counts from (there is no separate issue/send step).
+    if to_status in (QuotationStatus.APPROVED, QuotationStatus.ISSUED,
+                     QuotationStatus.SENT):
         quote.issued_at = _tz.now()
         fields.append("issued_at")
     if to_status in (QuotationStatus.ACCEPTED, QuotationStatus.REJECTED,

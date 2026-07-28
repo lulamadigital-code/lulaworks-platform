@@ -1407,10 +1407,10 @@ def _commercial_timeline(quote):
 
     rows = [{"label": "Quotation created", "done": True,
              "date": quote.created_at, "user": quote.created_by}]
-    for label, status in (("Approved", "approved"), ("Finalized", "issued"),
-                          ("Sent to customer", "sent")):
-        dt, user = when(status)
-        rows.append({"label": label, "done": bool(dt), "date": dt, "user": user})
+    # Approval is the final step; the customer's answer follows. (No separate
+    # finalize/sent stages.)
+    dt, user = when("approved")
+    rows.append({"label": "Approved", "done": bool(dt), "date": dt, "user": user})
 
     po = quote.customer_pos.all().first()
     rows.append({"label": "Purchase order received", "done": bool(po),
@@ -1450,9 +1450,11 @@ def _quotation_review(request, quote):
         # Before finalize: edit / approve / finalize. The customer-facing outputs
         # (PDF, Excel, Send) appear only once it is finalized and read-only.
         "can_edit": quote.is_editable and can_quote,
+        # Approve is the single, final step — it locks the quotation and turns on
+        # the outputs (PDF, Excel, Create invoice/delivery). There is no separate
+        # finalize or send.
         "can_approve": can_quote and quote.status in (
             "draft", "review", "manager_approval", "commercial_approval"),
-        "can_finalize": can_quote and quote.status == "approved",
         "can_download": quote.is_finalized,
         "can_revise": can_quote and quote.is_finalized,
         "can_award": request.user.has_perm_code("projects.create"),
@@ -2621,8 +2623,8 @@ def commercial_document_pdf(request, pk):
 
 
 #: The commercial life of an invoice / delivery note, for its timeline.
-_COMDOC_STEPS = ["Draft", "Approved", "Finalized", "Sent"]
-_COMDOC_STAGE = {"draft": 0, "approved": 1, "finalized": 2, "sent": 3}
+_COMDOC_STEPS = ["Draft", "Approved"]
+_COMDOC_STAGE = {"draft": 0, "approved": 1, "finalized": 1, "sent": 1}
 
 
 @login_required
@@ -2645,10 +2647,9 @@ def commercial_document_detail(request, pk):
         "quote": doc.quotation,
         "is_invoice": doc.kind == CommercialDocument.Kind.INVOICE,
         "can_view_money": _can_view_money(request.user),
+        # Approve is the single, final step; there is no finalize or send.
         "can_approve": can_quote and doc.status == "draft",
-        "can_finalize": can_quote and doc.status in ("draft", "approved"),
         "can_download": doc.is_finalized,
-        "can_send": can_quote and doc.status == "finalized",
         "next_statuses": commercial_document_next_statuses(doc),
         "timeline": timeline,
     })

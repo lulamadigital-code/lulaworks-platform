@@ -63,11 +63,13 @@ APPROVAL_CHAIN = [
 LOCKED_STATUSES = {QuotationStatus.AWARDED, QuotationStatus.ACCEPTED,
                    QuotationStatus.REJECTED, QuotationStatus.LOST,
                    QuotationStatus.EXPIRED}
-#: Finalized: issued to the customer or beyond. The document is now the
-#: commercial source of truth, so the editor is closed — a change is a new
-#: revision, never an overwrite. Wider than LOCKED_STATUSES (which is only the
-#: customer's final answer) because "finalize" locks editing before sending.
-FINALIZED_STATUSES = LOCKED_STATUSES | {QuotationStatus.ISSUED, QuotationStatus.SENT}
+#: Finalized: approved or beyond. Approval is the final commercial version — the
+#: document is now the source of truth, so the editor is closed and a change is a
+#: new revision, never an overwrite. (ISSUED/SENT are kept in the set for any
+#: legacy rows; the live workflow ends at APPROVED — there is no separate
+#: "finalize" or "send" step.)
+FINALIZED_STATUSES = LOCKED_STATUSES | {QuotationStatus.APPROVED,
+                                        QuotationStatus.ISSUED, QuotationStatus.SENT}
 #: Statuses that count as "still in play" for the pipeline.
 OPEN_STATUSES = set(APPROVAL_CHAIN) | {QuotationStatus.SENT,
                                        QuotationStatus.REVISION_REQUESTED}
@@ -612,4 +614,7 @@ class CommercialDocument(TenantBaseModel):
 
     @property
     def is_finalized(self) -> bool:
-        return self.status in (self.Status.FINALIZED, self.Status.SENT)
+        # Approval is the final step — an approved document is the read-only
+        # commercial record. FINALIZED/SENT remain for any legacy rows.
+        return self.status in (self.Status.APPROVED, self.Status.FINALIZED,
+                               self.Status.SENT)

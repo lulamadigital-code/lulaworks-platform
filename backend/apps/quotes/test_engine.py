@@ -926,7 +926,8 @@ class CommercialDocumentTests(TestCase):
             inv = create_invoice_document(q, None)
         self.assertEqual(inv.purchase_order.po_number, "PO45821")
 
-    def test_finalizing_a_document_locks_it(self):
+    def test_approving_a_document_locks_it(self):
+        # Approve is the final step (no finalize/send): it locks the document.
         from apps.quotes.services import (
             QuotationError, create_invoice_document, transition_commercial_document,
         )
@@ -935,7 +936,7 @@ class CommercialDocumentTests(TestCase):
             q = self._finalized_quote(c)
             inv = create_invoice_document(q, None)
             self.assertFalse(inv.is_finalized)
-            transition_commercial_document(inv, None, "finalized")
+            transition_commercial_document(inv, None, "approved")
             self.assertTrue(inv.is_finalized)
             with self.assertRaises(QuotationError):     # cannot go back to draft
                 transition_commercial_document(inv, None, "draft")

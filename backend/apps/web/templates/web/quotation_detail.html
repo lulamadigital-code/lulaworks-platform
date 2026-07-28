@@ -41,15 +41,10 @@
 <div class="actionbar">
   {% if can_edit %}<a class="btn ghost" href="{% url 'web:quotation_detail' quote.id %}?edit=1">Edit</a>{% endif %}
   {% if can_approve %}
-  <form method="post" action="{% url 'web:quotation_transition' quote.id %}">{% csrf_token %}
-    <input type="hidden" name="status" value="approved">
-    <button class="btn" type="submit">Approve</button></form>
-  {% endif %}
-  {% if can_finalize %}
   <form method="post" action="{% url 'web:quotation_transition' quote.id %}"
-        data-confirm="Finalize {{ quote.number|escapejs }}? It becomes read-only — further changes are revisions.">
-    {% csrf_token %}<input type="hidden" name="status" value="issued">
-    <button class="btn" type="submit">Finalize</button></form>
+        data-confirm="Approve {{ quote.number|escapejs }}? It becomes read-only — further changes are revisions.">
+    {% csrf_token %}<input type="hidden" name="status" value="approved">
+    <button class="btn" type="submit">Approve</button></form>
   {% endif %}
   {% if can_download %}
   <a class="btn ghost" href="{% url 'web:quotation_pdf' quote.id %}">Download PDF</a>
