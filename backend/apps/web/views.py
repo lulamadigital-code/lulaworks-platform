@@ -2633,7 +2633,10 @@ def commercial_document_detail(request, pk):
     as the quotation: PDF preview, status banner, timeline, lifecycle actions,
     read-only once finalized."""
     from apps.quotes.models import CommercialDocument
-    from apps.quotes.services import commercial_document_next_statuses
+    from apps.quotes.services import (
+        can_generate_documents,
+        commercial_document_next_statuses,
+    )
 
     doc = get_object_or_404(
         CommercialDocument.objects.select_related("quotation", "purchase_order"), pk=pk)
@@ -2650,6 +2653,9 @@ def commercial_document_detail(request, pk):
         # Approve is the single, final step; there is no finalize or send.
         "can_approve": can_quote and doc.status == "draft",
         "can_download": doc.is_finalized,
+        # From here you can also raise the sibling document off the same
+        # quotation — a delivery note from an invoice, or vice versa.
+        "can_generate_docs": can_quote and can_generate_documents(doc.quotation),
         "next_statuses": commercial_document_next_statuses(doc),
         "timeline": timeline,
     })

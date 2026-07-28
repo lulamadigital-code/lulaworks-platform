@@ -847,6 +847,19 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertContains(detail, "Approve")             # lifecycle action
         self.assertNotContains(detail, "Finalize")         # removed
         self.assertContains(detail, "preview")             # PDF preview
+        # The sibling document can be raised from here too.
+        self.assertContains(detail, "Create delivery note")
+
+    def test_delivery_note_page_offers_create_tax_invoice(self):
+        with tenant_scope(self.company.id):
+            self.quote.lines.create(company=self.company, position=2,
+                                    description="Bolt", qty=4, unit_price=25)
+        self._set_status("approved")
+        resp = self.client.post(self._url("delivery-note/"))
+        detail = self.client.get(resp.url)
+        self.assertContains(detail, "Delivery note")
+        self.assertContains(detail, "Create tax invoice")
+        self.assertNotContains(detail, "Create delivery note")
 
     def test_scope_of_work_shows_on_the_review_page(self):
         with tenant_scope(self.company.id):

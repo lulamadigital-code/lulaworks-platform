@@ -36,6 +36,15 @@
   <a class="btn ghost" href="{% url 'web:commercial_document_pdf' doc.id %}">Download PDF</a>
   <a class="btn ghost" href="{% url 'web:commercial_document_excel' doc.id %}">Export Excel</a>
   {% endif %}
+  {% if can_generate_docs %}
+  {% if is_invoice %}
+  <form method="post" action="{% url 'web:quotation_create_delivery' quote.id %}">{% csrf_token %}
+    <button class="btn" type="submit">Create delivery note</button></form>
+  {% else %}
+  <form method="post" action="{% url 'web:quotation_create_invoice' quote.id %}">{% csrf_token %}
+    <button class="btn" type="submit">Create tax invoice</button></form>
+  {% endif %}
+  {% endif %}
 </div>
 
 {# ── Timeline ─────────────────────────────────────────────────────────────── #}
