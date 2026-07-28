@@ -41,9 +41,17 @@ def make_company(name="Lulama"):
 
 
 def make_quote(company, *, vat_mode=VatMode.EXCLUSIVE, status=QuotationStatus.DRAFT,
-               number="QT-1"):
+               number="QT-1", site="K4 Shaft"):
+    # A real quotation always has a customer (the create flow sets it); attach an
+    # active one so document-generation guards see valid data.
+    import uuid
+
+    from apps.customers.models import Customer
+    customer = Customer.objects.create(
+        company=company, name="Harmony Mining", code=f"C-{uuid.uuid4().hex[:8]}")
     return Quotation.objects.create(
-        company=company, number=number, client_name="Harmony Mining",
+        company=company, number=number, client_name=customer.name,
+        customer=customer, site=site,
         vat_mode=vat_mode, vat_rate=Decimal("15.00"), status=status)
 
 
@@ -912,6 +920,39 @@ class CommercialDocumentTests(TestCase):
             self.assertFalse(can_generate_documents(q))
             with self.assertRaises(QuotationError):
                 create_invoice_document(q, None)
+
+    def test_the_same_po_number_cannot_be_attached_twice(self):
+        from apps.quotes.services import QuotationError, record_purchase_order
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._finalized_quote(c)
+            record_purchase_order(q, None, po_number="PO900", value=q.total)
+            with self.assertRaises(QuotationError):
+                record_purchase_order(q, None, po_number="po900", value=q.total)
+
+    def test_invoice_rejected_when_customer_is_blacklisted(self):
+        from apps.customers.models import CustomerStatus
+        from apps.quotes.services import QuotationError, create_invoice_document
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._finalized_quote(c)
+            q.customer.status = CustomerStatus.BLACKLISTED
+            q.customer.save()
+            with self.assertRaises(QuotationError):
+                create_invoice_document(q, None)
+
+    def test_delivery_rejected_without_a_site(self):
+        from apps.quotes.services import (
+            QuotationError, create_delivery_document, create_invoice_document,
+        )
+        c = make_company()
+        with tenant_scope(c.id):
+            q = self._finalized_quote(c)
+            q.site = ""
+            q.save()
+            create_invoice_document(q, None)          # invoice first (allowed)
+            with self.assertRaises(QuotationError):
+                create_delivery_document(q, None)     # no destination
 
     def test_delivery_note_requires_the_invoice_first(self):
         # Ordering: approve → invoice → delivery note. A delivery note cannot be

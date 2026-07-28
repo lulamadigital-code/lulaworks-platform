@@ -92,6 +92,22 @@ def _po_for_document(quote):
     return matching_purchase_order(quote) or quote.customer_pos.first()
 
 
+def _guard_generatable(quote):
+    """Shared preconditions for raising any document off a quotation: a customer
+    that is on file and engageable, and at least one line item."""
+    from apps.customers.models import CustomerStatus
+    customer = quote.customer
+    if customer is None:
+        raise QuotationError("This quotation has no customer on file.")
+    if customer.status in (CustomerStatus.ON_HOLD, CustomerStatus.DORMANT,
+                           CustomerStatus.BLACKLISTED):
+        raise QuotationError(
+            f"{customer.display_name} is {customer.get_status_display().lower()} — "
+            "documents cannot be raised for this customer.")
+    if not quote.lines.exists():
+        raise QuotationError("This quotation has no line items.")
+
+
 @transaction.atomic
 def create_invoice_document(quote, user):
     """Raise a tax invoice from the quotation — number inherited from the parent
@@ -99,6 +115,9 @@ def create_invoice_document(quote, user):
     typed."""
     if not can_generate_documents(quote):
         raise QuotationError("Approve the quotation before raising a tax invoice.")
+    _guard_generatable(quote)
+    if quote.invoice_total <= 0:
+        raise QuotationError("The invoice total is zero — there is nothing to invoice.")
     seq = quote.commercial_documents.filter(kind=CommercialDocument.Kind.INVOICE).count() + 1
     doc = CommercialDocument.objects.create(
         company=quote.company, quotation=quote, kind=CommercialDocument.Kind.INVOICE,
@@ -114,11 +133,19 @@ def create_delivery_document(quote, user, **fields):
     never prices. A PO is optional."""
     if not can_generate_documents(quote):
         raise QuotationError("Approve the quotation before raising a delivery note.")
+    _guard_generatable(quote)
     # A delivery note follows the tax invoice — it may only be raised once the
     # invoice for this quotation exists.
     if not quote.commercial_documents.filter(
             kind=CommercialDocument.Kind.INVOICE).exists():
         raise QuotationError("Create the tax invoice before the delivery note.")
+    # A delivery note needs a destination: the address given now, the quotation's
+    # customer site, or its free-text site.
+    destination = (fields.get("delivery_address", "").strip()
+                   or (str(quote.customer_site) if quote.customer_site_id else "")
+                   or quote.site)
+    if not destination:
+        raise QuotationError("A delivery site is required for a delivery note.")
     seq = quote.commercial_documents.filter(kind=CommercialDocument.Kind.DELIVERY).count() + 1
     doc = CommercialDocument.objects.create(
         company=quote.company, quotation=quote, kind=CommercialDocument.Kind.DELIVERY,
@@ -543,11 +570,17 @@ def _copy_contents(source, target, user):
 def record_purchase_order(quote, user, *, po_number, value=None, po_date=None,
                           issued_by=None, department=None, document=None, notes=""):
     """Capture the customer's PO. Several may arrive against one quotation when
-    work is awarded in stages."""
-    if not po_number.strip():
+    work is awarded in stages — but the same PO number is never attached twice."""
+    number = po_number.strip()
+    if not number:
         raise QuotationError("A PO number is required.")
+    # Never create a duplicate: the same PO number cannot be attached to this
+    # quotation more than once.
+    if quote.customer_pos.filter(po_number__iexact=number).exists():
+        raise QuotationError(
+            f"PO {number} is already attached to {quote.display_number}.")
     po = CustomerPurchaseOrder.objects.create(
-        company=quote.company, quotation=quote, po_number=po_number.strip(),
+        company=quote.company, quotation=quote, po_number=number,
         value=value if value is not None else quote.total, po_date=po_date,
         issued_by=issued_by or quote.contact, department=department or quote.department,
         document=document, notes=notes, created_by=user, updated_by=user,

@@ -774,6 +774,7 @@ class QuotationReviewWorkflowTests(TestCase):
             self.quote = create_quotation(self.company, self.user,
                                           client_name="Sasol", title="Crane hire")
             self.quote.customer = self.customer
+            self.quote.site = "Plant 3"
             self.quote.save()
             self.quote.lines.create(company=self.company, position=1,
                                     description="Crane", qty=1, unit_price=1000)

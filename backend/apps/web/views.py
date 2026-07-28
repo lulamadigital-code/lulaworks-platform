@@ -2613,6 +2613,15 @@ def quotation_po(request, pk):
     else:
         messages.success(request, f"PO {po.po_number} saved — details read from "
                                   f"{f.name}.")
+        # Warn (do not block) if the same PO number is on another of this
+        # customer's quotations — it may be a mis-keyed reference.
+        from apps.quotes.models import CustomerPurchaseOrder
+        if quote.customer_id and CustomerPurchaseOrder.objects.filter(
+                quotation__customer_id=quote.customer_id,
+                po_number__iexact=po.po_number).exclude(quotation_id=quote.id).exists():
+            messages.warning(
+                request, f"Heads up: PO {po.po_number} is also attached to another "
+                         f"quotation for {quote.customer.display_name}.")
     return redirect("web:quotation_detail", pk=pk)
 
 
