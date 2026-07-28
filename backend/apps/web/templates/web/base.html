@@ -107,8 +107,24 @@
                  background:#fff;color:var(--ink)}
     input:focus,select:focus{outline:0;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-t)}
     label{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 5px;font-weight:600}
-    .msg{padding:12px 16px;border-radius:10px;margin-bottom:16px;font-weight:600;box-shadow:var(--shadow)}
-    .msg.success{background:var(--green-t);color:#0a8f57} .msg.error{background:var(--red-t);color:#c22a41}
+    /* Toast pop-ups: slide in top-right, auto-dismiss (see the script below). */
+    .toasts{position:fixed;top:18px;right:18px;z-index:1000;display:flex;
+      flex-direction:column;gap:10px;max-width:min(380px,calc(100vw - 36px))}
+    .toast{display:flex;align-items:flex-start;gap:10px;padding:13px 14px;
+      border-radius:12px;font-weight:600;box-shadow:var(--shadow-lg);
+      background:var(--surface);border-left:4px solid var(--grey);
+      animation:toastin .28s ease both}
+    .toast.success{background:var(--green-t);color:#0a8f57;border-left-color:var(--green)}
+    .toast.error{background:var(--red-t);color:#c22a41;border-left-color:var(--red)}
+    .toast.warning{background:var(--orange-t);color:#a8620a;border-left-color:var(--orange)}
+    .toast-txt{flex:1;line-height:1.35}
+    .toast-x{border:0;background:none;color:inherit;font-size:20px;line-height:1;
+      cursor:pointer;opacity:.6;padding:0 2px}
+    .toast-x:hover{opacity:1}
+    .toast.hiding{animation:toastout .25s ease forwards}
+    @keyframes toastin{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+    @keyframes toastout{to{opacity:0;transform:translateX(24px)}}
+    @media (prefers-reduced-motion:reduce){.toast,.toast.hiding{animation:none}}
 
     /* ---- Charts ---- */
     .charts{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
@@ -344,7 +360,16 @@
   {% endif %}
   <main class="main" id="top">
     <div class="content">
-      {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+      {% if messages %}
+      <div class="toasts" id="toasts" aria-live="polite">
+        {% for m in messages %}
+        <div class="toast {{ m.tags }}" role="status">
+          <span class="toast-txt">{{ m }}</span>
+          <button type="button" class="toast-x" aria-label="Dismiss">&times;</button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
       {% block content %}{% endblock %}
     </div>
   </main>
@@ -357,5 +382,21 @@
   </a>
   <script src="{% static 'web/app.js' %}" defer></script>
   {% endif %}
+  <script>
+  // Toast pop-ups: dismiss on click, and auto-dismiss after a few seconds
+  // (errors linger longer so they are not missed).
+  (function () {
+    var box = document.getElementById("toasts");
+    if (!box) return;
+    function hide(t) {
+      t.classList.add("hiding");
+      setTimeout(function () { t.remove(); }, 260);
+    }
+    box.querySelectorAll(".toast").forEach(function (t) {
+      t.querySelector(".toast-x").addEventListener("click", function () { hide(t); });
+      setTimeout(function () { hide(t); }, t.classList.contains("error") ? 8000 : 4000);
+    });
+  })();
+  </script>
 </body>
 </html>
