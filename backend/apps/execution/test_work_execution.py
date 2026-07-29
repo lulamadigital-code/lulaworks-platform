@@ -12,7 +12,7 @@ from rest_framework.test import APITestCase
 
 from apps.administration.models import NumberingRule
 from apps.core.context import tenant_scope
-from apps.identity.models import Company, User
+from apps.identity.models import Company, Membership, Permission, Role, User
 
 from .models import (
     AllocationKind,
@@ -245,3 +245,76 @@ class OperationalDashboardTests(APITestCase):
         self.assertEqual(len(dash["map_points"]), 2)
         self.assertEqual(len(dash["flagged_reports"]), 1)  # the FAR check-in
         self.assertTrue(dash["timeline"])
+
+
+class WesApiTests(APITestCase):
+    """The Flutter app's write surface: post a field report (with GPS), allocate
+    a resource and reconcile it, and read the operational dashboard."""
+
+    def setUp(self):
+        self.company = make_company()
+        manage = Permission.objects.create(codename="execution.manage",
+                                            module="execution", label="M")
+        self.role = Role.objects.create(name="Ops", is_system=True)
+        self.role.permissions.add(manage)
+        self.ops = User.objects.create_user("ops@lulama.co.za", "x",
+                                             active_company=self.company)
+        Membership.objects.create(user=self.ops, company=self.company, role=self.role)
+        with tenant_scope(self.company.id):
+            self.task = Task.objects.create(
+                company=self.company, name="Deliver hoses",
+                site_latitude=Decimal(str(SITE[0])), site_longitude=Decimal(str(SITE[1])))
+        self.client.force_authenticate(self.ops)
+
+    def test_post_report_verifies_gps_and_returns_it(self):
+        resp = self.client.post("/api/v1/task-reports/", {
+            "task": str(self.task.id), "kind": "time_event",
+            "title": "Arrived at site", "event": "Arrived at site",
+            "latitude": str(FAR[0]), "longitude": str(FAR[1]),
+        }, format="json")
+        self.assertEqual(resp.status_code, 201, resp.data)
+        self.assertTrue(resp.data["location_flagged"])   # FAR is beyond tolerance
+        self.assertIsNotNone(resp.data["distance_m"])
+
+    def test_material_report_with_items_and_allocation_reconciles(self):
+        alloc = self.client.post("/api/v1/task-allocations/", {
+            "task": str(self.task.id), "kind": "purchase_budget",
+            "amount_allocated": "5000",
+        }, format="json")
+        self.assertEqual(alloc.status_code, 201, alloc.data)
+        alloc_id = alloc.data["id"]
+
+        report = self.client.post("/api/v1/task-reports/", {
+            "task": str(self.task.id), "kind": "material", "title": "Invoice 900",
+            "supplier": "Hydraulics SA", "amount": "1800", "allocation": alloc_id,
+            "items": [{"description": "Hose 1in", "quantity": "6", "unit_price": "300"}],
+        }, format="json")
+        self.assertEqual(report.status_code, 201, report.data)
+        self.assertEqual(len(report.data["items"]), 1)
+
+        # reconcile endpoint reflects the spend
+        rec = self.client.post(f"/api/v1/task-allocations/{alloc_id}/reconcile/")
+        self.assertEqual(rec.status_code, 200)
+        self.assertEqual(rec.data["amount_spent"], "1800.00")
+        self.assertEqual(rec.data["remaining"], "3200.00")
+
+    def test_operational_dashboard_endpoint(self):
+        self.client.post("/api/v1/task-reports/", {
+            "task": str(self.task.id), "kind": "fuel", "title": "Diesel",
+            "amount": "450",
+        }, format="json")
+        resp = self.client.get(f"/api/v1/tasks/{self.task.id}/operational/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["financials"]["spent"], "450.00")
+        self.assertEqual(len(resp.data["reports"]), 1)
+        self.assertTrue(resp.data["timeline"])
+
+    def test_report_requires_permission(self):
+        viewer = User.objects.create_user("v@lulama.co.za", "x",
+                                           active_company=self.company)
+        Membership.objects.create(user=viewer, company=self.company,
+                                  role=Role.objects.create(name="V", is_system=True))
+        self.client.force_authenticate(viewer)
+        resp = self.client.post("/api/v1/task-reports/", {
+            "task": str(self.task.id), "title": "x"}, format="json")
+        self.assertEqual(resp.status_code, 403)

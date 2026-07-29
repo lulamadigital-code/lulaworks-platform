@@ -97,6 +97,30 @@ class ApiClient {
   Future<dynamic> post(String path, [Map<String, dynamic>? body]) =>
       _send('POST', path, body);
 
+  /// Multipart POST — for uploading a receipt/invoice/photo from the field.
+  /// Sends optional string [fields] plus one file at [filePath].
+  Future<dynamic> postMultipart(String path,
+      {Map<String, String> fields = const {},
+      String? filePath,
+      String fileField = 'file',
+      bool retry = true}) async {
+    final req = http.MultipartRequest('POST', _uri(path));
+    if (_access != null) req.headers['Authorization'] = 'Bearer $_access';
+    req.fields.addAll(fields);
+    if (filePath != null) {
+      req.files.add(await http.MultipartFile.fromPath(fileField, filePath));
+    }
+    final resp = await http.Response.fromStream(await req.send());
+    if (resp.statusCode == 401 && retry && await _tryRefresh()) {
+      return postMultipart(path,
+          fields: fields, filePath: filePath, fileField: fileField, retry: false);
+    }
+    if (resp.statusCode >= 200 && resp.statusCode < 300) {
+      return resp.bodyBytes.isEmpty ? null : _decode(resp);
+    }
+    throw _error(resp);
+  }
+
   Future<dynamic> _send(String method, String path,
       [Map<String, dynamic>? body, bool retry = true]) async {
     final uri = _uri(path);

@@ -2,7 +2,16 @@ from rest_framework import serializers
 
 from apps.core.api import GoldenRuleSerializerMixin
 
-from .models import Resource, ResourceAllocation, Task, Timesheet, WorkPackage
+from .models import (
+    Resource,
+    ResourceAllocation,
+    Task,
+    TaskReport,
+    TaskReportItem,
+    TaskResourceAllocation,
+    Timesheet,
+    WorkPackage,
+)
 from .services import compute_task_readiness
 
 
@@ -73,3 +82,82 @@ class TimesheetSerializer(GoldenRuleSerializerMixin, serializers.ModelSerializer
         fields = ["id", "task", "resource", "date", "hours", "overtime_hours",
                   "approved", "approved_by", "notes", "labour_cost"]
         read_only_fields = ["id", "approved", "approved_by", "labour_cost"]
+
+
+# ── Work Execution System — the field record ─────────────────────────────────
+
+class TaskResourceAllocationSerializer(serializers.ModelSerializer):
+    remaining = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    is_over_budget = serializers.BooleanField(read_only=True)
+    kind_display = serializers.CharField(source="get_kind_display", read_only=True)
+
+    class Meta:
+        model = TaskResourceAllocation
+        fields = ["id", "task", "kind", "kind_display", "label", "is_monetary",
+                  "amount_allocated", "amount_spent", "status", "notes",
+                  "remaining", "is_over_budget", "created_at"]
+        read_only_fields = ["id", "amount_spent", "remaining", "is_over_budget",
+                            "kind_display", "created_at"]
+
+
+class TaskReportItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaskReportItem
+        fields = ["id", "description", "quantity", "unit", "unit_price", "line_total"]
+        read_only_fields = ["id"]
+
+
+class TaskReportSerializer(serializers.ModelSerializer):
+    """Read view of a field report, including its extracted line items."""
+
+    items = TaskReportItemSerializer(many=True, read_only=True)
+    kind_display = serializers.CharField(source="get_kind_display", read_only=True)
+    employee_name = serializers.CharField(source="employee.get_full_name", read_only=True)
+
+    class Meta:
+        model = TaskReport
+        fields = ["id", "task", "kind", "kind_display", "title", "event",
+                  "reported_at", "employee", "employee_name", "notes",
+                  "latitude", "longitude", "gps_accuracy_m", "distance_m",
+                  "location_flagged", "supplier", "invoice_number",
+                  "document_date", "amount", "vat_amount", "currency",
+                  "allocation", "extraction_status", "items", "created_at"]
+        read_only_fields = ["id", "kind_display", "employee_name", "distance_m",
+                            "location_flagged", "extraction_status", "items",
+                            "created_at"]
+
+
+class CreateTaskReportSerializer(serializers.Serializer):
+    """Write payload the Flutter app posts from the field. GPS is optional (the
+    device may lack a fix); the server verifies it against the task's site."""
+
+    task = serializers.UUIDField()
+    kind = serializers.ChoiceField(choices=TaskReport._meta.get_field("kind").choices,
+                                   default="progress")
+    title = serializers.CharField(max_length=200)
+    event = serializers.CharField(max_length=80, required=False, allow_blank=True)
+    notes = serializers.CharField(required=False, allow_blank=True)
+    reported_at = serializers.DateTimeField(required=False)
+    latitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False,
+                                        allow_null=True)
+    longitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False,
+                                         allow_null=True)
+    gps_accuracy_m = serializers.DecimalField(max_digits=8, decimal_places=1, required=False,
+                                              allow_null=True)
+    supplier = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    invoice_number = serializers.CharField(max_length=80, required=False, allow_blank=True)
+    document_date = serializers.DateField(required=False, allow_null=True)
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    vat_amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    currency = serializers.CharField(max_length=8, required=False, allow_blank=True)
+    allocation = serializers.UUIDField(required=False, allow_null=True)
+    items = TaskReportItemSerializer(many=True, required=False)
+
+
+class AllocateResourceSerializer(serializers.Serializer):
+    task = serializers.UUIDField()
+    kind = serializers.ChoiceField(
+        choices=TaskResourceAllocation._meta.get_field("kind").choices)
+    amount_allocated = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    label = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    notes = serializers.CharField(max_length=255, required=False, allow_blank=True)

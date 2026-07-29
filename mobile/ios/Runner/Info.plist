@@ -2,6 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Work Execution System: GPS-stamped field reports + receipt/invoice photos. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>LulaWorks records where each field report was captured, to verify work happened on site.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>LulaWorks lets you photograph receipts, supplier invoices and site evidence for a task.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>LulaWorks lets you attach photos of receipts, invoices and site evidence to a task.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

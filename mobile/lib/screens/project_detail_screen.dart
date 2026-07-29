@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
+import 'task_hub_screen.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   const ProjectDetailScreen({super.key, required this.api, required this.project});
@@ -21,7 +22,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             as Map<String, dynamic>);
     final checklist =
         pageResults(await widget.api.get('/compliance-items/?project=${widget.project.id}'));
-    return _Detail(readiness, checklist);
+    final tasks =
+        pageResults(await widget.api.get('/tasks/?project=${widget.project.id}'));
+    return _Detail(readiness, checklist, tasks);
   }
 
   @override
@@ -50,6 +53,25 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 const SizedBox(height: 16),
                 _GateCard(readiness: d.readiness),
                 const SizedBox(height: 16),
+                Text('Tasks (${d.tasks.length})',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                if (d.tasks.isEmpty)
+                  const Text('No tasks yet.'),
+                ...d.tasks.map((t) => _TaskTile(
+                      task: t,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TaskHubScreen(
+                            api: widget.api,
+                            taskId: '${t['id']}',
+                            name: '${t['name']}',
+                          ),
+                        ),
+                      ),
+                    )),
+                const SizedBox(height: 16),
                 Text('Compliance checklist',
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
@@ -76,9 +98,29 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 }
 
 class _Detail {
-  _Detail(this.readiness, this.checklist);
+  _Detail(this.readiness, this.checklist, this.tasks);
   final Readiness readiness;
   final List<Map<String, dynamic>> checklist;
+  final List<Map<String, dynamic>> tasks;
+}
+
+class _TaskTile extends StatelessWidget {
+  const _TaskTile({required this.task, required this.onTap});
+  final Map<String, dynamic> task;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        title: Text('${task['name']}'),
+        subtitle: Text('${task['status'] ?? ''}'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
+    );
+  }
 }
 
 /// The Work Readiness gate — the hard execution gate, front and centre.
