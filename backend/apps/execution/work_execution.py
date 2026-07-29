@@ -1,0 +1,295 @@
+"""Work Execution System — services that turn a Task into an operational record.
+
+A task in LulaWorks is not a checkbox. It carries the money set aside for it
+(:class:`TaskResourceAllocation`), the evidence captured in the field
+(:class:`TaskReport` — fuel, material, time/attendance, progress, each
+GPS-stamped) and the purchase lines extracted from supplier invoices
+(:class:`TaskReportItem`). These services are the single place that:
+
+* verifies a field check-in happened where it should have (GPS + tolerance),
+* reconciles what was allocated against what was actually spent,
+* rolls a task up into the numbers a manager needs (allocated / spent /
+  remaining / materials / documents / latest location), and
+* assembles the operational timeline — one auditable story per task and Work.
+
+The web, the API and the Flutter app all read from here so they can never drift.
+"""
+
+from __future__ import annotations
+
+import math
+from decimal import Decimal, InvalidOperation
+
+from django.db import transaction
+from django.db.models import Sum
+from django.utils import timezone
+
+from apps.core.events import publish
+
+from .models import (
+    NON_MONETARY_ALLOCATIONS,
+    Assignment,
+    AllocationKind,
+    AllocationStatus,
+    ExtractionStatus,
+    FINANCIAL_REPORT_KINDS,
+    ReportKind,
+    TaskReport,
+    TaskReportItem,
+    TaskResourceAllocation,
+)
+
+_ZERO = Decimal("0.00")
+DEFAULT_GPS_TOLERANCE_M = 500
+
+
+def _dec(value, default=_ZERO) -> Decimal:
+    """Coerce anything the web/API hands us (str, int, float, None) to Decimal."""
+    if value in (None, ""):
+        return default
+    if isinstance(value, Decimal):
+        return value
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError):
+        return default
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GPS verification
+# ─────────────────────────────────────────────────────────────────────────────
+
+def haversine_m(lat1, lon1, lat2, lon2) -> float:
+    """Great-circle distance in metres between two WGS-84 points."""
+    radius = 6_371_000.0
+    p1, p2 = math.radians(float(lat1)), math.radians(float(lat2))
+    dphi = math.radians(float(lat2) - float(lat1))
+    dlmb = math.radians(float(lon2) - float(lon1))
+    a = math.sin(dphi / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlmb / 2) ** 2
+    return 2 * radius * math.asin(math.sqrt(a))
+
+
+def verify_report_location(report, *, tolerance_m=None) -> TaskReport:
+    """Measure a report's GPS against its task's expected site and flag drift.
+
+    No coordinates on the report, or no expected coordinates on the task, means
+    there is nothing to verify — the report is left unflagged. Mutates and
+    returns ``report`` (the caller saves)."""
+    task = report.task
+    if report.latitude is None or report.longitude is None \
+            or task.site_latitude is None or task.site_longitude is None:
+        report.distance_m = None
+        report.location_flagged = False
+        return report
+
+    distance = haversine_m(report.latitude, report.longitude,
+                           task.site_latitude, task.site_longitude)
+    if tolerance_m is None:
+        tolerance_m = (task.project.gps_tolerance_m if task.project_id
+                       else DEFAULT_GPS_TOLERANCE_M)
+    report.distance_m = Decimal(str(round(distance, 1)))
+    report.location_flagged = distance > float(tolerance_m)
+    return report
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Resource allocation + reconciliation
+# ─────────────────────────────────────────────────────────────────────────────
+
+def allocate_task_resource(task, user, *, kind, amount_allocated=0, label="",
+                           is_monetary=None, notes="", status=None):
+    """Set aside an operational resource for a task before work starts."""
+    if is_monetary is None:
+        is_monetary = kind not in NON_MONETARY_ALLOCATIONS
+    alloc = TaskResourceAllocation.objects.create(
+        company=task.company, task=task, kind=kind, label=label,
+        is_monetary=is_monetary, amount_allocated=_dec(amount_allocated),
+        status=status or AllocationStatus.REQUESTED,
+        requested_by=user, created_by=user, updated_by=user, notes=notes,
+    )
+    publish("TaskResourceAllocated", company=task.company, subject=task, actor=user,
+            payload={"kind": kind, "amount": str(alloc.amount_allocated)})
+    return alloc
+
+
+def reconcile_allocation(allocation, *, save=True) -> TaskResourceAllocation:
+    """Recompute ``amount_spent`` from the reports booked against this allocation."""
+    total = allocation.reports.aggregate(s=Sum("amount"))["s"] or _ZERO
+    allocation.amount_spent = total
+    if save:
+        allocation.save(update_fields=["amount_spent", "updated_at"])
+    return allocation
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Task reports — the field record
+# ─────────────────────────────────────────────────────────────────────────────
+
+@transaction.atomic
+def create_task_report(task, user, *, kind=ReportKind.PROGRESS, title, event="",
+                       notes="", employee=None, reported_at=None,
+                       latitude=None, longitude=None, gps_accuracy_m=None,
+                       supplier="", invoice_number="", document_date=None,
+                       amount=0, vat_amount=0, currency="ZAR",
+                       allocation=None, extraction_status=None):
+    """Record an operational event on a task and verify where it happened.
+
+    Financial reports (fuel/material/expense) booked against an allocation
+    re-reconcile it so ``amount_spent`` stays live."""
+    report = TaskReport(
+        company=task.company, task=task, kind=kind, title=title, event=event,
+        notes=notes, employee=employee or user,
+        reported_at=reported_at or timezone.now(),
+        latitude=latitude, longitude=longitude, gps_accuracy_m=gps_accuracy_m,
+        supplier=supplier, invoice_number=invoice_number, document_date=document_date,
+        amount=_dec(amount), vat_amount=_dec(vat_amount), currency=currency or "ZAR",
+        allocation=allocation,
+        extraction_status=extraction_status or ExtractionStatus.NONE,
+        created_by=user, updated_by=user,
+    )
+    verify_report_location(report)
+    report.save()
+    if allocation is not None:
+        reconcile_allocation(allocation)
+    publish("TaskReportCreated", company=task.company, subject=task, actor=user,
+            payload={"kind": kind, "title": title, "amount": str(report.amount)})
+    return report
+
+
+def add_report_item(report, *, description, quantity=1, unit="", unit_price=0,
+                    line_total=None, user=None):
+    """Attach an extracted invoice line to a material-purchase report."""
+    qty = _dec(quantity, Decimal("1"))
+    price = _dec(unit_price)
+    total = _dec(line_total) if line_total is not None else (qty * price)
+    return TaskReportItem.objects.create(
+        company=report.company, report=report, task=report.task,
+        description=description, quantity=qty, unit=unit,
+        unit_price=price, line_total=total,
+        created_by=user, updated_by=user,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Rollups — the numbers a manager needs
+# ─────────────────────────────────────────────────────────────────────────────
+
+def task_financials(task) -> dict:
+    """Allocated vs spent for a task, plus the materials it bought."""
+    allocations = list(task.cost_allocations.all())
+    allocated = sum((a.amount_allocated for a in allocations if a.is_monetary), _ZERO)
+
+    fin_reports = [r for r in task.reports.all() if r.kind in FINANCIAL_REPORT_KINDS]
+    spent = sum((r.amount for r in fin_reports), _ZERO)
+
+    by_kind: dict[str, Decimal] = {}
+    for r in fin_reports:
+        by_kind[r.kind] = by_kind.get(r.kind, _ZERO) + r.amount
+
+    material_items = list(task.material_items.all())
+    materials_total = sum((r.amount for r in fin_reports
+                           if r.kind == ReportKind.MATERIAL), _ZERO)
+
+    return {
+        "allocated": allocated,
+        "spent": spent,
+        "remaining": allocated - spent,
+        "over_budget": allocated > 0 and spent > allocated,
+        "by_kind": by_kind,
+        "materials_total": materials_total,
+        "materials_count": len(material_items),
+        "material_items": material_items,
+        "allocations": allocations,
+    }
+
+
+def task_operational_dashboard(task, user=None) -> dict:
+    """Everything a task's operational hub shows — one place, no drift.
+
+    Answers, for a single task: who's on it, what's outstanding, how much money
+    is allocated/spent/left, what materials were bought, how many documents
+    exist, where the team last was, and the full timeline."""
+    reports = list(task.reports.select_related("employee").all())  # -reported_at first
+    located = [r for r in reports if r.has_location]
+    checklist = list(task.checklist_items.all())
+    subtasks = list(task.subtasks.all())
+    outstanding = [c.label for c in checklist if not c.is_done] \
+        + [s.name for s in subtasks if not s.is_done]
+
+    return {
+        "task": task,
+        "progress_pct": task.progress_pct,
+        "team": {role: task.team(role) for role, _ in Assignment.Role.choices},
+        "outstanding": outstanding,
+        "financials": task_financials(task),
+        "reports": reports,
+        "flagged_reports": [r for r in reports if r.location_flagged],
+        "latest_report": reports[0] if reports else None,
+        "latest_gps": located[0] if located else None,
+        "map_points": [
+            {"lat": float(r.latitude), "lng": float(r.longitude),
+             "title": r.title, "flagged": r.location_flagged,
+             "when": r.reported_at}
+            for r in located
+        ],
+        "documents": task.attachments.count(),
+        "timeline": task_timeline(task, reports=reports),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Operational timeline — one auditable story
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _detail_for(report) -> str:
+    if report.kind in FINANCIAL_REPORT_KINDS:
+        bits = [report.supplier, f"{report.currency} {report.amount}".strip()]
+        return " · ".join(b for b in bits if b and b.strip())
+    return report.notes or report.event or ""
+
+
+def task_timeline(task, *, reports=None) -> list[dict]:
+    """Chronological (oldest-first) record of everything that happened on a task:
+    creation, allocations, start, every field report, completion."""
+    events: list[dict] = []
+
+    def add(when, kind, label, detail=""):
+        if when is not None:
+            events.append({"when": when, "kind": kind, "label": label, "detail": detail})
+
+    add(task.created_at, "created", "Task created", task.name)
+    for a in task.cost_allocations.all():
+        detail = (str(a.amount_allocated) if a.is_monetary else a.label) or ""
+        add(a.created_at, "allocation", f"Allocated {a.get_kind_display()}", detail)
+    add(task.started_at, "started", "Task started")
+    for r in (reports if reports is not None else task.reports.all()):
+        add(r.reported_at, r.kind, r.title, _detail_for(r))
+    add(task.completed_at, "completed", "Task completed")
+
+    events.sort(key=lambda e: e["when"])
+    return events
+
+
+def work_timeline(project) -> list[dict]:
+    """The Work-level audit trail: the commercial events that created it (from
+    the linked quotation) merged with every field report across its tasks —
+    Quotation Approved → Work Created → … → Payment."""
+    events: list[dict] = []
+
+    def add(when, kind, label, detail=""):
+        if when is not None:
+            events.append({"when": when, "kind": kind, "label": label, "detail": detail})
+
+    quote = project.quotation
+    if quote is not None:
+        for ev in quote.events.all():
+            add(ev.created_at, ev.verb, ev.verb.replace("_", " ").capitalize(), ev.note)
+    add(project.awarded_at, "work_created", "Work created", project.number)
+
+    for task in project.tasks.all():
+        for r in task.reports.all():
+            add(r.reported_at, r.kind, f"{task.name}: {r.title}", _detail_for(r))
+        add(task.completed_at, "task_completed", f"{task.name} completed")
+
+    events.sort(key=lambda e: e["when"])
+    return events

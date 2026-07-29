@@ -9,6 +9,7 @@ until Work Readiness passes (all mandatory compliance satisfied) or an authorise
 override is recorded.
 """
 
+from django.conf import settings
 from django.db import models
 
 from apps.core.models import TenantBaseModel
@@ -20,6 +21,13 @@ class ProjectStatus(models.TextChoices):
     IN_EXECUTION = "in_execution", "In execution"
     COMPLETE = "complete", "Complete"
     CANCELLED = "cancelled", "Cancelled"
+
+
+class ProjectPriority(models.TextChoices):
+    LOW = "low", "Low"
+    NORMAL = "normal", "Normal"
+    HIGH = "high", "High"
+    URGENT = "urgent", "Urgent"
 
 
 class Project(TenantBaseModel):
@@ -41,6 +49,21 @@ class Project(TenantBaseModel):
         max_length=24, choices=ProjectStatus.choices, default=ProjectStatus.PENDING_COMPLIANCE
     )
     awarded_at = models.DateTimeField(null=True, blank=True)
+
+    # ── Work Details (operational header) ────────────────────────────────────
+    # Who owns delivery, when it must run, what it may cost, and how far a field
+    # GPS check-in may drift from the expected site before it's flagged.
+    work_manager = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="managed_projects",
+    )
+    priority = models.CharField(
+        max_length=8, choices=ProjectPriority.choices, default=ProjectPriority.NORMAL
+    )
+    planned_start = models.DateField(null=True, blank=True)
+    due_date = models.DateField(null=True, blank=True)
+    budget_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    gps_tolerance_m = models.PositiveIntegerField(default=500)
 
     class Meta:
         ordering = ["-created_at"]

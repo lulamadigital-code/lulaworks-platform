@@ -17,6 +17,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from apps.core.models import TenantBaseModel
 
@@ -210,6 +211,9 @@ class Task(TenantBaseModel):
     is_billable = models.BooleanField(default=False)
     client_name = models.CharField(max_length=255, blank=True)
     site = models.CharField(max_length=255, blank=True)
+    # Expected work location — GPS check-ins on this task are measured against it.
+    site_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    site_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     department = models.CharField(max_length=120, blank=True)
     work_package = models.ForeignKey(
         WorkPackage, on_delete=models.SET_NULL, null=True, blank=True, related_name="tasks"
@@ -417,6 +421,11 @@ class Attachment(TenantBaseModel):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="attachments")
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True, blank=True,
                                 related_name="attachments")
+    # A report FK lets photos/receipts/invoices attach to an operational
+    # TaskReport (fuel receipt, supplier invoice, site photo) while still
+    # carrying the owning task for one uniform file surface.
+    report = models.ForeignKey("execution.TaskReport", on_delete=models.CASCADE,
+                               null=True, blank=True, related_name="attachments")
     file = models.FileField(upload_to="work/%Y/%m/")
     original_name = models.CharField(max_length=255)
     content_type = models.CharField(max_length=120, blank=True)
@@ -573,3 +582,175 @@ class Timesheet(TenantBaseModel):
     @property
     def labour_cost(self) -> Decimal:
         return (self.total_hours * self.resource.hourly_rate).quantize(Decimal("0.01"))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WORK EXECUTION SYSTEM — a Task is an operational record, not a checkbox.
+#
+# Money set aside (allocations), evidence captured in the field (reports: fuel,
+# material, time/attendance, progress — each GPS-stamped), and the purchase
+# lines extracted from supplier invoices all hang off the Task, so a manager
+# can open any Work and answer, at any moment: who is responsible, where the
+# team is, how much was allocated, how much was actually spent, what materials
+# were bought, and what receipts/photos exist — without spreadsheets or WhatsApp.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class AllocationKind(models.TextChoices):
+    TRANSPORT = "transport", "Transport"
+    FUEL_ADVANCE = "fuel_advance", "Fuel advance"
+    TOLL = "toll", "Toll fees"
+    FOOD = "food", "Food allowance"
+    ACCOMMODATION = "accommodation", "Accommodation"
+    CASH_ADVANCE = "cash_advance", "Cash advance"
+    PURCHASE_BUDGET = "purchase_budget", "Purchase budget"
+    VEHICLE = "vehicle", "Company vehicle"
+    EQUIPMENT = "equipment", "Equipment"
+    PPE = "ppe", "PPE"
+    OTHER = "other", "Other"
+
+
+#: Allocation kinds that are logistics grants rather than cash to reconcile.
+NON_MONETARY_ALLOCATIONS = frozenset({
+    AllocationKind.VEHICLE, AllocationKind.EQUIPMENT, AllocationKind.PPE,
+})
+
+
+class AllocationStatus(models.TextChoices):
+    REQUESTED = "requested", "Requested"
+    APPROVED = "approved", "Approved"
+    ISSUED = "issued", "Issued"
+    RECONCILED = "reconciled", "Reconciled"
+    CANCELLED = "cancelled", "Cancelled"
+
+
+class TaskResourceAllocation(TenantBaseModel):
+    """Operational resources set aside for a task BEFORE work starts — fuel,
+    tolls, a cash advance, a company vehicle, PPE. Monetary allocations later
+    reconcile against actual spend captured on TaskReports (`amount_spent` is a
+    service-maintained rollup of the reports booked against this allocation)."""
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE,
+                             related_name="cost_allocations")
+    kind = models.CharField(max_length=20, choices=AllocationKind.choices)
+    label = models.CharField(max_length=200, blank=True)
+    is_monetary = models.BooleanField(default=True)
+    amount_allocated = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    amount_spent = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    status = models.CharField(max_length=12, choices=AllocationStatus.choices,
+                              default=AllocationStatus.REQUESTED)
+    requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                     null=True, blank=True, related_name="+")
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                    null=True, blank=True, related_name="+")
+    notes = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["kind", "-created_at"]
+        indexes = [models.Index(fields=["company", "task"])]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} · {self.amount_allocated}"
+
+    @property
+    def remaining(self) -> Decimal:
+        return self.amount_allocated - self.amount_spent
+
+    @property
+    def is_over_budget(self) -> bool:
+        return self.is_monetary and self.amount_spent > self.amount_allocated
+
+
+class ReportKind(models.TextChoices):
+    PROGRESS = "progress", "Progress update"
+    TIME_EVENT = "time_event", "Time & attendance"
+    FUEL = "fuel", "Fuel purchase"
+    MATERIAL = "material", "Material purchase"
+    EXPENSE = "expense", "Other expense"
+    GENERAL = "general", "General / evidence"
+
+
+#: Report kinds that book actual money against the task.
+FINANCIAL_REPORT_KINDS = frozenset({
+    ReportKind.FUEL, ReportKind.MATERIAL, ReportKind.EXPENSE,
+})
+
+
+class ExtractionStatus(models.TextChoices):
+    NONE = "none", "No document"
+    PENDING = "pending", "Awaiting review"
+    CONFIRMED = "confirmed", "Confirmed"
+
+
+class TaskReport(TenantBaseModel):
+    """A single operational event on a task: a progress note, a time/attendance
+    check-in, a fuel or material purchase — each stamped with who (employee),
+    when (reported_at) and where (GPS). This is the row that turns a task into
+    an auditable field record."""
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="reports")
+    kind = models.CharField(max_length=12, choices=ReportKind.choices,
+                            default=ReportKind.PROGRESS)
+    title = models.CharField(max_length=200)
+    event = models.CharField(max_length=80, blank=True)  # time_event label e.g. "Arrived at site"
+    reported_at = models.DateTimeField(default=timezone.now)
+    employee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                 null=True, blank=True, related_name="task_reports")
+    notes = models.TextField(blank=True)
+
+    # ── Location (GPS verification) ─────────────────────────────────────────
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    gps_accuracy_m = models.DecimalField(max_digits=8, decimal_places=1, null=True, blank=True)
+    distance_m = models.DecimalField(max_digits=10, decimal_places=1, null=True, blank=True)
+    location_flagged = models.BooleanField(default=False)  # beyond tolerance → review
+
+    # ── Financial (fuel / material / expense) ───────────────────────────────
+    supplier = models.CharField(max_length=200, blank=True)
+    invoice_number = models.CharField(max_length=80, blank=True)
+    document_date = models.DateField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    vat_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    currency = models.CharField(max_length=8, default="ZAR")
+    allocation = models.ForeignKey(TaskResourceAllocation, on_delete=models.SET_NULL,
+                                   null=True, blank=True, related_name="reports")
+    extraction_status = models.CharField(max_length=10, choices=ExtractionStatus.choices,
+                                         default=ExtractionStatus.NONE)
+
+    class Meta:
+        ordering = ["-reported_at", "-created_at"]
+        indexes = [
+            models.Index(fields=["company", "task", "kind"]),
+            models.Index(fields=["company", "location_flagged"]),
+        ]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} · {self.title}"
+
+    @property
+    def is_financial(self) -> bool:
+        return self.kind in FINANCIAL_REPORT_KINDS
+
+    @property
+    def has_location(self) -> bool:
+        return self.latitude is not None and self.longitude is not None
+
+
+class TaskReportItem(TenantBaseModel):
+    """A line item extracted from a supplier invoice on a material-purchase
+    report. Denormalises `task` so material rollups don't traverse reports."""
+
+    report = models.ForeignKey(TaskReport, on_delete=models.CASCADE, related_name="items")
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="material_items")
+    description = models.CharField(max_length=255)
+    quantity = models.DecimalField(max_digits=12, decimal_places=3, default=1)
+    unit = models.CharField(max_length=20, blank=True)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    line_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    class Meta:
+        ordering = ["report", "id"]
+        indexes = [models.Index(fields=["company", "task"])]
+
+    def __str__(self):
+        return f"{self.quantity} × {self.description}"
