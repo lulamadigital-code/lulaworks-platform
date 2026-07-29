@@ -1504,10 +1504,31 @@ class WorkInitiationTests(TestCase):
             self.assertEqual(project.quotation_id, q.id)
             self.assertEqual(project.customer_id, q.customer_id)
             self.assertEqual(project.phases.count(), len(WORK_PHASES))
-            self.assertEqual(project.tasks.count(), 7 + 4)   # supply + universal
+            self.assertEqual(project.tasks.count(), 6 + 4)   # supply + universal
             names = set(project.tasks.values_list("name", flat=True))
-            self.assertIn("Order materials", names)
+            self.assertIn("Purchase materials", names)
+            self.assertIn("Customer sign-off", names)
             self.assertIn("Issue tax invoice", names)
+
+    def test_repair_type_uses_repair_template(self):
+        from apps.quotes.models import QuotationType
+        from apps.quotes.services import (
+            ensure_quotation_types, initiate_work_from_quotation, resource_hints_for,
+        )
+        c = make_company()
+        with tenant_scope(c.id):
+            ensure_quotation_types(c)
+            repair = QuotationType.objects.get(company=c, key="mechanical_repair")
+            q = make_quote(c, number="LPS700702", status=QuotationStatus.APPROVED)
+            q.quotation_type = repair
+            q.save()
+            add_line(c, q, qty=1, price=500)
+            project = initiate_work_from_quotation(q, None)
+            names = set(project.tasks.values_list("name", flat=True))
+            self.assertIn("Diagnose fault", names)
+            self.assertIn("Return to service", names)
+            self.assertEqual(resource_hints_for("mechanical_repair"),
+                             ["purchase_budget", "transport"])
 
     def test_initiation_is_idempotent(self):
         from apps.quotes.services import initiate_work_from_quotation

@@ -707,27 +707,97 @@ _UNIVERSAL_TASKS = [
     ("Invoicing", "Issue tax invoice"),
     ("Payment Tracking", "Follow up and record payment"),
 ]
-#: Default operational tasks by quotation type, each placed in its phase.
-#: Configurable by administrators is a follow-on; this is the seeded default.
+#: Default operational tasks per job type — the spec's six templates, each task
+#: placed in one of the seven WORK_PHASES. Admin-editable templates are a
+#: follow-on; these are the seeded defaults.
+_SUPPLY_TASKS = [
+    ("Planning", "Review requirements"),
+    ("Procurement", "Arrange transport"),
+    ("Procurement", "Purchase materials"),
+    ("Quality Check", "Quality check"),
+    ("Delivery", "Deliver goods"),
+    ("Delivery", "Customer sign-off"),
+]
+_LABOUR_TASKS = [
+    ("Planning", "Assign workers"),
+    ("Planning", "Verify medical certificates"),
+    ("Planning", "Verify competency"),
+    ("Planning", "Verify PPE"),
+    ("Execution", "Clock in"),
+    ("Execution", "Execute work"),
+    ("Execution", "Clock out"),
+    ("Quality Check", "Supervisor approval"),
+]
+_PLANT_TASKS = [
+    ("Planning", "Inspect equipment"),
+    ("Procurement", "Fuel equipment"),
+    ("Delivery", "Transport equipment"),
+    ("Delivery", "Deliver to site"),
+    ("Execution", "Daily inspection"),
+    ("Delivery", "Collection"),
+]
+_MAINTENANCE_TASKS = [
+    ("Planning", "Site inspection"),
+    ("Planning", "Risk assessment"),
+    ("Execution", "Lock-out / tag-out"),
+    ("Execution", "Execute maintenance"),
+    ("Quality Check", "Functional testing"),
+    ("Delivery", "Customer sign-off"),
+]
+_REPAIR_TASKS = [
+    ("Planning", "Diagnose fault"),
+    ("Procurement", "Order parts"),
+    ("Execution", "Perform repair"),
+    ("Quality Check", "Test equipment"),
+    ("Delivery", "Return to service"),
+]
+_PM_TASKS = [
+    ("Planning", "Kick-off meeting"),
+    ("Planning", "Planning"),
+    ("Planning", "Resource allocation"),
+    ("Execution", "Daily progress review"),
+    ("Execution", "Risk management"),
+    ("Execution", "Client meetings"),
+    ("Delivery", "Handover"),
+]
+
+#: Real quotation-type keys → template. Several keys share a template (a rental
+#: is plant hire; a mechanical/electrical/emergency job is a repair).
 WORK_TASK_TEMPLATES = {
-    "supply": [("Procurement", "Order materials"), ("Procurement", "Receive materials"),
-               ("Execution", "Pick items"), ("Execution", "Pack items"),
-               ("Delivery", "Dispatch"), ("Delivery", "Deliver"),
-               ("Delivery", "Obtain customer signature")],
-    "labour_hire": [("Planning", "Assign employees"), ("Planning", "Verify competency"),
-                    ("Planning", "Verify medical certificates"), ("Planning", "Verify PPE"),
-                    ("Execution", "Capture timesheets"), ("Quality Check", "Supervisor approval")],
-    "plant_hire": [("Procurement", "Prepare equipment"), ("Quality Check", "Inspection"),
-                   ("Delivery", "Transport"), ("Delivery", "On-site delivery"),
-                   ("Delivery", "Collection")],
-    "maintenance": [("Planning", "Site inspection"), ("Planning", "Risk assessment"),
-                    ("Execution", "Execute maintenance"), ("Quality Check", "Testing"),
-                    ("Delivery", "Customer sign-off")],
-    "project_management": [("Planning", "Kick-off meeting"), ("Planning", "Detailed planning"),
-                           ("Planning", "Resource allocation"),
-                           ("Execution", "Weekly progress review"),
-                           ("Delivery", "Final handover")],
+    "supply": _SUPPLY_TASKS,
+    "labour_hire": _LABOUR_TASKS,
+    "plant_hire": _PLANT_TASKS, "rental": _PLANT_TASKS,
+    "maintenance": _MAINTENANCE_TASKS, "preventative": _MAINTENANCE_TASKS,
+    "mechanical_repair": _REPAIR_TASKS, "electrical_repair": _REPAIR_TASKS,
+    "emergency": _REPAIR_TASKS,
+    "project_management": _PM_TASKS,
 }
+
+#: Resource kinds worth pre-allocating for a job of each type (AllocationKind
+#: values). Surfaced as suggestions on the Work; amounts are always a human's
+#: call, so nothing is auto-allocated.
+_SUPPLY_HINTS = ["fuel_advance", "toll", "purchase_budget", "transport"]
+_LABOUR_HINTS = ["transport", "food", "accommodation", "ppe"]
+_PLANT_HINTS = ["fuel_advance", "equipment", "transport"]
+_MAINTENANCE_HINTS = ["purchase_budget", "ppe", "transport"]
+_REPAIR_HINTS = ["purchase_budget", "transport"]
+_PM_HINTS = ["transport", "accommodation"]
+WORK_RESOURCE_HINTS = {
+    "supply": _SUPPLY_HINTS,
+    "labour_hire": _LABOUR_HINTS,
+    "plant_hire": _PLANT_HINTS, "rental": _PLANT_HINTS,
+    "maintenance": _MAINTENANCE_HINTS, "preventative": _MAINTENANCE_HINTS,
+    "mechanical_repair": _REPAIR_HINTS, "electrical_repair": _REPAIR_HINTS,
+    "emergency": _REPAIR_HINTS,
+    "project_management": _PM_HINTS,
+}
+
+
+def resource_hints_for(type_key: str) -> list[str]:
+    """Suggested allocation kinds for a job type (empty for unknown types)."""
+    return list(WORK_RESOURCE_HINTS.get(type_key or "", []))
+
+
 _DEFAULT_TYPE_TASKS = [("Execution", "Complete the work")]
 
 
