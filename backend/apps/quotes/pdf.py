@@ -87,6 +87,28 @@ def _initials_surname(full_name: str) -> str:
     return f"{initials} {parts[-1]}"
 
 
+def _name(value: str) -> str:
+    """Capitalise a name for display so a value typed in lower case still prints
+    properly — "harmony mining" → "Harmony Mining". A word that already contains
+    an uppercase letter is left as-is, so acronyms and codes ("BHP", "K4 Shaft")
+    are never mangled; e-mails, phone numbers and references are never passed
+    through here."""
+    if not value:
+        return value
+    out = []
+    for word in str(value).split():
+        out.append(word if any(c.isupper() for c in word)
+                   else word[:1].upper() + word[1:])
+    return " ".join(out)
+
+
+def _sentence(value: str) -> str:
+    """Capitalise just the first letter of free text (e.g. a scope line), leaving
+    the rest untouched."""
+    value = (value or "").strip()
+    return value[:1].upper() + value[1:] if value else value
+
+
 def _customer_address(customer) -> str:
     if not customer:
         return ""
@@ -108,7 +130,8 @@ def _build_one_page(doc, story):
 def _scope_text(quote) -> str:
     """The Scope of Work shown below Prepared By. The quotation's title *is* its
     scope of work, so it is used when the dedicated scope field is left empty."""
-    return (quote.scope_of_work or "").strip() or (quote.title or "").strip()
+    return _sentence((quote.scope_of_work or "").strip()
+                     or (quote.title or "").strip())
 
 
 def _prepared_by_lines(quote, small):
@@ -121,11 +144,11 @@ def _prepared_by_lines(quote, small):
         return []
     esc = escape
     lines = [Paragraph(
-        f"<b>Prepared By:</b> {esc(prep.get_full_name() or prep.email)}", small)]
+        f"<b>Prepared By:</b> {esc(_name(prep.get_full_name()) or prep.email)}", small)]
     from apps.identity.models import Membership
     m = Membership.objects.filter(user=prep, company_id=quote.company_id).first()
     if m and m.job_title:
-        lines.append(Paragraph(f"Position: {esc(m.job_title)}", small))
+        lines.append(Paragraph(f"Position: {esc(_name(m.job_title))}", small))
     return lines
 
 
@@ -266,7 +289,8 @@ def quotation_pdf_bytes(quote) -> bytes:
     vendor = quote.vendor_number or (
         quote.customer.vendor_number if quote.customer_id else "")
     if vendor:
-        who = quote.customer.display_name if quote.customer_id else quote.client_name
+        who = _name(quote.customer.display_name if quote.customer_id
+                    else quote.client_name)
         ident.append(P(f"{who} Supplier No: {vendor}", small))
 
     # Big logo, top-right; the company identity fills the left.
@@ -281,19 +305,19 @@ def quotation_pdf_bytes(quote) -> bytes:
 
     # ── Two-column client / quotation block ──────────────────────────────────
     contact = quote.contact
-    left = [L("Client :", quote.client_name)]
+    left = [L("Client :", _name(quote.client_name))]
     addr = _customer_address(quote.customer)
     if addr:
-        left.append(P(f"Address: {addr}", muted))
+        left.append(P(f"Address: {_name(addr)}", muted))
     if quote.customer_id and quote.customer.vat_no:
         left.append(P(f"VAT No: {quote.customer.vat_no}", muted))
     site = str(quote.customer_site) if quote.customer_site_id else quote.site
     if site:
-        left.append(P(f"Ship to / Site: {site}", muted))
+        left.append(P(f"Ship to / Site: {_name(site)}", muted))
     if quote.department_id:
-        left.append(P(f"Department: {quote.department.name}", muted))
+        left.append(P(f"Department: {_name(quote.department.name)}", muted))
     if contact:
-        left.append(P(f"Contact Person: {contact.full_name}", small))
+        left.append(P(f"Contact Person: {_name(contact.full_name)}", small))
         tel = contact.telephone or contact.mobile
         if tel:
             left.append(P(f"Tel: {tel}", muted))
@@ -378,7 +402,7 @@ def quotation_pdf_bytes(quote) -> bytes:
 
     # ── Sign-off and banking — two separate boxes. "Compiled by" fills itself
     # in; "received in good order" is left blank for the customer to sign.
-    prep_name = _initials_surname(prep.get_full_name()) if prep and prep.get_full_name() \
+    prep_name = _initials_surname(_name(prep.get_full_name())) if prep and prep.get_full_name() \
         else (prep.email if prep else "")
     footer = _signoff_banking_boxes(
         header, brand, small, muted, compiled_label="Quotation Compiled By:",
@@ -459,14 +483,14 @@ def invoice_pdf_bytes(doc) -> bytes:
     story = _letterhead(company, brand, header, coname, small, muted, title, "TAX INVOICE")
 
     po = doc.purchase_order
-    left = [L("Bill to:", quote.client_name)]
+    left = [L("Bill to:", _name(quote.client_name))]
     addr = _customer_address(quote.customer)
     if addr:
-        left.append(P(f"Address: {addr}", muted))
+        left.append(P(f"Address: {_name(addr)}", muted))
     if quote.customer_id and quote.customer.vat_no:
         left.append(P(f"VAT No: {quote.customer.vat_no}", muted))
     if quote.contact:
-        left.append(P(f"Contact Person: {quote.contact.full_name}", small))
+        left.append(P(f"Contact Person: {_name(quote.contact.full_name)}", small))
         tel = quote.contact.telephone or quote.contact.mobile
         if tel:
             left.append(P(f"Tel: {tel}", muted))
@@ -524,7 +548,7 @@ def invoice_pdf_bytes(doc) -> bytes:
 
     # Same boxed sign-off + banking as the quotation, worded for an invoice.
     prep = quote.prepared_by
-    prep_name = _initials_surname(prep.get_full_name()) if prep and prep.get_full_name() \
+    prep_name = _initials_surname(_name(prep.get_full_name())) if prep and prep.get_full_name() \
         else (prep.email if prep else "")
     footer = _signoff_banking_boxes(
         header, brand, small, muted, compiled_label="Invoice Compiled By:",
@@ -564,11 +588,11 @@ def delivery_note_pdf_bytes(doc) -> bytes:
     po = doc.purchase_order
     ship_to = doc.delivery_address or (
         str(quote.customer_site) if quote.customer_site_id else quote.site)
-    left = [L("Client :", quote.client_name)]
+    left = [L("Client :", _name(quote.client_name))]
     if ship_to:
-        left.append(P(f"Deliver to: {ship_to}", muted))
+        left.append(P(f"Deliver to: {_name(ship_to)}", muted))
     if quote.contact:
-        left.append(P(f"Contact Person: {quote.contact.full_name}", small))
+        left.append(P(f"Contact Person: {_name(quote.contact.full_name)}", small))
         tel = quote.contact.telephone or quote.contact.mobile
         if tel:
             left.append(P(f"Tel: {tel}", muted))
@@ -619,7 +643,7 @@ def delivery_note_pdf_bytes(doc) -> bytes:
     # no banking details (nothing is paid against it).
     story += _terms_flowables(company, "delivery", small, muted)
     prep = quote.prepared_by
-    prep_name = _initials_surname(prep.get_full_name()) if prep and prep.get_full_name() \
+    prep_name = _initials_surname(_name(prep.get_full_name())) if prep and prep.get_full_name() \
         else (prep.email if prep else "")
     footer = _signoff_box(
         brand, small, muted, compiled_label="Delivery Compiled By:",

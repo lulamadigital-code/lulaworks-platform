@@ -1449,3 +1449,34 @@ class TenantUploadPathTests(TestCase):
         path = quotation_doc_upload_path(instance, "boq.pdf")
         self.assertTrue(path.startswith(f"c/{c.id}/"))
         self.assertEqual(path, f"c/{c.id}/quotation_docs/boq.pdf")
+
+
+class NameCapitalisationTests(TestCase):
+    """Names typed in lower case print capitalised on the documents; acronyms
+    and codes are preserved."""
+
+    def test_name_helper(self):
+        from apps.quotes.pdf import _name
+        self.assertEqual(_name("harmony mining"), "Harmony Mining")
+        self.assertEqual(_name("BHP billiton"), "BHP Billiton")   # acronym kept
+        self.assertEqual(_name("k4 shaft"), "K4 Shaft")
+        self.assertEqual(_name(""), "")
+
+    def test_lowercase_client_name_prints_capitalised(self):
+        import io
+
+        import pdfplumber
+
+        from apps.quotes.pdf import quotation_pdf_bytes
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, number="LPS424242", status=QuotationStatus.ISSUED)
+            q.client_name = "harmony mining"
+            q.site = "k4 shaft"
+            q.save()
+            add_line(c, q, qty=1, price=100)
+            with pdfplumber.open(io.BytesIO(quotation_pdf_bytes(q))) as d:
+                text = d.pages[0].extract_text()
+        self.assertIn("Harmony Mining", text)
+        self.assertNotIn("harmony mining", text)
+        self.assertIn("K4 Shaft", text)
