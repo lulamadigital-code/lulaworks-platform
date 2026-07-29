@@ -2640,13 +2640,20 @@ def quotation_po(request, pk):
     fields = extract_po_fields(extract_text_from_upload(f), company=quote.company,
                                user=request.user, use_ai=True)
     f.seek(0)                       # reading consumed the file; rewind before saving
-    # If the number couldn't be read, fall back to a reference off the quotation
-    # so the document still saves rather than failing.
-    po_number = (fields.get("po_number") or "").strip() or f"PO-{quote.number}"
+    extracted_number = (fields.get("po_number") or "").strip()
+    # If nothing at all could be read — no number, value, date or terms — the file
+    # is almost certainly not a purchase order. Reject it rather than record a
+    # bogus PO against the quotation.
+    if not any([extracted_number, fields.get("value"), fields.get("po_date"),
+                (fields.get("payment_terms") or "").strip()]):
+        messages.error(
+            request, f"“{f.name}” doesn’t look like a purchase order — nothing "
+                     "could be read from it. Upload the customer’s PO document.")
+        return redirect("web:quotation_detail", pk=pk)
     try:
         po = record_purchase_order(
             quote, request.user,
-            po_number=po_number,
+            po_number=extracted_number or f"PO-{quote.number}",
             value=_decimal_or_none(fields.get("value")),
             po_date=fields.get("po_date") or None,
             document=f,
@@ -2657,8 +2664,16 @@ def quotation_po(request, pk):
     else:
         from apps.core.audit import audit
         audit(request, "purchase_order.uploaded", entity=po)
-        messages.success(request, f"PO {po.po_number} saved — details read from "
-                                  f"{f.name}.")
+        if extracted_number:
+            messages.success(request, f"PO {po.po_number} saved — details read "
+                                      f"from {f.name}.")
+        else:
+            # Some PO fields read, but not the number — save it, but flag that the
+            # reference needs a human check rather than pretending it was read.
+            messages.warning(
+                request, f"Saved {f.name}, but the PO number couldn’t be read — "
+                         f"recorded as {po.po_number}. Check it is the right "
+                         "document and reference.")
         # Warn (do not block) if the same PO number is on another of this
         # customer's quotations — it may be a mis-keyed reference.
         from apps.quotes.models import CustomerPurchaseOrder

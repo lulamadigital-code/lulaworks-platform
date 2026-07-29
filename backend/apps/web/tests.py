@@ -871,6 +871,19 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertEqual(po.po_number, "4500123456")     # read off the document
         self.assertTrue(po.document)                       # the file is stored
 
+    def test_a_document_that_is_not_a_po_is_rejected(self):
+        # A valid-type file with no PO signal (no number/value/date/terms) must
+        # not be recorded as a bogus purchase order.
+        self._set_status("approved")
+        not_a_po = SimpleUploadedFile(
+            "holiday-photo-notes.txt",
+            b"Just some notes about the weekend. Nothing procurement here.\n",
+            content_type="text/plain")
+        resp = self.client.post(self._url("po/"), {"document": not_a_po})
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(self.company.id):
+            self.assertFalse(self.quote.customer_pos.exists())   # nothing saved
+
     def test_attach_po_requires_a_document(self):
         self._set_status("approved")
         resp = self.client.post(self._url("po/"), {})     # no file
