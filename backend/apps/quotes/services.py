@@ -690,6 +690,101 @@ def award_to_work(quote, user, *, create_project=True, work_name=""):
     return {"project": project, "task": task, "quotation": quote}
 
 
+# ── Automatic work initiation ─────────────────────────────────────────────────
+#
+# The commercial lifecycle (quotation → PO) flows straight into the operational
+# one (project → phases → tasks) with nothing re-entered — the differentiator
+# that makes LulaWorks a Contractor Operating System, not just a quoting tool.
+
+#: The operational phases every job is broken into.
+WORK_PHASES = ["Planning", "Procurement", "Execution", "Quality Check",
+               "Delivery", "Invoicing", "Payment Tracking"]
+
+#: Tasks added to every job, in their phase — the commercial close-out.
+_UNIVERSAL_TASKS = [
+    ("Planning", "Kick-off and plan the work"),
+    ("Quality Check", "Quality check before delivery"),
+    ("Invoicing", "Issue tax invoice"),
+    ("Payment Tracking", "Follow up and record payment"),
+]
+#: Default operational tasks by quotation type, each placed in its phase.
+#: Configurable by administrators is a follow-on; this is the seeded default.
+WORK_TASK_TEMPLATES = {
+    "supply": [("Procurement", "Order materials"), ("Procurement", "Receive materials"),
+               ("Execution", "Pick items"), ("Execution", "Pack items"),
+               ("Delivery", "Dispatch"), ("Delivery", "Deliver"),
+               ("Delivery", "Obtain customer signature")],
+    "labour_hire": [("Planning", "Assign employees"), ("Planning", "Verify competency"),
+                    ("Planning", "Verify medical certificates"), ("Planning", "Verify PPE"),
+                    ("Execution", "Capture timesheets"), ("Quality Check", "Supervisor approval")],
+    "plant_hire": [("Procurement", "Prepare equipment"), ("Quality Check", "Inspection"),
+                   ("Delivery", "Transport"), ("Delivery", "On-site delivery"),
+                   ("Delivery", "Collection")],
+    "maintenance": [("Planning", "Site inspection"), ("Planning", "Risk assessment"),
+                    ("Execution", "Execute maintenance"), ("Quality Check", "Testing"),
+                    ("Delivery", "Customer sign-off")],
+    "project_management": [("Planning", "Kick-off meeting"), ("Planning", "Detailed planning"),
+                           ("Planning", "Resource allocation"),
+                           ("Execution", "Weekly progress review"),
+                           ("Delivery", "Final handover")],
+}
+_DEFAULT_TYPE_TASKS = [("Execution", "Complete the work")]
+
+
+@transaction.atomic
+def initiate_work_from_quotation(quote, user):
+    """Turn an approved quotation (with or without a PO) into operational work: a
+    project, its default phases, and the tasks a job of this type needs — every
+    field carried over from the quotation, nothing re-entered.
+
+    Idempotent: if work already exists for this quotation it is returned rather
+    than duplicated, so a repeated PO upload never creates a second project.
+    """
+    from apps.execution.models import Phase, Task, WorkOrigin
+    from apps.execution.services import default_workspace
+    from apps.projects.services import award_quotation
+
+    if not quote.is_finalized:
+        raise QuotationError("Approve the quotation before starting work.")
+    existing = quote.projects.first()
+    if existing is not None:
+        return existing
+
+    site = str(quote.customer_site) if quote.customer_site_id else quote.site
+    project = award_quotation(
+        quote.company, user, quotation=quote,
+        work_type=(quote.quotation_type.label if quote.quotation_type else ""),
+        site=site)
+    if quote.customer_id and not project.customer_id:
+        project.customer = quote.customer
+        project.save(update_fields=["customer"])
+
+    phases = {}
+    for position, name in enumerate(WORK_PHASES, start=1):
+        phases[name] = Phase.objects.create(
+            company=quote.company, project=project, name=name, position=position,
+            created_by=user, updated_by=user)
+
+    key = quote.quotation_type.key if quote.quotation_type else ""
+    rows = WORK_TASK_TEMPLATES.get(key, _DEFAULT_TYPE_TASKS) + _UNIVERSAL_TASKS
+    workspace = default_workspace(quote.company)
+    scope = (quote.scope_of_work or quote.title or "").strip()
+    for phase_name, task_name in rows:
+        Task.objects.create(
+            company=quote.company, project=project, phase=phases.get(phase_name),
+            workspace=workspace, origin=WorkOrigin.PROJECT, name=task_name,
+            description=scope if phase_name == "Execution" else "",
+            client_name=quote.client_name, site=site,
+            created_by=user, updated_by=user)
+
+    record_event(quote, verb="work_initiated", actor=user,
+                 note=f"Work {project.number} created with {len(rows)} tasks "
+                      f"across {len(WORK_PHASES)} phases")
+    publish("WorkInitiated", company=quote.company, subject=project, actor=user,
+            payload={"quotation": quote.number, "project": project.number})
+    return project
+
+
 def traceability(quote) -> dict:
     """Everything that traces back to this quotation.
 

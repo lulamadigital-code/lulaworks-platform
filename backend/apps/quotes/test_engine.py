@@ -1480,3 +1480,51 @@ class NameCapitalisationTests(TestCase):
         self.assertIn("Harmony Mining", text)
         self.assertNotIn("harmony mining", text)
         self.assertIn("K4 Shaft", text)
+
+
+class WorkInitiationTests(TestCase):
+    """An approved quotation becomes operational work — project, phases and the
+    tasks a job of this type needs — with nothing re-entered."""
+
+    def test_initiate_creates_project_phases_and_type_tasks(self):
+        from apps.quotes.models import QuotationType
+        from apps.quotes.services import (
+            WORK_PHASES, ensure_quotation_types, initiate_work_from_quotation,
+        )
+        c = make_company()
+        with tenant_scope(c.id):
+            ensure_quotation_types(c)
+            supply = QuotationType.objects.get(company=c, key="supply")
+            q = make_quote(c, number="LPS700700", status=QuotationStatus.APPROVED)
+            q.quotation_type = supply
+            q.scope_of_work = "Supply conveyor rollers"
+            q.save()
+            add_line(c, q, qty=1, price=1000)
+            project = initiate_work_from_quotation(q, None)
+            self.assertEqual(project.quotation_id, q.id)
+            self.assertEqual(project.customer_id, q.customer_id)
+            self.assertEqual(project.phases.count(), len(WORK_PHASES))
+            self.assertEqual(project.tasks.count(), 7 + 4)   # supply + universal
+            names = set(project.tasks.values_list("name", flat=True))
+            self.assertIn("Order materials", names)
+            self.assertIn("Issue tax invoice", names)
+
+    def test_initiation_is_idempotent(self):
+        from apps.quotes.services import initiate_work_from_quotation
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, number="LPS700701", status=QuotationStatus.APPROVED)
+            add_line(c, q, qty=1, price=100)
+            p1 = initiate_work_from_quotation(q, None)
+            p2 = initiate_work_from_quotation(q, None)
+            self.assertEqual(p1.id, p2.id)
+            self.assertEqual(q.projects.count(), 1)
+
+    def test_cannot_start_work_before_approval(self):
+        from apps.quotes.services import QuotationError, initiate_work_from_quotation
+        c = make_company()
+        with tenant_scope(c.id):
+            q = make_quote(c, status=QuotationStatus.DRAFT)
+            add_line(c, q, qty=1, price=100)
+            with self.assertRaises(QuotationError):
+                initiate_work_from_quotation(q, None)

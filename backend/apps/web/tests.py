@@ -871,6 +871,31 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertEqual(po.po_number, "4500123456")     # read off the document
         self.assertTrue(po.document)                       # the file is stored
 
+    def test_po_upload_auto_creates_and_opens_work(self):
+        # The commercial → operational hand-off: a linked PO turns the quotation
+        # into a project with phases and tasks, and opens the Work Details page.
+        self._set_status("approved")
+        po_doc = SimpleUploadedFile(
+            "po.txt",
+            b"PURCHASE ORDER\nPO Number: 4500123456\nDate: 2026-07-01\nTotal: R1000.00\n",
+            content_type="text/plain")
+        resp = self.client.post(self._url("po/"), {"document": po_doc})
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/projects/", resp.url)              # opened Work Details
+        with tenant_scope(self.company.id):
+            project = self.quote.projects.first()
+            self.assertIsNotNone(project)
+            self.assertTrue(project.phases.exists())
+            self.assertTrue(project.tasks.exists())
+
+    def test_start_work_button_creates_work_without_a_po(self):
+        self._set_status("approved")
+        resp = self.client.post(self._url("start-work/"))
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/projects/", resp.url)
+        with tenant_scope(self.company.id):
+            self.assertTrue(self.quote.projects.exists())
+
     def test_a_document_that_is_not_a_po_is_rejected(self):
         # A valid-type file with no PO signal (no number/value/date/terms) must
         # not be recorded as a bogus purchase order.

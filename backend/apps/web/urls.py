@@ -60,6 +60,8 @@ urlpatterns = [
          name="quotation_transition"),
     path("quotations/<uuid:pk>/revise/", views.quotation_revise, name="quotation_revise"),
     path("quotations/<uuid:pk>/po/", views.quotation_po, name="quotation_po"),
+    path("quotations/<uuid:pk>/start-work/", views.quotation_start_work,
+         name="quotation_start_work"),
     path("quotations/<uuid:pk>/award/", views.quotation_award, name="quotation_award"),
     path("quotations/<uuid:pk>/invoice/", views.quotation_create_invoice,
          name="quotation_create_invoice"),

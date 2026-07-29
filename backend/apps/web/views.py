@@ -1500,6 +1500,9 @@ def _quotation_review(request, quote):
         # Once a document exists, its button becomes "View …" instead of "Create".
         "existing_invoice": quote.commercial_documents.filter(kind="invoice").first(),
         "existing_delivery": quote.commercial_documents.filter(kind="delivery").first(),
+        # Start Work (approved) → operational project; once it exists, Open Work.
+        "can_start_work": request.user.has_perm_code("projects.create"),
+        "existing_project": quote.projects.first(),
         "revisions": quote.revisions.order_by("revision"),
         "timeline": _commercial_timeline(quote),
     }
@@ -2683,7 +2686,42 @@ def quotation_po(request, pk):
             messages.warning(
                 request, f"Heads up: PO {po.po_number} is also attached to another "
                          f"quotation for {quote.customer.display_name}.")
+        # The PO is linked — automatically turn the quotation into operational
+        # work (project · phases · tasks) and open the Work Details page. This is
+        # the commercial → operational hand-off, with nothing re-entered.
+        from apps.quotes.services import initiate_work_from_quotation
+        try:
+            project = initiate_work_from_quotation(quote, request.user)
+        except QuotationError:
+            project = None
+        if project is not None:
+            audit(request, "work.initiated", entity=project)
+            messages.success(request, f"Work {project.number} created from "
+                                      f"{quote.number} — opening it now.")
+            return redirect("web:project_detail", pk=project.id)
     return redirect("web:quotation_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def quotation_start_work(request, pk):
+    """Option 1 — start operational work directly from an approved quotation
+    (no purchase order required). Creates the project · phases · tasks from the
+    quotation and opens the Work Details page. Idempotent."""
+    from apps.quotes.services import QuotationError, initiate_work_from_quotation
+    quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+    if not request.user.has_perm_code("projects.create"):
+        messages.error(request, "You do not have permission to start work.")
+        return redirect("web:quotation_detail", pk=pk)
+    try:
+        project = initiate_work_from_quotation(quote, request.user)
+    except QuotationError as exc:
+        messages.error(request, str(exc))
+        return redirect("web:quotation_detail", pk=pk)
+    from apps.core.audit import audit
+    audit(request, "work.initiated", entity=project)
+    messages.success(request, f"Work {project.number} created from {quote.number}.")
+    return redirect("web:project_detail", pk=project.id)
 
 
 @login_required
