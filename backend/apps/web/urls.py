@@ -89,6 +89,7 @@ urlpatterns = [
     path("work/", views.work_list, name="work"),
     path("work/new/", views.work_new, name="work_new"),
     path("work/<uuid:pk>/", views.work_detail, name="work_detail"),
+    path("work/<uuid:pk>/operations/", views.work_operations, name="work_operations"),
     path("work/<uuid:pk>/start/", views.work_start, name="work_start"),
     path("work/<uuid:pk>/complete/", views.work_complete, name="work_complete"),
     path("work/<uuid:pk>/status/", views.work_transition, name="work_transition"),

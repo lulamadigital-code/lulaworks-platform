@@ -1,0 +1,139 @@
+{% extends "web/base.html" %}
+{% block title %}Operations · {{ task.name }}{% endblock %}
+{% block content %}
+<p class="sub">
+  {% if task.project_id %}<a href="{% url 'web:project_detail' task.project_id %}">← {{ task.project.number }}</a>{% else %}<a href="{% url 'web:work' %}">← Work</a>{% endif %}
+  · <a href="{% url 'web:work_detail' task.id %}">Task detail</a>
+</p>
+<h1>{{ task.name }}</h1>
+<p class="sub">
+  Operations{% if task.client_name %} · {{ task.client_name }}{% endif %}{% if task.site %} · {{ task.site }}{% endif %}
+</p>
+
+{# ── Work Details header (operational) ─────────────────────────────────── #}
+{% if task.project_id %}
+<div class="card">
+  <div class="grid" style="margin:0;">
+    <div class="tile"><div class="n">{% if task.project.work_manager %}{{ task.project.work_manager.get_full_name|default:task.project.work_manager.email }}{% else %}—{% endif %}</div><div class="l">Work manager</div></div>
+    <div class="tile"><div class="n">{{ task.project.get_priority_display }}</div><div class="l">Priority</div></div>
+    <div class="tile"><div class="n">{{ task.project.planned_start|default:"—" }}</div><div class="l">Start</div></div>
+    <div class="tile"><div class="n">{{ task.project.due_date|default:"—" }}</div><div class="l">Due</div></div>
+    <div class="tile"><div class="n">{{ progress_pct }}%</div><div class="l">Progress</div></div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Money: allocated vs spent ─────────────────────────────────────────── #}
+<h2>Money</h2>
+<div class="grid">
+  <div class="tile"><div class="n">R{{ financials.allocated }}</div><div class="l">Allocated</div></div>
+  <div class="tile"><div class="n">R{{ financials.spent }}</div><div class="l">Spent</div></div>
+  <div class="tile" style="{% if financials.over_budget %}border-color:var(--bad);{% endif %}">
+    <div class="n" style="{% if financials.over_budget %}color:var(--bad);{% endif %}">R{{ financials.remaining }}</div><div class="l">Remaining</div></div>
+  <div class="tile"><div class="n">R{{ financials.materials_total }}</div><div class="l">Materials ({{ financials.materials_count }})</div></div>
+  <div class="tile"><div class="n">{{ documents }}</div><div class="l">Documents</div></div>
+</div>
+
+{% if flagged_reports %}
+<div class="card" style="border-color:var(--bad); background:var(--badbg);">
+  <strong style="color:var(--bad);">⚠ {{ flagged_reports|length }} check-in(s) outside the site tolerance</strong>
+  <span class="muted"> — review the flagged reports below.</span>
+</div>
+{% endif %}
+
+{# ── Allocations ───────────────────────────────────────────────────────── #}
+{% if financials.allocations %}
+<h2>Resource allocations</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Resource</th><th class="right">Allocated</th><th class="right">Spent</th><th class="right">Remaining</th><th>Status</th></tr>
+    {% for a in financials.allocations %}
+    <tr>
+      <td>{{ a.get_kind_display }}{% if a.label %} · {{ a.label }}{% endif %}</td>
+      <td class="right">{% if a.is_monetary %}R{{ a.amount_allocated }}{% else %}<span class="muted">n/a</span>{% endif %}</td>
+      <td class="right">{% if a.is_monetary %}R{{ a.amount_spent }}{% else %}—{% endif %}</td>
+      <td class="right" style="{% if a.is_over_budget %}color:var(--bad);{% endif %}">{% if a.is_monetary %}R{{ a.remaining }}{% else %}—{% endif %}</td>
+      <td><span class="chip">{{ a.get_status_display }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<div class="charts">
+  {# ── GPS check-in map ────────────────────────────────────────────────── #}
+  <div class="card">
+    <strong>Field check-ins</strong>
+    {% if map %}
+    <svg viewBox="0 0 300 300" width="100%" style="max-width:340px; display:block; margin:10px auto;" role="img" aria-label="Check-in locations relative to site">
+      <rect x="0" y="0" width="300" height="300" rx="10" fill="var(--panel,#f6f7f9)"/>
+      <line x1="150" y1="10" x2="150" y2="290" stroke="var(--line,#e2e5ea)" stroke-width="1"/>
+      <line x1="10" y1="150" x2="290" y2="150" stroke="var(--line,#e2e5ea)" stroke-width="1"/>
+      <circle cx="150" cy="150" r="{{ map.ring_px }}" fill="rgba(34,197,94,0.08)" stroke="var(--ok)" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <circle cx="150" cy="150" r="5" fill="#334155"/>
+      <text x="150" y="140" text-anchor="middle" font-size="9" fill="#334155">site</text>
+      {% for p in map.points %}
+      <circle cx="{{ p.x }}" cy="{{ p.y }}" r="6" fill="{% if p.flagged %}var(--bad){% else %}var(--ok){% endif %}" fill-opacity="0.85" stroke="#fff" stroke-width="1">
+        <title>{{ p.title }}{% if p.flagged %} — outside tolerance{% endif %}</title>
+      </circle>
+      {% endfor %}
+    </svg>
+    <p class="muted" style="text-align:center; font-size:12px;">
+      Dashed ring = allowed radius. <span style="color:var(--bad);">Red</span> = outside tolerance.
+    </p>
+    {% else %}
+    <p class="muted" style="margin-top:8px;">No GPS check-ins yet{% if not task.site_latitude %} (set the task's site coordinates to verify locations){% endif %}.</p>
+    {% endif %}
+  </div>
+
+  {# ── Team + outstanding ──────────────────────────────────────────────── #}
+  <div class="card">
+    <strong>Team</strong>
+    <div style="margin:8px 0 14px;">
+      {% for role, users in team.items %}{% for u in users %}<span class="chip">{{ u.get_full_name|default:u.email }} · {{ role }}</span> {% endfor %}{% empty %}{% endfor %}
+      {% if not team.owner and not team.executor %}<span class="muted">No one assigned.</span>{% endif %}
+    </div>
+    <strong>Outstanding ({{ outstanding|length }})</strong>
+    <ul style="margin:8px 0 0; padding-left:18px;">
+      {% for o in outstanding %}<li>{{ o }}</li>{% empty %}<li class="muted">Nothing outstanding.</li>{% endfor %}
+    </ul>
+  </div>
+</div>
+
+{# ── Field reports ─────────────────────────────────────────────────────── #}
+<h2>Field reports ({{ reports|length }})</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>When</th><th>Type</th><th>Report</th><th>By</th><th class="right">Amount</th><th>Location</th></tr>
+    {% for r in reports %}
+    <tr>
+      <td class="muted">{{ r.reported_at|date:"d M H:i" }}</td>
+      <td>{{ r.get_kind_display }}</td>
+      <td>{{ r.title }}{% if r.supplier %} <span class="muted">· {{ r.supplier }}</span>{% endif %}</td>
+      <td class="muted">{% if r.employee %}{{ r.employee.get_full_name|default:r.employee.email }}{% else %}—{% endif %}</td>
+      <td class="right">{% if r.amount %}R{{ r.amount }}{% endif %}</td>
+      <td>
+        {% if r.location_flagged %}<span class="chip bad">off-site {{ r.distance_m }} m</span>
+        {% elif r.distance_m is not None %}<span class="chip ok">on-site</span>
+        {% else %}<span class="muted">—</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:16px;">No reports captured yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{# ── Operational timeline ──────────────────────────────────────────────── #}
+<h2>Timeline</h2>
+<div class="card">
+  {% for e in timeline reversed %}
+  <div class="row" style="align-items:flex-start; gap:10px; padding:6px 0; {% if not forloop.last %}border-bottom:1px solid var(--line,#eee);{% endif %}">
+    <span class="muted" style="min-width:112px; font-size:12px;">{{ e.when|date:"d M H:i" }}</span>
+    <div>
+      <strong>{{ e.label }}</strong>
+      {% if e.detail %}<div class="muted" style="font-size:13px;">{{ e.detail }}</div>{% endif %}
+    </div>
+  </div>
+  {% empty %}<span class="muted">Nothing yet.</span>{% endfor %}
+</div>
+{% endblock %}

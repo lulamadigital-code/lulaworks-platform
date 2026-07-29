@@ -1195,3 +1195,52 @@ class QuotationListPaginationTests(TestCase):
             resp = self.client.get("/quotations/")
         self.assertEqual(len(resp.context["quotations"].object_list), 25)
         self.assertEqual(len(full.captured_queries), len(small.captured_queries))
+
+
+class WorkOperationsPageTests(TestCase):
+    """The manager's read-out of the Work Execution System: money allocated vs
+    spent, the GPS check-in map, flagged off-site reports, and the timeline."""
+
+    def _setup(self):
+        from decimal import Decimal
+
+        from apps.core.context import tenant_scope
+        from apps.execution.models import AllocationKind, ReportKind, Task
+        from apps.execution.work_execution import (
+            allocate_task_resource, create_task_report,
+        )
+        c = make_company()
+        user = user_with(c, ["work.edit", "compliance.override"])
+        with tenant_scope(c.id):
+            project = awarded_project(c)
+            task = Task.objects.create(
+                company=c, project=project, name="Deliver hoses",
+                site_latitude=Decimal("-26.204103"), site_longitude=Decimal("28.047305"))
+            allocate_task_resource(task, user, kind=AllocationKind.PURCHASE_BUDGET,
+                                   amount_allocated="5000")
+            create_task_report(task, user, kind=ReportKind.MATERIAL, title="Hoses",
+                               amount="1200", latitude=Decimal("-26.205000"),
+                               longitude=Decimal("28.048000"))               # on site
+            create_task_report(task, user, kind=ReportKind.TIME_EVENT,
+                               title="Left supplier", latitude=Decimal("-26.214103"),
+                               longitude=Decimal("28.057305"))               # off site
+        return c, user, project, task
+
+    def test_operations_page_shows_money_map_and_flag(self):
+        _, user, _, task = self._setup()
+        self.client.force_login(user)
+        resp = self.client.get(f"/work/{task.id}/operations/")
+        self.assertEqual(resp.status_code, 200)
+        body = resp.content.decode()
+        self.assertIn("Allocated", body)
+        self.assertIn("5000", body)
+        self.assertIn("Field check-ins", body)                 # the SVG map card
+        self.assertIn("outside the site tolerance", body)      # flagged banner
+        self.assertEqual(len(resp.context["map"]["points"]), 2)
+
+    def test_project_detail_links_to_task_operations(self):
+        _, user, project, task = self._setup()
+        self.client.force_login(user)
+        resp = self.client.get(f"/projects/{project.id}/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, f"/work/{task.id}/operations/")

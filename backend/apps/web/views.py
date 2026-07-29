@@ -233,11 +233,16 @@ def projects_list(request):
 def project_detail(request, pk):
     project = get_object_or_404(Project.objects.all(), pk=pk)
     readiness = recompute_readiness(project)
+    phases = list(project.phases.prefetch_related("tasks").all())
+    unphased = list(project.tasks.filter(phase__isnull=True))
     context = {
         "project": project,
         "readiness": readiness,
         "health": project_health(project, request.user),
         "checklist": project.compliance_items.all(),
+        "phases": phases,
+        "unphased_tasks": unphased,
+        "has_tasks": bool(unphased) or any(p.tasks.all() for p in phases),
         "can_view_money": _can_view_money(request.user),
         "can_compliance": request.user.has_perm_code("compliance.override"),
         "can_finance": request.user.has_perm_code("finance.manage"),
@@ -441,6 +446,51 @@ def work_detail(request, pk):
         "loose_checklist": task.checklist_items.filter(subtask__isnull=True),
     })
     return render(request, "web/work_detail.html", ctx)
+
+
+@login_required
+def work_operations(request, pk):
+    """The manager's read-out of everything the field captured on a task: money
+    allocated vs spent, materials, the GPS check-ins (plotted against the
+    expected site), documents and the operational timeline."""
+    import math
+
+    from apps.execution.work_execution import task_operational_dashboard
+
+    task = get_object_or_404(
+        Task.objects.all().select_related("project", "phase", "assignee"), pk=pk)
+    data = task_operational_dashboard(task, request.user)
+
+    # Self-contained scatter map: each located check-in as a metre-offset from the
+    # expected site, scaled into a 300×300 SVG so a manager sees at a glance which
+    # reports fell outside the tolerance ring.
+    map_ctx = None
+    pts = data["map_points"]
+    if task.site_latitude is not None and task.site_longitude is not None and pts:
+        slat, slon = float(task.site_latitude), float(task.site_longitude)
+        mlat = 111_320.0
+        mlon = 111_320.0 * math.cos(math.radians(slat))
+        offs = [{
+            "dx": (p["lng"] - slon) * mlon,
+            "dy": (p["lat"] - slat) * mlat,
+            "flagged": p["flagged"], "title": p["title"],
+        } for p in pts]
+        tol = float(task.project.gps_tolerance_m if task.project_id else 500)
+        span = max([tol] + [math.hypot(o["dx"], o["dy"]) for o in offs]) or 1.0
+        scale = 130.0 / span  # px per metre, leaving a margin in the 300 box
+        map_ctx = {
+            "ring_px": tol * scale,
+            "points": [{
+                "x": 150 + o["dx"] * scale,
+                "y": 150 - o["dy"] * scale,  # SVG y grows downward; north is up
+                "flagged": o["flagged"], "title": o["title"],
+            } for o in offs],
+        }
+
+    return render(request, "web/work_operations.html", {
+        **data, "task": task, "map": map_ctx,
+        "can_manage": has_work_perm(request.user, "work.edit"),
+    })
 
 
 def _work_guard(request, pk, code="work.edit"):

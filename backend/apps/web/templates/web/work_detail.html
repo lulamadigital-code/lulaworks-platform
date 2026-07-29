@@ -15,6 +15,7 @@
     </p>
   </div>
   <div class="row" style="gap:8px;">
+    <a class="btn" href="{% url 'web:work_operations' task.id %}">Operations</a>
     {% include "web/_statuschip.html" with s=task %}
     <span class="chip {% if task.priority == 'critical' %}bad{% elif task.priority == 'high' %}warn{% endif %}">{{ task.get_priority_display }}</span>
     {% if task.risk_level != 'low' %}<span class="chip warn">Risk: {{ task.get_risk_level_display }}</span>{% endif %}

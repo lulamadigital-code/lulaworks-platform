@@ -58,6 +58,30 @@
 </div>
 {% endif %}
 
+{% if has_tasks %}
+<h2>Work &amp; tasks</h2>
+<div class="card" style="padding:0;">
+  <table>
+    {% for phase in phases %}
+      {% for t in phase.tasks.all %}
+      <tr>
+        <td>{{ t.name }}</td>
+        <td class="muted">{{ phase.name }}</td>
+        <td class="muted">{{ t.get_status_display }}</td>
+        <td class="right" style="width:120px;"><a class="btn" style="padding:5px 12px; font-size:13px;" href="{% url 'web:work_operations' t.id %}">Operations</a></td>
+      </tr>
+      {% endfor %}
+    {% endfor %}
+    {% for t in unphased_tasks %}
+    <tr>
+      <td>{{ t.name }}</td><td class="muted">—</td><td class="muted">{{ t.get_status_display }}</td>
+      <td class="right" style="width:120px;"><a class="btn" style="padding:5px 12px; font-size:13px;" href="{% url 'web:work_operations' t.id %}">Operations</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
 <h2>Compliance checklist</h2>
 <div class="card" style="padding:0;">
   <table>
