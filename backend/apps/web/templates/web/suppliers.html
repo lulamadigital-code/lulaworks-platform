@@ -2,22 +2,49 @@
 {% block title %}Suppliers{% endblock %}
 {% block content %}
 <h1>Suppliers</h1>
-<p class="sub">Ranked by weighted performance score. <a href="{% url 'web:purchase_orders' %}">Purchase orders →</a></p>
+<p class="sub">Everyone you buy from — added automatically when you attach a receipt.
+  <a href="{% url 'web:purchase_orders' %}">Purchase orders →</a></p>
+
+<form method="get" class="filterbar">
+  <input type="search" name="q" value="{{ q }}"
+         placeholder="Search a supplier, or an item you buy (e.g. pipes)…" style="flex:2;min-width:200px;">
+  <button class="btn ghost" type="submit">Search</button>
+</form>
+
+{% if q and item_matches %}
+<h2>Where we buy “{{ q }}”</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Item</th><th>Supplier</th><th class="right">Last price</th><th>When</th></tr>
+    {% for p in item_matches %}
+    <tr>
+      <td>{{ p.description }}</td>
+      <td><a href="{% url 'web:supplier_detail' p.supplier.id %}">{{ p.supplier.name }}</a></td>
+      <td class="right">{{ p.currency }} {{ p.unit_price }}{% if p.unit and p.unit != 'each' %} / {{ p.unit }}{% endif %}</td>
+      <td class="muted">{{ p.date|date:"d M Y" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<h2>{% if q %}Matching suppliers{% else %}All suppliers{% endif %}</h2>
 <div class="card" style="padding:0;">
   <table>
     <tr><th>Supplier</th><th>Categories</th><th>Terms</th><th class="right">Performance</th></tr>
     {% for s in suppliers %}
     <tr>
-      <td>{% if s.preferred %}★ {% endif %}{{ s.name }}</td>
+      <td>{% if s.preferred %}★ {% endif %}<a href="{% url 'web:supplier_detail' s.id %}">{{ s.name }}</a></td>
       <td class="muted">{{ s.categories|join:", "|default:"—" }}</td>
       <td class="muted">{{ s.payment_terms }}</td>
       <td class="right">
         {% if s.performance_score >= 75 %}<span class="chip ok">{{ s.performance_score }}</span>
         {% elif s.performance_score >= 50 %}<span class="chip warn">{{ s.performance_score }}</span>
-        {% else %}<span class="chip bad">{{ s.performance_score }}</span>{% endif %}
+        {% else %}<span class="chip">{{ s.performance_score }}</span>{% endif %}
       </td>
     </tr>
-    {% empty %}<tr><td colspan="4" class="muted" style="padding:20px;">No suppliers yet.</td></tr>
+    {% empty %}<tr><td colspan="4" class="muted" style="padding:20px;">
+      {% if q %}No suppliers match “{{ q }}”.{% else %}No suppliers yet — attach a receipt on a job and the seller lands here.{% endif %}</td></tr>
     {% endfor %}
   </table>
 </div>

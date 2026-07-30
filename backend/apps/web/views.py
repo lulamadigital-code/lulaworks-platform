@@ -1807,8 +1807,46 @@ def estimate_approve(request, pk):
 
 @login_required
 def suppliers_list(request):
-    suppliers = Supplier.objects.all().order_by("-performance_score", "name")
-    return render(request, "web/suppliers.html", {"suppliers": suppliers})
+    """Suppliers (including any learned from receipts). A search matches supplier
+    names AND items we've bought, so 'pipes' answers 'who do we buy pipes from?'"""
+    from apps.procurement.models import SupplierPrice
+
+    q = (request.GET.get("q") or "").strip()
+    suppliers = Supplier.objects.all()
+    if q:
+        suppliers = suppliers.filter(name__icontains=q)
+    suppliers = suppliers.order_by("-performance_score", "name")
+
+    item_matches = []
+    if q:
+        # Match each word, and tolerate simple plurals ("pipes" finds "pipe"),
+        # so a natural search lands on what we actually bought.
+        from django.db.models import Q
+        terms = {w for w in q.split() if len(w) > 2}
+        terms |= {w[:-1] for w in list(terms) if w.endswith("s")}
+        cond = Q()
+        for term in terms or {q}:
+            cond |= Q(description__icontains=term)
+        seen = set()
+        for p in (SupplierPrice.objects.filter(cond)
+                  .select_related("supplier").order_by("item_key", "-date")):
+            key = (p.supplier_id, p.item_key)
+            if key not in seen:          # latest price per supplier+item
+                seen.add(key)
+                item_matches.append(p)
+    return render(request, "web/suppliers.html",
+                  {"suppliers": suppliers, "q": q, "item_matches": item_matches})
+
+
+@login_required
+def supplier_detail(request, pk):
+    """One supplier: what we've bought from them (price ledger) and the receipts
+    that built the record."""
+    supplier = get_object_or_404(Supplier.objects.all(), pk=pk)
+    prices = supplier.prices.all().order_by("-date")[:200]
+    receipts = supplier.receipts.select_related("task").order_by("-reported_at")[:100]
+    return render(request, "web/supplier_detail.html",
+                  {"supplier": supplier, "prices": prices, "receipts": receipts})
 
 
 @login_required

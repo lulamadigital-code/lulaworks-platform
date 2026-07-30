@@ -119,6 +119,7 @@ urlpatterns = [
     path("estimates/<uuid:pk>/revise/", views.estimate_revise, name="estimate_revise"),
     # Procurement
     path("suppliers/", views.suppliers_list, name="suppliers"),
+    path("suppliers/<uuid:pk>/", views.supplier_detail, name="supplier_detail"),
     path("purchase-orders/", views.purchase_orders_list, name="purchase_orders"),
     path("purchase-orders/<uuid:pk>/", views.po_detail, name="po_detail"),
     path("purchase-orders/<uuid:pk>/approve/", views.po_approve, name="po_approve"),

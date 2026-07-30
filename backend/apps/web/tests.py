@@ -1197,6 +1197,49 @@ class QuotationListPaginationTests(TestCase):
         self.assertEqual(len(full.captured_queries), len(small.captured_queries))
 
 
+class SuppliersDirectoryTests(TestCase):
+    """Finding suppliers built from receipts: the list, the 'where we buy X'
+    item search, and a supplier's purchase history + receipts."""
+
+    def _seed(self):
+        from apps.core.context import tenant_scope
+        from apps.execution.models import ReportKind, Task
+        from apps.execution.work_execution import (
+            add_report_item, create_task_report, learn_supplier_from_receipt,
+        )
+        c = make_company()
+        user = user_with(c, ["procurement.manage"])
+        with tenant_scope(c.id):
+            t = Task.objects.create(company=c, name="Supply pipes")
+            r = create_task_report(t, user, kind=ReportKind.MATERIAL,
+                                   title="Inv 4471", supplier="Hydraulics SA")
+            add_report_item(r, description="Hydraulic pipe 50mm", unit="m",
+                            unit_price="185", user=user)
+            learn_supplier_from_receipt(r, user)
+        return c, user
+
+    def test_item_search_finds_where_we_buy_it(self):
+        c, user = self._seed()
+        self.client.force_login(user)
+        resp = self.client.get("/suppliers/?q=pipes")     # plural still finds "pipe"
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Where we buy")
+        self.assertContains(resp, "Hydraulic pipe 50mm")
+        self.assertContains(resp, "Hydraulics SA")
+
+    def test_supplier_detail_shows_prices_and_receipts(self):
+        from apps.core.context import tenant_scope
+        from apps.procurement.models import Supplier
+        c, user = self._seed()
+        with tenant_scope(c.id):
+            sid = Supplier.objects.get(name="Hydraulics SA").id
+        self.client.force_login(user)
+        resp = self.client.get(f"/suppliers/{sid}/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "185")          # price recorded
+        self.assertContains(resp, "Inv 4471")     # the receipt
+
+
 class WorkOperationsPageTests(TestCase):
     """The manager's read-out of the Work Execution System: money allocated vs
     spent, the GPS check-in map, flagged off-site reports, and the timeline."""
