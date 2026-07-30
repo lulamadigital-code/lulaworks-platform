@@ -247,6 +247,60 @@ class OperationalDashboardTests(APITestCase):
         self.assertTrue(dash["timeline"])
 
 
+class ReceiptToSupplierDBTests(APITestCase):
+    """Buying + attaching a seller's receipt feeds the Suppliers database and the
+    price ledger — so next time we know where we bought this and what we paid."""
+
+    def setUp(self):
+        self.c = make_company()
+
+    def _material_receipt(self, supplier, items):
+        from apps.execution.work_execution import learn_supplier_from_receipt
+        with tenant_scope(self.c.id):
+            task = Task.objects.create(company=self.c, name="Buy pipes")
+            report = create_task_report(task, None, kind=ReportKind.MATERIAL,
+                                        title="Supplier invoice", supplier=supplier)
+            for desc, unit, price in items:
+                add_report_item(report, description=desc, unit=unit, unit_price=price)
+            sup = learn_supplier_from_receipt(report, None)
+        return report, sup
+
+    def test_receipt_creates_supplier_and_records_prices(self):
+        from apps.procurement.models import Supplier, SupplierPrice
+        report, sup = self._material_receipt(
+            "Hydraulics SA", [("Hose 1in", "ea", "300"), ("Fitting", "ea", "45")])
+        with tenant_scope(self.c.id):
+            self.assertIsNotNone(sup)
+            self.assertEqual(Supplier.objects.filter(name="Hydraulics SA").count(), 1)
+            self.assertEqual(SupplierPrice.objects.filter(supplier=sup).count(), 2)
+            report.refresh_from_db()
+            self.assertEqual(report.supplier_ref_id, sup.id)   # receipt is traceable
+
+    def test_second_receipt_matches_existing_supplier_no_duplicate(self):
+        from apps.procurement.models import Supplier, SupplierPrice
+        self._material_receipt("Hydraulics SA", [("Hose 1in", "ea", "300")])
+        self._material_receipt("hydraulics sa", [("Hose 2in", "ea", "420")])  # case-insensitive
+        with tenant_scope(self.c.id):
+            self.assertEqual(Supplier.objects.filter(company=self.c).count(), 1)
+            self.assertEqual(SupplierPrice.objects.count(), 2)  # both under the one supplier
+
+    def test_zero_priced_lines_are_not_recorded(self):
+        from apps.procurement.models import SupplierPrice
+        _, sup = self._material_receipt("Steel Co", [("Beam", "m", "0"), ("Bolt", "ea", "5")])
+        with tenant_scope(self.c.id):
+            self.assertEqual(SupplierPrice.objects.filter(supplier=sup).count(), 1)
+
+    def test_non_material_report_leaves_supplier_db_alone(self):
+        from apps.procurement.models import Supplier
+        from apps.execution.work_execution import learn_supplier_from_receipt
+        with tenant_scope(self.c.id):
+            task = Task.objects.create(company=self.c, name="Fuel")
+            r = create_task_report(task, None, kind=ReportKind.FUEL, title="Diesel",
+                                   supplier="Engen", amount="500")
+            self.assertIsNone(learn_supplier_from_receipt(r, None))
+            self.assertEqual(Supplier.objects.count(), 0)
+
+
 class WesApiTests(APITestCase):
     """The Flutter app's write surface: post a field report (with GPS), allocate
     a resource and reconcile it, and read the operational dashboard."""

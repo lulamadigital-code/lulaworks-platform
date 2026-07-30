@@ -38,6 +38,48 @@ def record_supplier_prices(company, supplier_quote) -> int:
     return n
 
 
+def learn_from_receipt(company, user, *, supplier_name, items, date=None, currency="ZAR"):
+    """Turn a confirmed purchase receipt into supplier knowledge.
+
+    Matches the seller into the Suppliers database (adding it the first time we
+    ever buy from them), then records each purchased line in the append-only
+    price ledger — so next time we know where we bought this and what we paid.
+    `items` is an iterable of objects/dicts with description, unit, unit_price.
+    Returns (supplier, prices_recorded, supplier_created)."""
+    from .models import Supplier
+
+    name = (supplier_name or "").strip()
+    if not name:
+        return None, 0, False
+    supplier = Supplier.objects.filter(company=company, name__iexact=name).first()
+    created = False
+    if supplier is None:
+        supplier = Supplier.objects.create(
+            company=company, name=name, notes="Added automatically from a receipt.",
+            created_by=user, updated_by=user)
+        created = True
+
+    day = date or timezone.localdate()
+    n = 0
+    for item in items:
+        get = (lambda k: item.get(k)) if isinstance(item, dict) else (lambda k: getattr(item, k, None))
+        desc = (get("description") or "").strip()
+        price = get("unit_price") or 0
+        if not desc or Decimal(str(price)) <= 0:
+            continue
+        SupplierPrice.objects.create(
+            company=company, supplier=supplier,
+            item_key=normalise(desc), description=desc,
+            unit=get("unit") or "each", unit_price=Decimal(str(price)),
+            currency=currency or "ZAR", date=day)
+        n += 1
+    if created or n:
+        publish("SupplierLearnedFromReceipt", company=company, subject=supplier,
+                actor=user, payload={"supplier": supplier.name, "prices": n,
+                                     "new_supplier": created})
+    return supplier, n, created
+
+
 def price_anomaly(company, description, proposed_price, *, threshold=Decimal("0.25")):
     """Flag a quote that deviates sharply from the historical average
     (PROCUREMENT §10: "detect unusual quotes")."""

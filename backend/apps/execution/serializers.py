@@ -113,18 +113,19 @@ class TaskReportSerializer(serializers.ModelSerializer):
     items = TaskReportItemSerializer(many=True, read_only=True)
     kind_display = serializers.CharField(source="get_kind_display", read_only=True)
     employee_name = serializers.CharField(source="employee.get_full_name", read_only=True)
+    supplier_ref_name = serializers.CharField(source="supplier_ref.name", read_only=True)
 
     class Meta:
         model = TaskReport
         fields = ["id", "task", "kind", "kind_display", "title", "event",
                   "reported_at", "employee", "employee_name", "notes",
                   "latitude", "longitude", "gps_accuracy_m", "distance_m",
-                  "location_flagged", "supplier", "invoice_number",
-                  "document_date", "amount", "vat_amount", "currency",
+                  "location_flagged", "supplier", "supplier_ref", "supplier_ref_name",
+                  "invoice_number", "document_date", "amount", "vat_amount", "currency",
                   "allocation", "extraction_status", "items", "created_at"]
-        read_only_fields = ["id", "kind_display", "employee_name", "distance_m",
-                            "location_flagged", "extraction_status", "items",
-                            "created_at"]
+        read_only_fields = ["id", "kind_display", "employee_name", "supplier_ref",
+                            "supplier_ref_name", "distance_m", "location_flagged",
+                            "extraction_status", "items", "created_at"]
 
 
 class CreateTaskReportSerializer(serializers.Serializer):

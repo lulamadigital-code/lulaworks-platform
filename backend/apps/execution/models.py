@@ -706,7 +706,13 @@ class TaskReport(TenantBaseModel):
     location_flagged = models.BooleanField(default=False)  # beyond tolerance → review
 
     # ── Financial (fuel / material / expense) ───────────────────────────────
-    supplier = models.CharField(max_length=200, blank=True)
+    supplier = models.CharField(max_length=200, blank=True)  # name as written on the receipt
+    # Once a material receipt is confirmed, the seller is matched into (or added
+    # to) the Suppliers database, and this points at that record — so the receipt
+    # is traceable and future buys know where we bought this before.
+    supplier_ref = models.ForeignKey(
+        "procurement.Supplier", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="receipts")
     invoice_number = models.CharField(max_length=80, blank=True)
     document_date = models.DateField(null=True, blank=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)

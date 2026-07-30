@@ -156,6 +156,28 @@ def create_task_report(task, user, *, kind=ReportKind.PROGRESS, title, event="",
     return report
 
 
+def learn_supplier_from_receipt(report, user):
+    """A confirmed material receipt feeds the Suppliers database: match/add the
+    seller and record its item prices, then link the report to that supplier so
+    the receipt is traceable and future buys know where we bought this before.
+
+    No-op for non-material reports or receipts without a supplier name. Returns
+    the Supplier (or None)."""
+    if report.kind != ReportKind.MATERIAL or not (report.supplier or "").strip():
+        return None
+    from apps.procurement.services import learn_from_receipt
+
+    supplier, _prices, _created = learn_from_receipt(
+        report.company, user, supplier_name=report.supplier,
+        items=list(report.items.all()),
+        date=report.document_date or report.reported_at.date(),
+        currency=report.currency)
+    if supplier is not None and report.supplier_ref_id != supplier.id:
+        report.supplier_ref = supplier
+        report.save(update_fields=["supplier_ref", "updated_at"])
+    return supplier
+
+
 def add_report_item(report, *, description, quantity=1, unit="", unit_price=0,
                     line_total=None, user=None):
     """Attach an extracted invoice line to a material-purchase report."""

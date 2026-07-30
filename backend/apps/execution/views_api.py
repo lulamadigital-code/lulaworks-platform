@@ -43,6 +43,7 @@ from .work_execution import (
     add_report_item,
     allocate_task_resource,
     create_task_report,
+    learn_supplier_from_receipt,
     reconcile_allocation,
     task_operational_dashboard,
 )
@@ -259,6 +260,9 @@ class TaskReportViewSet(TenantViewSet):
                             quantity=item.get("quantity", 1), unit=item.get("unit", ""),
                             unit_price=item.get("unit_price", 0),
                             line_total=item.get("line_total"), user=request.user)
+        # A confirmed material receipt teaches the Suppliers database: match/add
+        # the seller and record its prices, so next time we know where we buy this.
+        learn_supplier_from_receipt(report, request.user)
         report.refresh_from_db()
         return Response(TaskReportSerializer(report, context={"request": request}).data,
                         status=status.HTTP_201_CREATED)

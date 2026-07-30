@@ -109,7 +109,7 @@
     <tr>
       <td class="muted">{{ r.reported_at|date:"d M H:i" }}</td>
       <td>{{ r.get_kind_display }}</td>
-      <td>{{ r.title }}{% if r.supplier %} <span class="muted">· {{ r.supplier }}</span>{% endif %}</td>
+      <td>{{ r.title }}{% if r.supplier %} <span class="muted">· {{ r.supplier }}</span>{% endif %}{% if r.supplier_ref_id %} <span class="chip ok" title="Saved to your Suppliers database">in Suppliers</span>{% endif %}</td>
       <td class="muted">{% if r.employee %}{{ r.employee.get_full_name|default:r.employee.email }}{% else %}—{% endif %}</td>
       <td class="right">{% if r.amount %}R{{ r.amount }}{% endif %}</td>
       <td>
