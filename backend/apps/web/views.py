@@ -1834,19 +1834,177 @@ def suppliers_list(request):
             if key not in seen:          # latest price per supplier+item
                 seen.add(key)
                 item_matches.append(p)
-    return render(request, "web/suppliers.html",
-                  {"suppliers": suppliers, "q": q, "item_matches": item_matches})
+    return render(request, "web/suppliers.html", {
+        "suppliers": suppliers, "q": q, "item_matches": item_matches,
+        "can_manage": request.user.has_perm_code("procurement.manage")})
 
 
 @login_required
 def supplier_detail(request, pk):
-    """One supplier: what we've bought from them (price ledger) and the receipts
-    that built the record."""
+    """One supplier: what we've bought from them (price ledger), the receipts
+    that built the record, and the documents kept against them."""
     supplier = get_object_or_404(Supplier.objects.all(), pk=pk)
     prices = supplier.prices.all().order_by("-date")[:200]
     receipts = supplier.receipts.select_related("task").order_by("-reported_at")[:100]
-    return render(request, "web/supplier_detail.html",
-                  {"supplier": supplier, "prices": prices, "receipts": receipts})
+    return render(request, "web/supplier_detail.html", {
+        "supplier": supplier, "prices": prices, "receipts": receipts,
+        "documents": supplier.documents.all(),
+        "can_manage": request.user.has_perm_code("procurement.manage"),
+    })
+
+
+def _supplier_fields(post):
+    """Read the supplier form fields; categories arrive comma-separated."""
+    cats = [c.strip() for c in (post.get("categories") or "").split(",") if c.strip()]
+    return {
+        "name": (post.get("name") or "").strip(),
+        "contact_person": (post.get("contact_person") or "").strip(),
+        "email": (post.get("email") or "").strip(),
+        "phone": (post.get("phone") or "").strip(),
+        "payment_terms": (post.get("payment_terms") or "credit").strip(),
+        "categories": cats,
+        "notes": (post.get("notes") or "").strip(),
+    }
+
+
+@login_required
+@require_POST
+def supplier_create(request):
+    """Add a supplier by hand."""
+    from apps.core.audit import audit
+    if not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:suppliers")
+    fields = _supplier_fields(request.POST)
+    if not fields["name"]:
+        messages.error(request, "A supplier needs a name.")
+        return redirect("web:suppliers")
+    existing = Supplier.objects.filter(name__iexact=fields["name"]).first()
+    if existing:
+        messages.info(request, f"{existing.name} is already in your suppliers.")
+        return redirect("web:supplier_detail", pk=existing.id)
+    supplier = Supplier.objects.create(
+        company=request.user.active_company, created_by=request.user,
+        updated_by=request.user, **fields)
+    audit(request, "supplier.created", entity=supplier)
+    messages.success(request, f"Added {supplier.name}.")
+    return redirect("web:supplier_detail", pk=supplier.id)
+
+
+@login_required
+@require_POST
+def supplier_edit(request, pk):
+    """Edit a supplier's details."""
+    supplier = get_object_or_404(Supplier.objects.all(), pk=pk)
+    if not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:supplier_detail", pk=pk)
+    fields = _supplier_fields(request.POST)
+    if not fields["name"]:
+        messages.error(request, "A supplier needs a name.")
+        return redirect("web:supplier_detail", pk=pk)
+    for key, value in fields.items():
+        setattr(supplier, key, value)
+    supplier.updated_by = request.user
+    supplier.save()
+    messages.success(request, "Supplier updated.")
+    return redirect("web:supplier_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def supplier_document(request, pk):
+    """Attach a document (quote, certificate, banking, invoice) to a supplier."""
+    from apps.core.uploads import validate_upload
+    from apps.procurement.models import SupplierDocument
+
+    supplier = get_object_or_404(Supplier.objects.all(), pk=pk)
+    if not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:supplier_detail", pk=pk)
+    upload = request.FILES.get("file")
+    if upload is None:
+        messages.error(request, "Choose a file to upload.")
+        return redirect("web:supplier_detail", pk=pk)
+    try:
+        validate_upload(upload)
+    except ValueError as exc:
+        messages.error(request, str(exc))
+        return redirect("web:supplier_detail", pk=pk)
+    SupplierDocument.objects.create(
+        company=request.user.active_company, supplier=supplier, file=upload,
+        name=(request.POST.get("name") or upload.name).strip(),
+        doc_type=(request.POST.get("doc_type") or "other").strip(),
+        content_type=getattr(upload, "content_type", ""), size_bytes=upload.size,
+        created_by=request.user, updated_by=request.user)
+    messages.success(request, "Document uploaded.")
+    return redirect("web:supplier_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def supplier_import(request):
+    """Upload an old invoice and extract it for review before it seeds the
+    Suppliers database (human confirms first — nothing saved yet)."""
+    from apps.core.uploads import validate_upload
+    from apps.knowledge.document_intelligence import (
+        extract_po_fields,
+        extract_text_from_upload,
+    )
+    if not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:suppliers")
+    upload = request.FILES.get("file")
+    if upload is None:
+        messages.error(request, "Choose an invoice to upload.")
+        return redirect("web:suppliers")
+    try:
+        validate_upload(upload)
+    except ValueError as exc:
+        messages.error(request, str(exc))
+        return redirect("web:suppliers")
+    text = extract_text_from_upload(upload)
+    fields = extract_po_fields(text, company=request.user.active_company,
+                               user=request.user, use_ai=True)
+    return render(request, "web/supplier_import_review.html", {
+        "supplier_name": fields.get("contact", ""),
+        "invoice_number": fields.get("po_number", ""),
+        "doc_date": fields.get("po_date", ""),
+        "lines": fields.get("lines", []),
+        "filename": upload.name,
+    })
+
+
+@login_required
+@require_POST
+def supplier_import_confirm(request):
+    """Save the reviewed old-invoice lines into the Suppliers database."""
+    from apps.core.audit import audit
+    from apps.procurement.services import learn_from_receipt
+
+    if not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:suppliers")
+    name = (request.POST.get("supplier_name") or "").strip()
+    if not name:
+        messages.error(request, "Enter the supplier's name.")
+        return redirect("web:suppliers")
+    descriptions = request.POST.getlist("description")
+    units = request.POST.getlist("unit")
+    prices = request.POST.getlist("unit_price")
+    items = [
+        {"description": d.strip(), "unit": (units[i] if i < len(units) else "each"),
+         "unit_price": (prices[i] if i < len(prices) else "0")}
+        for i, d in enumerate(descriptions) if d.strip()
+    ]
+    doc_date = request.POST.get("doc_date") or None
+    supplier, n, created = learn_from_receipt(
+        request.user.active_company, request.user,
+        supplier_name=name, items=items, date=doc_date or None)
+    audit(request, "supplier.imported", entity=supplier)
+    verb = "Added" if created else "Updated"
+    messages.success(request, f"{verb} {supplier.name} — {n} price(s) recorded.")
+    return redirect("web:supplier_detail", pk=supplier.id)
 
 
 @login_required

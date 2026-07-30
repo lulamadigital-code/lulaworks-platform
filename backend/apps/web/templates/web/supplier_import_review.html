@@ -1,0 +1,44 @@
+{% extends "web/base.html" %}
+{% block title %}Import invoice{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:suppliers' %}">← Suppliers</a></p>
+<h1>Review before saving</h1>
+<p class="sub">Extracted from <strong>{{ filename }}</strong>. Check the supplier and prices,
+  then confirm — this back-fills your Suppliers database.</p>
+
+<form method="post" action="{% url 'web:supplier_import_confirm' %}">
+  {% csrf_token %}
+  <div class="card">
+    <div class="two">
+      <div><label>Supplier name *</label>
+        <input type="text" name="supplier_name" value="{{ supplier_name }}" required></div>
+      <div><label>Invoice date</label>
+        <input type="date" name="doc_date" value="{{ doc_date }}"></div>
+    </div>
+  </div>
+
+  <h2>Items &amp; prices</h2>
+  <div class="card" style="padding:0;">
+    <table>
+      <tr><th>Description</th><th style="width:110px;">Unit</th><th style="width:140px;" class="right">Unit price</th></tr>
+      {% for l in lines %}
+      <tr>
+        <td><input type="text" name="description" value="{{ l.description }}"></td>
+        <td><input type="text" name="unit" value="{{ l.unit|default:'each' }}"></td>
+        <td><input type="number" step="0.01" name="unit_price" value="{{ l.unit_price }}" style="text-align:right;"></td>
+      </tr>
+      {% endfor %}
+      {# a few blank rows so the user can add lines the extractor missed #}
+      {% for i in "123" %}
+      <tr>
+        <td><input type="text" name="description" placeholder="Add an item…"></td>
+        <td><input type="text" name="unit" value="each"></td>
+        <td><input type="number" step="0.01" name="unit_price" placeholder="0.00" style="text-align:right;"></td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  <p class="muted" style="font-size:12.5px;">Only rows with a description and a price above zero are recorded.</p>
+  <button class="btn" type="submit" style="margin-top:8px;">Save to Suppliers</button>
+</form>
+{% endblock %}

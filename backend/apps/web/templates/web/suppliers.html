@@ -2,8 +2,40 @@
 {% block title %}Suppliers{% endblock %}
 {% block content %}
 <h1>Suppliers</h1>
-<p class="sub">Everyone you buy from — added automatically when you attach a receipt.
-  <a href="{% url 'web:purchase_orders' %}">Purchase orders →</a></p>
+<p class="sub">Everyone you buy from — added automatically when you attach a receipt,
+  or added by hand below. <a href="{% url 'web:purchase_orders' %}">Purchase orders →</a></p>
+
+{% if can_manage %}
+<div class="two-col">
+  <div><div class="card">
+    <strong>Add a supplier</strong>
+    <form method="post" action="{% url 'web:supplier_create' %}" style="margin-top:10px;">
+      {% csrf_token %}
+      <input type="text" name="name" placeholder="Supplier name *" required>
+      <div class="two" style="margin-top:8px;">
+        <div><input type="text" name="contact_person" placeholder="Contact person"></div>
+        <div><input type="text" name="phone" placeholder="Phone"></div>
+        <div><input type="email" name="email" placeholder="Email"></div>
+        <div><input type="text" name="payment_terms" placeholder="Terms (e.g. credit / COD)"></div>
+      </div>
+      <input type="text" name="categories" placeholder="Categories, comma-separated (Steel, Hoses)" style="margin-top:8px;">
+      <button class="btn" type="submit" style="margin-top:12px;">Add supplier</button>
+    </form>
+  </div></div>
+  <div><div class="card">
+    <strong>Import from an old invoice</strong>
+    <p class="muted" style="margin:6px 0 10px;font-size:12.5px;">Upload a past supplier
+      invoice — we extract the seller and item prices for you to confirm, to back-fill
+      the database.</p>
+    <form method="post" action="{% url 'web:supplier_import' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="file" name="file" required
+             accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.csv,.txt">
+      <button class="btn ghost" type="submit" style="margin-top:12px;">Upload &amp; review</button>
+    </form>
+  </div></div>
+</div>
+{% endif %}
 
 <form method="get" class="filterbar">
   <input type="search" name="q" value="{{ q }}"

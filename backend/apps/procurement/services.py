@@ -59,6 +59,9 @@ def learn_from_receipt(company, user, *, supplier_name, items, date=None, curren
             created_by=user, updated_by=user)
         created = True
 
+    if isinstance(date, str):
+        from django.utils.dateparse import parse_date
+        date = parse_date(date)
     day = date or timezone.localdate()
     n = 0
     for item in items:

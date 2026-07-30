@@ -12,6 +12,10 @@ from django.db import models
 from apps.core.models import TenantBaseModel
 
 
+def supplier_doc_upload_path(instance, filename):
+    return f"c/{instance.company_id}/supplier_docs/{filename}"
+
+
 class Supplier(TenantBaseModel):
     name = models.CharField(max_length=255)
     registration_no = models.CharField(max_length=64, blank=True)
@@ -58,6 +62,25 @@ class SupplierPrice(TenantBaseModel):
 
     def __str__(self):
         return f"{self.description[:40]} @ {self.unit_price}"
+
+
+class SupplierDocument(TenantBaseModel):
+    """A file kept against a supplier — a quote, catalogue, BEE certificate,
+    banking confirmation, or an old invoice uploaded to seed prices."""
+
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE,
+                                 related_name="documents")
+    file = models.FileField(upload_to=supplier_doc_upload_path)
+    name = models.CharField(max_length=255)
+    doc_type = models.CharField(max_length=40, blank=True)  # invoice|quote|certificate|other
+    content_type = models.CharField(max_length=120, blank=True)
+    size_bytes = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
 
 
 # ─────────────────────── Supplier RFQ (outbound) → Supplier Quote (in) ───────────────────────

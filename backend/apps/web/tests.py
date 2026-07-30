@@ -1239,6 +1239,50 @@ class SuppliersDirectoryTests(TestCase):
         self.assertContains(resp, "185")          # price recorded
         self.assertContains(resp, "Inv 4471")     # the receipt
 
+    def test_manual_create_and_old_invoice_import(self):
+        from apps.core.context import tenant_scope
+        from apps.procurement.models import Supplier, SupplierPrice
+        c = make_company()
+        user = user_with(c, ["procurement.manage"])
+        self.client.force_login(user)
+
+        # add a supplier by hand
+        resp = self.client.post("/suppliers/new/",
+                                {"name": "Steel Co", "categories": "Steel, Beams"})
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(c.id):
+            self.assertEqual(Supplier.objects.get(name="Steel Co").categories,
+                             ["Steel", "Beams"])
+
+        # confirm an old-invoice import → seeds supplier + prices (blank/zero skipped)
+        resp = self.client.post("/suppliers/import/confirm/", {
+            "supplier_name": "Bolt Traders", "doc_date": "2026-01-15",
+            "description": ["M12 bolt", "Hex nut", ""],
+            "unit": ["ea", "ea", "ea"],
+            "unit_price": ["3.50", "1.20", "0"],
+        })
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(c.id):
+            bt = Supplier.objects.get(name="Bolt Traders")
+            self.assertEqual(SupplierPrice.objects.filter(supplier=bt).count(), 2)
+
+    def test_supplier_document_upload(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from apps.core.context import tenant_scope
+        from apps.procurement.models import Supplier
+        c = make_company()
+        user = user_with(c, ["procurement.manage"])
+        with tenant_scope(c.id):
+            s = Supplier.objects.create(company=c, name="Docs Co")
+        self.client.force_login(user)
+        f = SimpleUploadedFile("bee.pdf", b"%PDF-1.4 test", content_type="application/pdf")
+        resp = self.client.post(f"/suppliers/{s.id}/documents/",
+                                {"file": f, "doc_type": "certificate"})
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(c.id):
+            self.assertEqual(s.documents.count(), 1)
+
 
 class WorkOperationsPageTests(TestCase):
     """The manager's read-out of the Work Execution System: money allocated vs
