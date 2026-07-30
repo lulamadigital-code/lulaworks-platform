@@ -9,7 +9,12 @@
       operations. Every awarded quotation becomes the contract execution traces
       back to.</p>
   </div>
-  {% if can_create %}<a class="btn" href="{% url 'web:quotation_new' %}">+ New quotation</a>{% endif %}
+  {% if can_create %}
+  <div class="row" style="gap:8px;">
+    <a class="btn ghost" href="{% url 'web:rfq' %}">Start from RFQ</a>
+    <a class="btn" href="{% url 'web:quotation_new' %}">+ New quotation</a>
+  </div>
+  {% endif %}
 </div>
 
 <div class="grid">

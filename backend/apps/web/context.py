@@ -66,6 +66,7 @@ def nav_flags(request):
     user = getattr(request, "user", None)
     signed_in = bool(user and user.is_authenticated)
     can = bool(signed_in and user.has_perm_code("finance.view_money"))
+    can_proc = bool(signed_in and user.has_perm_code("procurement.manage"))
     rm = getattr(request, "resolver_match", None)
     section = _SECTIONS.get(rm.url_name, "") if rm else ""
 
@@ -74,6 +75,7 @@ def nav_flags(request):
         from apps.execution.services import unread_count
         unread = unread_count(user)
 
-    return {"perms_money": can, "has_logo": has_logo_file(),
+    return {"perms_money": can, "perms_procurement": can_proc,
+            "has_logo": has_logo_file(),
             "logo_static": logo_static_name(), "nav_section": section,
             "unread_notifications": unread}

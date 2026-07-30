@@ -333,17 +333,17 @@
 
       <span class="nav-gap"></span>
       {% include "web/_navlink.html" with url='web:customers' key='customers' label='Customers' icon='org' %}
-      {% include "web/_navlink.html" with url='web:rfq' key='rfq' label='RFQ' icon='inbox' %}
-      {% include "web/_navlink.html" with url='web:estimates' key='estimates' label='Estimates' icon='calc' %}
       {% include "web/_navlink.html" with url='web:quotations' key='quotations' label='Quotations' icon='doc' %}
 
       <span class="nav-gap"></span>
       {% include "web/_navlink.html" with url='web:work' key='work' label='Work' icon='check' %}
       {% include "web/_navlink.html" with url='web:projects' key='projects' label='Projects' icon='folder' %}
 
+      {% if perms_procurement or perms_money %}
       <span class="nav-gap"></span>
-      {% include "web/_navlink.html" with url='web:purchase_orders' key='procurement' label='Procurement' icon='cart' %}
+      {% if perms_procurement %}{% include "web/_navlink.html" with url='web:purchase_orders' key='procurement' label='Procurement' icon='cart' %}{% endif %}
       {% if perms_money %}{% include "web/_navlink.html" with url='web:commercial' key='commercial' label='Commercial' icon='cash' %}{% endif %}
+      {% endif %}
 
       <span class="nav-gap"></span>
       {% include "web/_navlink.html" with url='web:people' key='people' label='People' icon='users' %}
