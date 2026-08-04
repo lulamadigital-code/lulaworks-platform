@@ -32,8 +32,25 @@ pg_dump \
 size="$(du -h "$outfile" | cut -f1)"
 echo "[backup] wrote ${size}"
 
-# Retention: delete dumps older than N days.
+# ── Off-box copy to DigitalOcean Spaces / S3 (optional) ──────────────────────
+# The droplet's local volume is not disaster recovery — a lost droplet loses it.
+# If S3_BUCKET is set, push each dump to the bucket. aws-cli reads the
+# AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_DEFAULT_REGION from the env.
+# S3_ENDPOINT points aws-cli at Spaces (e.g. https://fra1.digitaloceanspaces.com);
+# leave it unset for real AWS S3. Set S3_BUCKET empty to keep backups local only.
+if [ -n "${S3_BUCKET:-}" ]; then
+    key="s3://${S3_BUCKET}/${S3_PREFIX:-lulaworks-backups}/$(basename "$outfile")"
+    echo "[backup] uploading → ${key}"
+    if aws s3 cp "$outfile" "$key" ${S3_ENDPOINT:+--endpoint-url "$S3_ENDPOINT"}; then
+        echo "[backup] off-box copy done"
+    else
+        echo "[backup] WARNING: off-box upload failed (local dump is still safe)" >&2
+    fi
+fi
+
+# Retention: delete LOCAL dumps older than N days. (Remote retention is best
+# handled by a bucket lifecycle policy — see docs/DEPLOYMENT.md.)
 find "$BACKUP_DIR" -name 'lulaworks_*.sql.gz' -type f \
     -mtime "+${BACKUP_RETENTION_DAYS}" -print -delete || true
 
-echo "[backup] done; keeping last ${BACKUP_RETENTION_DAYS} days"
+echo "[backup] done; keeping last ${BACKUP_RETENTION_DAYS} days locally"

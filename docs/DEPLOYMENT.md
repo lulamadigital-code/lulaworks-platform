@@ -24,7 +24,8 @@ internet** — everything else talks over the private Docker network.
 | `beat`    | `lulaworks/api:prod`    | Celery beat — scheduled jobs (reminders, cleanups, reports) | — |
 | `db`      | `postgres:16-alpine`    | PostgreSQL (persistent volume)                             | — (internal) |
 | `redis`   | `redis:7-alpine`        | Celery broker + Django cache (append-only persistence)     | — (internal) |
-| `backup`  | `postgres:16-alpine`    | Nightly `pg_dump` → `backups` volume, with retention        | — |
+| `backup`  | `lulaworks/backup` (`postgres:16-alpine` + aws-cli) | Nightly `pg_dump` → `backups` volume + off-box copy to Spaces/S3 | — |
+| `certbot` | `certbot/certbot`       | Automatic TLS certificate renewal (12h loop)               | — |
 | `flower`  | `mher/flower:2.0`       | *(optional, `--profile monitoring`)* Celery dashboard      | 127.0.0.1:5555 |
 | `pgadmin` | `dpage/pgadmin4`        | *(optional, `--profile debug`)* DB console                  | 127.0.0.1:5050 |
 
@@ -152,8 +153,9 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d web
 docker compose -f docker-compose.prod.yml --env-file .env.prod exec nginx nginx -s reload
 ```
 
-Renewal: `certbot renew` against the same volumes on a cron, then
-`nginx -s reload`.
+**Renewal is automatic.** The `certbot` service wakes every 12 h and renews any
+cert near expiry via the same webroot; nginx reloads on its own 6 h loop to pick
+up the new cert. Nothing to schedule — it just works once the first cert exists.
 
 ### Updating a running deployment
 
@@ -175,8 +177,28 @@ ssh -L 5555:127.0.0.1:5555 user@droplet   # then open http://localhost:5555 (Flo
 ## 5. Backups
 
 The `backup` service runs a `pg_dump` on boot and every `BACKUP_INTERVAL_SECONDS`
-(default 24 h), gzips it to the `backups-data` volume, and prunes dumps older
-than `BACKUP_RETENTION_DAYS` (default 14).
+(default 24 h), gzips it to the `backups-data` volume, and prunes local dumps
+older than `BACKUP_RETENTION_DAYS` (default 14).
+
+### Off-box copy (DigitalOcean Spaces / S3) — recommended
+
+The local volume lives on the droplet, so it dies with the droplet. Set the
+`S3_*` / `AWS_*` variables in `.env.prod` and every dump is also pushed to a
+bucket:
+
+```env
+S3_BUCKET=lulaworks-prod-backups
+S3_PREFIX=lulaworks-backups
+S3_ENDPOINT=https://fra1.digitaloceanspaces.com   # blank for real AWS S3
+AWS_ACCESS_KEY_ID=<spaces-key>
+AWS_SECRET_ACCESS_KEY=<spaces-secret>
+AWS_DEFAULT_REGION=fra1
+```
+
+Leave `S3_BUCKET` empty to keep backups local only. Off-box upload failures log
+a warning but never fail the local backup. **Remote retention** is best set as a
+bucket **lifecycle policy** (e.g. expire objects after 30–90 days) — the script
+only prunes locally.
 
 ```bash
 # List backups
