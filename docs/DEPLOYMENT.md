@@ -180,25 +180,48 @@ The `backup` service runs a `pg_dump` on boot and every `BACKUP_INTERVAL_SECONDS
 (default 24 h), gzips it to the `backups-data` volume, and prunes local dumps
 older than `BACKUP_RETENTION_DAYS` (default 14).
 
-### Off-box copy (DigitalOcean Spaces / S3) — recommended
+### Off-box copy (DigitalOcean Spaces) — recommended
 
-The local volume lives on the droplet, so it dies with the droplet. Set the
-`S3_*` / `AWS_*` variables in `.env.prod` and every dump is also pushed to a
-bucket:
+The local volume lives on the droplet, so it dies with the droplet. **DigitalOcean
+Spaces** is DigitalOcean's own object storage; it speaks the S3 API, which is why
+the settings are named `S3_*` (same variables would point at Amazon S3 in Phase 2
+— that is the *only* difference). You stay entirely on DigitalOcean.
+
+**One-time setup in the DigitalOcean console:**
+
+1. **Create a Space.** Left menu → **Spaces Object Storage** → **Create a Spaces
+   Bucket**. Pick a region near your droplet (e.g. Frankfurt = `fra1`), give it a
+   name (e.g. `lulaworks-prod-backups`), and set file listing to **Restrict**
+   (private). Note the region and the endpoint shown, e.g.
+   `https://fra1.digitaloceanspaces.com`.
+2. **Create an access key.** Left menu → **API** → **Spaces Keys** →
+   **Generate New Key**. Copy the **Key** and **Secret** now — the secret is
+   shown only once.
+3. **(Optional) retention.** In the Space → **Settings** → lifecycle rule to
+   expire objects after e.g. 30–90 days, so old dumps clean themselves up.
+
+**Then fill these three-ish values in `.env.prod` on the droplet** (region name
+appears twice — in the endpoint host and in `AWS_DEFAULT_REGION`):
 
 ```env
-S3_BUCKET=lulaworks-prod-backups
-S3_PREFIX=lulaworks-backups
-S3_ENDPOINT=https://fra1.digitaloceanspaces.com   # blank for real AWS S3
-AWS_ACCESS_KEY_ID=<spaces-key>
-AWS_SECRET_ACCESS_KEY=<spaces-secret>
-AWS_DEFAULT_REGION=fra1
+S3_BUCKET=lulaworks-prod-backups                  # the Space name from step 1
+S3_PREFIX=lulaworks-backups                        # a folder inside the Space
+S3_ENDPOINT=https://fra1.digitaloceanspaces.com    # your Space's region endpoint
+AWS_ACCESS_KEY_ID=<Spaces Key from step 2>
+AWS_SECRET_ACCESS_KEY=<Spaces Secret from step 2>
+AWS_DEFAULT_REGION=fra1                             # the region code (matches endpoint)
 ```
 
-Leave `S3_BUCKET` empty to keep backups local only. Off-box upload failures log
-a warning but never fail the local backup. **Remote retention** is best set as a
-bucket **lifecycle policy** (e.g. expire objects after 30–90 days) — the script
-only prunes locally.
+Restart the backup service to apply, then force one and confirm it uploaded:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d backup
+docker compose -f docker-compose.prod.yml --env-file .env.prod \
+    exec backup sh /usr/local/bin/backup.sh        # look for "off-box copy done"
+```
+
+Leave `S3_BUCKET` empty to keep backups local only. Off-box upload failures log a
+warning but never fail the local backup, so the app is never blocked on Spaces.
 
 ```bash
 # List backups
