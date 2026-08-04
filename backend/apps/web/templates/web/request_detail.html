@@ -1,0 +1,60 @@
+{% extends "web/base.html" %}
+{% block title %}{{ req.number }}{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:requests' %}">← Requests</a></p>
+<div class="row">
+  <h1 style="margin:0;">{{ req.number }}</h1>
+  <span class="sp" style="flex:1;"></span>
+  {% if req.status == 'approved' %}<span class="chip ok">Approved</span>
+  {% elif req.status == 'submitted' %}<span class="chip warn">Awaiting approval</span>
+  {% elif req.status == 'rejected' %}<span class="chip bad">Rejected</span>
+  {% elif req.status == 'fulfilled' %}<span class="chip ok">Fulfilled</span>
+  {% else %}<span class="chip">{{ req.get_status_display }}</span>{% endif %}
+</div>
+<p class="sub">{{ req.title }}
+  {% if req.task %} · <a href="{% url 'web:work_operations' req.task.id %}">{{ req.task.name }}</a>{% endif %}
+  {% if req.needed_by %} · needed by {{ req.needed_by|date:"d M Y" }}{% endif %}
+  {% if req.requested_by %} · by {{ req.requested_by.get_full_name|default:req.requested_by.email }}{% endif %}</p>
+
+{% if req.notes %}<p class="muted">{{ req.notes }}</p>{% endif %}
+{% if req.status == 'rejected' and req.rejected_reason %}
+<div class="card" style="border-color:var(--bad);"><strong style="color:var(--bad);">Rejected:</strong> {{ req.rejected_reason }}</div>
+{% endif %}
+
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Item</th><th class="right">Qty</th><th>Unit</th><th class="right">Est. price</th><th class="right">Est. line</th></tr>
+    {% for l in lines %}
+    <tr>
+      <td>{% if l.product %}<a href="{% url 'web:product_detail' l.product.id %}">{{ l.description }}</a>{% else %}{{ l.description }}{% endif %}</td>
+      <td class="right">{{ l.quantity }}</td>
+      <td class="muted">{{ l.unit }}</td>
+      <td class="right">R{{ l.est_unit_price }}</td>
+      <td class="right">R{{ l.line_est }}</td>
+    </tr>
+    {% endfor %}
+    <tr style="font-weight:700;"><td colspan="4">Estimated total</td><td class="right">R{{ req.est_total }}</td></tr>
+  </table>
+</div>
+
+{% if can_approve %}
+<div class="card">
+  {% if req.status == 'submitted' %}
+  <div class="row" style="gap:10px;">
+    <form method="post" action="{% url 'web:request_approve' req.id %}" style="margin:0;">{% csrf_token %}
+      <button class="btn" type="submit">Approve</button></form>
+    <form method="post" action="{% url 'web:request_reject' req.id %}" class="row" style="gap:8px;margin:0;flex:1;">{% csrf_token %}
+      <input type="text" name="reason" placeholder="Reason for rejecting…" style="flex:1;">
+      <button class="btn ghost" type="submit" style="color:var(--bad);border-color:var(--bad);">Reject</button></form>
+  </div>
+  {% elif req.status == 'approved' %}
+  <form method="post" action="{% url 'web:request_fulfil' req.id %}" style="margin:0;">{% csrf_token %}
+    <button class="btn" type="submit">Mark as purchased</button>
+    <span class="muted" style="margin-left:8px;font-size:12.5px;">Then capture the receipt on the task — it feeds the Suppliers database.</span>
+  </form>
+  {% else %}
+  <span class="muted">No actions for this status.</span>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

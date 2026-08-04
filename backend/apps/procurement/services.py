@@ -9,11 +9,16 @@ from django.utils import timezone
 from apps.administration.services import next_number
 from apps.core.events import publish
 
+from django.db import transaction
+
 from .models import (
     GRNLine,
     POLine,
     Product,
     ProductAlias,
+    ProcurementRequest,
+    ProcurementRequestLine,
+    ProcurementRequestStatus,
     PurchaseOrder,
     SupplierPrice,
     SupplierRFQStatus,
@@ -318,3 +323,103 @@ def three_way_match(purchase_order) -> dict:
         })
     return {"matched": not variances, "variances": variances,
             "po_total": po_total, "invoiced": invoiced}
+
+
+# ── Procurement Requests (internal requisition → optional approval) ────────────
+
+def procurement_approval_required(company) -> bool:
+    """Whether a request must be approved before it can be purchased. Optional
+    per company — off by default (small contractors buy directly)."""
+    from apps.administration.models import CompanySettings
+    s = CompanySettings.objects.filter(company=company).first()
+    return bool(s and (s.approval_rules or {}).get("procurement_required"))
+
+
+def _last_price_for(company, description):
+    """Best estimate for a line — the most recent price we've paid, if any."""
+    product = resolve_product(company, None, description, create=False)
+    qs = SupplierPrice.objects.filter(company=company)
+    qs = qs.filter(product=product) if product else qs.filter(item_key=normalise(description))
+    row = qs.order_by("-date").first()
+    return row.unit_price if row else Decimal("0")
+
+
+@transaction.atomic
+def create_request(company, user, *, title, lines, task=None, project=None,
+                   notes="", needed_by=None):
+    """Raise an internal request for what a task needs. Each line's estimated
+    price is prefilled from the last price we paid for that item."""
+    if task is not None and project is None:
+        project = task.project
+    req = ProcurementRequest.objects.create(
+        company=company, number=next_number(company, "procurement_request"),
+        title=title, task=task, project=project, notes=notes, needed_by=needed_by,
+        requested_by=user, created_by=user, updated_by=user)
+    for ln in lines or []:
+        desc = (ln.get("description") or "").strip()
+        if not desc:
+            continue
+        est = ln.get("est_unit_price")
+        est = Decimal(str(est)) if est not in (None, "") else _last_price_for(company, desc)
+        ProcurementRequestLine.objects.create(
+            company=company, request=req, description=desc,
+            product=resolve_product(company, user, desc),
+            quantity=Decimal(str(ln.get("quantity") or 1)),
+            unit=ln.get("unit") or "each", est_unit_price=est,
+            created_by=user, updated_by=user)
+    publish("ProcurementRequestCreated", company=company, subject=req, actor=user,
+            payload={"number": req.number, "task": str(task.id) if task else None})
+    return req
+
+
+def submit_request(req, user):
+    """Send a draft for approval — or auto-approve it when the company doesn't
+    require approval."""
+    if req.status != ProcurementRequestStatus.DRAFT:
+        return req
+    if procurement_approval_required(req.company):
+        req.status = ProcurementRequestStatus.SUBMITTED
+    else:
+        req.status = ProcurementRequestStatus.APPROVED
+        req.approved_at = timezone.now()
+    req.updated_by = user
+    req.save(update_fields=["status", "approved_at", "updated_by", "updated_at"])
+    publish("ProcurementRequestSubmitted", company=req.company, subject=req, actor=user,
+            payload={"status": req.status})
+    return req
+
+
+def approve_request(req, user):
+    if req.status != ProcurementRequestStatus.SUBMITTED:
+        return req
+    req.status = ProcurementRequestStatus.APPROVED
+    req.approved_by = user
+    req.approved_at = timezone.now()
+    req.updated_by = user
+    req.save(update_fields=["status", "approved_by", "approved_at", "updated_by", "updated_at"])
+    publish("ProcurementRequestApproved", company=req.company, subject=req, actor=user)
+    return req
+
+
+def reject_request(req, user, reason=""):
+    if req.status != ProcurementRequestStatus.SUBMITTED:
+        return req
+    req.status = ProcurementRequestStatus.REJECTED
+    req.rejected_reason = reason[:255]
+    req.updated_by = user
+    req.save(update_fields=["status", "rejected_reason", "updated_by", "updated_at"])
+    publish("ProcurementRequestRejected", company=req.company, subject=req, actor=user)
+    return req
+
+
+def fulfil_request(req, user):
+    """Mark an approved request as bought — the 'purchase happened' step that
+    closes the loop back to the task."""
+    if req.status != ProcurementRequestStatus.APPROVED:
+        return req
+    req.lines.update(fulfilled=True)
+    req.status = ProcurementRequestStatus.FULFILLED
+    req.updated_by = user
+    req.save(update_fields=["status", "updated_by", "updated_at"])
+    publish("ProcurementRequestFulfilled", company=req.company, subject=req, actor=user)
+    return req

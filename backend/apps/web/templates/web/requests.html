@@ -1,0 +1,65 @@
+{% extends "web/base.html" %}
+{% block title %}Procurement requests{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Procurement requests</h1>
+    <p class="sub" style="margin:0;">What a task needs — raised before anything is bought.</p>
+  </div>
+  <a class="btn" href="{% url 'web:request_new' %}">+ New request</a>
+</div>
+
+<div class="grid">
+  <div class="tile"><div class="n">{{ awaiting }}</div><div class="l">Awaiting approval</div></div>
+  <div class="tile"><div class="n">{% if approval_required %}On{% else %}Off{% endif %}</div><div class="l">Approval required</div></div>
+</div>
+
+{% if can_config %}
+<div class="card">
+  <form method="post" action="{% url 'web:request_settings' %}" class="row" style="gap:10px;margin:0;align-items:center;">
+    {% csrf_token %}
+    <label style="display:flex;align-items:center;gap:8px;font-weight:normal;margin:0;">
+      <input type="checkbox" name="procurement_required" value="1" {% if approval_required %}checked{% endif %} style="width:auto;">
+      Require manager approval before purchases
+    </label>
+    <button class="btn ghost" type="submit">Save</button>
+    <span class="muted" style="font-size:12.5px;">Off = small teams buy directly; On = every request needs approval.</span>
+  </form>
+</div>
+{% endif %}
+
+<form method="get" class="filterbar">
+  <select name="status">
+    <option value="">Any status</option>
+    {% for value, label in statuses %}
+    <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn ghost" type="submit">Filter</button>
+</form>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Request</th><th>For</th><th>Requested by</th><th>Needed</th>
+        <th class="right">Est. value</th><th>Status</th></tr>
+    {% for r in requests %}
+    <tr>
+      <td><a href="{% url 'web:request_detail' r.id %}"><strong>{{ r.number }}</strong></a>
+        <br><span class="muted" style="font-size:12.5px;">{{ r.title }}</span></td>
+      <td class="muted">{% if r.task %}{{ r.task.name }}{% elif r.project %}{{ r.project.number }}{% else %}—{% endif %}</td>
+      <td class="muted">{% if r.requested_by %}{{ r.requested_by.get_full_name|default:r.requested_by.email }}{% else %}—{% endif %}</td>
+      <td class="muted">{{ r.needed_by|date:"d M Y"|default:"—" }}</td>
+      <td class="right">R{{ r.est_total }}</td>
+      <td>
+        {% if r.status == 'approved' %}<span class="chip ok">Approved</span>
+        {% elif r.status == 'submitted' %}<span class="chip warn">Awaiting approval</span>
+        {% elif r.status == 'rejected' %}<span class="chip bad">Rejected</span>
+        {% elif r.status == 'fulfilled' %}<span class="chip ok">Fulfilled</span>
+        {% else %}<span class="chip">{{ r.get_status_display }}</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">No requests yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

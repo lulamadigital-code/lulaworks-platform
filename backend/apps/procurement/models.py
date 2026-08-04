@@ -324,3 +324,77 @@ class SupplierInvoice(TenantBaseModel):
 
     def __str__(self):
         return f"{self.supplier} {self.invoice_no or self.date}"
+
+
+# ─────────────────────── Procurement Requests (internal requisition) ───────────
+#
+# Before anyone buys, they raise a request: what a task needs. If the company
+# turns approval on (CompanySettings.approval_rules["procurement_required"]),
+# a manager must approve before it can be purchased; otherwise it is approved on
+# submission. This is the financial-control gate between a need and a spend.
+
+class ProcurementRequestStatus(models.TextChoices):
+    DRAFT = "draft", "Draft"
+    SUBMITTED = "submitted", "Awaiting approval"
+    APPROVED = "approved", "Approved"
+    REJECTED = "rejected", "Rejected"
+    FULFILLED = "fulfilled", "Fulfilled"
+    CANCELLED = "cancelled", "Cancelled"
+
+
+class ProcurementRequest(TenantBaseModel):
+    number = models.CharField(max_length=32)
+    task = models.ForeignKey("execution.Task", on_delete=models.SET_NULL, null=True,
+                             blank=True, related_name="procurement_requests")
+    project = models.ForeignKey("projects.Project", on_delete=models.SET_NULL, null=True,
+                                blank=True, related_name="procurement_requests")
+    title = models.CharField(max_length=255)
+    notes = models.TextField(blank=True)
+    needed_by = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=12, choices=ProcurementRequestStatus.choices,
+                              default=ProcurementRequestStatus.DRAFT)
+    requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                     null=True, blank=True, related_name="+")
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                    null=True, blank=True, related_name="+")
+    approved_at = models.DateTimeField(null=True, blank=True)
+    rejected_reason = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["company", "status"])]
+
+    def __str__(self):
+        return f"{self.number} · {self.title}"
+
+    @property
+    def est_total(self):
+        return sum((ln.line_est for ln in self.lines.all()), Decimal("0"))
+
+    @property
+    def is_open(self):
+        return self.status in (ProcurementRequestStatus.DRAFT,
+                               ProcurementRequestStatus.SUBMITTED,
+                               ProcurementRequestStatus.APPROVED)
+
+
+class ProcurementRequestLine(TenantBaseModel):
+    request = models.ForeignKey(ProcurementRequest, on_delete=models.CASCADE,
+                                related_name="lines")
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name="+")
+    description = models.CharField(max_length=500)
+    quantity = models.DecimalField(max_digits=12, decimal_places=2, default=1)
+    unit = models.CharField(max_length=32, default="each")
+    est_unit_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    fulfilled = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.quantity} × {self.description}"
+
+    @property
+    def line_est(self):
+        return (self.quantity or Decimal("0")) * (self.est_unit_price or Decimal("0"))

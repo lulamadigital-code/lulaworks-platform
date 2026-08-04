@@ -1,0 +1,42 @@
+{% extends "web/base.html" %}
+{% block title %}New request{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:requests' %}">← Requests</a></p>
+<h1>New procurement request</h1>
+
+<form method="post" action="{% url 'web:request_new' %}">
+  {% csrf_token %}
+  <div class="card">
+    <div class="two">
+      <div><label>Title</label>
+        <input type="text" name="title" placeholder="e.g. Materials for pump repair" required></div>
+      <div><label>For task (optional)</label>
+        <select name="task">
+          <option value="">— none —</option>
+          {% for t in tasks %}<option value="{{ t.id }}" {% if task and t.id == task.id %}selected{% endif %}>{{ t.name }}</option>{% endfor %}
+        </select></div>
+      <div><label>Needed by</label><input type="date" name="needed_by"></div>
+    </div>
+    <label style="margin-top:8px;">Notes</label>
+    <textarea name="notes" rows="2" placeholder="Anything the approver/buyer should know"></textarea>
+  </div>
+
+  <h2>Items needed</h2>
+  <div class="card" style="padding:0;">
+    <table>
+      <tr><th>Description</th><th style="width:90px;">Qty</th><th style="width:100px;">Unit</th>
+          <th style="width:140px;" class="right">Est. price</th></tr>
+      {% for i in "12345" %}
+      <tr>
+        <td><input type="text" name="description" placeholder="{% if forloop.first %}e.g. Hydraulic Pipe 50mm{% endif %}"></td>
+        <td><input type="number" step="0.01" name="quantity" value="1"></td>
+        <td><input type="text" name="unit" value="each"></td>
+        <td><input type="number" step="0.01" name="est_unit_price" placeholder="auto" style="text-align:right;"></td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  <p class="muted" style="font-size:12.5px;">Leave the price blank to use the last price you paid for that item.</p>
+  <button class="btn" type="submit" style="margin-top:8px;">Create request</button>
+</form>
+{% endblock %}

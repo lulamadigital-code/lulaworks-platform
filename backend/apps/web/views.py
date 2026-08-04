@@ -2098,6 +2098,136 @@ def product_merge(request, pk):
 
 
 @login_required
+def requests_list(request):
+    """Internal procurement requests — what tasks need, before it's bought."""
+    from apps.procurement.models import ProcurementRequest, ProcurementRequestStatus
+    from apps.procurement.services import procurement_approval_required
+
+    status = (request.GET.get("status") or "").strip()
+    qs = ProcurementRequest.objects.all().select_related("task", "project", "requested_by")
+    if status:
+        qs = qs.filter(status=status)
+    awaiting = ProcurementRequest.objects.filter(
+        status=ProcurementRequestStatus.SUBMITTED).count()
+    return render(request, "web/requests.html", {
+        "requests": qs, "statuses": ProcurementRequestStatus.choices, "status": status,
+        "awaiting": awaiting,
+        "approval_required": procurement_approval_required(request.user.active_company),
+        "can_approve": request.user.has_perm_code("procurement.manage"),
+        "can_config": request.user.has_perm_code("company.manage"),
+    })
+
+
+@login_required
+def request_new(request):
+    """Create a procurement request. GET renders the form; POST creates it and
+    submits it (auto-approved unless the company requires approval)."""
+    from apps.execution.models import Task
+    from apps.procurement.services import create_request, submit_request
+
+    if request.method == "POST":
+        task = Task.objects.filter(pk=request.POST.get("task")).first()
+        descriptions = request.POST.getlist("description")
+        quantities = request.POST.getlist("quantity")
+        units = request.POST.getlist("unit")
+        prices = request.POST.getlist("est_unit_price")
+        lines = [
+            {"description": d.strip(),
+             "quantity": quantities[i] if i < len(quantities) else 1,
+             "unit": units[i] if i < len(units) else "each",
+             "est_unit_price": prices[i] if i < len(prices) else ""}
+            for i, d in enumerate(descriptions) if d.strip()
+        ]
+        if not lines:
+            messages.error(request, "Add at least one item.")
+            return redirect("web:request_new")
+        req = create_request(
+            request.user.active_company, request.user,
+            title=(request.POST.get("title") or "Materials request").strip(),
+            task=task, notes=(request.POST.get("notes") or "").strip(),
+            needed_by=request.POST.get("needed_by") or None, lines=lines)
+        submit_request(req, request.user)
+        messages.success(request, f"Request {req.number} created.")
+        return redirect("web:request_detail", pk=req.id)
+
+    task = Task.objects.filter(pk=request.GET.get("task")).first()
+    return render(request, "web/request_new.html", {
+        "task": task, "tasks": Task.objects.all().order_by("name")[:500]})
+
+
+@login_required
+def request_detail(request, pk):
+    from apps.procurement.models import ProcurementRequest
+
+    req = get_object_or_404(
+        ProcurementRequest.objects.select_related("task", "project", "requested_by",
+                                                  "approved_by"), pk=pk)
+    return render(request, "web/request_detail.html", {
+        "req": req, "lines": req.lines.all(),
+        "can_approve": request.user.has_perm_code("procurement.manage"),
+    })
+
+
+def _request_guard(request, pk, *, need_manage=False):
+    from apps.procurement.models import ProcurementRequest
+    req = get_object_or_404(ProcurementRequest.objects.all(), pk=pk)
+    if need_manage and not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You do not have permission.")
+        return req, False
+    return req, True
+
+
+@login_required
+@require_POST
+def request_approve(request, pk):
+    from apps.procurement.services import approve_request
+    req, ok = _request_guard(request, pk, need_manage=True)
+    if ok:
+        approve_request(req, request.user)
+        messages.success(request, f"Approved {req.number}.")
+    return redirect("web:request_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def request_reject(request, pk):
+    from apps.procurement.services import reject_request
+    req, ok = _request_guard(request, pk, need_manage=True)
+    if ok:
+        reject_request(req, request.user, reason=request.POST.get("reason", ""))
+        messages.info(request, f"Rejected {req.number}.")
+    return redirect("web:request_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def request_fulfil(request, pk):
+    from apps.procurement.services import fulfil_request
+    req, ok = _request_guard(request, pk, need_manage=True)
+    if ok:
+        fulfil_request(req, request.user)
+        messages.success(request, f"{req.number} marked as purchased.")
+    return redirect("web:request_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def request_settings(request):
+    """Toggle whether purchases need approval (optional per company)."""
+    from apps.administration.models import CompanySettings
+    if not request.user.has_perm_code("company.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:requests")
+    s, _ = CompanySettings.objects.get_or_create(company=request.user.active_company)
+    rules = dict(s.approval_rules or {})
+    rules["procurement_required"] = bool(request.POST.get("procurement_required"))
+    s.approval_rules = rules
+    s.save(update_fields=["approval_rules", "updated_at"])
+    messages.success(request, "Procurement approval setting updated.")
+    return redirect("web:requests")
+
+
+@login_required
 def purchase_orders_list(request):
     pos = PurchaseOrder.objects.all().select_related("supplier").prefetch_related("lines")
     return render(request, "web/purchase_orders.html",

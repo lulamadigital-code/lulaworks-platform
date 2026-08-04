@@ -5,7 +5,11 @@
   {% if task.project_id %}<a href="{% url 'web:project_detail' task.project_id %}">← {{ task.project.number }}</a>{% else %}<a href="{% url 'web:work' %}">← Work</a>{% endif %}
   · <a href="{% url 'web:work_detail' task.id %}">Task detail</a>
 </p>
-<h1>{{ task.name }}</h1>
+<div class="row">
+  <h1 style="margin:0;">{{ task.name }}</h1>
+  <span class="sp" style="flex:1;"></span>
+  <a class="btn ghost" href="{% url 'web:request_new' %}?task={{ task.id }}">Request materials</a>
+</div>
 <p class="sub">
   Operations{% if task.client_name %} · {{ task.client_name }}{% endif %}{% if task.site %} · {{ task.site }}{% endif %}
 </p>

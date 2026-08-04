@@ -1421,3 +1421,79 @@ class ProductsIntelligenceTests(TestCase):
             steel = [s for s in spend if s["category"] == "steel"]
             self.assertTrue(steel)
             self.assertEqual(steel[0]["total"], Decimal("5000"))
+
+
+class ProcurementRequestTests(TestCase):
+    """Internal requisition → optional approval → purchase."""
+
+    def _settings(self, c, required):
+        from apps.administration.models import CompanySettings
+        from apps.core.context import tenant_scope
+        with tenant_scope(c.id):
+            s, _ = CompanySettings.objects.get_or_create(company=c)
+            s.approval_rules = {"procurement_required": required}
+            s.save()
+
+    def test_autoapproves_when_approval_off(self):
+        from apps.core.context import tenant_scope
+        from apps.procurement.models import ProcurementRequest
+        c = make_company()
+        user = user_with(c, ["procurement.manage", "company.manage"])
+        self._settings(c, False)
+        self.client.force_login(user)
+        resp = self.client.post("/requests/new/", {
+            "title": "Pump materials",
+            "description": ["Bolts", "Oil"], "quantity": ["10", "2"],
+            "unit": ["ea", "L"], "est_unit_price": ["", ""]})
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(c.id):
+            r = ProcurementRequest.objects.get()
+            self.assertEqual(r.status, "approved")     # no approval needed
+            self.assertEqual(r.lines.count(), 2)
+
+    def test_needs_approval_when_on(self):
+        from apps.core.context import tenant_scope
+        from apps.procurement.models import ProcurementRequest
+        c = make_company()
+        user = user_with(c, ["procurement.manage"])
+        self._settings(c, True)
+        self.client.force_login(user)
+        self.client.post("/requests/new/", {
+            "title": "X", "description": ["Bolts"], "quantity": ["1"],
+            "unit": ["ea"], "est_unit_price": ["5"]})
+        with tenant_scope(c.id):
+            r = ProcurementRequest.objects.get()
+            self.assertEqual(r.status, "submitted")    # awaiting approval
+        self.client.post(f"/requests/{r.id}/approve/")
+        with tenant_scope(c.id):
+            r.refresh_from_db()
+            self.assertEqual(r.status, "approved")
+
+    def test_price_prefill_from_last_price(self):
+        from decimal import Decimal
+
+        from apps.core.context import tenant_scope
+        from apps.procurement.services import create_request, learn_from_receipt
+        c = make_company()
+        user = user_with(c, ["procurement.manage"])
+        with tenant_scope(c.id):
+            learn_from_receipt(c, user, supplier_name="Steel Co",
+                items=[{"description": "Steel beam", "unit": "m", "unit_price": "500"}])
+            req = create_request(c, user, title="T",
+                                 lines=[{"description": "Steel beam", "quantity": "2"}])
+            self.assertEqual(req.lines.first().est_unit_price, Decimal("500.00"))
+
+    def test_approve_requires_permission(self):
+        from apps.core.context import tenant_scope
+        from apps.procurement.services import create_request, submit_request
+        c = make_company()
+        worker = user_with(c, ["work.edit"], email="w@lulama.co.za")
+        self._settings(c, True)
+        with tenant_scope(c.id):
+            req = create_request(c, worker, title="T", lines=[{"description": "Bolts"}])
+            submit_request(req, worker)
+        self.client.force_login(worker)
+        self.client.post(f"/requests/{req.id}/approve/")   # no procurement.manage
+        with tenant_scope(c.id):
+            req.refresh_from_db()
+            self.assertEqual(req.status, "submitted")       # still pending
