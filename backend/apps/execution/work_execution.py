@@ -42,6 +42,15 @@ from .models import (
 _ZERO = Decimal("0.00")
 DEFAULT_GPS_TOLERANCE_M = 500
 
+#: How a field report's kind books into the finance cost ledger. The values are
+#: finance ``CostCategory`` codes (kept as plain strings to avoid a finance
+#: import here — finance is the downstream consumer, not us).
+REPORT_KIND_TO_COST_CATEGORY = {
+    ReportKind.MATERIAL: "material",
+    ReportKind.FUEL: "equipment",
+    ReportKind.EXPENSE: "other",
+}
+
 
 def _dec(value, default=_ZERO) -> Decimal:
     """Coerce anything the web/API hands us (str, int, float, None) to Decimal."""
@@ -223,6 +232,27 @@ def task_financials(task) -> dict:
         "material_items": material_items,
         "allocations": allocations,
     }
+
+
+def project_field_spend(project) -> dict[str, Decimal]:
+    """Actual field money captured against a project's tasks, grouped by finance
+    cost category.
+
+    This is real cash/card spend the crew recorded on site (material, fuel and
+    other expenses on :class:`TaskReport`) — money that never touched a
+    procurement PO. It is the WES half of the money loop: finance converges it
+    into the cost ledger so a manager's profitability reflects what was actually
+    spent, not only what came through supplier invoices."""
+    totals: dict[str, Decimal] = {}
+    rows = (
+        TaskReport.objects.filter(task__project=project, kind__in=FINANCIAL_REPORT_KINDS)
+        .values("kind")
+        .annotate(total=Sum("amount"))
+    )
+    for row in rows:
+        category = REPORT_KIND_TO_COST_CATEGORY.get(row["kind"], "other")
+        totals[category] = totals.get(category, _ZERO) + (row["total"] or _ZERO)
+    return totals
 
 
 def task_operational_dashboard(task, user=None) -> dict:

@@ -92,6 +92,81 @@ class ConvergenceTests(APITestCase):
         self.assertEqual(bva["labour"]["variance"], "9000.00")   # R9k over the R45k budget
 
 
+class FieldSpendConvergenceTests(APITestCase):
+    """The money loop closes: cash/card spend the crew captures in the field
+    (WES task reports) converges into the cost ledger and hits profitability,
+    alongside — never overwriting — procurement's supplier-invoice material."""
+
+    def test_field_reports_land_in_actuals_and_profitability(self):
+        from apps.execution.work_execution import create_task_report
+        from apps.execution.models import ReportKind
+        from .services import actual_cost
+
+        c = make_company()
+        with tenant_scope(c.id):
+            project, _ = awarded_project_with_budget(c)
+            task = Task.objects.create(company=c, project=project, name="Overhaul",
+                                       blocks_on_compliance=False)
+            # Crew buys steel cash on site (R2 000) and fuel (R800), plus a misc expense.
+            create_task_report(task, None, kind=ReportKind.MATERIAL,
+                               title="Steel offcuts", supplier="Steel & Pipe",
+                               amount=Decimal("2000"))
+            create_task_report(task, None, kind=ReportKind.FUEL,
+                               title="Diesel", supplier="Engen", amount=Decimal("800"))
+            create_task_report(task, None, kind=ReportKind.EXPENSE,
+                               title="Toll gate", amount=Decimal("150"))
+            result = rebuild_actuals_from_sources(project)
+            bva = {r["category"]: r for r in budget_vs_actual(project)["lines"]}
+            total = actual_cost(project)
+        # Field spend grouped by finance category, no procurement invoices in play.
+        self.assertEqual(result["field"], {"material": Decimal("2000"),
+                                           "equipment": Decimal("800"),
+                                           "other": Decimal("150")})
+        self.assertEqual(bva["material"]["actual"], "2000.00")   # field material shows through
+        self.assertEqual(bva["equipment"]["actual"], "800.00")   # fuel → equipment
+        self.assertEqual(bva["other"]["actual"], "150.00")
+        self.assertEqual(total, Decimal("2950.00"))              # all field spend in the ledger
+
+    def test_resync_is_idempotent(self):
+        """Running convergence twice must not double-count field spend."""
+        from apps.execution.work_execution import create_task_report
+        from apps.execution.models import ReportKind
+        from .services import actual_cost
+
+        c = make_company()
+        with tenant_scope(c.id):
+            project, _ = awarded_project_with_budget(c)
+            task = Task.objects.create(company=c, project=project, name="T",
+                                       blocks_on_compliance=False)
+            create_task_report(task, None, kind=ReportKind.MATERIAL,
+                               title="Bolts", supplier="Fastenal", amount=Decimal("500"))
+            rebuild_actuals_from_sources(project)
+            rebuild_actuals_from_sources(project)   # re-sync
+            total = actual_cost(project)
+        self.assertEqual(total, Decimal("500.00"))
+
+    def test_removed_receipt_self_corrects(self):
+        """Deleting a field receipt and re-syncing clears its ledger row — the
+        actual must fall back, not leave a stale cost behind."""
+        from apps.execution.work_execution import create_task_report
+        from apps.execution.models import ReportKind
+        from .services import actual_cost
+
+        c = make_company()
+        with tenant_scope(c.id):
+            project, _ = awarded_project_with_budget(c)
+            task = Task.objects.create(company=c, project=project, name="T",
+                                       blocks_on_compliance=False)
+            r = create_task_report(task, None, kind=ReportKind.MATERIAL,
+                                   title="Gaskets", supplier="Acme", amount=Decimal("900"))
+            rebuild_actuals_from_sources(project)
+            self.assertEqual(actual_cost(project), Decimal("900.00"))
+            r.delete()                              # receipt reversed
+            rebuild_actuals_from_sources(project)   # re-sync
+            total = actual_cost(project)
+        self.assertEqual(total, Decimal("0.00"))
+
+
 class ProfitabilityTests(APITestCase):
     def test_live_profitability(self):
         c = make_company()

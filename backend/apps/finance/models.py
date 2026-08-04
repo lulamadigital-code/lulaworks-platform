@@ -91,6 +91,7 @@ class BudgetLine(TenantBaseModel):
 class CostSource(models.TextChoices):
     TIMESHEETS = "timesheets", "Timesheets (labour)"
     SUPPLIER_INVOICES = "supplier_invoices", "Supplier invoices (material)"
+    FIELD_REPORTS = "field_reports", "Field reports (WES)"
     EXPENSE = "expense", "Expense"
     VARIATION = "variation", "Variation"
     MANUAL = "manual", "Manual adjustment"

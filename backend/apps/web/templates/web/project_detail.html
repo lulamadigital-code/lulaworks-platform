@@ -125,6 +125,9 @@
   <div class="tile"><div class="n">R{{ hub_spent }}</div><div class="l">Spent</div></div>
   <div class="tile"><div class="n">R{{ hub_materials }}</div><div class="l">Materials ({{ hub_materials_lines }})</div></div>
 </div>
+<p class="muted" style="font-size:12.5px;margin:2px 0 14px;">Field spend the crew
+  captures here (material, fuel &amp; expense receipts) flows straight into this
+  job's actual cost and profitability{% if not can_view_money %} (visible to finance){% endif %}.</p>
 {% if hub_requests %}
 <div class="card" style="padding:0;">
   <table>

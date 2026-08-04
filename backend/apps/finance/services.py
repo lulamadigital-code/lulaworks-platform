@@ -91,14 +91,30 @@ def _upsert_cost(project, *, category, amount, source, source_ref="", user=None)
 def rebuild_actuals_from_sources(project, user=None) -> dict:
     """Pull actual costs from the operational modules into the CostEntry ledger:
     labour from approved timesheets, material from 3-way-matchable supplier
-    invoices. Manual/variation entries are left untouched (upsert by source)."""
+    invoices, and the crew's field spend (material/fuel/expense receipts captured
+    on the job's tasks — WES). Manual/variation entries are left untouched
+    (upsert by source), so nothing double-counts."""
     from apps.execution.services import project_actual_costs
+    from apps.execution.work_execution import project_field_spend
     costs = project_actual_costs(project)
     _upsert_cost(project, category=CostCategory.LABOUR, amount=costs["labour"],
                  source=CostSource.TIMESHEETS, source_ref="approved timesheets", user=user)
     _upsert_cost(project, category=CostCategory.MATERIAL, amount=costs["material"],
                  source=CostSource.SUPPLIER_INVOICES, source_ref="supplier invoices", user=user)
-    return {"labour": costs["labour"], "material": costs["material"]}
+
+    # WES field spend — real cash/card money captured on the job's tasks, keyed by
+    # its own source so it sums alongside (never overwrites) procurement material.
+    # Field spend spans a *dynamic* set of categories, so we replace the prior
+    # field entries wholesale: that way an edited or deleted receipt — a category
+    # that drops to zero — self-corrects instead of leaving a stale ledger row.
+    field = project_field_spend(project)
+    with transaction.atomic():
+        project.cost_entries.filter(source=CostSource.FIELD_REPORTS).delete()
+        for category, amount in field.items():
+            _upsert_cost(project, category=category, amount=amount,
+                         source=CostSource.FIELD_REPORTS, source_ref="field reports", user=user)
+
+    return {"labour": costs["labour"], "material": costs["material"], "field": field}
 
 
 def actual_cost(project) -> Decimal:
