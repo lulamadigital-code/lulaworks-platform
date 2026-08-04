@@ -1331,3 +1331,93 @@ class WorkOperationsPageTests(TestCase):
         resp = self.client.get(f"/projects/{project.id}/")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, f"/work/{task.id}/operations/")
+
+
+class ProductsIntelligenceTests(TestCase):
+    """Products built from the price ledger — comparison, trend, aliases, spend."""
+
+    def _seed(self, c, user):
+        from apps.core.context import tenant_scope
+        from apps.procurement.services import learn_from_receipt
+        with tenant_scope(c.id):
+            learn_from_receipt(c, user, supplier_name="Hydraulics SA",
+                items=[{"description": "Hydraulic Pipe 50mm", "unit": "m", "unit_price": "185"}],
+                date="2026-02-01")
+            learn_from_receipt(c, user, supplier_name="Flow Systems",
+                items=[{"description": "Hydraulic Pipe 50mm", "unit": "m", "unit_price": "181"}],
+                date="2026-03-01")
+            learn_from_receipt(c, user, supplier_name="Hydraulics SA",
+                items=[{"description": "Hydraulic Pipe 50mm", "unit": "m", "unit_price": "190"}],
+                date="2026-04-01")
+
+    def test_product_intelligence(self):
+        from decimal import Decimal
+
+        from apps.core.context import tenant_scope
+        from apps.procurement.models import Product
+        from apps.procurement.services import product_intelligence
+        c = make_company()
+        user = user_with(c, ["procurement.manage"])
+        self._seed(c, user)
+        with tenant_scope(c.id):
+            p = Product.objects.get(name="Hydraulic Pipe 50mm")
+            intel = product_intelligence(p)
+            self.assertEqual(intel["times_bought"], 3)
+            self.assertEqual(intel["supplier_count"], 2)
+            self.assertEqual(intel["lowest"], Decimal("181.00"))
+            self.assertEqual(intel["highest"], Decimal("190.00"))
+            self.assertEqual(intel["cheapest"].supplier.name, "Flow Systems")  # 181 latest
+            self.assertGreaterEqual(len(intel["trend"]), 3)
+
+    def test_aliases_map_spellings(self):
+        from apps.core.context import tenant_scope
+        from apps.procurement.services import add_product_alias, resolve_product
+        c = make_company()
+        user = user_with(c, ["procurement.manage"])
+        with tenant_scope(c.id):
+            p = resolve_product(c, user, "Hydraulic Pipe 50mm")
+            add_product_alias(p, user, "Hyd Pipe 50mm")
+            self.assertEqual(resolve_product(c, user, "hyd pipe 50mm").id, p.id)
+
+    def test_products_pages_render(self):
+        from apps.core.context import tenant_scope
+        from apps.procurement.models import Product
+        c = make_company()
+        user = user_with(c, ["procurement.manage"])
+        self._seed(c, user)
+        self.client.force_login(user)
+        r = self.client.get("/products/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Hydraulic Pipe 50mm")
+        with tenant_scope(c.id):
+            pid = Product.objects.get(name="Hydraulic Pipe 50mm").id
+        r = self.client.get(f"/products/{pid}/")
+        self.assertContains(r, "Who sells it")
+        self.assertContains(r, "cheapest")
+
+    def test_spend_by_category(self):
+        from decimal import Decimal
+
+        from apps.core.context import tenant_scope
+        from apps.execution.models import ReportKind, Task
+        from apps.execution.work_execution import (
+            add_report_item, create_task_report, learn_supplier_from_receipt,
+        )
+        from apps.procurement.models import Product
+        from apps.procurement.services import spend_by_category
+        c = make_company()
+        user = user_with(c, ["procurement.manage"])
+        with tenant_scope(c.id):
+            task = Task.objects.create(company=c, name="Buy steel")
+            rep = create_task_report(task, user, kind=ReportKind.MATERIAL,
+                                     title="Invoice", supplier="Steel Co")
+            add_report_item(rep, description="Steel beam", unit="m",
+                            unit_price="500", line_total="5000")
+            learn_supplier_from_receipt(rep, user)
+            p = Product.objects.get(name="Steel beam")
+            p.category = "steel"
+            p.save()
+            spend = spend_by_category(c)
+            steel = [s for s in spend if s["category"] == "steel"]
+            self.assertTrue(steel)
+            self.assertEqual(steel[0]["total"], Decimal("5000"))

@@ -12,6 +12,8 @@ from apps.core.events import publish
 from .models import (
     GRNLine,
     POLine,
+    Product,
+    ProductAlias,
     PurchaseOrder,
     SupplierPrice,
     SupplierRFQStatus,
@@ -20,6 +22,154 @@ from .models import (
 
 def normalise(text: str) -> str:
     return " ".join(text.lower().split())
+
+
+# ── Products: one item, many spellings, across suppliers and time ─────────────
+
+def resolve_product(company, user, description, *, create=True):
+    """Map a written description to a Product via its aliases; create a new
+    Product (and seed alias) the first time we see an item. Returns None for an
+    empty description, or when `create=False` and nothing matches."""
+    key = normalise(description or "")
+    if not key:
+        return None
+    alias = (ProductAlias.objects.filter(company=company, key=key)
+             .select_related("product").first())
+    if alias:
+        return alias.product
+    if not create:
+        return None
+    product = Product.objects.create(
+        company=company, name=description.strip()[:255],
+        created_by=user, updated_by=user)
+    ProductAlias.objects.create(
+        company=company, product=product, label=description.strip()[:255],
+        key=key, created_by=user, updated_by=user)
+    return product
+
+
+def add_product_alias(product, user, label):
+    """Teach a Product another spelling. If that spelling already belongs to a
+    different product, it is re-pointed here (a lightweight merge)."""
+    key = normalise(label or "")
+    if not key:
+        return None
+    alias, created = ProductAlias.objects.get_or_create(
+        company=product.company, key=key,
+        defaults={"product": product, "label": label.strip()[:255],
+                  "created_by": user, "updated_by": user})
+    if not created and alias.product_id != product.id:
+        # Re-point the alias and its prices at this product (merge).
+        SupplierPrice.objects.filter(product_id=alias.product_id,
+                                     item_key=key).update(product=product)
+        alias.product = product
+        alias.label = label.strip()[:255]
+        alias.save(update_fields=["product", "label", "updated_at"])
+    return alias
+
+
+def merge_products(keep, drop, user):
+    """Fold `drop` into `keep`: move its aliases and prices, then delete it."""
+    if keep.id == drop.id:
+        return keep
+    drop.aliases.update(product=keep)
+    drop.prices.update(product=keep)
+    drop.delete()
+    return keep
+
+
+_STALE_DAYS = 182  # ~6 months → a recorded price is no longer reliable
+
+
+def product_intelligence(product):
+    """Everything a product page answers: who sells it, who's cheapest, how often
+    and when we bought it, the average/low/high, the price trend, and whether the
+    latest price is stale."""
+    from collections import OrderedDict
+
+    prices = list(product.prices.select_related("supplier").order_by("-date", "-created_at"))
+    amounts = [p.unit_price for p in prices]
+    today = timezone.localdate()
+    last = prices[0].date if prices else None
+
+    # Latest price per supplier → cheapest first (the comparison table).
+    latest_by_supplier = {}
+    for p in prices:            # already newest-first
+        latest_by_supplier.setdefault(p.supplier_id, p)
+    comparison = sorted(latest_by_supplier.values(), key=lambda p: p.unit_price)
+
+    # Monthly average → trend + % change.
+    monthly = OrderedDict()
+    for p in reversed(prices):  # oldest-first
+        monthly.setdefault(p.date.strftime("%Y-%m"), []).append(p.unit_price)
+    trend = [{"month": m, "avg": (sum(v) / len(v)).quantize(Decimal("0.01"))}
+             for m, v in monthly.items()]
+    pct_change = None
+    if len(trend) >= 2 and trend[0]["avg"]:
+        pct_change = ((trend[-1]["avg"] - trend[0]["avg"]) / trend[0]["avg"] * 100
+                      ).quantize(Decimal("0.1"))
+
+    return {
+        "product": product,
+        "times_bought": len(prices),
+        "last_bought": last,
+        "days_since": (today - last).days if last else None,
+        "is_stale": bool(last and (today - last).days > _STALE_DAYS),
+        "avg": (sum(amounts) / len(amounts)).quantize(Decimal("0.01")) if amounts else None,
+        "lowest": min(amounts) if amounts else None,
+        "highest": max(amounts) if amounts else None,
+        "supplier_count": len(latest_by_supplier),
+        "comparison": comparison,      # SupplierPrice rows, cheapest first
+        "cheapest": comparison[0] if comparison else None,
+        "trend": trend,
+        "pct_change": pct_change,
+        "prices": prices,
+    }
+
+
+def products_overview(company, *, q="", category=""):
+    """List products with quick stats for the Products page. `q` matches the name
+    or any alias (so 'pipe' finds 'Hydraulic Pipe 50mm')."""
+    products = Product.objects.all()
+    if category:
+        products = products.filter(category=category)
+    if q:
+        key = normalise(q)
+        ids = set(products.filter(name__icontains=q).values_list("id", flat=True))
+        ids |= set(ProductAlias.objects.filter(company=company, key__icontains=key)
+                   .values_list("product_id", flat=True))
+        products = products.filter(id__in=ids)
+    products = products.prefetch_related("prices__supplier").order_by("name")
+
+    rows = []
+    today = timezone.localdate()
+    for p in products:
+        prices = list(p.prices.all())
+        last = max((x.date for x in prices), default=None)
+        rows.append({
+            "product": p,
+            "times_bought": len(prices),
+            "suppliers": len({x.supplier_id for x in prices}),
+            "last_bought": last,
+            "is_stale": bool(last and (today - last).days > _STALE_DAYS),
+            "avg": (sum(x.unit_price for x in prices) / len(prices)).quantize(Decimal("0.01"))
+            if prices else None,
+        })
+    return rows
+
+
+def spend_by_category(company):
+    """Actual spend grouped by product category, from the material lines we've
+    captured on receipts. Uncategorised items fall under 'Other'."""
+    from apps.execution.models import TaskReportItem
+
+    totals = {}
+    for item in TaskReportItem.objects.all():
+        product = resolve_product(company, None, item.description, create=False)
+        cat = (product.category if product and product.category else "other")
+        totals[cat] = totals.get(cat, Decimal("0")) + (item.line_total or Decimal("0"))
+    return sorted(({"category": k, "total": v} for k, v in totals.items()),
+                  key=lambda r: r["total"], reverse=True)
 
 
 # ── Price ledger + anomaly (PROCUREMENT §10) ──────────────────────────────────
@@ -31,6 +181,7 @@ def record_supplier_prices(company, supplier_quote) -> int:
     for line in supplier_quote.lines.all():
         SupplierPrice.objects.create(
             company=company, supplier=supplier_quote.supplier,
+            product=resolve_product(company, None, line.description),
             item_key=normalise(line.description), description=line.description,
             unit=line.unit, unit_price=line.unit_price, date=today,
         )
@@ -72,6 +223,7 @@ def learn_from_receipt(company, user, *, supplier_name, items, date=None, curren
             continue
         SupplierPrice.objects.create(
             company=company, supplier=supplier,
+            product=resolve_product(company, user, desc),
             item_key=normalise(desc), description=desc,
             unit=get("unit") or "each", unit_price=Decimal(str(price)),
             currency=currency or "ZAR", date=day)

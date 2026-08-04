@@ -1,0 +1,92 @@
+{% extends "web/base.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:products' %}">← Products</a></p>
+<div class="row">
+  <h1 style="margin:0;">{{ product.name }}</h1>
+  <span class="sp" style="flex:1;"></span>
+  {% if product.category %}<span class="chip">{{ product.get_category_display }}</span>{% endif %}
+  {% if is_stale %}<span class="chip warn" title="Last price may no longer be reliable">stale price</span>{% endif %}
+</div>
+
+{# ── The product-knowledge answer ─────────────────────────────────────────── #}
+<div class="grid">
+  <div class="tile"><div class="n">{{ times_bought }}×</div><div class="l">Times bought</div></div>
+  <div class="tile"><div class="n">{{ supplier_count }}</div><div class="l">Suppliers</div></div>
+  <div class="tile"><div class="n">{% if avg %}R{{ avg }}{% else %}—{% endif %}</div><div class="l">Average</div></div>
+  <div class="tile"><div class="n">{% if lowest %}R{{ lowest }}{% else %}—{% endif %}</div><div class="l">Lowest</div></div>
+  <div class="tile"><div class="n">{% if highest %}R{{ highest }}{% else %}—{% endif %}</div><div class="l">Highest</div></div>
+  <div class="tile"><div class="n">{% if last_bought %}{{ last_bought|date:"d M Y" }}{% else %}—{% endif %}</div>
+    <div class="l">Last bought{% if days_since %} · {{ days_since }}d ago{% endif %}</div></div>
+</div>
+
+{# ── Who sells it, cheapest first ─────────────────────────────────────────── #}
+<h2>Who sells it</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Supplier</th><th class="right">Latest price</th><th>When</th><th></th></tr>
+    {% for p in comparison %}
+    <tr>
+      <td>{% if p.supplier.preferred %}★ {% endif %}<a href="{% url 'web:supplier_detail' p.supplier.id %}">{{ p.supplier.name }}</a></td>
+      <td class="right">{{ p.currency }} {{ p.unit_price }}{% if p.unit and p.unit != 'each' %} / {{ p.unit }}{% endif %}</td>
+      <td class="muted">{{ p.date|date:"d M Y" }}</td>
+      <td>{% if forloop.first %}<span class="chip ok">cheapest</span>{% endif %}</td>
+    </tr>
+    {% empty %}<tr><td colspan="4" class="muted" style="padding:16px;">No prices recorded yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{# ── Price trend ──────────────────────────────────────────────────────────── #}
+{% if trend %}
+<h2>Price trend{% if pct_change is not None %}
+  <span class="chip {% if pct_change > 0 %}bad{% elif pct_change < 0 %}ok{% endif %}"
+        style="font-weight:600;">{% if pct_change > 0 %}↑{% elif pct_change < 0 %}↓{% endif %} {{ pct_change }}%</span>{% endif %}</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Month</th>{% for t in trend %}<th class="right">{{ t.month }}</th>{% endfor %}</tr>
+    <tr><td class="muted">Avg price</td>{% for t in trend %}<td class="right">R{{ t.avg }}</td>{% endfor %}</tr>
+  </table>
+</div>
+{% endif %}
+
+{# ── Aliases, category, merge ─────────────────────────────────────────────── #}
+{% if can_manage %}
+<h2>Spellings &amp; category</h2>
+<div class="two-col">
+  <div><div class="card">
+    <strong>Category &amp; name</strong>
+    <form method="post" action="{% url 'web:product_edit' product.id %}" style="margin-top:10px;">
+      {% csrf_token %}
+      <input type="text" name="name" value="{{ product.name }}" placeholder="Name">
+      <select name="category" style="margin-top:8px;">
+        <option value="">Uncategorised</option>
+        {% for value, label in categories %}
+        <option value="{{ value }}" {% if product.category == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn" type="submit" style="margin-top:12px;">Save</button>
+    </form>
+  </div></div>
+  <div><div class="card">
+    <strong>Other spellings</strong>
+    <div style="margin:8px 0;">
+      {% for a in aliases %}<span class="chip">{{ a.label }}</span> {% endfor %}
+    </div>
+    <form method="post" action="{% url 'web:product_alias' product.id %}" class="row" style="gap:8px;margin:0;">
+      {% csrf_token %}
+      <input type="text" name="label" placeholder="Add a spelling (e.g. Hyd Pipe 50mm)" style="flex:1;">
+      <button class="btn ghost" type="submit">Add</button>
+    </form>
+    <form method="post" action="{% url 'web:product_merge' product.id %}" class="row" style="gap:8px;margin-top:10px;">
+      {% csrf_token %}
+      <select name="drop" style="flex:1;">
+        <option value="">Merge another product into this…</option>
+        {% for o in other_products %}<option value="{{ o.id }}">{{ o.name }}</option>{% endfor %}
+      </select>
+      <button class="btn ghost" type="submit">Merge</button>
+    </form>
+  </div></div>
+</div>
+{% endif %}
+{% endblock %}

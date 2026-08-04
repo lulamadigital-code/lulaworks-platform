@@ -24,7 +24,10 @@
     </div>
     <input type="text" name="categories" value="{{ supplier.categories|join:', ' }}"
            placeholder="Categories, comma-separated" style="margin-top:8px;">
-    <textarea name="notes" rows="2" placeholder="Notes" style="margin-top:8px;">{{ supplier.notes }}</textarea>
+    <textarea name="notes" rows="2" placeholder="Operational notes (e.g. delivers after 10am, min order R500)" style="margin-top:8px;">{{ supplier.notes }}</textarea>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:normal;">
+      <input type="checkbox" name="preferred" value="1" {% if supplier.preferred %}checked{% endif %} style="width:auto;">
+      ★ Preferred supplier</label>
     <button class="btn" type="submit" style="margin-top:12px;">Save</button>
   </form>
 </details>
@@ -83,17 +86,25 @@
   </form>
 </div>
 {% endif %}
+{% regroup documents|dictsort:"doc_type" by doc_type as doc_groups %}
+{% if doc_groups %}
+{% for group in doc_groups %}
 <div class="card" style="padding:0;">
+  <div class="row" style="padding:12px 16px;border-bottom:1px solid var(--line);">
+    <strong>{{ group.grouper|default:"Other"|capfirst }}</strong>
+    <span class="muted" style="margin-left:8px;">({{ group.list|length }})</span>
+  </div>
   <table>
-    <tr><th>Document</th><th>Type</th><th>Added</th></tr>
-    {% for d in documents %}
+    {% for d in group.list %}
     <tr>
       <td><a href="{{ d.file.url }}" target="_blank" rel="noopener">{{ d.name }}</a></td>
-      <td class="muted">{{ d.doc_type|default:"—" }}</td>
-      <td class="muted">{{ d.created_at|date:"d M Y" }}</td>
+      <td class="muted right">{{ d.created_at|date:"d M Y" }}</td>
     </tr>
-    {% empty %}<tr><td colspan="3" class="muted" style="padding:16px;">No documents yet.</td></tr>
     {% endfor %}
   </table>
 </div>
+{% endfor %}
+{% else %}
+<div class="card"><span class="muted">No documents yet.</span></div>
+{% endif %}
 {% endblock %}

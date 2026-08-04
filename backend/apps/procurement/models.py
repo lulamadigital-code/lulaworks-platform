@@ -44,11 +44,59 @@ class Supplier(TenantBaseModel):
         return self.name
 
 
+class ProductCategory(models.TextChoices):
+    HYDRAULICS = "hydraulics", "Hydraulics"
+    ELECTRICAL = "electrical", "Electrical"
+    STEEL = "steel", "Steel"
+    FASTENERS = "fasteners", "Fasteners"
+    BEARINGS = "bearings", "Bearings"
+    PPE = "ppe", "PPE"
+    CONSUMABLES = "consumables", "Consumables"
+    TOOLS = "tools", "Tools"
+    MECHANICAL = "mechanical", "Mechanical"
+    PLUMBING = "plumbing", "Plumbing"
+    OTHER = "other", "Other"
+
+
+class Product(TenantBaseModel):
+    """A thing we buy, tracked across suppliers and time. The same item is written
+    a dozen ways on invoices ("Hyd Pipe 50mm", "Hydraulic Pipe"); ProductAlias maps
+    all of those to one Product so history and search stay clean."""
+
+    name = models.CharField(max_length=255)  # canonical display name
+    category = models.CharField(max_length=20, choices=ProductCategory.choices, blank=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class ProductAlias(TenantBaseModel):
+    """A normalised spelling that resolves to a Product. `key` is the normalised
+    form used for matching; `label` is what was written."""
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="aliases")
+    label = models.CharField(max_length=255)
+    key = models.CharField(max_length=200, db_index=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["company", "key"], name="uniq_product_alias_key"),
+        ]
+
+    def __str__(self):
+        return self.label
+
+
 class SupplierPrice(TenantBaseModel):
     """Append-only historical price ledger (PROCUREMENT §10) — feeds estimation
     and quote-anomaly detection."""
 
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name="prices")
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name="prices")
     item_key = models.CharField(max_length=200, db_index=True)  # normalised description
     description = models.CharField(max_length=500)
     unit = models.CharField(max_length=32, default="each")

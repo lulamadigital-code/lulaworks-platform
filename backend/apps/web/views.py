@@ -1905,6 +1905,7 @@ def supplier_edit(request, pk):
         return redirect("web:supplier_detail", pk=pk)
     for key, value in fields.items():
         setattr(supplier, key, value)
+    supplier.preferred = bool(request.POST.get("preferred"))
     supplier.updated_by = request.user
     supplier.save()
     messages.success(request, "Supplier updated.")
@@ -2005,6 +2006,95 @@ def supplier_import_confirm(request):
     verb = "Added" if created else "Updated"
     messages.success(request, f"{verb} {supplier.name} — {n} price(s) recorded.")
     return redirect("web:supplier_detail", pk=supplier.id)
+
+
+@login_required
+def products_list(request):
+    """Products we buy, built from the price ledger — with a spend-by-category
+    breakdown. Search matches names and aliases."""
+    from apps.procurement.models import ProductCategory
+    from apps.procurement.services import products_overview, spend_by_category
+
+    q = (request.GET.get("q") or "").strip()
+    category = (request.GET.get("category") or "").strip()
+    return render(request, "web/products.html", {
+        "rows": products_overview(request.user.active_company, q=q, category=category),
+        "spend": spend_by_category(request.user.active_company),
+        "categories": ProductCategory.choices, "q": q, "category": category,
+    })
+
+
+@login_required
+def product_detail(request, pk):
+    """The product-knowledge page: who sells it, who's cheapest, how often/when we
+    bought it, avg/low/high, price trend, aliases and category."""
+    from apps.procurement.models import Product, ProductCategory
+    from apps.procurement.services import product_intelligence
+
+    product = get_object_or_404(Product.objects.all(), pk=pk)
+    ctx = product_intelligence(product)
+    ctx.update({
+        "categories": ProductCategory.choices,
+        "aliases": product.aliases.all(),
+        "other_products": Product.objects.exclude(pk=pk).order_by("name")[:500],
+        "can_manage": request.user.has_perm_code("procurement.manage"),
+    })
+    return render(request, "web/product_detail.html", ctx)
+
+
+@login_required
+@require_POST
+def product_edit(request, pk):
+    from apps.procurement.models import Product
+
+    product = get_object_or_404(Product.objects.all(), pk=pk)
+    if not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:product_detail", pk=pk)
+    name = (request.POST.get("name") or "").strip()
+    if name:
+        product.name = name
+    product.category = (request.POST.get("category") or "").strip()
+    product.updated_by = request.user
+    product.save()
+    messages.success(request, "Product updated.")
+    return redirect("web:product_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def product_alias(request, pk):
+    from apps.procurement.models import Product
+    from apps.procurement.services import add_product_alias
+
+    product = get_object_or_404(Product.objects.all(), pk=pk)
+    if not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:product_detail", pk=pk)
+    label = (request.POST.get("label") or "").strip()
+    if label:
+        add_product_alias(product, request.user, label)
+        messages.success(request, f"“{label}” now maps to {product.name}.")
+    return redirect("web:product_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def product_merge(request, pk):
+    """Fold another product into this one (duplicate cleanup, #8)."""
+    from apps.procurement.models import Product
+    from apps.procurement.services import merge_products
+
+    keep = get_object_or_404(Product.objects.all(), pk=pk)
+    if not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You do not have permission.")
+        return redirect("web:product_detail", pk=pk)
+    drop = Product.objects.filter(pk=request.POST.get("drop")).first()
+    if drop and drop.id != keep.id:
+        name = drop.name
+        merge_products(keep, drop, request.user)
+        messages.success(request, f"Merged “{name}” into {keep.name}.")
+    return redirect("web:product_detail", pk=pk)
 
 
 @login_required

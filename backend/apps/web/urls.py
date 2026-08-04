@@ -127,6 +127,12 @@ urlpatterns = [
     path("suppliers/<uuid:pk>/edit/", views.supplier_edit, name="supplier_edit"),
     path("suppliers/<uuid:pk>/documents/", views.supplier_document,
          name="supplier_document"),
+    # Products (procurement intelligence — built from the price ledger)
+    path("products/", views.products_list, name="products"),
+    path("products/<uuid:pk>/", views.product_detail, name="product_detail"),
+    path("products/<uuid:pk>/edit/", views.product_edit, name="product_edit"),
+    path("products/<uuid:pk>/alias/", views.product_alias, name="product_alias"),
+    path("products/<uuid:pk>/merge/", views.product_merge, name="product_merge"),
     path("purchase-orders/", views.purchase_orders_list, name="purchase_orders"),
     path("purchase-orders/<uuid:pk>/", views.po_detail, name="po_detail"),
     path("purchase-orders/<uuid:pk>/approve/", views.po_approve, name="po_approve"),

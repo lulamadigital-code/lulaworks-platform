@@ -1,0 +1,48 @@
+{% extends "web/base.html" %}
+{% block title %}Products{% endblock %}
+{% block content %}
+<h1>Products</h1>
+<p class="sub">What you buy — built from every receipt and supplier price.
+  <a href="{% url 'web:suppliers' %}">Suppliers →</a></p>
+
+{% if spend %}
+<h2>Spend by category</h2>
+<div class="grid">
+  {% for s in spend %}
+  <div class="tile"><div class="n">R{{ s.total }}</div><div class="l">{{ s.category|capfirst }}</div></div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<form method="get" class="filterbar">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search a product (name or spelling)…" style="flex:2;min-width:180px;">
+  <select name="category">
+    <option value="">Any category</option>
+    {% for value, label in categories %}
+    <option value="{{ value }}" {% if category == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn ghost" type="submit">Search</button>
+</form>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Product</th><th>Category</th><th class="right">Suppliers</th>
+        <th class="right">Bought</th><th class="right">Avg price</th><th>Last bought</th></tr>
+    {% for r in rows %}
+    <tr>
+      <td><a href="{% url 'web:product_detail' r.product.id %}">{{ r.product.name }}</a></td>
+      <td class="muted">{{ r.product.get_category_display|default:"—" }}</td>
+      <td class="right">{{ r.suppliers }}</td>
+      <td class="right">{{ r.times_bought }}×</td>
+      <td class="right">{% if r.avg %}R{{ r.avg }}{% else %}—{% endif %}</td>
+      <td class="muted">{% if r.last_bought %}{{ r.last_bought|date:"d M Y" }}
+        {% if r.is_stale %}<span class="chip warn" title="Price may no longer be reliable">stale</span>{% endif %}
+        {% else %}—{% endif %}</td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">
+      {% if q or category %}No products match.{% else %}No products yet — they appear as you record purchases.{% endif %}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

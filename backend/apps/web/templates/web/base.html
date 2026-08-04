@@ -342,6 +342,7 @@
       {% if perms_procurement or perms_money %}
       <span class="nav-gap"></span>
       {% if perms_procurement %}{% include "web/_navlink.html" with url='web:purchase_orders' key='procurement' label='Purchasing' icon='cart' %}{% endif %}
+      {% if perms_procurement %}{% include "web/_navlink.html" with url='web:products' key='products' label='Products' icon='box' %}{% endif %}
       {% if perms_money %}{% include "web/_navlink.html" with url='web:commercial' key='commercial' label='Commercial' icon='cash' %}{% endif %}
       {% endif %}
 
