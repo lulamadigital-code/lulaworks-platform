@@ -17,12 +17,12 @@ def logo_static_name() -> str:
 
 _SECTIONS = {
     "dashboard": "dashboard",
-    "work": "work", "work_new": "work", "work_detail": "work",
-    "work_start": "work", "work_complete": "work", "work_transition": "work",
-    "work_subtask_add": "work", "work_checklist_add": "work",
-    "work_checklist_toggle": "work", "work_comment_add": "work",
-    "work_file_add": "work", "work_member": "work", "work_link": "work",
-    "work_decompose": "work", "work_decompose_apply": "work",
+    "work": "jobs", "work_new": "jobs", "work_detail": "jobs",
+    "work_start": "jobs", "work_complete": "jobs", "work_transition": "jobs",
+    "work_subtask_add": "jobs", "work_checklist_add": "jobs",
+    "work_checklist_toggle": "jobs", "work_comment_add": "jobs",
+    "work_file_add": "jobs", "work_member": "jobs", "work_link": "jobs",
+    "work_decompose": "jobs", "work_decompose_apply": "jobs",
     "notifications": "notifications",
     "people": "people", "people_add": "people", "people_role": "people",
     "people_status": "people", "person_detail": "people",

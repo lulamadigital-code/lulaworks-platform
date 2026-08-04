@@ -428,7 +428,7 @@ class UnifiedWorkTests(TestCase):
         self.client.force_login(mgr)
 
         # New standalone work — no project, no RFQ, no quotation
-        resp = self.client.post("/work/new/", {
+        resp = self.client.post("/jobs/new/", {
             "name": "Replace faulty DB board", "origin": "manual",
             "project": "", "is_billable": "on", "client_name": "Corner Cafe",
         })
@@ -440,10 +440,10 @@ class UnifiedWorkTests(TestCase):
             self.assertFalse(task.blocks_on_compliance)  # no project → no gate
             self.assertEqual(task.status, TaskStatus.READY)  # ready immediately
 
-        self.client.post(f"/work/{task.id}/start/")
+        self.client.post(f"/jobs/{task.id}/start/")
         with tenant_scope(c.id):
             self.assertEqual(Task.objects.get(id=task.id).status, TaskStatus.IN_PROGRESS)
-        self.client.post(f"/work/{task.id}/complete/", {"actual_hours": "2"})
+        self.client.post(f"/jobs/{task.id}/complete/", {"actual_hours": "2"})
         with tenant_scope(c.id):
             self.assertEqual(Task.objects.get(id=task.id).status, TaskStatus.COMPLETED)
 
@@ -451,7 +451,7 @@ class UnifiedWorkTests(TestCase):
         c = make_company()
         viewer = user_with(c, ["projects.view"], email="v@lulama.co.za")
         self.client.force_login(viewer)
-        resp = self.client.post("/work/new/", {"name": "X"})
+        resp = self.client.post("/jobs/new/", {"name": "X"})
         self.assertEqual(resp.status_code, 302)  # redirected, not created
         from apps.execution.models import Task
         with tenant_scope(c.id):
@@ -464,7 +464,7 @@ class UnifiedWorkTests(TestCase):
             from apps.execution.services import create_work
             create_work(c, mgr, name="Standalone job", origin="manual")
         self.client.force_login(mgr)
-        self.assertContains(self.client.get("/work/"), "Standalone job")
+        self.assertContains(self.client.get("/jobs/"), "Standalone job")
 
 
 class EveryPageLoadsTests(TestCase):
@@ -1316,7 +1316,7 @@ class WorkOperationsPageTests(TestCase):
     def test_operations_page_shows_money_map_and_flag(self):
         _, user, _, task = self._setup()
         self.client.force_login(user)
-        resp = self.client.get(f"/work/{task.id}/operations/")
+        resp = self.client.get(f"/jobs/{task.id}/operations/")
         self.assertEqual(resp.status_code, 200)
         body = resp.content.decode()
         self.assertIn("Allocated", body)
@@ -1330,7 +1330,7 @@ class WorkOperationsPageTests(TestCase):
         self.client.force_login(user)
         resp = self.client.get(f"/projects/{project.id}/")
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, f"/work/{task.id}/operations/")
+        self.assertContains(resp, f"/jobs/{task.id}/operations/")
 
 
 class ProductsIntelligenceTests(TestCase):
