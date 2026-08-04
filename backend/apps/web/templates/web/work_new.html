@@ -1,8 +1,8 @@
 {% extends "web/base.html" %}
-{% block title %}New Work{% endblock %}
+{% block title %}New Job{% endblock %}
 {% block content %}
-<p class="sub"><a href="{% url 'web:work' %}">← Work</a></p>
-<h1>New Work</h1>
+<p class="sub"><a href="{% url 'web:work' %}">← Jobs</a></p>
+<h1>New Job</h1>
 <p class="sub">One front door for every kind of work. Pick where it came from —
   the engine handles the rest. Leave the project blank for standalone work.</p>
 
@@ -14,7 +14,7 @@
     <p class="muted" style="margin:0 0 14px;font-size:13px;">The origin is the only
       real difference between jobs — everything after this is the same engine.</p>
 
-    <label>Work origin</label>
+    <label>Job origin</label>
     <div class="originpick">
       {% for value, label in origins %}
       <label class="opt">
@@ -37,7 +37,7 @@
       <div>
         <label>Project (optional — blank means standalone)</label>
         <select name="project">
-          <option value="">Standalone work</option>
+          <option value="">Standalone job</option>
           {% for p in projects %}<option value="{{ p.id }}">{{ p.number }} — {{ p.client_name }}</option>{% endfor %}
         </select>
       </div>
@@ -90,7 +90,7 @@
 
   <div class="card">
     <h2 style="margin:0 0 4px;">4 · Who is on it?</h2>
-    <p class="muted" style="margin:0 0 14px;font-size:13px;">Work is a team sport.
+    <p class="muted" style="margin:0 0 14px;font-size:13px;">A job is a team sport.
       One owner is accountable; watchers get told without being able to change anything.</p>
     <div class="two">
       <div>

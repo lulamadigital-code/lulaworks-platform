@@ -1,14 +1,14 @@
 {% extends "web/base.html" %}
 {% block title %}{{ task.name }}{% endblock %}
 {% block content %}
-<p class="sub"><a href="{% url 'web:work' %}">← Work</a></p>
+<p class="sub"><a href="{% url 'web:work' %}">← Jobs</a></p>
 
 <div class="pagehead">
   <div>
     <h1 style="margin:0 0 6px;">{{ task.name }}</h1>
     <p class="sub" style="margin:0;">
       {% if task.project %}<a href="{% url 'web:project_detail' task.project.id %}">{{ task.project.number }}</a>
-      {% else %}Standalone work{% endif %}
+      {% else %}Standalone job{% endif %}
       · {{ task.get_origin_display }}
       {% if task.client_name %} · {{ task.client_name }}{% endif %}
       {% if task.site %} · {{ task.site }}{% endif %}
@@ -23,7 +23,7 @@
   </div>
 </div>
 
-{# ── The work item's own dashboard ───────────────────────────────────────── #}
+{# ── The job's own dashboard ───────────────────────────────────────── #}
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">%</div>
     <div class="n">{{ progress_pct }}%</div><div class="l">Progress</div></div>

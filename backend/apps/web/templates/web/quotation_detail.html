@@ -61,13 +61,13 @@
   <form method="post" action="{% url 'web:quotation_create_delivery' quote.id %}">{% csrf_token %}
     <button class="btn" type="submit">Create delivery note</button></form>
   {% endif %}
-  {% comment %}Start Work turns the approved quotation into an operational
-  project · phases · tasks (no PO required); once it exists, Open Work.{% endcomment %}
+  {% comment %}Start Job turns the approved quotation into an operational
+  project · phases · tasks (no PO required); once it exists, Open Job.{% endcomment %}
   {% if existing_project %}
-  <a class="btn" href="{% url 'web:project_detail' existing_project.id %}">Open Work</a>
+  <a class="btn" href="{% url 'web:project_detail' existing_project.id %}">Open Job</a>
   {% elif po_active and can_start_work %}
   <form method="post" action="{% url 'web:quotation_start_work' quote.id %}">{% csrf_token %}
-    <button class="btn" type="submit">Start Work</button></form>
+    <button class="btn" type="submit">Start Job</button></form>
   {% endif %}
   {% comment %}Upload a customer PO — the action-bar button jumps to the upload
   card in the Purchase orders section below, where the file is chosen.{% endcomment %}
@@ -187,7 +187,7 @@
 <div class="card">
   <table class="kv">
     <tr><td class="muted">Projects</td><td>{{ trace.projects|length }}</td></tr>
-    <tr><td class="muted">Work items</td><td>{{ trace.tasks|length }}</td></tr>
+    <tr><td class="muted">Jobs</td><td>{{ trace.tasks|length }}</td></tr>
     {% if can_view_money %}<tr><td class="muted">Invoiced</td><td>R{{ trace.invoiced }}</td></tr>{% endif %}
   </table>
 </div>

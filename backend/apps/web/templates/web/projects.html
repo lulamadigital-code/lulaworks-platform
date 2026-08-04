@@ -5,7 +5,7 @@
 <p class="sub">{{ projects|length }} project{{ projects|length|pluralize }}.</p>
 <div class="card" style="padding:0;">
   <table>
-    <tr><th>Number</th><th>Title</th><th>Client</th><th>Work type</th><th>Status</th></tr>
+    <tr><th>Number</th><th>Title</th><th>Client</th><th>Job type</th><th>Status</th></tr>
     {% for p in projects %}
     <tr>
       <td><a href="{% url 'web:project_detail' p.id %}">{{ p.number }}</a></td>

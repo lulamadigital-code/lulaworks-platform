@@ -8,7 +8,7 @@
   <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">📁</div>
     <div class="n">{{ project_count }}</div><div class="l">Projects</div></div>
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">✓</div>
-    <div class="n">{{ work_total }}</div><div class="l">Work items</div></div>
+    <div class="n">{{ work_total }}</div><div class="l">Jobs</div></div>
   <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">⚑</div>
     <div class="n">{{ ready|add:in_execution }}</div><div class="l">Ready / in progress</div></div>
   <div class="tile"><div class="ic" style="background:var(--red-t);color:#c22a41;">!</div>
@@ -30,7 +30,7 @@
 
 <div class="charts">
   <div class="card">
-    <h2 style="margin:0 0 16px;">Work by status</h2>
+    <h2 style="margin:0 0 16px;">Jobs by status</h2>
     {% if donut.segments %}
     <div style="display:flex;align-items:center;gap:26px;flex-wrap:wrap;">
       <svg viewBox="0 0 140 140" width="150" height="150" style="flex:0 0 150px;">
@@ -51,11 +51,11 @@
         {% endfor %}
       </div>
     </div>
-    {% else %}<p class="muted">No work yet — create some from the Work tab.</p>{% endif %}
+    {% else %}<p class="muted">No jobs yet — create some from the Jobs tab.</p>{% endif %}
   </div>
 
   <div class="card">
-    <h2 style="margin:0 0 16px;">Work by origin</h2>
+    <h2 style="margin:0 0 16px;">Jobs by origin</h2>
     {% if origins %}
     {% for o in origins %}
     <div class="barrow">
@@ -63,7 +63,7 @@
       <div class="track"><div class="fill" style="width:{{ o.pct }}%;background:{{ o.color }};">{{ o.count }}</div></div>
     </div>
     {% endfor %}
-    <p class="muted" style="margin-top:14px;font-size:13px;">Everything is Work — the only difference is how it started.</p>
+    <p class="muted" style="margin-top:14px;font-size:13px;">Every job runs through one engine — the only difference is how it started.</p>
     {% else %}<p class="muted">No work yet.</p>{% endif %}
   </div>
 </div>

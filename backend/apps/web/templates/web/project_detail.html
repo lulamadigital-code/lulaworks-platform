@@ -5,7 +5,7 @@
 <h1>{{ project.title|default:project.client_name }}</h1>
 <p class="sub">{{ project.number }} · {{ project.client_name }}{% if project.site %} · {{ project.site }}{% endif %}{% if project.work_type %} · {{ project.work_type }}{% endif %}</p>
 
-<h2>Work readiness</h2>
+<h2>Readiness</h2>
 {% include "web/_readiness.html" %}
 
 {% if can_compliance and not readiness.gate_status == 'ready' and not readiness.gate_status == 'overridden' %}
@@ -59,7 +59,7 @@
 {% endif %}
 
 {% if has_tasks %}
-<h2>Work &amp; tasks</h2>
+<h2>Jobs &amp; tasks</h2>
 <div class="card" style="padding:0;">
   <table>
     {% for phase in phases %}

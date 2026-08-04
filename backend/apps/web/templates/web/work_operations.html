@@ -2,7 +2,7 @@
 {% block title %}Operations · {{ task.name }}{% endblock %}
 {% block content %}
 <p class="sub">
-  {% if task.project_id %}<a href="{% url 'web:project_detail' task.project_id %}">← {{ task.project.number }}</a>{% else %}<a href="{% url 'web:work' %}">← Work</a>{% endif %}
+  {% if task.project_id %}<a href="{% url 'web:project_detail' task.project_id %}">← {{ task.project.number }}</a>{% else %}<a href="{% url 'web:work' %}">← Jobs</a>{% endif %}
   · <a href="{% url 'web:work_detail' task.id %}">Task detail</a>
 </p>
 <div class="row">
@@ -14,11 +14,11 @@
   Operations{% if task.client_name %} · {{ task.client_name }}{% endif %}{% if task.site %} · {{ task.site }}{% endif %}
 </p>
 
-{# ── Work Details header (operational) ─────────────────────────────────── #}
+{# ── Job Details header (operational) ─────────────────────────────────── #}
 {% if task.project_id %}
 <div class="card">
   <div class="grid" style="margin:0;">
-    <div class="tile"><div class="n">{% if task.project.work_manager %}{{ task.project.work_manager.get_full_name|default:task.project.work_manager.email }}{% else %}—{% endif %}</div><div class="l">Work manager</div></div>
+    <div class="tile"><div class="n">{% if task.project.work_manager %}{{ task.project.work_manager.get_full_name|default:task.project.work_manager.email }}{% else %}—{% endif %}</div><div class="l">Job manager</div></div>
     <div class="tile"><div class="n">{{ task.project.get_priority_display }}</div><div class="l">Priority</div></div>
     <div class="tile"><div class="n">{{ task.project.planned_start|default:"—" }}</div><div class="l">Start</div></div>
     <div class="tile"><div class="n">{{ task.project.due_date|default:"—" }}</div><div class="l">Due</div></div>

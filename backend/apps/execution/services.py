@@ -219,7 +219,7 @@ def create_work(company, user, *, name, origin=None, project=None, description="
     publish("WorkCreated", company=company, subject=task, actor=user,
             payload={"name": name, "origin": origin,
                      "standalone": project is None, "billable": is_billable})
-    notify_team(task, verb="task_assigned", title=f"New work: {task.name}", actor=user)
+    notify_team(task, verb="task_assigned", title=f"New job: {task.name}", actor=user)
     return task
 
 

@@ -374,7 +374,7 @@ def work_list(request):
 def work_new(request):
     """The universal New Work wizard — the same front door for every origin."""
     if not has_work_perm(request.user, "work.create"):
-        messages.error(request, "You do not have permission to create work.")
+        messages.error(request, "You do not have permission to create a job.")
         return redirect("web:work")
 
     company = request.user.active_company
@@ -416,7 +416,7 @@ def work_new(request):
         for f in request.FILES.getlist("attachments"):
             add_attachment(task, request.user, uploaded_file=f)
 
-        messages.success(request, f"Work created: {task.name}.")
+        messages.success(request, f"Job created: {task.name}.")
         return redirect("web:work_detail", pk=task.id)
 
     return render(request, "web/work_new.html", {
@@ -3183,7 +3183,7 @@ def quotation_po(request, pk):
             project = None
         if project is not None:
             audit(request, "work.initiated", entity=project)
-            messages.success(request, f"Work {project.number} created from "
+            messages.success(request, f"Job {project.number} created from "
                                       f"{quote.number} — opening it now.")
             return redirect("web:project_detail", pk=project.id)
     return redirect("web:quotation_detail", pk=pk)
@@ -3198,7 +3198,7 @@ def quotation_start_work(request, pk):
     from apps.quotes.services import QuotationError, initiate_work_from_quotation
     quote = get_object_or_404(Quotation.objects.all(), pk=pk)
     if not request.user.has_perm_code("projects.create"):
-        messages.error(request, "You do not have permission to start work.")
+        messages.error(request, "You do not have permission to start a job.")
         return redirect("web:quotation_detail", pk=pk)
     try:
         project = initiate_work_from_quotation(quote, request.user)
@@ -3207,7 +3207,7 @@ def quotation_start_work(request, pk):
         return redirect("web:quotation_detail", pk=pk)
     from apps.core.audit import audit
     audit(request, "work.initiated", entity=project)
-    messages.success(request, f"Work {project.number} created from {quote.number}.")
+    messages.success(request, f"Job {project.number} created from {quote.number}.")
     return redirect("web:project_detail", pk=project.id)
 
 
@@ -3218,7 +3218,7 @@ def quotation_award(request, pk):
     from apps.quotes.services import QuotationError, award_to_work
     quote = get_object_or_404(Quotation.objects.all(), pk=pk)
     if not request.user.has_perm_code("projects.create"):
-        messages.error(request, "You do not have permission to award work.")
+        messages.error(request, "You do not have permission to award a job.")
         return redirect("web:quotation_detail", pk=pk)
     try:
         result = award_to_work(quote, request.user,

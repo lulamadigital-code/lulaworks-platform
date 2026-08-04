@@ -4,10 +4,10 @@
 
 <div class="pagehead">
   <div>
-    <h1>Work</h1>
-    <p class="sub" style="margin:0;">Everything is Work — the only difference is how it started.</p>
+    <h1>Jobs</h1>
+    <p class="sub" style="margin:0;">Every job runs through one engine — the only difference is how it started.</p>
   </div>
-  {% if can_manage %}<a class="btn" href="{% url 'web:work_new' %}">+ New Work</a>{% endif %}
+  {% if can_manage %}<a class="btn" href="{% url 'web:work_new' %}">+ New Job</a>{% endif %}
 </div>
 
 <div class="grid">
@@ -106,7 +106,7 @@
 {% elif view == 'table' %}
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Work</th><th>Origin</th><th>Project</th><th>Owner</th><th>Priority</th>
+    <tr><th>Job</th><th>Origin</th><th>Project</th><th>Owner</th><th>Priority</th>
         <th>Due</th><th>Progress</th><th>Status</th></tr>
     {% for t in tasks %}
     <tr>
