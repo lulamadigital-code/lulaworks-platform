@@ -1546,3 +1546,40 @@ class ProjectCreateTests(TestCase):
         self.client.post("/projects/new/", {"title": "X", "client_name": "Y"})
         with tenant_scope(c.id):
             self.assertFalse(Project.objects.filter(title="X").exists())
+
+
+class JobHubTests(TestCase):
+    """The project (job) detail page pulls in commercial docs, money/materials
+    rolled up from its tasks, procurement requests and a timeline."""
+
+    def test_hub_shows_everything(self):
+        from decimal import Decimal
+
+        from apps.core.context import tenant_scope
+        from apps.execution.models import AllocationKind, ReportKind, Task
+        from apps.execution.work_execution import (
+            allocate_task_resource, create_task_report,
+        )
+        from apps.procurement.services import create_request
+        c = make_company()
+        user = user_with(c, ["projects.create", "projects.view", "finance.view_money",
+                             "procurement.manage"])
+        with tenant_scope(c.id):
+            project = awarded_project(c)          # has a quotation
+            task = Task.objects.create(company=c, project=project, name="Buy pipes")
+            allocate_task_resource(task, user, kind=AllocationKind.PURCHASE_BUDGET,
+                                   amount_allocated="5000")
+            create_task_report(task, user, kind=ReportKind.MATERIAL, title="Pipe",
+                               amount="1800")
+            create_request(c, user, title="More pipe", task=task,
+                           lines=[{"description": "Pipe", "quantity": "3"}])
+        self.client.force_login(user)
+        r = self.client.get(f"/projects/{project.id}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Commercial documents")
+        self.assertContains(r, project.quotation.display_number)   # quote linked
+        self.assertContains(r, "Materials &amp; procurement")
+        self.assertContains(r, "R5000")          # allocated rollup
+        self.assertContains(r, "R1800")          # spent rollup
+        self.assertContains(r, "More pipe")      # procurement request
+        self.assertContains(r, "Timeline")

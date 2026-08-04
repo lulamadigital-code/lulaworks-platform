@@ -85,6 +85,77 @@
   </table>
 </div>
 
+{# ── Commercial documents (the paper trail for this job) ─────────────────── #}
+<h2>Commercial documents</h2>
+<div class="card" style="padding:0;">
+  <table>
+    {% if hub_quote %}
+    <tr><td><span class="chip info">Quotation</span></td>
+      <td><a href="{% url 'web:quotation_detail' hub_quote.id %}">{{ hub_quote.display_number }}</a></td>
+      <td class="muted">{{ hub_quote.get_status_display }}</td>
+      <td class="right">{% if can_view_money %}R{{ hub_quote.total }}{% endif %}</td></tr>
+    {% endif %}
+    {% for po in hub_pos %}
+    <tr><td><span class="chip purple">Customer PO</span></td>
+      <td>{{ po.number|default:"—" }}</td><td class="muted">received</td>
+      <td class="right">{% if can_view_money and po.value %}R{{ po.value }}{% endif %}</td></tr>
+    {% endfor %}
+    {% for d in hub_invoices %}
+    <tr><td><span class="chip ok">Tax invoice</span></td>
+      <td><a href="{% url 'web:commercial_document_detail' d.id %}">{{ d.number }}</a></td>
+      <td class="muted">{{ d.get_status_display }}</td>
+      <td class="right"><a href="{% url 'web:commercial_document_pdf' d.id %}">PDF</a></td></tr>
+    {% endfor %}
+    {% for d in hub_deliveries %}
+    <tr><td><span class="chip">Delivery note</span></td>
+      <td><a href="{% url 'web:commercial_document_detail' d.id %}">{{ d.number }}</a></td>
+      <td class="muted">{{ d.get_status_display }}</td>
+      <td class="right"><a href="{% url 'web:commercial_document_pdf' d.id %}">PDF</a></td></tr>
+    {% endfor %}
+    {% if not hub_quote and not hub_invoices and not hub_deliveries %}
+    <tr><td colspan="4" class="muted" style="padding:16px;">No commercial documents — this job wasn't raised from a quotation.</td></tr>
+    {% endif %}
+  </table>
+</div>
+
+{# ── Materials & procurement rolled up from the job's tasks ──────────────── #}
+<h2>Materials &amp; procurement</h2>
+<div class="grid">
+  <div class="tile"><div class="n">R{{ hub_allocated }}</div><div class="l">Allocated</div></div>
+  <div class="tile"><div class="n">R{{ hub_spent }}</div><div class="l">Spent</div></div>
+  <div class="tile"><div class="n">R{{ hub_materials }}</div><div class="l">Materials ({{ hub_materials_lines }})</div></div>
+</div>
+{% if hub_requests %}
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Request</th><th>For</th><th>Status</th></tr>
+    {% for r in hub_requests %}
+    <tr>
+      <td><a href="{% url 'web:request_detail' r.id %}">{{ r.number }}</a> <span class="muted">{{ r.title }}</span></td>
+      <td class="muted">{% if r.task %}{{ r.task.name }}{% else %}—{% endif %}</td>
+      <td>{% if r.status == 'approved' %}<span class="chip ok">Approved</span>
+        {% elif r.status == 'submitted' %}<span class="chip warn">Awaiting</span>
+        {% elif r.status == 'fulfilled' %}<span class="chip ok">Fulfilled</span>
+        {% else %}<span class="chip">{{ r.get_status_display }}</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{# ── One timeline for the whole job ─────────────────────────────────────── #}
+{% if hub_timeline %}
+<h2>Timeline</h2>
+<div class="card">
+  {% for e in hub_timeline reversed %}
+  <div class="row" style="align-items:flex-start; gap:10px; padding:6px 0; {% if not forloop.last %}border-bottom:1px solid var(--line,#eee);{% endif %}">
+    <span class="muted" style="min-width:112px; font-size:12px;">{{ e.when|date:"d M H:i" }}</span>
+    <div><strong>{{ e.label }}</strong>{% if e.detail %}<div class="muted" style="font-size:13px;">{{ e.detail }}</div>{% endif %}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 <h2>Compliance checklist</h2>
 <div class="card" style="padding:0;">
   <table>

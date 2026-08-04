@@ -293,7 +293,50 @@ def project_detail(request, pk):
         context["profitability"] = profitability(project)
         context["forecast"] = profit_forecast(project)
         context["budget"] = budget_vs_actual(project)
+    context.update(_job_hub(project))
     return render(request, "web/project_detail.html", context)
+
+
+def _job_hub(project):
+    """Everything that hangs off this job/project, assembled for the hub view:
+    the commercial documents (quote · POs · invoices · delivery notes), the money
+    and materials rolled up from its tasks, its procurement requests, and one
+    merged timeline."""
+    from decimal import Decimal
+
+    from apps.execution.work_execution import task_financials, work_timeline
+    from apps.procurement.models import ProcurementRequest
+
+    quote = project.quotation
+    invoices = deliveries = pos = []
+    if quote is not None:
+        docs = list(quote.commercial_documents.all())
+        invoices = [d for d in docs if d.kind == "invoice"]
+        deliveries = [d for d in docs if d.kind == "delivery"]
+        pos = list(quote.customer_pos.all())
+
+    allocated = spent = materials = Decimal("0")
+    materials_lines = 0
+    for t in project.tasks.all():
+        fin = task_financials(t)
+        allocated += fin["allocated"]
+        spent += fin["spent"]
+        materials += fin["materials_total"]
+        materials_lines += fin["materials_count"]
+
+    return {
+        "hub_quote": quote,
+        "hub_pos": pos,
+        "hub_invoices": invoices,
+        "hub_deliveries": deliveries,
+        "hub_allocated": allocated,
+        "hub_spent": spent,
+        "hub_materials": materials,
+        "hub_materials_lines": materials_lines,
+        "hub_requests": list(ProcurementRequest.objects.filter(project=project)
+                             .select_related("task")[:20]),
+        "hub_timeline": work_timeline(project),
+    }
 
 
 @login_required
