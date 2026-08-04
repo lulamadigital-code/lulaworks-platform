@@ -53,7 +53,7 @@
   <div class="row" style="flex-wrap:wrap;gap:8px;">
     {% if computed_status == 'ready' and task.status != 'in_progress' %}
     <form method="post" action="{% url 'web:work_start' task.id %}">{% csrf_token %}
-      <button class="btn" type="submit">▶ Start work</button></form>
+      <button class="btn" type="submit">▶ Start job</button></form>
     {% endif %}
     {% for s in next_statuses %}
     <form method="post" action="{% url 'web:work_transition' task.id %}">{% csrf_token %}
@@ -232,7 +232,7 @@
       {% empty %}<p class="muted" style="margin:0;">Nothing is holding this up.</p>{% endfor %}
 
       {% if dependents %}
-      <p class="muted" style="margin:14px 0 6px;font-size:12.5px;">This work unblocks:</p>
+      <p class="muted" style="margin:14px 0 6px;font-size:12.5px;">This job unblocks:</p>
       {% for d in dependents %}
       <div class="deprow"><a href="{% url 'web:work_detail' d.to_task.id %}">{{ d.to_task.name }}</a></div>
       {% endfor %}

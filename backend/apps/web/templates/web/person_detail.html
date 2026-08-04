@@ -21,13 +21,13 @@
 
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▶</div>
-    <div class="n">{{ work.open_count }}</div><div class="l">Open work</div></div>
+    <div class="n">{{ work.open_count }}</div><div class="l">Open jobs</div></div>
   <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div>
     <div class="n">{{ work.past_count }}</div><div class="l">Completed</div></div>
   <div class="tile"><div class="ic" style="background:var(--red-t);color:#c22a41;">!</div>
     <div class="n">{{ work.overdue_count }}</div><div class="l">Overdue</div></div>
   <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">⏱</div>
-    <div class="n">{{ work.estimated_hours }}</div><div class="l">Hours on open work</div></div>
+    <div class="n">{{ work.estimated_hours }}</div><div class="l">Hours on open jobs</div></div>
 </div>
 
 {% if work.projects %}
@@ -70,7 +70,7 @@
   {% endfor %}
 </div>
 
-<h2>Past work ({{ work.past|length }})</h2>
+<h2>Past jobs ({{ work.past|length }})</h2>
 <div class="card" style="padding:0;">
   {% for entry in work.past %}
   <a class="workrow" href="{% url 'web:work_detail' entry.task.id %}">
@@ -86,7 +86,7 @@
     {% include "web/_statuschip.html" with s=entry.task %}
   </a>
   {% empty %}
-  <p class="muted" style="padding:22px;">No completed work yet.</p>
+  <p class="muted" style="padding:22px;">No completed jobs yet.</p>
   {% endfor %}
 </div>
 

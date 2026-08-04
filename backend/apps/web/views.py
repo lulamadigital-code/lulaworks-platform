@@ -156,7 +156,7 @@ _STATUS_META = {
     "closed": ("#676879", "Closed"), "cancelled": ("#c4c7d0", "Cancelled"),
 }
 _ORIGIN_META = {
-    "rfq": ("#a25ddc", "RFQ / Tender"), "manual": ("#579bfc", "Manual work"),
+    "rfq": ("#a25ddc", "RFQ / Tender"), "manual": ("#579bfc", "Manual job"),
     "project": ("#17a2b8", "Project"),
     "customer_request": ("#fdab3d", "Customer request"),
     "recurring": ("#00c875", "Recurring maintenance"),

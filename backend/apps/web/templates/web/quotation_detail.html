@@ -134,7 +134,7 @@
   <strong>Attach a purchase order</strong>
   <p class="muted" style="margin:6px 0 12px;font-size:12.5px;">Attach the customer's PO
     document — its number, date, value and payment terms are read straight off it,
-    so there is nothing to type. Several may be attached for staged work.</p>
+    so there is nothing to type. Several may be attached for staged jobs.</p>
   <form method="post" action="{% url 'web:quotation_po' quote.id %}"
         enctype="multipart/form-data" style="margin:0;">{% csrf_token %}
     <label class="btn" style="margin:0;cursor:pointer;">Choose PO document
@@ -148,14 +148,14 @@
 {% if can_edit or can_award %}
 {% if purchase_orders and can_award and quote.status != 'awarded' %}
 <div class="card" style="border-left:4px solid var(--green);border-radius:0 var(--r) var(--r) 0;">
-  <strong>Award and create work</strong>
+  <strong>Award and create job</strong>
   <p class="muted" style="margin:8px 0 12px;font-size:13px;">Moves the customer, site,
-    contact, scope and value into a project and a work item in one step.</p>
+    contact, scope and value into a project and a job in one step.</p>
   <form method="post" action="{% url 'web:quotation_award' quote.id %}"
-        data-confirm="Award {{ quote.number|escapejs }} and create the work?&#10;&#10;This is not reversible.">
+        data-confirm="Award {{ quote.number|escapejs }} and create the job?&#10;&#10;This is not reversible.">
     {% csrf_token %}
-    <input type="text" name="work_name" placeholder="Name for the work (optional)">
-    <button class="btn" type="submit" style="margin-top:12px;">Award → create work</button>
+    <input type="text" name="work_name" placeholder="Name for the job (optional)">
+    <button class="btn" type="submit" style="margin-top:12px;">Award → create job</button>
   </form>
 </div>
 {% endif %}

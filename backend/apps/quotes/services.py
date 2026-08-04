@@ -702,7 +702,7 @@ WORK_PHASES = ["Planning", "Procurement", "Execution", "Quality Check",
 
 #: Tasks added to every job, in their phase — the commercial close-out.
 _UNIVERSAL_TASKS = [
-    ("Planning", "Kick-off and plan the work"),
+    ("Planning", "Kick-off and plan the job"),
     ("Quality Check", "Quality check before delivery"),
     ("Invoicing", "Issue tax invoice"),
     ("Payment Tracking", "Follow up and record payment"),

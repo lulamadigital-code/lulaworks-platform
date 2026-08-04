@@ -148,11 +148,11 @@ class WorkOrigin(models.TextChoices):
     else flows through the same engine (the unified workflow)."""
 
     RFQ = "rfq", "RFQ / Tender"
-    MANUAL = "manual", "Manual work"
+    MANUAL = "manual", "Manual job"
     PROJECT = "project", "Project"
     CUSTOMER_REQUEST = "customer_request", "Customer request"
     RECURRING = "recurring", "Recurring maintenance"
-    INTERNAL = "internal", "Internal company work"
+    INTERNAL = "internal", "Internal company job"
     BREAKDOWN = "breakdown", "Breakdown / emergency callout"
     PREVENTATIVE = "preventative", "Preventative maintenance"
 

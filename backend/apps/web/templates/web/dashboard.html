@@ -41,7 +41,7 @@
                 transform="rotate({{ s.rotate }} 70 70)"/>
         {% endfor %}
         <text x="70" y="66" text-anchor="middle" font-size="26" font-weight="800" fill="#292f4c">{{ work_total }}</text>
-        <text x="70" y="84" text-anchor="middle" font-size="10" fill="#676879">work items</text>
+        <text x="70" y="84" text-anchor="middle" font-size="10" fill="#676879">jobs</text>
       </svg>
       <div class="legend">
         {% for s in donut.segments %}
@@ -64,7 +64,7 @@
     </div>
     {% endfor %}
     <p class="muted" style="margin-top:14px;font-size:13px;">Every job runs through one engine — the only difference is how it started.</p>
-    {% else %}<p class="muted">No work yet.</p>{% endif %}
+    {% else %}<p class="muted">No jobs yet.</p>{% endif %}
   </div>
 </div>
 

@@ -3,8 +3,8 @@
 {% block content %}
 <p class="sub"><a href="{% url 'web:work' %}">← Jobs</a></p>
 <h1>New Job</h1>
-<p class="sub">One front door for every kind of work. Pick where it came from —
-  the engine handles the rest. Leave the project blank for standalone work.</p>
+<p class="sub">One front door for every kind of job. Pick where it came from —
+  the engine handles the rest. Leave the project blank for a standalone job.</p>
 
 <form method="post" enctype="multipart/form-data">
   {% csrf_token %}
@@ -55,7 +55,7 @@
       </div>
     </div>
     <label class="inline" style="margin-top:14px;">
-      <input type="checkbox" name="is_billable" value="1"> Billable work</label>
+      <input type="checkbox" name="is_billable" value="1"> Billable job</label>
   </div>
 
   <div class="card">
@@ -133,7 +133,7 @@
   </div>
 
   <div class="row">
-    <button class="btn" type="submit">Create work</button>
+    <button class="btn" type="submit">Create job</button>
     <a href="{% url 'web:work' %}" class="muted" style="margin-left:14px;">Cancel</a>
   </div>
 </form>

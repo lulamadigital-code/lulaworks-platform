@@ -1,5 +1,5 @@
 {% extends "web/base.html" %}
-{% block title %}Work{% endblock %}
+{% block title %}Jobs{% endblock %}
 {% block content %}
 
 <div class="pagehead">
@@ -12,7 +12,7 @@
 
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▦</div>
-    <div class="n">{{ report.total }}</div><div class="l">Total work</div></div>
+    <div class="n">{{ report.total }}</div><div class="l">Total jobs</div></div>
   <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">▶</div>
     <div class="n">{{ report.open }}</div><div class="l">Open</div></div>
   <div class="tile"><div class="ic" style="background:var(--red-t);color:#c22a41;">!</div>
@@ -32,7 +32,7 @@
 
 <form method="get" class="filterbar">
   <input type="hidden" name="view" value="{{ view }}">
-  <input type="search" name="q" value="{{ f.q|default:'' }}" placeholder="Search work…" style="flex:2;min-width:150px;">
+  <input type="search" name="q" value="{{ f.q|default:'' }}" placeholder="Search jobs…" style="flex:2;min-width:150px;">
   <select name="origin">
     <option value="">All origins</option>
     {% for value, label in origins %}
@@ -53,7 +53,7 @@
   </select>
   <select name="scope">
     <option value="">Project + standalone</option>
-    <option value="project" {% if f.scope == 'project' %}selected{% endif %}>Project work</option>
+    <option value="project" {% if f.scope == 'project' %}selected{% endif %}>Project jobs</option>
     <option value="standalone" {% if f.scope == 'standalone' %}selected{% endif %}>Standalone</option>
   </select>
   <label class="inline"><input type="checkbox" name="mine" value="1" {% if f.mine %}checked{% endif %}> Mine</label>
@@ -78,7 +78,7 @@
     {% include "web/_statuschip.html" with s=t %}
   </a>
   {% empty %}
-  <p class="muted" style="padding:22px;">No work matches these filters.</p>
+  <p class="muted" style="padding:22px;">No jobs match these filters.</p>
   {% endfor %}
 </div>
 
@@ -121,7 +121,7 @@
       </td>
       <td>{% include "web/_statuschip.html" with s=t %}</td>
     </tr>
-    {% empty %}<tr><td colspan="8" class="muted" style="padding:20px;">No work matches these filters.</td></tr>{% endfor %}
+    {% empty %}<tr><td colspan="8" class="muted" style="padding:20px;">No jobs match these filters.</td></tr>{% endfor %}
   </table>
 </div>
 
@@ -140,7 +140,7 @@
   {% endfor %}
 </div>
 {% empty %}
-<div class="card"><p class="muted" style="margin:0;">Nothing scheduled — no work has a due date yet.</p></div>
+<div class="card"><p class="muted" style="margin:0;">Nothing scheduled — no job has a due date yet.</p></div>
 {% endfor %}
 {% if undated %}
 <h2>No due date ({{ undated|length }})</h2>
@@ -165,11 +165,11 @@
     <span class="muted" style="width:120px;font-size:12.5px;">{{ r.hours }}h est.
       {% if r.overdue %}· <span style="color:var(--red);">{{ r.overdue }} late</span>{% endif %}</span>
   </div>
-  {% empty %}<p class="muted" style="margin:0;">Nobody is assigned to open work yet.</p>{% endfor %}
+  {% empty %}<p class="muted" style="margin:0;">Nobody is assigned to open jobs yet.</p>{% endfor %}
 </div>
 {% if unassigned %}
 <div class="card" style="border-color:var(--orange-t);">
-  <h2 style="margin:0 0 10px;color:#b9711a;">Unassigned open work ({{ unassigned|length }})</h2>
+  <h2 style="margin:0 0 10px;color:#b9711a;">Unassigned open jobs ({{ unassigned|length }})</h2>
   {% for t in unassigned %}
   <a class="workrow flush" href="{% url 'web:work_detail' t.id %}">
     <span class="prio {{ t.priority }}"></span>

@@ -65,7 +65,7 @@
         <tr><td class="muted">Company</td><td>{{ person.active_company.name }}</td></tr>
         <tr><td class="muted">Role</td><td>{{ membership.role.name|default:"—" }}</td></tr>
         <tr><td class="muted">Job title</td><td>{{ membership.job_title|default:"—" }}</td></tr>
-        <tr><td class="muted">Open work</td><td>{{ work.open_count }}</td></tr>
+        <tr><td class="muted">Open jobs</td><td>{{ work.open_count }}</td></tr>
         <tr><td class="muted">Completed</td><td>{{ work.past_count }}</td></tr>
       </table>
       <p class="muted" style="margin:12px 0 0;font-size:12.5px;">
@@ -74,7 +74,7 @@
     </div>
 
     {% if work.current %}
-    <h2>Your open work</h2>
+    <h2>Your open jobs</h2>
     <div class="card" style="padding:0;">
       {% for entry in work.current %}
       <a class="workrow" href="{% url 'web:work_detail' entry.task.id %}">
