@@ -1,8 +1,13 @@
 {% extends "web/base.html" %}
 {% block title %}Projects{% endblock %}
 {% block content %}
-<h1>Projects</h1>
-<p class="sub">{{ projects|length }} project{{ projects|length|pluralize }}.</p>
+<div class="pagehead">
+  <div>
+    <h1>Projects</h1>
+    <p class="sub" style="margin:0;">A project groups related jobs. {{ projects|length }} project{{ projects|length|pluralize }}.</p>
+  </div>
+  {% if can_create %}<a class="btn" href="{% url 'web:project_create' %}">+ New project</a>{% endif %}
+</div>
 <div class="card" style="padding:0;">
   <table>
     <tr><th>Number</th><th>Title</th><th>Client</th><th>Job type</th><th>Status</th></tr>

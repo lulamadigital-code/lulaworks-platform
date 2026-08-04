@@ -1516,3 +1516,33 @@ class ProcurementDashboardTests(TestCase):
         r = self.client.get("/procurement/prices/")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Steel beam")
+
+
+class ProjectCreateTests(TestCase):
+    """A project can be started directly (a container), not only via a quotation."""
+
+    def test_create_project_directly(self):
+        from apps.core.context import tenant_scope
+        from apps.projects.models import Project
+        c = make_company()
+        user = user_with(c, ["projects.create"])
+        self.client.force_login(user)
+        self.assertContains(self.client.get("/projects/"), "+ New project")
+        resp = self.client.post("/projects/new/", {
+            "title": "Mine Shutdown 2026", "client_name": "Sasol", "site": "Secunda"})
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(c.id):
+            p = Project.objects.get(title="Mine Shutdown 2026")
+            self.assertEqual(p.client_name, "Sasol")
+            self.assertIsNone(p.quotation_id)          # no quotation behind it
+
+    def test_create_requires_permission(self):
+        from apps.core.context import tenant_scope
+        from apps.projects.models import Project
+        c = make_company()
+        user = user_with(c, ["projects.view"])         # lacks projects.create
+        self.client.force_login(user)
+        self.assertNotContains(self.client.get("/projects/"), "+ New project")
+        self.client.post("/projects/new/", {"title": "X", "client_name": "Y"})
+        with tenant_scope(c.id):
+            self.assertFalse(Project.objects.filter(title="X").exists())

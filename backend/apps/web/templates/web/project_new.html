@@ -1,0 +1,45 @@
+{% extends "web/base.html" %}
+{% block title %}New project{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:projects' %}">← Projects</a></p>
+<h1>New project</h1>
+<p class="sub">A container to group related jobs — e.g. a shutdown or a site upgrade.
+  You can add jobs to it afterwards, or start jobs standalone without a project.</p>
+
+<form method="post" action="{% url 'web:project_create' %}">
+  {% csrf_token %}
+  <div class="card">
+    <label>Title *</label>
+    <input type="text" name="title" required placeholder="e.g. Mine Shutdown 2026">
+    <div class="two" style="margin-top:8px;">
+      <div>
+        <label>Customer</label>
+        <select name="customer">
+          <option value="">— choose —</option>
+          {% for c in customers %}<option value="{{ c.id }}">{{ c.display_name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>…or client name</label>
+        <input type="text" name="client_name" placeholder="If not in your customers yet">
+      </div>
+      <div>
+        <label>Site</label>
+        <input type="text" name="site" placeholder="e.g. Secunda plant">
+      </div>
+      <div>
+        <label>Mine / area</label>
+        <input type="text" name="mine" placeholder="Optional">
+      </div>
+      <div>
+        <label>Job type</label>
+        <input type="text" name="job_type" placeholder="e.g. shutdown, maintenance">
+      </div>
+    </div>
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0;">The project opens in
+      <strong>pending compliance</strong> — its readiness gate stays closed until the
+      mandatory items are satisfied (or overridden), just like an awarded project.</p>
+  </div>
+  <button class="btn" type="submit">Create project</button>
+</form>
+{% endblock %}

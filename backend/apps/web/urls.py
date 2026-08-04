@@ -35,6 +35,7 @@ urlpatterns = [
     path("people/<uuid:pk>/status/", views.people_status, name="people_status"),
     path("", views.dashboard, name="dashboard"),
     path("projects/", views.projects_list, name="projects"),
+    path("projects/new/", views.project_create, name="project_create"),
     path("projects/<uuid:pk>/", views.project_detail, name="project_detail"),
     path("projects/<uuid:pk>/readiness/", views.readiness_partial, name="readiness_partial"),
     path("projects/<uuid:pk>/override/", views.project_override, name="project_override"),

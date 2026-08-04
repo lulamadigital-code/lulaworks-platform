@@ -226,7 +226,47 @@ def dashboard(request):
 @login_required
 def projects_list(request):
     projects = Project.objects.all().select_related("quotation")
-    return render(request, "web/projects.html", {"projects": projects})
+    return render(request, "web/projects.html", {
+        "projects": projects,
+        "can_create": request.user.has_perm_code("projects.create"),
+    })
+
+
+@login_required
+def project_create(request):
+    """Start a Project directly (a container to group jobs), independent of any
+    quotation."""
+    from apps.core.audit import audit
+    from apps.customers.models import Customer
+    from apps.projects.services import create_project
+
+    if not request.user.has_perm_code("projects.create"):
+        messages.error(request, "You do not have permission to create a project.")
+        return redirect("web:projects")
+
+    if request.method == "POST":
+        customer = Customer.objects.filter(pk=request.POST.get("customer")).first()
+        title = (request.POST.get("title") or "").strip()
+        client_name = (request.POST.get("client_name") or "").strip()
+        if not title:
+            messages.error(request, "Give the project a title.")
+            return redirect("web:project_create")
+        if not customer and not client_name:
+            messages.error(request, "Choose a customer or type a client name.")
+            return redirect("web:project_create")
+        project = create_project(
+            request.user.active_company, request.user,
+            title=title, client_name=client_name, customer=customer,
+            site=(request.POST.get("site") or "").strip(),
+            mine=(request.POST.get("mine") or "").strip(),
+            work_type=(request.POST.get("job_type") or "").strip())
+        audit(request, "project.created", entity=project)
+        messages.success(request, f"Project {project.number} created.")
+        return redirect("web:project_detail", pk=project.id)
+
+    from apps.core.audit import audit  # noqa: F401 (import kept near use below)
+    return render(request, "web/project_new.html",
+                  {"customers": Customer.objects.all().order_by("name")})
 
 
 @login_required

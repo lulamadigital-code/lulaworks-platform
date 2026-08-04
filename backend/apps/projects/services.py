@@ -40,3 +40,22 @@ def award_quotation(company, user, *, quotation, work_type="", mine="", site="")
     from apps.finance.services import create_budget_from_estimate
     create_budget_from_estimate(project, user)
     return project
+
+
+@transaction.atomic
+def create_project(company, user, *, title="", client_name="", customer=None,
+                   site="", mine="", work_type="") -> Project:
+    """Start a Project directly — a container to group jobs, with no quotation
+    behind it (a company may run project-first, or bundle several jobs under one
+    engagement). Same compliance gate as an awarded project."""
+    project = Project.objects.create(
+        company=company, number=next_number(company, "project"),
+        title=title, client_name=client_name or (customer.display_name if customer else ""),
+        customer=customer, site=site, mine=mine, work_type=work_type,
+        awarded_at=timezone.now(), created_by=user, updated_by=user,
+    )
+    publish("ProjectCreated", company=company, subject=project, actor=user,
+            payload={"number": project.number, "quotation": None, "work_type": work_type})
+    from apps.compliance.services import discover_requirements
+    discover_requirements(project, user)
+    return project
