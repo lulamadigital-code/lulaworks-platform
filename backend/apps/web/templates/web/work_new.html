@@ -38,7 +38,7 @@
         <label>Project (optional — blank means standalone)</label>
         <select name="project">
           <option value="">Standalone job</option>
-          {% for p in projects %}<option value="{{ p.id }}">{{ p.number }} — {{ p.client_name }}</option>{% endfor %}
+          {% for p in projects %}<option value="{{ p.id }}" {% if p.id|stringformat:'s' == preset_project %}selected{% endif %}>{{ p.number }} — {{ p.client_name }}</option>{% endfor %}
         </select>
       </div>
       <div>

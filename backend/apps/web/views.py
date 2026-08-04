@@ -434,7 +434,7 @@ def work_new(request):
 
         task = create_work(
             company, request.user,
-            name=request.POST.get("name", "").strip() or "Untitled work",
+            name=request.POST.get("name", "").strip() or "Untitled job",
             description=request.POST.get("description", "").strip(),
             origin=request.POST.get("origin") or WorkOrigin.MANUAL,
             project=project, phase=phase,
@@ -465,6 +465,7 @@ def work_new(request):
         "risks": RiskLevel.choices,
         "projects": Project.objects.all(),
         "people": _company_users(request.user),
+        "preset_project": request.GET.get("project") or "",
     })
 
 

@@ -58,8 +58,11 @@
 </div>
 {% endif %}
 
-{% if has_tasks %}
-<h2>Jobs &amp; tasks</h2>
+<div class="row" style="margin:26px 0 12px;">
+  <h2 style="margin:0;">Jobs &amp; tasks</h2>
+  <span class="sp" style="flex:1;"></span>
+  <a class="btn" href="{% url 'web:work_new' %}?project={{ project.id }}">+ Add job</a>
+</div>
 <div class="card" style="padding:0;">
   <table>
     {% for phase in phases %}
@@ -78,9 +81,9 @@
       <td class="right" style="width:120px;"><a class="btn" style="padding:5px 12px; font-size:13px;" href="{% url 'web:work_operations' t.id %}">Operations</a></td>
     </tr>
     {% endfor %}
+    {% if not has_tasks %}<tr><td colspan="4" class="muted" style="padding:16px;">No jobs yet — add the first one.</td></tr>{% endif %}
   </table>
 </div>
-{% endif %}
 
 <h2>Compliance checklist</h2>
 <div class="card" style="padding:0;">
