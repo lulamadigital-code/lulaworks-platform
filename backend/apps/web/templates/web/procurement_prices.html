@@ -1,0 +1,29 @@
+{% extends "web/base.html" %}
+{% block title %}Price history{% endblock %}
+{% block content %}
+<h1>Price history</h1>
+<p class="sub">Every price we've paid — the ledger that feeds product intelligence and estimates.</p>
+{% include "web/_procurement_nav.html" %}
+
+<form method="get" class="filterbar">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search an item…" style="flex:2;min-width:180px;">
+  <button class="btn ghost" type="submit">Search</button>
+</form>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Date</th><th>Item</th><th>Supplier</th><th>Unit</th><th class="right">Price</th></tr>
+    {% for p in rows %}
+    <tr>
+      <td class="muted">{{ p.date|date:"d M Y" }}</td>
+      <td>{% if p.product %}<a href="{% url 'web:product_detail' p.product.id %}">{{ p.description }}</a>{% else %}{{ p.description }}{% endif %}</td>
+      <td class="muted"><a href="{% url 'web:supplier_detail' p.supplier.id %}">{{ p.supplier.name }}</a></td>
+      <td class="muted">{{ p.unit }}</td>
+      <td class="right">{{ p.currency }} {{ p.unit_price }}</td>
+    </tr>
+    {% empty %}<tr><td colspan="5" class="muted" style="padding:20px;">
+      {% if q %}No prices match “{{ q }}”.{% else %}No prices recorded yet.{% endif %}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

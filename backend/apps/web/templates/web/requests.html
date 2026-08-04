@@ -8,6 +8,7 @@
   </div>
   <a class="btn" href="{% url 'web:request_new' %}">+ New request</a>
 </div>
+{% include "web/_procurement_nav.html" %}
 
 <div class="grid">
   <div class="tile"><div class="n">{{ awaiting }}</div><div class="l">Awaiting approval</div></div>

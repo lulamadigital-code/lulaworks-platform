@@ -1497,3 +1497,22 @@ class ProcurementRequestTests(TestCase):
         with tenant_scope(c.id):
             req.refresh_from_db()
             self.assertEqual(req.status, "submitted")       # still pending
+
+
+class ProcurementDashboardTests(TestCase):
+    def test_dashboard_and_price_history(self):
+        from apps.core.context import tenant_scope
+        from apps.procurement.services import learn_from_receipt
+        c = make_company()
+        user = user_with(c, ["procurement.manage"])
+        with tenant_scope(c.id):
+            learn_from_receipt(c, user, supplier_name="Steel Co",
+                items=[{"description": "Steel beam", "unit": "m", "unit_price": "500"}])
+        self.client.force_login(user)
+        r = self.client.get("/procurement/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Steel Co")          # top supplier card
+        self.assertContains(r, "Price history")      # sub-nav present
+        r = self.client.get("/procurement/prices/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Steel beam")

@@ -2,8 +2,8 @@
 {% block title %}Suppliers{% endblock %}
 {% block content %}
 <h1>Suppliers</h1>
-<p class="sub">Everyone you buy from — added automatically when you attach a receipt,
-  or added by hand below. <a href="{% url 'web:purchase_orders' %}">Purchase orders →</a></p>
+<p class="sub">Everyone you buy from — added automatically when you attach a receipt, or added by hand below.</p>
+{% include "web/_procurement_nav.html" %}
 
 {% if can_manage %}
 <div class="two-col">

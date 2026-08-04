@@ -2228,6 +2228,27 @@ def request_settings(request):
 
 
 @login_required
+def procurement_dashboard(request):
+    """The Procurement home page — suppliers, purchases, requests and spend at a
+    glance, with the section's sub-navigation."""
+    from apps.procurement.services import procurement_dashboard_metrics
+    return render(request, "web/procurement_dashboard.html",
+                  procurement_dashboard_metrics(request.user.active_company))
+
+
+@login_required
+def procurement_prices(request):
+    """Price history — the append-only ledger of everything we've paid."""
+    from apps.procurement.models import SupplierPrice
+    q = (request.GET.get("q") or "").strip()
+    rows = SupplierPrice.objects.select_related("supplier", "product")
+    if q:
+        rows = rows.filter(description__icontains=q)
+    rows = rows.order_by("-date", "-created_at")[:300]
+    return render(request, "web/procurement_prices.html", {"rows": rows, "q": q})
+
+
+@login_required
 def purchase_orders_list(request):
     pos = PurchaseOrder.objects.all().select_related("supplier").prefetch_related("lines")
     return render(request, "web/purchase_orders.html",

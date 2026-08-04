@@ -2,8 +2,8 @@
 {% block title %}Products{% endblock %}
 {% block content %}
 <h1>Products</h1>
-<p class="sub">What you buy — built from every receipt and supplier price.
-  <a href="{% url 'web:suppliers' %}">Suppliers →</a></p>
+<p class="sub">What you buy — built from every receipt and supplier price.</p>
+{% include "web/_procurement_nav.html" %}
 
 {% if spend %}
 <h2>Spend by category</h2>

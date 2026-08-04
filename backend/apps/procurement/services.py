@@ -423,3 +423,42 @@ def fulfil_request(req, user):
     req.save(update_fields=["status", "updated_by", "updated_at"])
     publish("ProcurementRequestFulfilled", company=req.company, subject=req, actor=user)
     return req
+
+
+# ── Procurement dashboard (the section's home page) ───────────────────────────
+
+def procurement_dashboard_metrics(company):
+    """Headline numbers for the Procurement home page."""
+    from django.db.models import Count, Sum
+
+    from apps.execution.models import ReportKind, TaskReport
+    from .models import Supplier
+
+    today = timezone.localdate()
+    month_start = today.replace(day=1)
+    mat = TaskReport.objects.filter(kind=ReportKind.MATERIAL)
+
+    most = (Product.objects.annotate(n=Count("prices")).filter(n__gt=0)
+            .order_by("-n").first())
+    top = (Supplier.objects.annotate(n=Count("prices")).filter(n__gt=0)
+           .order_by("-n").first())
+    return {
+        "active_suppliers": Supplier.objects.count(),
+        "products": Product.objects.count(),
+        "todays_purchases": mat.filter(reported_at__date=today).count(),
+        "month_spend": mat.filter(reported_at__date__gte=month_start)
+                          .aggregate(s=Sum("amount"))["s"] or Decimal("0"),
+        "awaiting_approval": ProcurementRequest.objects.filter(
+            status=ProcurementRequestStatus.SUBMITTED).count(),
+        "open_requests": ProcurementRequest.objects.filter(
+            status__in=[ProcurementRequestStatus.DRAFT,
+                        ProcurementRequestStatus.SUBMITTED,
+                        ProcurementRequestStatus.APPROVED]).count(),
+        "most_purchased": most,
+        "top_supplier": top,
+        "recent_requests": list(
+            ProcurementRequest.objects.select_related("task", "requested_by")[:6]),
+        "recent_prices": list(
+            SupplierPrice.objects.select_related("supplier", "product")
+            .order_by("-date", "-created_at")[:8]),
+    }

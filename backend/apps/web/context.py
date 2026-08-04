@@ -55,12 +55,13 @@ _SECTIONS = {
     "compliance_item_approve": "projects",
     "estimates": "estimates", "estimate_detail": "estimates",
     "estimate_approve": "estimates", "estimate_revise": "estimates",
+    "procurement": "procurement", "procurement_prices": "procurement",
     "suppliers": "procurement", "supplier_detail": "procurement",
     "purchase_orders": "procurement", "po_detail": "procurement",
     "po_approve": "procurement", "po_receive": "procurement",
+    "products": "procurement", "product_detail": "procurement",
+    "requests": "procurement", "request_new": "procurement", "request_detail": "procurement",
     "commercial": "commercial", "invoice_payment": "commercial",
-    "products": "products", "product_detail": "products",
-    "requests": "requests", "request_new": "requests", "request_detail": "requests",
     "lulama": "lulama",
 }
 
