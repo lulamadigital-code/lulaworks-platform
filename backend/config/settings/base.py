@@ -102,6 +102,13 @@ DATABASES = {
         "PASSWORD": config("DB_PASSWORD"),
         "HOST": config("DB_HOST", default="localhost"),
         "PORT": config("DB_PORT", default="5432"),
+        # Connection pooling: hold a connection open for CONN_MAX_AGE seconds
+        # instead of reconnecting per request (0 = old behaviour). CONN_HEALTH_CHECKS
+        # discards a pooled connection that died between requests so a reused
+        # connection never serves an error.
+        "CONN_MAX_AGE": config("DB_CONN_MAX_AGE", default=60, cast=int),
+        "CONN_HEALTH_CHECKS": True,
+        "OPTIONS": {"connect_timeout": config("DB_CONNECT_TIMEOUT", default=10, cast=int)},
     }
 }
 
@@ -191,6 +198,13 @@ CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS", default="http://localhost:3000"
 ).split(",")
 
+# Behind the nginx reverse proxy the browser talks HTTPS to a real domain, so
+# Django must trust that origin for CSRF (POSTs from the manager web / admin).
+# Comma-separated, scheme-qualified, e.g. "https://app.lulaworks.co.za".
+CSRF_TRUSTED_ORIGINS = [
+    o for o in config("CSRF_TRUSTED_ORIGINS", default="").split(",") if o
+]
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Africa/Johannesburg"
 USE_I18N = True
@@ -209,10 +223,27 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Structured logging: human-readable text in dev, single-line JSON in prod
+# (LOG_FORMAT=json) so logs drop straight into CloudWatch / Loki / an ELK stack
+# with no reparsing. Everything still goes to stdout/stderr — the container
+# runtime (Docker, later ECS) owns collection, never a file inside the container.
+LOG_FORMAT = config("LOG_FORMAT", default="plain")
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "formatters": {"verbose": {"format": "{levelname} {asctime} {name} {message}", "style": "{"}},
-    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "verbose"}},
+    "formatters": {
+        "verbose": {"format": "{levelname} {asctime} {name} {message}", "style": "{"},
+        "json": {
+            "()": "pythonjsonlogger.json.JsonFormatter",
+            "format": "%(levelname)s %(asctime)s %(name)s %(module)s %(process)d %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json" if LOG_FORMAT == "json" else "verbose",
+        }
+    },
     "root": {"handlers": ["console"], "level": config("LOG_LEVEL", default="INFO")},
 }

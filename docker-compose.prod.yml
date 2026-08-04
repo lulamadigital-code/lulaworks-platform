@@ -1,0 +1,235 @@
+# LulaWorks — PRODUCTION stack (single-node Docker Compose).
+#
+# Target: a DigitalOcean droplet in Phase 1. The SAME images run on AWS in
+# Phase 2 — there you drop the `db` and `redis` services and point DB_HOST /
+# REDIS_URL at RDS + ElastiCache (see docs/DEPLOYMENT.md → "AWS migration").
+#
+#   Bring up:   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#   Logs:       docker compose -f docker-compose.prod.yml logs -f web
+#   Monitoring: docker compose -f docker-compose.prod.yml --profile monitoring up -d
+#
+# Design rules honoured here:
+#   • one responsibility per container            • non-root app user (in image)
+#   • db + redis NEVER publish a host port        • only nginx faces the internet
+#   • persistent data lives in named volumes      • every service has a healthcheck
+#   • secrets come from .env.prod (gitignored)    • workers run OUTSIDE the web container
+
+x-app-env: &app-env
+  env_file: .env.prod
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.prod
+
+services:
+  # ── Reverse proxy: the only service bound to host ports ────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./infra/nginx/snippets:/etc/nginx/snippets:ro
+      - static-data:/app/staticfiles:ro       # served directly, populated by web
+      - media-data:/app/media:ro              # served directly, written by web/worker
+      - certbot-webroot:/var/www/certbot:ro   # Let's Encrypt HTTP-01 challenge
+      - letsencrypt:/etc/letsencrypt:ro        # certs (once issued)
+      - nginx-logs:/var/log/nginx
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost/health/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+
+  # ── Django web app (gunicorn only — no background work here) ───────────────
+  web:
+    build: ./backend
+    image: lulaworks/api:prod            # ONE image, reused by worker + beat
+    <<: *app-env
+    restart: unless-stopped
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application -c gunicorn.conf.py"
+    volumes:
+      - static-data:/app/staticfiles       # collectstatic target (nginx reads it)
+      - media-data:/app/media              # uploads (nginx reads it)
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 1G
+
+  # ── Celery worker (background jobs: AI extraction, PDFs, exports, email) ────
+  worker:
+    image: lulaworks/api:prod
+    <<: *app-env
+    restart: unless-stopped
+    command: celery -A config worker -l info --concurrency=${CELERY_CONCURRENCY:-4}
+    volumes:
+      - media-data:/app/media              # tasks read/write the same uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping -t 10 >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1G
+
+  # ── Celery beat (scheduler: reminders, cleanups, scheduled reports) ─────────
+  beat:
+    image: lulaworks/api:prod
+    <<: *app-env
+    restart: unless-stopped
+    command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+
+  # ── PostgreSQL (internal only — no published port) ─────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-lulaworks_platform}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env.prod}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-lulaworks_platform}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1G
+
+  # ── Redis (broker + cache; internal only, append-only persistence) ─────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: >
+      redis-server --appendonly yes
+                   --maxmemory ${REDIS_MAXMEMORY:-256mb}
+                   --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 320M
+
+  # ── Nightly database backup (pg_dump → backups volume, with retention) ──────
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+    entrypoint: ["/bin/sh", "/usr/local/bin/entrypoint.sh"]
+    volumes:
+      - ./infra/backup/backup.sh:/usr/local/bin/backup.sh:ro
+      - ./infra/backup/restore.sh:/usr/local/bin/restore.sh:ro
+      - ./infra/backup/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+      - backups-data:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+
+  # ── Flower — Celery monitoring UI (optional; `--profile monitoring`) ────────
+  # Dedicated image (keeps the app image lean). Bound to localhost only: reach
+  # it via an SSH tunnel, never the public net.
+  flower:
+    image: mher/flower:2.0
+    restart: unless-stopped
+    command: celery flower --port=5555
+    environment:
+      CELERY_BROKER_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${REDIS_URL:-redis://redis:6379/0}
+    ports:
+      - "127.0.0.1:5555:5555"
+    depends_on:
+      redis:
+        condition: service_healthy
+    profiles: ["monitoring"]
+
+  # ── pgAdmin — DB console (optional; `--profile debug`, DEV/staging only) ────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@lulaworks.local}
+      # Soft default so the base stack always parses; set a real password in
+      # .env.prod before actually enabling the debug profile.
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-change-me-before-using-pgadmin}
+      PGADMIN_LISTEN_PORT: 5050
+    ports:
+      - "127.0.0.1:5050:5050"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: ["debug"]
+
+volumes:
+  postgres-data:
+  redis-data:
+  media-data:
+  static-data:
+  backups-data:
+  nginx-logs:
+  letsencrypt:
+  certbot-webroot:
+  pgadmin-data:

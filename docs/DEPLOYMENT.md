@@ -1,98 +1,312 @@
-# LulaWorks — Container-First Deployment
+# LulaWorks — Deployment & Infrastructure
 
-**Core architectural requirement:** LulaWorks is a **container-first** application. All application services run as Docker containers, configured **only** through environment variables, with **no persistent data inside containers**. The same setup runs locally (docker compose) and in production (Amazon ECS) **without code changes**.
+Production infrastructure for the LulaWorks platform. Phase 1 targets a single
+**DigitalOcean** droplet with Docker Compose; Phase 2 lifts the *same images* to
+**AWS** with only configuration changes. This document is the operator's source
+of truth — you should be able to deploy, back up, and recover without reading
+application code.
+
+> Local development uses `docker-compose.yml` (db, redis, api, worker, beat on
+> named volumes). Production uses `docker-compose.prod.yml` (this document).
 
 ---
 
-## 1. Principles
+## 1. Container architecture
 
-- **12-factor config:** every setting comes from environment variables (`python-decouple` reads `os.environ`). No config baked into images; no secrets in the repo or images (`.env*` are gitignored and `.dockerignore`d).
-- **Stateless app containers:** API/worker/beat hold no state. All persistent data lives in **external services**: PostgreSQL, Redis, S3, SES. Uploaded files go to **S3** (never the container filesystem); static files are served by **WhiteNoise** from the image.
-- **One image, many commands:** a single image runs the API, the Celery worker, and Celery beat — they differ only by their start command. This guarantees they never drift apart.
-- **External backing services in production:** Postgres → **RDS**, Redis → **ElastiCache**, files → **S3**, email → **SES**, secrets → **Secrets Manager**. These are *not* application containers.
+One responsibility per container. In production, **only nginx faces the
+internet** — everything else talks over the private Docker network.
 
-## 2. Services
+| Service   | Image                   | Responsibility                                             | Host port |
+|-----------|-------------------------|------------------------------------------------------------|-----------|
+| `nginx`   | `nginx:1.27-alpine`     | TLS termination, reverse proxy, static/media, gzip, rate limiting, security headers | 80, 443 |
+| `web`     | `lulaworks/api:prod`    | Django + Gunicorn only (API, auth, business logic)         | — (internal) |
+| `worker`  | `lulaworks/api:prod`    | Celery worker — background jobs (AI extraction, PDFs, exports, email, notifications) | — |
+| `beat`    | `lulaworks/api:prod`    | Celery beat — scheduled jobs (reminders, cleanups, reports) | — |
+| `db`      | `postgres:16-alpine`    | PostgreSQL (persistent volume)                             | — (internal) |
+| `redis`   | `redis:7-alpine`        | Celery broker + Django cache (append-only persistence)     | — (internal) |
+| `backup`  | `postgres:16-alpine`    | Nightly `pg_dump` → `backups` volume, with retention        | — |
+| `flower`  | `mher/flower:2.0`       | *(optional, `--profile monitoring`)* Celery dashboard      | 127.0.0.1:5555 |
+| `pgadmin` | `dpage/pgadmin4`        | *(optional, `--profile debug`)* DB console                  | 127.0.0.1:5050 |
 
-| Service | Command | Prod backing service |
-|---|---|---|
-| **api** | `gunicorn config.wsgi:application` | ECS Fargate task (behind ALB) |
-| **worker** | `celery -A config worker` | ECS Fargate task |
-| **beat** | `celery -A config beat` | ECS Fargate task (single) |
-| db *(dev only)* | postgres container | **Amazon RDS PostgreSQL** |
-| redis *(dev only)* | redis container | **Amazon ElastiCache** |
+The `web`, `worker`, and `beat` services are the **same image** running
+different commands (12-factor). Background work never runs inside `web`.
 
-In production the `db` and `redis` containers are **not deployed** — the app points at RDS/ElastiCache via env vars.
+### Data flow
 
-## 3. Docker architecture
-
-- **`backend/Dockerfile`** — `python:3.13-slim`, installs `requirements.txt`, runs as a **non-root** user, exposes 8000. **No `manage.py` at build time** (no secrets/DB available during build). `ENTRYPOINT` waits for the DB, then execs the service command; default `CMD` is gunicorn.
-- **`backend/entrypoint.sh`** — waits for Postgres (`DB_HOST:DB_PORT`) up to 60s, then `exec "$@"`. Migrations/`collectstatic` are **explicit**, not implicit on every start (so parallel ECS tasks don't race).
-- **`backend/.dockerignore`** — excludes `.env*`, caches, `staticfiles/`, `media/`, `.git/`.
-
-## 4. Local development (docker compose)
-
-```bash
-cp .env.docker.example .env.docker      # then set a real SECRET_KEY
-docker compose build
-docker compose up
-# API → http://localhost:8000/health/   ·   Swagger → /api/v1/docs/
 ```
-- `docker-compose.yml` runs **db, redis, api, worker, beat**. `db`/`redis` are dev-only, with **named volumes** (`postgres-data`, `redis-data`) so data survives restarts — data lives in volumes, **never in app containers**.
-- The **api** service command runs `migrate` + `collectstatic` + `gunicorn` for convenience in dev.
-- Config comes from `.env.docker` (service hostnames `db`/`redis`, not localhost).
-
-One-off commands:
-```bash
-docker compose run --rm api python manage.py createsuperuser
-docker compose run --rm api python manage.py test
+Internet ──HTTPS──▶ nginx ──HTTP──▶ web (gunicorn) ──▶ db  (PostgreSQL)
+                     │                    │           └──▶ redis (cache)
+                     ├─ /static/ (volume) │
+                     └─ /media/  (volume) worker/beat ──▶ redis (broker) ──▶ db
+                                          backup ──nightly pg_dump──▶ backups volume
 ```
 
-## 5. Production deployment workflow (Amazon ECS)
+---
 
-1. **Build & push** the image to ECR (CI): `docker build -t <ecr>/lulaworks-api backend/ && docker push …` (one image for all three services).
-2. **Provision external services** (Terraform, `infra/`): RDS PostgreSQL, ElastiCache Redis, S3 buckets, SES, Secrets Manager, ALB, ECS cluster.
-3. **Inject config** from **Secrets Manager** as task-definition environment/secrets (`SECRET_KEY`, `DB_*`, `REDIS_URL`, AWS creds via IAM task role). `DJANGO_SETTINGS_MODULE=config.settings.prod`.
-4. **Run migrations as a one-off ECS task** (not in the service start command) before/at release: `python manage.py migrate --noinput`.
-5. **collectstatic** to S3 (or bake to the image with WhiteNoise) at release.
-6. **Deploy three ECS services** from the same image, differing by command:
-   - api: `gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3` (behind ALB, `/health/` healthcheck)
-   - worker: `celery -A config worker -l info`
-   - beat: `celery -A config beat -l info`
-7. Logs → **CloudWatch** (app logs to stdout — already configured).
+## 2. Startup process
 
-Scaling: api/worker scale horizontally (stateless). Postgres/Redis scale as managed services. No code changes between dev and prod — only environment.
+The `web` container's entrypoint waits for PostgreSQL to accept connections,
+then the service command runs migrations, collects static files into the shared
+`static-data` volume (which nginx serves), and starts Gunicorn:
 
-## 6. Environment variables (contract)
+```
+migrate --noinput  →  collectstatic --noinput  →  gunicorn -c gunicorn.conf.py
+```
 
-| Var | Purpose | Dev (compose) | Prod (Secrets Manager) |
-|---|---|---|---|
-| `SECRET_KEY` | Django secret | in `.env.docker` | secret |
-| `DEBUG` | debug mode | `True` | `False` |
-| `DJANGO_SETTINGS_MODULE` | settings | `config.settings.dev` | `config.settings.prod` |
-| `DB_NAME/USER/PASSWORD/HOST/PORT` | Postgres | `db:5432` | RDS endpoint |
-| `REDIS_URL` | broker + cache | `redis://redis:6379/0` | ElastiCache endpoint |
-| `CORS_ALLOWED_ORIGINS` | web/app origins | localhost | app domains |
-| `AWS_*` (later) | S3/SES | — | IAM task role |
-| `AI_PROVIDER` | active LLM (`claude`/`openai`/`gemini`) | unset → deterministic | `claude` |
-| `ANTHROPIC_API_KEY` | live LLM key (enables metered enrichment) | unset | **secret** |
-| `ANTHROPIC_MODEL` | model id | `claude-sonnet-5` | `claude-sonnet-5` |
+Compose dependency ordering guarantees: `db`/`redis` become **healthy** →
+`web` starts and becomes **healthy** → `nginx` starts. Every service has a
+healthcheck (§6), and `restart: unless-stopped` restarts anything that dies.
 
-### Going live with AI (optional)
-The platform is **deterministic-first**: with no key set, Lulama and every agent run
-fully on grounded data — free, exact, no LLM. To enable the metered live-LLM
-executive briefing, set `ANTHROPIC_API_KEY` (via `.env.docker` locally, **Secrets
-Manager** in prod) and `AI_PROVIDER=claude`. The `anthropic` SDK ships in the image;
-the gateway meters every call against the tenant's credit ledger, falls back
-provider→provider then to the deterministic result on any failure, and the LLM only
-*phrases* the deterministic facts — it is never the source of truth. No key, no
-credits, or a provider outage all degrade gracefully to the deterministic path.
+> Single web instance runs migrations on start (fine for one node). If you scale
+> `web` to multiple replicas, move `migrate`/`collectstatic` into a one-off
+> release task so replicas don't race.
 
-## 7. What changed in the code for container-first
+---
 
-- **WhiteNoise** added (middleware + `STORAGES.staticfiles`) so the API serves its own static files inside a container — no separate web server.
-- Settings already env-only (`python-decouple`); `os.environ` (compose/ECS) takes precedence over any `.env` file, so the same code runs in every environment.
-- Logging already writes to **stdout** (CloudWatch-ready).
-- `config.settings.prod` hardens security (SSL redirect, HSTS, secure cookies, proxy SSL header) for the ALB/ECS edge.
-- No business logic changed.
+## 3. Environment variables
 
-> **Validated (2026-07-16):** `docker compose build && up` runs the full stack — **api, worker, beat, db, redis all healthy**. `/health/` returns ok, JWT is issued over HTTP through gunicorn, the OpenAPI schema + Swagger (`/api/v1/docs/`) serve 200, and the **14-test suite passes inside the container**. Local dev publishes db→`5433` and redis→`6380` on the host to avoid clashing with a locally-running Postgres/Redis (internal ports are unchanged).
+Configuration is entirely environment-driven. Templates live in the repo; the
+real files (`.env.docker`, `.env.prod`) are **gitignored** and never committed.
+
+| File                  | Purpose                          | Committed? |
+|-----------------------|----------------------------------|------------|
+| `.env.docker.example` | Local dev template               | ✅ (template) |
+| `.env.prod.example`   | Production template              | ✅ (template) |
+| `.env.docker`         | Local dev secrets                | ❌ gitignored |
+| `.env.prod`           | Production secrets (on server)   | ❌ gitignored |
+
+Key variables (see `.env.prod.example` for the full list):
+
+| Variable                | Meaning                                                        |
+|-------------------------|----------------------------------------------------------------|
+| `SECRET_KEY`            | Django secret — `python -c "import secrets;print(secrets.token_urlsafe(64))"` |
+| `DEBUG`                 | Always `False` in production                                   |
+| `ALLOWED_HOSTS`         | Your domain(s) + droplet IP, comma-separated                   |
+| `CSRF_TRUSTED_ORIGINS`  | `https://your-domain` — required for admin/manager POSTs over HTTPS |
+| `SECURE_SSL_REDIRECT`   | `False` for the first HTTP-only boot; `True` once TLS is live  |
+| `DB_*`                  | PostgreSQL name / user / password / host (`db`) / port         |
+| `REDIS_URL`             | `redis://redis:6379/0`                                         |
+| `CELERY_CONCURRENCY`    | Worker process count (default 4)                               |
+| `LOG_LEVEL` / `LOG_FORMAT` | `INFO` / `json` (structured logs in prod)                  |
+| `GEMINI_API_KEY` etc.   | AI provider keys — **secrets**, only in `.env.prod`            |
+| `BACKUP_RETENTION_DAYS` | Days of nightly dumps to keep (default 14)                     |
+
+**AI is optional and deterministic-first:** with no key set, Lulama and every
+agent run fully on grounded data — free, no LLM. Set `GEMINI_API_KEY` /
+`ANTHROPIC_API_KEY` (in `.env.prod`, Secrets Manager on AWS) to enable metered
+live enrichment; the gateway falls back to the deterministic result on any
+failure.
+
+---
+
+## 4. Deploying to DigitalOcean (Phase 1)
+
+**Prerequisites:** a droplet (Ubuntu 22.04+, ≥ 2 GB RAM) with Docker Engine and
+the Compose plugin installed, and a domain's A-record pointed at the droplet IP.
+
+```bash
+# 1. Get the code onto the droplet
+git clone <repo-url> lulaworks && cd lulaworks
+
+# 2. Create the production env file from the template and fill in real secrets
+cp .env.prod.example .env.prod
+nano .env.prod            # SECRET_KEY, DB_PASSWORD, ALLOWED_HOSTS, domain, AI keys…
+#   keep SECURE_SSL_REDIRECT=False for this first (HTTP) boot
+
+# 3. Build and start the whole stack
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+
+# 4. Create the first admin user
+docker compose -f docker-compose.prod.yml --env-file .env.prod \
+    exec web python manage.py createsuperuser
+
+# 5. Verify
+curl http://<droplet-ip>/health/      # → {"status": "ok", ...}
+docker compose -f docker-compose.prod.yml --env-file .env.prod ps
+```
+
+The app is now live over HTTP. Add HTTPS next.
+
+### Enabling HTTPS
+
+nginx already serves the ACME HTTP-01 challenge from the `certbot-webroot`
+volume. Issue a certificate, then switch nginx to the TLS server block:
+
+```bash
+# 1. Issue the certificate (webroot matches the mounted volume)
+docker run --rm \
+  -v lulaworks_letsencrypt:/etc/letsencrypt \
+  -v lulaworks_certbot-webroot:/var/www/certbot \
+  certbot/certbot certonly --webroot -w /var/www/certbot \
+  -d app.your-domain.co.za --agree-tos -m you@your-domain.co.za --no-eff-email
+
+# 2. Turn on the HTTPS server block
+cd infra/nginx/conf.d
+mv default.conf default.conf.disabled
+mv ssl.conf.example ssl.conf
+sed -i 's/DOMAIN/app.your-domain.co.za/g' ssl.conf
+
+# 3. Enforce HTTPS in Django and reload
+sed -i 's/^SECURE_SSL_REDIRECT=.*/SECURE_SSL_REDIRECT=True/' ../../../.env.prod
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d web
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec nginx nginx -s reload
+```
+
+Renewal: `certbot renew` against the same volumes on a cron, then
+`nginx -s reload`.
+
+### Updating a running deployment
+
+```bash
+git pull
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build web worker beat
+# migrations + collectstatic run automatically as web starts
+```
+
+### Monitoring (optional)
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod --profile monitoring up -d
+ssh -L 5555:127.0.0.1:5555 user@droplet   # then open http://localhost:5555 (Flower)
+```
+
+---
+
+## 5. Backups
+
+The `backup` service runs a `pg_dump` on boot and every `BACKUP_INTERVAL_SECONDS`
+(default 24 h), gzips it to the `backups-data` volume, and prunes dumps older
+than `BACKUP_RETENTION_DAYS` (default 14).
+
+```bash
+# List backups
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec backup ls -lh /backups
+
+# Force one now
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec backup sh /usr/local/bin/backup.sh
+
+# Copy a dump off the server (do this to somewhere durable — Spaces/S3 — regularly!)
+docker compose -f docker-compose.prod.yml --env-file .env.prod cp \
+    backup:/backups/<dump>.sql.gz ./
+```
+
+> ⚠️ The backup volume lives on the same droplet. For real disaster recovery,
+> copy dumps off-box (DigitalOcean Spaces / S3) on a schedule.
+
+### Restore
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm \
+  -e RESTORE_FILE=/backups/lulaworks_..._YYYYMMDD_HHMMSS.sql.gz \
+  backup sh /usr/local/bin/restore.sh
+
+# then, if the dump predates the current code:
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py migrate
+```
+
+Dumps are taken with `--clean --if-exists`, so a restore safely drops and
+recreates each object.
+
+---
+
+## 6. Health checks
+
+Every service reports health; the orchestrator restarts unhealthy containers.
+
+| Service | Check |
+|---------|-------|
+| `web`   | `curl -f http://localhost:8000/health/` |
+| `nginx` | `wget --spider http://localhost/health/` |
+| `db`    | `pg_isready` |
+| `redis` | `redis-cli ping` |
+| `worker`| `celery -A config inspect ping` |
+
+`/health/` is exempt from the HTTPS redirect so internal HTTP probes always get
+a `200`.
+
+---
+
+## 7. Security posture
+
+- **Non-root:** the app image runs as `appuser` (uid 10001), never root.
+- **No exposed internals:** `db` and `redis` publish **no** host ports — they are
+  reachable only on the private Docker network. Only nginx binds 80/443.
+- **Secrets:** live in `.env.prod` (gitignored) / a secrets manager — never in
+  the image or git. `.dockerignore` keeps `.env*` out of the build context.
+- **TLS:** terminated at nginx; modern protocols/ciphers; HSTS once live.
+- **Security headers:** `X-Frame-Options`, `X-Content-Type-Options`,
+  `Referrer-Policy`, `Permissions-Policy` — set once, no duplication.
+- **Rate limiting:** auth endpoints throttled hard (20 req/min) against
+  credential stuffing; API and general traffic have their own zones.
+- **Request size limit:** 25 MB at nginx (plus Django's own limit).
+- **Least privilege:** Flower/pgAdmin bind to `127.0.0.1` only — reach them via
+  an SSH tunnel, never the public internet.
+
+---
+
+## 8. Performance
+
+- **Gunicorn** (`backend/gunicorn.conf.py`): threaded workers sized to CPU,
+  `max_requests` recycling to cap memory, heartbeat on `/dev/shm`. All values
+  env-overridable (`GUNICORN_WORKERS`, `GUNICORN_TIMEOUT`, …).
+- **DB connection pooling:** `CONN_MAX_AGE=60` with health checks — connections
+  are reused across requests instead of reopened each time.
+- **Static caching:** nginx serves static/media directly with long-lived
+  `Cache-Control`; static is WhiteNoise-compressed at collect time.
+- **Compression:** gzip on text/JSON/JS/CSS/SVG responses.
+- **Resource limits:** each service has CPU/memory `limits` so one container
+  can't starve the droplet (tune per droplet size).
+
+---
+
+## 9. Logging
+
+All services log to stdout/stderr — the runtime owns collection (no log files
+inside containers). The Django app emits **structured JSON** in production
+(`LOG_FORMAT=json`), ready to ship to CloudWatch / Loki / an ELK stack. nginx
+access logs include real client IP and upstream response time. Inspect with:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f web
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f nginx
+```
+
+---
+
+## 10. AWS migration (Phase 2)
+
+The images do not change. The single-node compose maps cleanly onto managed AWS
+services:
+
+| Phase 1 (DigitalOcean)      | Phase 2 (AWS)                                            |
+|-----------------------------|---------------------------------------------------------|
+| `web`/`worker`/`beat` images | Same images on **ECS Fargate** (one task def per role)  |
+| `db` container               | **RDS PostgreSQL** — drop the service, point `DB_HOST` at the RDS endpoint |
+| `redis` container            | **ElastiCache Redis** — drop the service, point `REDIS_URL` at it |
+| `nginx` container            | **ALB** (TLS via ACM) → the `web` service; keep nginx only if you still serve static locally |
+| `media` volume               | **S3** — flip the `STORAGES["default"]` backend (already isolated in settings) |
+| `static` volume              | **S3 + CloudFront** (WhiteNoise → collectstatic to S3)  |
+| `backup` container           | **RDS automated snapshots** + PITR                      |
+| `.env.prod`                  | **Secrets Manager / SSM Parameter Store** (same keys)   |
+| JSON logs to stdout          | **CloudWatch Logs** (already structured)                |
+
+Migration-safe choices already in place: env-driven config everywhere, the
+storage backend isolated behind Django's `STORAGES`, `SECURE_PROXY_SSL_HEADER`
+for running behind a load balancer, and stateless app containers (all state in
+db/redis/volumes). Nothing here paints the platform into a DigitalOcean corner.
+
+---
+
+## Quick reference
+
+```bash
+# Dev (local)
+docker compose up -d --build
+
+# Prod
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f web
+docker compose -f docker-compose.prod.yml --env-file .env.prod ps
+docker compose -f docker-compose.prod.yml --env-file .env.prod down       # keep data
+docker compose -f docker-compose.prod.yml --env-file .env.prod down -v     # wipe volumes (danger)
+```

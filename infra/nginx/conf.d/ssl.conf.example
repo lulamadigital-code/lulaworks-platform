@@ -1,0 +1,86 @@
+# LulaWorks — HTTPS server block (enable AFTER a certificate exists).
+#
+# Activation:
+#   1. Point your domain's A record at the droplet.
+#   2. Issue a cert (see docs/DEPLOYMENT.md → "Enabling HTTPS"). Certbot writes
+#      to /var/www/certbot for the challenge and /etc/letsencrypt for the cert;
+#      both are mounted into this container in docker-compose.prod.yml.
+#   3. Replace the plain-HTTP block: `mv default.conf default.conf.disabled`
+#      and `mv ssl.conf.example ssl.conf`, then `docker compose ... exec nginx nginx -s reload`.
+#   4. Replace every DOMAIN below with your real domain.
+
+# ── Redirect all HTTP → HTTPS (but keep the ACME challenge on HTTP) ───────────
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type "text/plain";
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# ── HTTPS ─────────────────────────────────────────────────────────────────────
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name DOMAIN;
+
+    ssl_certificate     /etc/letsencrypt/live/DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/DOMAIN/privkey.pem;
+
+    # Modern, safe TLS defaults.
+    ssl_protocols        TLSv1.2 TLSv1.3;
+    ssl_ciphers          ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache    shared:SSL:10m;
+    ssl_session_timeout  1d;
+    ssl_session_tickets  off;
+
+    include /etc/nginx/snippets/security-headers.conf;
+    # HSTS: only ever sent over HTTPS. Matches SECURE_HSTS_SECONDS in prod.py.
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+    location /static/ {
+        alias /app/staticfiles/;
+        access_log off;
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "public, max-age=2592000, immutable";
+    }
+    location /media/ {
+        alias /app/media/;
+        access_log off;
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "public, max-age=604800";
+    }
+    location = /health/ {
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_pass http://django;
+        access_log off;
+    }
+    location = /login/ {
+        limit_req zone=auth burst=10 nodelay;
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_pass http://django;
+    }
+    location /api/v1/auth/ {
+        limit_req zone=auth burst=10 nodelay;
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_pass http://django;
+    }
+    location /api/ {
+        limit_req zone=api burst=30 nodelay;
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_pass http://django;
+    }
+    location / {
+        limit_req zone=general burst=50 nodelay;
+        include /etc/nginx/snippets/proxy.conf;
+        proxy_pass http://django;
+    }
+}
