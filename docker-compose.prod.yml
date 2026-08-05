@@ -81,7 +81,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.50"
+          # Keep <= the droplet's vCPU count. 1.0 works on a 1-vCPU box; raise
+          # (e.g. 1.5) only on a larger droplet.
+          cpus: "1.00"
           memory: 1G
 
   # ── Celery worker (background jobs: AI extraction, PDFs, exports, email) ────
