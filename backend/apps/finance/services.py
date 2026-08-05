@@ -221,8 +221,12 @@ def profit_forecast(project) -> dict:
 
 @transaction.atomic
 def create_invoice(project, user, *, client_name=None, lines=None, retention_pct=0,
-                   vat_rate=Decimal("15.00"), due_date=None, is_progress_claim=False,
+                   vat_rate=None, due_date=None, is_progress_claim=False,
                    percent_complete=0) -> Invoice:
+    # Tax is per-company, never a single-country assumption: default to the
+    # company's configured rate (0 = none) unless the caller specifies one.
+    if vat_rate is None:
+        vat_rate = getattr(project.company, "default_tax_rate", Decimal("0"))
     invoice = Invoice.objects.create(
         company=project.company, project=project, number=next_number(project.company, "invoice"),
         client_name=client_name or project.client_name, vat_rate=vat_rate,

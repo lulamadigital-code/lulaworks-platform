@@ -13,6 +13,18 @@ from apps.core.models import PlatformBaseModel, UUIDModel
 from .managers import UserManager
 
 
+def default_currency():
+    """New-company currency from platform config (not a hard-coded country)."""
+    from django.conf import settings
+    return getattr(settings, "DEFAULT_CURRENCY", "ZAR")
+
+
+def default_timezone():
+    """New-company timezone from platform config; each company can change it."""
+    from django.conf import settings
+    return getattr(settings, "TIME_ZONE", "UTC")
+
+
 class SubscriptionStatus(models.TextChoices):
     TRIAL = "trial", "Trial"
     ACTIVE = "active", "Active"
@@ -30,11 +42,16 @@ class Company(PlatformBaseModel):
     vat_no = models.CharField(max_length=32, blank=True)
     industry = models.CharField(max_length=64, blank=True)
     company_size = models.CharField(max_length=32, blank=True)
-    country = models.CharField(max_length=64, default="South Africa")
+    country = models.CharField(max_length=64, blank=True)  # neutral: set per company
     province = models.CharField(max_length=64, blank=True)
     city = models.CharField(max_length=64, blank=True)
-    timezone = models.CharField(max_length=64, default="Africa/Johannesburg")
-    currency = models.CharField(max_length=8, default="ZAR")
+    # Locale defaults derive from platform config (not a hard-coded country), so
+    # a company anywhere gets sensible neutral defaults it can then change.
+    timezone = models.CharField(max_length=64, default=default_timezone)
+    currency = models.CharField(max_length=8, default=default_currency)
+    # VAT / sales-tax rate applied to this company's NEW invoices (0 = none).
+    # Configurable per company so tax is never a single-country assumption.
+    default_tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     logo = models.ImageField(upload_to="company_logos/", blank=True, null=True)
     brand_primary = models.CharField(max_length=9, blank=True)
     brand_secondary = models.CharField(max_length=9, blank=True)

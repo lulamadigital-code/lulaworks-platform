@@ -39,7 +39,9 @@ SECTIONS = [
 
 
 def make_company(name="Lulama"):
-    c = Company.objects.create(name=name)
+    # An SA contractor with 15% VAT configured (tax is now per-company; the
+    # platform default for a new company is 0%).
+    c = Company.objects.create(name=name, default_tax_rate=Decimal("15.00"))
     for dt, pfx in [("quotation", "QT"), ("project", "PRJ"), ("estimate", "EST"),
                     ("invoice", "INV"), ("variation", "VO"), ("po", "PO")]:
         NumberingRule.objects.create(company=c, doc_type=dt, prefix=pfx,
@@ -318,3 +320,22 @@ class FinanceAPITests(APITestCase):
         self.client.force_authenticate(rival)
         resp = self.client.get(f"/api/v1/invoices/{inv.id}/")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class InternationalDefaultsTests(APITestCase):
+    """Tax is per-company, not a single-country assumption."""
+
+    def test_new_company_has_no_tax_by_default(self):
+        c = Company.objects.create(name="US Contractor")   # platform default
+        self.assertEqual(c.default_tax_rate, Decimal("0"))
+
+    def test_invoice_uses_company_tax_rate(self):
+        c = make_company()                 # SA company, 15%
+        c.default_tax_rate = Decimal("0")  # switch to a no-tax jurisdiction
+        c.save(update_fields=["default_tax_rate"])
+        with tenant_scope(c.id):
+            project, _ = awarded_project_with_budget(c)
+            inv = create_invoice(project, None,
+                                 lines=[{"description": "Works", "qty": 1, "unit_price": 1000}])
+            self.assertEqual(inv.vat_rate, Decimal("0"))
+            self.assertEqual(inv.vat_amount, Decimal("0.00"))

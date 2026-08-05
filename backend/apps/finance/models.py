@@ -152,7 +152,7 @@ class Invoice(TenantBaseModel):
     percent_complete = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     issue_date = models.DateField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
-    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("15.00"))
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # set from company.default_tax_rate
     retention_pct = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     retention_released = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
