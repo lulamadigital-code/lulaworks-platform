@@ -4,9 +4,17 @@ deployment (DATA_MODEL §15)."""
 
 from decouple import config
 
-from .base import *  # noqa: F401,F403
+from .base import *  # noqa: F401,F403  # noqa: E402
 
 DEBUG = False
+
+# The container / load-balancer healthcheck hits the app on localhost over HTTP.
+# Always allow the loopback names so the probe never 400s on DisallowedHost,
+# whatever public ALLOWED_HOSTS the operator configured. These are only
+# reachable from inside the container, so this doesn't widen the attack surface.
+for _loopback in ("localhost", "127.0.0.1"):
+    if _loopback not in ALLOWED_HOSTS:  # noqa: F405
+        ALLOWED_HOSTS = ALLOWED_HOSTS + [_loopback]  # noqa: F405
 
 # HTTPS enforcement. Secure by default; set SECURE_SSL_REDIRECT=False for the
 # very first HTTP-only bring-up (before a TLS cert exists), then flip it back on
