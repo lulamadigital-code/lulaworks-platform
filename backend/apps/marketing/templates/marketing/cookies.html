@@ -1,0 +1,34 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight"><div class="wrap prose" style="margin:0 auto;">
+  <span class="eyebrow">Legal</span>
+  <h1>Cookie Policy</h1>
+  <p class="muted">Effective date: {% now "j F Y" %}</p>
+  <p>This Cookie Policy explains how LulaWorks uses cookies and similar technologies when you use our
+    website and platform.</p>
+
+  <h2>Essential cookies</h2>
+  <p>These are required for the platform to work — they enable core functions like page navigation, form
+    submission and security. The Service cannot function properly without them, so they cannot be switched off.</p>
+
+  <h2>Authentication cookies</h2>
+  <p>These keep you securely logged in and maintain your session as you move between pages. They are cleared
+    when you log out or your session expires.</p>
+
+  <h2>Preference cookies</h2>
+  <p>These remember choices you make — such as your selected billing cycle or display preferences — so the
+    experience is consistent each time you return.</p>
+
+  <h2>Analytics cookies</h2>
+  <p>Where enabled, these help us understand how the website and platform are used — which pages are visited
+    and how features perform — so we can improve them. Analytics data is aggregated and does not identify you
+    personally.</p>
+
+  <h2>How to disable cookies</h2>
+  <p>You can control or delete cookies through your browser settings. Most browsers let you block or remove
+    cookies and notify you when a site sets one. Note that disabling essential or authentication cookies will
+    prevent you from logging in and using the platform.</p>
+
+  <p>For more on how we handle your data, see our <a href="{% url 'marketing:privacy' %}">Privacy Policy</a>.</p>
+</div></section>
+{% endblock %}

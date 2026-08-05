@@ -1,0 +1,55 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap">
+    <div class="grid g2" style="align-items:start;">
+      <div>
+        <span class="eyebrow">Book a demo</span>
+        <h1>See LulaWorks on your own jobs</h1>
+        <p class="lead">Book a personalised 30-minute walkthrough. We'll show you how LulaWorks
+          fits your workflow — from quotation to payment — and answer every question.</p>
+        <ul style="list-style:none;padding:0;color:var(--muted);">
+          <li style="padding:6px 0;"><span class="tick">✔</span> A live, tailored walkthrough</li>
+          <li style="padding:6px 0;"><span class="tick">✔</span> Honest answers on pricing and fit</li>
+          <li style="padding:6px 0;"><span class="tick">✔</span> Guidance on migrating your data</li>
+          <li style="padding:6px 0;"><span class="tick">✔</span> No obligation, no pressure</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Request your demo</h3>
+        <form method="post">
+          {% csrf_token %}
+          <div class="two">
+            <div class="field"><label>Company *</label><input name="company" required></div>
+            <div class="field"><label>Your name *</label><input name="name" required></div>
+          </div>
+          <div class="two">
+            <div class="field"><label>Email *</label><input type="email" name="email" required></div>
+            <div class="field"><label>Phone</label><input name="phone"></div>
+          </div>
+          <div class="two">
+            <div class="field"><label>Industry</label>
+              <select name="industry">
+                <option value="">Select…</option>
+                <option>General contracting</option><option>Mechanical / engineering</option>
+                <option>Mining contractor</option><option>Maintenance services</option>
+                <option>Industrial services</option><option>Construction</option><option>Other</option>
+              </select></div>
+            <div class="field"><label>Employees</label>
+              <select name="employees"><option value="">Select…</option>
+                <option>1–10</option><option>11–50</option><option>51–200</option><option>200+</option></select></div>
+          </div>
+          <div class="two">
+            <div class="field"><label>Preferred date</label><input type="date" name="preferred_date"></div>
+            <div class="field"><label>Preferred time</label>
+              <select name="preferred_time"><option value="">Select…</option>
+                <option>Morning</option><option>Afternoon</option></select></div>
+          </div>
+          <div class="field"><label>Additional notes</label><textarea name="notes" rows="3"></textarea></div>
+          <button class="btn" style="width:100%;" type="submit">Book my demo</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

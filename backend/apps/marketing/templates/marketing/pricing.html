@@ -1,0 +1,48 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap center">
+    <span class="eyebrow">Pricing</span>
+    <h1>Simple, transparent pricing</h1>
+    <p class="lead">Pay for the users and AI you need. <strong>Employees are always unlimited</strong> —
+      we never charge you for the size of your crew.</p>
+
+    {% with annual=request.GET.cycle %}
+    <div class="toggle" style="margin:22px 0 8px;">
+      <a href="?cycle=monthly" class="{% if annual != 'annual' %}on{% endif %}">Monthly</a>
+      <a href="?cycle=annual" class="{% if annual == 'annual' %}on{% endif %}">Annual · save ~2 months</a>
+    </div>
+
+    <div class="grid g3" style="margin-top:34px;text-align:left;align-items:start;">
+      {% for p in plans %}
+      <div class="card plan {% if p.is_popular %}popular{% endif %}">
+        {% if p.is_popular %}<span class="tag">MOST POPULAR</span>{% endif %}
+        <h3>{{ p.name }}</h3>
+        <div class="price">
+          {% if annual == 'annual' %}R{{ p.annual_price|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">/yr</span>
+          {% else %}R{{ p.price|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">/mo</span>{% endif %}
+        </div>
+        {% if annual == 'annual' and p.annual_saving > 0 %}
+          <p style="margin:2px 0 0;color:var(--green);font-weight:700;">Save R{{ p.annual_saving|floatformat:0 }} a year</p>
+        {% endif %}
+        <ul>
+          <li><strong>{{ p.max_users }} user{{ p.max_users|pluralize }}</strong></li>
+          <li>Unlimited employees</li>
+          <li>{{ p.monthly_ai_credits|floatformat:0 }} AI credits / month</li>
+          <li>{{ p.storage_quota_bytes|filesizeformat }} storage</li>
+          {% for f in p.features %}<li>{{ f }}</li>{% endfor %}
+        </ul>
+        <a class="btn {% if not p.is_popular %}ghost{% endif %}" style="width:100%;" href="{% url 'marketing:trial' %}">Start Free Trial</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% endwith %}
+
+    <p class="muted" style="margin-top:28px;">Need more AI? Top up any plan with credit packs:
+      {% for pack in packs %}<strong>{{ pack.credits|floatformat:0 }} for R{{ pack.price|floatformat:0 }}</strong>{% if not forloop.last %} · {% endif %}{% endfor %}.</p>
+    <div class="cta-row" style="justify-content:center;margin-top:10px;">
+      <a class="btn ghost" href="{% url 'marketing:demo' %}">Book a Demo</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

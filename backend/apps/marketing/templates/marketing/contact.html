@@ -1,0 +1,42 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap">
+    <div class="grid g2" style="align-items:start;">
+      <div>
+        <span class="eyebrow">Contact us</span>
+        <h1>We'd love to hear from you</h1>
+        <p class="lead">Questions about LulaWorks, pricing or getting started? Send us a message
+          and the right person will get back to you.</p>
+        <div class="card" style="margin-top:18px;">
+          <p style="margin:0 0 10px;"><strong>General:</strong> <a href="mailto:hello@lulaworks.co.za">hello@lulaworks.co.za</a></p>
+          <p style="margin:0 0 10px;"><strong>Sales:</strong> <a href="mailto:sales@lulaworks.co.za">sales@lulaworks.co.za</a></p>
+          <p style="margin:0 0 10px;"><strong>Support:</strong> <a href="mailto:support@lulaworks.co.za">support@lulaworks.co.za</a></p>
+          <p style="margin:0 0 10px;"><strong>Business hours:</strong> Mon–Fri, 08:00–17:00 (SAST)</p>
+          <p style="margin:0;"><strong>Find us:</strong> South Africa</p>
+          <div style="margin-top:12px;height:170px;border-radius:12px;background:
+               repeating-linear-gradient(45deg,var(--bg),var(--bg) 12px,#eef0f5 12px,#eef0f5 24px);
+               display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:600;">
+            Map location
+          </div>
+          <p class="muted" style="margin:12px 0 0;">Follow us: LinkedIn · Facebook · X · Instagram</p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Send a message</h3>
+        <form method="post">
+          {% csrf_token %}
+          <div class="two">
+            <div class="field"><label>Name *</label><input name="name" required value="{{ form.name|default:'' }}"></div>
+            <div class="field"><label>Email *</label><input type="email" name="email" required value="{{ form.email|default:'' }}"></div>
+          </div>
+          <div class="field"><label>Company</label><input name="company" value="{{ form.company|default:'' }}"></div>
+          <div class="field"><label>Subject</label><input name="subject" value="{{ form.subject|default:'' }}"></div>
+          <div class="field"><label>Message *</label><textarea name="message" rows="5" required>{{ form.message|default:'' }}</textarea></div>
+          <button class="btn" style="width:100%;" type="submit">Send message</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

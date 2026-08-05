@@ -1,0 +1,45 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap prose" style="margin:0 auto;">
+    <span class="eyebrow">About us</span>
+    <h1>We build software for the people who build things</h1>
+    <p class="lead">LulaWorks is a South African platform built for contractors, engineering firms,
+      mining contractors, maintenance teams and industrial service providers.</p>
+
+    <h2>Why we built LulaWorks</h2>
+    <p>Contracting is hard enough without the admin. Most contractors run their business across
+      spreadsheets, WhatsApp groups, email chains and a few disconnected apps. A quote lives in
+      one place, the purchase order in another, the site photos on a phone, and the invoice in a
+      third system entirely. Information falls through the cracks, margins leak, and no one ever
+      has the full picture of a job in one place.</p>
+    <p>We built LulaWorks to fix exactly that — to take a contractor from the first customer
+      enquiry all the way to the final payment on one intelligent platform, with AI doing the
+      tedious data entry along the way.</p>
+
+    <h2>Our mission</h2>
+    <p>To give every contractor — from a two-person team to a fifty-person operation — the kind of
+      operating system that used to be reserved for large enterprises: connected, intelligent, and
+      simple enough to actually use on a busy site.</p>
+
+    <h2>Our vision</h2>
+    <p>A world where running a contracting business is about doing great work, not fighting
+      paperwork — where quoting, buying, delivering and getting paid all flow together, and the
+      numbers are always clear.</p>
+
+    <h2>Built around real problems</h2>
+    <ul>
+      <li>Quote faster and win more work, without re-typing the same details.</li>
+      <li>Know the true cost and profit of every job as it happens.</li>
+      <li>Buy materials at the best price, with a supplier history that builds itself.</li>
+      <li>Keep the field team accountable with GPS-stamped check-ins.</li>
+      <li>Get paid on time with clean, compliant invoices and clear tracking.</li>
+    </ul>
+
+    <div class="cta-row" style="margin-top:24px;">
+      <a class="btn" href="{% url 'marketing:trial' %}">Start Free Trial</a>
+      <a class="btn ghost" href="{% url 'marketing:contact' %}">Talk to us</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

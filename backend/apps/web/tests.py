@@ -61,7 +61,7 @@ def awarded_project(company):
 
 class AuthTests(TestCase):
     def test_dashboard_requires_login(self):
-        resp = self.client.get("/")
+        resp = self.client.get("/dashboard/")
         self.assertEqual(resp.status_code, 302)
         self.assertIn("/login/", resp.url)
 
@@ -71,7 +71,7 @@ class AuthTests(TestCase):
             awarded_project(c)
         user = user_with(c, ["projects.view"])
         self.client.force_login(user)
-        resp = self.client.get("/")
+        resp = self.client.get("/dashboard/")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Operations dashboard")
 
@@ -86,9 +86,9 @@ class GoldenRuleTests(TestCase):
 
         # Dashboard: commercial panel only for the finance user.
         self.client.force_login(broke)
-        self.assertNotContains(self.client.get("/"), "Portfolio margin")
+        self.assertNotContains(self.client.get("/dashboard/"), "Portfolio margin")
         self.client.force_login(rich)
-        self.assertContains(self.client.get("/"), "Portfolio margin")
+        self.assertContains(self.client.get("/dashboard/"), "Portfolio margin")
 
         # Project detail: profitability only for the finance user.
         url = f"/projects/{project.id}/"

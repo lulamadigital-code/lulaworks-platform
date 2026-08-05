@@ -1,0 +1,52 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap prose" style="margin:0 auto;">
+    <div class="center"><span class="eyebrow">FAQ</span><h1>Frequently asked questions</h1></div>
+
+    <h2>General</h2>
+    <details class="faq"><summary>What is LulaWorks?</summary><p>LulaWorks is an all-in-one platform for contractors — quotations, jobs, tasks, procurement, suppliers, delivery notes, invoices and payments — with AI that handles the tedious data entry. It replaces the spreadsheets, WhatsApp threads and disconnected tools most contractors juggle.</p></details>
+    <details class="faq"><summary>Who is LulaWorks for?</summary><p>Contractors, engineering firms, mining contractors, maintenance teams, industrial service providers and construction businesses — from a two-person office to a fifty-person operation.</p></details>
+    <details class="faq"><summary>Do I need to install anything?</summary><p>No. LulaWorks runs in your browser and on mobile. There's nothing to install and updates happen automatically.</p></details>
+
+    <h2>Pricing</h2>
+    <details class="faq"><summary>How much does LulaWorks cost?</summary><p>Three plans: Starter (R299/month), Professional (R1,299/month) and Business (R3,999/month). Annual billing saves roughly two months. See the <a href="{% url 'marketing:pricing' %}">pricing page</a> for full details.</p></details>
+    <details class="faq"><summary>What's the difference between users and employees?</summary><p>A <strong>user</strong> is someone who logs in (owner, admin, project manager, procurement, accounts) and consumes a licence. An <strong>employee</strong> is a worker you manage in the system (technicians, drivers, welders, operators). Employees are unlimited on every plan — we never charge for the size of your crew.</p></details>
+    <details class="faq"><summary>Can I change plans later?</summary><p>Yes. Upgrade any time and the new limits apply immediately. Downgrades keep all your data — you simply can't add users beyond the smaller plan's limit until you're within it.</p></details>
+
+    <h2>Security</h2>
+    <details class="faq"><summary>Is my data secure?</summary><p>Yes. LulaWorks uses role-based access control, full audit logging and strict tenant isolation, so your company's data is only ever visible to your company. Data is encrypted in transit.</p></details>
+    <details class="faq"><summary>Who can see my company's information?</summary><p>Only the users you invite, according to the roles you assign them. No other company on the platform can access your data.</p></details>
+
+    <h2>AI</h2>
+    <details class="faq"><summary>What does the AI actually do?</summary><p>It reads documents for you — RFQs, purchase orders, supplier invoices and scopes of work — and fills in the details, and it can suggest quotations based on your own history. Each AI operation uses one AI credit.</p></details>
+    <details class="faq"><summary>What happens if I run out of AI credits?</summary><p>All non-AI features keep working normally. You can buy an AI credit pack or upgrade your plan to resume AI operations. Your remaining credits are always shown on your dashboard.</p></details>
+
+    <h2>Billing</h2>
+    <details class="faq"><summary>How does billing work?</summary><p>You're billed monthly or annually for your chosen plan. AI credits reset each billing cycle. You can buy additional credit packs at any time, and they're added to your balance immediately.</p></details>
+    <details class="faq"><summary>Do you offer annual billing?</summary><p>Yes — annual billing is available on every plan and saves you roughly two months compared to paying monthly.</p></details>
+
+    <h2>Support</h2>
+    <details class="faq"><summary>What support is included?</summary><p>Starter includes email support, Professional includes priority support, and Business includes highest-priority support. You can always reach us at support@lulaworks.co.za.</p></details>
+
+    <h2>Data</h2>
+    <details class="faq"><summary>Who owns the data I put into LulaWorks?</summary><p>You do. Your data is yours — we process it to provide the service and never sell it. See our <a href="{% url 'marketing:privacy' %}">Privacy Policy</a>.</p></details>
+    <details class="faq"><summary>Can I export my data?</summary><p>Yes. Quotations, invoices and delivery notes export as PDF, and data exports as Excel.</p></details>
+
+    <h2>Trial</h2>
+    <details class="faq"><summary>How does the free trial work?</summary><p>Every new company gets a 30-day free trial with Professional features, 2 users, unlimited employees, 100 AI credits and 2 GB of storage. No credit card is required to start.</p></details>
+    <details class="faq"><summary>What happens when the trial ends?</summary><p>You choose a paid plan to continue. All the data you created during the trial stays intact when you upgrade.</p></details>
+
+    <h2>Cancellation</h2>
+    <details class="faq"><summary>Can I cancel any time?</summary><p>Yes. You can cancel from your billing page. Access continues until the end of your current billing period, and your data is preserved.</p></details>
+
+    <h2>Migration</h2>
+    <details class="faq"><summary>Can you help me move my existing data across?</summary><p>Yes. You can import historical quotations and supplier invoices to seed your history, and our team can help you get set up — <a href="{% url 'marketing:contact' %}">get in touch</a>.</p></details>
+
+    <div class="center" style="margin-top:34px;">
+      <p class="muted">Still have a question?</p>
+      <a class="btn" href="{% url 'marketing:contact' %}">Contact us</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap center">
+    <span class="eyebrow">Features</span>
+    <h1>Everything a contractor needs, in one platform</h1>
+    <p class="lead">From the first customer enquiry to the final payment — plus the AI, mobile
+      and reporting tools that make it effortless.</p>
+    <div class="cta-row" style="justify-content:center;margin-top:18px;">
+      <a class="btn" href="{% url 'marketing:trial' %}">Start Free Trial</a>
+      <a class="btn ghost" href="{% url 'marketing:demo' %}">Book a Demo</a>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="wrap">
+    <div class="grid g2">
+      {% for ic, title, desc, benefits in modules %}
+      <div class="card">
+        <div class="ic">{{ ic }}</div>
+        <h3>{{ title }}</h3>
+        <p class="muted">{{ desc }}</p>
+        <ul style="margin:0;padding-left:18px;color:var(--muted);font-size:14.5px;">
+          {% for b in benefits %}<li style="margin:4px 0;">{{ b }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section band">
+  <div class="wrap center">
+    <h2>See it on your own jobs</h2>
+    <p class="lead">Start a free trial or book a live demo with our team.</p>
+    <div class="cta-row" style="justify-content:center;margin-top:18px;">
+      <a class="btn lg white" href="{% url 'marketing:trial' %}">Start Free Trial</a>
+      <a class="btn lg ghost" href="{% url 'marketing:demo' %}" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.5);">Book a Demo</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

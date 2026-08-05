@@ -1,0 +1,119 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">The Contractor Operating System</span>
+      <h1>From Quotation to Payment.<br>One Platform. Powered by AI.</h1>
+      <p class="lead">LulaWorks helps contractors manage quotations, jobs, procurement, teams,
+        deliveries, invoices and payments from one intelligent platform.</p>
+      <div class="cta-row">
+        <a class="btn lg" href="{% url 'marketing:trial' %}">Start Free Trial</a>
+        <a class="btn lg ghost" href="{% url 'marketing:demo' %}">Book a Demo</a>
+      </div>
+      <div class="badges">
+        <span><span class="tick">✔</span> AI Powered</span>
+        <span><span class="tick">✔</span> Cloud Based</span>
+        <span><span class="tick">✔</span> Mobile Friendly</span>
+        <span><span class="tick">✔</span> Secure</span>
+        <span><span class="tick">✔</span> Built for Contractors</span>
+      </div>
+    </div>
+    <div>
+      <div class="mock" role="img" aria-label="LulaWorks dashboard preview">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <div class="body">
+          <div class="kpi"><small>Open quotations</small><b>R1.8m</b></div>
+          <div class="kpi"><small>Active jobs</small><b>24</b></div>
+          <div class="kpi"><small>Outstanding</small><b>R612k</b></div>
+          <div class="rowline"></div>
+          <div class="rowline short"></div>
+          <div class="kpi"><small>Procurement</small><b>18 POs</b></div>
+          <div class="kpi"><small>On site now</small><b>37</b></div>
+          <div class="kpi"><small>AI credits</small><b>1,860</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ── Why LulaWorks ─────────────────────────────────────────────────────────── #}
+<section class="section">
+  <div class="wrap center">
+    <span class="eyebrow">Why LulaWorks</span>
+    <h2>Stop juggling spreadsheets, WhatsApp and disconnected tools</h2>
+    <p class="lead">Most contractors run the business across a dozen places — a quote in Excel,
+      a PO in email, site photos on WhatsApp, invoices in another app. Things slip, margins leak,
+      and nobody has the full picture. LulaWorks brings the whole job into one place, from the
+      first quotation to the final payment.</p>
+  </div>
+</section>
+
+{# ── Features preview ──────────────────────────────────────────────────────── #}
+<section class="section alt">
+  <div class="wrap">
+    <div class="center" style="margin-bottom:36px;">
+      <span class="eyebrow">Everything in one place</span>
+      <h2>One platform for the whole operation</h2>
+    </div>
+    <div class="grid g4">
+      {% for ic,t,d in feature_cards %}
+      <div class="card"><div class="ic">{{ ic }}</div><h3>{{ t }}</h3><p class="muted" style="margin:0;">{{ d }}</p></div>
+      {% endfor %}
+    </div>
+    <div class="center" style="margin-top:30px;">
+      <a class="btn ghost" href="{% url 'marketing:features' %}">Explore all features →</a>
+    </div>
+  </div>
+</section>
+
+{# ── How it works ──────────────────────────────────────────────────────────── #}
+<section class="section">
+  <div class="wrap center">
+    <span class="eyebrow">How it works</span>
+    <h2>The whole job, end to end</h2>
+    <p class="lead">Every step flows into the next — no re-typing, no lost paperwork, no gaps.</p>
+    <div class="flow" style="margin-top:30px;">
+      <span class="step">Customer</span><span class="arw">→</span>
+      <span class="step">Quotation</span><span class="arw">→</span>
+      <span class="step">Purchase Order</span><span class="arw">→</span>
+      <span class="step">Job</span><span class="arw">→</span>
+      <span class="step">Tasks</span><span class="arw">→</span>
+      <span class="step">Procurement</span><span class="arw">→</span>
+      <span class="step">Delivery</span><span class="arw">→</span>
+      <span class="step">Invoice</span><span class="arw">→</span>
+      <span class="step">Payment</span>
+    </div>
+  </div>
+</section>
+
+{# ── Testimonials ──────────────────────────────────────────────────────────── #}
+<section class="section alt">
+  <div class="wrap">
+    <div class="center" style="margin-bottom:36px;"><span class="eyebrow">Trusted by contractors</span>
+      <h2>Built for the way you actually work</h2></div>
+    <div class="grid g3">
+      {% for quote,name,role in testimonials %}
+      <div class="card">
+        <p style="font-size:16.5px;">“{{ quote }}”</p>
+        <p style="margin:0;font-weight:700;">{{ name }}<br><span class="muted" style="font-weight:400;">{{ role }}</span></p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ── Final CTA ─────────────────────────────────────────────────────────────── #}
+<section class="section band">
+  <div class="wrap center">
+    <h2>Ready to transform your contracting business?</h2>
+    <p class="lead">Start your 30-day free trial today. No credit card required.</p>
+    <div class="cta-row" style="justify-content:center;margin-top:20px;">
+      <a class="btn lg white" href="{% url 'marketing:trial' %}">Start Free Trial</a>
+      <a class="btn lg ghost" href="{% url 'marketing:demo' %}" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.5);">Book a Demo</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

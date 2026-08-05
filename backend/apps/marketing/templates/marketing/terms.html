@@ -1,0 +1,79 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight"><div class="wrap prose" style="margin:0 auto;">
+  <span class="eyebrow">Legal</span>
+  <h1>Terms &amp; Conditions</h1>
+  <p class="muted">Effective date: {% now "j F Y" %}</p>
+  <p>These Terms &amp; Conditions ("Terms") govern your access to and use of LulaWorks (the "Service").
+    By creating an account or using the Service, you agree to these Terms.</p>
+
+  <h2>1. Acceptance</h2>
+  <p>By registering for, accessing or using the Service, you confirm that you have the authority to bind
+    your company and that you accept these Terms on its behalf.</p>
+
+  <h2>2. Subscriptions</h2>
+  <p>The Service is provided on a subscription basis under the plan you select (Starter, Professional or
+    Business). Each plan sets limits on users, AI credits and storage. Employees are unlimited on all plans.</p>
+
+  <h2>3. Billing</h2>
+  <p>Subscriptions are billed monthly or annually in advance in South African Rand. AI credits reset each
+    billing cycle. Additional AI credit packs are charged when purchased and added immediately.</p>
+
+  <h2>4. Free trial</h2>
+  <p>New companies may start a 30-day free trial with Professional features, capped at 2 users, 100 AI credits
+    and 2 GB of storage, with unlimited employees. No payment card is required. At the end of the trial you
+    must select a paid plan to continue; your data remains intact when you upgrade.</p>
+
+  <h2>5. Cancellation</h2>
+  <p>You may cancel your subscription at any time. Access continues until the end of the current billing
+    period. Fees already paid are non-refundable except where required by law.</p>
+
+  <h2>6. User responsibilities</h2>
+  <p>You are responsible for keeping your login credentials secure, for the activity of the users you invite,
+    and for the accuracy and lawfulness of the data you enter or upload.</p>
+
+  <h2>7. Acceptable use</h2>
+  <p>You may not use the Service to break the law, infringe others' rights, upload malicious code, attempt to
+    gain unauthorised access, or interfere with the platform's operation or other customers' use of it.</p>
+
+  <h2>8. AI services</h2>
+  <p>AI features assist with extraction and suggestions and may not be perfect. You remain responsible for
+    reviewing and verifying AI-generated output before relying on it.</p>
+
+  <h2>9. Uploaded documents</h2>
+  <p>You confirm you have the right to upload the documents you submit and to have them processed by the
+    Service, including by AI providers where you enable AI features.</p>
+
+  <h2>10. Data ownership</h2>
+  <p>You own your data. We claim no ownership over the content you create or upload. You grant us the limited
+    licence needed to host and process it to provide the Service.</p>
+
+  <h2>11. Intellectual property</h2>
+  <p>The Service, including its software, design and content (excluding your data), is owned by LulaWorks and
+    protected by intellectual-property laws. These Terms grant you a limited, non-exclusive right to use it.</p>
+
+  <h2>12. Availability</h2>
+  <p>We work to keep the Service available and reliable but do not guarantee uninterrupted access.
+    Maintenance, updates or events beyond our control may cause downtime.</p>
+
+  <h2>13. Limitation of liability</h2>
+  <p>To the maximum extent permitted by law, LulaWorks is not liable for indirect, incidental or consequential
+    losses, and our total liability is limited to the fees you paid for the Service in the twelve months
+    preceding the claim.</p>
+
+  <h2>14. Termination</h2>
+  <p>We may suspend or terminate access for breach of these Terms. On termination, your right to use the
+    Service ends; data handling follows our <a href="{% url 'marketing:privacy' %}">Privacy Policy</a>.</p>
+
+  <h2>15. Changes</h2>
+  <p>We may update these Terms from time to time. Material changes will be notified through the Service or by
+    email, and continued use after changes means you accept them.</p>
+
+  <h2>16. Governing law</h2>
+  <p>These Terms are governed by the laws of the Republic of South Africa, and the South African courts have
+    jurisdiction over any dispute.</p>
+
+  <h2>17. Contact</h2>
+  <p>Questions about these Terms? Email <a href="mailto:legal@lulaworks.co.za">legal@lulaworks.co.za</a>.</p>
+</div></section>
+{% endblock %}

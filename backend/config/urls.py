@@ -3,6 +3,8 @@ from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
+from apps.marketing import views as marketing_views
 from rest_framework_simplejwt.views import (
     TokenBlacklistView,
     TokenObtainPairView,
@@ -45,9 +47,14 @@ urlpatterns = [
     # OpenAPI
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/v1/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
-    # Manager web (session-auth, server-rendered HTML + HTMX) — mounted last so
-    # admin / api / health take precedence.
+    # SEO endpoints for the public site.
+    path("robots.txt", marketing_views.robots_txt, name="robots_txt"),
+    path("sitemap.xml", marketing_views.sitemap_xml, name="sitemap_xml"),
+    # Manager web (session-auth, server-rendered HTML + HTMX). Mounted before the
+    # public site so its named routes (login/, dashboard/, projects/, …) resolve.
     path("", include("apps.web.urls")),
+    # Public marketing website — owns "/" (home) and the public content pages.
+    path("", include("apps.marketing.urls")),
 ]
 
 # Uploaded media (avatars, work files) in DEVELOPMENT only. In production these
