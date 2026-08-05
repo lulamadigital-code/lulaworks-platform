@@ -119,11 +119,11 @@
     {% if p.is_popular %}<span class="chip ok" style="position:absolute;top:-10px;left:16px;">Most popular</span>{% endif %}
     <h3 style="margin:0 0 2px;">{{ p.name }}</h3>
     <div style="font-size:28px;font-weight:800;">
-      {% if selected_cycle == 'annual' %}R{{ p.annual_price|floatformat:0 }}<span class="muted" style="font-size:14px;font-weight:400;">/yr</span>
-      {% else %}R{{ p.price|floatformat:0 }}<span class="muted" style="font-size:14px;font-weight:400;">/mo</span>{% endif %}
+      {% if selected_cycle == 'annual' %}{{ p.symbol }}{{ p.annual|floatformat:0 }}<span class="muted" style="font-size:14px;font-weight:400;">/yr</span>
+      {% else %}{{ p.symbol }}{{ p.monthly|floatformat:0 }}<span class="muted" style="font-size:14px;font-weight:400;">/mo</span>{% endif %}
     </div>
     {% if selected_cycle == 'annual' and p.annual_saving > 0 %}
-      <p class="muted" style="margin:2px 0 0;color:var(--ok,#3a3);">Save R{{ p.annual_saving|floatformat:0 }} a year</p>
+      <p class="muted" style="margin:2px 0 0;color:var(--ok,#3a3);">Save {{ p.symbol }}{{ p.annual_saving|floatformat:0 }} a year</p>
     {% endif %}
     <ul style="list-style:none;padding:0;margin:14px 0;font-size:13.5px;line-height:1.9;">
       {% for f in p.features %}<li>· {{ f }}</li>{% endfor %}

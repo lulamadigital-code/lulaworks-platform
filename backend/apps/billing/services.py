@@ -180,7 +180,9 @@ def start_trial(company, actor=None):
     today = timezone.localdate()
     sub = Subscription.objects.create(
         company=company, plan=plan, status=SubscriptionStatus.TRIAL,
-        billing_cycle=BillingCycle.MONTHLY, current_period_start=today,
+        billing_cycle=BillingCycle.MONTHLY,
+        currency=getattr(company, "currency", None) or "ZAR",
+        current_period_start=today,
         current_period_end=today + timedelta(days=TRIAL_DAYS), seats=TRIAL_USERS,
         overrides={"max_users": TRIAL_USERS, "storage_quota_bytes": TRIAL_STORAGE_BYTES},
     )
@@ -192,13 +194,16 @@ def start_trial(company, actor=None):
 
 
 @transaction.atomic
-def change_plan(company, plan_code: str, billing_cycle: str = "monthly", actor=None):
+def change_plan(company, plan_code: str, billing_cycle: str = "monthly",
+                currency: str = None, actor=None):
     """Move a company onto a plan. Activates immediately, preserves all data.
     Upgrades raise limits + top up credits now; downgrades keep data and flag
-    over-limit if current usage exceeds the smaller plan."""
+    over-limit if current usage exceeds the smaller plan. Bills in `currency`
+    (defaults to the company's currency)."""
     from .models import Plan, Subscription, SubscriptionStatus
     plan = Plan.objects.get(code=plan_code, is_active=True)
     today = timezone.localdate()
+    currency = currency or getattr(company, "currency", None) or "ZAR"
     sub = getattr(company, "subscription", None)
     prev_tier = sub.plan.tier if sub is not None else -1
 
@@ -206,6 +211,7 @@ def change_plan(company, plan_code: str, billing_cycle: str = "monthly", actor=N
         sub = Subscription(company=company)
     sub.plan = plan
     sub.billing_cycle = billing_cycle
+    sub.currency = currency
     sub.status = SubscriptionStatus.ACTIVE
     sub.cancel_at_period_end = False
     sub.current_period_start = today
@@ -224,8 +230,8 @@ def change_plan(company, plan_code: str, billing_cycle: str = "monthly", actor=N
         kind = BillingTransaction_kind("UPGRADE")
     else:
         kind = BillingTransaction_kind("DOWNGRADE")
-    _log(company, kind, f"Switched to {plan.name} ({billing_cycle})",
-         amount=plan.price_for(billing_cycle), plan=plan)
+    _log(company, kind, f"Switched to {plan.name} ({billing_cycle}, {currency})",
+         amount=plan.price_in(currency, billing_cycle), plan=plan)
     return sub
 
 
@@ -332,9 +338,34 @@ def storage_status(company) -> dict:
     }
 
 
+def priced_plans(currency: str) -> list:
+    """Active plans with their prices resolved for `currency` — templates can't
+    call price_in(currency, cycle) with args, so we flatten it here. Used by both
+    the public pricing page and the in-app billing page."""
+    from .models import Plan
+    rows = []
+    for p in Plan.objects.filter(is_active=True).order_by("tier"):
+        rows.append({
+            "id": p.id, "code": p.code, "name": p.name, "tier": p.tier,
+            "is_popular": p.is_popular, "features": p.features,
+            "max_users": p.max_users, "monthly_ai_credits": p.monthly_ai_credits,
+            "storage_quota_bytes": p.storage_quota_bytes,
+            "symbol": p.symbol_for(currency),
+            "monthly": p.price_in(currency, "monthly"),
+            "annual": p.price_in(currency, "annual"),
+            "annual_saving": p.annual_saving_in(currency),
+        })
+    return rows
+
+
+def supported_currencies() -> list:
+    from .models import SUPPORTED_CURRENCIES
+    return SUPPORTED_CURRENCIES
+
+
 def subscription_overview(company) -> dict:
     """Everything the Billing page and dashboard widgets render — one source."""
-    from .models import CreditPack, Plan
+    from .models import CreditPack
     sub = getattr(company, "subscription", None)
     today = timezone.localdate()
 
@@ -346,10 +377,15 @@ def subscription_overview(company) -> dict:
     if sub is not None and sub.is_trialing and sub.current_period_end:
         trial_days_left = max(0, (sub.current_period_end - today).days)
 
+    from .models import currency_symbol
+    currency = (sub.currency if sub else None) or getattr(company, "currency", None) or "ZAR"
+
     return {
         "subscription": sub,
         "plan": sub.plan if sub else None,
         "billing_cycle": sub.billing_cycle if sub else "monthly",
+        "currency": currency,
+        "currency_symbol": currency_symbol(currency),
         "status": sub.status if sub else "none",
         "is_trialing": bool(sub and sub.is_trialing),
         "trial_days_left": trial_days_left,
@@ -362,7 +398,7 @@ def subscription_overview(company) -> dict:
         "user_count": users,
         "user_limit": company.max_users,
         "employee_count": employee_count(company),
-        "plans": list(Plan.objects.filter(is_active=True).order_by("tier")),
+        "plans": priced_plans(currency),
         "packs": list(CreditPack.objects.filter(is_active=True).order_by("price")),
         "history": list(company.billing_transactions.all()[:20]),
     }

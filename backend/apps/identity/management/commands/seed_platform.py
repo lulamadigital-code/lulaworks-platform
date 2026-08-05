@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 
 from apps.administration.models import FeatureFlagDefinition
 from apps.ai_platform.models import PromptTemplate
-from apps.billing.models import CreditPack, Plan
+from apps.billing.models import CreditPack, Plan, PlanPrice
 from apps.identity.models import Permission, Role
 
 PERMISSIONS = [
@@ -131,6 +131,15 @@ CREDIT_PACKS = [
     ("pack_10000", "10,000 AI Credits", 10000, 2999),
 ]
 
+# Regional pricing per plan: {code: {currency: (monthly, annual)}}. These are
+# round local SaaS prices (not raw FX conversions), which is how SaaS is priced
+# per region. ZAR is the plan's base price above. Annual ≈ two months free.
+PLAN_PRICES = {
+    "starter": {"USD": (19, 190), "EUR": (18, 180), "GBP": (15, 150), "AUD": (29, 290)},
+    "professional": {"USD": (79, 790), "EUR": (75, 750), "GBP": (65, 650), "AUD": (119, 1190)},
+    "business": {"USD": (249, 2490), "EUR": (239, 2390), "GBP": (199, 1990), "AUD": (379, 3790)},
+}
+
 FLAGS = [
     ("ai_quoting", "AI quote generation", False),
     ("compliance_engine", "Compliance Intelligence", True),
@@ -170,6 +179,18 @@ class Command(BaseCommand):
         # Retire any legacy plans not in the V1 set (kept for existing subs, hidden).
         Plan.objects.exclude(code__in=[p["code"] for p in PLANS]).update(is_active=False)
         self.stdout.write(f"Plans: {len(PLANS)} (legacy plans deactivated)")
+
+        # Regional prices (base currency ZAR lives on the plan itself).
+        n_prices = 0
+        for code, by_currency in PLAN_PRICES.items():
+            plan = Plan.objects.get(code=code)
+            for currency, (monthly, annual) in by_currency.items():
+                PlanPrice.objects.update_or_create(
+                    plan=plan, currency=currency,
+                    defaults={"monthly": monthly, "annual": annual},
+                )
+                n_prices += 1
+        self.stdout.write(f"Plan prices (multi-currency): {n_prices}")
 
         for code, name, credits, price in CREDIT_PACKS:
             CreditPack.objects.update_or_create(

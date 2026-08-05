@@ -143,14 +143,26 @@ def features(request):
 
 
 def pricing(request):
-    from apps.billing.models import CreditPack, Plan
+    from django.conf import settings
+
+    from apps.billing.models import CreditPack
+    from apps.billing.services import priced_plans, supported_currencies
+
+    currencies = supported_currencies()
+    default_ccy = getattr(settings, "DEFAULT_CURRENCY", "ZAR")
+    currency = (request.GET.get("currency") or default_ccy).upper()
+    if currency not in currencies:
+        currency = default_ccy
+
     ctx = _seo(
         "Pricing — LulaWorks",
-        "Simple, transparent pricing for contractors. Starter R299, Professional "
-        "R1,299, Business R3,999 per month. Unlimited employees on every plan.",
+        "Simple, transparent pricing for contractors, in your currency. "
+        "Unlimited employees on every plan.",
     )
-    ctx["plans"] = list(Plan.objects.filter(is_active=True).order_by("tier"))
+    ctx["plans"] = priced_plans(currency)
     ctx["packs"] = list(CreditPack.objects.filter(is_active=True).order_by("price"))
+    ctx["currencies"] = currencies
+    ctx["currency"] = currency
     return render(request, "marketing/pricing.html", ctx)
 
 

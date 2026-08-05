@@ -8,6 +8,15 @@ from django.db import models
 
 from apps.core.models import PlatformBaseModel
 
+# Currencies LulaWorks is built to price in. Amounts are stored as Decimal; only
+# the display symbol differs. Order here is the display order in the UI selector.
+CURRENCY_SYMBOLS = {"ZAR": "R", "USD": "$", "EUR": "€", "GBP": "£", "AUD": "A$"}
+SUPPORTED_CURRENCIES = list(CURRENCY_SYMBOLS)
+
+
+def currency_symbol(code: str) -> str:
+    return CURRENCY_SYMBOLS.get(code, (code or "") + " ")
+
 
 class Plan(PlatformBaseModel):
     """A subscription product. Entitlements drive feature flags + limits.
@@ -43,22 +52,60 @@ class Plan(PlatformBaseModel):
     def __str__(self):
         return self.name
 
-    #: Display symbols for the currencies we're built to support. Amounts are
-    #: always stored as Decimal; only presentation differs by currency.
-    CURRENCY_SYMBOLS = {"ZAR": "R", "USD": "$", "EUR": "€", "GBP": "£", "AUD": "A$"}
-
     @property
     def currency_symbol(self) -> str:
-        return self.CURRENCY_SYMBOLS.get(self.currency, self.currency + " ")
+        return currency_symbol(self.currency)
+
+    def symbol_for(self, currency: str = None) -> str:
+        return currency_symbol(currency or self.currency)
 
     def price_for(self, cycle: str):
-        """Headline price for a billing cycle ('monthly' | 'annual')."""
+        """Base-currency headline price for a billing cycle ('monthly'|'annual')."""
         return self.annual_price if cycle == "annual" else self.price
+
+    def price_in(self, currency: str, cycle: str = "monthly"):
+        """Price for a given currency + cycle. Falls back to the plan's base
+        currency price when no explicit price exists for `currency`."""
+        if currency and currency != self.currency:
+            pp = self.prices.filter(currency=currency).first()
+            if pp is not None:
+                return pp.annual if cycle == "annual" else pp.monthly
+        return self.price_for(cycle)
+
+    def annual_saving_in(self, currency: str):
+        """Annual saving (≈ two months) in the given currency."""
+        return (self.price_in(currency, "monthly") * 12) - self.price_in(currency, "annual")
+
+    @property
+    def available_currencies(self):
+        """Currencies this plan is priced in (base + any PlanPrice), in display order."""
+        priced = {self.currency} | set(self.prices.values_list("currency", flat=True))
+        return [c for c in SUPPORTED_CURRENCIES if c in priced]
 
     @property
     def annual_saving(self):
         """What annual billing saves vs 12 monthly payments (≈ two months)."""
         return (self.price * 12) - self.annual_price
+
+
+class PlanPrice(PlatformBaseModel):
+    """A plan's price in one currency. One Plan (its limits/features/tier) can
+    carry many prices — so LulaWorks lists local prices per region without
+    duplicating the plan. The plan's own price/annual_price is the base currency."""
+
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name="prices")
+    currency = models.CharField(max_length=3)
+    monthly = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    annual = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    class Meta:
+        ordering = ["plan", "currency"]
+        constraints = [
+            models.UniqueConstraint(fields=["plan", "currency"], name="unique_plan_currency")
+        ]
+
+    def __str__(self):
+        return f"{self.plan.code} {self.currency} {self.monthly}"
 
 
 class SubscriptionStatus(models.TextChoices):
@@ -87,6 +134,9 @@ class Subscription(PlatformBaseModel):
     billing_cycle = models.CharField(
         max_length=12, choices=BillingCycle.choices, default=BillingCycle.MONTHLY
     )
+    # The currency this company is billed in (set from Company.currency on
+    # subscribe). Amounts come from the plan's PlanPrice for this currency.
+    currency = models.CharField(max_length=3, default="ZAR")
     current_period_start = models.DateField(null=True, blank=True)
     current_period_end = models.DateField(null=True, blank=True)
     seats = models.PositiveIntegerField(default=1)
@@ -113,8 +163,12 @@ class Subscription(PlatformBaseModel):
 
     @property
     def price(self):
-        """What this company pays per cycle right now."""
-        return self.plan.price_for(self.billing_cycle)
+        """What this company pays per cycle right now, in its billing currency."""
+        return self.plan.price_in(self.currency, self.billing_cycle)
+
+    @property
+    def currency_symbol(self) -> str:
+        return currency_symbol(self.currency)
 
 
 class CreditPack(PlatformBaseModel):

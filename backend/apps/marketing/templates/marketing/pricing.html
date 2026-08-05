@@ -8,9 +8,16 @@
       we never charge you for the size of your crew.</p>
 
     {% with annual=request.GET.cycle %}
-    <div class="toggle" style="margin:22px 0 8px;">
-      <a href="?cycle=monthly" class="{% if annual != 'annual' %}on{% endif %}">Monthly</a>
-      <a href="?cycle=annual" class="{% if annual == 'annual' %}on{% endif %}">Annual · save ~2 months</a>
+    <div class="row" style="justify-content:center;gap:14px;flex-wrap:wrap;margin:22px 0 8px;">
+      <div class="toggle">
+        <a href="?cycle=monthly&currency={{ currency }}" class="{% if annual != 'annual' %}on{% endif %}">Monthly</a>
+        <a href="?cycle=annual&currency={{ currency }}" class="{% if annual == 'annual' %}on{% endif %}">Annual · save ~2 months</a>
+      </div>
+      <div class="toggle">
+        {% for c in currencies %}
+        <a href="?cycle={{ annual|default:'monthly' }}&currency={{ c }}" class="{% if c == currency %}on{% endif %}">{{ c }}</a>
+        {% endfor %}
+      </div>
     </div>
 
     <div class="grid g3" style="margin-top:34px;text-align:left;align-items:start;">
@@ -19,11 +26,11 @@
         {% if p.is_popular %}<span class="tag">MOST POPULAR</span>{% endif %}
         <h3>{{ p.name }}</h3>
         <div class="price">
-          {% if annual == 'annual' %}{{ p.currency_symbol }}{{ p.annual_price|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">/yr</span>
-          {% else %}{{ p.currency_symbol }}{{ p.price|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">/mo</span>{% endif %}
+          {% if annual == 'annual' %}{{ p.symbol }}{{ p.annual|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">/yr</span>
+          {% else %}{{ p.symbol }}{{ p.monthly|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">/mo</span>{% endif %}
         </div>
         {% if annual == 'annual' and p.annual_saving > 0 %}
-          <p style="margin:2px 0 0;color:var(--green);font-weight:700;">Save {{ p.currency_symbol }}{{ p.annual_saving|floatformat:0 }} a year</p>
+          <p style="margin:2px 0 0;color:var(--green);font-weight:700;">Save {{ p.symbol }}{{ p.annual_saving|floatformat:0 }} a year</p>
         {% endif %}
         <ul>
           <li><strong>{{ p.max_users }} user{{ p.max_users|pluralize }}</strong></li>
@@ -38,8 +45,8 @@
     </div>
     {% endwith %}
 
-    <p class="muted" style="margin-top:28px;">Need more AI? Top up any plan with credit packs:
-      {% for pack in packs %}<strong>{{ pack.credits|floatformat:0 }} for R{{ pack.price|floatformat:0 }}</strong>{% if not forloop.last %} · {% endif %}{% endfor %}.</p>
+    <p class="muted" style="margin-top:24px;">Prices shown in {{ currency }}. Choose your currency above.
+      All plans include a 30-day free trial — no credit card required.</p>
     <div class="cta-row" style="justify-content:center;margin-top:10px;">
       <a class="btn ghost" href="{% url 'marketing:demo' %}">Book a Demo</a>
     </div>

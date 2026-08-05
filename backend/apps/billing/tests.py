@@ -154,3 +154,31 @@ class SubscriptionLifecycleTests(TestCase):
         self.assertTrue(ov["is_trialing"])
         self.assertEqual(ov["credits_remaining"], Decimal("100"))
         self.assertIn("pct", ov["storage"])
+
+
+class MultiCurrencyPricingTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="US Co", currency="USD")
+        _, self.pro, _ = _seed_plans()
+        from .models import PlanPrice
+        PlanPrice.objects.create(plan=self.pro, currency="USD",
+                                 monthly=Decimal("79"), annual=Decimal("790"))
+
+    def test_price_in_returns_currency_price(self):
+        self.assertEqual(self.pro.price_in("USD", "monthly"), Decimal("79"))
+        self.assertEqual(self.pro.price_in("USD", "annual"), Decimal("790"))
+        # Fallback to base (ZAR) when no price for that currency.
+        self.assertEqual(self.pro.price_in("GBP", "monthly"), self.pro.price)
+
+    def test_priced_plans_flattens_for_currency(self):
+        from .services import priced_plans
+        rows = {r["code"]: r for r in priced_plans("USD")}
+        self.assertEqual(rows["professional"]["monthly"], Decimal("79"))
+        self.assertEqual(rows["professional"]["symbol"], "$")
+
+    def test_change_plan_records_company_currency_and_amount(self):
+        from .services import change_plan
+        sub = change_plan(self.company, "professional")   # company.currency = USD
+        self.assertEqual(sub.currency, "USD")
+        self.assertEqual(sub.price, Decimal("79"))         # USD monthly, not ZAR
+        self.assertEqual(sub.currency_symbol, "$")
