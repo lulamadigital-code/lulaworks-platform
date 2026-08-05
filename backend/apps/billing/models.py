@@ -18,6 +18,9 @@ class Plan(PlatformBaseModel):
 
     code = models.CharField(max_length=32, unique=True)  # starter, professional, business
     name = models.CharField(max_length=64)
+    # Pricing currency. V1 charges in ZAR, but the field is here so plans can be
+    # priced in USD/EUR/GBP/AUD/… as LulaWorks expands, with no schema change.
+    currency = models.CharField(max_length=3, default="ZAR")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)          # monthly
     annual_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)   # yearly (~2 months free)
     billing_period = models.CharField(max_length=12, default="monthly")
@@ -39,6 +42,14 @@ class Plan(PlatformBaseModel):
 
     def __str__(self):
         return self.name
+
+    #: Display symbols for the currencies we're built to support. Amounts are
+    #: always stored as Decimal; only presentation differs by currency.
+    CURRENCY_SYMBOLS = {"ZAR": "R", "USD": "$", "EUR": "€", "GBP": "£", "AUD": "A$"}
+
+    @property
+    def currency_symbol(self) -> str:
+        return self.CURRENCY_SYMBOLS.get(self.currency, self.currency + " ")
 
     def price_for(self, cycle: str):
         """Headline price for a billing cycle ('monthly' | 'annual')."""

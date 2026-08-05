@@ -19,11 +19,11 @@
         {% if p.is_popular %}<span class="tag">MOST POPULAR</span>{% endif %}
         <h3>{{ p.name }}</h3>
         <div class="price">
-          {% if annual == 'annual' %}R{{ p.annual_price|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">/yr</span>
-          {% else %}R{{ p.price|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">/mo</span>{% endif %}
+          {% if annual == 'annual' %}{{ p.currency_symbol }}{{ p.annual_price|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">/yr</span>
+          {% else %}{{ p.currency_symbol }}{{ p.price|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">/mo</span>{% endif %}
         </div>
         {% if annual == 'annual' and p.annual_saving > 0 %}
-          <p style="margin:2px 0 0;color:var(--green);font-weight:700;">Save R{{ p.annual_saving|floatformat:0 }} a year</p>
+          <p style="margin:2px 0 0;color:var(--green);font-weight:700;">Save {{ p.currency_symbol }}{{ p.annual_saving|floatformat:0 }} a year</p>
         {% endif %}
         <ul>
           <li><strong>{{ p.max_users }} user{{ p.max_users|pluralize }}</strong></li>

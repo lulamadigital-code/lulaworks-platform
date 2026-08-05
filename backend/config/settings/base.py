@@ -61,6 +61,10 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # i18n-ready: resolves the active locale per request so languages can be added
+    # later (V1 is English-only) without re-architecting. Must sit after Session
+    # and before Common.
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -206,10 +210,23 @@ CSRF_TRUSTED_ORIGINS = [
     o for o in config("CSRF_TRUSTED_ORIGINS", default="").split(",") if o
 ]
 
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "Africa/Johannesburg"
+# Internationalisation. LulaWorks is a global platform: English-only in V1, but
+# i18n is switched on and the language list is here so more can be added without
+# re-architecting. Dates/numbers are stored ISO/UTC and displayed locale-aware.
+LANGUAGE_CODE = config("LANGUAGE_CODE", default="en")
+LANGUAGES = [
+    ("en", "English"),
+    # Future: ("fr", "Français"), ("es", "Español"), ("pt", "Português"), …
+]
+# Default platform timezone; per-company timezone lives on Company.timezone.
+TIME_ZONE = config("TIME_ZONE", default="UTC")
 USE_I18N = True
 USE_TZ = True
+
+# Default pricing/display currency for the platform. Individual plans carry their
+# own currency (Plan.currency); tenants carry Company.currency. Multi-currency
+# ready — V1 defaults to ZAR.
+DEFAULT_CURRENCY = config("DEFAULT_CURRENCY", default="ZAR")
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
