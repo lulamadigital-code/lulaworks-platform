@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import views, views_billing
 
 app_name = "web"
 
@@ -27,6 +27,11 @@ urlpatterns = [
     path("company/bank/", views.company_bank, name="company_bank"),
     path("company/contacts/", views.company_contact, name="company_contact"),
     path("company/documents/", views.company_document, name="company_document"),
+    # Billing & subscription
+    path("billing/", views_billing.billing, name="billing"),
+    path("billing/change-plan/", views_billing.billing_change_plan, name="billing_change_plan"),
+    path("billing/cancel/", views_billing.billing_cancel, name="billing_cancel"),
+    path("billing/buy-credits/", views_billing.billing_buy_credits, name="billing_buy_credits"),
     # People — the company's own members, and the pool every work picker reads
     path("people/", views.people, name="people"),
     path("people/add/", views.people_add, name="people_add"),

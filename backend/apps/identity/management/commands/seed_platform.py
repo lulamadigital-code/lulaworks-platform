@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 
 from apps.administration.models import FeatureFlagDefinition
 from apps.ai_platform.models import PromptTemplate
-from apps.billing.models import Plan
+from apps.billing.models import CreditPack, Plan
 from apps.identity.models import Permission, Role
 
 PERMISSIONS = [
@@ -68,12 +68,67 @@ ROLES = {
     "Worker": ["projects.view", "work.edit", "work.files"],
 }
 
+GB = 1024 ** 3
+
+# The V1 pricing model (spec). Plans are DATA — an Enterprise tier can be added
+# later as another row with a higher `tier`, no code change. `module_entitlements`
+# are the gating keys; `features` are the human-readable bullets for the UI.
+_STARTER_ENTITLEMENTS = ["basic_procurement", "basic_dashboard", "pdf_export", "excel_export"]
+_PRO_ENTITLEMENTS = _STARTER_ENTITLEMENTS + [
+    "ai_extraction", "rfq_extraction", "po_extraction", "invoice_extraction",
+    "scope_extraction", "supplier_intelligence", "price_history", "gps_checkin",
+    "time_tracking", "team_management", "advanced_dashboard",
+]
+_BUSINESS_ENTITLEMENTS = _PRO_ENTITLEMENTS + [
+    "approval_workflows", "compliance_management", "procurement_analytics",
+    "advanced_reporting", "multi_team",
+]
+
 PLANS = [
-    ("starter", "Starter", 299, 4, 1_073_741_824, 0, []),
-    ("business", "Business", 799, 15, 5_368_709_120, 500,
-     ["accounting", "dashboards", "compliance"]),
-    ("growth", "Growth", 1999, 50, 10_737_418_240, 2000,
-     ["accounting", "dashboards", "compliance", "procurement", "analytics"]),
+    {
+        "code": "starter", "name": "Starter", "tier": 1, "is_popular": False,
+        "price": 299, "annual_price": 2990, "max_users": 2,
+        "storage_quota_bytes": 5 * GB, "monthly_ai_credits": 300,
+        "support_level": "email", "module_entitlements": _STARTER_ENTITLEMENTS,
+        "features": [
+            "2 users", "Unlimited employees", "Unlimited customers & suppliers",
+            "Unlimited jobs, tasks & quotations", "Unlimited tax invoices & delivery notes",
+            "Basic procurement", "Basic dashboard", "PDF & Excel export",
+            "300 AI credits / month", "5 GB storage", "Email support",
+        ],
+    },
+    {
+        "code": "professional", "name": "Professional", "tier": 2, "is_popular": True,
+        "price": 1299, "annual_price": 12990, "max_users": 10,
+        "storage_quota_bytes": 50 * GB, "monthly_ai_credits": 2000,
+        "support_level": "priority", "module_entitlements": _PRO_ENTITLEMENTS,
+        "features": [
+            "Everything in Starter, plus:", "10 users", "2,000 AI credits / month",
+            "50 GB storage", "AI document extraction (RFQ, PO, invoice, scope)",
+            "Supplier intelligence & product price history",
+            "GPS employee check-ins & time tracking", "Team management",
+            "Advanced dashboards", "Priority support",
+        ],
+    },
+    {
+        "code": "business", "name": "Business", "tier": 3, "is_popular": False,
+        "price": 3999, "annual_price": 39990, "max_users": 50,
+        "storage_quota_bytes": 200 * GB, "monthly_ai_credits": 8000,
+        "support_level": "highest", "module_entitlements": _BUSINESS_ENTITLEMENTS,
+        "features": [
+            "Everything in Professional, plus:", "50 users", "8,000 AI credits / month",
+            "200 GB storage", "Advanced approval workflows", "Compliance management",
+            "Advanced procurement analytics", "Advanced reporting",
+            "Multi-team management", "Highest-priority support",
+        ],
+    },
+]
+
+# Optional one-off AI credit top-ups (spec).
+CREDIT_PACKS = [
+    ("pack_500", "500 AI Credits", 500, 199),
+    ("pack_2000", "2,000 AI Credits", 2000, 699),
+    ("pack_10000", "10,000 AI Credits", 10000, 2999),
 ]
 
 FLAGS = [
@@ -105,16 +160,23 @@ class Command(BaseCommand):
             role.permissions.set(wanted)
         self.stdout.write(f"Role templates: {len(ROLES)}")
 
-        for code, name, price, users, quota, credits, modules in PLANS:
-            Plan.objects.get_or_create(
-                code=code,
-                defaults={
-                    "name": name, "price": price, "max_users": users,
-                    "storage_quota_bytes": quota, "monthly_ai_credits": credits,
-                    "module_entitlements": modules,
-                },
+        # update_or_create so re-seeding REFRESHES prices/limits/features on any
+        # already-seeded plan (e.g. a running deployment) — not just new rows.
+        for spec in PLANS:
+            Plan.objects.update_or_create(
+                code=spec["code"],
+                defaults={**{k: v for k, v in spec.items() if k != "code"}, "is_active": True},
             )
-        self.stdout.write(f"Plans: {len(PLANS)}")
+        # Retire any legacy plans not in the V1 set (kept for existing subs, hidden).
+        Plan.objects.exclude(code__in=[p["code"] for p in PLANS]).update(is_active=False)
+        self.stdout.write(f"Plans: {len(PLANS)} (legacy plans deactivated)")
+
+        for code, name, credits, price in CREDIT_PACKS:
+            CreditPack.objects.update_or_create(
+                code=code,
+                defaults={"name": name, "credits": credits, "price": price, "is_active": True},
+            )
+        self.stdout.write(f"Credit packs: {len(CREDIT_PACKS)}")
 
         for key, desc, default in FLAGS:
             FeatureFlagDefinition.objects.get_or_create(

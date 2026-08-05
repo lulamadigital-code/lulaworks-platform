@@ -1246,6 +1246,13 @@ def people_add(request):
         messages.error(request, "Choose a role for the new member.")
         return redirect("web:people")
 
+    # Subscription seat limit — a User consumes a licence (Employees never do).
+    from apps.billing.services import can_add_user
+    seat = can_add_user(request.user.active_company)
+    if not seat.allowed:
+        messages.error(request, seat.reason)
+        return redirect("web:billing")
+
     try:
         membership, temp_password = add_company_member(
             request.user.active_company, request.user,

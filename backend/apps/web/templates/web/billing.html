@@ -1,0 +1,167 @@
+{% extends "web/base.html" %}
+{% block title %}Billing{% endblock %}
+{% block content %}
+<h1>Billing &amp; subscription</h1>
+<p class="sub">Your LulaWorks plan, AI credits, storage and billing history.</p>
+
+{% if is_over_limit %}
+<div class="card" style="border-color:var(--bad,#e5484d);background:var(--badbg,#fff0f0);">
+  <strong>You're over your plan's limits.</strong>
+  <p class="muted" style="margin:6px 0 0;">Your data is safe and fully accessible — but
+    you can't add new users until you're back within the limit or on a bigger plan.</p>
+</div>
+{% endif %}
+
+{# ── Current plan status ─────────────────────────────────────────────────── #}
+<div class="card">
+  <div class="row" style="align-items:flex-start;">
+    <div>
+      <div class="row" style="gap:10px;">
+        <h2 style="margin:0;">{{ plan.name|default:"No plan" }}</h2>
+        {% if is_trialing %}<span class="chip warn">Free trial</span>
+        {% elif status == 'active' %}<span class="chip ok">Active</span>
+        {% elif status == 'suspended' %}<span class="chip bad">Suspended</span>
+        {% elif status == 'cancelled' %}<span class="chip">Cancelled</span>
+        {% endif %}
+        <span class="muted">{{ billing_cycle|capfirst }} billing</span>
+      </div>
+      {% if is_trialing and trial_days_left is not None %}
+        <p class="muted" style="margin:8px 0 0;">{{ trial_days_left }} day{{ trial_days_left|pluralize }}
+          left in your trial. Choose a plan below to keep everything after it ends —
+          your data stays intact.</p>
+      {% elif next_billing_date %}
+        <p class="muted" style="margin:8px 0 0;">
+          {% if cancel_at_period_end %}Access ends{% else %}Next billing date{% endif %}:
+          <strong>{{ next_billing_date|date:"d M Y" }}</strong>
+        </p>
+      {% endif %}
+      {% if cancel_at_period_end %}
+        <p class="muted" style="margin:4px 0 0;color:var(--bad,#e5484d);">
+          Cancellation scheduled — your data will be preserved.</p>
+      {% endif %}
+    </div>
+    <span class="sp" style="flex:1;"></span>
+    {% if not is_trialing and plan and can_manage and not cancel_at_period_end %}
+    <form method="post" action="{% url 'web:billing_cancel' %}"
+          onsubmit="return confirm('Cancel at the end of the current period? Your data is kept.');">
+      {% csrf_token %}
+      <button class="btn" type="submit" style="background:transparent;color:var(--bad,#e5484d);border:1px solid var(--bad,#e5484d);">Cancel subscription</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Usage: credits · storage · users · employees ────────────────────────── #}
+<div class="grid">
+  <div class="tile">
+    <div class="n">{{ credits_remaining|floatformat:0 }}</div>
+    <div class="l">AI credits left <span class="muted">/ {{ credits_monthly|floatformat:0 }} mo</span></div>
+  </div>
+  <div class="tile">
+    <div class="n">{{ storage.used_gb }}<span class="muted" style="font-size:14px;"> / {{ storage.quota_gb }} GB</span></div>
+    <div class="l">Storage {% if storage.warn %}<span class="chip bad">{{ storage.pct }}%</span>{% else %}({{ storage.pct }}%){% endif %}</div>
+  </div>
+  <div class="tile">
+    <div class="n">{{ user_count }}<span class="muted" style="font-size:14px;"> / {{ user_limit }}</span></div>
+    <div class="l">Users (licensed)</div>
+  </div>
+  <div class="tile">
+    <div class="n">{{ employee_count }}</div>
+    <div class="l">Employees (unlimited)</div>
+  </div>
+</div>
+
+{% if storage.warn %}
+<p class="muted" style="margin:-6px 0 14px;color:var(--bad,#e5484d);">
+  ⚠ Storage is {{ storage.pct }}% full — free up space or upgrade for more.</p>
+{% endif %}
+
+{# ── AI credit exhausted notice ──────────────────────────────────────────── #}
+{% if credits_remaining <= 0 %}
+<div class="card" style="border-color:var(--warn,#f5a623);">
+  <strong>You're out of AI credits.</strong>
+  <p class="muted" style="margin:6px 0 0;">Non-AI features keep working. Buy a credit
+    pack below or upgrade your plan to resume AI document extraction and suggestions.</p>
+</div>
+{% endif %}
+
+{# ── AI credit packs ─────────────────────────────────────────────────────── #}
+<div class="row" style="margin:26px 0 12px;"><h2 style="margin:0;">Buy AI credits</h2></div>
+<div class="grid">
+  {% for pack in packs %}
+  <div class="tile" style="text-align:left;">
+    <div class="n">{{ pack.credits|floatformat:0 }}</div>
+    <div class="l">credits · <strong>R{{ pack.price|floatformat:0 }}</strong></div>
+    {% if can_manage %}
+    <form method="post" action="{% url 'web:billing_buy_credits' %}" style="margin-top:10px;">
+      {% csrf_token %}
+      <input type="hidden" name="pack_code" value="{{ pack.code }}">
+      <button class="btn" type="submit" style="padding:6px 14px;font-size:13px;">Buy pack</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Plan comparison ─────────────────────────────────────────────────────── #}
+<div class="row" style="margin:30px 0 8px;">
+  <h2 style="margin:0;">Plans</h2>
+  <span class="sp" style="flex:1;"></span>
+  <div class="row" style="gap:0;border:1px solid var(--line,#e5e5e5);border-radius:8px;overflow:hidden;">
+    <a href="?cycle=monthly" class="btn" style="border-radius:0;{% if selected_cycle != 'annual' %}{% else %}background:transparent;color:var(--ink,#333);{% endif %}">Monthly</a>
+    <a href="?cycle=annual" class="btn" style="border-radius:0;{% if selected_cycle == 'annual' %}{% else %}background:transparent;color:var(--ink,#333);{% endif %}">Annual <span style="font-size:11px;">· save ~2 months</span></a>
+  </div>
+</div>
+
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));align-items:start;">
+  {% for p in plans %}
+  <div class="card" style="{% if p.is_popular %}border:2px solid var(--brand,#0aa);{% endif %}position:relative;">
+    {% if p.is_popular %}<span class="chip ok" style="position:absolute;top:-10px;left:16px;">Most popular</span>{% endif %}
+    <h3 style="margin:0 0 2px;">{{ p.name }}</h3>
+    <div style="font-size:28px;font-weight:800;">
+      {% if selected_cycle == 'annual' %}R{{ p.annual_price|floatformat:0 }}<span class="muted" style="font-size:14px;font-weight:400;">/yr</span>
+      {% else %}R{{ p.price|floatformat:0 }}<span class="muted" style="font-size:14px;font-weight:400;">/mo</span>{% endif %}
+    </div>
+    {% if selected_cycle == 'annual' and p.annual_saving > 0 %}
+      <p class="muted" style="margin:2px 0 0;color:var(--ok,#3a3);">Save R{{ p.annual_saving|floatformat:0 }} a year</p>
+    {% endif %}
+    <ul style="list-style:none;padding:0;margin:14px 0;font-size:13.5px;line-height:1.9;">
+      {% for f in p.features %}<li>· {{ f }}</li>{% endfor %}
+    </ul>
+    {% if p.id == current_plan_id and not is_trialing %}
+      <button class="btn" disabled style="width:100%;opacity:.6;">Current plan</button>
+    {% elif can_manage %}
+    <form method="post" action="{% url 'web:billing_change_plan' %}">
+      {% csrf_token %}
+      <input type="hidden" name="plan_code" value="{{ p.code }}">
+      <input type="hidden" name="billing_cycle" value="{{ selected_cycle }}">
+      <button class="btn" type="submit" style="width:100%;{% if p.is_popular %}{% else %}background:var(--ink,#333);{% endif %}">
+        {% if is_trialing %}Choose {{ p.name }}
+        {% elif p.tier > current_tier %}Upgrade
+        {% elif p.tier < current_tier %}Downgrade
+        {% else %}Select{% endif %}
+      </button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Billing history ─────────────────────────────────────────────────────── #}
+<h2 style="margin:30px 0 10px;">Billing history</h2>
+<div class="card" style="padding:0;">
+  <table>
+    <tr><th>Date</th><th>Item</th><th>Credits</th><th class="right">Amount</th></tr>
+    {% for t in history %}
+    <tr>
+      <td class="muted">{{ t.created_at|date:"d M Y" }}</td>
+      <td>{{ t.description|default:t.get_kind_display }}</td>
+      <td class="muted">{% if t.credits %}+{{ t.credits|floatformat:0 }}{% else %}—{% endif %}</td>
+      <td class="right">{% if t.amount %}R{{ t.amount|floatformat:2 }}{% else %}—{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" class="muted" style="padding:16px;">No billing activity yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

@@ -30,6 +30,8 @@ _SECTIONS = {
     "company_profile": "company", "company_bank": "company",
     "company_contact": "company", "company_document": "company",
     "company_hours_page": "company", "company_hours": "company",
+    "billing": "billing", "billing_change_plan": "billing",
+    "billing_cancel": "billing", "billing_buy_credits": "billing",
     "customers": "customers", "customer_detail": "customers",
     "customer_edit": "customers",
     "customer_create": "customers", "customer_contact_save": "customers",
