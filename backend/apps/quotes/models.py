@@ -243,6 +243,12 @@ class Quotation(TenantBaseModel):
     assumptions = models.TextField(blank=True)
     notes = models.TextField(blank=True)
 
+    #: Per-document override of the company's default look. Null → use the
+    #: company default template for quotations, then the plain layout.
+    template = models.ForeignKey(
+        "DocumentTemplate", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+")
+
     class Meta:
         ordering = ["-created_at"]
         constraints = [
@@ -653,6 +659,11 @@ class CommercialDocument(TenantBaseModel):
         CustomerPurchaseOrder, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="commercial_documents")
 
+    #: Per-document override of the company's default look for this doc type.
+    template = models.ForeignKey(
+        "DocumentTemplate", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+")
+
     # Delivery-note operational fields (a delivery note carries no prices).
     delivery_date = models.DateField(null=True, blank=True)
     delivery_address = models.CharField(max_length=255, blank=True)
@@ -677,3 +688,129 @@ class CommercialDocument(TenantBaseModel):
         # commercial record. FINALIZED/SENT remain for any legacy rows.
         return self.status in (self.Status.APPROVED, self.Status.FINALIZED,
                                self.Status.SENT)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Document Designer — companies keep THEIR document branding, not ours.
+#
+# A business that has issued the same quotation layout for fifteen years should
+# not have to abandon it to adopt LulaWorks. A DocumentTemplate lets a company
+# hold several looks per document type, pick a default, and override it on a
+# single document — without touching code.
+#
+# Deliberately config-over-code: the visual variety is a small set of real
+# BASE LAYOUTS (classic / modern / compact) parameterised by a JSON `config`
+# (colours, font, logo position, header/footer, watermark, page numbering, which
+# fields show, banking, terms). The named looks the market expects — Engineering,
+# Mining, Corporate, Logistics — are PRESET CONFIGS over those layouts, not
+# fifteen bespoke renderers. This is what lets a visual designer or AI-assisted
+# "import my existing document" be added later without a redesign: they will just
+# produce more `config`, and the renderer already knows how to read it.
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class DocumentType(models.TextChoices):
+    QUOTATION = "quotation", "Quotation"
+    INVOICE = "invoice", "Tax invoice"
+    DELIVERY = "delivery", "Delivery note"
+
+
+class BaseLayout(models.TextChoices):
+    CLASSIC = "classic", "Classic"      # the letterhead LulaWorks shipped with
+    MODERN = "modern", "Modern"         # accent bar, logo can move
+    COMPACT = "compact", "Compact"      # tighter, fits more on a page
+
+
+#: The full set of switches a template may set, with the values used when a
+#: template (or the whole feature) is absent — so a company with no templates
+#: renders exactly as before. `resolve` / `effective_config` in services merge a
+#: template's stored `config` over this. Kept flat and JSON-serialisable so the
+#: same shape can come from a form today or an AI importer tomorrow.
+DEFAULT_CONFIG = {
+    "accent_color": "",           # "" → company brand_primary → LulaWorks teal
+    "secondary_color": "",
+    "font": "Helvetica",          # Helvetica | Times-Roman | Courier (print-safe)
+    "logo_position": "left",      # left | center | right
+    "header_note": "",            # small line under the letterhead
+    "footer_note": "",            # small line in the page footer
+    "watermark_text": "",         # e.g. "DRAFT", "QUOTATION"
+    "show_watermark": False,
+    "page_numbering": True,
+    # Which blocks/fields appear. Defaults reproduce today's documents.
+    "show_banking": True,
+    "show_signature": True,
+    "show_terms": True,
+    "show_vat_number": True,
+    "show_registration_number": True,
+    "show_customer_po": True,
+    "show_project_reference": False,
+    "show_qr": False,
+    "terms_override": "",         # non-empty replaces the company's stored terms
+}
+
+#: Values a `config` may legitimately hold, so a form/import can't smuggle in
+#: unknown keys or unsafe values. Enforced in services.clean_config.
+ALLOWED_FONTS = ["Helvetica", "Times-Roman", "Courier"]
+ALLOWED_LOGO_POSITIONS = ["left", "center", "right"]
+
+
+class DocumentTemplate(TenantBaseModel):
+    """One saved look for one document type. `is_default` marks the company's
+    default for that type (at most one per company+type, kept true by the
+    service). `config` holds the switches above."""
+
+    doc_type = models.CharField(max_length=12, choices=DocumentType.choices)
+    name = models.CharField(max_length=80)
+    base_layout = models.CharField(max_length=12, choices=BaseLayout.choices,
+                                   default=BaseLayout.CLASSIC)
+    is_default = models.BooleanField(default=False)
+    #: True for the seeded built-ins; a company can add its own on top.
+    is_builtin = models.BooleanField(default=False)
+    config = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ["doc_type", "-is_default", "name"]
+        indexes = [models.Index(fields=["company", "doc_type", "is_default"])]
+
+    def __str__(self):
+        return f"{self.get_doc_type_display()} · {self.name}"
+
+    def merged_config(self) -> dict:
+        """This template's config filled in with the defaults for anything unset
+        — the shape the PDF builders actually read."""
+        out = dict(DEFAULT_CONFIG)
+        out.update(self.config or {})
+        return out
+
+
+#: The built-in library seeded for every company (services.seed_document_templates).
+#: (doc_type, name, base_layout, is_default, config-overrides). Configs are sparse
+#: — only what differs from DEFAULT_CONFIG — because that is exactly what a preset
+#: IS: a small, named set of deviations from the plain document.
+BUILTIN_TEMPLATES = [
+    # Quotations
+    ("quotation", "Classic", "classic", True, {}),
+    ("quotation", "Modern", "modern", False,
+     {"logo_position": "left", "accent_color": "#0E6E6E"}),
+    ("quotation", "Corporate", "classic", False,
+     {"accent_color": "#1F3A5F", "font": "Times-Roman"}),
+    ("quotation", "Engineering", "modern", False,
+     {"accent_color": "#14549B", "show_project_reference": True,
+      "header_note": "Engineering & Technical Services"}),
+    ("quotation", "Minimal", "compact", False,
+     {"accent_color": "#333333", "show_banking": False, "show_signature": False}),
+    ("quotation", "Mining", "modern", False,
+     {"accent_color": "#B9711A", "secondary_color": "#22303B",
+      "show_project_reference": True}),
+    # Tax invoices
+    ("invoice", "Standard", "classic", True, {}),
+    ("invoice", "Corporate", "classic", False,
+     {"accent_color": "#1F3A5F", "font": "Times-Roman"}),
+    ("invoice", "Compact", "compact", False, {"show_signature": False}),
+    # Delivery notes
+    ("delivery", "Standard", "classic", True, {}),
+    ("delivery", "Warehouse", "compact", False,
+     {"show_signature": True, "header_note": "Goods received in good order"}),
+    ("delivery", "Logistics", "modern", False,
+     {"accent_color": "#0A8F57", "header_note": "Proof of Delivery"}),
+]
