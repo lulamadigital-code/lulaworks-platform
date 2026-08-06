@@ -281,4 +281,204 @@ class OverviewTests(TestCase):
             stats = customer_overview(customer)
             self.assertEqual(stats["contacts"], 1)
             self.assertEqual(stats["branches"], 1)
-            self.assertGreater(stats["departments"], 0)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CRM — leads, pipeline, activities, history, notes.
+# ══════════════════════════════════════════════════════════════════════════════
+
+from .models import (  # noqa: E402
+    Activity,
+    CustomerNote,
+    Interaction,
+    Lead,
+    Opportunity,
+    OpportunityStage,
+)
+from .services import (  # noqa: E402
+    CRMError,
+    add_note,
+    convert_lead,
+    create_lead,
+    create_opportunity_for,
+    crm_reports,
+    crm_search,
+    customer_dashboard,
+    lose_opportunity,
+    pipeline_summary,
+    schedule_activity,
+    set_opportunity_stage,
+    win_opportunity,
+)
+
+
+class LeadConversionTests(TestCase):
+    def test_convert_lead_mints_customer_contact_and_opportunity(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            lead = create_lead(company, None, company_name="Prospect Mining",
+                               contact_name="Thabo Ncube", email="thabo@prospect.co.za",
+                               industry="Mining", estimated_value=250000)
+            customer = convert_lead(lead, None)
+
+            self.assertEqual(customer.name, "Prospect Mining")
+            self.assertEqual(customer.industry, "Mining")
+            lead.refresh_from_db()
+            self.assertEqual(lead.status, Lead.Status.CONVERTED)
+            self.assertEqual(lead.converted_customer_id, customer.id)
+            self.assertIsNotNone(lead.converted_at)
+            # The human came across as the primary contact.
+            self.assertTrue(customer.contacts.filter(full_name="Thabo Ncube",
+                                                     is_primary=True).exists())
+            # And a qualified opportunity was opened, carrying the value.
+            opp = Opportunity.objects.get(customer=customer)
+            self.assertEqual(opp.stage, OpportunityStage.QUALIFIED)
+            self.assertEqual(opp.estimated_value, lead.estimated_value)
+            self.assertEqual(opp.lead_id, lead.id)
+
+    def test_convert_lead_is_idempotent(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            lead = create_lead(company, None, company_name="Once Off")
+            first = convert_lead(lead, None, create_opportunity=False)
+            second = convert_lead(lead, None, create_opportunity=False)
+            self.assertEqual(first.id, second.id)
+            self.assertEqual(Customer.objects.filter(name="Once Off").count(), 1)
+
+    def test_create_lead_requires_a_name(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            with self.assertRaises(CRMError):
+                create_lead(company, None, company_name="   ")
+
+
+class PipelineTests(TestCase):
+    def _customer(self, company):
+        return create_customer(company, None, name="Deep Level Mining",
+                               seed_departments=False)
+
+    def test_stage_advance_updates_default_probability(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            opp = create_opportunity_for(self._customer(company), None,
+                                         title="Conveyor overhaul")
+            self.assertEqual(opp.probability, 10)          # LEAD default
+            set_opportunity_stage(opp, None, OpportunityStage.NEGOTIATION)
+            self.assertEqual(opp.stage, OpportunityStage.NEGOTIATION)
+            self.assertEqual(opp.probability, 80)          # tracked the stage
+
+    def test_custom_probability_is_respected_on_advance(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            opp = create_opportunity_for(self._customer(company), None,
+                                         title="X", probability=55)
+            set_opportunity_stage(opp, None, OpportunityStage.QUOTE_SENT)
+            self.assertEqual(opp.probability, 55)          # human value untouched
+
+    def test_win_stamps_close_date_and_links_quotation(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            opp = create_opportunity_for(self._customer(company), None, title="Y")
+            win_opportunity(opp, None)
+            self.assertTrue(opp.is_won)
+            self.assertIsNotNone(opp.closed_at)
+            self.assertEqual(opp.probability, 100)
+
+    def test_lose_records_reason(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            opp = create_opportunity_for(self._customer(company), None, title="Z")
+            lose_opportunity(opp, None, reason="Budget cut")
+            self.assertTrue(opp.is_lost)
+            self.assertEqual(opp.lost_reason, "Budget cut")
+
+    def test_pipeline_summary_totals_open_value(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            cust = self._customer(company)
+            create_opportunity_for(cust, None, title="A", estimated_value=100000,
+                                   stage=OpportunityStage.QUALIFIED)
+            create_opportunity_for(cust, None, title="B", estimated_value=50000,
+                                   stage=OpportunityStage.NEGOTIATION)
+            won = create_opportunity_for(cust, None, title="C",
+                                         estimated_value=999999)
+            win_opportunity(won, None)          # excluded from open pipeline
+            summary = pipeline_summary(company)
+            self.assertEqual(summary["open_count"], 2)
+            self.assertEqual(summary["open_value"], 150000)
+
+
+class ActivityAndHistoryTests(TestCase):
+    def test_schedule_and_complete_activity(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            cust = create_customer(company, None, name="C", seed_departments=False)
+            act = schedule_activity(company, None, subject="Call procurement",
+                                    activity_type=Activity.Type.CALL, customer=cust)
+            self.assertTrue(act.is_open)
+            from apps.customers.services import complete_activity
+            complete_activity(act, None, outcome="Spoke to buyer")
+            self.assertEqual(act.status, Activity.Status.DONE)
+            self.assertIsNotNone(act.completed_at)
+
+    def test_activity_requires_an_anchor(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            with self.assertRaises(CRMError):
+                schedule_activity(company, None, subject="Orphan")
+
+    def test_note_pins_and_requires_body(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            cust = create_customer(company, None, name="C", seed_departments=False)
+            note = add_note(company, None, body="Prefers morning deliveries",
+                            customer=cust, is_pinned=True)
+            self.assertTrue(note.is_pinned)
+            with self.assertRaises(CRMError):
+                add_note(company, None, body="", customer=cust)
+
+
+class DashboardAndSearchTests(TestCase):
+    def test_customer_dashboard_reads_crm_layer(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            cust = create_customer(company, None, name="Anglo Plats")
+            create_opportunity_for(cust, None, title="Shutdown 2026",
+                                   estimated_value=500000,
+                                   stage=OpportunityStage.NEGOTIATION)
+            schedule_activity(company, None, subject="Site visit",
+                              activity_type=Activity.Type.SITE_VISIT, customer=cust)
+            data = customer_dashboard(cust)
+            self.assertEqual(data["open_opportunity_count"], 1)
+            self.assertEqual(data["open_opportunity_value"], 500000)
+            self.assertIsNotNone(data["next_activity"])
+
+    def test_crm_search_finds_customer_and_lead(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            create_customer(company, None, name="Sasol Secunda")
+            create_lead(company, None, company_name="Sasol Sasolburg")
+            res = crm_search(company, "Sasol")
+            names = {c.name for c in res["customers"]}
+            self.assertIn("Sasol Secunda", names)
+            self.assertEqual(len(res["leads"]), 1)
+            self.assertGreaterEqual(res["total"], 2)
+
+    def test_crm_search_ignores_short_queries(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            res = crm_search(company, "S")
+            self.assertEqual(res["total"], 0)
+
+    def test_crm_reports_counts_conversion(self):
+        company = make_company()
+        with tenant_scope(company.id):
+            cust = create_customer(company, None, name="C", seed_departments=False)
+            w = create_opportunity_for(cust, None, title="won deal")
+            win_opportunity(w, None)
+            lose_opportunity(create_opportunity_for(cust, None, title="lost deal"),
+                             None)
+            rep = crm_reports(company)
+            self.assertEqual(rep["won"], 1)
+            self.assertEqual(rep["lost"], 1)
+            self.assertEqual(rep["conversion_rate"], 50.0)

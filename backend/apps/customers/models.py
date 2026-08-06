@@ -18,6 +18,7 @@ responsibility is functional — it tells LulaWorks who to send a quotation to a
 who to copy, which is the whole point of modelling the organisation at all.
 """
 
+from django.conf import settings
 from django.db import models
 
 from apps.core.models import TenantBaseModel
@@ -71,6 +72,20 @@ def customer_doc_upload_path(instance, filename):
     return f"c/{instance.company_id}/customer_docs/{filename}"
 
 
+#: What kind of client this is. Drives nothing structural yet — it exists so a
+#: sales team can segment and report ("show me all the mines"), and so future
+#: pricing/terms defaults can key off it without another migration.
+class CustomerType(models.TextChoices):
+    MINE = "mine", "Mine"
+    INDUSTRIAL = "industrial", "Industrial / Manufacturing"
+    CONSTRUCTION = "construction", "Construction"
+    ENGINEERING = "engineering", "Engineering firm"
+    UTILITY = "utility", "Utility / Power"
+    GOVERNMENT = "government", "Government / Municipal"
+    COMMERCIAL = "commercial", "Commercial"
+    OTHER = "other", "Other"
+
+
 class Customer(TenantBaseModel):
     """A client organisation. `code` is generated so people have something short
     to quote on paperwork; `client_name` fields elsewhere become a display
@@ -79,6 +94,12 @@ class Customer(TenantBaseModel):
     code = models.CharField(max_length=16, blank=True)
     name = models.CharField(max_length=255)                  # registered name
     trading_name = models.CharField(max_length=255, blank=True)
+    customer_type = models.CharField(max_length=16, choices=CustomerType.choices,
+                                     blank=True)
+    #: ISO-ish language tag for future localisation of documents to this client
+    #: (e.g. "en", "pt", "fr"). Stored now so the relationship carries it; no
+    #: behaviour keys off it yet.
+    preferred_language = models.CharField(max_length=12, blank=True)
     registration_no = models.CharField(max_length=64, blank=True)
     vat_no = models.CharField(max_length=32, blank=True)
     tax_no = models.CharField(max_length=32, blank=True)
@@ -350,3 +371,345 @@ class CustomerDocument(TenantBaseModel):
 
     def __str__(self):
         return self.name
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CRM — the relationship layer that sits AROUND the customer record.
+#
+# The customer models above answer "who is this organisation and how is it
+# structured". The models below answer the questions a sales team lives in:
+# who might become a customer (Lead), what deals are in flight (Opportunity),
+# what we've done and must still do about them (Activity), what was said
+# (Interaction), and what we must not forget (CustomerNote).
+#
+# The intended flow, and the reason this is a pipeline and not a flat list:
+#
+#     Lead ─▶ Opportunity ─▶ Customer ─▶ Quotation ─▶ Job ─▶ Invoice ─▶ Payment
+#      │          │                          ▲
+#      └── convert┴──────────────────────────┘
+#
+# A Lead is a stranger; converting it mints a real Customer. An Opportunity is a
+# named deal against a Customer; winning it is expected to produce a Quotation.
+# Nothing here sends anything or moves money — it records intent and history,
+# leaving the actual quotation/job/invoice objects as the single source of truth
+# (see the relationship helpers in services.py).
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+#: Where a lead came from — the input to any "which channel actually converts?"
+#: question a sales manager will eventually ask.
+LEAD_SOURCES = [
+    "Website", "Referral", "Cold call", "Email", "Trade show", "Tender portal",
+    "Existing customer", "Social media", "Advertising", "Walk-in", "Other",
+]
+
+
+class Lead(TenantBaseModel):
+    """A potential customer we have NOT yet qualified into a real relationship.
+
+    Kept deliberately separate from Customer: a lead is cheap, disposable and
+    often junk, and we don't want half-real strangers polluting the customer
+    list, the routing engine or the reports. When a lead is real, converting it
+    creates a proper Customer (and optionally an Opportunity) and stamps
+    `converted_customer` so the history survives the promotion.
+    """
+
+    class Status(models.TextChoices):
+        NEW = "new", "New"
+        CONTACTED = "contacted", "Contacted"
+        QUALIFIED = "qualified", "Qualified"
+        UNQUALIFIED = "unqualified", "Unqualified"
+        CONVERTED = "converted", "Converted"
+        LOST = "lost", "Lost"
+
+    # Who they are — free text, because we know almost nothing yet.
+    company_name = models.CharField(max_length=255)
+    contact_name = models.CharField(max_length=160, blank=True)
+    job_title = models.CharField(max_length=120, blank=True)
+    email = models.EmailField(blank=True)
+    telephone = models.CharField(max_length=32, blank=True)
+    mobile = models.CharField(max_length=32, blank=True)
+    industry = models.CharField(max_length=120, blank=True)
+    customer_type = models.CharField(max_length=16, choices=CustomerType.choices,
+                                     blank=True)
+    city = models.CharField(max_length=120, blank=True)
+    country = models.CharField(max_length=64, blank=True)
+
+    source = models.CharField(max_length=48, blank=True)   # one of LEAD_SOURCES
+    status = models.CharField(max_length=16, choices=Status.choices,
+                              default=Status.NEW, db_index=True)
+    estimated_value = models.DecimalField(max_digits=14, decimal_places=2,
+                                          null=True, blank=True)
+    currency = models.CharField(max_length=8, default="ZAR")
+
+    assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                    null=True, blank=True, related_name="+")
+    notes = models.TextField(blank=True)
+
+    # Promotion trail: set when the lead becomes a real customer.
+    converted_customer = models.ForeignKey(Customer, on_delete=models.SET_NULL,
+                                           null=True, blank=True,
+                                           related_name="source_leads")
+    converted_at = models.DateTimeField(null=True, blank=True)
+    lost_reason = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["company", "status"])]
+
+    def __str__(self):
+        return self.company_name
+
+    @property
+    def is_open(self) -> bool:
+        return self.status in (self.Status.NEW, self.Status.CONTACTED,
+                               self.Status.QUALIFIED)
+
+    @property
+    def display_contact(self) -> str:
+        return self.contact_name or self.company_name
+
+
+#: The deal pipeline. Ordered — the integer position drives the board columns
+#: and the "how far through the funnel" reporting. WON/LOST are terminal.
+class OpportunityStage(models.TextChoices):
+    LEAD = "lead", "Lead"
+    QUALIFIED = "qualified", "Qualified"
+    QUOTE_REQUESTED = "quote_requested", "Quotation requested"
+    QUOTE_SENT = "quote_sent", "Quotation sent"
+    NEGOTIATION = "negotiation", "Negotiation"
+    WON = "won", "Won"
+    LOST = "lost", "Lost"
+
+
+#: Position of each stage in the funnel (for ordering the board + progress %).
+OPPORTUNITY_STAGE_ORDER = {
+    OpportunityStage.LEAD: 0,
+    OpportunityStage.QUALIFIED: 1,
+    OpportunityStage.QUOTE_REQUESTED: 2,
+    OpportunityStage.QUOTE_SENT: 3,
+    OpportunityStage.NEGOTIATION: 4,
+    OpportunityStage.WON: 5,
+    OpportunityStage.LOST: 5,
+}
+OPEN_OPPORTUNITY_STAGES = [
+    OpportunityStage.LEAD, OpportunityStage.QUALIFIED,
+    OpportunityStage.QUOTE_REQUESTED, OpportunityStage.QUOTE_SENT,
+    OpportunityStage.NEGOTIATION,
+]
+
+
+class Opportunity(TenantBaseModel):
+    """A named, in-flight deal against a real Customer.
+
+    This is the object a pipeline report sums: an estimated value, a stage, a
+    probability and an expected close date. Winning one is expected to produce a
+    Quotation — we hold a nullable link to it rather than duplicating line items,
+    keeping the quotation as the source of commercial truth.
+    """
+
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE,
+                                 related_name="opportunities")
+    #: Where it came from, when it was promoted out of a raw Lead.
+    lead = models.ForeignKey(Lead, on_delete=models.SET_NULL, null=True, blank=True,
+                             related_name="opportunities")
+    site = models.ForeignKey(CustomerSite, on_delete=models.SET_NULL, null=True,
+                             blank=True, related_name="opportunities")
+    contact = models.ForeignKey(CustomerContact, on_delete=models.SET_NULL,
+                                null=True, blank=True, related_name="opportunities")
+
+    title = models.CharField(max_length=200)
+    reference = models.CharField(max_length=48, blank=True)  # client's enquiry ref
+    description = models.TextField(blank=True)
+    stage = models.CharField(max_length=20, choices=OpportunityStage.choices,
+                             default=OpportunityStage.LEAD, db_index=True)
+    estimated_value = models.DecimalField(max_digits=14, decimal_places=2,
+                                          null=True, blank=True)
+    currency = models.CharField(max_length=8, default="ZAR")
+    #: 0–100. Defaults track the stage but can be overridden by a salesperson.
+    probability = models.PositiveSmallIntegerField(default=10)
+    expected_close_date = models.DateField(null=True, blank=True)
+    source = models.CharField(max_length=48, blank=True)
+
+    assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                    null=True, blank=True, related_name="+")
+
+    #: The deliverable a won deal produced. Optional and nullable — a deal can be
+    #: won on a handshake before the quotation object exists.
+    quotation = models.ForeignKey("quotes.Quotation", on_delete=models.SET_NULL,
+                                  null=True, blank=True, related_name="opportunities")
+
+    closed_at = models.DateTimeField(null=True, blank=True)
+    lost_reason = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["company", "stage"])]
+        verbose_name_plural = "opportunities"
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def is_open(self) -> bool:
+        return self.stage in OPEN_OPPORTUNITY_STAGES
+
+    @property
+    def is_won(self) -> bool:
+        return self.stage == OpportunityStage.WON
+
+    @property
+    def is_lost(self) -> bool:
+        return self.stage == OpportunityStage.LOST
+
+    @property
+    def weighted_value(self):
+        """Estimated value × probability — what a forecast actually sums."""
+        from decimal import Decimal
+        if self.estimated_value is None:
+            return Decimal("0")
+        return (self.estimated_value * Decimal(self.probability) / Decimal(100))
+
+
+class Activity(TenantBaseModel):
+    """Something to DO, or something that was done — a call, a meeting, a site
+    visit, a follow-up, a reminder.
+
+    Activities are the CRM's to-do engine: an open activity with a due date is a
+    task on someone's list; a completed one is a fact in the history. An activity
+    can hang off any of the relationship anchors (customer / lead / opportunity /
+    contact) so it shows up everywhere it's relevant without being duplicated.
+    """
+
+    class Type(models.TextChoices):
+        CALL = "call", "Call"
+        MEETING = "meeting", "Meeting"
+        SITE_VISIT = "site_visit", "Site visit"
+        FOLLOW_UP = "follow_up", "Follow-up"
+        EMAIL = "email", "Email"
+        REMINDER = "reminder", "Reminder"
+        TASK = "task", "Task"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        DONE = "done", "Completed"
+        CANCELLED = "cancelled", "Cancelled"
+
+    activity_type = models.CharField(max_length=16, choices=Type.choices,
+                                     default=Type.FOLLOW_UP)
+    subject = models.CharField(max_length=200)
+    detail = models.TextField(blank=True)
+
+    # Anchors — any subset may be set. At least one should be, but the DB stays
+    # permissive so a quick "call John tomorrow" needn't be fully wired first.
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, null=True,
+                                 blank=True, related_name="activities")
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, null=True, blank=True,
+                             related_name="activities")
+    opportunity = models.ForeignKey(Opportunity, on_delete=models.CASCADE, null=True,
+                                    blank=True, related_name="activities")
+    contact = models.ForeignKey(CustomerContact, on_delete=models.SET_NULL,
+                                null=True, blank=True, related_name="activities")
+
+    due_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    status = models.CharField(max_length=12, choices=Status.choices,
+                              default=Status.OPEN, db_index=True)
+    assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                    null=True, blank=True, related_name="+")
+
+    completed_at = models.DateTimeField(null=True, blank=True)
+    outcome = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["status", "due_at", "-created_at"]
+        indexes = [
+            models.Index(fields=["company", "status", "due_at"]),
+            models.Index(fields=["company", "assigned_to", "status"]),
+        ]
+        verbose_name_plural = "activities"
+
+    def __str__(self):
+        return self.subject
+
+    @property
+    def is_open(self) -> bool:
+        return self.status == self.Status.OPEN
+
+    @property
+    def is_overdue(self) -> bool:
+        from django.utils import timezone
+        return bool(self.is_open and self.due_at and self.due_at < timezone.now())
+
+
+class Interaction(TenantBaseModel):
+    """A record of communication that HAPPENED — an email, a phone call, a
+    meeting, a WhatsApp exchange, a note of what was said.
+
+    Distinct from Activity (which is forward-looking, a thing to do): an
+    Interaction is the log of what actually passed between us and the client. It
+    is the "Communication History" the spec asks for, and the raw material for
+    "last activity" on the customer dashboard.
+    """
+
+    class Channel(models.TextChoices):
+        EMAIL = "email", "Email"
+        PHONE = "phone", "Phone call"
+        MEETING = "meeting", "Meeting"
+        SITE_VISIT = "site_visit", "Site visit"
+        WHATSAPP = "whatsapp", "WhatsApp"
+        NOTE = "note", "Internal note"
+        OTHER = "other", "Other"
+
+    class Direction(models.TextChoices):
+        INBOUND = "in", "Inbound"
+        OUTBOUND = "out", "Outbound"
+        INTERNAL = "internal", "Internal"
+
+    channel = models.CharField(max_length=12, choices=Channel.choices,
+                               default=Channel.NOTE)
+    direction = models.CharField(max_length=10, choices=Direction.choices,
+                                 default=Direction.OUTBOUND)
+    subject = models.CharField(max_length=200, blank=True)
+    summary = models.TextField()
+    occurred_at = models.DateTimeField(db_index=True)
+
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, null=True,
+                                 blank=True, related_name="interactions")
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, null=True, blank=True,
+                             related_name="interactions")
+    opportunity = models.ForeignKey(Opportunity, on_delete=models.CASCADE, null=True,
+                                    blank=True, related_name="interactions")
+    contact = models.ForeignKey(CustomerContact, on_delete=models.SET_NULL,
+                                null=True, blank=True, related_name="interactions")
+
+    class Meta:
+        ordering = ["-occurred_at"]
+        indexes = [models.Index(fields=["company", "customer", "-occurred_at"])]
+
+    def __str__(self):
+        return self.subject or f"{self.get_channel_display()} · {self.occurred_at:%Y-%m-%d}"
+
+
+class CustomerNote(TenantBaseModel):
+    """A free-form note about a client — the standing knowledge that isn't a
+    field: "prefers morning deliveries", "always request site induction",
+    "finance requires a PO reference on every invoice".
+
+    Pinned notes float to the top because they're the ones a person needs to see
+    before they act, not scroll to find.
+    """
+
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, null=True,
+                                 blank=True, related_name="crm_notes")
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, null=True, blank=True,
+                             related_name="crm_notes")
+    opportunity = models.ForeignKey(Opportunity, on_delete=models.CASCADE, null=True,
+                                    blank=True, related_name="crm_notes")
+    body = models.TextField()
+    is_pinned = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-is_pinned", "-created_at"]
+
+    def __str__(self):
+        return (self.body[:60] + "…") if len(self.body) > 60 else self.body

@@ -11,10 +11,17 @@ from django.db import transaction
 
 from .models import (
     RESPONSIBILITIES,
+    Activity,
     Customer,
     CustomerContact,
     CustomerDepartment,
+    CustomerNote,
     DEFAULT_DEPARTMENTS,
+    Interaction,
+    Lead,
+    Opportunity,
+    OpportunityStage,
+    OPEN_OPPORTUNITY_STAGES,
 )
 
 
@@ -216,4 +223,485 @@ def customer_overview(customer) -> dict:
         "open_projects": projects.exclude(status__in=["complete", "cancelled"]).count(),
         "invoices": invoices.count(),
         "contracts": customer.contracts.filter(status="active").count(),
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CRM — the relationship layer (leads, pipeline, activities, history, notes).
+#
+# The functions below are what turn the CRM models into behaviour. The house
+# rule from the rest of the platform holds here too: the real workflow objects
+# (Quotation, Project, Invoice) remain the source of truth; the CRM records
+# intent and history and *links* to them, it never duplicates their numbers.
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+class CRMError(Exception):
+    """A CRM operation the user can fix — surfaced back to them verbatim."""
+
+
+# ── Leads ─────────────────────────────────────────────────────────────────────
+
+@transaction.atomic
+def create_lead(company, user, *, company_name, **fields) -> Lead:
+    """Capture a raw enquiry. Almost everything is optional — a lead is a
+    stranger, and demanding a full profile up front is how leads never get
+    logged at all."""
+    name = (company_name or "").strip()
+    if not name:
+        raise CRMError("A lead needs at least a company or contact name.")
+    return Lead.objects.create(
+        company=company, company_name=name,
+        created_by=user, updated_by=user, **fields,
+    )
+
+
+@transaction.atomic
+def convert_lead(lead, user, *, create_opportunity=True, opportunity_title="",
+                 seed_departments=True) -> Customer:
+    """Promote a real lead into a Customer (and, by default, an Opportunity).
+
+    This is the Lead → Customer boundary in the sales flow. It is idempotent on
+    the customer: a lead already converted returns its existing customer rather
+    than minting a duplicate. Everything logged against the lead stays on the
+    lead — the trail is preserved via `converted_customer`, not moved.
+    """
+    from django.utils import timezone
+
+    if lead.converted_customer_id:
+        return lead.converted_customer
+
+    customer = create_customer(
+        lead.company, user, name=lead.company_name,
+        industry=lead.industry, customer_type=lead.customer_type,
+        city=lead.city, country=(lead.country or "South Africa"),
+        telephone=lead.telephone, mobile=lead.mobile, email=lead.email,
+        currency=lead.currency, seed_departments=seed_departments,
+    )
+
+    # Carry the human across too, so the customer isn't a faceless shell.
+    if lead.contact_name:
+        CustomerContact.objects.create(
+            company=lead.company, customer=customer, full_name=lead.contact_name,
+            job_title=lead.job_title, email=lead.email, telephone=lead.telephone,
+            mobile=lead.mobile, is_primary=True,
+            created_by=user, updated_by=user,
+        )
+
+    lead.status = Lead.Status.CONVERTED
+    lead.converted_customer = customer
+    lead.converted_at = timezone.now()
+    lead.updated_by = user
+    lead.save(update_fields=["status", "converted_customer", "converted_at",
+                             "updated_by", "updated_at"])
+
+    if create_opportunity:
+        create_opportunity_for(
+            customer, user,
+            title=opportunity_title or f"{lead.company_name} — new enquiry",
+            lead=lead, estimated_value=lead.estimated_value,
+            currency=lead.currency, source=lead.source,
+            stage=OpportunityStage.QUALIFIED,
+        )
+    return customer
+
+
+def mark_lead_lost(lead, user, *, reason="") -> Lead:
+    lead.status = Lead.Status.LOST
+    lead.lost_reason = (reason or "").strip()
+    lead.updated_by = user
+    lead.save(update_fields=["status", "lost_reason", "updated_by", "updated_at"])
+    return lead
+
+
+# ── Opportunities (the pipeline) ──────────────────────────────────────────────
+
+#: Default probability for each stage — a starting point a salesperson overrides.
+#: The funnel gets more likely as it advances; WON/LOST are certainties.
+STAGE_PROBABILITY = {
+    OpportunityStage.LEAD: 10,
+    OpportunityStage.QUALIFIED: 25,
+    OpportunityStage.QUOTE_REQUESTED: 40,
+    OpportunityStage.QUOTE_SENT: 60,
+    OpportunityStage.NEGOTIATION: 80,
+    OpportunityStage.WON: 100,
+    OpportunityStage.LOST: 0,
+}
+
+
+@transaction.atomic
+def create_opportunity_for(customer, user, *, title, stage=OpportunityStage.LEAD,
+                           **fields) -> Opportunity:
+    """Open a deal against a customer. Probability defaults from the stage unless
+    the caller sets one explicitly."""
+    title = (title or "").strip()
+    if not title:
+        raise CRMError("An opportunity needs a title.")
+    fields.setdefault("probability", STAGE_PROBABILITY.get(stage, 10))
+    return Opportunity.objects.create(
+        company=customer.company, customer=customer, title=title, stage=stage,
+        created_by=user, updated_by=user, **fields,
+    )
+
+
+@transaction.atomic
+def set_opportunity_stage(opp, user, stage, *, reason="") -> Opportunity:
+    """Move a deal along the pipeline. Advancing the stage nudges the default
+    probability (only if the user hasn't diverged from the previous default), and
+    reaching WON/LOST stamps the close date."""
+    from django.utils import timezone
+
+    if stage not in OpportunityStage.values:
+        raise CRMError(f"Unknown stage '{stage}'.")
+
+    previous_default = STAGE_PROBABILITY.get(opp.stage)
+    opp.stage = stage
+    # Keep probability meaningful: if it was still sitting on the old stage's
+    # default, move it to the new one; if a human set a custom value, respect it.
+    if opp.probability == previous_default:
+        opp.probability = STAGE_PROBABILITY.get(stage, opp.probability)
+
+    fields = ["stage", "probability", "updated_by", "updated_at"]
+    if stage in (OpportunityStage.WON, OpportunityStage.LOST):
+        opp.closed_at = timezone.now()
+        fields.append("closed_at")
+        if stage == OpportunityStage.LOST and reason:
+            opp.lost_reason = reason.strip()
+            fields.append("lost_reason")
+    elif opp.closed_at:                       # re-opened
+        opp.closed_at = None
+        fields.append("closed_at")
+
+    opp.updated_by = user
+    opp.save(update_fields=fields)
+    return opp
+
+
+def win_opportunity(opp, user, *, quotation=None) -> Opportunity:
+    """Mark a deal won, optionally linking the quotation it produced."""
+    if quotation is not None:
+        opp.quotation = quotation
+        opp.save(update_fields=["quotation"])
+    return set_opportunity_stage(opp, user, OpportunityStage.WON)
+
+
+def lose_opportunity(opp, user, *, reason="") -> Opportunity:
+    return set_opportunity_stage(opp, user, OpportunityStage.LOST, reason=reason)
+
+
+def pipeline_summary(company) -> dict:
+    """The sales pipeline at a glance: count and value in each open stage, plus
+    the weighted forecast. This is the number a sales manager opens the CRM to
+    see."""
+    from decimal import Decimal
+
+    rows, total_value, weighted = [], Decimal("0"), Decimal("0")
+    open_opps = list(Opportunity.objects.filter(
+        company=company, stage__in=OPEN_OPPORTUNITY_STAGES))
+    for stage in OPEN_OPPORTUNITY_STAGES:
+        stage_opps = [o for o in open_opps if o.stage == stage]
+        value = sum((o.estimated_value or Decimal("0")) for o in stage_opps)
+        rows.append({
+            "stage": stage,
+            "label": OpportunityStage(stage).label,
+            "count": len(stage_opps),
+            "value": value,
+        })
+        total_value += value
+        weighted += sum(o.weighted_value for o in stage_opps)
+    return {
+        "stages": rows,
+        "open_count": len(open_opps),
+        "open_value": total_value,
+        "weighted_value": weighted.quantize(Decimal("0.01")),
+    }
+
+
+# ── Activities (the to-do engine) ─────────────────────────────────────────────
+
+@transaction.atomic
+def schedule_activity(company, user, *, subject, activity_type=Activity.Type.FOLLOW_UP,
+                      customer=None, lead=None, opportunity=None, contact=None,
+                      due_at=None, assigned_to=None, detail="") -> Activity:
+    subject = (subject or "").strip()
+    if not subject:
+        raise CRMError("An activity needs a subject.")
+    if not any([customer, lead, opportunity]):
+        raise CRMError("Attach the activity to a customer, lead or opportunity.")
+    return Activity.objects.create(
+        company=company, subject=subject, activity_type=activity_type,
+        customer=customer, lead=lead, opportunity=opportunity, contact=contact,
+        due_at=due_at, assigned_to=assigned_to or user, detail=detail,
+        created_by=user, updated_by=user,
+    )
+
+
+def complete_activity(activity, user, *, outcome="") -> Activity:
+    """Close an activity and (usefully) drop a matching interaction into the
+    history, so "what did we actually do" stays a single timeline."""
+    from django.utils import timezone
+
+    activity.status = Activity.Status.DONE
+    activity.completed_at = timezone.now()
+    activity.outcome = (outcome or "").strip()
+    activity.updated_by = user
+    activity.save(update_fields=["status", "completed_at", "outcome",
+                                 "updated_by", "updated_at"])
+    return activity
+
+
+def cancel_activity(activity, user) -> Activity:
+    activity.status = Activity.Status.CANCELLED
+    activity.updated_by = user
+    activity.save(update_fields=["status", "updated_by", "updated_at"])
+    return activity
+
+
+def open_activities(company, *, assigned_to=None, limit=None):
+    qs = Activity.objects.filter(company=company, status=Activity.Status.OPEN)
+    if assigned_to is not None:
+        qs = qs.filter(assigned_to=assigned_to)
+    qs = qs.select_related("customer", "lead", "opportunity", "assigned_to")
+    return list(qs[:limit]) if limit else list(qs)
+
+
+# ── Communication history ─────────────────────────────────────────────────────
+
+@transaction.atomic
+def log_interaction(company, user, *, summary, channel=Interaction.Channel.NOTE,
+                    direction=Interaction.Direction.OUTBOUND, subject="",
+                    occurred_at=None, customer=None, lead=None, opportunity=None,
+                    contact=None) -> Interaction:
+    from django.utils import timezone
+
+    summary = (summary or "").strip()
+    if not summary:
+        raise CRMError("A logged interaction needs a summary of what was said.")
+    return Interaction.objects.create(
+        company=company, summary=summary, channel=channel, direction=direction,
+        subject=(subject or "").strip(), occurred_at=occurred_at or timezone.now(),
+        customer=customer, lead=lead, opportunity=opportunity, contact=contact,
+        created_by=user, updated_by=user,
+    )
+
+
+# ── Notes ─────────────────────────────────────────────────────────────────────
+
+@transaction.atomic
+def add_note(company, user, *, body, customer=None, lead=None, opportunity=None,
+             is_pinned=False) -> CustomerNote:
+    body = (body or "").strip()
+    if not body:
+        raise CRMError("A note can't be empty.")
+    if not any([customer, lead, opportunity]):
+        raise CRMError("Attach the note to a customer, lead or opportunity.")
+    return CustomerNote.objects.create(
+        company=company, body=body, customer=customer, lead=lead,
+        opportunity=opportunity, is_pinned=is_pinned,
+        created_by=user, updated_by=user,
+    )
+
+
+# ── The customer 360 dashboard ────────────────────────────────────────────────
+
+def customer_dashboard(customer) -> dict:
+    """Everything about one customer in one place — the "single source of truth"
+    view the spec is really asking for.
+
+    Reads through the real workflow tables (quotations, projects, invoices) so
+    the numbers can never drift from them, and folds in the CRM layer (open
+    opportunities, next activity, last interaction, pinned notes).
+    """
+    from decimal import Decimal
+
+    from apps.finance.models import Invoice, InvoiceStatus
+    from apps.projects.models import Project
+    from apps.quotes.models import OPEN_STATUSES, Quotation, QuotationStatus
+
+    quotations = list(Quotation.objects.filter(customer=customer)
+                      .order_by("-created_at"))
+    projects = list(Project.objects.filter(customer=customer)
+                    .order_by("-created_at"))
+    invoices = list(Invoice.objects.filter(project__customer=customer)
+                    .select_related("project").order_by("-created_at"))
+
+    open_quotes = [q for q in quotations if q.status in OPEN_STATUSES]
+    won_quotes = [q for q in quotations
+                  if q.status in (QuotationStatus.ACCEPTED, QuotationStatus.AWARDED)]
+    open_projects = [p for p in projects
+                     if p.status not in ("complete", "cancelled")]
+
+    paid = sum((inv.paid for inv in invoices), Decimal("0"))
+    outstanding = sum((inv.outstanding for inv in invoices
+                       if inv.status != InvoiceStatus.PAID), Decimal("0"))
+
+    opportunities = list(Opportunity.objects.filter(customer=customer)
+                         .order_by("-created_at"))
+    open_opps = [o for o in opportunities if o.is_open]
+
+    next_activity = (Activity.objects.filter(customer=customer,
+                                             status=Activity.Status.OPEN)
+                     .order_by("due_at", "-created_at").first())
+    last_interaction = (Interaction.objects.filter(customer=customer)
+                        .order_by("-occurred_at").first())
+    pinned_notes = list(CustomerNote.objects.filter(customer=customer,
+                                                    is_pinned=True)[:5])
+    primary_contact = customer.contacts.filter(
+        status=CustomerContact.Status.ACTIVE, is_primary=True).first()
+
+    return {
+        "customer": customer,
+        "overview": customer_overview(customer),
+        # Commercial rollup
+        "open_quotes": open_quotes,
+        "open_quote_count": len(open_quotes),
+        "won_quote_count": len(won_quotes),
+        "open_projects": open_projects,
+        "open_project_count": len(open_projects),
+        "completed_project_count": sum(1 for p in projects
+                                       if p.status == "complete"),
+        "invoice_count": len(invoices),
+        "outstanding": outstanding,
+        "revenue": paid,
+        # CRM layer
+        "opportunities": opportunities[:10],
+        "open_opportunity_count": len(open_opps),
+        "open_opportunity_value": sum((o.estimated_value or Decimal("0"))
+                                      for o in open_opps),
+        "next_activity": next_activity,
+        "last_interaction": last_interaction,
+        "pinned_notes": pinned_notes,
+        "primary_contact": primary_contact,
+        "recent_quotations": quotations[:6],
+        "recent_invoices": invoices[:6],
+    }
+
+
+# ── Global CRM search ─────────────────────────────────────────────────────────
+
+def crm_search(company, query: str, *, limit=10) -> dict:
+    """One box, everything: customers, contacts, leads, opportunities, and the
+    workflow records people search by number (quotations, invoices).
+
+    Kept deliberately simple (icontains across the fields people actually type)
+    — fast, predictable, and good enough until search volume justifies a real
+    index. Each bucket is capped so a broad term can't return the whole DB.
+    """
+    from django.db.models import Q
+
+    q = (query or "").strip()
+    if len(q) < 2:
+        return {"query": q, "customers": [], "contacts": [], "leads": [],
+                "opportunities": [], "quotations": [], "invoices": [], "total": 0}
+
+    customers = list(Customer.objects.filter(company=company).filter(
+        Q(name__icontains=q) | Q(trading_name__icontains=q) |
+        Q(code__icontains=q) | Q(registration_no__icontains=q) |
+        Q(vat_no__icontains=q) | Q(vendor_number__icontains=q))[:limit])
+
+    contacts = list(CustomerContact.objects.filter(company=company).filter(
+        Q(full_name__icontains=q) | Q(email__icontains=q) |
+        Q(mobile__icontains=q) | Q(telephone__icontains=q))
+        .select_related("customer")[:limit])
+
+    leads = list(Lead.objects.filter(company=company).filter(
+        Q(company_name__icontains=q) | Q(contact_name__icontains=q) |
+        Q(email__icontains=q))[:limit])
+
+    opportunities = list(Opportunity.objects.filter(company=company).filter(
+        Q(title__icontains=q) | Q(reference__icontains=q))
+        .select_related("customer")[:limit])
+
+    from apps.quotes.models import Quotation
+    quotations = list(Quotation.objects.filter(company=company).filter(
+        Q(number__icontains=q) | Q(customer_reference__icontains=q) |
+        Q(rfq_reference__icontains=q)).select_related("customer")[:limit])
+
+    from apps.finance.models import Invoice
+    invoices = list(Invoice.objects.filter(company=company).filter(
+        Q(number__icontains=q)).select_related("project", "project__customer")[:limit])
+
+    total = sum(len(x) for x in (customers, contacts, leads, opportunities,
+                                 quotations, invoices))
+    return {
+        "query": q, "customers": customers, "contacts": contacts, "leads": leads,
+        "opportunities": opportunities, "quotations": quotations,
+        "invoices": invoices, "total": total,
+    }
+
+
+# ── Reporting ─────────────────────────────────────────────────────────────────
+
+def crm_reports(company) -> dict:
+    """The CRM report pack: who the customers are, what they're worth, which
+    have gone quiet, and how well enquiries turn into deals."""
+    from datetime import timedelta
+    from decimal import Decimal
+
+    from django.utils import timezone
+
+    from apps.finance.models import Invoice
+    from apps.projects.models import Project
+
+    customers = list(Customer.objects.filter(company=company))
+    by_status = {}
+    for c in customers:
+        by_status[c.status] = by_status.get(c.status, 0) + 1
+
+    # Revenue by customer (paid invoices), reading through projects.
+    invoices = list(Invoice.objects.filter(company=company)
+                    .select_related("project", "project__customer"))
+    revenue = {}
+    for inv in invoices:
+        cust = getattr(inv.project, "customer", None)
+        if cust is None:
+            continue
+        revenue[cust.id] = revenue.get(cust.id, Decimal("0")) + inv.paid
+    cust_by_id = {c.id: c for c in customers}
+    top = sorted(
+        ({"customer": cust_by_id[cid], "revenue": val}
+         for cid, val in revenue.items() if cid in cust_by_id),
+        key=lambda r: r["revenue"], reverse=True)[:10]
+
+    # Inactive: no project or activity in 120 days. Cheap heuristic on recency.
+    cutoff = timezone.now() - timedelta(days=120)
+    recent_project_customers = set(
+        Project.objects.filter(company=company, created_at__gte=cutoff)
+        .values_list("customer_id", flat=True))
+    recent_activity_customers = set(
+        Activity.objects.filter(company=company, created_at__gte=cutoff)
+        .values_list("customer_id", flat=True))
+    active_ids = recent_project_customers | recent_activity_customers
+    inactive = [c for c in customers if c.id not in active_ids
+                and c.status == "active"]
+
+    # Conversion: won opportunities / all closed opportunities.
+    won = Opportunity.objects.filter(company=company,
+                                     stage=OpportunityStage.WON).count()
+    lost = Opportunity.objects.filter(company=company,
+                                      stage=OpportunityStage.LOST).count()
+    closed = won + lost
+    conversion_rate = round(100 * won / closed, 1) if closed else None
+
+    leads_total = Lead.objects.filter(company=company).count()
+    leads_converted = Lead.objects.filter(
+        company=company, status=Lead.Status.CONVERTED).count()
+    lead_conversion = (round(100 * leads_converted / leads_total, 1)
+                       if leads_total else None)
+
+    return {
+        "customer_count": len(customers),
+        "prospect_count": by_status.get("prospect", 0),
+        "active_count": by_status.get("active", 0),
+        "by_status": by_status,
+        "top_customers": top,
+        "total_revenue": sum(revenue.values(), Decimal("0")),
+        "inactive_customers": inactive[:25],
+        "inactive_count": len(inactive),
+        "won": won, "lost": lost,
+        "conversion_rate": conversion_rate,
+        "leads_total": leads_total,
+        "leads_converted": leads_converted,
+        "lead_conversion": lead_conversion,
+        "pipeline": pipeline_summary(company),
     }
