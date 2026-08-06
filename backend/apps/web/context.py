@@ -43,6 +43,7 @@ _SECTIONS = {
     "crm_lead_convert": "crm", "crm_lead_lost": "crm",
     "crm_pipeline": "crm", "crm_opportunity_create": "crm",
     "crm_opportunity_detail": "crm", "crm_opportunity_stage": "crm",
+    "crm_opportunity_move": "crm",
     "crm_activities": "crm", "crm_activity_schedule": "crm",
     "crm_activity_complete": "crm", "crm_interaction_log": "crm",
     "crm_note_add": "crm",

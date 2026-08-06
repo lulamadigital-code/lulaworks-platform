@@ -1666,6 +1666,40 @@ class CRMWebTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Harmony Gold")
 
+    def test_board_drag_move_endpoint(self):
+        """The drag-and-drop endpoint moves an opportunity between open stages
+        and answers JSON (no redirect)."""
+        import json
+        from apps.customers.models import Opportunity, OpportunityStage
+        from apps.customers.services import create_customer, create_opportunity_for
+        with tenant_scope(self.company.id):
+            cust = create_customer(self.company, self.user, name="Exxaro",
+                                   seed_departments=False)
+            opp = create_opportunity_for(cust, self.user, title="Coal handling",
+                                         stage=OpportunityStage.QUALIFIED)
+        r = self.client.post(f"/crm/opportunities/{opp.id}/move/",
+                             {"stage": "negotiation"})
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(json.loads(r.content)["ok"])
+        with tenant_scope(self.company.id):
+            opp.refresh_from_db()
+            self.assertEqual(opp.stage, OpportunityStage.NEGOTIATION)
+
+    def test_board_drag_rejects_terminal_stage(self):
+        """Won/lost aren't drop targets on the board — they're deliberate
+        decisions made on the detail page, so the move endpoint refuses them."""
+        from apps.customers.models import OpportunityStage
+        from apps.customers.services import create_customer, create_opportunity_for
+        with tenant_scope(self.company.id):
+            cust = create_customer(self.company, self.user, name="Kumba",
+                                   seed_departments=False)
+            opp = create_opportunity_for(cust, self.user, title="Ore deal")
+        r = self.client.post(f"/crm/opportunities/{opp.id}/move/", {"stage": "won"})
+        self.assertEqual(r.status_code, 400)
+        with tenant_scope(self.company.id):
+            opp.refresh_from_db()
+            self.assertFalse(opp.is_won)
+
     def test_customer_detail_shows_opportunities_section(self):
         from apps.customers.services import create_customer
         with tenant_scope(self.company.id):

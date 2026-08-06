@@ -25,6 +25,8 @@ urlpatterns = [
          name="crm_opportunity_detail"),
     path("crm/opportunities/<uuid:pk>/stage/", views_crm.opportunity_stage,
          name="crm_opportunity_stage"),
+    path("crm/opportunities/<uuid:pk>/move/", views_crm.opportunity_move,
+         name="crm_opportunity_move"),
     path("crm/activities/", views_crm.activities, name="crm_activities"),
     path("crm/activities/schedule/", views_crm.activity_schedule,
          name="crm_activity_schedule"),

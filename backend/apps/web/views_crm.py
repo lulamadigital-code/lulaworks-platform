@@ -12,6 +12,7 @@ signed-in user), so `Model.objects.all()` is already scoped to the company.
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -250,6 +251,32 @@ def opportunity_stage(request, pk):
         return redirect("web:crm_opportunity_detail", pk=pk)
     messages.success(request, f"Moved to {opp.get_stage_display()}.")
     return redirect("web:crm_opportunity_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def opportunity_move(request, pk):
+    """Drag-and-drop endpoint for the pipeline board: set an opportunity's stage
+    and answer JSON so the card can settle in its new column without a reload.
+
+    The board only renders the OPEN stages as columns, so a drag never lands on
+    won/lost — those stay deliberate decisions made on the detail page (a win
+    links a quotation, a loss records a reason). We still guard here.
+    """
+    opp = get_object_or_404(Opportunity.objects.all(), pk=pk)
+    if not _can_manage(request.user):
+        return JsonResponse({"ok": False, "error": "Not allowed."}, status=403)
+    stage = request.POST.get("stage", "")
+    if stage not in OPEN_OPPORTUNITY_STAGES:
+        return JsonResponse(
+            {"ok": False, "error": "Won/lost are set from the opportunity page."},
+            status=400)
+    try:
+        crm.set_opportunity_stage(opp, request.user, stage)
+    except crm.CRMError as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+    return JsonResponse({"ok": True, "stage": opp.stage,
+                         "probability": opp.probability})
 
 
 # ── Activities ────────────────────────────────────────────────────────────────
