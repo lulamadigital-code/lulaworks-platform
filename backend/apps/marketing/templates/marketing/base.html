@@ -80,6 +80,8 @@
     .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px;color:var(--ink)}
     .brand:hover{text-decoration:none}
     .brand .dot{width:12px;height:12px;border-radius:4px;background:var(--primary);display:inline-block}
+    .brand-logo{height:32px;width:auto;display:block}
+    @media(max-width:860px){.brand-logo{height:28px}}
     .nav .links{display:flex;gap:6px;margin-left:14px}
     .nav .links a{color:var(--muted);font-weight:600;font-size:15px;padding:8px 12px;border-radius:9px}
     .nav .links a:hover{color:var(--ink);background:var(--bg);text-decoration:none}
@@ -202,7 +204,9 @@
 <body>
   <header class="site">
     <nav class="wrap nav">
-      <a class="brand" href="{% url 'marketing:home' %}"><span class="dot"></span>LulaWorks</a>
+      <a class="brand" href="{% url 'marketing:home' %}" aria-label="LulaWorks home">
+        <img src="{% static 'web/logo.png' %}" alt="LulaWorks" class="brand-logo">
+      </a>
       <input type="checkbox" id="mc" class="menu-check">
       <div class="links">
         <a href="{% url 'marketing:features' %}">Features</a>
