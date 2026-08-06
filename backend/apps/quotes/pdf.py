@@ -39,6 +39,73 @@ LINE = colors.HexColor("#dfe6e6")
 
 _HEX = re.compile(r"#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
 
+#: Bold companion for each print-safe base font (ReportLab base-14, no embedding).
+_BOLD_FOR = {"Helvetica": "Helvetica-Bold", "Times-Roman": "Times-Bold",
+             "Courier": "Courier-Bold"}
+
+
+def _resolve(document, doc_type):
+    """The document's effective look: accent colour, base font, and the full
+    config switch-set. `document` is a Quotation or a CommercialDocument — both
+    carry `.company` and an optional `.template`. Falls back to the company brand
+    colour and the plain layout, so a company with no templates is unchanged.
+    """
+    from .document_templates import effective_config_for
+    cfg = effective_config_for(document, doc_type)
+    accent = (cfg.get("accent_color") or "").strip()
+    if _HEX.match(accent):
+        try:
+            brand = colors.HexColor(accent[:7])
+        except ValueError:
+            brand = _brand_color(document.company)
+    else:
+        brand = _brand_color(document.company)
+    font = cfg.get("font") or "Helvetica"
+    return {"brand": brand, "cfg": cfg, "font": font,
+            "font_bold": _BOLD_FOR.get(font, "Helvetica-Bold")}
+
+
+def _apply_font(styles, font, font_bold):
+    """Point a document's paragraph styles at the chosen base font. Titles and
+    the company name stay bold; body/muted use the regular weight."""
+    for st in styles:
+        if st is None:
+            continue
+        st.fontName = font
+    # The title and company-name styles are the bold ones by convention.
+
+
+def _page_decorator(cfg, brand):
+    """Returns an onPage(canvas, doc) that paints the per-template chrome: an
+    optional diagonal watermark, a centred footer note, and a page number. None
+    when nothing is configured, so the default document draws nothing extra."""
+    watermark = (cfg.get("watermark_text") or "").strip() if cfg.get("show_watermark") else ""
+    footer_note = (cfg.get("footer_note") or "").strip()
+    numbering = bool(cfg.get("page_numbering"))
+    if not (watermark or footer_note or numbering):
+        return None
+
+    def _draw(canvas, doc):
+        canvas.saveState()
+        w, h = doc.pagesize
+        if watermark:
+            canvas.saveState()
+            canvas.setFont("Helvetica-Bold", 72)
+            canvas.setFillColor(colors.Color(0.85, 0.85, 0.85, alpha=0.35))
+            canvas.translate(w / 2, h / 2)
+            canvas.rotate(45)
+            canvas.drawCentredString(0, 0, watermark[:40])
+            canvas.restoreState()
+        canvas.setFont("Helvetica", 7.5)
+        canvas.setFillColor(colors.grey)
+        if footer_note:
+            canvas.drawCentredString(w / 2, 7 * mm, footer_note[:160])
+        if numbering:
+            canvas.drawRightString(w - 12 * mm, 7 * mm, f"Page {doc.page}")
+        canvas.restoreState()
+
+    return _draw
+
 
 def _brand_color(company):
     """The company's own brand colour if it set a valid one, else the LulaWorks
@@ -117,14 +184,18 @@ def _customer_address(customer) -> str:
     return ", ".join(p for p in parts if p)
 
 
-def _build_one_page(doc, story):
+def _build_one_page(doc, story, on_page=None):
     """Build the document forced onto a single page: the whole story is wrapped
     in a frame the size of the page's content area and shrunk to fit only if it
     would otherwise overflow. A normal-length quotation, invoice or delivery note
     is rendered untouched; an unusually long one is scaled down rather than
-    spilling onto a second page."""
+    spilling onto a second page. `on_page` draws per-template chrome (watermark,
+    footer note, page number)."""
     frame = KeepInFrame(doc.width, doc.height, story, mode="shrink")
-    doc.build([frame])
+    if on_page is not None:
+        doc.build([frame], onFirstPage=on_page, onLaterPages=on_page)
+    else:
+        doc.build([frame])
 
 
 def _scope_text(quote) -> str:
@@ -152,12 +223,20 @@ def _prepared_by_lines(quote, small):
     return lines
 
 
-def _terms_flowables(company, kind, small, muted):
+def _terms_flowables(company, kind, small, muted, cfg=None):
     """The company's standard Terms & Conditions for this document type, pulled
-    from Company Profile → Commercial Document Settings and auto-inserted. Each
-    non-blank line of the stored text becomes a paragraph. Empty when unset."""
-    from apps.identity.profile import document_terms
-    text = document_terms(company, kind=kind)
+    from Company Profile → Commercial Document Settings and auto-inserted. A
+    template may hide terms (show_terms=False) or supply its own wording
+    (terms_override). Each non-blank line becomes a paragraph. Empty when unset."""
+    cfg = cfg or {}
+    if not cfg.get("show_terms", True):
+        return []
+    override = (cfg.get("terms_override") or "").strip()
+    if override:
+        text = override
+    else:
+        from apps.identity.profile import document_terms
+        text = document_terms(company, kind=kind)
     if not text:
         return []
     out = [Paragraph("<b>Terms &amp; Conditions</b>", small), Spacer(1, 1.5 * mm)]
@@ -202,12 +281,22 @@ def _signoff_box(brand, small, muted, *, compiled_label, prep_name, today,
 
 def _signoff_banking_boxes(header, brand, small, muted, *, compiled_label,
                            prep_name, today,
-                           received_label="Received in Good Order By:"):
+                           received_label="Received in Good Order By:",
+                           show_signature=True, show_banking=True):
     """The two bordered boxes at the foot of a commercial document: a sign-off
     (compiled by, then received by) on the left and BANKING DETAILS on the right.
+    A template may hide either box; hiding both drops the footer entirely.
     Shared by the quotation and the tax invoice so they look identical."""
     def M(t):
         return Paragraph(escape(str(t)), muted)
+
+    # A template can suppress either box — and if both are off there is no footer.
+    if not show_signature and not show_banking:
+        return None
+    if show_signature and not show_banking:
+        return _signoff_box(brand, small, muted, compiled_label=compiled_label,
+                            prep_name=prep_name, today=today,
+                            received_label=received_label, width=104 * mm)
 
     signoff = _signoff_column(small, muted, compiled_label=compiled_label,
                               prep_name=prep_name, today=today,
@@ -224,6 +313,15 @@ def _signoff_banking_boxes(header, brand, small, muted, *, compiled_label,
     else:
         bank_rows = [title, Spacer(1, 1.5 * mm),
                      M("Add a bank account in the Company Profile.")]
+
+    # Banking only (signature suppressed): one full-width banking box.
+    if not show_signature:
+        box = Table([[bank_rows]], colWidths=[186 * mm], hAlign="LEFT")
+        box.setStyle(TableStyle([
+            ("BOX", (0, 0), (0, 0), 1, brand), ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (0, 0), 9), ("RIGHTPADDING", (0, 0), (0, 0), 9),
+            ("TOPPADDING", (0, 0), (0, 0), 9), ("BOTTOMPADDING", (0, 0), (0, 0), 9)]))
+        return box
 
     footer = Table([[signoff, "", bank_rows]], colWidths=[104 * mm, 6 * mm, 76 * mm])
     footer.setStyle(TableStyle([
@@ -245,7 +343,8 @@ def quotation_pdf_bytes(quote) -> bytes:
     doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=14 * mm, bottomMargin=12 * mm,
                             leftMargin=12 * mm, rightMargin=12 * mm,
                             title=f"Quotation {quote.number}")
-    brand = _brand_color(company)
+    res = _resolve(quote, "quotation")
+    brand, cfg, font, font_bold = res["brand"], res["cfg"], res["font"], res["font_bold"]
     styles = getSampleStyleSheet()
     body = styles["BodyText"]
     small = body.clone("small"); small.fontSize = 9; small.leading = 11.5
@@ -254,6 +353,7 @@ def quotation_pdf_bytes(quote) -> bytes:
     title.textColor = brand; title.alignment = 0     # left, aligned with the meta
     title.fontSize = 20; title.spaceAfter = 2
     coname = small.clone("coname"); coname.fontSize = 15; coname.leading = 18
+    _apply_font([body, small, muted], font, font_bold)   # titles/coname stay bold
 
     # Every company fact comes from the Company Profile — one place, never re-typed.
     from apps.identity.profile import document_header
@@ -279,9 +379,9 @@ def quotation_pdf_bytes(quote) -> bytes:
         ident.append(P(f"Email {header['email']}", muted))
     if header["tax_reference_no"]:
         ident.append(P(f"Tax No: {header['tax_reference_no']}", muted))
-    if header["vat_no"]:
+    if header["vat_no"] and cfg.get("show_vat_number", True):
         ident.append(P(f"Vat No: {header['vat_no']}", muted))
-    if header["registration_no"]:
+    if header["registration_no"] and cfg.get("show_registration_number", True):
         ident.append(P(f"Company Reg: {header['registration_no']}", muted))
     # The number THIS customer files us under — how their accounts payable finds
     # us. Snapshotted onto the quotation, but fall back to the customer record so
@@ -302,6 +402,9 @@ def quotation_pdf_bytes(quote) -> bytes:
     story = [head, Spacer(1, 3 * mm),
              HRFlowable(width="100%", thickness=2.2, color=brand,
                         spaceBefore=2, spaceAfter=6)]
+    header_note = (cfg.get("header_note") or "").strip()
+    if header_note:
+        story += [Paragraph(f"<b>{escape(header_note)}</b>", small), Spacer(1, 2 * mm)]
 
     # ── Two-column client / quotation block ──────────────────────────────────
     contact = quote.contact
@@ -309,7 +412,7 @@ def quotation_pdf_bytes(quote) -> bytes:
     addr = _customer_address(quote.customer)
     if addr:
         left.append(P(f"Address: {_name(addr)}", muted))
-    if quote.customer_id and quote.customer.vat_no:
+    if quote.customer_id and quote.customer.vat_no and cfg.get("show_vat_number", True):
         left.append(P(f"VAT No: {quote.customer.vat_no}", muted))
     site = str(quote.customer_site) if quote.customer_site_id else quote.site
     if site:
@@ -335,8 +438,10 @@ def quotation_pdf_bytes(quote) -> bytes:
     if scope:
         right.append(Spacer(1, 1 * mm))
         right.append(L("Scope of Work:", scope))
-    if quote.customer_reference:
+    if quote.customer_reference and cfg.get("show_customer_po", True):
         right.append(P(f"Your reference: {quote.customer_reference}", small))
+    if quote.project_reference and cfg.get("show_project_reference", False):
+        right.append(P(f"Project ref: {quote.project_reference}", small))
     if quote.validity_date:
         right.append(P(f"Valid until: {quote.validity_date:%d/%m/%Y}", small))
 
@@ -383,7 +488,7 @@ def quotation_pdf_bytes(quote) -> bytes:
     tot.setStyle(TableStyle([
         ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
         ("FONTSIZE", (0, 0), (-1, -1), 9.5),
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+        ("FONTNAME", (0, 0), (-1, -1), font_bold),
         ("LINEABOVE", (0, -1), (-1, -1), 0.8, brand),
         ("TOPPADDING", (0, 0), (-1, -1), 4),
         ("TEXTCOLOR", (0, -1), (-1, -1), brand),
@@ -398,7 +503,7 @@ def quotation_pdf_bytes(quote) -> bytes:
         story.append(Spacer(1, 4 * mm))
 
     # Standard terms & conditions, configured once per company and inserted here.
-    story += _terms_flowables(company, "quotation", small, muted)
+    story += _terms_flowables(company, "quotation", small, muted, cfg)
 
     # ── Sign-off and banking — two separate boxes. "Compiled by" fills itself
     # in; "received in good order" is left blank for the customer to sign.
@@ -406,13 +511,16 @@ def quotation_pdf_bytes(quote) -> bytes:
         else (prep.email if prep else "")
     footer = _signoff_banking_boxes(
         header, brand, small, muted, compiled_label="Quotation Compiled By:",
-        prep_name=prep_name, today=quote.created_at.strftime("%d/%m/%Y"))
-    story += [footer, Spacer(1, 6 * mm)]
+        prep_name=prep_name, today=quote.created_at.strftime("%d/%m/%Y"),
+        show_signature=cfg.get("show_signature", True),
+        show_banking=cfg.get("show_banking", True))
+    if footer is not None:
+        story += [footer, Spacer(1, 6 * mm)]
 
     story.append(P(f"Please use document number ({quote.number}) for reference "
                    "when making payments.", muted))
 
-    _build_one_page(doc, story)
+    _build_one_page(doc, story, on_page=_page_decorator(cfg, brand))
     return buf.getvalue()
 
 
@@ -421,9 +529,12 @@ def quotation_pdf_bytes(quote) -> bytes:
 # Both reuse the quotation's letterhead helpers and its data, so nothing is
 # re-keyed and every document carries the parent commercial reference.
 
-def _letterhead(company, brand, header, coname, small, muted, title, title_text):
+def _letterhead(company, brand, header, coname, small, muted, title, title_text,
+                cfg=None):
     """The shared top of every commercial document: company identity, big logo,
-    the bold rule, and the document title in the right column."""
+    the bold rule, and the document title in the right column. `cfg` can hide the
+    VAT/registration lines, move the logo, and add a header note."""
+    cfg = cfg or {}
     esc = escape
     ident = [Paragraph(f"<b>{esc(header['display_name'])}</b>", coname)]
     for line in header["address_lines"]:
@@ -436,17 +547,42 @@ def _letterhead(company, brand, header, coname, small, muted, title, title_text)
         ident.append(Paragraph(f"Email {esc(header['email'])}", muted))
     if header["tax_reference_no"]:
         ident.append(Paragraph(f"Tax No: {esc(header['tax_reference_no'])}", muted))
-    if header["vat_no"]:
+    if header["vat_no"] and cfg.get("show_vat_number", True):
         ident.append(Paragraph(f"Vat No: {esc(header['vat_no'])}", muted))
-    if header["registration_no"]:
+    if header["registration_no"] and cfg.get("show_registration_number", True):
         ident.append(Paragraph(f"Company Reg: {esc(header['registration_no'])}", muted))
 
+    out = [_letterhead_table(header, ident, cfg), Spacer(1, 3 * mm),
+           HRFlowable(width="100%", thickness=2.2, color=brand, spaceBefore=2, spaceAfter=6)]
+    note = (cfg.get("header_note") or "").strip()
+    if note:
+        out.append(Paragraph(f"<b>{esc(note)}</b>", small))
+        out.append(Spacer(1, 2 * mm))
+    return out
+
+
+def _letterhead_table(header, ident, cfg):
+    """Company identity + logo, with the logo positioned per the template
+    (default right). 'center' stacks the logo above a centred identity block."""
     logo = _logo_flowable(header)
+    position = (cfg or {}).get("logo_position", "left")
+    # Historically the identity sits left and the logo right; that is our
+    # 'left' (identity-led) default. 'right' swaps them; 'center' stacks.
+    if position == "center":
+        rows = [[logo or ""], [ident]]
+        head = Table(rows, colWidths=[186 * mm])
+        head.setStyle(TableStyle([("ALIGN", (0, 0), (0, 0), "CENTER"),
+                                  ("VALIGN", (0, 0), (-1, -1), "TOP")]))
+        return head
+    if position == "right":
+        head = Table([[logo or "", ident]], colWidths=[76 * mm, 110 * mm])
+        head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
+                                  ("ALIGN", (0, 0), (0, 0), "LEFT")]))
+        return head
     head = Table([[ident, logo or ""]], colWidths=[110 * mm, 76 * mm])
     head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
                               ("ALIGN", (1, 0), (1, 0), "RIGHT")]))
-    return [head, Spacer(1, 3 * mm),
-            HRFlowable(width="100%", thickness=2.2, color=brand, spaceBefore=2, spaceAfter=6)]
+    return head
 
 
 def _doc_styles(brand):
@@ -466,9 +602,11 @@ def invoice_pdf_bytes(doc) -> bytes:
 
     quote = doc.quotation
     company = quote.company
-    brand = _brand_color(company)
+    res = _resolve(doc, "invoice")
+    brand, cfg, font, font_bold = res["brand"], res["cfg"], res["font"], res["font_bold"]
     header = document_header(company, kind="invoice")
     small, muted, title, coname = _doc_styles(brand)
+    _apply_font([small, muted], font, font_bold)
 
     def P(t, s=small):
         return Paragraph(escape(str(t)), s)
@@ -480,14 +618,15 @@ def invoice_pdf_bytes(doc) -> bytes:
     pdf = SimpleDocTemplate(buf, pagesize=A4, topMargin=14 * mm, bottomMargin=12 * mm,
                             leftMargin=12 * mm, rightMargin=12 * mm,
                             title=f"Tax invoice {doc.number}")
-    story = _letterhead(company, brand, header, coname, small, muted, title, "TAX INVOICE")
+    story = _letterhead(company, brand, header, coname, small, muted, title,
+                        "TAX INVOICE", cfg)
 
     po = doc.purchase_order
     left = [L("Bill to:", _name(quote.client_name))]
     addr = _customer_address(quote.customer)
     if addr:
         left.append(P(f"Address: {_name(addr)}", muted))
-    if quote.customer_id and quote.customer.vat_no:
+    if quote.customer_id and quote.customer.vat_no and cfg.get("show_vat_number", True):
         left.append(P(f"VAT No: {quote.customer.vat_no}", muted))
     if quote.contact:
         left.append(P(f"Contact Person: {_name(quote.contact.full_name)}", small))
@@ -502,7 +641,7 @@ def invoice_pdf_bytes(doc) -> bytes:
              P(f"Date: {doc.created_at:%d/%m/%Y}", small),
              L("Quotation ref:", quote.number)]
     # The PO number the customer submitted — the invoice references their order.
-    if po and po.po_number:
+    if po and po.po_number and cfg.get("show_customer_po", True):
         right.append(L("PO Number:", po.po_number))
     right.extend(_prepared_by_lines(quote, small))
     # Scope of work sits directly below Prepared by, as on the quotation.
@@ -538,13 +677,13 @@ def invoice_pdf_bytes(doc) -> bytes:
     tot = Table(totals, colWidths=[45 * mm, 33.5 * mm], hAlign="RIGHT")
     tot.setStyle(TableStyle([
         ("ALIGN", (0, 0), (-1, -1), "RIGHT"), ("FONTSIZE", (0, 0), (-1, -1), 9.5),
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+        ("FONTNAME", (0, 0), (-1, -1), font_bold),
         ("LINEABOVE", (0, -1), (-1, -1), 0.8, brand), ("TOPPADDING", (0, 0), (-1, -1), 4),
         ("TEXTCOLOR", (0, -1), (-1, -1), brand)]))
     story += [tot, Spacer(1, 8 * mm)]
 
     # Standard invoice terms, configured once per company and inserted here.
-    story += _terms_flowables(company, "invoice", small, muted)
+    story += _terms_flowables(company, "invoice", small, muted, cfg)
 
     # Same boxed sign-off + banking as the quotation, worded for an invoice.
     prep = quote.prepared_by
@@ -553,11 +692,14 @@ def invoice_pdf_bytes(doc) -> bytes:
     footer = _signoff_banking_boxes(
         header, brand, small, muted, compiled_label="Invoice Compiled By:",
         prep_name=prep_name, today=doc.created_at.strftime("%d/%m/%Y"),
-        received_label="Received By:")
-    story += [footer, Spacer(1, 6 * mm),
-              P(f"Please use invoice number ({doc.number}) as the payment "
+        received_label="Received By:",
+        show_signature=cfg.get("show_signature", True),
+        show_banking=cfg.get("show_banking", True))
+    if footer is not None:
+        story += [footer, Spacer(1, 6 * mm)]
+    story += [P(f"Please use invoice number ({doc.number}) as the payment "
                 "reference. E&amp;OE.", muted)]
-    _build_one_page(pdf, story)
+    _build_one_page(pdf, story, on_page=_page_decorator(cfg, brand))
     return buf.getvalue()
 
 
@@ -569,9 +711,11 @@ def delivery_note_pdf_bytes(doc) -> bytes:
 
     quote = doc.quotation
     company = quote.company
-    brand = _brand_color(company)
+    res = _resolve(doc, "delivery")
+    brand, cfg, font, font_bold = res["brand"], res["cfg"], res["font"], res["font_bold"]
     header = document_header(company, kind="report")
     small, muted, title, coname = _doc_styles(brand)
+    _apply_font([small, muted], font, font_bold)
 
     def P(t, s=small):
         return Paragraph(escape(str(t)), s)
@@ -583,7 +727,8 @@ def delivery_note_pdf_bytes(doc) -> bytes:
     pdf = SimpleDocTemplate(buf, pagesize=A4, topMargin=14 * mm, bottomMargin=12 * mm,
                             leftMargin=12 * mm, rightMargin=12 * mm,
                             title=f"Delivery note {doc.number}")
-    story = _letterhead(company, brand, header, coname, small, muted, title, "DELIVERY NOTE")
+    story = _letterhead(company, brand, header, coname, small, muted, title,
+                        "DELIVERY NOTE", cfg)
 
     po = doc.purchase_order
     ship_to = doc.delivery_address or (
@@ -603,7 +748,7 @@ def delivery_note_pdf_bytes(doc) -> bytes:
              L("Delivery note:", doc.number),
              P(f"Date: {doc.created_at:%d/%m/%Y}", small),
              L("Quotation ref:", quote.number)]
-    if po:
+    if po and cfg.get("show_customer_po", True):
         right.append(L("PO Number:", po.po_number))
     if doc.delivery_date:
         right.append(L("Delivery date:", f"{doc.delivery_date:%d/%m/%Y}"))
@@ -641,14 +786,14 @@ def delivery_note_pdf_bytes(doc) -> bytes:
 
     # Standard delivery terms, then a sign-off box only — a delivery note carries
     # no banking details (nothing is paid against it).
-    story += _terms_flowables(company, "delivery", small, muted)
-    prep = quote.prepared_by
-    prep_name = _initials_surname(_name(prep.get_full_name())) if prep and prep.get_full_name() \
-        else (prep.email if prep else "")
-    footer = _signoff_box(
-        brand, small, muted, compiled_label="Delivery Compiled By:",
-        prep_name=prep_name, today=doc.created_at.strftime("%d/%m/%Y"),
-        received_label="Received in Good Order By:", width=104 * mm)
-    story += [footer]
-    _build_one_page(pdf, story)
+    story += _terms_flowables(company, "delivery", small, muted, cfg)
+    if cfg.get("show_signature", True):
+        prep = quote.prepared_by
+        prep_name = _initials_surname(_name(prep.get_full_name())) \
+            if prep and prep.get_full_name() else (prep.email if prep else "")
+        story += [_signoff_box(
+            brand, small, muted, compiled_label="Delivery Compiled By:",
+            prep_name=prep_name, today=doc.created_at.strftime("%d/%m/%Y"),
+            received_label="Received in Good Order By:", width=104 * mm)]
+    _build_one_page(pdf, story, on_page=_page_decorator(cfg, brand))
     return buf.getvalue()

@@ -106,3 +106,46 @@ class ConfigValidationTests(TestCase):
             self.assertEqual(tpl.config["accent_color"], "#123456")
             with self.assertRaises(dt.TemplateError):
                 dt.update_template(tpl, None, config={"accent_color": "nope"})
+
+
+class PdfRenderingTests(TestCase):
+    """The payoff: the PDF builders honour a template, and a company with no
+    template still renders exactly as before (a valid PDF, no exceptions)."""
+
+    def _quote(self, company, **extra):
+        from .models import Quotation
+        return Quotation.objects.create(company=company, number="QT-1",
+                                        client_name="Harmony", site="Welkom",
+                                        **extra)
+
+    def test_quotation_renders_without_a_template(self):
+        from .pdf import quotation_pdf_bytes
+        c = make_company()
+        with tenant_scope(c.id):
+            pdf = quotation_pdf_bytes(self._quote(c))
+            self.assertTrue(pdf.startswith(b"%PDF"))
+
+    def test_quotation_renders_with_a_preset_template(self):
+        from .pdf import quotation_pdf_bytes
+        c = make_company()
+        with tenant_scope(c.id):
+            dt.seed_document_templates(c)
+            mining = DocumentTemplate.objects.get(company=c, doc_type="quotation",
+                                                  name="Mining")
+            pdf = quotation_pdf_bytes(self._quote(c, template=mining))
+            self.assertTrue(pdf.startswith(b"%PDF"))
+
+    def test_template_toggles_and_watermark_render(self):
+        """A template that hides banking + signature and stamps a watermark must
+        still produce a valid document."""
+        from .pdf import quotation_pdf_bytes
+        c = make_company()
+        with tenant_scope(c.id):
+            tpl = dt.create_template(
+                c, None, doc_type="quotation", name="Draft look",
+                base_layout="compact",
+                config={"show_banking": False, "show_signature": False,
+                        "show_watermark": True, "watermark_text": "DRAFT",
+                        "footer_note": "Confidential", "font": "Times-Roman"})
+            pdf = quotation_pdf_bytes(self._quote(c, template=tpl))
+            self.assertTrue(pdf.startswith(b"%PDF"))
