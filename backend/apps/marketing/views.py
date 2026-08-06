@@ -171,13 +171,19 @@ def about(request):
 @require_http_methods(["GET", "POST"])
 def contact(request):
     if request.method == "POST":
-        ContactMessage.objects.create(
-            name=request.POST.get("name", "").strip(),
-            email=request.POST.get("email", "").strip(),
-            company=request.POST.get("company", "").strip(),
-            subject=request.POST.get("subject", "").strip(),
-            message=request.POST.get("message", "").strip(),
-        )
+        from apps.core.validation import InputError, clean_email, clean_str
+        try:
+            msg = ContactMessage(
+                name=clean_str(request.POST.get("name"), field="Name", max_length=200, required=True),
+                email=clean_email(request.POST.get("email")),
+                company=clean_str(request.POST.get("company"), field="Company", max_length=200),
+                subject=clean_str(request.POST.get("subject"), field="Subject", max_length=200),
+                message=clean_str(request.POST.get("message"), field="Message", max_length=5000, required=True),
+            )
+        except InputError as exc:
+            messages.error(request, str(exc))
+            return redirect("marketing:contact")
+        msg.save()
         messages.success(request, "Thanks — we've received your message and will reply shortly.")
         return redirect("marketing:contact")
     return render(request, "marketing/contact.html", _seo(
@@ -189,18 +195,24 @@ def contact(request):
 @require_http_methods(["GET", "POST"])
 def demo(request):
     if request.method == "POST":
+        from apps.core.validation import InputError, clean_email, clean_str
         raw_date = request.POST.get("preferred_date") or None
-        DemoRequest.objects.create(
-            company=request.POST.get("company", "").strip(),
-            name=request.POST.get("name", "").strip(),
-            email=request.POST.get("email", "").strip(),
-            phone=request.POST.get("phone", "").strip(),
-            industry=request.POST.get("industry", "").strip(),
-            employees=request.POST.get("employees", "").strip(),
-            preferred_date=raw_date or None,
-            preferred_time=request.POST.get("preferred_time", "").strip(),
-            notes=request.POST.get("notes", "").strip(),
-        )
+        try:
+            demo_req = DemoRequest(
+                company=clean_str(request.POST.get("company"), field="Company", max_length=200, required=True),
+                name=clean_str(request.POST.get("name"), field="Name", max_length=200, required=True),
+                email=clean_email(request.POST.get("email")),
+                phone=clean_str(request.POST.get("phone"), field="Phone", max_length=40),
+                industry=clean_str(request.POST.get("industry"), field="Industry", max_length=120),
+                employees=clean_str(request.POST.get("employees"), field="Employees", max_length=40),
+                preferred_date=raw_date or None,
+                preferred_time=clean_str(request.POST.get("preferred_time"), field="Preferred time", max_length=40),
+                notes=clean_str(request.POST.get("notes"), field="Notes", max_length=2000),
+            )
+        except InputError as exc:
+            messages.error(request, str(exc))
+            return redirect("marketing:demo")
+        demo_req.save()
         return redirect("marketing:demo_thanks")
     return render(request, "marketing/demo.html", _seo(
         "Book a Demo — LulaWorks",

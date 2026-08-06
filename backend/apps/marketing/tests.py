@@ -94,6 +94,72 @@ class TrialRegistrationTests(TestCase):
         self.assertContains(resp, "already exists")
         self.assertEqual(Company.objects.count(), 0)
 
+    def test_invalid_email_is_rejected(self):
+        resp = self.client.post(reverse("marketing:trial"), {
+            "company": "X", "full_name": "Y", "email": "not-an-email", "password": "s3curePass!"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "valid email")
+        self.assertEqual(Company.objects.count(), 0)
+
+    def test_weak_password_is_rejected(self):
+        # Django's AUTH_PASSWORD_VALIDATORS must run server-side (not just client).
+        resp = self.client.post(reverse("marketing:trial"), {
+            "company": "X", "full_name": "Y", "email": "new@co.za", "password": "123"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(Company.objects.count(), 0)
+        self.assertFalse(User.objects.filter(email="new@co.za").exists())
+
+    def test_overlong_company_name_is_rejected(self):
+        resp = self.client.post(reverse("marketing:trial"), {
+            "company": "A" * 5000, "full_name": "Y", "email": "big@co.za",
+            "password": "s3curePass!"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "too long")
+        self.assertEqual(Company.objects.count(), 0)
+
+
+class InputValidationTests(TestCase):
+    """Public forms reject malformed / oversized anonymous input server-side."""
+
+    def test_contact_rejects_invalid_email(self):
+        self.client.post(reverse("marketing:contact"), {
+            "name": "Sipho", "email": "nope", "message": "Hi"})
+        self.assertEqual(ContactMessage.objects.count(), 0)
+
+    def test_contact_rejects_missing_message(self):
+        self.client.post(reverse("marketing:contact"), {
+            "name": "Sipho", "email": "s@co.za", "message": ""})
+        self.assertEqual(ContactMessage.objects.count(), 0)
+
+    def test_demo_rejects_invalid_email(self):
+        resp = self.client.post(reverse("marketing:demo"), {
+            "company": "Acme", "name": "Lerato", "email": "bad"})
+        self.assertRedirects(resp, reverse("marketing:demo"))
+        self.assertEqual(DemoRequest.objects.count(), 0)
+
+
+class ApiDocsAccessTests(TestCase):
+    """The OpenAPI schema + Swagger UI expose the whole API surface — they must
+    NOT be reachable by anonymous visitors."""
+
+    def test_anonymous_schema_is_denied(self):
+        r = self.client.get(reverse("schema"))
+        self.assertIn(r.status_code, (401, 403))
+
+    def test_anonymous_docs_is_denied(self):
+        r = self.client.get(reverse("docs"))
+        self.assertIn(r.status_code, (401, 403))
+
+    def test_staff_can_read_schema(self):
+        # DRF authenticates with JWT (not the session), so exercise the real path.
+        from rest_framework.test import APIClient
+        from rest_framework_simplejwt.tokens import AccessToken
+        staff = User.objects.create_superuser(email="root@lw.io", password="s3curePass!")
+        api = APIClient()
+        api.credentials(HTTP_AUTHORIZATION=f"Bearer {AccessToken.for_user(staff)}")
+        r = api.get(reverse("schema"))
+        self.assertEqual(r.status_code, 200)
+
 
 class CurrencyDetectionTests(TestCase):
     def setUp(self):
