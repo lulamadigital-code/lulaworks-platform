@@ -21,9 +21,10 @@ from apps.core.events import publish
 
 from . import governance
 from .agents import AGENTS, AgentResult, _decimalless, agent_required_perm
-from .gateway import InsufficientCreditsError, run_metered
+from .gateway import AllProvidersFailedError, InsufficientCreditsError, run_task
 from .models import AIInteraction, ApprovalStatus, PromptTemplate
-from .providers import NotConfiguredError, ai_configured, configured_provider_names, get_provider
+from .providers import ai_configured
+from .routing import TaskType
 from .tools import ToolPermissionError
 
 logger = logging.getLogger(__name__)
@@ -111,19 +112,18 @@ def _maybe_enrich(company, user, consolidated) -> tuple[str, str] | None:
         "invent numbers, names or actions. Note that any proposed actions require "
         "human approval.\n\nFINDINGS:\n" + json.dumps(grounded, default=str)
     )
-    for name in configured_provider_names():
-        try:
-            provider = get_provider(name)
-            resp = run_metered(company, user, provider, prompt, agent="lulama", system=system)
-            return resp.provider, resp.text
-        except InsufficientCreditsError:
-            logger.info("Lulama enrichment skipped: no AI credits.")
-            return None
-        except (NotConfiguredError, Exception) as exc:  # noqa: BLE001 - resilient fallback
-            logger.warning("Lulama enrichment via %s failed (%s); trying next / falling back.",
-                           name, exc)
-            continue
-    return None
+    # The router picks the reasoning-preferred provider and fails over as needed;
+    # any total failure just drops the (optional) narrative enrichment.
+    try:
+        resp = run_task(company, user, TaskType.REASONING, prompt,
+                        agent="lulama", prompt_name="lulama_briefing", system=system)
+        return resp.provider, resp.text
+    except InsufficientCreditsError:
+        logger.info("Lulama enrichment skipped: no AI credits.")
+        return None
+    except AllProvidersFailedError as exc:
+        logger.warning("Lulama enrichment unavailable (%s); using deterministic result.", exc)
+        return None
 
 
 # ── The orchestrator ──────────────────────────────────────────────────────────

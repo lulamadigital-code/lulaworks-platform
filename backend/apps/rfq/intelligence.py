@@ -10,9 +10,10 @@ import json
 import re
 from decimal import Decimal, InvalidOperation
 
-from apps.ai_platform.gateway import run_metered
+from apps.ai_platform.gateway import AllProvidersFailedError, run_metered, run_task
 from apps.ai_platform.models import PromptTemplate
-from apps.ai_platform.providers import ai_configured, get_provider
+from apps.ai_platform.providers import ai_configured
+from apps.ai_platform.routing import TaskType
 
 from .extraction import ExtractedLine, ExtractedValue
 
@@ -62,16 +63,25 @@ def enrich_with_ai(company, user, extraction, *, provider=None, force=False):
     values always win; AI only *adds* missing fields/lines. `provider`/`force`
     are for dependency injection in tests; production passes neither and the
     call is a no-op unless a provider is configured and gaps exist."""
-    if provider is None:
-        if not ai_configured():
-            return extraction
-        provider = get_provider()
+    # `provider` is a test dependency-injection hook; production passes none and
+    # goes through the task router (extraction → Gemini first, then fail over).
+    if provider is None and not ai_configured():
+        return extraction
     if not force and not _has_gaps(extraction):
         return extraction
 
     prompt = _prompt_text().replace("{text}", extraction.text[:12000])
-    resp = run_metered(company, user, provider, prompt, agent="rfq_extraction")
+    if provider is not None:
+        resp = run_metered(company, user, provider, prompt, agent="rfq_extraction",
+                           task="extraction", prompt_name="rfq_extraction")
+    else:
+        try:
+            resp = run_task(company, user, TaskType.EXTRACTION, prompt,
+                            agent="rfq_extraction", prompt_name="rfq_extraction")
+        except AllProvidersFailedError:
+            return extraction
     ai_fields, ai_lines = _parse_ai(resp.text)
+    # Internal provenance metadata (audit only, never shown to end users).
     method = f"ai_{resp.provider}"
 
     for key, payload in ai_fields.items():

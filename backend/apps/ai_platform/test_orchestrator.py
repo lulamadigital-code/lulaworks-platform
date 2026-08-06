@@ -262,12 +262,12 @@ class EnrichmentTests(APITestCase):
             user = user_with(c, PERMS)
         return c, project, user
 
+    @override_settings(ANTHROPIC_API_KEY="a", OPENAI_API_KEY="", GEMINI_API_KEY="")
     def test_enrich_adds_briefing_and_meters_credits(self):
         c, project, user = self._setup()
+        # Only Claude configured → the router (reasoning→Claude) picks the stub.
         with tenant_scope(c.id), \
-                patch("apps.ai_platform.orchestrator.configured_provider_names",
-                      return_value=["claude"]), \
-                patch("apps.ai_platform.orchestrator.get_provider",
+                patch("apps.ai_platform.providers.get_provider",
                       return_value=_StubProvider()):
             interaction = orchestrate(c, user, "Prepare this project", project=project,
                                       enrich=True)
@@ -276,12 +276,11 @@ class EnrichmentTests(APITestCase):
         self.assertIn("executive_briefing", interaction.result)
         self.assertEqual(balance, Decimal("9"))   # 10 − 1 credit metered
 
+    @override_settings(ANTHROPIC_API_KEY="a", OPENAI_API_KEY="", GEMINI_API_KEY="")
     def test_provider_failure_falls_back_to_deterministic(self):
         c, project, user = self._setup()
         with tenant_scope(c.id), \
-                patch("apps.ai_platform.orchestrator.configured_provider_names",
-                      return_value=["claude"]), \
-                patch("apps.ai_platform.orchestrator.get_provider",
+                patch("apps.ai_platform.providers.get_provider",
                       return_value=_StubProvider(fail=True)):
             interaction = orchestrate(c, user, "Prepare this project", project=project,
                                       enrich=True)

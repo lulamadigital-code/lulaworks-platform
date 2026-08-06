@@ -240,16 +240,18 @@ def _ai_json(company, user, prompt_template: str, text: str, *, agent: str) -> d
     if not text.strip():
         return {}
     try:
-        from apps.ai_platform.gateway import run_metered
-        from apps.ai_platform.providers import ai_configured, get_provider
+        from apps.ai_platform.gateway import run_task
+        from apps.ai_platform.providers import ai_configured
+        from apps.ai_platform.routing import TaskType
     except ImportError:
         return {}
     if company is None or user is None or not ai_configured():
         return {}
     try:
-        provider = get_provider()
         prompt = prompt_template.replace("{text}", text[:12000])
-        resp = run_metered(company, user, provider, prompt, agent=agent)
+        # Document extraction routes to Gemini first, then fails over.
+        resp = run_task(company, user, TaskType.EXTRACTION, prompt,
+                        agent=agent, prompt_name=agent, json_mode=True)
         m = re.search(r"\{.*\}", resp.text, re.DOTALL)
         return json.loads(m.group(0)) if m else {}
     except Exception:

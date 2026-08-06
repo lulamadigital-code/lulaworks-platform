@@ -36,8 +36,8 @@ from statistics import median
 from django.db import transaction
 
 from . import governance
-from .gateway import InsufficientCreditsError, run_metered
-from .providers import NotConfiguredError, configured_provider_names, get_provider
+from .gateway import AllProvidersFailedError, InsufficientCreditsError, run_task
+from .routing import TaskType
 
 logger = logging.getLogger(__name__)
 
@@ -422,32 +422,33 @@ def _maybe_enrich(company, user, draft: Decomposition, *, name, description) -> 
         '"extra_risks": [up to 3 risks], "briefing": "<=60 words for the supervisor"}. '
         "Do not invent equipment numbers, people, dates or prices."
     )
-    for provider_name in configured_provider_names():
-        try:
-            provider = get_provider(provider_name)
-            resp = run_metered(company, user, provider, prompt,
-                               agent="lulaai_decompose", json_mode=True)
-            payload = json.loads(_json_slice(resp.text))
-        except InsufficientCreditsError:
-            logger.info("Decomposition enrichment skipped: no AI credits.")
-            return
-        except Exception as exc:  # noqa: BLE001 - resilient: grounding already stands
-            logger.warning("Decomposition enrichment via %s failed (%s); keeping "
-                           "the grounded draft.", provider_name, exc)
-            continue
-        else:
-            existing = {c.lower() for c in draft.checklist}
-            added = [str(c).strip() for c in payload.get("extra_checklist", [])[:4]
-                     if str(c).strip() and str(c).strip().lower() not in existing]
-            draft.checklist.extend(added)
-            draft.risks.extend(str(r).strip() for r in payload.get("extra_risks", [])[:3]
-                               if str(r).strip())
-            draft.briefing = str(payload.get("briefing", ""))[:400]
-            draft.provider = resp.provider
-            if added:
-                draft.grounded_in.append(
-                    f"{len(added)} step(s) suggested by {resp.provider} (review these)")
-            return
+    # Reasoning task — router picks Claude first, then fails over. The grounded
+    # draft already stands on its own if the LLM is unavailable.
+    try:
+        resp = run_task(company, user, TaskType.REASONING, prompt,
+                        agent="lulaai_decompose", prompt_name="lulaai_decompose",
+                        json_mode=True)
+        payload = json.loads(_json_slice(resp.text))
+    except InsufficientCreditsError:
+        logger.info("Decomposition enrichment skipped: no AI credits.")
+        return
+    except (AllProvidersFailedError, ValueError, json.JSONDecodeError) as exc:
+        logger.warning("Decomposition enrichment unavailable (%s); keeping the "
+                       "grounded draft.", exc)
+        return
+
+    existing = {c.lower() for c in draft.checklist}
+    added = [str(c).strip() for c in payload.get("extra_checklist", [])[:4]
+             if str(c).strip() and str(c).strip().lower() not in existing]
+    draft.checklist.extend(added)
+    draft.risks.extend(str(r).strip() for r in payload.get("extra_risks", [])[:3]
+                       if str(r).strip())
+    draft.briefing = str(payload.get("briefing", ""))[:400]
+    # Branding: the plan was enriched by LulaAI (not a named vendor).
+    draft.provider = "lulaai"
+    if added:
+        draft.grounded_in.append(
+            f"{len(added)} step(s) suggested by LulaAI (review these)")
 
 
 def _json_slice(text: str) -> str:

@@ -178,13 +178,12 @@ class EnrichmentTests(TestCase):
     """The LLM may only add to a grounded plan, and its failure must be harmless."""
 
     def test_provider_failure_keeps_the_grounded_draft(self):
+        from apps.ai_platform.gateway import AllProvidersFailedError
         c = make_company()
         with tenant_scope(c.id):
             user = _grounded_user(c)
-            with patch("apps.ai_platform.decomposition.configured_provider_names",
-                       return_value=["claude"]), \
-                 patch("apps.ai_platform.decomposition.run_metered",
-                       side_effect=RuntimeError("provider down")):
+            with patch("apps.ai_platform.decomposition.run_task",
+                       side_effect=AllProvidersFailedError("provider down")):
                 draft = propose_decomposition(c, user, name="Pump seal replacement")
 
             self.assertTrue(draft.checklist)     # deterministic plan survived
@@ -203,10 +202,7 @@ class EnrichmentTests(TestCase):
                         '"extra_risks": ["Wrong seal size on site"], '
                         '"briefing": "Standard seal job."}')
 
-            with patch("apps.ai_platform.decomposition.configured_provider_names",
-                       return_value=["claude"]), \
-                 patch("apps.ai_platform.decomposition.get_provider"), \
-                 patch("apps.ai_platform.decomposition.run_metered",
+            with patch("apps.ai_platform.decomposition.run_task",
                        return_value=_Resp()):
                 draft = propose_decomposition(c, user, name="Pump seal replacement")
 
@@ -214,15 +210,16 @@ class EnrichmentTests(TestCase):
                 self.assertIn(step, draft.checklist)      # nothing was replaced
             self.assertIn("Fit new gasket set", draft.checklist)
             self.assertIn("Wrong seal size on site", draft.risks)
-            self.assertEqual(draft.provider, "claude")
+            # Branded: users see "LulaAI", never the underlying vendor.
+            self.assertEqual(draft.provider, "lulaai")
 
     def test_enrichment_requires_ai_permission(self):
         c = make_company()
         with tenant_scope(c.id):
             user = user_with(c, ["execution.manage"])          # no ai.generate
-            with patch("apps.ai_platform.decomposition.run_metered") as metered:
+            with patch("apps.ai_platform.decomposition.run_task") as routed:
                 draft = propose_decomposition(c, user, name="Pump seal replacement")
-            metered.assert_not_called()
+            routed.assert_not_called()
             self.assertTrue(draft.checklist)   # deterministic plan still offered
 
 

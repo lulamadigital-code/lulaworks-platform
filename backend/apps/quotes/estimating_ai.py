@@ -25,8 +25,12 @@ from statistics import median
 
 from django.db import transaction
 
-from apps.ai_platform.gateway import InsufficientCreditsError, run_metered
-from apps.ai_platform.providers import configured_provider_names, get_provider
+from apps.ai_platform.gateway import (
+    AllProvidersFailedError,
+    InsufficientCreditsError,
+    run_task,
+)
+from apps.ai_platform.routing import TaskType
 
 from .models import LineCategory, QuotationLine, QuotationStatus
 
@@ -158,37 +162,36 @@ def _ai_lines(quote, user, already) -> tuple[list, str]:
         '{"lines": [{"description": "...", "category": "labour|material|'
         'consumable|equipment|transport|other", "unit": "each"}]}'
     )
-    for provider_name in configured_provider_names():
-        try:
-            provider = get_provider(provider_name)
-            resp = run_metered(company=quote.company, user=user, provider=provider,
-                               prompt=prompt, agent="quote_estimating", json_mode=True)
-            payload = json.loads(resp.text[resp.text.find("{"):resp.text.rfind("}") + 1])
-        except InsufficientCreditsError:
-            return [], "AI suggestions skipped — no AI credits."
-        except Exception as exc:  # noqa: BLE001 - history-based suggestions still stand
-            logger.warning("Quote estimating via %s failed (%s).", provider_name, exc)
+    # One call — the router picks the generation-preferred provider and fails
+    # over internally; history-based suggestions still stand if the LLM is down.
+    try:
+        resp = run_task(company=quote.company, user=user, task=TaskType.GENERATION,
+                        prompt=prompt, agent="quote_estimating",
+                        prompt_name="item_suggestions", json_mode=True)
+        payload = json.loads(resp.text[resp.text.find("{"):resp.text.rfind("}") + 1])
+    except InsufficientCreditsError:
+        return [], "AI suggestions skipped — no AI credits."
+    except (AllProvidersFailedError, ValueError, json.JSONDecodeError) as exc:
+        logger.warning("Quote estimating unavailable (%s).", exc)
+        return [], "AI suggestions unavailable right now."
+    out = []
+    for row in payload.get("lines", [])[:15]:
+        description = str(row.get("description", "")).strip()
+        if not description or description.lower() in already:
             continue
-        else:
-            out = []
-            for row in payload.get("lines", [])[:15]:
-                description = str(row.get("description", "")).strip()
-                if not description or description.lower() in already:
-                    continue
-                already.add(description.lower())
-                out.append({
-                    "description": description[:500],
-                    "category": str(row.get("category", "other"))[:16],
-                    "qty": Decimal("1"),
-                    "unit": str(row.get("unit") or "each")[:32],
-                    # Deliberately no cost: the estimator prices it.
-                    "unit_cost": Decimal("0"),
-                    "markup_pct": Decimal("0"),
-                    "source": f"{resp.provider} — needs pricing",
-                    "confidence": 0.5,
-                })
-            return out, f"{len(out)} suggestion(s) from {resp.provider}, unpriced."
-    return [], ""
+        already.add(description.lower())
+        out.append({
+            "description": description[:500],
+            "category": str(row.get("category", "other"))[:16],
+            "qty": Decimal("1"),
+            "unit": str(row.get("unit") or "each")[:32],
+            # Deliberately no cost: the estimator prices it.
+            "unit_cost": Decimal("0"),
+            "markup_pct": Decimal("0"),
+            "source": "LulaAI — needs pricing",
+            "confidence": 0.5,
+        })
+    return out, f"{len(out)} suggestion(s) from LulaAI, unpriced."
 
 
 @transaction.atomic

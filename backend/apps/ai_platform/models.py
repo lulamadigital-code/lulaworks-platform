@@ -68,12 +68,19 @@ class AIUsageLog(models.Model):
     )
     provider = models.CharField(max_length=24)  # claude|openai|gemini
     agent = models.CharField(max_length=48, blank=True)
+    #: The task category routed (extraction/reasoning/…) and the feature name.
+    task = models.CharField(max_length=32, blank=True)
+    prompt_name = models.CharField(max_length=64, blank=True)
+    #: Correlates every attempt of one logical request (primary + any failovers).
+    request_id = models.UUIDField(null=True, blank=True, db_index=True)
     tokens_in = models.PositiveIntegerField(default=0)
     tokens_out = models.PositiveIntegerField(default=0)
     cost = models.DecimalField(max_digits=10, decimal_places=4, default=0)
     credits_used = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     execution_ms = models.PositiveIntegerField(default=0)
+    #: ok | failover (this provider failed, trying the next) | error (all failed)
     status = models.CharField(max_length=16, default="ok")
+    error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
