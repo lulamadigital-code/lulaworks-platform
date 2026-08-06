@@ -113,10 +113,17 @@ class CurrencyDetectionTests(TestCase):
         r = self.client.get(reverse("marketing:pricing"), HTTP_CF_IPCOUNTRY="US")
         self.assertContains(r, "$79")
 
-    def test_uk_visitor_sees_gbp_via_accept_language(self):
+    def test_uk_visitor_sees_gbp_via_geo_header(self):
+        r = self.client.get(reverse("marketing:pricing"), HTTP_CF_IPCOUNTRY="GB")
+        self.assertContains(r, "£65")
+
+    def test_browser_language_does_not_set_currency(self):
+        # A SA visitor whose browser is set to en-GB must NOT be shown pounds —
+        # currency comes from location, not language. No geo header → default.
         r = self.client.get(reverse("marketing:pricing"),
                             HTTP_ACCEPT_LANGUAGE="en-GB,en;q=0.9")
-        self.assertContains(r, "£65")
+        self.assertContains(r, "R1299")   # ZAR default, not GBP
+        self.assertNotContains(r, "£65")
 
     def test_unknown_location_falls_back_to_default(self):
         r = self.client.get(reverse("marketing:pricing"))

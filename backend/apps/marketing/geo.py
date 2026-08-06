@@ -1,18 +1,23 @@
-"""Locale/geo → currency detection for the public site.
+"""Location → currency detection for the public site.
 
-Picks the visitor's currency automatically so a US visitor sees USD, a UK
-visitor GBP, etc. Resolution order (first hit wins):
+Picks the visitor's currency from their **location** (not their browser
+language, which is unreliable — a South African browser often sends en-GB).
+Resolution order, first hit wins:
 
-  1. Explicit ?currency= override (hidden; for support/QA) — then remembered.
-  2. A currency already stored in the session (sticky once detected/chosen).
-  3. The country from a CDN/proxy geo header (Cloudflare / CloudFront / etc.).
-  4. The country from the browser's Accept-Language (e.g. en-US → US).
-  5. Platform default (settings.DEFAULT_CURRENCY).
+  1. Explicit ?currency= override (hidden; for support/QA) — remembered.
+  2. A currency already stored in the session (sticky once confidently found).
+  3. Country from a CDN/proxy geo header (Cloudflare CF-IPCountry / CloudFront …).
+  4. Country from a lightweight IP geolocation lookup (one call per session).
+  5. Platform default (settings.DEFAULT_CURRENCY) — not stored, so a later
+     confident detection can still correct it.
 
-No external API calls and no GeoIP database — it uses the country a fronting CDN
-already provides, degrading to locale then default. A real GeoIP lookup can slot
-into `_country_from_ip` later without changing callers.
+Only *confident* results (override / header / IP) are cached in the session, so
+a transient miss never sticks the wrong currency. Best accuracy comes from
+fronting the site with Cloudflare (adds CF-IPCountry, no external call).
 """
+
+import ipaddress
+import urllib.request
 
 from django.conf import settings
 
@@ -50,37 +55,53 @@ def _country_from_headers(request):
     return None
 
 
-def _country_from_accept_language(request):
-    al = request.META.get("HTTP_ACCEPT_LANGUAGE", "")
-    first = al.split(",")[0].strip().replace("_", "-")  # e.g. "en-US"
-    parts = first.split("-")
-    if len(parts) >= 2 and len(parts[1]) == 2 and parts[1].isalpha():
-        return parts[1].upper()
-    return None
+def _client_ip(request):
+    xff = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    ip = xff.split(",")[0].strip() if xff else request.META.get("REMOTE_ADDR", "")
+    return ip
+
+
+def _is_public_ip(ip) -> bool:
+    try:
+        return ipaddress.ip_address(ip).is_global
+    except ValueError:
+        return False
 
 
 def _country_from_ip(request):
-    """Placeholder for a real IP→country lookup (GeoIP2/MaxMind) if added later."""
-    return None
+    """Best-effort IP → ISO country via a free geolocation service. Skips
+    private/loopback IPs and fails closed (None) on any error. The visitor's IP
+    is sent to the geolocation provider — a standard practice for this feature."""
+    ip = _client_ip(request)
+    if not ip or not _is_public_ip(ip):
+        return None
+    try:
+        req = urllib.request.Request(
+            f"https://ipapi.co/{ip}/country/",
+            headers={"User-Agent": "LulaWorks/1.0"},
+        )
+        with urllib.request.urlopen(req, timeout=2) as resp:
+            code = resp.read().decode().strip().upper()
+        return code if len(code) == 2 and code.isalpha() else None
+    except Exception:
+        return None
 
 
 def detect_currency(request) -> str:
-    """The currency to show/bill this visitor, auto-detected from their location."""
+    """The currency to show/bill this visitor, from their location."""
     override = (request.GET.get("currency") or "").upper()
     if override in SUPPORTED_CURRENCIES:
-        request.session["currency"] = override
+        request.session["ccy"] = override
         return override
 
-    stored = request.session.get("currency")
+    stored = request.session.get("ccy")
     if stored in SUPPORTED_CURRENCIES:
         return stored
 
-    country = (_country_from_headers(request)
-               or _country_from_ip(request)
-               or _country_from_accept_language(request))
+    country = _country_from_headers(request) or _country_from_ip(request)
     currency = COUNTRY_CURRENCY.get(country) if country else None
-    if currency not in SUPPORTED_CURRENCIES:
-        currency = _default()
+    if currency in SUPPORTED_CURRENCIES:
+        request.session["ccy"] = currency   # confident → sticky
+        return currency
 
-    request.session["currency"] = currency
-    return currency
+    return _default()   # unsure → platform default (ZAR), not cached
