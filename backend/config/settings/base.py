@@ -51,6 +51,7 @@ LOCAL_APPS = [
     "apps.finance",
     "apps.web",
     "apps.marketing",
+    "apps.payments",
 ]
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
@@ -227,6 +228,15 @@ USE_TZ = True
 # own currency (Plan.currency); tenants carry Company.currency. Multi-currency
 # ready — V1 defaults to ZAR.
 DEFAULT_CURRENCY = config("DEFAULT_CURRENCY", default="ZAR")
+
+# --- Payments (provider-agnostic gateway abstraction; apps.payments) ---
+# 'mock' is the safe offline default (no real charge). Set 'stripe' + the keys
+# below to charge for real. Add PayFast/Paystack/etc. as new gateways later
+# without touching subscription logic.
+PAYMENT_GATEWAY = config("PAYMENT_GATEWAY", default="mock")
+STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY", default="")
+STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY", default="")
+STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET", default="")
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"

@@ -16,6 +16,10 @@ whitenoise==6.12.0
 # Structured (JSON) logging for production — used when LOG_FORMAT=json so logs
 # ship cleanly into CloudWatch / Loki / an ELK stack later. Pure-Python.
 python-json-logger==3.1.0
+# Payments — Stripe gateway (lazy-imported; only used when STRIPE_SECRET_KEY set).
+# The billing engine talks to a provider-agnostic abstraction, so this is one
+# adapter among several possible providers.
+stripe==10.10.0
 pdfplumber==0.11.10
 pytesseract==0.3.13
 pdf2image==1.17.0

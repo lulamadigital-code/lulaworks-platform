@@ -50,6 +50,8 @@ urlpatterns = [
     # SEO endpoints for the public site.
     path("robots.txt", marketing_views.robots_txt, name="robots_txt"),
     path("sitemap.xml", marketing_views.sitemap_xml, name="sitemap_xml"),
+    # Payments (checkout return/cancel + provider webhooks).
+    path("", include("apps.payments.urls")),
     # Manager web (session-auth, server-rendered HTML + HTMX). Mounted before the
     # public site so its named routes (login/, dashboard/, projects/, …) resolve.
     path("", include("apps.web.urls")),

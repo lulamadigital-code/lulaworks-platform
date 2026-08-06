@@ -12,8 +12,6 @@ from django.views.decorators.http import require_POST
 from apps.billing.models import BillingCycle
 from apps.billing.services import (
     cancel_subscription,
-    change_plan,
-    purchase_credit_pack,
     start_trial,
     subscription_overview,
 )
@@ -53,27 +51,23 @@ def billing(request):
 @login_required
 @require_POST
 def billing_change_plan(request):
+    """Start checkout for a plan. Payment goes through the gateway abstraction
+    (apps.payments); on success the subscription is activated. The gateway is
+    provider-agnostic — mock in dev, Stripe/PayFast/… in production."""
     if not _can_manage(request):
         messages.error(request, "You do not have permission to manage billing.")
         return redirect("web:billing")
+    from apps.payments.services import begin_subscription_checkout
     plan_code = request.POST.get("plan_code", "")
     cycle = request.POST.get("billing_cycle", "monthly")
     if cycle not in dict(BillingCycle.choices):
         cycle = "monthly"
     try:
-        sub = change_plan(company := _company(request), plan_code, cycle, actor=request.user)
+        session = begin_subscription_checkout(request, _company(request), plan_code, cycle)
     except Exception:
         messages.error(request, "That plan could not be selected. Please try again.")
         return redirect("web:billing")
-    verb = "upgraded" if sub else "changed"
-    messages.success(request, f"Plan {verb} to {sub.plan.name} ({sub.get_billing_cycle_display()}).")
-    if sub.is_over_limit:
-        messages.warning(
-            request,
-            "You're above the new plan's limits — your data is safe, but adding "
-            "users is blocked until you're back within the limit.",
-        )
-    return redirect("web:billing")
+    return redirect(session.url)
 
 
 @login_required
@@ -94,14 +88,16 @@ def billing_cancel(request):
 @login_required
 @require_POST
 def billing_buy_credits(request):
+    """Start checkout for an AI credit pack (via the payment gateway); credits
+    are added on successful payment."""
     if not _can_manage(request):
         messages.error(request, "You do not have permission to manage billing.")
         return redirect("web:billing")
+    from apps.payments.services import begin_pack_checkout
     pack_code = request.POST.get("pack_code", "")
     try:
-        pack = purchase_credit_pack(_company(request), pack_code, actor=request.user)
+        session = begin_pack_checkout(request, _company(request), pack_code)
     except Exception:
         messages.error(request, "That credit pack could not be purchased.")
         return redirect("web:billing")
-    messages.success(request, f"{pack.name} added — {pack.credits:.0f} AI credits are now available.")
-    return redirect("web:billing")
+    return redirect(session.url)
