@@ -1,0 +1,80 @@
+{% extends "web/base.html" %}
+{% block title %}CRM{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>CRM</h1>
+    <p class="sub" style="margin:0;">Every customer relationship in one place — from the
+      first enquiry, through the pipeline, to the deals you win. Lead → Opportunity →
+      Customer → Quotation → Job.</p>
+  </div>
+</div>
+
+{% include "web/crm/_tabs.html" with active='hub' %}
+
+<div class="grid">
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">◎</div>
+    <div><div class="cap">Open opportunities</div><strong>{{ pipeline.open_count }}</strong></div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">R</div>
+    <div><div class="cap">Pipeline value</div><strong>{{ pipeline.open_value|floatformat:0 }}</strong></div></div>
+  <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">≈</div>
+    <div><div class="cap">Weighted forecast</div><strong>{{ pipeline.weighted_value|floatformat:0 }}</strong></div></div>
+  <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">%</div>
+    <div><div class="cap">Win rate</div><strong>{% if reports.conversion_rate is not None %}{{ reports.conversion_rate }}%{% else %}—{% endif %}</strong></div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-top:18px;">
+  <div>
+    <h2>Pipeline by stage</h2>
+    <div class="card">
+      {% for s in pipeline.stages %}
+      <div class="barrow">
+        <div class="li" style="min-width:150px;">{{ s.label }}</div>
+        <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:{% widthratio s.count pipeline.open_count 100 %}%;"></div></div>
+        <div class="right muted" style="min-width:120px;text-align:right;">{{ s.count }} · {{ s.value|floatformat:0 }}</div>
+      </div>
+      {% empty %}<p class="muted" style="padding:14px;">No open opportunities yet.</p>{% endfor %}
+    </div>
+
+    <h2>New leads</h2>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <tr><th>Company</th><th>Contact</th><th>Source</th><th>Status</th><th>Value</th></tr>
+        {% for lead in recent_leads %}
+        <tr>
+          <td><a href="{% url 'web:crm_lead_detail' lead.id %}"><strong>{{ lead.company_name }}</strong></a></td>
+          <td class="muted">{{ lead.contact_name|default:"—" }}</td>
+          <td class="muted">{{ lead.source|default:"—" }}</td>
+          <td><span class="chip">{{ lead.get_status_display }}</span></td>
+          <td class="muted">{% if lead.estimated_value %}{{ lead.currency }} {{ lead.estimated_value|floatformat:0 }}{% else %}—{% endif %}</td>
+        </tr>
+        {% empty %}<tr><td colspan="5" class="muted" style="padding:18px;">No open leads. <a href="{% url 'web:crm_leads' %}">Capture one →</a></td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <h2>My open activities</h2>
+    <div class="card">
+      {% for a in my_activities %}
+      <div style="display:flex;justify-content:space-between;gap:8px;padding:9px 2px;border-bottom:1px solid var(--line);">
+        <div>
+          <strong>{{ a.subject }}</strong>
+          <div class="muted" style="font-size:12.5px;">
+            {{ a.get_activity_type_display }}
+            {% if a.customer %}· {{ a.customer.display_name }}{% elif a.lead %}· {{ a.lead.company_name }}{% elif a.opportunity %}· {{ a.opportunity.title }}{% endif %}
+          </div>
+        </div>
+        <div class="right muted" style="font-size:12.5px;white-space:nowrap;">
+          {% if a.due_at %}{% if a.is_overdue %}<span class="chip bad">Due {{ a.due_at|date:"d M" }}</span>{% else %}{{ a.due_at|date:"d M" }}{% endif %}{% endif %}
+        </div>
+      </div>
+      {% empty %}<p class="muted" style="padding:6px 2px;">Nothing scheduled. You're clear.</p>{% endfor %}
+    </div>
+    <p style="margin-top:10px;"><a class="btn ghost" href="{% url 'web:crm_activities' %}">All activities →</a></p>
+  </div>
+</div>
+
+{% endblock %}

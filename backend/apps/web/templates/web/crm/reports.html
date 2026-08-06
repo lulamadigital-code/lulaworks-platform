@@ -1,0 +1,60 @@
+{% extends "web/base.html" %}
+{% block title %}Reports · CRM{% endblock %}
+{% block content %}
+
+<div class="pagehead"><div><h1>CRM reports</h1>
+  <p class="sub" style="margin:0;">Who your customers are, what they're worth, which have
+    gone quiet, and how well enquiries turn into deals.</p></div></div>
+
+{% include "web/crm/_tabs.html" with active='reports' %}
+
+<div class="grid">
+  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">#</div>
+    <div><div class="cap">Customers</div><strong>{{ reports.customer_count }}</strong></div></div>
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">◔</div>
+    <div><div class="cap">Prospects</div><strong>{{ reports.prospect_count }}</strong></div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">R</div>
+    <div><div class="cap">Total revenue</div><strong>{{ reports.total_revenue|floatformat:0 }}</strong></div></div>
+  <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">%</div>
+    <div><div class="cap">Win rate</div><strong>{% if reports.conversion_rate is not None %}{{ reports.conversion_rate }}%{% else %}—{% endif %}</strong></div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;">
+  <div>
+    <h2>Top customers by revenue</h2>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <tr><th>Customer</th><th class="right">Revenue</th></tr>
+        {% for r in reports.top_customers %}
+        <tr><td><a href="{% url 'web:customer_detail' r.customer.id %}">{{ r.customer.display_name }}</a></td>
+          <td class="right muted">{{ r.revenue|floatformat:0 }}</td></tr>
+        {% empty %}<tr><td colspan="2" class="muted" style="padding:16px;">No invoiced revenue yet.</td></tr>{% endfor %}
+      </table>
+    </div>
+
+    <h2>Conversion</h2>
+    <div class="card">
+      <p><span class="muted">Opportunities won / lost:</span> {{ reports.won }} / {{ reports.lost }}</p>
+      <p><span class="muted">Lead conversion:</span>
+        {% if reports.lead_conversion is not None %}{{ reports.lead_conversion }}% ({{ reports.leads_converted }} of {{ reports.leads_total }}){% else %}—{% endif %}</p>
+      <p><span class="muted">Open pipeline:</span> {{ reports.pipeline.open_count }} deals ·
+        {{ reports.pipeline.open_value|floatformat:0 }} · weighted {{ reports.pipeline.weighted_value|floatformat:0 }}</p>
+    </div>
+  </div>
+
+  <div>
+    <h2>Inactive customers <span class="muted" style="font-weight:400;">({{ reports.inactive_count }})</span></h2>
+    <p class="sub" style="margin-top:0;">Active customers with no project or activity in 120 days — worth a call.</p>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <tr><th>Customer</th><th>Industry</th></tr>
+        {% for c in reports.inactive_customers %}
+        <tr><td><a href="{% url 'web:customer_detail' c.id %}">{{ c.display_name }}</a></td>
+          <td class="muted">{{ c.industry|default:"—" }}</td></tr>
+        {% empty %}<tr><td colspan="2" class="muted" style="padding:16px;">Everyone's been engaged recently.</td></tr>{% endfor %}
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

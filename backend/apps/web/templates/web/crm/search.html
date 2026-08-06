@@ -1,0 +1,45 @@
+{% extends "web/base.html" %}
+{% block title %}Search · CRM{% endblock %}
+{% block content %}
+
+<div class="pagehead"><div><h1>CRM search</h1>
+  <p class="sub" style="margin:0;">One box across customers, contacts, leads, opportunities,
+    quotations and invoices.</p></div></div>
+
+{% include "web/crm/_tabs.html" with active='' %}
+
+{% if results.query and results.total == 0 %}
+  <div class="card"><p class="muted" style="margin:0;">Nothing matched “{{ results.query }}”.</p></div>
+{% endif %}
+
+{% if results.customers %}<h2>Customers</h2><div class="card">
+  {% for c in results.customers %}<p style="margin:4px 0;"><a href="{% url 'web:customer_detail' c.id %}"><strong>{{ c.display_name }}</strong></a>
+    <span class="muted"> · {{ c.code }}{% if c.vendor_number %} · vendor {{ c.vendor_number }}{% endif %}</span></p>{% endfor %}
+</div>{% endif %}
+
+{% if results.contacts %}<h2>Contacts</h2><div class="card">
+  {% for c in results.contacts %}<p style="margin:4px 0;"><a href="{% url 'web:customer_contact_detail' c.id %}"><strong>{{ c.full_name }}</strong></a>
+    <span class="muted"> · {{ c.customer.display_name }}{% if c.email %} · {{ c.email }}{% endif %}</span></p>{% endfor %}
+</div>{% endif %}
+
+{% if results.leads %}<h2>Leads</h2><div class="card">
+  {% for l in results.leads %}<p style="margin:4px 0;"><a href="{% url 'web:crm_lead_detail' l.id %}"><strong>{{ l.company_name }}</strong></a>
+    <span class="muted"> · {{ l.get_status_display }}</span></p>{% endfor %}
+</div>{% endif %}
+
+{% if results.opportunities %}<h2>Opportunities</h2><div class="card">
+  {% for o in results.opportunities %}<p style="margin:4px 0;"><a href="{% url 'web:crm_opportunity_detail' o.id %}"><strong>{{ o.title }}</strong></a>
+    <span class="muted"> · {{ o.customer.display_name }} · {{ o.get_stage_display }}</span></p>{% endfor %}
+</div>{% endif %}
+
+{% if results.quotations %}<h2>Quotations</h2><div class="card">
+  {% for q in results.quotations %}<p style="margin:4px 0;"><a href="{% url 'web:quotation_detail' q.id %}"><strong>{{ q.display_number }}</strong></a>
+    <span class="muted">{% if q.customer %} · {{ q.customer.display_name }}{% endif %} · {{ q.get_status_display }}</span></p>{% endfor %}
+</div>{% endif %}
+
+{% if results.invoices %}<h2>Invoices</h2><div class="card">
+  {% for i in results.invoices %}<p style="margin:4px 0;"><strong>{{ i.number }}</strong>
+    <span class="muted">{% if i.project %} · {{ i.project.customer.display_name|default:'' }}{% endif %} · {{ i.get_status_display }}</span></p>{% endfor %}
+</div>{% endif %}
+
+{% endblock %}

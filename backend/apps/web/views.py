@@ -2580,6 +2580,16 @@ def customer_detail(request, pk):
             grouped.append({"department": dept, "contacts": people})
     unassigned = [c for c in customer.contacts.all() if c.department_id is None]
 
+    # CRM layer: open opportunities against this customer, plus the next thing
+    # anyone has to do about them. Reuses the same models the pipeline board does.
+    from apps.customers.models import Activity, Opportunity
+    opportunities = list(Opportunity.objects.filter(customer=customer)
+                         .order_by("-created_at")[:10])
+    open_opps = [o for o in opportunities if o.is_open]
+    next_activity = (Activity.objects.filter(customer=customer,
+                                             status=Activity.Status.OPEN)
+                     .order_by("due_at", "-created_at").first())
+
     return render(request, "web/customer_detail.html", {
         "customer": customer,
         "stats": customer_overview(customer),
@@ -2594,6 +2604,10 @@ def customer_detail(request, pk):
         "methods": CustomerContact.Method.choices,
         "quotations": Quotation.objects.filter(customer=customer)[:10],
         "projects": Project.objects.filter(customer=customer)[:10],
+        "opportunities": opportunities,
+        "open_opp_count": len(open_opps),
+        "open_opp_value": sum((o.estimated_value or 0) for o in open_opps),
+        "next_activity": next_activity,
         "can_manage": request.user.has_perm_code("projects.create"),
     })
 

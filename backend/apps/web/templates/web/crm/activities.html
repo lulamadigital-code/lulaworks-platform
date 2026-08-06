@@ -1,0 +1,42 @@
+{% extends "web/base.html" %}
+{% block title %}Activities · CRM{% endblock %}
+{% block content %}
+
+<div class="pagehead"><div><h1>Activities</h1>
+  <p class="sub" style="margin:0;">Everything the team still has to do — calls, meetings,
+    site visits and follow-ups across every customer, lead and deal.</p></div></div>
+
+{% include "web/crm/_tabs.html" with active='activities' %}
+
+<div class="filterbar">
+  <a class="btn {% if scope == 'mine' %}primary{% else %}ghost{% endif %}" href="?scope=mine">Mine</a>
+  <a class="btn {% if scope == 'all' %}primary{% else %}ghost{% endif %}" href="?scope=all">Everyone</a>
+</div>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>What</th><th>Type</th><th>Related to</th><th>Owner</th><th>Due</th><th></th></tr>
+    {% for a in items %}
+    <tr>
+      <td><strong>{{ a.subject }}</strong></td>
+      <td class="muted">{{ a.get_activity_type_display }}</td>
+      <td class="muted">
+        {% if a.customer %}<a href="{% url 'web:customer_detail' a.customer.id %}">{{ a.customer.display_name }}</a>
+        {% elif a.lead %}<a href="{% url 'web:crm_lead_detail' a.lead.id %}">{{ a.lead.company_name }}</a>
+        {% elif a.opportunity %}<a href="{% url 'web:crm_opportunity_detail' a.opportunity.id %}">{{ a.opportunity.title }}</a>
+        {% else %}—{% endif %}
+      </td>
+      <td class="muted">{{ a.assigned_to.get_full_name|default:a.assigned_to.email|default:"—" }}</td>
+      <td>{% if a.due_at %}{% if a.is_overdue %}<span class="chip bad">{{ a.due_at|date:"d M H:i" }}</span>{% else %}<span class="muted">{{ a.due_at|date:"d M H:i" }}</span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td>{% if can_manage %}
+        <form method="post" action="{% url 'web:crm_activity_complete' a.id %}" style="display:inline;">{% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'web:crm_activities' %}?scope={{ scope }}">
+          <button class="btn ghost" type="submit" style="padding:3px 10px;">Done</button>
+        </form>{% endif %}</td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">Nothing open. Everyone's clear.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

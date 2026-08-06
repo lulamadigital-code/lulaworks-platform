@@ -1583,3 +1583,94 @@ class JobHubTests(TestCase):
         self.assertContains(r, "R1800")          # spent rollup
         self.assertContains(r, "More pipe")      # procurement request
         self.assertContains(r, "Timeline")
+
+
+class CRMWebTests(TestCase):
+    """The CRM web surface: hub, leads (+convert), pipeline, activities, search,
+    reports, and the CRM layer folded into the customer 360."""
+
+    def setUp(self):
+        self.company = make_company("CRM Co")
+        # A sales user who can manage (projects.create gates CRM writes) and see money.
+        self.user = user_with(self.company, ["projects.create", "projects.view",
+                                             "finance.view_money"], email="sales@crm.co")
+        self.client.force_login(self.user)
+
+    def test_nav_says_crm(self):
+        r = self.client.get("/crm/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, ">CRM<")
+
+    def test_hub_and_sections_render(self):
+        for path in ["/crm/", "/crm/leads/", "/crm/pipeline/",
+                     "/crm/activities/", "/crm/reports/"]:
+            self.assertEqual(self.client.get(path).status_code, 200, path)
+
+    def test_capture_and_convert_lead(self):
+        r = self.client.post("/crm/leads/new/", {
+            "company_name": "Prospect Mining", "contact_name": "Thabo",
+            "email": "t@prospect.co.za", "estimated_value": "250000"})
+        self.assertEqual(r.status_code, 302)
+        from apps.customers.models import Customer, Lead, Opportunity
+        with tenant_scope(self.company.id):
+            lead = Lead.objects.get(company_name="Prospect Mining")
+        # Convert it (with an opportunity).
+        r = self.client.post(f"/crm/leads/{lead.id}/convert/",
+                             {"create_opportunity": "on"})
+        self.assertEqual(r.status_code, 302)
+        with tenant_scope(self.company.id):
+            self.assertTrue(Customer.objects.filter(name="Prospect Mining").exists())
+            self.assertTrue(Opportunity.objects.filter(lead=lead).exists())
+
+    def test_open_opportunity_from_customer_and_advance(self):
+        from apps.customers.models import Opportunity
+        from apps.customers.services import create_customer
+        with tenant_scope(self.company.id):
+            cust = create_customer(self.company, self.user, name="Anglo",
+                                   seed_departments=False)
+        r = self.client.post("/crm/opportunities/new/", {
+            "customer": str(cust.id), "title": "Shutdown 2026",
+            "estimated_value": "500000"})
+        self.assertEqual(r.status_code, 302)
+        with tenant_scope(self.company.id):
+            opp = Opportunity.objects.get(title="Shutdown 2026")
+        r = self.client.post(f"/crm/opportunities/{opp.id}/stage/",
+                             {"stage": "won"})
+        self.assertEqual(r.status_code, 302)
+        with tenant_scope(self.company.id):
+            opp.refresh_from_db()
+            self.assertTrue(opp.is_won)
+
+    def test_schedule_activity_and_complete(self):
+        from apps.customers.models import Activity
+        from apps.customers.services import create_customer
+        with tenant_scope(self.company.id):
+            cust = create_customer(self.company, self.user, name="Sasol",
+                                   seed_departments=False)
+        self.client.post("/crm/activities/schedule/", {
+            "customer": str(cust.id), "subject": "Call buyer",
+            "activity_type": "call"})
+        with tenant_scope(self.company.id):
+            act = Activity.objects.get(subject="Call buyer")
+        r = self.client.post(f"/crm/activities/{act.id}/complete/", {})
+        self.assertEqual(r.status_code, 302)
+        with tenant_scope(self.company.id):
+            act.refresh_from_db()
+            self.assertEqual(act.status, Activity.Status.DONE)
+
+    def test_search_finds_customer(self):
+        from apps.customers.services import create_customer
+        with tenant_scope(self.company.id):
+            create_customer(self.company, self.user, name="Harmony Gold")
+        r = self.client.get("/crm/search/?q=Harmony")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Harmony Gold")
+
+    def test_customer_detail_shows_opportunities_section(self):
+        from apps.customers.services import create_customer
+        with tenant_scope(self.company.id):
+            cust = create_customer(self.company, self.user, name="Impala",
+                                   seed_departments=False)
+        r = self.client.get(f"/customers/{cust.id}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Opportunities")

@@ -32,6 +32,44 @@
     <div class="n">{{ stats.open_projects }}</div><div class="l">Open projects</div></div>
 </div>
 
+{# ── CRM: sales pipeline against this customer ───────────────────────────── #}
+<h2>Opportunities
+  {% if open_opp_count %}<span class="muted" style="font-weight:400;font-size:14px;">·
+    {{ open_opp_count }} open worth {{ open_opp_value|floatformat:0 }}</span>{% endif %}</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Opportunity</th><th>Stage</th><th>Value</th><th>Probability</th></tr>
+    {% for o in opportunities %}
+    <tr>
+      <td><a href="{% url 'web:crm_opportunity_detail' o.id %}"><strong>{{ o.title }}</strong></a></td>
+      <td>{% if o.is_won %}<span class="chip ok">{{ o.get_stage_display }}</span>
+        {% elif o.is_lost %}<span class="chip bad">{{ o.get_stage_display }}</span>
+        {% else %}<span class="chip">{{ o.get_stage_display }}</span>{% endif %}</td>
+      <td class="muted">{% if o.estimated_value %}{{ o.currency }} {{ o.estimated_value|floatformat:0 }}{% else %}—{% endif %}</td>
+      <td class="muted">{{ o.probability }}%</td>
+    </tr>
+    {% empty %}<tr><td colspan="4" class="muted" style="padding:16px;">No opportunities yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% if next_activity %}
+<p class="sub" style="margin-top:8px;">Next: <strong>{{ next_activity.subject }}</strong>
+  {% if next_activity.due_at %}· due {{ next_activity.due_at|date:"d M Y" }}{% endif %}
+  · <a href="{% url 'web:crm_activities' %}">all activities</a></p>
+{% endif %}
+{% if can_manage %}
+<div class="card" style="margin-top:12px;">
+  <form method="post" action="{% url 'web:crm_opportunity_create' %}">{% csrf_token %}
+    <input type="hidden" name="customer" value="{{ customer.id }}">
+    <div class="two">
+      <div><label>New opportunity title</label><input type="text" name="title" required placeholder="Conveyor overhaul — 2026 shutdown"></div>
+      <div><label>Estimated value</label><input type="text" name="estimated_value" placeholder="500000"></div>
+    </div>
+    <div style="margin-top:10px;"><button class="btn primary" type="submit">Open opportunity</button></div>
+  </form>
+</div>
+{% endif %}
+
 {# ── Company details ────────────────────────────────────────────────────── #}
 <h2>Details</h2>
 <div class="card">

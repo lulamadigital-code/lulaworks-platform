@@ -1,0 +1,110 @@
+{% comment %}
+Shared CRM relationship panel: schedule activities, log interactions, add notes,
+and show what has already happened. Params:
+  anchor_field  "customer" | "lead" | "opportunity"
+  anchor_id     the pk to attach new records to
+  next_url      where to return after a POST
+  activities, interactions, notes  querysets/lists
+  can_manage    bool
+{% endcomment %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+  <div>
+    <h2>Activities</h2>
+    {% if can_manage %}
+    <div class="card">
+      <form method="post" action="{% url 'web:crm_activity_schedule' %}">{% csrf_token %}
+        <input type="hidden" name="{{ anchor_field }}" value="{{ anchor_id }}">
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <div class="two">
+          <div><label>What</label><input type="text" name="subject" required placeholder="Call procurement"></div>
+          <div><label>Type</label><select name="activity_type">
+            <option value="call">Call</option><option value="meeting">Meeting</option>
+            <option value="site_visit">Site visit</option><option value="follow_up" selected>Follow-up</option>
+            <option value="email">Email</option><option value="reminder">Reminder</option>
+          </select></div>
+          <div><label>Due</label><input type="datetime-local" name="due_at"></div>
+        </div>
+        <div style="margin-top:10px;"><button class="btn primary" type="submit">Schedule</button></div>
+      </form>
+    </div>
+    {% endif %}
+    <div class="card" style="margin-top:12px;">
+      {% for a in activities %}
+      <div style="display:flex;justify-content:space-between;gap:8px;padding:9px 2px;border-bottom:1px solid var(--line);">
+        <div><strong>{{ a.subject }}</strong>
+          <div class="muted" style="font-size:12.5px;">{{ a.get_activity_type_display }}
+            {% if a.status == 'done' %}· <span style="color:#0a8f57;">done {{ a.completed_at|date:"d M" }}</span>{% endif %}</div></div>
+        <div style="white-space:nowrap;">
+          {% if a.status == 'open' %}
+            {% if a.due_at %}<span class="muted" style="font-size:12.5px;">{{ a.due_at|date:"d M H:i" }}</span>{% endif %}
+            {% if can_manage %}
+            <form method="post" action="{% url 'web:crm_activity_complete' a.id %}" style="display:inline;">{% csrf_token %}
+              <input type="hidden" name="next" value="{{ next_url }}">
+              <button class="btn ghost" type="submit" style="padding:3px 8px;">Done</button>
+            </form>{% endif %}
+          {% else %}<span class="chip ok">✓</span>{% endif %}
+        </div>
+      </div>
+      {% empty %}<p class="muted" style="padding:6px 2px;">No activities yet.</p>{% endfor %}
+    </div>
+  </div>
+
+  <div>
+    <h2>Communication</h2>
+    {% if can_manage %}
+    <div class="card">
+      <form method="post" action="{% url 'web:crm_interaction_log' %}">{% csrf_token %}
+        <input type="hidden" name="{{ anchor_field }}" value="{{ anchor_id }}">
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <div class="two">
+          <div><label>Channel</label><select name="channel">
+            <option value="phone">Phone call</option><option value="email">Email</option>
+            <option value="meeting">Meeting</option><option value="site_visit">Site visit</option>
+            <option value="whatsapp">WhatsApp</option><option value="note" selected>Note</option>
+          </select></div>
+          <div><label>Direction</label><select name="direction">
+            <option value="out" selected>Outbound</option><option value="in">Inbound</option>
+            <option value="internal">Internal</option></select></div>
+        </div>
+        <label style="margin-top:8px;">Summary</label>
+        <textarea name="summary" rows="2" required placeholder="What was said / agreed"></textarea>
+        <div style="margin-top:10px;"><button class="btn primary" type="submit">Log</button></div>
+      </form>
+    </div>
+    {% endif %}
+    <div class="card" style="margin-top:12px;">
+      {% for i in interactions %}
+      <div style="padding:9px 2px;border-bottom:1px solid var(--line);">
+        <div style="display:flex;justify-content:space-between;">
+          <strong>{{ i.get_channel_display }}</strong>
+          <span class="muted" style="font-size:12.5px;">{{ i.occurred_at|date:"d M Y" }}</span>
+        </div>
+        <div class="muted" style="font-size:13px;">{{ i.summary }}</div>
+      </div>
+      {% empty %}<p class="muted" style="padding:6px 2px;">No history logged yet.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<h2 style="margin-top:22px;">Notes</h2>
+{% if can_manage %}
+<div class="card">
+  <form method="post" action="{% url 'web:crm_note_add' %}">{% csrf_token %}
+    <input type="hidden" name="{{ anchor_field }}" value="{{ anchor_id }}">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <textarea name="body" rows="2" required placeholder="Prefers morning deliveries · always request site induction"></textarea>
+    <div style="margin-top:10px;display:flex;align-items:center;gap:12px;">
+      <label style="margin:0;font-weight:400;"><input type="checkbox" name="is_pinned"> Pin</label>
+      <button class="btn primary" type="submit">Add note</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+<div class="card" style="margin-top:12px;">
+  {% for n in notes %}
+  <div style="padding:9px 2px;border-bottom:1px solid var(--line);">
+    {% if n.is_pinned %}<span class="chip">📌 pinned</span> {% endif %}{{ n.body }}
+    <div class="muted" style="font-size:12px;">{{ n.created_at|date:"d M Y" }}</div>
+  </div>
+  {% empty %}<p class="muted" style="padding:6px 2px;">No notes yet.</p>{% endfor %}
+</div>

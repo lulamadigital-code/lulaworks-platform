@@ -1,0 +1,51 @@
+{% extends "web/base.html" %}
+{% block title %}Pipeline · CRM{% endblock %}
+{% block content %}
+
+<div class="pagehead"><div><h1>Pipeline</h1>
+  <p class="sub" style="margin:0;">Open deals by stage. {{ summary.open_count }} open worth
+    {{ summary.open_value|floatformat:0 }} · weighted forecast {{ summary.weighted_value|floatformat:0 }}.</p></div></div>
+
+{% include "web/crm/_tabs.html" with active='pipeline' %}
+
+<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;">
+  {% for col in columns %}
+  <div style="flex:0 0 250px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <strong>{{ col.label }}</strong>
+      <span class="muted" style="font-size:12.5px;">{{ col.cards|length }} · {{ col.value|floatformat:0 }}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for o in col.cards %}
+      <a class="card" href="{% url 'web:crm_opportunity_detail' o.id %}" style="display:block;padding:12px;text-decoration:none;">
+        <strong>{{ o.title }}</strong>
+        <div class="muted" style="font-size:12.5px;">{{ o.customer.display_name }}</div>
+        <div style="margin-top:6px;display:flex;justify-content:space-between;font-size:12.5px;">
+          <span>{% if o.estimated_value %}{{ o.currency }} {{ o.estimated_value|floatformat:0 }}{% else %}—{% endif %}</span>
+          <span class="muted">{{ o.probability }}%</span>
+        </div>
+      </a>
+      {% empty %}<div class="muted" style="font-size:12.5px;padding:6px 2px;">—</div>{% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if won %}
+<h2 style="margin-top:22px;">Recently won</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Opportunity</th><th>Customer</th><th>Value</th><th>Closed</th></tr>
+    {% for o in won %}
+    <tr>
+      <td><a href="{% url 'web:crm_opportunity_detail' o.id %}"><strong>{{ o.title }}</strong></a></td>
+      <td class="muted">{{ o.customer.display_name }}</td>
+      <td class="muted">{% if o.estimated_value %}{{ o.currency }} {{ o.estimated_value|floatformat:0 }}{% else %}—{% endif %}</td>
+      <td class="muted">{{ o.closed_at|date:"d M Y"|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}

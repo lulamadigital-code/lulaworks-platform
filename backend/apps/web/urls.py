@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, views_billing, views_tax
+from . import views, views_billing, views_crm, views_tax
 
 app_name = "web"
 
@@ -9,7 +9,30 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     path("password/", views.change_password, name="change_password"),
     path("profile/", views.profile, name="profile"),
-    # Customers — client organisations, departments, contacts
+    # ── CRM — the relationship layer: hub, leads, pipeline, activities ──────────
+    path("crm/", views_crm.crm_hub, name="crm_hub"),
+    path("crm/search/", views_crm.crm_search, name="crm_search"),
+    path("crm/reports/", views_crm.crm_reports, name="crm_reports"),
+    path("crm/leads/", views_crm.leads_list, name="crm_leads"),
+    path("crm/leads/new/", views_crm.lead_create, name="crm_lead_create"),
+    path("crm/leads/<uuid:pk>/", views_crm.lead_detail, name="crm_lead_detail"),
+    path("crm/leads/<uuid:pk>/convert/", views_crm.lead_convert, name="crm_lead_convert"),
+    path("crm/leads/<uuid:pk>/lost/", views_crm.lead_lost, name="crm_lead_lost"),
+    path("crm/pipeline/", views_crm.pipeline, name="crm_pipeline"),
+    path("crm/opportunities/new/", views_crm.opportunity_create,
+         name="crm_opportunity_create"),
+    path("crm/opportunities/<uuid:pk>/", views_crm.opportunity_detail,
+         name="crm_opportunity_detail"),
+    path("crm/opportunities/<uuid:pk>/stage/", views_crm.opportunity_stage,
+         name="crm_opportunity_stage"),
+    path("crm/activities/", views_crm.activities, name="crm_activities"),
+    path("crm/activities/schedule/", views_crm.activity_schedule,
+         name="crm_activity_schedule"),
+    path("crm/activities/<uuid:pk>/complete/", views_crm.activity_complete,
+         name="crm_activity_complete"),
+    path("crm/interactions/log/", views_crm.interaction_log, name="crm_interaction_log"),
+    path("crm/notes/add/", views_crm.note_add, name="crm_note_add"),
+    # Customers — client organisations, departments, contacts (part of the CRM)
     path("customers/", views.customers_list, name="customers"),
     path("customers/new/", views.customer_create, name="customer_create"),
     path("customers/<uuid:pk>/", views.customer_detail, name="customer_detail"),

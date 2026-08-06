@@ -1,0 +1,13 @@
+{% comment %}CRM section tabs. Param: active (hub|leads|pipeline|customers|activities|reports){% endcomment %}
+<div class="filterbar" style="gap:6px;margin-bottom:18px;">
+  <a class="btn {% if active == 'hub' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_hub' %}">Overview</a>
+  <a class="btn {% if active == 'leads' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_leads' %}">Leads</a>
+  <a class="btn {% if active == 'pipeline' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_pipeline' %}">Pipeline</a>
+  <a class="btn {% if active == 'customers' %}primary{% else %}ghost{% endif %}" href="{% url 'web:customers' %}">Customers</a>
+  <a class="btn {% if active == 'activities' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_activities' %}">Activities</a>
+  <a class="btn {% if active == 'reports' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_reports' %}">Reports</a>
+  <form method="get" action="{% url 'web:crm_search' %}" style="margin-left:auto;display:flex;gap:6px;">
+    <input type="search" name="q" placeholder="Search CRM…" value="{{ q|default:'' }}" style="min-width:180px;">
+    <button class="btn ghost" type="submit">Search</button>
+  </form>
+</div>

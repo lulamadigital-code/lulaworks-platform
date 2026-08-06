@@ -11,6 +11,8 @@
   </div>
 </div>
 
+{% include "web/crm/_tabs.html" with active='customers' %}
+
 <form method="get" class="filterbar">
   <input type="search" name="q" value="{{ q }}" placeholder="Search customers…" style="flex:2;min-width:160px;">
   <select name="status">

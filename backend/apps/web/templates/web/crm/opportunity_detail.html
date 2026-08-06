@@ -1,0 +1,49 @@
+{% extends "web/base.html" %}
+{% block title %}{{ opp.title }} · Opportunity{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>{{ opp.title }}</h1>
+    <p class="sub" style="margin:0;"><a href="{% url 'web:customer_detail' opp.customer.id %}">{{ opp.customer.display_name }}</a>
+      · <span class="chip">{{ opp.get_stage_display }}</span> · {{ opp.probability }}%
+      {% if opp.estimated_value %}· {{ opp.currency }} {{ opp.estimated_value|floatformat:0 }}{% endif %}</p>
+  </div>
+  <div><a class="btn ghost" href="{% url 'web:crm_pipeline' %}">← Pipeline</a></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:18px;">
+  <div class="card">
+    <h3 style="margin-top:0;">Deal</h3>
+    {% if opp.description %}<p>{{ opp.description }}</p>{% endif %}
+    {% if opp.expected_close_date %}<p><span class="muted">Expected close:</span> {{ opp.expected_close_date|date:"d M Y" }}</p>{% endif %}
+    {% if opp.source %}<p><span class="muted">Source:</span> {{ opp.source }}</p>{% endif %}
+    {% if opp.lead %}<p><span class="muted">From lead:</span> <a href="{% url 'web:crm_lead_detail' opp.lead.id %}">{{ opp.lead.company_name }}</a></p>{% endif %}
+    {% if opp.quotation %}<p><span class="muted">Quotation:</span> <a href="{% url 'web:quotation_detail' opp.quotation.id %}">{{ opp.quotation.display_number }}</a></p>{% endif %}
+    {% if opp.is_lost and opp.lost_reason %}<p><span class="chip bad">Lost</span> {{ opp.lost_reason }}</p>{% endif %}
+
+    {% if can_manage and opp.is_open %}
+    <hr style="border:none;border-top:1px solid var(--line);margin:14px 0;">
+    <h3>Move stage</h3>
+    <form method="post" action="{% url 'web:crm_opportunity_stage' opp.id %}">{% csrf_token %}
+      <select name="stage">
+        {% for value, label in stages %}
+        <option value="{{ value }}" {% if value == opp.stage %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="reason" placeholder="Reason (if lost)" style="margin-top:8px;">
+      <button class="btn primary" type="submit" style="margin-top:10px;width:100%;">Update</button>
+    </form>
+    {% if opp.customer %}
+    <p style="margin-top:12px;"><a class="btn ghost" href="{% url 'web:quotation_new' %}?customer={{ opp.customer.id }}" style="width:100%;">Create quotation →</a></p>
+    {% endif %}
+    {% endif %}
+  </div>
+
+  <div>
+    {% url 'web:crm_opportunity_detail' opp.id as next_url %}
+    {% include "web/crm/_timeline.html" with anchor_field='opportunity' anchor_id=opp.id next_url=next_url %}
+  </div>
+</div>
+
+{% endblock %}
