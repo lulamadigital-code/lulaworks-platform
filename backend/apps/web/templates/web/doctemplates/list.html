@@ -1,0 +1,49 @@
+{% extends "web/base.html" %}
+{% block title %}Document templates{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>Document templates</h1>
+    <p class="sub" style="margin:0;">Keep your own look for every document. Each type can
+      have several templates; the <strong>default</strong> is used for new documents, and you
+      can override it on any single one. Colours, fonts, logo, fields, banking and terms are
+      all yours to set — no design work required.</p>
+  </div>
+  <div><a class="btn ghost" href="{% url 'web:company_profile' %}">← Company</a></div>
+</div>
+
+{% for g in groups %}
+<h2>{{ g.label }}</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Template</th><th>Layout</th><th>Default</th><th></th></tr>
+    {% for t in g.templates %}
+    <tr>
+      <td><a href="{% url 'web:doc_template_edit' t.id %}"><strong>{{ t.name }}</strong></a>
+        {% if t.is_builtin %}<span class="muted" style="font-size:11.5px;"> · built-in</span>{% endif %}</td>
+      <td class="muted">{{ t.get_base_layout_display }}</td>
+      <td>{% if t.is_default %}<span class="chip ok">Default</span>{% else %}
+        {% if can_manage %}<form method="post" action="{% url 'web:doc_template_default' t.id %}" style="display:inline;">{% csrf_token %}
+          <button class="btn ghost" type="submit" style="padding:3px 10px;">Make default</button></form>{% endif %}{% endif %}</td>
+      <td style="white-space:nowrap;">
+        <a class="btn ghost" href="{% url 'web:doc_template_edit' t.id %}" style="padding:3px 10px;">Edit</a>
+        <a class="btn ghost" href="{% url 'web:doc_template_preview' t.id %}" target="_blank" style="padding:3px 10px;">Preview</a>
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="4" class="muted" style="padding:16px;">No templates yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% if can_manage %}
+<form method="post" action="{% url 'web:doc_template_create' %}" class="filterbar" style="margin-top:10px;">{% csrf_token %}
+  <input type="hidden" name="doc_type" value="{{ g.doc_type }}">
+  <input type="text" name="name" placeholder="New {{ g.label|lower }} template name" required style="flex:2;min-width:180px;">
+  <select name="base_layout">{% for v, l in layouts %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select>
+  <button class="btn primary" type="submit">Add</button>
+</form>
+{% endif %}
+{% endfor %}
+
+{% endblock %}

@@ -1646,6 +1646,10 @@ def _quotation_review(request, quote):
         "existing_project": quote.projects.first(),
         "revisions": quote.revisions.order_by("revision"),
         "timeline": _commercial_timeline(quote),
+        # Document Designer: which look this quotation uses, and the choices.
+        "doc_templates": __import__("apps.quotes.document_templates",
+                                    fromlist=["templates_for"]).templates_for(
+                                        quote.company, "quotation"),
     }
     if quote.status == "awarded":
         context["trace"] = traceability(quote)

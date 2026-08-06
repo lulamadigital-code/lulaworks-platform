@@ -1,0 +1,83 @@
+{% extends "web/base.html" %}
+{% block title %}{{ tpl.name }} · Template{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>{{ tpl.name }}</h1>
+    <p class="sub" style="margin:0;">{{ tpl.get_doc_type_display }} template
+      {% if tpl.is_default %}· <span class="chip ok">Default</span>{% endif %}</p>
+  </div>
+  <div>
+    <a class="btn ghost" href="{% url 'web:doc_template_preview' tpl.id %}" target="_blank">Preview PDF</a>
+    <a class="btn ghost" href="{% url 'web:doc_templates' %}">← All templates</a>
+  </div>
+</div>
+
+<form method="post">{% csrf_token %}
+  <div class="card">
+    <div class="two">
+      <div><label>Template name</label><input type="text" name="name" value="{{ tpl.name }}" required></div>
+      <div><label>Base layout</label><select name="base_layout">
+        {% for v, l in layouts %}<option value="{{ v }}" {% if v == tpl.base_layout %}selected{% endif %}>{{ l }}</option>{% endfor %}
+      </select></div>
+    </div>
+  </div>
+
+  <h2>Branding</h2>
+  <div class="card">
+    <div class="two">
+      {% for f in branding_fields %}
+      <div>
+        <label>{{ f.label }}</label>
+        {% if f.kind == 'color' %}
+          <input type="text" name="{{ f.key }}" value="{{ f.value }}" placeholder="#0E6E6E (blank = company brand)">
+        {% elif f.kind == 'font' %}
+          <select name="{{ f.key }}">{% for opt in fonts %}<option value="{{ opt }}" {% if opt == f.value %}selected{% endif %}>{{ opt }}</option>{% endfor %}</select>
+        {% elif f.kind == 'logo' %}
+          <select name="{{ f.key }}">{% for opt in logo_positions %}<option value="{{ opt }}" {% if opt == f.value %}selected{% endif %}>{{ opt|capfirst }}</option>{% endfor %}</select>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <h2>Layout & chrome</h2>
+  <div class="card">
+    {% for f in layout_fields %}
+      {% if f.kind == 'text' %}
+      <div style="margin-bottom:10px;"><label>{{ f.label }}</label>
+        <input type="text" name="{{ f.key }}" value="{{ f.value }}"></div>
+      {% else %}
+      <label style="display:block;font-weight:400;margin-bottom:6px;">
+        <input type="checkbox" name="{{ f.key }}" {% if f.value %}checked{% endif %}> {{ f.label }}</label>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <h2>Fields shown</h2>
+  <div class="card">
+    <div class="two">
+      {% for f in visibility_fields %}
+      <label style="display:block;font-weight:400;margin-bottom:6px;">
+        <input type="checkbox" name="{{ f.key }}" {% if f.value %}checked{% endif %}> {{ f.label }}</label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <h2>Terms & conditions override</h2>
+  <div class="card">
+    <p class="sub" style="margin-top:0;">Leave blank to use the company's standard terms for this
+      document type. Fill in to use this wording on documents that use this template.</p>
+    <textarea name="terms_override" rows="4" placeholder="Custom terms for this template…">{{ cfg.terms_override }}</textarea>
+  </div>
+
+  {% if can_manage %}
+  <div style="margin-top:14px;display:flex;gap:8px;">
+    <button class="btn primary" type="submit">Save template</button>
+    <a class="btn ghost" href="{% url 'web:doc_template_preview' tpl.id %}" target="_blank">Preview PDF</a>
+  </div>
+  {% endif %}
+</form>
+
+{% endblock %}

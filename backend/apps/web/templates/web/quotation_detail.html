@@ -103,6 +103,24 @@
 
 {# ── The document, as the customer will see it ─────────────────────────────── #}
 <h2>Quotation preview</h2>
+{% if doc_templates %}
+<div class="card" style="margin-bottom:10px;">
+  <form method="post" action="{% url 'web:quotation_set_template' quote.id %}"
+        style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">{% csrf_token %}
+    <div style="flex:1;min-width:220px;">
+      <label>Document template</label>
+      <select name="template">
+        <option value="">Company default</option>
+        {% for t in doc_templates %}
+        <option value="{{ t.id }}" {% if quote.template_id == t.id %}selected{% endif %}>{{ t.name }}{% if t.is_default %} (default){% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn ghost" type="submit">Apply to this quotation</button>
+    <a class="btn ghost" href="{% url 'web:doc_templates' %}">Manage templates →</a>
+  </form>
+</div>
+{% endif %}
 <div class="card" style="padding:0;overflow:hidden;">
   <iframe title="Quotation PDF preview" class="pdfframe"
           src="{% url 'web:quotation_pdf' quote.id %}?inline=1"></iframe>

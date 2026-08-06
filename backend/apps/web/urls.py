@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, views_billing, views_crm, views_tax
+from . import views, views_billing, views_crm, views_doctemplates, views_tax
 
 app_name = "web"
 
@@ -53,6 +53,18 @@ urlpatterns = [
     path("company/contacts/", views.company_contact, name="company_contact"),
     path("company/documents/", views.company_document, name="company_document"),
     path("company/tax/", views_tax.company_tax, name="company_tax"),
+    # Document Designer — per-company templates for quotations/invoices/DNs
+    path("company/templates/", views_doctemplates.templates_list, name="doc_templates"),
+    path("company/templates/new/", views_doctemplates.template_create,
+         name="doc_template_create"),
+    path("company/templates/<uuid:pk>/", views_doctemplates.template_edit,
+         name="doc_template_edit"),
+    path("company/templates/<uuid:pk>/default/", views_doctemplates.template_set_default,
+         name="doc_template_default"),
+    path("company/templates/<uuid:pk>/preview/", views_doctemplates.template_preview,
+         name="doc_template_preview"),
+    path("quotations/<uuid:pk>/template/", views_doctemplates.quotation_set_template,
+         name="quotation_set_template"),
     # Billing & subscription
     path("billing/", views_billing.billing, name="billing"),
     path("billing/change-plan/", views_billing.billing_change_plan, name="billing_change_plan"),

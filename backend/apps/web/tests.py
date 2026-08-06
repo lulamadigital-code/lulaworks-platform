@@ -1708,3 +1708,90 @@ class CRMWebTests(TestCase):
         r = self.client.get(f"/customers/{cust.id}/")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Opportunities")
+
+
+class DocTemplateWebTests(TestCase):
+    """Document Designer web surface: templates seed on first view, edit/save
+    with validation, set default, per-quotation override, and preview."""
+
+    def setUp(self):
+        self.company = make_company("Doc Co")
+        self.user = user_with(self.company, ["projects.create", "quotes.create",
+                                             "finance.view_money"], email="doc@co.io")
+        self.client.force_login(self.user)
+
+    def test_list_seeds_builtins_on_first_view(self):
+        from apps.quotes.models import DocumentTemplate
+        r = self.client.get("/company/templates/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Document templates")
+        with tenant_scope(self.company.id):
+            self.assertTrue(DocumentTemplate.objects.filter(company=self.company).exists())
+
+    def test_edit_saves_config(self):
+        from apps.quotes.models import DocumentTemplate
+        self.client.get("/company/templates/")   # seed
+        with tenant_scope(self.company.id):
+            tpl = DocumentTemplate.objects.get(company=self.company,
+                                               doc_type="quotation", name="Modern")
+        r = self.client.post(f"/company/templates/{tpl.id}/", {
+            "name": "Modern", "base_layout": "modern",
+            "accent_color": "#123456", "font": "Times-Roman",
+            "logo_position": "center", "show_banking": "on"})
+        self.assertEqual(r.status_code, 302)
+        with tenant_scope(self.company.id):
+            tpl.refresh_from_db()
+            self.assertEqual(tpl.config["accent_color"], "#123456")
+            self.assertEqual(tpl.config["font"], "Times-Roman")
+            self.assertFalse(tpl.config["show_signature"])   # checkbox absent → off
+
+    def test_edit_rejects_bad_colour(self):
+        from apps.quotes.models import DocumentTemplate
+        self.client.get("/company/templates/")
+        with tenant_scope(self.company.id):
+            tpl = DocumentTemplate.objects.get(company=self.company,
+                                               doc_type="quotation", name="Modern")
+        r = self.client.post(f"/company/templates/{tpl.id}/", {
+            "name": "Modern", "base_layout": "modern", "accent_color": "red"},
+            follow=True)
+        self.assertContains(r, "valid colour")
+
+    def test_set_default(self):
+        from apps.quotes.models import DocumentTemplate
+        self.client.get("/company/templates/")
+        with tenant_scope(self.company.id):
+            corp = DocumentTemplate.objects.get(company=self.company,
+                                                doc_type="quotation", name="Corporate")
+        r = self.client.post(f"/company/templates/{corp.id}/default/")
+        self.assertEqual(r.status_code, 302)
+        with tenant_scope(self.company.id):
+            corp.refresh_from_db()
+            self.assertTrue(corp.is_default)
+
+    def test_quotation_template_override(self):
+        from apps.quotes.models import DocumentTemplate, Quotation
+        self.client.get("/company/templates/")
+        with tenant_scope(self.company.id):
+            tpl = DocumentTemplate.objects.get(company=self.company,
+                                               doc_type="quotation", name="Mining")
+            quote = Quotation.objects.create(company=self.company, number="QT-9",
+                                             client_name="X", site="Y")
+        r = self.client.post(f"/quotations/{quote.id}/template/",
+                             {"template": str(tpl.id)})
+        self.assertEqual(r.status_code, 302)
+        with tenant_scope(self.company.id):
+            quote.refresh_from_db()
+            self.assertEqual(quote.template_id, tpl.id)
+
+    def test_preview_returns_pdf(self):
+        from apps.quotes.models import DocumentTemplate, Quotation
+        self.client.get("/company/templates/")
+        with tenant_scope(self.company.id):
+            Quotation.objects.create(company=self.company, number="QT-7",
+                                     client_name="Prev", site="Z")
+            tpl = DocumentTemplate.objects.get(company=self.company,
+                                               doc_type="quotation", name="Classic")
+        r = self.client.get(f"/company/templates/{tpl.id}/preview/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "application/pdf")
+        self.assertTrue(r.content.startswith(b"%PDF"))
