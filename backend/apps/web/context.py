@@ -31,6 +31,8 @@ _SECTIONS = {
     "company_contact": "company", "company_document": "company",
     "company_hours_page": "company", "company_hours": "company",
     "company_tax": "company",
+    "ai_settings": "company", "ai_provider_toggle": "company",
+    "ai_provider_priority": "company", "ai_provider_test": "company",
     "doc_templates": "company", "doc_template_create": "company",
     "doc_template_edit": "company", "doc_template_default": "company",
     "doc_template_preview": "company", "quotation_set_template": "quotations",

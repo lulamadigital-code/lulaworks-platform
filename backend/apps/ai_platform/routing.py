@@ -111,10 +111,26 @@ def provider_available(name: str) -> bool:
 
 
 def provider_enabled(name: str) -> bool:
-    """Whether an admin has left this provider switched on. Phase-1 default:
-    everything is on; disabling arrives with the provider-management model."""
+    """Whether an admin has left this provider switched on. Reads the
+    AIProviderSetting an admin controls (default on), then a deployment-level
+    settings.AI_DISABLED_PROVIDERS kill-switch as a final override."""
     disabled = set(getattr(settings, "AI_DISABLED_PROVIDERS", []) or [])
-    return name not in disabled
+    if name in disabled:
+        return False
+    try:
+        from .provider_admin import is_enabled
+        return is_enabled(name)
+    except Exception:                       # DB not ready (e.g. during migrate)
+        return True
+
+
+def _priority(name: str) -> int:
+    """Tie-break order, admin-tunable via AIProviderSetting; static default else."""
+    try:
+        from .provider_admin import priority as admin_priority
+        return admin_priority(name)
+    except Exception:
+        return PROVIDER_PRIORITY.get(name, 99)
 
 
 def route(task_or_feature: str) -> list[str]:
@@ -130,9 +146,9 @@ def route(task_or_feature: str) -> list[str]:
         if name not in seen and provider_available(name):
             chain.append(name)
             seen.add(name)
-    # Tail: any remaining available provider, by static priority — so a task is
-    # never stranded just because its named providers are all down.
-    for name in sorted(ALL_PROVIDERS, key=lambda n: PROVIDER_PRIORITY.get(n, 99)):
+    # Tail: any remaining available provider, by admin-tunable priority — so a
+    # task is never stranded just because its named providers are all down.
+    for name in sorted(ALL_PROVIDERS, key=_priority):
         if name not in seen and provider_available(name):
             chain.append(name)
             seen.add(name)

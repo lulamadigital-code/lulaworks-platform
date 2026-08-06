@@ -1,6 +1,13 @@
 from django.urls import path
 
-from . import views, views_billing, views_crm, views_doctemplates, views_tax
+from . import (
+    views,
+    views_ai_settings,
+    views_billing,
+    views_crm,
+    views_doctemplates,
+    views_tax,
+)
 
 app_name = "web"
 
@@ -53,6 +60,14 @@ urlpatterns = [
     path("company/contacts/", views.company_contact, name="company_contact"),
     path("company/documents/", views.company_document, name="company_document"),
     path("company/tax/", views_tax.company_tax, name="company_tax"),
+    # AI Settings — the super-admin AI Orchestration console
+    path("company/ai/", views_ai_settings.ai_settings, name="ai_settings"),
+    path("company/ai/<str:provider>/toggle/", views_ai_settings.ai_provider_toggle,
+         name="ai_provider_toggle"),
+    path("company/ai/<str:provider>/priority/", views_ai_settings.ai_provider_priority,
+         name="ai_provider_priority"),
+    path("company/ai/<str:provider>/test/", views_ai_settings.ai_provider_test,
+         name="ai_provider_test"),
     # Document Designer — per-company templates for quotations/invoices/DNs
     path("company/templates/", views_doctemplates.templates_list, name="doc_templates"),
     path("company/templates/new/", views_doctemplates.template_create,

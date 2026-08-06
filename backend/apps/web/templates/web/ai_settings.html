@@ -1,0 +1,117 @@
+{% extends "web/base.html" %}
+{% block title %}AI Settings{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>AI Settings</h1>
+    <p class="sub" style="margin:0;">LulaAI decides which model handles each task, and
+      falls over automatically if one is unavailable — so the experience stays consistent
+      whichever provider answers. Manage providers and see usage here. API keys are set at
+      deployment (never stored here).</p>
+  </div>
+  <div><a class="btn ghost" href="{% url 'web:company_profile' %}">← Company</a></div>
+</div>
+
+{# ── Usage snapshot ─────────────────────────────────────────────────────────── #}
+<div class="grid">
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">∑</div>
+    <div><div class="cap">AI calls ({{ usage.days }}d)</div><strong>{{ usage.total_calls }}</strong></div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">◆</div>
+    <div><div class="cap">Credits used</div><strong>{{ usage.total_credits|floatformat:0 }}</strong></div></div>
+  <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">⤳</div>
+    <div><div class="cap">Failovers</div><strong>{{ usage.total_failovers }}</strong></div></div>
+</div>
+
+{# ── Providers ──────────────────────────────────────────────────────────────── #}
+<h2>Providers</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Provider</th><th>Status</th><th>Model</th><th>Priority</th><th>Enabled</th><th>Test</th></tr>
+    {% for p in providers %}
+    <tr>
+      <td><strong>{{ p.label }}</strong></td>
+      <td>{% if p.ready %}<span class="chip ok">Ready</span>
+        {% elif not p.configured %}<span class="chip">{{ p.state }}</span>
+        {% else %}<span class="chip bad">{{ p.state }}</span>{% endif %}</td>
+      <td class="muted">{{ p.model|default:"—" }}</td>
+      <td>
+        {% if can_manage %}
+        <form method="post" action="{% url 'web:ai_provider_priority' p.provider %}" style="display:flex;gap:6px;">{% csrf_token %}
+          <input type="number" name="priority" value="{{ p.priority }}" style="width:70px;">
+          <input type="hidden" name="model_override" value="{{ p.model }}">
+          <button class="btn ghost" type="submit" style="padding:3px 8px;">Save</button>
+        </form>
+        {% else %}<span class="muted">{{ p.priority }}</span>{% endif %}
+      </td>
+      <td>
+        {% if can_manage %}
+        <form method="post" action="{% url 'web:ai_provider_toggle' p.provider %}" style="display:inline;">{% csrf_token %}
+          <input type="hidden" name="enabled" value="{% if p.enabled %}0{% else %}1{% endif %}">
+          <button class="btn ghost" type="submit" style="padding:3px 10px;">{% if p.enabled %}Disable{% else %}Enable{% endif %}</button>
+        </form>
+        {% else %}{% if p.enabled %}Yes{% else %}No{% endif %}{% endif %}
+      </td>
+      <td><button class="btn ghost pl-test" data-provider="{{ p.provider }}" style="padding:3px 10px;">Test</button>
+        <span class="pl-test-result muted" style="font-size:12px;"></span></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+<p class="muted" style="font-size:12.5px;margin-top:6px;">A provider shows <em>No API key set</em>
+  until its key is configured in the deployment environment. Disabling a provider takes it out
+  of routing immediately; tasks fail over to the next available one.</p>
+
+{# ── Which model does what ──────────────────────────────────────────────────── #}
+<h2>Task routing</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Task</th><th>Preferred order</th><th>Serving now</th></tr>
+    {% for t in task_routes %}
+    <tr>
+      <td><strong>{{ t.label }}</strong></td>
+      <td class="muted">{{ t.preferred|join:" → " }}</td>
+      <td>{% if t.active %}<span class="chip ok">{{ t.active }}</span>
+        {% if t.chain|length > 1 %}<span class="muted" style="font-size:12px;"> then {{ t.chain|slice:"1:"|join:", " }}</span>{% endif %}
+        {% else %}<span class="chip bad">no provider available</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{# ── Per-provider usage ─────────────────────────────────────────────────────── #}
+{% if usage.per_provider %}
+<h2>Usage by provider ({{ usage.days }} days)</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Provider</th><th>Calls</th><th>OK</th><th>Failovers</th><th>Credits</th><th>Tokens</th></tr>
+    {% for r in usage.per_provider %}
+    <tr><td>{{ r.provider }}</td><td>{{ r.calls }}</td><td class="muted">{{ r.ok }}</td>
+      <td class="muted">{{ r.failovers }}</td><td class="muted">{{ r.credits|floatformat:0 }}</td>
+      <td class="muted">{{ r.tokens }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<form id="ai-csrf" style="display:none;">{% csrf_token %}</form>
+<script>
+(function () {
+  const csrf = document.querySelector("#ai-csrf [name=csrfmiddlewaretoken]").value;
+  document.querySelectorAll(".pl-test").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const out = btn.parentElement.querySelector(".pl-test-result");
+      out.textContent = "testing…";
+      try {
+        const res = await fetch("/company/ai/" + btn.dataset.provider + "/test/",
+          {method: "POST", headers: {"X-CSRFToken": csrf}});
+        const data = await res.json();
+        out.textContent = (data.ok ? "✓ " : "✕ ") + data.detail;
+        out.style.color = data.ok ? "#0a8f57" : "#c22a41";
+      } catch (e) { out.textContent = "✕ test failed"; out.style.color = "#c22a41"; }
+    });
+  });
+})();
+</script>
+
+{% endblock %}

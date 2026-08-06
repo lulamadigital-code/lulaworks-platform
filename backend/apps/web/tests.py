@@ -1795,3 +1795,57 @@ class DocTemplateWebTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r["Content-Type"], "application/pdf")
         self.assertTrue(r.content.startswith(b"%PDF"))
+
+
+class AISettingsWebTests(TestCase):
+    """The super-admin AI console: renders, gates on company.manage, toggles a
+    provider, and the test-connection endpoint answers JSON without a key."""
+
+    def setUp(self):
+        self.company = make_company("AI Admin Co")
+        self.admin = user_with(self.company, ["company.manage"], email="admin@ai.co")
+        self.plain = user_with(self.company, ["projects.view"], email="plain@ai.co")
+
+    def test_page_renders_for_admin_and_seeds_providers(self):
+        from apps.ai_platform.models import AIProviderSetting
+        self.client.force_login(self.admin)
+        r = self.client.get("/company/ai/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "AI Settings")
+        self.assertContains(r, "Task routing")
+        with tenant_scope(self.company.id):
+            self.assertEqual(AIProviderSetting.objects.count(), 3)
+
+    def test_toggle_requires_manage_permission(self):
+        self.client.force_login(self.plain)
+        r = self.client.post("/company/ai/gemini/toggle/", {"enabled": "0"})
+        self.assertEqual(r.status_code, 302)
+        from apps.ai_platform import provider_admin as pa
+        with tenant_scope(self.company.id):
+            self.assertTrue(pa.is_enabled("gemini"))   # unchanged — not allowed
+
+    def test_admin_can_disable_a_provider(self):
+        from apps.ai_platform import provider_admin as pa
+        self.client.force_login(self.admin)
+        r = self.client.post("/company/ai/gemini/toggle/", {"enabled": "0"})
+        self.assertEqual(r.status_code, 302)
+        with tenant_scope(self.company.id):
+            self.assertFalse(pa.is_enabled("gemini"))
+
+    def test_test_connection_returns_json_no_key(self):
+        import json
+        self.client.force_login(self.admin)
+        r = self.client.post("/company/ai/claude/test/")
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertFalse(data["ok"])
+        self.assertIn("No API key", data["detail"])
+
+    def test_company_page_has_no_provider_names(self):
+        """LulaAI branding: end users/admins on the company page never see the
+        vendor names — provider management lives only in AI Settings."""
+        self.client.force_login(self.admin)
+        r = self.client.get("/company/")
+        body = r.content.decode()
+        # The company profile page must not present a provider picker.
+        self.assertNotIn('name="ai_provider"', body)

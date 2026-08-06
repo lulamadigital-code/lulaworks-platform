@@ -33,6 +33,29 @@ class PromptTemplate(PlatformBaseModel):
         return f"{self.agent}/{self.version}"
 
 
+class AIProviderSetting(PlatformBaseModel):
+    """Admin-tunable provider configuration — everything EXCEPT the API key.
+
+    Keys never live here (or anywhere in the DB): they stay in the environment /
+    secrets manager, so there is nothing sensitive to encrypt or leak. This holds
+    only the non-secret switches an admin flips without a deploy: whether a
+    provider is enabled, its tie-break priority, and an optional model override.
+    Platform-level (one row per provider) because the keys it complements are
+    global to the deployment.
+    """
+
+    provider = models.CharField(max_length=24, unique=True)  # gemini|claude|openai
+    enabled = models.BooleanField(default=True)
+    priority = models.PositiveSmallIntegerField(default=100)  # lower = tried first
+    model_override = models.CharField(max_length=64, blank=True)
+
+    class Meta:
+        ordering = ["priority", "provider"]
+
+    def __str__(self):
+        return f"{self.provider} ({'on' if self.enabled else 'off'})"
+
+
 class AICreditLedger(models.Model):
     """Append-only credit ledger. Balance = latest balance_after."""
 
