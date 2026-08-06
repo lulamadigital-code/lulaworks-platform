@@ -93,3 +93,45 @@ class TrialRegistrationTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "already exists")
         self.assertEqual(Company.objects.count(), 0)
+
+
+class CurrencyDetectionTests(TestCase):
+    def setUp(self):
+        from apps.billing.models import PlanPrice
+        Plan.objects.create(code="starter", name="Starter", tier=1, price=Decimal("299"),
+                            annual_price=Decimal("2990"), max_users=2,
+                            storage_quota_bytes=5 * GB, monthly_ai_credits=Decimal("300"))
+        pro = Plan.objects.create(code="professional", name="Professional", tier=2,
+                                  is_popular=True, price=Decimal("1299"),
+                                  annual_price=Decimal("12990"), max_users=10,
+                                  storage_quota_bytes=50 * GB, monthly_ai_credits=Decimal("2000"))
+        for ccy, m, a in [("USD", 79, 790), ("GBP", 65, 650), ("EUR", 75, 750)]:
+            PlanPrice.objects.create(plan=pro, currency=ccy, monthly=m, annual=a)
+        Role.objects.create(company=None, name="Company Owner", is_system=True)
+
+    def test_us_visitor_sees_usd_via_geo_header(self):
+        r = self.client.get(reverse("marketing:pricing"), HTTP_CF_IPCOUNTRY="US")
+        self.assertContains(r, "$79")
+
+    def test_uk_visitor_sees_gbp_via_accept_language(self):
+        r = self.client.get(reverse("marketing:pricing"),
+                            HTTP_ACCEPT_LANGUAGE="en-GB,en;q=0.9")
+        self.assertContains(r, "£65")
+
+    def test_unknown_location_falls_back_to_default(self):
+        r = self.client.get(reverse("marketing:pricing"))
+        self.assertContains(r, "R1299")   # ZAR base price
+
+    def test_no_currency_selector_list_rendered(self):
+        r = self.client.get(reverse("marketing:pricing"), HTTP_CF_IPCOUNTRY="US")
+        # The old manual currency pills built links like ?cycle=...&currency=...
+        self.assertNotContains(r, "&currency=")
+
+    def test_signup_sets_company_currency_from_location(self):
+        self.client.post(reverse("marketing:trial"), {
+            "company": "Yankee Build", "full_name": "Sam Owner",
+            "email": "sam@yankee.us", "password": "s3curePass!",
+        }, HTTP_CF_IPCOUNTRY="US")
+        company = Company.objects.get(name="Yankee Build")
+        self.assertEqual(company.currency, "USD")
+        self.assertEqual(company.subscription.currency, "USD")

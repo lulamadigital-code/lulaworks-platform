@@ -143,25 +143,19 @@ def features(request):
 
 
 def pricing(request):
-    from django.conf import settings
-
     from apps.billing.models import CreditPack
-    from apps.billing.services import priced_plans, supported_currencies
+    from apps.billing.services import priced_plans
 
-    currencies = supported_currencies()
-    default_ccy = getattr(settings, "DEFAULT_CURRENCY", "ZAR")
-    currency = (request.GET.get("currency") or default_ccy).upper()
-    if currency not in currencies:
-        currency = default_ccy
+    from .geo import detect_currency
 
+    currency = detect_currency(request)   # auto: US → USD, UK → GBP, …
     ctx = _seo(
         "Pricing — LulaWorks",
-        "Simple, transparent pricing for contractors, in your currency. "
+        "Simple, transparent pricing for contractors, in your local currency. "
         "Unlimited employees on every plan.",
     )
     ctx["plans"] = priced_plans(currency)
     ctx["packs"] = list(CreditPack.objects.filter(is_active=True).order_by("price"))
-    ctx["currencies"] = currencies
     ctx["currency"] = currency
     return render(request, "marketing/pricing.html", ctx)
 
@@ -233,6 +227,7 @@ def trial(request):
     if request.user.is_authenticated:
         return redirect("web:dashboard")
     if request.method == "POST":
+        from .geo import detect_currency
         try:
             user = register_trial_company(
                 company_name=request.POST.get("company", ""),
@@ -241,6 +236,7 @@ def trial(request):
                 password=request.POST.get("password", ""),
                 phone=request.POST.get("phone", ""),
                 industry=request.POST.get("industry", ""),
+                currency=detect_currency(request),   # bill the new company in its local currency
             )
         except RegistrationError as exc:
             messages.error(request, str(exc))

@@ -15,11 +15,13 @@ class RegistrationError(Exception):
 
 @transaction.atomic
 def register_trial_company(*, company_name, full_name, email, password,
-                           phone="", industry=""):
+                           phone="", industry="", currency=None):
     """Create a new company on the free trial and return its owner user.
 
-    The caller logs the returned user in. Raises RegistrationError for problems
-    a visitor can fix (duplicate email, missing fields)."""
+    The caller logs the returned user in. `currency` (auto-detected from the
+    visitor's location) sets the company's billing currency. Raises
+    RegistrationError for problems a visitor can fix (duplicate email, missing
+    fields)."""
     from apps.billing.services import start_trial
     from apps.identity.models import Company, Membership, Role, User
 
@@ -34,7 +36,10 @@ def register_trial_company(*, company_name, full_name, email, password,
         )
 
     first, _, last = full_name.partition(" ")
-    company = Company.objects.create(name=company_name, industry=(industry or "").strip())
+    company_kwargs = {"name": company_name, "industry": (industry or "").strip()}
+    if currency:
+        company_kwargs["currency"] = currency
+    company = Company.objects.create(**company_kwargs)
     user = User.objects.create_user(
         email=email, password=password, first_name=first, last_name=last,
         mobile=(phone or "").strip(),

@@ -8,16 +8,9 @@
       we never charge you for the size of your crew.</p>
 
     {% with annual=request.GET.cycle %}
-    <div class="row" style="justify-content:center;gap:14px;flex-wrap:wrap;margin:22px 0 8px;">
-      <div class="toggle">
-        <a href="?cycle=monthly&currency={{ currency }}" class="{% if annual != 'annual' %}on{% endif %}">Monthly</a>
-        <a href="?cycle=annual&currency={{ currency }}" class="{% if annual == 'annual' %}on{% endif %}">Annual · save ~2 months</a>
-      </div>
-      <div class="toggle">
-        {% for c in currencies %}
-        <a href="?cycle={{ annual|default:'monthly' }}&currency={{ c }}" class="{% if c == currency %}on{% endif %}">{{ c }}</a>
-        {% endfor %}
-      </div>
+    <div class="toggle" style="margin:22px 0 8px;">
+      <a href="?cycle=monthly" class="{% if annual != 'annual' %}on{% endif %}">Monthly</a>
+      <a href="?cycle=annual" class="{% if annual == 'annual' %}on{% endif %}">Annual · save ~2 months</a>
     </div>
 
     <div class="grid g3" style="margin-top:34px;text-align:left;align-items:start;">
@@ -45,7 +38,7 @@
     </div>
     {% endwith %}
 
-    <p class="muted" style="margin-top:24px;">Prices shown in {{ currency }}. Choose your currency above.
+    <p class="muted" style="margin-top:24px;">Prices shown in {{ currency }}, based on your location.
       All plans include a 30-day free trial — no credit card required.</p>
     <div class="cta-row" style="justify-content:center;margin-top:10px;">
       <a class="btn ghost" href="{% url 'marketing:demo' %}">Book a Demo</a>
