@@ -433,6 +433,18 @@
   </div>
 </div>
 
+<div class="card">
+  <div class="row" style="gap:12px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:220px;">
+      <strong>Tax settings</strong>
+      <p class="muted" style="margin:6px 0 0;font-size:13px;">VAT / GST / sales tax
+        rate and treatment for the invoices you send — tax-inclusive pricing and
+        cross-border reverse charge. Applied to every new invoice.</p>
+    </div>
+    <a class="btn ghost" href="{% url 'web:company_tax' %}">Open tax settings →</a>
+  </div>
+</div>
+
 <h2>Defaults</h2>
 <div class="card">
   <form method="post">{% csrf_token %}

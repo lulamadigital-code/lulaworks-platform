@@ -152,7 +152,10 @@ class Invoice(TenantBaseModel):
     percent_complete = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     issue_date = models.DateField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
-    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # set from company.default_tax_rate
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # set by the tax engine
+    tax_name = models.CharField(max_length=24, default="VAT")   # VAT / GST / Sales Tax
+    tax_inclusive = models.BooleanField(default=False)          # line prices already include tax
+    reverse_charge = models.BooleanField(default=False)         # cross-border B2B; recipient self-accounts
     retention_pct = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     retention_released = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
@@ -172,7 +175,21 @@ class Invoice(TenantBaseModel):
 
     @property
     def vat_amount(self) -> Decimal:
+        """Tax portion. Exclusive: subtotal × rate. Inclusive: extracted from the
+        tax-inclusive line totals."""
+        if not self.vat_rate:
+            return Decimal("0.00")
+        if self.tax_inclusive:
+            factor = 1 + (self.vat_rate / 100)
+            return (self.subtotal - self.subtotal / factor).quantize(TWO)
         return (self.subtotal * self.vat_rate / 100).quantize(TWO)
+
+    @property
+    def net_amount(self) -> Decimal:
+        """Amount before tax (differs from subtotal only when tax-inclusive)."""
+        if self.tax_inclusive:
+            return (self.subtotal - self.vat_amount).quantize(TWO)
+        return self.subtotal
 
     @property
     def retention_amount(self) -> Decimal:
@@ -180,8 +197,10 @@ class Invoice(TenantBaseModel):
 
     @property
     def total(self) -> Decimal:
-        """Payable now = subtotal + VAT − retention held back."""
-        return (self.subtotal + self.vat_amount - self.retention_amount).quantize(TWO)
+        """Payable now, less retention held back. Tax-inclusive subtotals already
+        contain the tax, so it isn't added again."""
+        base = self.subtotal if self.tax_inclusive else (self.subtotal + self.vat_amount)
+        return (base - self.retention_amount).quantize(TWO)
 
     @property
     def paid(self) -> Decimal:

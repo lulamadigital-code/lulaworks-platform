@@ -52,6 +52,11 @@ class Company(PlatformBaseModel):
     # VAT / sales-tax rate applied to this company's NEW invoices (0 = none).
     # Configurable per company so tax is never a single-country assumption.
     default_tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    # Tax engine config (apps.tax). Label + whether prices are quoted tax-inclusive
+    # (EU-style) and whether cross-border B2B reverse charge applies.
+    tax_name = models.CharField(max_length=24, blank=True)     # VAT / GST / Sales Tax
+    prices_include_tax = models.BooleanField(default=False)
+    reverse_charge_enabled = models.BooleanField(default=False)
     logo = models.ImageField(upload_to="company_logos/", blank=True, null=True)
     brand_primary = models.CharField(max_length=9, blank=True)
     brand_secondary = models.CharField(max_length=9, blank=True)

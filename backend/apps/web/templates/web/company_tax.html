@@ -1,0 +1,67 @@
+{% extends "web/base.html" %}
+{% block title %}Tax settings{% endblock %}
+{% block content %}
+<p class="sub"><a href="{% url 'web:company_profile' %}">← Company</a></p>
+<h1>Tax settings</h1>
+<p class="sub">How tax is applied to the invoices you send your customers. These
+  drive every new invoice — existing invoices keep the tax they were issued with.</p>
+
+{% if jurisdiction %}
+<div class="card" style="background:var(--primary-t);border-color:var(--primary);">
+  <div class="row">
+    <div>
+      <strong>Standard for {{ company.country }}:</strong>
+      {{ jurisdiction.tax_name }} {{ jurisdiction.rate }}%{% if jurisdiction.prices_include_tax %}, prices tax-inclusive{% endif %}.
+    </div>
+    <span class="sp" style="flex:1;"></span>
+    {% if can_manage %}
+    <form method="post" style="margin:0;">{% csrf_token %}
+      <input type="hidden" name="action" value="apply_default">
+      <button class="btn" type="submit" style="padding:6px 14px;font-size:13px;">Apply this</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<div class="card"><p class="muted" style="margin:0;">Set your country on the
+  <a href="{% url 'web:company_profile' %}">Company profile</a> to get its standard tax treatment suggested here.</p></div>
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+  <div class="card">
+    <div class="two">
+      <div>
+        <label>Tax name</label>
+        <input type="text" name="tax_name" value="{{ company.tax_name }}" placeholder="VAT / GST / Sales Tax">
+      </div>
+      <div>
+        <label>Rate (%)</label>
+        <input type="number" step="0.01" min="0" name="rate" value="{{ company.default_tax_rate }}">
+      </div>
+      <div>
+        <label>Tax registration number</label>
+        <input type="text" name="tax_number" value="{{ company.vat_no }}" placeholder="e.g. VAT / GST number">
+      </div>
+    </div>
+
+    <label class="inline" style="margin-top:14px;display:flex;gap:8px;align-items:flex-start;">
+      <input type="checkbox" name="prices_include_tax" value="1" style="width:auto;" {% if company.prices_include_tax %}checked{% endif %}>
+      <span><strong>Prices include tax</strong><br>
+        <span class="muted" style="font-size:13px;">Your line prices already include tax (common in the EU/UK). Off = tax added on top (common in SA/US/B2B).</span></span>
+    </label>
+
+    <label class="inline" style="margin-top:12px;display:flex;gap:8px;align-items:flex-start;">
+      <input type="checkbox" name="reverse_charge_enabled" value="1" style="width:auto;" {% if company.reverse_charge_enabled %}checked{% endif %}>
+      <span><strong>Apply reverse charge on cross-border business customers</strong><br>
+        <span class="muted" style="font-size:13px;">When invoicing a tax-registered customer in another country, charge 0% and note that the recipient accounts for the tax.</span></span>
+    </label>
+
+    {% if can_manage %}
+    <div style="margin-top:16px;"><button class="btn" type="submit">Save tax settings</button></div>
+    {% else %}
+    <p class="muted" style="margin-top:14px;">You need the “manage company” permission to change these.</p>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}

@@ -339,3 +339,19 @@ class InternationalDefaultsTests(APITestCase):
                                  lines=[{"description": "Works", "qty": 1, "unit_price": 1000}])
             self.assertEqual(inv.vat_rate, Decimal("0"))
             self.assertEqual(inv.vat_amount, Decimal("0.00"))
+
+
+class InclusiveTaxInvoiceTests(APITestCase):
+    def test_tax_inclusive_invoice_extracts_tax_from_line_totals(self):
+        c = make_company()               # 15% VAT
+        c.prices_include_tax = True      # switch to tax-inclusive pricing
+        c.save(update_fields=["prices_include_tax"])
+        with tenant_scope(c.id):
+            project, _ = awarded_project_with_budget(c)
+            inv = create_invoice(project, None,
+                                 lines=[{"description": "Works", "qty": 1, "unit_price": 115}])
+            self.assertTrue(inv.tax_inclusive)
+            self.assertEqual(inv.subtotal, Decimal("115.00"))
+            self.assertEqual(inv.vat_amount, Decimal("15.00"))   # extracted, not added
+            self.assertEqual(inv.net_amount, Decimal("100.00"))
+            self.assertEqual(inv.total, Decimal("115.00"))       # already tax-inclusive

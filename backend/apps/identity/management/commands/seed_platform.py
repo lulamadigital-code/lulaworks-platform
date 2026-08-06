@@ -6,6 +6,7 @@ from django.core.management.base import BaseCommand
 from apps.administration.models import FeatureFlagDefinition
 from apps.ai_platform.models import PromptTemplate
 from apps.billing.models import CreditPack, Plan, PlanPrice
+from apps.tax.models import TaxJurisdiction
 from apps.identity.models import Permission, Role
 
 PERMISSIONS = [
@@ -140,6 +141,32 @@ PLAN_PRICES = {
     "business": {"USD": (249, 2490), "EUR": (239, 2390), "GBP": (199, 1990), "AUD": (379, 3790)},
 }
 
+# Standard tax treatment per country (apps.tax). Rate/name/inclusive by region;
+# EU members share a reverse-charge region for cross-border B2B. Names match the
+# free-text country stored on Company/Customer. US sales tax varies by state, so
+# 0 default (configurable per company).
+#   name, code, tax_name, rate, prices_include_tax, reverse_charge_region
+TAX_JURISDICTIONS = [
+    ("South Africa", "ZA", "VAT", 15, False, ""),
+    ("United Kingdom", "GB", "VAT", 20, True, ""),
+    ("United States", "US", "Sales Tax", 0, False, ""),
+    ("Australia", "AU", "GST", 10, True, ""),
+    ("New Zealand", "NZ", "GST", 15, True, ""),
+    ("Canada", "CA", "GST", 5, False, ""),
+    ("Kenya", "KE", "VAT", 16, False, ""),
+    ("Nigeria", "NG", "VAT", 7.5, False, ""),
+    ("Ghana", "GH", "VAT", 15, False, ""),
+    ("United Arab Emirates", "AE", "VAT", 5, False, ""),
+    ("Ireland", "IE", "VAT", 23, True, "EU"),
+    ("Germany", "DE", "VAT", 19, True, "EU"),
+    ("France", "FR", "VAT", 20, True, "EU"),
+    ("Netherlands", "NL", "VAT", 21, True, "EU"),
+    ("Spain", "ES", "VAT", 21, True, "EU"),
+    ("Italy", "IT", "VAT", 22, True, "EU"),
+    ("Portugal", "PT", "VAT", 23, True, "EU"),
+    ("Belgium", "BE", "VAT", 21, True, "EU"),
+]
+
 FLAGS = [
     ("ai_quoting", "AI quote generation", False),
     ("compliance_engine", "Compliance Intelligence", True),
@@ -198,6 +225,14 @@ class Command(BaseCommand):
                 defaults={"name": name, "credits": credits, "price": price, "is_active": True},
             )
         self.stdout.write(f"Credit packs: {len(CREDIT_PACKS)}")
+
+        for name, ccode, tax_name, rate, incl, region in TAX_JURISDICTIONS:
+            TaxJurisdiction.objects.update_or_create(
+                name=name,
+                defaults={"code": ccode, "tax_name": tax_name, "rate": rate,
+                          "prices_include_tax": incl, "reverse_charge_region": region},
+            )
+        self.stdout.write(f"Tax jurisdictions: {len(TAX_JURISDICTIONS)}")
 
         for key, desc, default in FLAGS:
             FeatureFlagDefinition.objects.get_or_create(

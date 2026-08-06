@@ -223,13 +223,22 @@ def profit_forecast(project) -> dict:
 def create_invoice(project, user, *, client_name=None, lines=None, retention_pct=0,
                    vat_rate=None, due_date=None, is_progress_claim=False,
                    percent_complete=0) -> Invoice:
-    # Tax is per-company, never a single-country assumption: default to the
-    # company's configured rate (0 = none) unless the caller specifies one.
+    # Tax engine decides the treatment (rate, label, inclusive, cross-border
+    # reverse charge) from the company + customer — never a single-country
+    # assumption. An explicit vat_rate from the caller overrides it.
+    tax_name, tax_inclusive, reverse_charge = "VAT", False, False
     if vat_rate is None:
-        vat_rate = getattr(project.company, "default_tax_rate", Decimal("0"))
+        from apps.tax.services import compute_tax
+        customer = getattr(project, "customer", None) or getattr(
+            getattr(project, "quotation", None), "customer", None)
+        decision = compute_tax(project.company, customer=customer)
+        vat_rate = decision.rate
+        tax_name, tax_inclusive, reverse_charge = (
+            decision.tax_name, decision.inclusive, decision.reverse_charge)
     invoice = Invoice.objects.create(
         company=project.company, project=project, number=next_number(project.company, "invoice"),
         client_name=client_name or project.client_name, vat_rate=vat_rate,
+        tax_name=tax_name, tax_inclusive=tax_inclusive, reverse_charge=reverse_charge,
         retention_pct=retention_pct, due_date=due_date, is_progress_claim=is_progress_claim,
         percent_complete=percent_complete, created_by=user, updated_by=user,
     )

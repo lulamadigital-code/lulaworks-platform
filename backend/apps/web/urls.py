@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, views_billing
+from . import views, views_billing, views_tax
 
 app_name = "web"
 
@@ -27,6 +27,7 @@ urlpatterns = [
     path("company/bank/", views.company_bank, name="company_bank"),
     path("company/contacts/", views.company_contact, name="company_contact"),
     path("company/documents/", views.company_document, name="company_document"),
+    path("company/tax/", views_tax.company_tax, name="company_tax"),
     # Billing & subscription
     path("billing/", views_billing.billing, name="billing"),
     path("billing/change-plan/", views_billing.billing_change_plan, name="billing_change_plan"),
