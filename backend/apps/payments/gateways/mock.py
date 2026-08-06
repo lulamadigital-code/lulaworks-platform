@@ -23,6 +23,10 @@ class MockGateway(PaymentGateway):
         url = reverse("payments:mock_checkout", args=[intent.id])
         return CheckoutSession(url=url, external_id=f"mock_{intent.id}")
 
+    def confirm_payment(self, intent) -> bool:
+        # Test gateway: reaching the return page means the tester clicked "Pay".
+        return True
+
     def parse_webhook(self, payload: bytes, headers: dict) -> WebhookEvent:
         # The mock flow completes via the local checkout page, not a webhook.
         return WebhookEvent(kind="ignored")

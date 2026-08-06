@@ -31,13 +31,23 @@ def mock_checkout(request, intent_id):
 
 @login_required
 def payment_return(request, intent_id):
-    """Success return from checkout. Completing here is idempotent — for Stripe
-    the webhook is authoritative, but this covers the redirect too."""
+    """Success return from checkout. SECURITY: the return URL is user-reachable,
+    so we verify payment with the provider before activating anything; the signed
+    webhook is the other authoritative path. Both call the idempotent
+    complete_intent, so whichever lands first wins and the second is a no-op."""
+    from .gateways import get_gateway
     intent = _own_intent(request, intent_id)
     if intent is None:
         return redirect("web:billing")
-    complete_intent(intent, actor=request.user)
-    messages.success(request, "Payment successful — your account has been updated.")
+    if get_gateway(intent.gateway).confirm_payment(intent):
+        complete_intent(intent, actor=request.user)
+        messages.success(request, "Payment successful — your account has been updated.")
+    else:
+        messages.info(
+            request,
+            "Thanks! We're confirming your payment with the provider — your "
+            "account will update as soon as it clears.",
+        )
     return redirect("web:billing")
 
 

@@ -30,4 +30,4 @@ def available_gateways() -> list:
 def _ensure_loaded():
     # Import provider modules so their @register runs (idempotent).
     if not _REGISTRY:
-        from . import mock, stripe_gateway  # noqa: F401
+        from . import mock, paystack_gateway, stripe_gateway  # noqa: F401

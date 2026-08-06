@@ -9,11 +9,13 @@ from decimal import Decimal
 from django.test import RequestFactory, TestCase, override_settings
 
 from apps.ai_platform.gateway import credit_balance
-from apps.billing.models import CreditPack, Plan, PlanPrice, SubscriptionStatus
-from apps.billing.services import GB
-from apps.identity.models import Company
+from django.test import Client
 
-from .gateways import get_gateway
+from apps.billing.models import CreditPack, Plan, PlanPrice, Subscription, SubscriptionStatus
+from apps.billing.services import GB
+from apps.identity.models import Company, Membership, User
+
+from .gateways import available_gateways, get_gateway
 from .models import CheckoutIntent
 from .services import (
     begin_subscription_checkout,
@@ -100,3 +102,46 @@ class CheckoutFlowTests(TestCase):
         # The mock gateway completes via the local return, not a webhook.
         result = process_webhook("mock", b"{}", {})
         self.assertFalse(result["handled"])
+
+
+class PaystackAndSecurityTests(TestCase):
+    def setUp(self):
+        self.pro = _plans()
+        self.company = Company.objects.create(name="Naija Co", currency="ZAR")
+
+    def test_paystack_is_registered(self):
+        self.assertIn("paystack", available_gateways())
+        self.assertIn("stripe", available_gateways())
+        self.assertEqual(get_gateway("paystack").code, "paystack")
+
+    def test_confirm_payment_denies_by_default(self):
+        # No provider session recorded → Stripe verification returns False
+        # without any external call (early return).
+        intent = CheckoutIntent.objects.create(
+            company=self.company, kind=CheckoutIntent.Kind.SUBSCRIPTION, gateway="stripe",
+            plan_code="professional", billing_cycle="monthly", currency="ZAR", amount=1299)
+        self.assertFalse(get_gateway("stripe").confirm_payment(intent))
+
+    @override_settings(PAYSTACK_SECRET_KEY="sk_test_x")
+    def test_paystack_webhook_rejects_forged_signature(self):
+        with self.assertRaises(ValueError):
+            get_gateway("paystack").parse_webhook(b'{"event":"charge.success"}',
+                                                  {"HTTP_X_PAYSTACK_SIGNATURE": "wrong"})
+
+    def test_return_url_cannot_grant_subscription_without_payment(self):
+        """SECURITY: hitting the success/return URL without the provider
+        confirming payment must NOT activate a subscription."""
+        user = User.objects.create_user(email="owner@co.za", password="pw12345!")
+        user.active_company = self.company
+        user.save(update_fields=["active_company"])
+        Membership.objects.create(company=self.company, user=user, status="active")
+        # Stripe intent with no session recorded → confirm_payment() is False.
+        intent = CheckoutIntent.objects.create(
+            company=self.company, kind=CheckoutIntent.Kind.SUBSCRIPTION, gateway="stripe",
+            plan_code="professional", billing_cycle="monthly", currency="ZAR", amount=1299)
+        client = Client()
+        client.force_login(user)
+        client.get(f"/billing/checkout/{intent.id}/return/")
+        intent.refresh_from_db()
+        self.assertEqual(intent.status, CheckoutIntent.Status.PENDING)     # not completed
+        self.assertFalse(Subscription.objects.filter(company=self.company).exists())  # no sub granted

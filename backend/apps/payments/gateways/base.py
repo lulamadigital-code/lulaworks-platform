@@ -49,6 +49,16 @@ class PaymentGateway(ABC):
         """Verify + normalise an incoming provider webhook into a WebhookEvent.
         Must raise on an invalid signature."""
 
+    def confirm_payment(self, intent) -> bool:
+        """SECURITY: has this intent actually been paid, per the provider?
+
+        The success/return URL is user-reachable and must never be trusted on its
+        own to grant a subscription. The return view calls this to verify payment
+        server-side with the provider before activating anything; the signed
+        webhook is the other authoritative path. Default is False (deny) so an
+        unimplemented provider can never accidentally grant access."""
+        return False
+
     def customer_portal_url(self, *, company, return_url: str):
         """Optional: a provider-hosted portal for managing payment methods /
         cancelling. Providers that don't support one return None."""

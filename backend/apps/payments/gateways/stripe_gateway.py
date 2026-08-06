@@ -78,6 +78,14 @@ class StripeGateway(PaymentGateway):
         )
         return CheckoutSession(url=session.url, external_id=session.id)
 
+    def confirm_payment(self, intent) -> bool:
+        """Server-side check that the Checkout Session was actually paid."""
+        if not intent.external_session_id:
+            return False
+        stripe = self._client()
+        session = stripe.checkout.Session.retrieve(intent.external_session_id)
+        return session.get("payment_status") == "paid"
+
     def parse_webhook(self, payload: bytes, headers: dict) -> WebhookEvent:
         stripe = self._client()
         secret = getattr(settings, "STRIPE_WEBHOOK_SECRET", "")
