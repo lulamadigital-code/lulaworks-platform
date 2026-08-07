@@ -33,6 +33,7 @@ _SECTIONS = {
     "company_tax": "company",
     "ai_settings": "company", "ai_provider_toggle": "company",
     "ai_provider_priority": "company", "ai_provider_test": "company",
+    "email_history": "company", "email_detail": "company", "email_resend": "company",
     "doc_templates": "company", "doc_template_create": "company",
     "doc_template_edit": "company", "doc_template_default": "company",
     "doc_template_preview": "company", "quotation_set_template": "quotations",

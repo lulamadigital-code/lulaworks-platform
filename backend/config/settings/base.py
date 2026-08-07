@@ -49,6 +49,7 @@ LOCAL_APPS = [
     "apps.compliance",
     "apps.execution",
     "apps.finance",
+    "apps.notifications",
     "apps.web",
     "apps.marketing",
     "apps.payments",
@@ -188,6 +189,24 @@ GEMINI_MODEL = config("GEMINI_MODEL", default="gemini-2.5-flash")
 # starve the answer on long extraction prompts.
 GEMINI_THINKING_BUDGET = config("GEMINI_THINKING_BUDGET", default="0", cast=str)
 AI_CREDITS_PER_EXTRACTION = config("AI_CREDITS_PER_EXTRACTION", default="1", cast=str)
+
+# --- Email & Notification platform ---
+# The provider is Django's EMAIL_BACKEND: SMTP in prod, console in dev (nothing
+# actually sends until SMTP is configured), and swappable to SendGrid/SES/
+# Mailgun/Postmark/Resend later by changing this one variable — no module change.
+EMAIL_BACKEND = config(
+    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = config("EMAIL_HOST", default="")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=15, cast=int)
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="LulaWorks <no-reply@lulaworks.com>")
+SERVER_EMAIL = config("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
+SUPPORT_EMAIL = config("SUPPORT_EMAIL", default="")
+#: Absolute base URL, used to build activation links and embed the logo in email.
+SITE_URL = config("SITE_URL", default="")
 
 # --- Celery / Redis (async boundary; DATA_MODEL §14) ---
 REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")

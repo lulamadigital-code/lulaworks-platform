@@ -6,6 +6,7 @@ from . import (
     views_billing,
     views_crm,
     views_doctemplates,
+    views_email,
     views_tax,
 )
 
@@ -68,6 +69,11 @@ urlpatterns = [
          name="ai_provider_priority"),
     path("company/ai/<str:provider>/test/", views_ai_settings.ai_provider_test,
          name="ai_provider_test"),
+    # Email history — the audit trail of everything LulaWorks sent
+    path("company/emails/", views_email.email_history, name="email_history"),
+    path("company/emails/<uuid:pk>/", views_email.email_detail, name="email_detail"),
+    path("company/emails/<uuid:pk>/resend/", views_email.email_resend,
+         name="email_resend"),
     # Document Designer — per-company templates for quotations/invoices/DNs
     path("company/templates/", views_doctemplates.templates_list, name="doc_templates"),
     path("company/templates/new/", views_doctemplates.template_create,

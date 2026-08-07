@@ -1,0 +1,56 @@
+{% comment %}
+LulaWorks branded email shell. Inline styles only (email clients strip <style>).
+Context (all optional, filled by the email service from the company profile):
+  brand_color, logo_url, company_name, company_address_lines, support_email,
+  website, year, preheader. Content templates fill the `content` block; CTA via
+  `cta_url` + `cta_label`.
+{% endcomment %}<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ subject|default:"LulaWorks" }}</title></head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#22303b;">
+{% if preheader %}<span style="display:none;max-height:0;overflow:hidden;">{{ preheader }}</span>{% endif %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:24px 0;">
+  <tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+           style="width:600px;max-width:92%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+
+      {# ── Header ─────────────────────────────────────────────────────────── #}
+      <tr><td style="background:{{ brand_color|default:'#0E6E6E' }};padding:22px 28px;">
+        {% if logo_url %}<img src="{{ logo_url }}" alt="{{ company_name }}" height="34" style="height:34px;display:block;">
+        {% else %}<span style="color:#ffffff;font-size:20px;font-weight:700;">{{ company_name|default:"LulaWorks" }}</span>{% endif %}
+      </td></tr>
+
+      {# ── Body ───────────────────────────────────────────────────────────── #}
+      <tr><td style="padding:30px 28px 8px;">
+        {% if heading %}<h1 style="margin:0 0 14px;font-size:20px;color:#22303b;">{{ heading }}</h1>{% endif %}
+        <div style="font-size:14.5px;line-height:1.6;color:#3a4a57;">
+          {% block content %}{{ body|linebreaksbr }}{% endblock %}
+        </div>
+
+        {% if cta_url %}
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 6px;">
+          <tr><td style="border-radius:8px;background:{{ brand_color|default:'#0E6E6E' }};">
+            <a href="{{ cta_url }}" style="display:inline-block;padding:12px 26px;font-size:14.5px;
+               font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">{{ cta_label|default:"Open" }}</a>
+          </td></tr>
+        </table>
+        {% if cta_note %}<p style="font-size:12.5px;color:#8a97a1;margin:8px 0 0;">{{ cta_note }}</p>{% endif %}
+        {% endif %}
+      </td></tr>
+
+      {# ── Footer ─────────────────────────────────────────────────────────── #}
+      <tr><td style="padding:22px 28px 26px;border-top:1px solid #eef1f4;">
+        <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#22303b;">{{ company_name|default:"LulaWorks" }}</p>
+        {% for line in company_address_lines %}<p style="margin:0;font-size:12px;color:#8a97a1;">{{ line }}</p>{% endfor %}
+        <p style="margin:10px 0 0;font-size:12px;color:#8a97a1;">
+          {% if support_email %}Support: <a href="mailto:{{ support_email }}" style="color:{{ brand_color|default:'#0E6E6E' }};">{{ support_email }}</a>{% endif %}
+          {% if website %}&nbsp;·&nbsp;<a href="{{ website }}" style="color:{{ brand_color|default:'#0E6E6E' }};">{{ website }}</a>{% endif %}
+        </p>
+        <p style="margin:12px 0 0;font-size:11px;color:#aeb8c0;">© {{ year }} {{ company_name|default:"LulaWorks" }}. Powered by LulaWorks.</p>
+      </td></tr>
+
+    </table>
+  </td></tr>
+</table>
+</body></html>

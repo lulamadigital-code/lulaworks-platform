@@ -1,0 +1,52 @@
+{% extends "web/base.html" %}
+{% block title %}Email history{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>Email history</h1>
+    <p class="sub" style="margin:0;">Every email LulaWorks has sent for this company —
+      invitations, documents, receipts and notifications. Failed messages can be resent.</p>
+  </div>
+  <div><a class="btn ghost" href="{% url 'web:company_profile' %}">← Company</a></div>
+</div>
+
+<div class="filterbar">
+  <a class="btn {% if not status %}primary{% else %}ghost{% endif %}" href="?">All ({{ total }})</a>
+  {% for t in tabs %}
+  <a class="btn {% if status == t.value %}primary{% else %}ghost{% endif %}" href="?status={{ t.value }}">{{ t.label }} ({{ t.count }})</a>
+  {% endfor %}
+</div>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>To</th><th>Subject</th><th>Type</th><th>Status</th><th>When</th><th></th></tr>
+    {% for log in page %}
+    <tr>
+      <td><a href="{% url 'web:email_detail' log.id %}">{{ log.to_email }}</a>
+        {% if log.to_name %}<br><span class="muted" style="font-size:12px;">{{ log.to_name }}</span>{% endif %}</td>
+      <td>{{ log.subject|truncatechars:48 }}</td>
+      <td class="muted">{{ log.get_category_display }}</td>
+      <td>{% if log.status == 'sent' %}<span class="chip ok">Sent</span>
+        {% elif log.status == 'failed' %}<span class="chip bad">Failed</span>
+        {% else %}<span class="chip">{{ log.get_status_display }}</span>{% endif %}</td>
+      <td class="muted">{{ log.created_at|date:"d M H:i" }}</td>
+      <td>{% if log.status == 'failed' %}
+        <form method="post" action="{% url 'web:email_resend' log.id %}" style="display:inline;">{% csrf_token %}
+          <button class="btn ghost" type="submit" style="padding:3px 10px;">Resend</button>
+        </form>{% endif %}</td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">No email sent yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% if page.has_other_pages %}
+<div class="filterbar" style="margin-top:12px;">
+  {% if page.has_previous %}<a class="btn ghost" href="?status={{ status }}&page={{ page.previous_page_number }}">← Prev</a>{% endif %}
+  <span class="muted" style="align-self:center;">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a class="btn ghost" href="?status={{ status }}&page={{ page.next_page_number }}">Next →</a>{% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

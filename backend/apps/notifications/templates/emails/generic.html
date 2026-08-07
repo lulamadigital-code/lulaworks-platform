@@ -1,0 +1,5 @@
+{% extends "emails/base.html" %}
+{% comment %}The default content template — a heading, a body, and an optional
+call-to-action. Most transactional emails can use this by passing heading/body/
+cta_url/cta_label; richer ones extend base.html directly.{% endcomment %}
+{% block content %}{{ body|linebreaksbr }}{% endblock %}

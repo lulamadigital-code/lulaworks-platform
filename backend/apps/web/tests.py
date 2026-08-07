@@ -1849,3 +1849,55 @@ class AISettingsWebTests(TestCase):
         body = r.content.decode()
         # The company profile page must not present a provider picker.
         self.assertNotIn('name="ai_provider"', body)
+
+
+class EmailHistoryWebTests(TestCase):
+    """The admin email-history console: renders, is gated on company.manage,
+    lists logged email scoped to the company, and can resend a failure."""
+
+    def setUp(self):
+        self.company = make_company("Mail Co")
+        self.admin = user_with(self.company, ["company.manage"], email="admin@mail.co")
+        self.plain = user_with(self.company, ["projects.view"], email="plain@mail.co")
+
+    def _log(self, **kw):
+        from apps.notifications.models import EmailLog, EmailStatus
+        defaults = dict(company=self.company, to_email="c@x.co", subject="Hi",
+                        template="generic", status=EmailStatus.SENT)
+        defaults.update(kw)
+        return EmailLog.objects.create(**defaults)
+
+    def test_history_renders_for_admin(self):
+        self._log(subject="Your quotation QT-1")
+        self.client.force_login(self.admin)
+        r = self.client.get("/company/emails/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Email history")
+        self.assertContains(r, "Your quotation QT-1")
+
+    def test_history_denied_for_non_admin(self):
+        self.client.force_login(self.plain)
+        r = self.client.get("/company/emails/")
+        self.assertEqual(r.status_code, 302)   # redirected away
+
+    def test_history_is_company_scoped(self):
+        other = make_company("Other Co")
+        from apps.notifications.models import EmailLog
+        EmailLog.objects.create(company=other, to_email="x@x.co", subject="Secret",
+                                template="generic")
+        self._log(subject="Ours")
+        self.client.force_login(self.admin)
+        r = self.client.get("/company/emails/")
+        self.assertContains(r, "Ours")
+        self.assertNotContains(r, "Secret")   # another tenant's email is hidden
+
+    def test_resend_failed_email(self):
+        from apps.notifications.models import EmailLog, EmailStatus
+        log = self._log(status=EmailStatus.FAILED, to_email="fail@x.co")
+        self.client.force_login(self.admin)
+        with self.settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+                           CELERY_TASK_ALWAYS_EAGER=True):
+            r = self.client.post(f"/company/emails/{log.id}/resend/")
+        self.assertEqual(r.status_code, 302)
+        # A fresh log row exists for the resend.
+        self.assertEqual(EmailLog.objects.filter(to_email="fail@x.co").count(), 2)
