@@ -19,6 +19,8 @@
       <input type="password" name="password" autocomplete="current-password" required>
       <button class="btn" style="width:100%; margin-top:20px;" type="submit">Sign in</button>
     </form>
+    <p style="margin-top:14px;text-align:center;font-size:13px;">
+      <a href="{% url 'web:password_reset_request' %}">Forgot your password?</a></p>
   </div>
 </div>
 {% endblock %}

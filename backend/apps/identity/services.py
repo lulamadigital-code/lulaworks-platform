@@ -2,11 +2,12 @@
 
 Two rules shape this module:
 
-1. **Add directly, hand over a one-time password.** There is no invite email yet
-   (no SMTP), so a manager creates the account and passes on a generated
-   temporary password. That password is shown to the manager exactly once, is
-   never stored in plain text, and the account cannot be used for anything until
-   the person has chosen their own — `must_change_password` gates every page.
+1. **Invite by secure link — never email a password.** A manager enters a name,
+   email and role; LulaWorks creates the account with NO usable password and
+   emails a time-limited activation link. The recipient follows it and sets their
+   own password. Nothing is ever transmitted that could be used as a credential.
+   (`add_member` with a one-time password remains for API/back-compat, but the
+   web flow uses `invite_member`.)
 
 2. **Deactivate, never delete.** A person who leaves must stay attached to the
    jobs, timesheets and sign-offs they touched, or the audit trail becomes a lie.
@@ -200,3 +201,232 @@ def member_work(user, company):
         "blocked_count": sum(1 for t in open_tasks if t.status == "blocked"),
         "estimated_hours": sum((t.estimated_hours or 0) for t in open_tasks),
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Invitations & account tokens — the secure, link-based account lifecycle.
+#
+# LulaWorks never emails a password. A manager invites; the person activates via
+# a single-use, time-limited link and sets their own password. Password reset
+# and email verification use the same token mechanism.
+# ══════════════════════════════════════════════════════════════════════════════
+
+INVITE_TTL_DAYS = 7
+RESET_TTL_HOURS = 1
+
+
+def _new_token() -> str:
+    import secrets as _s
+    return _s.token_urlsafe(32)
+
+
+def _mint_token(*, purpose, email, user=None, company=None, role=None,
+                invited_by=None, ttl):
+    from django.utils import timezone
+    from .models import AccountToken
+    return AccountToken.objects.create(
+        purpose=purpose, token=_new_token(), email=email.strip().lower(),
+        user=user, company=company, role=role, invited_by=invited_by,
+        expires_at=timezone.now() + ttl,
+    )
+
+
+def _activation_url(token) -> str:
+    from django.conf import settings
+    base = getattr(settings, "SITE_URL", "").rstrip("/")
+    path = {"invite": "/activate/", "reset": "/reset/",
+            "verify": "/verify/"}.get(token.purpose, "/activate/")
+    return f"{base}{path}{token.token}/"
+
+
+@transaction.atomic
+def invite_member(company, actor, *, email, role, first_name="", last_name="",
+                  job_title="", mobile=""):
+    """Invite a person to the company by secure activation link.
+
+    Creates the account with NO usable password (so it cannot be logged into
+    until they set one), the membership, an invite token, and sends the branded
+    invitation email. Returns (membership, token). An email that already exists
+    on the platform gains a membership and is emailed a plain "you've been added"
+    note instead of an activation link (they already have a password).
+    """
+    from .models import AccountToken
+
+    email = (email or "").strip().lower()
+    if not email:
+        raise MemberError("An email address is required.")
+
+    user = User.objects.filter(email__iexact=email).first()
+    is_new = user is None
+
+    if is_new:
+        user = User(email=email, first_name=first_name.strip(),
+                    last_name=last_name.strip(), mobile=mobile.strip(),
+                    active_company=company, must_change_password=True)
+        user.set_unusable_password()          # activation link sets the real one
+        user.save()
+    else:
+        existing = Membership.objects.filter(company=company, user=user).first()
+        if existing is not None:
+            if existing.status == "active":
+                raise MemberError(f"{email} is already a member of this company.")
+            existing.status = "active"
+            existing.role = role
+            existing.save(update_fields=["status", "role"])
+            return existing, None
+
+    membership = Membership.objects.create(
+        company=company, user=user, role=role, job_title=job_title.strip(),
+        invited_by=actor, status="active")
+
+    from datetime import timedelta
+    token = None
+    if is_new:
+        token = _mint_token(
+            purpose=AccountToken.Purpose.INVITE, email=email, user=user,
+            company=company, role=role, invited_by=actor,
+            ttl=timedelta(days=INVITE_TTL_DAYS))
+        _send_invite_email(company, actor, user, token)
+    else:
+        _send_added_email(company, user)
+    return membership, token
+
+
+def _send_invite_email(company, actor, user, token):
+    from apps.notifications.models import EmailCategory
+    from apps.notifications.service import send_email
+    inviter = (actor.get_full_name() or actor.email) if actor else company.name
+    send_email(
+        to=user.email, subject=f"You're invited to join {company.name} on LulaWorks",
+        template="invitation", company=company, sent_by=actor,
+        to_name=(user.get_full_name() or "").strip(), category=EmailCategory.ACCOUNT,
+        context={
+            "heading": f"Join {company.name} on LulaWorks",
+            "inviter": inviter, "company_name_display": company.name,
+            "role": token.role.name if token.role else "",
+            "cta_url": _activation_url(token), "cta_label": "Set your password",
+            "cta_note": f"This invitation expires in {INVITE_TTL_DAYS} days. "
+                        "You'll choose your own password — we never send one.",
+        })
+
+
+def _send_added_email(company, user):
+    from apps.notifications.models import EmailCategory
+    from apps.notifications.service import send_email
+    from django.conf import settings
+    send_email(
+        to=user.email, subject=f"You've been added to {company.name} on LulaWorks",
+        template="generic", company=company, category=EmailCategory.ACCOUNT,
+        to_name=(user.get_full_name() or "").strip(),
+        context={
+            "heading": f"You've been added to {company.name}",
+            "body": "You already have a LulaWorks account, so just sign in with "
+                    "your existing password to access this company.",
+            "cta_url": (getattr(settings, "SITE_URL", "").rstrip("/") + "/login/"),
+            "cta_label": "Sign in",
+        })
+
+
+@transaction.atomic
+def accept_invitation(token_str, *, password):
+    """Complete an invitation: validate the token, set the user's chosen
+    password, activate the account, and consume the token. Returns the user."""
+    from django.contrib.auth.password_validation import validate_password
+    from django.core.exceptions import ValidationError
+    from django.utils import timezone
+    from .models import AccountToken
+
+    token = AccountToken.objects.select_related("user").filter(
+        token=token_str, purpose=AccountToken.Purpose.INVITE).first()
+    if token is None or not token.is_valid:
+        raise MemberError("This invitation link is invalid or has expired.")
+    try:
+        validate_password(password, token.user)
+    except ValidationError as exc:
+        raise MemberError(" ".join(exc.messages))
+
+    user = token.user
+    user.set_password(password)
+    user.must_change_password = False
+    user.is_active = True
+    user.save(update_fields=["password", "must_change_password", "is_active"])
+
+    token.used_at = timezone.now()
+    token.save(update_fields=["used_at"])
+    _send_welcome_email(token.company, user)
+    return user
+
+
+def _send_welcome_email(company, user):
+    from apps.notifications.models import EmailCategory
+    from apps.notifications.service import send_email
+    from django.conf import settings
+    send_email(
+        to=user.email, subject="Welcome to LulaWorks", template="generic",
+        company=company, category=EmailCategory.ACCOUNT,
+        to_name=(user.get_full_name() or "").strip(),
+        context={
+            "heading": f"Welcome{', ' + user.first_name if user.first_name else ''}!",
+            "body": "Your account is active. You can sign in any time.",
+            "cta_url": (getattr(settings, "SITE_URL", "").rstrip("/") + "/login/"),
+            "cta_label": "Open LulaWorks",
+        })
+
+
+def request_password_reset(email) -> bool:
+    """Start a password reset. Sends a reset link if an active account exists —
+    but ALWAYS behaves the same to the caller (returns True) so the reset page
+    can't be used to discover which emails have accounts (no user enumeration)."""
+    from datetime import timedelta
+    from .models import AccountToken
+
+    email = (email or "").strip().lower()
+    user = User.objects.filter(email__iexact=email, is_active=True).first()
+    if user is not None:
+        token = _mint_token(purpose=AccountToken.Purpose.RESET, email=email,
+                            user=user, ttl=timedelta(hours=RESET_TTL_HOURS))
+        _send_reset_email(user, token)
+    return True
+
+
+def _send_reset_email(user, token):
+    from apps.notifications.models import EmailCategory
+    from apps.notifications.service import send_email
+    company = user.active_company
+    send_email(
+        to=user.email, subject="Reset your LulaWorks password",
+        template="password_reset", company=company, category=EmailCategory.SECURITY,
+        to_name=(user.get_full_name() or "").strip(),
+        context={
+            "heading": "Reset your password",
+            "cta_url": _activation_url(token), "cta_label": "Choose a new password",
+            "cta_note": f"This link expires in {RESET_TTL_HOURS} hour. If you "
+                        "didn't request this, you can safely ignore this email.",
+        })
+
+
+@transaction.atomic
+def reset_password(token_str, *, password):
+    """Complete a password reset: validate the token, set the new password,
+    consume the token. Returns the user."""
+    from django.contrib.auth.password_validation import validate_password
+    from django.core.exceptions import ValidationError
+    from django.utils import timezone
+    from .models import AccountToken
+
+    token = AccountToken.objects.select_related("user").filter(
+        token=token_str, purpose=AccountToken.Purpose.RESET).first()
+    if token is None or not token.is_valid:
+        raise MemberError("This reset link is invalid or has expired.")
+    try:
+        validate_password(password, token.user)
+    except ValidationError as exc:
+        raise MemberError(" ".join(exc.messages))
+
+    user = token.user
+    user.set_password(password)
+    user.must_change_password = False
+    user.save(update_fields=["password", "must_change_password"])
+    token.used_at = timezone.now()
+    token.save(update_fields=["used_at"])
+    return user

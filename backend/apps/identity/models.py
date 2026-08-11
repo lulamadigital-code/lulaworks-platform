@@ -444,3 +444,49 @@ class CompanyBranding(PlatformBaseModel):
         chosen = {"invoice": self.invoice_logo, "report": self.report_logo,
                   "email": self.email_logo}.get(kind)
         return chosen or self.company.logo
+
+
+class AccountToken(PlatformBaseModel):
+    """A secure, single-use, time-limited token for account actions that arrive
+    by email — an invitation to join, a password reset, an email verification.
+
+    LulaWorks NEVER emails a password. A new user is invited with an activation
+    link; they follow it and set their own password. That is the whole point of
+    this model: the secret in the email is a random token that grants exactly one
+    action, once, before it expires — not a credential.
+    """
+
+    class Purpose(models.TextChoices):
+        INVITE = "invite", "Invitation"
+        RESET = "reset", "Password reset"
+        VERIFY = "verify", "Email verification"
+
+    purpose = models.CharField(max_length=12, choices=Purpose.choices)
+    #: High-entropy URL-safe secret (secrets.token_urlsafe). Looked up by exact
+    #: match; single-use and short-lived, so it is never a standing credential.
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+    email = models.EmailField()
+    user = models.ForeignKey("identity.User", on_delete=models.CASCADE,
+                             null=True, blank=True, related_name="account_tokens")
+    # Invitation context (unused for resets).
+    company = models.ForeignKey("identity.Company", on_delete=models.CASCADE,
+                                null=True, blank=True, related_name="+")
+    role = models.ForeignKey("identity.Role", on_delete=models.SET_NULL,
+                             null=True, blank=True, related_name="+")
+    invited_by = models.ForeignKey("identity.User", on_delete=models.SET_NULL,
+                                   null=True, blank=True, related_name="+")
+
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["email", "purpose"])]
+
+    def __str__(self):
+        return f"{self.purpose} for {self.email}"
+
+    @property
+    def is_valid(self) -> bool:
+        from django.utils import timezone
+        return self.used_at is None and self.expires_at > timezone.now()

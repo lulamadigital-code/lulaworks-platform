@@ -2,6 +2,7 @@ from django.urls import path
 
 from . import (
     views,
+    views_account,
     views_ai_settings,
     views_billing,
     views_crm,
@@ -15,6 +16,11 @@ app_name = "web"
 urlpatterns = [
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
+    # Public account lifecycle — invitation activation + password reset (no login)
+    path("activate/<str:token>/", views_account.activate, name="activate"),
+    path("reset/", views_account.password_reset_request, name="password_reset_request"),
+    path("reset/<str:token>/", views_account.password_reset_confirm,
+         name="password_reset_confirm"),
     path("password/", views.change_password, name="change_password"),
     path("profile/", views.profile, name="profile"),
     # ── CRM — the relationship layer: hub, leads, pipeline, activities ──────────

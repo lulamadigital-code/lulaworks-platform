@@ -1901,3 +1901,59 @@ class EmailHistoryWebTests(TestCase):
         self.assertEqual(r.status_code, 302)
         # A fresh log row exists for the resend.
         self.assertEqual(EmailLog.objects.filter(to_email="fail@x.co").count(), 2)
+
+
+class AccountLifecycleWebTests(TestCase):
+    """Public activation + password-reset pages (no login)."""
+
+    def setUp(self):
+        self.company = make_company("Invite Co")
+        self.role = Role.objects.create(name="Worker2", is_system=True)
+        self.admin = user_with(self.company, ["users.invite"], email="boss@invite.co")
+
+    def _invite(self, email="newbie@invite.co"):
+        from apps.identity.services import invite_member
+        with tenant_scope(self.company.id):
+            _, token = invite_member(self.company, self.admin, email=email,
+                                     role=self.role, first_name="New")
+        return token
+
+    def test_activation_page_renders_for_valid_token(self):
+        with self.settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+                           CELERY_TASK_ALWAYS_EAGER=True, SITE_URL="https://x"):
+            token = self._invite()
+        r = self.client.get(f"/activate/{token.token}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Set your password")
+
+    def test_activation_sets_password_and_logs_in(self):
+        with self.settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+                           CELERY_TASK_ALWAYS_EAGER=True, SITE_URL="https://x"):
+            token = self._invite()
+        r = self.client.post(f"/activate/{token.token}/",
+                             {"password": "s3curePass!", "confirm": "s3curePass!"})
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/dashboard/", r.url)
+        self.assertIn("_auth_user_id", self.client.session)
+
+    def test_activation_rejects_mismatched_passwords(self):
+        with self.settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+                           CELERY_TASK_ALWAYS_EAGER=True, SITE_URL="https://x"):
+            token = self._invite()
+        r = self.client.post(f"/activate/{token.token}/",
+                             {"password": "s3curePass!", "confirm": "different1!"}, follow=True)
+        self.assertContains(r, "don")
+
+    def test_invalid_token_shows_expired_message(self):
+        r = self.client.get("/activate/not-a-real-token/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "invalid or has expired")
+
+    def test_reset_request_always_confirms(self):
+        r = self.client.post("/reset/", {"email": "whoever@nowhere.co"})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Check your email")
+
+    def test_login_page_has_forgot_link(self):
+        r = self.client.get("/login/")
+        self.assertContains(r, "/reset/")

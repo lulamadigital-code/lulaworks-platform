@@ -1253,8 +1253,9 @@ def people_add(request):
         messages.error(request, seat.reason)
         return redirect("web:billing")
 
+    from apps.identity.services import invite_member
     try:
-        membership, temp_password = add_company_member(
+        membership, token = invite_member(
             request.user.active_company, request.user,
             email=request.POST.get("email", ""),
             first_name=request.POST.get("first_name", ""),
@@ -1267,16 +1268,16 @@ def people_add(request):
         messages.error(request, str(exc))
         return redirect("web:people")
 
-    if temp_password:
-        # Carried in the session for exactly one render, then popped.
-        request.session["new_member_password"] = temp_password
-        request.session["new_member_email"] = membership.user.email
-        messages.success(request, f"{membership.user.email} added.")
+    if token is not None:
+        # An invitation link was emailed — no password is ever created or shown.
+        messages.success(
+            request, f"Invitation sent to {membership.user.email}. They'll set "
+                     "their own password via the secure link.")
     else:
         messages.success(
             request,
             f"{membership.user.email} already had a LulaWorks account and has "
-            "been added to this company with their existing password.")
+            "been added to this company. We've emailed them to sign in.")
     return redirect("web:people")
 
 
