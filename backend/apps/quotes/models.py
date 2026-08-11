@@ -248,6 +248,12 @@ class Quotation(TenantBaseModel):
     template = models.ForeignKey(
         "DocumentTemplate", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="+")
+    #: Pinned at finalise: the exact template VERSION this document was rendered
+    #: with, so a later edit to the template never changes an issued quotation.
+    #: Null while still editable → resolve the live template head.
+    template_version = models.ForeignKey(
+        "DocumentTemplateVersion", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+")
 
     class Meta:
         ordering = ["-created_at"]
@@ -663,6 +669,10 @@ class CommercialDocument(TenantBaseModel):
     template = models.ForeignKey(
         "DocumentTemplate", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="+")
+    #: Pinned at finalise — the exact template version used (immutable history).
+    template_version = models.ForeignKey(
+        "DocumentTemplateVersion", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+")
 
     # Delivery-note operational fields (a delivery note carries no prices).
     delivery_date = models.DateField(null=True, blank=True)
@@ -754,30 +764,115 @@ ALLOWED_FONTS = ["Helvetica", "Times-Roman", "Courier"]
 ALLOWED_LOGO_POSITIONS = ["left", "center", "right"]
 
 
+class TemplateEngine(models.TextChoices):
+    """How a template is rendered. The ReportLab engine draws today's built-in
+    looks from `config`; the HTML engine (WeasyPrint) renders a stored HTML/CSS
+    body with {{field}} placeholders — used for custom-built and AI-imported
+    designs. Both coexist; a document just points at a template of either kind."""
+    REPORTLAB = "reportlab", "LulaWorks (built-in)"
+    HTML = "html", "HTML / CSS"
+
+
+class TemplateOrigin(models.TextChoices):
+    """Where a template came from — drives the library UI and, later, a
+    marketplace. `builtin` = seeded LulaWorks look; `custom` = built in the
+    visual editor; `imported` = reconstructed by LulaAI from an uploaded doc."""
+    BUILTIN = "builtin", "LulaWorks template"
+    CUSTOM = "custom", "Custom"
+    IMPORTED = "imported", "Imported"
+
+
 class DocumentTemplate(TenantBaseModel):
-    """One saved look for one document type. `is_default` marks the company's
-    default for that type (at most one per company+type, kept true by the
-    service). `config` holds the switches above."""
+    """A named template ("family/head") for one document type. `is_default` marks
+    the company's default for that type (at most one per company+type, kept true
+    by the service). For the ReportLab engine `config` holds the switches above;
+    for the HTML engine the design lives on the current DocumentTemplateVersion.
+
+    This row is the stable handle a document points at; its editable history is
+    the chain of DocumentTemplateVersions, so a finalised document can pin the
+    exact version it was rendered with and never change under a later edit."""
 
     doc_type = models.CharField(max_length=12, choices=DocumentType.choices)
     name = models.CharField(max_length=80)
+    description = models.CharField(max_length=255, blank=True)
+    engine = models.CharField(max_length=12, choices=TemplateEngine.choices,
+                              default=TemplateEngine.REPORTLAB)
+    origin = models.CharField(max_length=12, choices=TemplateOrigin.choices,
+                              default=TemplateOrigin.BUILTIN)
     base_layout = models.CharField(max_length=12, choices=BaseLayout.choices,
                                    default=BaseLayout.CLASSIC)
     is_default = models.BooleanField(default=False)
     #: True for the seeded built-ins; a company can add its own on top.
     is_builtin = models.BooleanField(default=False)
     config = models.JSONField(default=dict, blank=True)
+    #: Archived templates are kept (a past document may reference one) but hidden
+    #: from the picker; restore clears this. Never hard-deleted.
+    archived_at = models.DateTimeField(null=True, blank=True)
+    #: The version a NEW document rendered with this template will use. History is
+    #: the reverse `versions` relation; this is just the pointer to the head.
+    current_version = models.ForeignKey(
+        "DocumentTemplateVersion", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+")
 
     class Meta:
         ordering = ["doc_type", "-is_default", "name"]
-        indexes = [models.Index(fields=["company", "doc_type", "is_default"])]
+        indexes = [models.Index(fields=["company", "doc_type", "is_default"]),
+                   models.Index(fields=["company", "doc_type", "archived_at"])]
 
     def __str__(self):
         return f"{self.get_doc_type_display()} · {self.name}"
 
+    @property
+    def is_archived(self) -> bool:
+        return self.archived_at is not None
+
+    @property
+    def is_html(self) -> bool:
+        return self.engine == TemplateEngine.HTML
+
     def merged_config(self) -> dict:
         """This template's config filled in with the defaults for anything unset
         — the shape the PDF builders actually read."""
+        out = dict(DEFAULT_CONFIG)
+        out.update(self.config or {})
+        return out
+
+
+class DocumentTemplateVersion(TenantBaseModel):
+    """An immutable snapshot of a template at one point in time. Every save makes
+    a new version; a finalised document pins the version it used so a later edit
+    to the template never alters an already-issued quotation/invoice/DN.
+
+    Holds BOTH engines' payloads: `config`/`base_layout` for ReportLab, and
+    `html`/`css`/`design` for the HTML engine (populated by the visual builder or
+    an AI import in a later phase — blank for today's built-ins)."""
+
+    template = models.ForeignKey(DocumentTemplate, on_delete=models.CASCADE,
+                                 related_name="versions")
+    version = models.PositiveIntegerField(default=1)
+    engine = models.CharField(max_length=12, choices=TemplateEngine.choices,
+                              default=TemplateEngine.REPORTLAB)
+    base_layout = models.CharField(max_length=12, choices=BaseLayout.choices,
+                                   default=BaseLayout.CLASSIC)
+    config = models.JSONField(default=dict, blank=True)
+    #: HTML engine payload (future phases). `design` is the structured spec
+    #: (sections/fields/columns) an AI import or the visual editor produces.
+    html = models.TextField(blank=True)
+    css = models.TextField(blank=True)
+    design = models.JSONField(default=dict, blank=True)
+    note = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["template", "-version"]
+        constraints = [
+            models.UniqueConstraint(fields=["template", "version"],
+                                    name="unique_template_version"),
+        ]
+
+    def __str__(self):
+        return f"{self.template.name} v{self.version}"
+
+    def merged_config(self) -> dict:
         out = dict(DEFAULT_CONFIG)
         out.update(self.config or {})
         return out
@@ -850,4 +945,32 @@ BUILTIN_TEMPLATES += [
     (doc_type, label, layout, False, cfg)
     for label, layout, cfg in HOUSE_STYLES
     for doc_type in ("quotation", "invoice", "delivery")
+]
+
+#: The named LulaWorks library the picker groups by document type. These round out
+#: the industry looks the market expects (Modern / Corporate / Engineering /
+#: Construction / Industrial / Minimal). Only entries not already present above are
+#: added — sync matches on (doc_type, name), so there are no duplicates.
+BUILTIN_TEMPLATES += [
+    # Quotation — Modern/Corporate/Engineering/Minimal already exist above.
+    ("quotation", "Construction", "modern", False,
+     {"accent_color": "#B45309", "show_project_reference": True,
+      "header_note": "Construction & Civil Works"}),
+    ("quotation", "Industrial", "compact", False,
+     {"accent_color": "#37474F", "show_project_reference": True}),
+    # Tax invoice.
+    ("invoice", "Modern", "modern", False, {"accent_color": "#0B72E7"}),
+    ("invoice", "Engineering", "modern", False,
+     {"accent_color": "#14549B", "show_project_reference": True,
+      "header_note": "Engineering & Technical Services"}),
+    ("invoice", "Industrial", "compact", False, {"accent_color": "#37474F"}),
+    ("invoice", "Minimal", "compact", False,
+     {"accent_color": "#333333", "show_signature": False}),
+    # Delivery note.
+    ("delivery", "Modern", "modern", False, {"accent_color": "#0B72E7"}),
+    ("delivery", "Corporate", "classic", False,
+     {"accent_color": "#1F3A5F", "font": "Times-Roman"}),
+    ("delivery", "Industrial", "compact", False,
+     {"accent_color": "#37474F", "header_note": "Goods received in good order"}),
+    ("delivery", "Minimal", "compact", False, {"accent_color": "#333333"}),
 ]

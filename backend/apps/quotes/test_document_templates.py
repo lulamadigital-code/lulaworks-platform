@@ -275,3 +275,89 @@ class SyncBuiltinsTests(TestCase):
             for doc_type in ("quotation", "invoice", "delivery"):
                 self.assertEqual(DocumentTemplate.objects.filter(
                     company=c, doc_type=doc_type, is_default=True).count(), 1)
+
+
+class TemplateVersioningTests(TestCase):
+    """Editing records immutable versions; a finalised document is pinned to the
+    version it was issued with; archive/restore; and document-type validation."""
+
+    def test_edit_records_a_new_version(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            tpl = dt.create_template(c, None, doc_type="quotation", name="House",
+                                     base_layout="modern",
+                                     config={"accent_color": "#111111"})
+            self.assertEqual(tpl.versions.count(), 1)
+            first = tpl.current_version_id
+            dt.update_template(tpl, None, config={"accent_color": "#222222"})
+            tpl.refresh_from_db()
+            self.assertEqual(tpl.versions.count(), 2)
+            self.assertNotEqual(tpl.current_version_id, first)
+
+    def test_finalised_document_is_frozen_against_later_edits(self):
+        from apps.quotes.models import Quotation
+        c = make_company()
+        with tenant_scope(c.id):
+            tpl = dt.create_template(c, None, doc_type="quotation", name="House",
+                                     base_layout="modern",
+                                     config={"accent_color": "#111111"})
+            dt.set_default_template(tpl)
+            q = Quotation.objects.create(company=c, number="QT-1",
+                                         client_name="Sibanye", template=tpl)
+            dt.pin_template_version(q, "quotation")
+            q.refresh_from_db()
+            self.assertIsNotNone(q.template_version_id)
+
+            # The template's colour changes after the quotation was issued.
+            dt.update_template(tpl, None, config={"accent_color": "#999999"})
+
+            # The issued quotation still renders with the ORIGINAL colour…
+            self.assertEqual(dt.effective_config_for(q, "quotation")["accent_color"],
+                             "#111111")
+            # …while a brand-new quotation picks up the new one.
+            self.assertEqual(dt.effective_config(c, "quotation")["accent_color"],
+                             "#999999")
+
+    def test_archive_hides_from_the_picker_and_restore_brings_it_back(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            dt.create_template(c, None, doc_type="quotation", name="Keep",
+                               base_layout="classic")            # becomes default
+            extra = dt.create_template(c, None, doc_type="quotation", name="Extra",
+                                       base_layout="modern")
+            dt.archive_template(extra, None)
+            self.assertNotIn("Extra", [t.name for t in dt.templates_for(c, "quotation")])
+            self.assertIn("Extra", [t.name for t in
+                                    dt.templates_for(c, "quotation", include_archived=True)])
+            dt.restore_template(extra, None)
+            self.assertIn("Extra", [t.name for t in dt.templates_for(c, "quotation")])
+
+    def test_the_default_cannot_be_archived(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            tpl = dt.create_template(c, None, doc_type="quotation", name="Only",
+                                     base_layout="classic")
+            with self.assertRaises(dt.TemplateError):
+                dt.archive_template(tpl, None)
+
+    def test_a_wrong_type_override_is_ignored(self):
+        from apps.quotes.models import Quotation
+        c = make_company()
+        with tenant_scope(c.id):
+            inv = dt.create_template(c, None, doc_type="invoice", name="Inv",
+                                     base_layout="modern",
+                                     config={"accent_color": "#abcdef"})
+            q = Quotation.objects.create(company=c, number="QT-2",
+                                         client_name="X", template=inv)
+            # An invoice template must never render a quotation.
+            self.assertIsNone(dt.resolve_template(c, "quotation", override=q.template))
+
+    def test_duplicate_is_a_non_default_custom_copy(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            src = dt.create_template(c, None, doc_type="quotation", name="Src",
+                                     base_layout="modern")
+            copy = dt.duplicate_template(src, None)
+            self.assertFalse(copy.is_default)
+            self.assertEqual(copy.origin, "custom")
+            self.assertEqual(copy.versions.count(), 1)

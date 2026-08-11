@@ -37,6 +37,8 @@ _SECTIONS = {
     "doc_templates": "company", "doc_template_create": "company",
     "doc_template_edit": "company", "doc_template_default": "company",
     "doc_template_preview": "company", "quotation_set_template": "quotations",
+    "doc_template_duplicate": "company", "doc_template_archive": "company",
+    "doc_template_restore": "company",
     "billing": "billing", "billing_change_plan": "billing",
     "billing_cancel": "billing", "billing_buy_credits": "billing",
     # CRM — customers are one part of it; leads/pipeline/activities are the rest.

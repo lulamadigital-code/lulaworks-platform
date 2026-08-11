@@ -206,6 +206,13 @@ def transition_commercial_document(doc, user, to_status):
     doc.status = to_status
     doc.updated_by = user
     doc.save(update_fields=["status", "updated_by"])
+
+    # Freeze the look once the commercial record is locked (approved+), pinning the
+    # template version so a later template edit can't alter an issued invoice/DN.
+    # `kind` ("invoice"/"delivery") is exactly the template doc_type.
+    if doc.is_finalized:
+        from .document_templates import pin_template_version
+        pin_template_version(doc, doc.kind, actor=user)
     return doc
 
 
@@ -503,6 +510,14 @@ def transition(quote, user, *, to_status, note="", customer_contact=None):
         fields.append("updated_by")
 
     quote.save(update_fields=fields)
+
+    # Freeze the look: once a quotation is issued, pin the exact template version
+    # it was rendered with so a later edit to that template never changes what the
+    # customer already received. Silent if the company uses no template.
+    if to_status in FINALIZED_STATUSES:
+        from .document_templates import pin_template_version
+        pin_template_version(quote, "quotation", actor=user)
+
     record_event(quote, verb="status_changed", note=note, actor=user,
                  from_status=previous, to_status=to_status,
                  customer_contact=customer_contact)

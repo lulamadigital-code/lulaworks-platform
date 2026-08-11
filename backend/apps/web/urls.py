@@ -99,6 +99,12 @@ urlpatterns = [
          name="doc_template_default"),
     path("company/templates/<uuid:pk>/preview/", views_doctemplates.template_preview,
          name="doc_template_preview"),
+    path("company/templates/<uuid:pk>/duplicate/", views_doctemplates.template_duplicate,
+         name="doc_template_duplicate"),
+    path("company/templates/<uuid:pk>/archive/", views_doctemplates.template_archive,
+         name="doc_template_archive"),
+    path("company/templates/<uuid:pk>/restore/", views_doctemplates.template_restore,
+         name="doc_template_restore"),
     path("quotations/<uuid:pk>/template/", views_doctemplates.quotation_set_template,
          name="quotation_set_template"),
     # Billing & subscription

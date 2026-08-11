@@ -7,33 +7,67 @@
     <h1>Document templates</h1>
     <p class="sub" style="margin:0;">Keep your own look for every document. Each type can
       have several templates; the <strong>default</strong> is used for new documents, and you
-      can override it on any single one. Colours, fonts, logo, fields, banking and terms are
-      all yours to set — no design work required.</p>
+      can override it on any single one. Editing a template creates a new version —
+      documents you've already issued never change.</p>
   </div>
   <div><a class="btn ghost" href="{% url 'web:company_profile' %}">← Company</a></div>
 </div>
 
+<!-- Three ways to get a template -->
+<div class="three" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:18px;">
+  <div class="card" style="border-top:3px solid var(--accent,#0E6E6E);">
+    <strong>1 · Choose a LulaWorks template</strong>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0;">Pick a ready-made look below —
+      Modern, Corporate, Engineering, Construction, Industrial, Minimal — and make it your default.</p>
+  </div>
+  <div class="card">
+    <strong>2 · Customise your own</strong>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0;">Start from any template, then set logo,
+      colours, fonts, layout, fields and sections. Use <em>Duplicate</em> to make it yours first.</p>
+  </div>
+  <div class="card" style="opacity:.9;">
+    <strong>3 · Import your existing document <span class="chip info" style="font-size:10.5px;">LulaAI · soon</span></strong>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0;">Upload a quotation/invoice you already use and
+      LulaAI will recreate its structure as a reusable template. Coming next.</p>
+  </div>
+</div>
+
 {% for g in groups %}
 <h2>{{ g.label }}</h2>
-<div class="card" style="padding:0;overflow-x:auto;">
-  <table>
-    <tr><th>Template</th><th>Layout</th><th>Default</th><th></th></tr>
-    {% for t in g.templates %}
-    <tr>
-      <td><a href="{% url 'web:doc_template_edit' t.id %}"><strong>{{ t.name }}</strong></a>
-        {% if t.is_builtin %}<span class="muted" style="font-size:11.5px;"> · built-in</span>{% endif %}</td>
-      <td class="muted">{{ t.get_base_layout_display }}</td>
-      <td>{% if t.is_default %}<span class="chip ok">Default</span>{% else %}
-        {% if can_manage %}<form method="post" action="{% url 'web:doc_template_default' t.id %}" style="display:inline;">{% csrf_token %}
-          <button class="btn ghost" type="submit" style="padding:3px 10px;">Make default</button></form>{% endif %}{% endif %}</td>
-      <td style="white-space:nowrap;">
-        <a class="btn ghost" href="{% url 'web:doc_template_edit' t.id %}" style="padding:3px 10px;">Edit</a>
-        <a class="btn ghost" href="{% url 'web:doc_template_preview' t.id %}" target="_blank" style="padding:3px 10px;">Preview</a>
-      </td>
-    </tr>
-    {% empty %}<tr><td colspan="4" class="muted" style="padding:16px;">No templates yet.</td></tr>
-    {% endfor %}
-  </table>
+<div class="tpl-gallery">
+  {% for t in g.templates %}
+  <div class="card tpl{% if t.is_default %} tpl-default{% endif %}">
+    <div class="row" style="gap:8px;align-items:flex-start;">
+      <div style="flex:1;">
+        <a href="{% url 'web:doc_template_edit' t.id %}"><strong>{{ t.name }}</strong></a>
+        {% if t.is_default %}<span class="chip ok" style="font-size:10.5px;">Default</span>{% endif %}
+        <div class="muted" style="font-size:11.5px;margin-top:2px;">
+          {{ t.get_base_layout_display }}
+          · {{ t.get_origin_display }}{% if t.engine == 'html' %} · HTML{% endif %}
+        </div>
+      </div>
+    </div>
+    {% if t.description %}<p class="muted" style="font-size:12px;margin:6px 0 0;">{{ t.description }}</p>{% endif %}
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">
+      <a class="btn ghost" href="{% url 'web:doc_template_preview' t.id %}" target="_blank" style="padding:3px 10px;">Preview</a>
+      <a class="btn ghost" href="{% url 'web:doc_template_edit' t.id %}" style="padding:3px 10px;">Customise</a>
+      {% if can_manage %}
+        {% if not t.is_default %}
+        <form method="post" action="{% url 'web:doc_template_default' t.id %}" style="display:inline;">{% csrf_token %}
+          <button class="btn ghost" type="submit" style="padding:3px 10px;">Set default</button></form>
+        {% endif %}
+        <form method="post" action="{% url 'web:doc_template_duplicate' t.id %}" style="display:inline;">{% csrf_token %}
+          <button class="btn ghost" type="submit" style="padding:3px 10px;">Duplicate</button></form>
+        {% if not t.is_default %}
+        <form method="post" action="{% url 'web:doc_template_archive' t.id %}" style="display:inline;"
+              onsubmit="return confirm('Archive this template? Documents already issued with it are unaffected.');">{% csrf_token %}
+          <button class="btn ghost" type="submit" style="padding:3px 10px;">Archive</button></form>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}<div class="card muted">No templates yet.</div>
+  {% endfor %}
 </div>
 
 {% if can_manage %}
@@ -41,9 +75,31 @@
   <input type="hidden" name="doc_type" value="{{ g.doc_type }}">
   <input type="text" name="name" placeholder="New {{ g.label|lower }} template name" required style="flex:2;min-width:180px;">
   <select name="base_layout">{% for v, l in layouts %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select>
-  <button class="btn primary" type="submit">Add</button>
+  <button class="btn primary" type="submit">Create blank</button>
 </form>
+{% endif %}
+
+{% if g.archived %}
+<details style="margin-top:8px;">
+  <summary class="muted" style="cursor:pointer;font-size:12.5px;">Archived {{ g.label|lower }}s ({{ g.archived|length }})</summary>
+  <div class="card" style="padding:0;overflow-x:auto;margin-top:6px;">
+    <table>
+      {% for t in g.archived %}
+      <tr>
+        <td><strong>{{ t.name }}</strong> <span class="muted" style="font-size:11.5px;">· {{ t.get_origin_display }}</span></td>
+        <td style="text-align:right;">
+          {% if can_manage %}<form method="post" action="{% url 'web:doc_template_restore' t.id %}" style="display:inline;">{% csrf_token %}
+            <button class="btn ghost" type="submit" style="padding:3px 10px;">Restore</button></form>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</details>
 {% endif %}
 {% endfor %}
 
+<style>
+.tpl-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+.tpl-default{border-left:3px solid var(--accent,#0E6E6E);}
+</style>
 {% endblock %}

@@ -57,14 +57,19 @@ def _can(user):
 @login_required
 def templates_list(request):
     """One section per document type. Seeds the built-in library on first view
-    so a new company opens to a full set of looks rather than a blank page."""
+    (and tops up any newly shipped built-ins) so a company always opens to a full
+    set of looks. Active templates show as a gallery; archived ones collapse below."""
     company = request.user.active_company
-    dts.seed_document_templates(company, actor=request.user)
+    if dts.seed_document_templates(company, actor=request.user) == 0:
+        dts.sync_builtin_templates(company, actor=request.user)
     groups = []
     for value, label in DocumentType.choices:
+        active = dts.templates_for(company, value)
+        archived = [t for t in dts.templates_for(company, value, include_archived=True)
+                    if t.is_archived]
         groups.append({
             "doc_type": value, "label": label,
-            "templates": dts.templates_for(company, value),
+            "templates": active, "archived": archived,
         })
     return render(request, "web/doctemplates/list.html", {
         "groups": groups,
@@ -136,6 +141,46 @@ def template_set_default(request, pk):
         return redirect("web:doc_templates")
     dts.set_default_template(tpl)
     messages.success(request, f"“{tpl.name}” is now the default {tpl.get_doc_type_display().lower()}.")
+    return redirect("web:doc_templates")
+
+
+@login_required
+@require_POST
+def template_duplicate(request, pk):
+    tpl = get_object_or_404(DocumentTemplate.objects.all(), pk=pk)
+    if not _can(request.user):
+        messages.error(request, "You do not have permission to duplicate templates.")
+        return redirect("web:doc_templates")
+    copy = dts.duplicate_template(tpl, request.user)
+    messages.success(request, f"Duplicated “{tpl.name}”. Customise your copy.")
+    return redirect("web:doc_template_edit", pk=copy.id)
+
+
+@login_required
+@require_POST
+def template_archive(request, pk):
+    tpl = get_object_or_404(DocumentTemplate.objects.all(), pk=pk)
+    if not _can(request.user):
+        messages.error(request, "You do not have permission to archive templates.")
+        return redirect("web:doc_templates")
+    try:
+        dts.archive_template(tpl, request.user)
+    except dts.TemplateError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"“{tpl.name}” archived.")
+    return redirect("web:doc_templates")
+
+
+@login_required
+@require_POST
+def template_restore(request, pk):
+    tpl = get_object_or_404(DocumentTemplate.objects.all(), pk=pk)
+    if not _can(request.user):
+        messages.error(request, "You do not have permission to restore templates.")
+        return redirect("web:doc_templates")
+    dts.restore_template(tpl, request.user)
+    messages.success(request, f"“{tpl.name}” restored.")
     return redirect("web:doc_templates")
 
 
