@@ -1,0 +1,35 @@
+<table>
+  <tr><th>Name</th><th>Reach</th><th>Responsibilities</th><th>Status</th><th></th></tr>
+  {% for c in rows %}
+  <tr{% if c.status != 'active' %} style="opacity:.55;"{% endif %}>
+    <td>
+      <strong>{{ c.full_name }}</strong>{% if c.is_primary %} <span class="pill">Primary</span>{% endif %}
+      {% if c.job_title %}<br><span class="muted" style="font-size:12px;">{{ c.job_title }}</span>{% endif %}
+    </td>
+    <td class="muted" style="font-size:12.5px;">
+      {% if c.email %}{{ c.email }}<br>{% endif %}
+      {% if c.mobile %}{{ c.mobile }}{% elif c.telephone %}{{ c.telephone }}{% endif %}
+      {% if not c.reach %}—{% endif %}
+    </td>
+    <td class="muted" style="font-size:12px;">
+      {% for lbl in c.responsibility_labels %}{{ lbl }}{% if not forloop.last %} · {% endif %}{% empty %}—{% endfor %}
+    </td>
+    <td style="font-size:12px;">{{ c.get_status_display }}</td>
+    <td style="white-space:nowrap;">
+      {% if can_manage %}
+      <a class="btn ghost" href="?edit={{ c.id }}#form" style="padding:3px 10px;">Edit</a>
+      {% if c.status == 'active' %}
+      <form method="post" action="{% url 'web:crm_customer_contact_status' customer.id c.id %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="status" value="left">
+        <button class="btn ghost" type="submit" style="padding:3px 10px;" title="Mark as no longer there">Deactivate</button>
+      </form>
+      {% else %}
+      <form method="post" action="{% url 'web:crm_customer_contact_status' customer.id c.id %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="status" value="active">
+        <button class="btn ghost" type="submit" style="padding:3px 10px;">Reactivate</button>
+      </form>
+      {% endif %}{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>

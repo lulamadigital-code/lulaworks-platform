@@ -1,0 +1,71 @@
+{% extends "web/base.html" %}
+{% block title %}Sites · {{ customer.display_name }}{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>Sites — {{ customer.display_name }}</h1>
+    <p class="sub" style="margin:0;">Where work actually happens, and what it takes to get on
+      site. A job is assigned to a specific place — the gate, the induction, the person to call
+      all live here so the crew has them before they arrive.</p>
+  </div>
+  <div><a class="btn ghost" href="{% url 'web:customer_detail' customer.id %}">← Customer</a></div>
+</div>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Site</th><th>Address / GPS</th><th>On-site contact</th><th>Access &amp; safety</th><th></th></tr>
+    {% for s in sites %}
+    <tr>
+      <td><strong>{{ s.full_path }}</strong>{% if s.site_code %}<br><span class="muted" style="font-size:12px;">{{ s.site_code }}</span>{% endif %}</td>
+      <td class="muted" style="font-size:12.5px;">{{ s.physical_address|default:"—" }}
+        {% if s.latitude and s.longitude %}<br><a href="https://maps.google.com/?q={{ s.latitude }},{{ s.longitude }}" target="_blank">{{ s.latitude }}, {{ s.longitude }}</a>{% endif %}</td>
+      <td class="muted" style="font-size:12.5px;">{% if s.site_contact %}{{ s.site_contact.full_name }}{% if s.site_contact.reach %}<br>{{ s.site_contact.reach }}{% endif %}{% else %}—{% endif %}</td>
+      <td class="muted" style="font-size:12px;">{% if s.access_notes %}🔑 {{ s.access_notes }}<br>{% endif %}{% if s.safety_requirements %}⛑ {{ s.safety_requirements|truncatechars:80 }}{% endif %}{% if not s.access_notes and not s.safety_requirements %}—{% endif %}</td>
+      <td style="white-space:nowrap;">
+        {% if can_manage %}
+        <a class="btn ghost" href="?edit={{ s.id }}#form" style="padding:3px 10px;">Edit</a>
+        <form method="post" action="{% url 'web:crm_customer_site_delete' customer.id s.id %}" style="display:inline;"
+              onsubmit="return confirm('Remove this site?');">{% csrf_token %}
+          <button class="btn ghost" type="submit" style="padding:3px 10px;">Remove</button>
+        </form>{% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="5" class="muted" style="padding:20px;">No sites yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% if can_manage %}
+<h2 id="form">{% if editing %}Edit site{% else %}Add a site{% endif %}</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:crm_customer_sites' customer.id %}">{% csrf_token %}
+    {% if editing %}<input type="hidden" name="site_id" value="{{ editing.id }}">{% endif %}
+    <div class="two">
+      <div><label>Site name *</label><input type="text" name="name" required
+             value="{{ editing.name|default:'' }}" placeholder="Welkom / Plant 1 / Crusher"></div>
+      <div><label>Site code</label><input type="text" name="site_code" value="{{ editing.site_code|default:'' }}"></div>
+      <div><label>Physical address</label><input type="text" name="physical_address" value="{{ editing.physical_address|default:'' }}"></div>
+      <div><label>Parent site (for nesting)</label>
+        <select name="parent"><option value="">— top level —</option>
+          {% for s in sites %}{% if s.id != editing.id %}<option value="{{ s.id }}" {% if editing.parent_id == s.id %}selected{% endif %}>{{ s.full_path }}</option>{% endif %}{% endfor %}
+        </select></div>
+      <div><label>GPS latitude</label><input type="text" name="latitude" value="{{ editing.latitude|default:'' }}" placeholder="-27.985"></div>
+      <div><label>GPS longitude</label><input type="text" name="longitude" value="{{ editing.longitude|default:'' }}" placeholder="26.735"></div>
+      <div><label>On-site contact</label>
+        <select name="site_contact"><option value="">—</option>
+          {% for c in contacts %}<option value="{{ c.id }}" {% if editing.site_contact_id == c.id %}selected{% endif %}>{{ c.full_name }}</option>{% endfor %}
+        </select></div>
+      <div><label>Access notes</label><input type="text" name="access_notes" value="{{ editing.access_notes|default:'' }}" placeholder="Gate 3, sign in at security"></div>
+    </div>
+    <label style="margin-top:10px;">Safety requirements (induction, PPE, permits)</label>
+    <textarea name="safety_requirements" rows="2" placeholder="Full PPE. Site induction required. Hot-work permit for welding.">{{ editing.safety_requirements|default:'' }}</textarea>
+    <div style="margin-top:12px;display:flex;gap:8px;">
+      <button class="btn primary" type="submit">{% if editing %}Save site{% else %}Add site{% endif %}</button>
+      {% if editing %}<a class="btn ghost" href="{% url 'web:crm_customer_sites' customer.id %}">Cancel</a>{% endif %}
+    </div>
+  </form>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -413,3 +413,120 @@ def crm_reports(request):
     return render(request, "web/crm/reports.html", {
         "reports": crm.crm_reports(request.user.active_company),
     })
+
+
+# ── Customer Sites & Contacts management ──────────────────────────────────────
+
+@login_required
+def customer_sites(request, pk):
+    """Manage a customer's operating sites — where work actually happens, and
+    what it takes to get on site (GPS, access, safety)."""
+    from apps.customers.models import Customer, CustomerSite
+    customer = get_object_or_404(
+        Customer.objects.prefetch_related("sites", "contacts", "branches"), pk=pk)
+
+    if request.method == "POST" and _can_manage(request.user):
+        site = None
+        edit_id = request.POST.get("site_id")
+        if edit_id:
+            site = get_object_or_404(CustomerSite.objects.filter(customer=customer),
+                                     pk=edit_id)
+        try:
+            crm.save_site(customer, request.user, site=site, data=request.POST)
+        except crm.CRMError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, "Site saved.")
+            return redirect("web:crm_customer_sites", pk=pk)
+
+    editing = None
+    if request.GET.get("edit"):
+        editing = CustomerSite.objects.filter(customer=customer,
+                                              pk=request.GET["edit"]).first()
+    return render(request, "web/crm/customer_sites.html", {
+        "customer": customer,
+        "sites": list(customer.sites.select_related("parent", "site_contact")),
+        "contacts": list(customer.contacts.all()),
+        "editing": editing,
+        "can_manage": _can_manage(request.user),
+    })
+
+
+@login_required
+@require_POST
+def customer_site_delete(request, pk, site_id):
+    from apps.customers.models import Customer, CustomerSite
+    customer = get_object_or_404(Customer.objects.all(), pk=pk)
+    if not _can_manage(request.user):
+        messages.error(request, "You do not have permission to remove sites.")
+        return redirect("web:crm_customer_sites", pk=pk)
+    site = get_object_or_404(CustomerSite.objects.filter(customer=customer), pk=site_id)
+    crm.delete_site(site, request.user)
+    messages.success(request, "Site removed.")
+    return redirect("web:crm_customer_sites", pk=pk)
+
+
+@login_required
+def customer_contacts(request, pk):
+    """Manage a customer's people — grouped by department, with the
+    responsibility coverage that drives document routing (the gaps are the point)."""
+    from apps.customers.models import (
+        CONTACT_ROLES, Customer, CustomerContact, RESPONSIBILITIES)
+    customer = get_object_or_404(
+        Customer.objects.prefetch_related("contacts", "departments"), pk=pk)
+
+    if request.method == "POST" and _can_manage(request.user):
+        contact = None
+        edit_id = request.POST.get("contact_id")
+        if edit_id:
+            contact = get_object_or_404(
+                CustomerContact.objects.filter(customer=customer), pk=edit_id)
+        try:
+            crm.save_contact(customer, request.user, contact=contact, data=request.POST)
+        except crm.CRMError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, "Contact saved.")
+            return redirect("web:crm_customer_contacts", pk=pk)
+
+    contacts = list(customer.contacts.select_related("department"))
+    grouped, unassigned = [], []
+    for dept in customer.departments.all():
+        people = [c for c in contacts if c.department_id == dept.id]
+        if people:
+            grouped.append({"department": dept, "contacts": people})
+    unassigned = [c for c in contacts if c.department_id is None]
+
+    editing = None
+    if request.GET.get("edit"):
+        editing = CustomerContact.objects.filter(
+            customer=customer, pk=request.GET["edit"]).first()
+
+    return render(request, "web/crm/customer_contacts.html", {
+        "customer": customer,
+        "grouped": grouped, "unassigned": unassigned,
+        "matrix": crm.responsibility_matrix(customer),
+        "departments": list(customer.departments.all()),
+        "roles": CONTACT_ROLES,
+        "responsibilities": list(RESPONSIBILITIES.items()),
+        "methods": CustomerContact.Method.choices,
+        "statuses": CustomerContact.Status.choices,
+        "editing": editing,
+        "can_manage": _can_manage(request.user),
+    })
+
+
+@login_required
+@require_POST
+def customer_contact_status(request, pk, contact_id):
+    from apps.customers.models import Customer, CustomerContact
+    customer = get_object_or_404(Customer.objects.all(), pk=pk)
+    if not _can_manage(request.user):
+        messages.error(request, "You do not have permission to change contacts.")
+        return redirect("web:crm_customer_contacts", pk=pk)
+    contact = get_object_or_404(
+        CustomerContact.objects.filter(customer=customer), pk=contact_id)
+    status = request.POST.get("status", CustomerContact.Status.ACTIVE)
+    crm.set_contact_status(contact, request.user, status=status)
+    messages.success(request, f"{contact.full_name} updated.")
+    return redirect("web:crm_customer_contacts", pk=pk)

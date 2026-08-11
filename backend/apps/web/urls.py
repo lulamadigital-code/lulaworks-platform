@@ -48,6 +48,15 @@ urlpatterns = [
          name="crm_activity_complete"),
     path("crm/interactions/log/", views_crm.interaction_log, name="crm_interaction_log"),
     path("crm/notes/add/", views_crm.note_add, name="crm_note_add"),
+    # Customer Sites & Contacts management
+    path("crm/customers/<uuid:pk>/sites/", views_crm.customer_sites,
+         name="crm_customer_sites"),
+    path("crm/customers/<uuid:pk>/sites/<uuid:site_id>/delete/",
+         views_crm.customer_site_delete, name="crm_customer_site_delete"),
+    path("crm/customers/<uuid:pk>/contacts/", views_crm.customer_contacts,
+         name="crm_customer_contacts"),
+    path("crm/customers/<uuid:pk>/contacts/<uuid:contact_id>/status/",
+         views_crm.customer_contact_status, name="crm_customer_contact_status"),
     # Customers — client organisations, departments, contacts (part of the CRM)
     path("customers/", views.customers_list, name="customers"),
     path("customers/new/", views.customer_create, name="customer_create"),

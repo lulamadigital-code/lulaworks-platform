@@ -137,7 +137,9 @@
 </style>
 
 {# ── The org chart ──────────────────────────────────────────────────────── #}
-<h2>Departments &amp; people</h2>
+<h2 style="display:flex;align-items:center;gap:12px;">Departments &amp; people
+  <a class="btn ghost" href="{% url 'web:crm_customer_contacts' customer.id %}"
+     style="font-size:13px;padding:4px 12px;">Manage contacts →</a></h2>
 {% for group in grouped %}
 <div class="card">
   <div class="row" style="gap:10px;">
@@ -223,8 +225,9 @@
 {% endif %}
 
 {# ── Places ─────────────────────────────────────────────────────────────── #}
-{% if customer.branches.all or customer.sites.all %}
-<h2>Branches &amp; sites</h2>
+<h2 style="display:flex;align-items:center;gap:12px;">Branches &amp; sites
+  <a class="btn ghost" href="{% url 'web:crm_customer_sites' customer.id %}"
+     style="font-size:13px;padding:4px 12px;">Manage sites →</a></h2>
 <div class="two-col">
   <div>
     <div class="card">
@@ -250,7 +253,6 @@
     </div>
   </div>
 </div>
-{% endif %}
 
 {# ── Commercial history ─────────────────────────────────────────────────── #}
 <h2>Jobs for this customer</h2>

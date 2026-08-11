@@ -5,6 +5,7 @@ are the ones proving a document reaches the right person, and that it degrades
 honestly when it cannot.
 """
 
+from decimal import Decimal
 from types import SimpleNamespace
 
 from django.test import SimpleTestCase, TestCase
@@ -482,3 +483,121 @@ class DashboardAndSearchTests(TestCase):
             self.assertEqual(rep["won"], 1)
             self.assertEqual(rep["lost"], 1)
             self.assertEqual(rep["conversion_rate"], 50.0)
+
+
+class SiteContactManagementTests(TestCase):
+    """The save/delete services behind the Sites & Contacts screens — whitelisted
+    writes, GPS parsing, on-site contact linking, and responsibility multi-select."""
+
+    def _post(self, data):
+        """A QueryDict-like object so save_contact's getlist() path is exercised."""
+        from django.http import QueryDict
+        qd = QueryDict(mutable=True)
+        for key, value in data.items():
+            if isinstance(value, (list, tuple)):
+                for v in value:
+                    qd.appendlist(key, v)
+            else:
+                qd[key] = value
+        return qd
+
+    def test_save_site_requires_a_name(self):
+        from .services import CRMError, save_site
+        company = make_company()
+        with tenant_scope(company.id):
+            customer = create_customer(company, None, name="Sibanye",
+                                       seed_departments=False)
+            with self.assertRaises(CRMError):
+                save_site(customer, None, data=self._post({"name": "  "}))
+
+    def test_save_site_parses_gps_and_links_contact(self):
+        from .services import save_site
+        company = make_company()
+        with tenant_scope(company.id):
+            customer = create_customer(company, None, name="Sibanye",
+                                       seed_departments=False)
+            gatekeeper = add_contact(company, customer, "Gate Keeper")
+            site = save_site(customer, None, data=self._post({
+                "name": "Plant 1", "physical_address": "N12, Welkom",
+                "latitude": "-27.985", "longitude": "26.735",
+                "safety_requirements": "Full PPE, induction required",
+                "site_contact": str(gatekeeper.id),
+            }))
+            self.assertEqual(site.name, "Plant 1")
+            self.assertEqual(site.latitude, Decimal("-27.985"))
+            self.assertEqual(site.longitude, Decimal("26.735"))
+            self.assertEqual(site.site_contact_id, gatekeeper.id)
+            self.assertIn("PPE", site.safety_requirements)
+
+    def test_save_site_updates_in_place(self):
+        from .services import save_site
+        company = make_company()
+        with tenant_scope(company.id):
+            customer = create_customer(company, None, name="Sibanye",
+                                       seed_departments=False)
+            site = save_site(customer, None, data=self._post({"name": "Plant 1"}))
+            same = save_site(customer, None, site=site,
+                             data=self._post({"name": "Plant 1 — Crusher"}))
+            self.assertEqual(same.id, site.id)
+            self.assertEqual(CustomerSite.objects.count(), 1)
+            self.assertEqual(same.name, "Plant 1 — Crusher")
+
+    def test_bad_gps_is_dropped_not_fatal(self):
+        from .services import save_site
+        company = make_company()
+        with tenant_scope(company.id):
+            customer = create_customer(company, None, name="Sibanye",
+                                       seed_departments=False)
+            site = save_site(customer, None, data=self._post({
+                "name": "Plant 1", "latitude": "not-a-number"}))
+            self.assertIsNone(site.latitude)
+
+    def test_delete_site_removes_it(self):
+        from .services import delete_site, save_site
+        company = make_company()
+        with tenant_scope(company.id):
+            customer = create_customer(company, None, name="Sibanye",
+                                       seed_departments=False)
+            site = save_site(customer, None, data=self._post({"name": "Plant 1"}))
+            delete_site(site, None)
+            self.assertEqual(CustomerSite.objects.count(), 0)
+
+    def test_save_contact_records_responsibilities(self):
+        from .services import save_contact
+        company = make_company()
+        with tenant_scope(company.id):
+            customer = create_customer(company, None, name="Sibanye",
+                                       seed_departments=False)
+            contact = save_contact(customer, None, data=self._post({
+                "full_name": "Thabo Approver", "email": "thabo@client.co.za",
+                "roles": ["Procurement Officer", "Buyer"],
+                "responsibilities": ["approve_po", "approve_invoice", "bogus_key"],
+            }))
+            self.assertEqual(contact.roles, ["Procurement Officer", "Buyer"])
+            # The bogus responsibility is filtered — only known keys route documents.
+            self.assertEqual(sorted(contact.responsibilities),
+                             ["approve_invoice", "approve_po"])
+
+    def test_save_contact_requires_a_name(self):
+        from .services import CRMError, save_contact
+        company = make_company()
+        with tenant_scope(company.id):
+            customer = create_customer(company, None, name="Sibanye",
+                                       seed_departments=False)
+            with self.assertRaises(CRMError):
+                save_contact(customer, None, data=self._post({"full_name": ""}))
+
+    def test_set_contact_status_deactivates_and_reactivates(self):
+        from .services import set_contact_status
+        company = make_company()
+        with tenant_scope(company.id):
+            customer = create_customer(company, None, name="Sibanye",
+                                       seed_departments=False)
+            contact = add_contact(company, customer, "Leaver")
+            set_contact_status(contact, None, status=CustomerContact.Status.LEFT)
+            contact.refresh_from_db()
+            self.assertEqual(contact.status, CustomerContact.Status.LEFT)
+            self.assertFalse(contact.is_contactable)
+            set_contact_status(contact, None, status=CustomerContact.Status.ACTIVE)
+            contact.refresh_from_db()
+            self.assertTrue(contact.is_contactable)

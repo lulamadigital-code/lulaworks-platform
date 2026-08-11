@@ -53,6 +53,8 @@ _SECTIONS = {
     "crm_activities": "crm", "crm_activity_schedule": "crm",
     "crm_activity_complete": "crm", "crm_interaction_log": "crm",
     "crm_note_add": "crm",
+    "crm_customer_sites": "crm", "crm_customer_site_delete": "crm",
+    "crm_customer_contacts": "crm", "crm_customer_contact_status": "crm",
     "rfq": "rfq", "rfq_detail": "rfq", "rfq_upload": "rfq", "rfq_approve": "rfq",
     "rfq_line": "rfq",
     "quotations": "quotations", "quotation_detail": "quotations",

@@ -1,0 +1,112 @@
+{% extends "web/base.html" %}
+{% block title %}Contacts · {{ customer.display_name }}{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>Contacts — {{ customer.display_name }}</h1>
+    <p class="sub" style="margin:0;">The people, grouped by department, and what each is
+      empowered to do. Responsibilities aren't labels — they route documents. An RFQ goes
+      to whoever "can release RFQs"; an invoice to whoever "receives invoices". The gaps
+      below are the point: an unheld responsibility is a document with nowhere to go.</p>
+  </div>
+  <div><a class="btn ghost" href="{% url 'web:customer_detail' customer.id %}">← Customer</a></div>
+</div>
+
+<!-- Responsibility coverage — the gaps are what matters -->
+<div class="card">
+  <h3 style="margin-top:0;">Responsibility coverage</h3>
+  <div class="two" style="gap:6px 18px;">
+    {% for row in matrix %}
+    <div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+      <span style="font-size:16px;">{% if row.covered %}✅{% else %}⚠️{% endif %}</span>
+      <div>
+        <strong style="font-size:13px;">{{ row.label }}</strong><br>
+        <span class="muted" style="font-size:12px;">
+          {% if row.contacts %}{% for c in row.contacts %}{{ c.full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+          {% else %}<span style="color:var(--danger,#c0392b);">No one assigned</span>{% endif %}
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- People by department -->
+{% for group in grouped %}
+<h2>{{ group.department.name }}</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  {% include "web/crm/_contact_rows.html" with rows=group.contacts %}
+</div>
+{% endfor %}
+
+{% if unassigned %}
+<h2>No department</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  {% include "web/crm/_contact_rows.html" with rows=unassigned %}
+</div>
+{% endif %}
+
+{% if not grouped and not unassigned %}
+<div class="card"><p class="muted" style="margin:0;">No contacts yet.</p></div>
+{% endif %}
+
+{% if can_manage %}
+<h2 id="form">{% if editing %}Edit contact{% else %}Add a contact{% endif %}</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:crm_customer_contacts' customer.id %}">{% csrf_token %}
+    {% if editing %}<input type="hidden" name="contact_id" value="{{ editing.id }}">{% endif %}
+    <div class="two">
+      <div><label>Full name *</label><input type="text" name="full_name" required value="{{ editing.full_name|default:'' }}"></div>
+      <div><label>Job title</label><input type="text" name="job_title" value="{{ editing.job_title|default:'' }}"></div>
+      <div><label>Department</label>
+        <select name="department"><option value="">—</option>
+          {% for d in departments %}<option value="{{ d.id }}" {% if editing.department_id == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+        </select></div>
+      <div><label>Email</label><input type="email" name="email" value="{{ editing.email|default:'' }}"></div>
+      <div><label>Telephone</label><input type="text" name="telephone" value="{{ editing.telephone|default:'' }}"></div>
+      <div><label>Mobile</label><input type="text" name="mobile" value="{{ editing.mobile|default:'' }}"></div>
+      <div><label>WhatsApp</label><input type="text" name="whatsapp" value="{{ editing.whatsapp|default:'' }}"></div>
+      <div><label>Preferred method</label>
+        <select name="preferred_method">
+          {% for val, lbl in methods %}<option value="{{ val }}" {% if editing.preferred_method == val %}selected{% endif %}>{{ lbl }}</option>{% endfor %}
+        </select></div>
+    </div>
+
+    <label style="margin-top:12px;">Roles (what they're called)</label>
+    <div class="chips">
+      {% for r in roles %}
+      <label class="chip"><input type="checkbox" name="roles" value="{{ r }}"
+        {% if editing and r in editing.roles %}checked{% endif %}> {{ r }}</label>
+      {% endfor %}
+    </div>
+
+    <label style="margin-top:12px;">Responsibilities (what they can do — these route documents)</label>
+    <div class="chips">
+      {% for key, lbl in responsibilities %}
+      <label class="chip"><input type="checkbox" name="responsibilities" value="{{ key }}"
+        {% if editing and key in editing.responsibilities %}checked{% endif %}> {{ lbl }}</label>
+      {% endfor %}
+    </div>
+
+    <label class="chip" style="margin-top:12px;display:inline-flex;">
+      <input type="checkbox" name="is_primary" value="1" {% if editing.is_primary %}checked{% endif %}> Primary contact</label>
+
+    <div><label style="margin-top:10px;">Notes</label>
+      <textarea name="notes" rows="2">{{ editing.notes|default:'' }}</textarea></div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;">
+      <button class="btn primary" type="submit">{% if editing %}Save contact{% else %}Add contact{% endif %}</button>
+      {% if editing %}<a class="btn ghost" href="{% url 'web:crm_customer_contacts' customer.id %}">Cancel</a>{% endif %}
+    </div>
+  </form>
+</div>
+{% endif %}
+
+<style>
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--border,#e2e2e2);
+  border-radius:14px;font-size:12.5px;cursor:pointer;background:var(--surface,#fff);}
+.chip input{margin:0;}
+</style>
+{% endblock %}

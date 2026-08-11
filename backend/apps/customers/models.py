@@ -196,9 +196,17 @@ class CustomerSite(TenantBaseModel):
     name = models.CharField(max_length=160)
     site_code = models.CharField(max_length=32, blank=True)
     description = models.CharField(max_length=255, blank=True)
+    physical_address = models.CharField(max_length=255, blank=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     access_notes = models.CharField(max_length=255, blank=True)
+    #: Safety requirements to get on site — induction, PPE, permits. The crew
+    #: needs this BEFORE they arrive, so it lives on the site, not in someone's head.
+    safety_requirements = models.TextField(blank=True)
+    #: Who to call when you're at the gate. A contact at the customer, so it stays
+    #: correct if that person's number changes.
+    site_contact = models.ForeignKey("CustomerContact", on_delete=models.SET_NULL,
+                                     null=True, blank=True, related_name="+")
 
     class Meta:
         ordering = ["customer", "name"]

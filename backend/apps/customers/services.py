@@ -705,3 +705,118 @@ def crm_reports(company) -> dict:
         "lead_conversion": lead_conversion,
         "pipeline": pipeline_summary(company),
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Sites & contacts management — the dedicated CRM screens.
+#
+# A big client is a place with many gates and many people. These are the writes
+# behind the Sites and Contacts management pages: create/update a site (where
+# work happens, and what it takes to get on it), and maintain the people whose
+# RESPONSIBILITIES drive document routing.
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _dec_or_none(value):
+    from decimal import Decimal, InvalidOperation
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        return Decimal(value)
+    except InvalidOperation:
+        return None
+
+
+#: The site fields a form may set — a whitelist, so a stray POST key can't write
+#: something it shouldn't.
+_SITE_TEXT_FIELDS = ("name", "site_code", "description", "physical_address",
+                     "access_notes", "safety_requirements")
+
+
+@transaction.atomic
+def save_site(customer, user, *, site=None, data):
+    """Create or update a customer site. `data` is a plain dict (request.POST).
+    Returns the site. Name is required; GPS and the on-site contact are optional."""
+    from .models import CustomerSite
+
+    name = (data.get("name") or "").strip()
+    if not name:
+        raise CRMError("A site needs a name.")
+
+    if site is None:
+        site = CustomerSite(company=customer.company, customer=customer,
+                            created_by=user)
+    for field in _SITE_TEXT_FIELDS:
+        if field in data:
+            setattr(site, field, (data.get(field) or "").strip())
+    site.latitude = _dec_or_none(data.get("latitude"))
+    site.longitude = _dec_or_none(data.get("longitude"))
+
+    parent_id = (data.get("parent") or "").strip()
+    site.parent = (CustomerSite.objects.filter(customer=customer, pk=parent_id).first()
+                   if parent_id else None)
+    contact_id = (data.get("site_contact") or "").strip()
+    site.site_contact = (customer.contacts.filter(pk=contact_id).first()
+                         if contact_id else None)
+    site.updated_by = user
+    site.save()
+    return site
+
+
+def delete_site(site, user):
+    """Soft-delete a site (keeps history; nestable children go with it)."""
+    site.delete()
+
+
+#: Contact fields a form may set.
+_CONTACT_TEXT_FIELDS = ("full_name", "job_title", "email", "telephone", "mobile",
+                        "extension", "whatsapp")
+
+
+@transaction.atomic
+def save_contact(customer, user, *, contact=None, data):
+    """Create or update a customer contact, including the responsibilities that
+    drive document routing. `data` is request.POST (getlist for the multi-values)."""
+    from .models import CustomerContact, CustomerDepartment
+
+    full_name = (data.get("full_name") or "").strip()
+    if not full_name:
+        raise CRMError("A contact needs a name.")
+
+    if contact is None:
+        contact = CustomerContact(company=customer.company, customer=customer,
+                                  created_by=user)
+    for field in _CONTACT_TEXT_FIELDS:
+        if field in data:
+            setattr(contact, field, (data.get(field) or "").strip())
+
+    dept_id = (data.get("department") or "").strip()
+    contact.department = (CustomerDepartment.objects.filter(
+        customer=customer, pk=dept_id).first() if dept_id else None)
+
+    method = (data.get("preferred_method") or "").strip()
+    if method:
+        contact.preferred_method = method
+    status = (data.get("status") or "").strip()
+    if status:
+        contact.status = status
+
+    # Multi-value fields (roles + functional responsibilities).
+    getlist = getattr(data, "getlist", None)
+    if getlist is not None:
+        contact.roles = [r for r in getlist("roles") if r]
+        contact.responsibilities = [r for r in getlist("responsibilities")
+                                    if r in RESPONSIBILITIES]
+    contact.is_primary = bool(data.get("is_primary"))
+    contact.updated_by = user
+    contact.save()          # the model unsets other primaries when this is primary
+    return contact
+
+
+def set_contact_status(contact, user, *, status):
+    """Deactivate / reactivate a contact (kept, never deleted — they may be on a
+    past quotation)."""
+    contact.status = status
+    contact.updated_by = user
+    contact.save(update_fields=["status", "updated_by", "updated_at"])
+    return contact
