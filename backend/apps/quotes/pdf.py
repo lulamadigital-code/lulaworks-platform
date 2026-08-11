@@ -393,11 +393,10 @@ def quotation_pdf_bytes(quote) -> bytes:
                     else quote.client_name)
         ident.append(P(f"{who} Supplier No: {vendor}", small))
 
-    # Big logo, top-right; the company identity fills the left.
-    logo = _logo_flowable(header)
-    head = Table([[ident, logo or ""]], colWidths=[110 * mm, 76 * mm])
-    head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
-                              ("ALIGN", (1, 0), (1, 0), "RIGHT")]))
+    # Logo positioned per the template (cfg["logo_position"]); identity fills the
+    # rest. Shares the one letterhead builder with invoices and delivery notes so
+    # all three documents honour the same setting identically.
+    head = _letterhead_table(header, ident, cfg)
     # A bold brand-coloured rule separates the letterhead from the client block.
     story = [head, Spacer(1, 3 * mm),
              HRFlowable(width="100%", thickness=2.2, color=brand,
@@ -562,23 +561,24 @@ def _letterhead(company, brand, header, coname, small, muted, title, title_text,
 
 
 def _letterhead_table(header, ident, cfg):
-    """Company identity + logo, with the logo positioned per the template
-    (default right). 'center' stacks the logo above a centred identity block."""
+    """Company identity + logo, laid out so `logo_position` means what it says:
+    'left' puts the LOGO on the left (identity right), 'right' puts the logo on
+    the right (identity left — the classic default), 'center' stacks the logo
+    above a centred identity block."""
     logo = _logo_flowable(header)
-    position = (cfg or {}).get("logo_position", "left")
-    # Historically the identity sits left and the logo right; that is our
-    # 'left' (identity-led) default. 'right' swaps them; 'center' stacks.
+    position = (cfg or {}).get("logo_position", "right")
     if position == "center":
-        rows = [[logo or ""], [ident]]
-        head = Table(rows, colWidths=[186 * mm])
+        head = Table([[logo or ""], [ident]], colWidths=[186 * mm])
         head.setStyle(TableStyle([("ALIGN", (0, 0), (0, 0), "CENTER"),
                                   ("VALIGN", (0, 0), (-1, -1), "TOP")]))
         return head
-    if position == "right":
+    if position == "left":
+        # Logo on the left, identity to its right.
         head = Table([[logo or "", ident]], colWidths=[76 * mm, 110 * mm])
         head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
                                   ("ALIGN", (0, 0), (0, 0), "LEFT")]))
         return head
+    # Default 'right': identity on the left, logo on the right.
     head = Table([[ident, logo or ""]], colWidths=[110 * mm, 76 * mm])
     head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
                               ("ALIGN", (1, 0), (1, 0), "RIGHT")]))

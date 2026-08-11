@@ -5,7 +5,7 @@ type and pick a default; a document can override it; and the resolver always
 falls back to today's plain layout so a company with no templates is unaffected.
 """
 
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 
 from apps.core.context import tenant_scope
 from apps.identity.models import Company
@@ -149,3 +149,36 @@ class PdfRenderingTests(TestCase):
                         "footer_note": "Confidential", "font": "Times-Roman"})
             pdf = quotation_pdf_bytes(self._quote(c, template=tpl))
             self.assertTrue(pdf.startswith(b"%PDF"))
+
+
+class LetterheadLogoPositionTests(SimpleTestCase):
+    """logo_position must mean what it says. Asserts the letterhead layout so a
+    future refactor can't silently invert it again (the bug this fixes: 'left'
+    used to put the logo on the RIGHT)."""
+
+    def _table(self, position):
+        from .pdf import _letterhead_table
+        ident = ["IDENT-SENTINEL"]                 # identity by object identity
+        table = _letterhead_table({"logo": None}, ident, {"logo_position": position})
+        return table, ident
+
+    def test_left_puts_the_logo_on_the_left(self):
+        table, ident = self._table("left")
+        # One row, two columns; identity is the RIGHT cell → logo sits left.
+        self.assertIs(table._cellvalues[0][1], ident)
+
+    def test_right_puts_the_logo_on_the_right(self):
+        table, ident = self._table("right")
+        # Identity is the LEFT cell → logo sits right (the classic default).
+        self.assertIs(table._cellvalues[0][0], ident)
+
+    def test_center_stacks_logo_above_identity(self):
+        table, ident = self._table("center")
+        self.assertEqual(len(table._cellvalues), 2)   # logo row, then identity row
+        self.assertIs(table._cellvalues[1][0], ident)
+
+    def test_default_when_unset_is_logo_right(self):
+        from .pdf import _letterhead_table
+        ident = ["IDENT-SENTINEL"]
+        table = _letterhead_table({"logo": None}, ident, {})   # no logo_position
+        self.assertIs(table._cellvalues[0][0], ident)          # identity left

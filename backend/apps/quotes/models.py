@@ -730,7 +730,7 @@ DEFAULT_CONFIG = {
     "accent_color": "",           # "" → company brand_primary → LulaWorks teal
     "secondary_color": "",
     "font": "Helvetica",          # Helvetica | Times-Roman | Courier (print-safe)
-    "logo_position": "left",      # left | center | right
+    "logo_position": "right",     # left | center | right (logo side; identity fills the rest)
     "header_note": "",            # small line under the letterhead
     "footer_note": "",            # small line in the page footer
     "watermark_text": "",         # e.g. "DRAFT", "QUOTATION"
