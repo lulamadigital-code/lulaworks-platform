@@ -190,7 +190,91 @@ def start_trial(company, actor=None):
     _reset_credits_to(company, TRIAL_CREDITS)
     _log(company, BillingTransaction_kind("TRIAL_STARTED"),
          "30-day Professional trial started", credits=TRIAL_CREDITS, plan=plan)
+    _notify_billing(
+        company, subject="Your LulaWorks trial has started",
+        heading="Welcome to your 30-day trial",
+        body=(f"Your 30-day Professional trial is active until "
+              f"{sub.current_period_end:%d %B %Y}. Explore everything — no card "
+              "required. We'll remind you before it ends."))
     return sub
+
+
+# ── Billing notifications ─────────────────────────────────────────────────────
+
+def _billing_admins(company):
+    """Users who should receive billing email — active members who can manage the
+    company. Never emails field-only employees."""
+    from apps.identity.models import Membership
+    seen, users = set(), []
+    for m in (Membership.objects.filter(company=company, status="active",
+                                        role__permissions__codename="company.manage")
+              .select_related("user")):
+        u = m.user
+        if u and u.email and u.id not in seen:
+            seen.add(u.id)
+            users.append(u)
+    return users
+
+
+def _notify_billing(company, *, subject, heading, body, cta_url="", cta_label=""):
+    """Send a billing email to the company's admins (receipts, renewals,
+    reminders). Honours preferences + login access; never raises."""
+    try:
+        from apps.notifications.dispatch import _email_allowed
+        from apps.notifications.models import EmailCategory
+        from apps.notifications.service import send_email
+    except Exception:  # notifications app unavailable
+        return
+    ctx = {"heading": heading, "body": body}
+    if cta_url:
+        ctx.update({"cta_url": cta_url, "cta_label": cta_label or "Open billing"})
+    for user in _billing_admins(company):
+        if not _email_allowed(user, EmailCategory.BILLING):
+            continue
+        try:
+            send_email(to=user.email, subject=subject, template="generic",
+                       context=ctx, company=company,
+                       to_name=(user.get_full_name() or "").strip(),
+                       category=EmailCategory.BILLING)
+        except Exception:  # noqa: BLE001 - a receipt failing must not break billing
+            pass
+
+
+#: How many days before a trial ends to send the reminder.
+TRIAL_REMINDER_DAYS = 3
+
+
+def run_trial_reminders(today=None) -> dict:
+    """Daily sweep (Celery beat): warn companies whose trial ends soon, and tell
+    those whose trial expired yesterday. Platform-wide (Subscription is not
+    tenant-scoped). Returns counts for logging/tests."""
+    from .models import Subscription, SubscriptionStatus
+    today = today or timezone.localdate()
+    reminded = expired = 0
+
+    ending = Subscription.objects.filter(
+        status=SubscriptionStatus.TRIAL,
+        current_period_end=today + timedelta(days=TRIAL_REMINDER_DAYS))
+    for sub in ending.select_related("company"):
+        _notify_billing(
+            sub.company, subject="Your LulaWorks trial ends soon",
+            heading=f"{TRIAL_REMINDER_DAYS} days left in your trial",
+            body=(f"Your Professional trial ends on {sub.current_period_end:%d %B %Y}. "
+                  "Choose a plan to keep your data, users and AI credits — nothing "
+                  "is lost, you just pick up where you left off."))
+        reminded += 1
+
+    just_expired = Subscription.objects.filter(
+        status=SubscriptionStatus.TRIAL, current_period_end=today - timedelta(days=1))
+    for sub in just_expired.select_related("company"):
+        _notify_billing(
+            sub.company, subject="Your LulaWorks trial has ended",
+            heading="Your trial has ended",
+            body=("Your 30-day trial has ended. Your data is safe — choose a plan "
+                  "any time to continue where you left off."))
+        expired += 1
+
+    return {"reminded": reminded, "expired": expired}
 
 
 @transaction.atomic
@@ -230,8 +314,18 @@ def change_plan(company, plan_code: str, billing_cycle: str = "monthly",
         kind = BillingTransaction_kind("UPGRADE")
     else:
         kind = BillingTransaction_kind("DOWNGRADE")
+    price = plan.price_in(currency, billing_cycle)
     _log(company, kind, f"Switched to {plan.name} ({billing_cycle}, {currency})",
-         amount=plan.price_in(currency, billing_cycle), plan=plan)
+         amount=price, plan=plan)
+    direction = ("upgraded to" if plan.tier > prev_tier
+                 else "changed to" if plan.tier == prev_tier or prev_tier < 0
+                 else "moved to")
+    _notify_billing(
+        company, subject=f"Your LulaWorks plan: {plan.name}",
+        heading=f"You're now on {plan.name}",
+        body=(f"Your subscription has been {direction} the {plan.name} plan "
+              f"({billing_cycle}), billed at {currency} {price:,.2f}. Your new "
+              f"period runs to {sub.current_period_end:%d %B %Y}."))
     return sub
 
 
@@ -257,6 +351,12 @@ def purchase_credit_pack(company, pack_code: str, actor=None):
     topup_credits(company, pack.credits, source=f"pack:{pack.code}")
     _log(company, BillingTransaction_kind("CREDIT_PACK"),
          f"Purchased {pack.name}", amount=pack.price, credits=pack.credits)
+    _notify_billing(
+        company, subject=f"Receipt — {pack.name}",
+        heading="Thank you for your purchase",
+        body=(f"Your purchase of {pack.name} ({pack.credits:g} AI credits) for "
+              f"{pack.price:,.2f} was successful. The credits have been added to "
+              "your balance."))
     return pack
 
 

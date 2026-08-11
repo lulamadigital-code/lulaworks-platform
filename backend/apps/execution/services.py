@@ -155,7 +155,7 @@ def complete_task(task, user, *, actual_hours=None) -> Task:
         recompute_project_progress(task.project)
     publish("TaskCompleted", company=task.company, subject=task, actor=user,
             payload={"task": task.name})
-    notify_team(task, verb="task_completed", title=f"Completed: {task.name}", actor=user)
+    notify_team(task, verb="task_completed", title=f"Completed: {task.name}", actor=user, email=True)
     run_automations(task, TaskStatus.COMPLETED, actor=user)
     return task
 
@@ -219,7 +219,7 @@ def create_work(company, user, *, name, origin=None, project=None, description="
     publish("WorkCreated", company=company, subject=task, actor=user,
             payload={"name": name, "origin": origin,
                      "standalone": project is None, "billable": is_billable})
-    notify_team(task, verb="task_assigned", title=f"New job: {task.name}", actor=user)
+    notify_team(task, verb="task_assigned", title=f"New job: {task.name}", actor=user, email=True)
     return task
 
 
@@ -429,7 +429,7 @@ def add_member(task, user, role) -> Assignment:
     if created:
         notify(user, task=task, verb="task_assigned",
                title=f"You were added to {task.name}",
-               body=f"Role: {assignment.get_role_display()}")
+               body=f"Role: {assignment.get_role_display()}", email=True)
     return assignment
 
 
@@ -615,7 +615,7 @@ def transition(task, user, *, to_status, note="") -> Task:
     publish("TaskStatusChanged", company=task.company, subject=task, actor=user,
             payload={"task": task.name, "from": previous, "to": to_status})
     notify_team(task, verb="status_changed",
-                title=f"{task.name} → {task.get_status_display()}", actor=user)
+                title=f"{task.name} → {task.get_status_display()}", actor=user, email=True)
     run_automations(task, to_status, actor=user)
     return task
 
@@ -671,24 +671,94 @@ def add_attachment(task, user, *, uploaded_file, comment=None, kind="document"):
 
 # ── Notifications ─────────────────────────────────────────────────────────────
 
-def notify(user, *, task=None, verb="", title="", body="", url=""):
+def notify(user, *, task=None, verb="", title="", body="", url="", email=False):
+    """Write an in-app notification (the canonical inbox) and — when `email` is
+    set — also send the branded email through the Email & Notification platform,
+    honouring the user's preferences and login access. In-app is always written;
+    email is opt-in per event so routine chatter (comments, files) doesn't spam."""
     from .models import Notification
     if user is None:
         return None
-    return Notification.objects.create(
-        company=task.company if task else user.active_company, user=user, task=task,
-        verb=verb, title=title, body=body,
-        url=url or (f"/work/{task.id}/" if task else ""),
+    company = task.company if task else user.active_company
+    full_url = url or (f"/work/{task.id}/" if task else "")
+    note = Notification.objects.create(
+        company=company, user=user, task=task, verb=verb, title=title, body=body,
+        url=full_url,
     )
+    if email:
+        _email_notification(user, company, title=title, body=body, url=full_url)
+    return note
 
 
-def notify_team(task, *, verb, title, body="", actor=None):
+def _email_notification(user, company, *, title, body, url):
+    """Send a task/notification email via the platform if the channel is allowed
+    for this user. Never raises — a notification failing must not break the
+    business action that triggered it."""
+    from apps.notifications.dispatch import _email_allowed
+    from apps.notifications.models import EmailCategory
+    if not _email_allowed(user, EmailCategory.TASK):
+        return
+    from django.conf import settings
+    from apps.notifications.service import send_email
+    site = getattr(settings, "SITE_URL", "").rstrip("/")
+    ctx = {"heading": title, "body": body}
+    if url:
+        ctx.update({"cta_url": (site + url) if url.startswith("/") else url,
+                    "cta_label": "Open in LulaWorks"})
+    try:
+        send_email(to=user.email, subject=title, template="generic", context=ctx,
+                   company=company, to_name=(user.get_full_name() or "").strip(),
+                   category=EmailCategory.TASK)
+    except Exception:  # noqa: BLE001 - resilient: in-app notification already stands
+        pass
+
+
+def notify_team(task, *, verb, title, body="", actor=None, email=False):
     """Fan out to everyone attached to the work — including watchers, who exist
     precisely to be told without being able to change anything. The actor never
     notifies themselves."""
     recipients = {a.user for a in task.assignments.select_related("user")}
     recipients.discard(actor)
-    return [notify(u, task=task, verb=verb, title=title, body=body) for u in recipients]
+    return [notify(u, task=task, verb=verb, title=title, body=body, email=email)
+            for u in recipients]
+
+
+def run_overdue_reminders(today=None) -> int:
+    """Daily sweep (Celery beat): email each person who has open work now past its
+    due date — one summary per person, not per task. Platform-wide (uses
+    all_objects to cross tenants). Returns the number of people emailed."""
+    from django.utils import timezone
+    from .models import Assignment, Task, TERMINAL_STATUSES
+    today = today or timezone.localdate()
+
+    overdue = (Task.all_objects
+               .filter(due_date__lt=today)
+               .exclude(status__in=TERMINAL_STATUSES)
+               .values_list("id", "company_id"))
+    task_ids = [t[0] for t in overdue]
+    if not task_ids:
+        return 0
+
+    # Group overdue tasks by assignee (one email each). all_objects: the sweep
+    # is platform-wide, outside any single tenant's context.
+    per_user = {}
+    for a in (Assignment.all_objects.filter(task_id__in=task_ids)
+              .select_related("user", "task", "task__company")):
+        per_user.setdefault(a.user, set()).add(a.task)
+
+    emailed = 0
+    for user, tasks in per_user.items():
+        company = next(iter(tasks)).company
+        n = len(tasks)
+        _email_notification(
+            user, company,
+            title=f"You have {n} overdue task{'s' if n != 1 else ''}",
+            body=("These jobs are past their due date: "
+                  + ", ".join(sorted(t.name for t in tasks)[:8])
+                  + ("…" if n > 8 else "") + "."),
+            url="/work/")
+        emailed += 1
+    return emailed
 
 
 def unread_count(user) -> int:

@@ -1421,6 +1421,8 @@ def change_password(request):
             # Changing the hash rotates the session auth hash — keep them signed in.
             from django.contrib.auth import update_session_auth_hash
             update_session_auth_hash(request, request.user)
+            from apps.identity.services import notify_password_changed
+            notify_password_changed(request.user)   # security confirmation email
             messages.success(request, "Password updated.")
             return redirect("web:dashboard")
 

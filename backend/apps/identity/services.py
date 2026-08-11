@@ -429,4 +429,26 @@ def reset_password(token_str, *, password):
     user.save(update_fields=["password", "must_change_password"])
     token.used_at = timezone.now()
     token.save(update_fields=["used_at"])
+    notify_password_changed(user)
     return user
+
+
+def notify_password_changed(user):
+    """Security email: confirm a password change (a heads-up if it wasn't them).
+    Called after a reset or a self-service change. Never raises."""
+    try:
+        from apps.notifications.models import EmailCategory
+        from apps.notifications.service import send_email
+        send_email(
+            to=user.email, subject="Your LulaWorks password was changed",
+            template="generic", company=user.active_company,
+            category=EmailCategory.SECURITY,
+            to_name=(user.get_full_name() or "").strip(),
+            context={
+                "heading": "Your password was changed",
+                "body": "This is a confirmation that your LulaWorks password was "
+                        "just changed. If this wasn't you, reset your password "
+                        "immediately and contact support.",
+            })
+    except Exception:  # noqa: BLE001 - security notice must not break the change
+        pass

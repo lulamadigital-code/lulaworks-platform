@@ -213,6 +213,16 @@ REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TASK_ALWAYS_EAGER = config("CELERY_EAGER", default=False, cast=bool)
+# Scheduled work (Celery beat): the daily notification sweep — trial reminders
+# and overdue-task nudges. Runs at 07:00 in the app timezone.
+from celery.schedules import crontab  # noqa: E402
+
+CELERY_BEAT_SCHEDULE = {
+    "daily-notification-reminders": {
+        "task": "apps.notifications.tasks.daily_reminders",
+        "schedule": crontab(hour=7, minute=0),
+    },
+}
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
