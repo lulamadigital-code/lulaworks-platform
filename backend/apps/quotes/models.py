@@ -814,3 +814,40 @@ BUILTIN_TEMPLATES = [
     ("delivery", "Logistics", "modern", False,
      {"accent_color": "#0A8F57", "header_note": "Proof of Delivery"}),
 ]
+
+
+#: House styles that echo the look of well-known billing / procurement tools, so a
+#: company can pick a familiar, professional document without a designer. These are
+#: LAYOUT + CONFIG only — the rendered document carries the company's OWN name,
+#: logo and details; no third-party brand appears on it. The names are colour-led
+#: style labels shown only in the template picker. Each expands across all three
+#: document types so a company gets a consistent set.
+#:   (label, base_layout, config-overrides)
+HOUSE_STYLES = [
+    # Clean invoicing tools → the 'modern' coloured-band look, logo on the left.
+    ("FreshBooks Blue", "modern",
+     {"accent_color": "#0B72E7", "logo_position": "left"}),
+    ("Xero Teal", "modern",
+     {"accent_color": "#13B5EA", "logo_position": "left"}),
+    ("QuickBooks Green", "modern",
+     {"accent_color": "#2CA01C", "logo_position": "left"}),
+    ("Sage Green", "modern",
+     {"accent_color": "#00875A", "logo_position": "left"}),
+    ("Jira Blue", "modern",
+     {"accent_color": "#0052CC", "logo_position": "left"}),
+    # Enterprise procurement → the 'compact' dense look, logo right, order refs on.
+    ("SAP Blue", "compact",
+     {"accent_color": "#0A6ED1", "logo_position": "right",
+      "show_project_reference": True, "show_customer_po": True}),
+    ("Ariba Procurement", "compact",
+     {"accent_color": "#1A5276", "logo_position": "right",
+      "show_project_reference": True, "show_customer_po": True}),
+]
+
+#: Expand every house style across the three document types (never a default —
+#: they sit alongside the built-in defaults for the company to choose).
+BUILTIN_TEMPLATES += [
+    (doc_type, label, layout, False, cfg)
+    for label, layout, cfg in HOUSE_STYLES
+    for doc_type in ("quotation", "invoice", "delivery")
+]

@@ -127,6 +127,33 @@ def seed_document_templates(company, actor=None) -> int:
 
 
 @transaction.atomic
+def sync_builtin_templates(company, actor=None) -> int:
+    """Top-up: add any built-in templates the company is missing, WITHOUT touching
+    what it already has. Unlike seed_document_templates (which only runs for a
+    company that has none), this reaches already-seeded companies when new
+    built-ins ship — e.g. the house styles. Never changes an existing row, never
+    moves the default flag. Matches on (doc_type, name). Returns how many added."""
+    existing = {(t.doc_type, t.name)
+                for t in DocumentTemplate.objects.filter(company=company)}
+    created = 0
+    for doc_type, name, layout, is_default, cfg in BUILTIN_TEMPLATES:
+        if (doc_type, name) in existing:
+            continue
+        # Only seed a default when the company genuinely has none for that type,
+        # so a top-up never overrides a chosen default.
+        wants_default = is_default and not DocumentTemplate.objects.filter(
+            company=company, doc_type=doc_type, is_default=True).exists()
+        DocumentTemplate.objects.create(
+            company=company, doc_type=doc_type, name=name, base_layout=layout,
+            is_default=wants_default, is_builtin=True, config=clean_config(cfg),
+            created_by=actor, updated_by=actor,
+        )
+        existing.add((doc_type, name))
+        created += 1
+    return created
+
+
+@transaction.atomic
 def create_template(company, actor, *, doc_type, name, base_layout, config=None):
     name = (name or "").strip()
     if not name:

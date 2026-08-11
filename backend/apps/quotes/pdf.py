@@ -62,7 +62,22 @@ def _resolve(document, doc_type):
         brand = _brand_color(document.company)
     font = cfg.get("font") or "Helvetica"
     return {"brand": brand, "cfg": cfg, "font": font,
-            "font_bold": _BOLD_FOR.get(font, "Helvetica-Bold")}
+            "font_bold": _BOLD_FOR.get(font, "Helvetica-Bold"),
+            "layout": cfg.get("_base_layout") or "classic"}
+
+
+def _ident_styles(layout, coname, small, muted):
+    """Identity text styles for the letterhead. On 'modern' the identity sits on
+    a brand-coloured band, so its text is white; on 'compact' the company name is
+    a touch smaller (denser letterhead); 'classic' is unchanged black-on-white."""
+    if layout == "modern":
+        co = coname.clone("bandco"); co.textColor = colors.white
+        sm = small.clone("bandsm"); sm.textColor = colors.white
+        return co, sm, sm            # coname, small, muted all white on the band
+    if layout == "compact":
+        co = coname.clone("cco"); co.fontSize = 12.5; co.leading = 15
+        return co, small, muted
+    return coname, small, muted
 
 
 def _apply_font(styles, font, font_bold):
@@ -367,22 +382,26 @@ def quotation_pdf_bytes(quote) -> bytes:
         honoured but the value can never inject tags."""
         return Paragraph(f"<b>{escape(label)}</b> {escape(str(value))}", style)
 
-    # ── Company identity (top-left) + logo (top-right) ───────────────────────
-    ident = [Paragraph(f"<b>{escape(header['display_name'])}</b>", coname)]
+    # ── Company identity + logo ──────────────────────────────────────────────
+    # On the 'modern' layout the identity sits on a brand-coloured band, so its
+    # text is white (co/sm/mu); classic/compact are black-on-white.
+    layout = res["layout"]
+    co, sm, mu = _ident_styles(layout, coname, small, muted)
+    ident = [Paragraph(f"<b>{escape(header['display_name'])}</b>", co)]
     for line in header["address_lines"]:
-        ident.append(P(line, muted))
+        ident.append(P(line, mu))
     if header["phone"]:
-        ident.append(P(f"Tel {header['phone']}", muted))
+        ident.append(P(f"Tel {header['phone']}", mu))
     if header["mobile"]:
-        ident.append(P(f"Cell {header['mobile']}", muted))
+        ident.append(P(f"Cell {header['mobile']}", mu))
     if header["email"]:
-        ident.append(P(f"Email {header['email']}", muted))
+        ident.append(P(f"Email {header['email']}", mu))
     if header["tax_reference_no"]:
-        ident.append(P(f"Tax No: {header['tax_reference_no']}", muted))
+        ident.append(P(f"Tax No: {header['tax_reference_no']}", mu))
     if header["vat_no"] and cfg.get("show_vat_number", True):
-        ident.append(P(f"Vat No: {header['vat_no']}", muted))
+        ident.append(P(f"Vat No: {header['vat_no']}", mu))
     if header["registration_no"] and cfg.get("show_registration_number", True):
-        ident.append(P(f"Company Reg: {header['registration_no']}", muted))
+        ident.append(P(f"Company Reg: {header['registration_no']}", mu))
     # The number THIS customer files us under — how their accounts payable finds
     # us. Snapshotted onto the quotation, but fall back to the customer record so
     # it still prints if the snapshot was empty at creation.
@@ -391,16 +410,17 @@ def quotation_pdf_bytes(quote) -> bytes:
     if vendor:
         who = _name(quote.customer.display_name if quote.customer_id
                     else quote.client_name)
-        ident.append(P(f"{who} Supplier No: {vendor}", small))
+        ident.append(P(f"{who} Supplier No: {vendor}", sm))
 
     # Logo positioned per the template (cfg["logo_position"]); identity fills the
     # rest. Shares the one letterhead builder with invoices and delivery notes so
-    # all three documents honour the same setting identically.
-    head = _letterhead_table(header, ident, cfg)
-    # A bold brand-coloured rule separates the letterhead from the client block.
-    story = [head, Spacer(1, 3 * mm),
-             HRFlowable(width="100%", thickness=2.2, color=brand,
-                        spaceBefore=2, spaceAfter=6)]
+    # all three documents honour the same setting (and band) identically.
+    head = _letterhead_table(header, ident, cfg, brand)
+    story = [head, Spacer(1, 3 * mm)]
+    # The band is its own divider on 'modern'; classic/compact keep the bold rule.
+    if layout != "modern":
+        story.append(HRFlowable(width="100%", thickness=1.2 if layout == "compact" else 2.2,
+                                color=brand, spaceBefore=2, spaceAfter=6))
     header_note = (cfg.get("header_note") or "").strip()
     if header_note:
         story += [Paragraph(f"<b>{escape(header_note)}</b>", small), Spacer(1, 2 * mm)]
@@ -535,24 +555,30 @@ def _letterhead(company, brand, header, coname, small, muted, title, title_text,
     VAT/registration lines, move the logo, and add a header note."""
     cfg = cfg or {}
     esc = escape
-    ident = [Paragraph(f"<b>{esc(header['display_name'])}</b>", coname)]
+    layout = cfg.get("_base_layout") or "classic"
+    co, sm, mu = _ident_styles(layout, coname, small, muted)
+    ident = [Paragraph(f"<b>{esc(header['display_name'])}</b>", co)]
     for line in header["address_lines"]:
-        ident.append(Paragraph(esc(line), muted))
+        ident.append(Paragraph(esc(line), mu))
     if header["phone"]:
-        ident.append(Paragraph(f"Tel {esc(header['phone'])}", muted))
+        ident.append(Paragraph(f"Tel {esc(header['phone'])}", mu))
     if header["mobile"]:
-        ident.append(Paragraph(f"Cell {esc(header['mobile'])}", muted))
+        ident.append(Paragraph(f"Cell {esc(header['mobile'])}", mu))
     if header["email"]:
-        ident.append(Paragraph(f"Email {esc(header['email'])}", muted))
+        ident.append(Paragraph(f"Email {esc(header['email'])}", mu))
     if header["tax_reference_no"]:
-        ident.append(Paragraph(f"Tax No: {esc(header['tax_reference_no'])}", muted))
+        ident.append(Paragraph(f"Tax No: {esc(header['tax_reference_no'])}", mu))
     if header["vat_no"] and cfg.get("show_vat_number", True):
-        ident.append(Paragraph(f"Vat No: {esc(header['vat_no'])}", muted))
+        ident.append(Paragraph(f"Vat No: {esc(header['vat_no'])}", mu))
     if header["registration_no"] and cfg.get("show_registration_number", True):
-        ident.append(Paragraph(f"Company Reg: {esc(header['registration_no'])}", muted))
+        ident.append(Paragraph(f"Company Reg: {esc(header['registration_no'])}", mu))
 
-    out = [_letterhead_table(header, ident, cfg), Spacer(1, 3 * mm),
-           HRFlowable(width="100%", thickness=2.2, color=brand, spaceBefore=2, spaceAfter=6)]
+    out = [_letterhead_table(header, ident, cfg, brand), Spacer(1, 3 * mm)]
+    # The coloured band is its own divider on 'modern'; classic/compact keep the
+    # bold brand rule (thinner on compact).
+    if layout != "modern":
+        out.append(HRFlowable(width="100%", thickness=1.2 if layout == "compact" else 2.2,
+                              color=brand, spaceBefore=2, spaceAfter=6))
     note = (cfg.get("header_note") or "").strip()
     if note:
         out.append(Paragraph(f"<b>{esc(note)}</b>", small))
@@ -560,29 +586,47 @@ def _letterhead(company, brand, header, coname, small, muted, title, title_text,
     return out
 
 
-def _letterhead_table(header, ident, cfg):
-    """Company identity + logo, laid out so `logo_position` means what it says:
-    'left' puts the LOGO on the left (identity right), 'right' puts the logo on
-    the right (identity left — the classic default), 'center' stacks the logo
-    above a centred identity block."""
-    logo = _logo_flowable(header)
+def _letterhead_table(header, ident, cfg, brand=None):
+    """Company identity + logo. `logo_position` means what it says: 'left' puts
+    the LOGO on the left (identity right), 'right' the logo on the right (identity
+    left — the classic default), 'center' stacks the logo above a centred block.
+
+    On the 'modern' base layout the whole letterhead sits inside a full-width
+    brand-coloured band (the identity was built in white by the caller); on
+    'classic'/'compact' it is the plain identity + logo row."""
     position = (cfg or {}).get("logo_position", "right")
+    layout = (cfg or {}).get("_base_layout") or "classic"
+    # On the band the logo must be modest (a tall logo would balloon the band) and
+    # legible on colour; on classic/compact it fills the letterhead as before.
+    logo = (_logo_flowable(header, max_h=15 * mm, max_w=46 * mm) if layout == "modern"
+            else _logo_flowable(header))
+
     if position == "center":
-        head = Table([[logo or ""], [ident]], colWidths=[186 * mm])
-        head.setStyle(TableStyle([("ALIGN", (0, 0), (0, 0), "CENTER"),
-                                  ("VALIGN", (0, 0), (-1, -1), "TOP")]))
-        return head
-    if position == "left":
-        # Logo on the left, identity to its right.
-        head = Table([[logo or "", ident]], colWidths=[76 * mm, 110 * mm])
-        head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
-                                  ("ALIGN", (0, 0), (0, 0), "LEFT")]))
-        return head
-    # Default 'right': identity on the left, logo on the right.
-    head = Table([[ident, logo or ""]], colWidths=[110 * mm, 76 * mm])
-    head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
-                              ("ALIGN", (1, 0), (1, 0), "RIGHT")]))
-    return head
+        inner = Table([[logo or ""], [ident]], colWidths=[176 * mm if layout == "modern" else 186 * mm])
+        inner.setStyle(TableStyle([("ALIGN", (0, 0), (0, 0), "CENTER"),
+                                   ("VALIGN", (0, 0), (-1, -1), "TOP")]))
+    elif position == "left":
+        inner = Table([[logo or "", ident]], colWidths=[52 * mm, 124 * mm] if layout == "modern"
+                      else [76 * mm, 110 * mm])
+        inner.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE" if layout == "modern" else "TOP"),
+                                   ("ALIGN", (0, 0), (0, 0), "LEFT")]))
+    else:  # 'right' (and any unknown value) → identity left, logo right
+        inner = Table([[ident, logo or ""]], colWidths=[124 * mm, 52 * mm] if layout == "modern"
+                      else [110 * mm, 76 * mm])
+        inner.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE" if layout == "modern" else "TOP"),
+                                   ("ALIGN", (1, 0), (1, 0), "RIGHT")]))
+
+    if layout != "modern" or brand is None:
+        return inner
+    # Wrap the identity row in a slim brand-coloured band — the 'modern' look.
+    band = Table([[inner]], colWidths=[186 * mm])
+    band.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), brand),
+                              ("LEFTPADDING", (0, 0), (-1, -1), 12),
+                              ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+                              ("TOPPADDING", (0, 0), (-1, -1), 9),
+                              ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
+                              ("VALIGN", (0, 0), (-1, -1), "MIDDLE")]))
+    return band
 
 
 def _doc_styles(brand):
