@@ -31,11 +31,15 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Runtime OS deps only: libpq5 (Postgres client lib for psycopg2), curl (health
-# probes), tesseract-ocr + poppler-utils (document OCR / PDF rasterisation).
+# Runtime OS deps. libpq5 (Postgres client lib for psycopg2), curl (health
+# probes), tesseract-ocr + poppler-utils (document OCR / PDF rasterisation), and
+# the Pango/cairo/gdk-pixbuf stack + base fonts that WeasyPrint needs to render
+# the HTML-engine document templates to PDF.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        libpq5 curl tesseract-ocr poppler-utils \
+       libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 \
+       libcairo2 libffi8 shared-mime-info fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # The ready-built virtualenv from the builder stage (no pip cache, no toolchain).

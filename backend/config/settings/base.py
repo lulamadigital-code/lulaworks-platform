@@ -316,4 +316,13 @@ LOGGING = {
         }
     },
     "root": {"handlers": ["console"], "level": config("LOG_LEVEL", default="INFO")},
+    # WeasyPrint + fontTools are extremely chatty at DEBUG (they log every font
+    # table on every HTML-template PDF). Keep them at WARNING so custom-template
+    # rendering doesn't flood the logs.
+    "loggers": {
+        "weasyprint": {"level": "WARNING"},
+        "fontTools": {"level": "WARNING"},
+        "fontTools.subset": {"level": "WARNING"},
+        "fontTools.ttLib": {"level": "WARNING"},
+    },
 }

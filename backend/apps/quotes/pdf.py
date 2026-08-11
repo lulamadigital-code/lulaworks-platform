@@ -352,6 +352,14 @@ def _signoff_banking_boxes(header, brand, small, muted, *, compiled_label,
 
 
 def quotation_pdf_bytes(quote) -> bytes:
+    # HTML-engine templates (custom-built / AI-imported) render via WeasyPrint;
+    # the built-in ReportLab looks fall through to the code below.
+    from .document_templates import resolve_render
+    engine, design = resolve_render(quote, "quotation")
+    if engine == "html":
+        from .html_render import render_html_pdf
+        return render_html_pdf(quote, "quotation", design)
+
     company = quote.company
     buf = BytesIO()
     # Narrow margins so the content fills the page width (usable width ≈ 186mm).
@@ -642,6 +650,12 @@ def _doc_styles(brand):
 def invoice_pdf_bytes(doc) -> bytes:
     """A tax invoice built from the quotation: same items and prices, VAT added
     (an exclusive quote defers VAT to here), the parent reference and the PO."""
+    from .document_templates import resolve_render
+    engine, design = resolve_render(doc, "invoice")
+    if engine == "html":
+        from .html_render import render_html_pdf
+        return render_html_pdf(doc, "invoice", design)
+
     from apps.identity.profile import document_header
 
     quote = doc.quotation
@@ -751,6 +765,12 @@ def delivery_note_pdf_bytes(doc) -> bytes:
     """A delivery note built from the quotation — operational quantities, never
     prices. Ordered comes from the quotation; Delivered/Outstanding are filled
     in on delivery."""
+    from .document_templates import resolve_render
+    engine, design = resolve_render(doc, "delivery")
+    if engine == "html":
+        from .html_render import render_html_pdf
+        return render_html_pdf(doc, "delivery", design)
+
     from apps.identity.profile import document_header
 
     quote = doc.quotation

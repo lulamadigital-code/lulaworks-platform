@@ -32,5 +32,9 @@ anthropic==0.69.0
 google-genai==2.12.1
 # Quotation PDF generation (pure-Python; no system libs — fits the slim image).
 reportlab==4.2.5
+# HTML→PDF for the Template Studio HTML engine (custom-built + AI-imported
+# document templates). Unlike reportlab this needs Pango/cairo/gdk-pixbuf system
+# libraries — added in the Dockerfile runtime stage.
+weasyprint==63.1
 # Test coverage — the standing quality gate (config in pyproject.toml).
 coverage[toml]==7.6.1

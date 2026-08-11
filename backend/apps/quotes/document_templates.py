@@ -17,10 +17,15 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import (
+    ALLOWED_FONT_FAMILIES,
     ALLOWED_FONTS,
+    ALLOWED_HEADER_STYLES,
     ALLOWED_LOGO_POSITIONS,
     BUILTIN_TEMPLATES,
     DEFAULT_CONFIG,
+    DEFAULT_DESIGN,
+    TEMPLATE_ITEM_COLUMN_KEYS,
+    TEMPLATE_SECTION_KEYS,
     BaseLayout,
     DocumentTemplate,
     DocumentTemplateVersion,
@@ -82,6 +87,65 @@ def _as_bool(val) -> bool:
     return str(val).strip().lower() in ("1", "true", "on", "yes")
 
 
+def clean_design(raw: dict) -> dict:
+    """Validate an HTML-engine `design` into the full, safe schema. Unknown section
+    keys / columns are dropped; every known section is preserved in the given order
+    (missing ones appended visible); colours/fonts are checked. This is the single
+    write gate the visual builder AND a future AI import both pass through."""
+    raw = raw or {}
+    b_in = raw.get("branding") or {}
+    branding = dict(DEFAULT_DESIGN["branding"])
+    for key in ("accent_color", "secondary_color"):
+        if key in b_in:
+            val = (b_in.get(key) or "").strip()
+            if val and not _HEX.match(val):
+                raise TemplateError(f"“{val}” isn’t a valid colour (use #RRGGBB).")
+            branding[key] = val
+    if "font_family" in b_in:
+        font = (b_in.get("font_family") or "").strip() or "Helvetica"
+        if font not in ALLOWED_FONT_FAMILIES:
+            raise TemplateError(f"Unsupported font “{font}”.")
+        branding["font_family"] = font
+    if "logo_position" in b_in:
+        lp = (b_in.get("logo_position") or "").strip() or "left"
+        if lp not in ALLOWED_LOGO_POSITIONS:
+            raise TemplateError(f"Unknown logo position “{lp}”.")
+        branding["logo_position"] = lp
+    if "header_style" in b_in:
+        hs = (b_in.get("header_style") or "").strip() or "band"
+        if hs not in ALLOWED_HEADER_STYLES:
+            raise TemplateError(f"Unknown header style “{hs}”.")
+        branding["header_style"] = hs
+
+    sections, seen = [], set()
+    for entry in (raw.get("sections") or []):
+        key = entry.get("key")
+        if key in TEMPLATE_SECTION_KEYS and key not in seen:
+            sections.append({"key": key, "visible": _as_bool(entry.get("visible", True))})
+            seen.add(key)
+    for key in TEMPLATE_SECTION_KEYS:       # append any not mentioned, visible
+        if key not in seen:
+            sections.append({"key": key, "visible": True})
+
+    columns = [c for c in (raw.get("columns") or []) if c in TEMPLATE_ITEM_COLUMN_KEYS]
+    if not columns:
+        columns = list(TEMPLATE_ITEM_COLUMN_KEYS)
+
+    return {
+        "branding": branding, "sections": sections, "columns": columns,
+        "header_note": (raw.get("header_note") or "").strip()[:200],
+        "footer_note": (raw.get("footer_note") or "").strip()[:200],
+    }
+
+
+def current_design(template) -> dict:
+    """The design the builder edits — the current version's, or a clean default."""
+    version = template.current_version
+    if version and version.design:
+        return version.design
+    return {k: v for k, v in DEFAULT_DESIGN.items()}  # shallow copy is fine here
+
+
 # ── Resolution ────────────────────────────────────────────────────────────────
 
 def resolve_template(company, doc_type, *, override=None):
@@ -129,24 +193,87 @@ def effective_config_for(document, doc_type) -> dict:
                             override=getattr(document, "template", None))
 
 
+def resolve_render(document, doc_type):
+    """Which engine renders this document, and the HTML design when it's the HTML
+    engine. Honours a pinned version (immutability) first, else the live template
+    head. Returns (engine, design) — design is {} for the ReportLab engine."""
+    from .models import TemplateEngine
+
+    pinned = getattr(document, "template_version", None)
+    if pinned is not None:
+        return pinned.engine, (pinned.design or {})
+    tpl = resolve_template(document.company, doc_type,
+                           override=getattr(document, "template", None))
+    if tpl is None:
+        return TemplateEngine.REPORTLAB, {}
+    if tpl.engine == TemplateEngine.HTML:
+        version = tpl.current_version
+        return TemplateEngine.HTML, ((version.design if version else {}) or {})
+    return TemplateEngine.REPORTLAB, {}
+
+
 # ── Versioning ────────────────────────────────────────────────────────────────
 
-def _snapshot_version(template, actor, *, note=""):
+def _snapshot_version(template, actor, *, note="", design=None):
     """Freeze the template's current fields into a new immutable version and point
     the head at it. Called on every create/edit; the resulting version is what a
-    finalised document pins so a later edit can't rewrite an issued document."""
+    finalised document pins so a later edit can't rewrite an issued document.
+    `design` carries the HTML-engine payload — inherited from the previous version
+    when not re-supplied, so a config-only edit keeps the design."""
     last = template.versions.order_by("-version").first()
     number = (last.version + 1) if last else 1
+    if design is None:
+        design = dict(last.design) if (last and last.design) else {}
     version = DocumentTemplateVersion.objects.create(
         company=template.company, template=template, version=number,
         engine=template.engine, base_layout=template.base_layout,
-        config=dict(template.config or {}), note=(note or "")[:200],
+        config=dict(template.config or {}), design=design, note=(note or "")[:200],
         created_by=actor, updated_by=actor,
     )
     template.current_version = version
     template.updated_by = actor
     template.save(update_fields=["current_version", "updated_by", "updated_at"])
     return version
+
+
+@transaction.atomic
+def create_html_template(company, actor, *, doc_type, name, design=None,
+                         description="", origin=TemplateOrigin.CUSTOM):
+    """A company's own (or AI-imported) HTML-engine template. Same lifecycle as a
+    ReportLab template — versioned, default-able — but rendered from a `design`."""
+    name = (name or "").strip()
+    if not name:
+        raise TemplateError("A template needs a name.")
+    if doc_type not in dict(DocumentTemplate._meta.get_field("doc_type").choices):
+        raise TemplateError("Unknown document type.")
+    tpl = DocumentTemplate.objects.create(
+        company=company, doc_type=doc_type, name=name,
+        description=(description or "")[:255], origin=origin,
+        engine=TemplateEngine.HTML, config={},
+        created_by=actor, updated_by=actor,
+    )
+    _snapshot_version(tpl, actor, note="Created", design=clean_design(design or {}))
+    if not DocumentTemplate.objects.filter(company=company, doc_type=doc_type,
+                                           is_default=True, archived_at__isnull=True).exists():
+        set_default_template(tpl)
+    return tpl
+
+
+@transaction.atomic
+def update_html_design(template, actor, *, design, name=None, description=None, note=""):
+    """Save an edit to an HTML template's design — a new immutable version."""
+    if name is not None:
+        name = name.strip()
+        if not name:
+            raise TemplateError("A template needs a name.")
+        template.name = name
+    if description is not None:
+        template.description = description[:255]
+    template.updated_by = actor
+    template.save()
+    _snapshot_version(template, actor, note=note or "Edited",
+                      design=clean_design(design or {}))
+    return template
 
 
 def pin_template_version(document, doc_type, actor=None):
@@ -273,7 +400,9 @@ def duplicate_template(template, actor, *, new_name=None):
         is_default=False, is_builtin=False, config=dict(template.config or {}),
         created_by=actor, updated_by=actor,
     )
-    _snapshot_version(tpl, actor, note=f"Duplicated from {template.name}")
+    src = template.current_version
+    design = dict(src.design) if (src and src.design) else {}
+    _snapshot_version(tpl, actor, note=f"Duplicated from {template.name}", design=design)
     return tpl
 
 

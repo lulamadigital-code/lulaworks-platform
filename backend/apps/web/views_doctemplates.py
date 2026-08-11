@@ -14,12 +14,18 @@ from django.views.decorators.http import require_POST
 
 from apps.quotes import document_templates as dts
 from apps.quotes.models import (
+    ALLOWED_FONT_FAMILIES,
     ALLOWED_FONTS,
+    ALLOWED_HEADER_STYLES,
     ALLOWED_LOGO_POSITIONS,
     DEFAULT_CONFIG,
+    TEMPLATE_ITEM_COLUMNS,
+    TEMPLATE_FIELD_LIBRARY,
+    TEMPLATE_SECTIONS,
     BaseLayout,
     DocumentTemplate,
     DocumentType,
+    TemplateEngine,
 )
 
 #: The config switches, grouped for the form. (key, label, kind).
@@ -102,6 +108,9 @@ def template_create(request):
 @login_required
 def template_edit(request, pk):
     tpl = get_object_or_404(DocumentTemplate.objects.all(), pk=pk)
+    # HTML-engine templates are edited in the visual builder, not the config form.
+    if tpl.engine == TemplateEngine.HTML:
+        return redirect("web:doc_template_builder", pk=pk)
     if request.method == "POST":
         if not _can(request.user):
             messages.error(request, "You do not have permission to edit templates.")
@@ -142,6 +151,71 @@ def template_set_default(request, pk):
     dts.set_default_template(tpl)
     messages.success(request, f"“{tpl.name}” is now the default {tpl.get_doc_type_display().lower()}.")
     return redirect("web:doc_templates")
+
+
+@login_required
+@require_POST
+def template_build_new(request):
+    """Create a fresh HTML-engine template (Method 2 — 'build your own') and open
+    it in the visual builder."""
+    if not _can(request.user):
+        messages.error(request, "You do not have permission to add templates.")
+        return redirect("web:doc_templates")
+    doc_type = request.POST.get("doc_type", "")
+    name = (request.POST.get("name") or "").strip() or "My template"
+    try:
+        tpl = dts.create_html_template(
+            request.user.active_company, request.user,
+            doc_type=doc_type, name=name)
+    except dts.TemplateError as exc:
+        messages.error(request, str(exc))
+        return redirect("web:doc_templates")
+    messages.success(request, "Template created — design it below.")
+    return redirect("web:doc_template_builder", pk=tpl.id)
+
+
+@login_required
+def template_builder(request, pk):
+    """The no-code visual builder for an HTML template: branding, section
+    show/hide/reorder, item columns, header/footer notes, with a PDF preview."""
+    tpl = get_object_or_404(DocumentTemplate.objects.all(), pk=pk)
+    if tpl.engine != TemplateEngine.HTML:
+        return redirect("web:doc_template_edit", pk=pk)
+
+    if request.method == "POST":
+        if not _can(request.user):
+            messages.error(request, "You do not have permission to edit templates.")
+            return redirect("web:doc_template_builder", pk=pk)
+        try:
+            dts.update_html_design(
+                tpl, request.user, design=_design_from_post(request.POST),
+                name=request.POST.get("name", tpl.name),
+                description=request.POST.get("description", tpl.description))
+        except dts.TemplateError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, "Template saved.")
+            return redirect("web:doc_template_builder", pk=pk)
+
+    design = dts.current_design(tpl)
+    branding = design.get("branding", {})
+    # Sections in the design's current order, each with its label.
+    labels = dict(TEMPLATE_SECTIONS)
+    ordered = design.get("sections") or [{"key": k, "visible": True} for k, _ in TEMPLATE_SECTIONS]
+    sections = [{"key": s["key"], "label": labels.get(s["key"], s["key"]),
+                 "visible": s.get("visible", True)} for s in ordered
+                if s["key"] in labels]
+    active_cols = set(design.get("columns") or [])
+    columns = [{"key": k, "label": lbl, "on": k in active_cols}
+               for k, lbl in TEMPLATE_ITEM_COLUMNS]
+    return render(request, "web/doctemplates/builder.html", {
+        "tpl": tpl, "design": design, "branding": branding,
+        "sections": sections, "columns": columns,
+        "fonts": ALLOWED_FONT_FAMILIES, "logo_positions": ALLOWED_LOGO_POSITIONS,
+        "header_styles": ALLOWED_HEADER_STYLES,
+        "field_library": TEMPLATE_FIELD_LIBRARY,
+        "can_manage": _can(request.user),
+    })
 
 
 @login_required
@@ -239,6 +313,35 @@ def _config_from_post(post) -> dict:
 def _with_values(fields, cfg):
     return [{"key": k, "label": lbl, "kind": kind, "value": cfg.get(k)}
             for (k, lbl, kind) in fields]
+
+
+def _design_from_post(post) -> dict:
+    """Assemble an HTML-template design from the builder form. Section order comes
+    from a per-section number input; validation (colours/fonts/known keys) happens
+    in dts.clean_design."""
+    from apps.quotes.models import TEMPLATE_SECTION_KEYS
+    branding = {
+        "accent_color": post.get("accent_color", ""),
+        "secondary_color": post.get("secondary_color", ""),
+        "font_family": post.get("font_family", ""),
+        "logo_position": post.get("logo_position", ""),
+        "header_style": post.get("header_style", ""),
+    }
+    ordered = []
+    for key in TEMPLATE_SECTION_KEYS:
+        try:
+            order = int(post.get(f"order_{key}", "999"))
+        except (TypeError, ValueError):
+            order = 999
+        ordered.append((order, {"key": key, "visible": f"visible_{key}" in post}))
+    ordered.sort(key=lambda pair: pair[0])
+    return {
+        "branding": branding,
+        "sections": [entry for _, entry in ordered],
+        "columns": post.getlist("columns"),
+        "header_note": post.get("header_note", ""),
+        "footer_note": post.get("footer_note", ""),
+    }
 
 
 def _preview_pdf(company, tpl):

@@ -21,9 +21,14 @@
       Modern, Corporate, Engineering, Construction, Industrial, Minimal — and make it your default.</p>
   </div>
   <div class="card">
-    <strong>2 · Customise your own</strong>
-    <p class="muted" style="font-size:12.5px;margin:6px 0 0;">Start from any template, then set logo,
-      colours, fonts, layout, fields and sections. Use <em>Duplicate</em> to make it yours first.</p>
+    <strong>2 · Build your own</strong>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0;">A no-code designer: branding, sections,
+      columns — LulaWorks fills it with real data. Or <em>Duplicate</em> a look above and tweak it.</p>
+    {% if can_manage %}
+    <form method="post" action="{% url 'web:doc_template_build_new' %}" class="filterbar" style="margin-top:8px;gap:6px;">{% csrf_token %}
+      <select name="doc_type" style="flex:1;min-width:0;">{% for v, l in doc_types %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select>
+      <button class="btn primary" type="submit" style="padding:4px 12px;">Build →</button>
+    </form>{% endif %}
   </div>
   <div class="card" style="opacity:.9;">
     <strong>3 · Import your existing document <span class="chip info" style="font-size:10.5px;">LulaAI · soon</span></strong>

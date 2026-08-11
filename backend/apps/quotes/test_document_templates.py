@@ -361,3 +361,81 @@ class TemplateVersioningTests(TestCase):
             self.assertFalse(copy.is_default)
             self.assertEqual(copy.origin, "custom")
             self.assertEqual(copy.versions.count(), 1)
+
+
+class HtmlEngineTests(TestCase):
+    """The HTML engine (Method 2): design validation, section show/hide/reorder,
+    dispatch from the shared PDF entry points, and per-version immutability."""
+
+    def _quote(self, c, template=None):
+        from .models import Quotation
+        q = Quotation.objects.create(company=c, number="QT-H1", client_name="Sibanye",
+                                     site="Plant 1", template=template)
+        q.lines.create(company=c, position=1, description="Pump overhaul", qty=1,
+                       unit="ea", unit_cost=1000)
+        return q
+
+    def test_clean_design_validates_and_completes(self):
+        from .models import TEMPLATE_SECTION_KEYS
+        d = dt.clean_design({
+            "branding": {"accent_color": "#123456", "font_family": "Arial"},
+            "sections": [{"key": "items", "visible": False}, {"key": "bogus"}],
+            "columns": ["description", "qty", "evil"]})
+        self.assertEqual(d["branding"]["accent_color"], "#123456")
+        # Unknown section dropped; every known section present exactly once.
+        keys = [s["key"] for s in d["sections"]]
+        self.assertEqual(sorted(keys), sorted(TEMPLATE_SECTION_KEYS))
+        self.assertEqual(len(keys), len(set(keys)))
+        items = next(s for s in d["sections"] if s["key"] == "items")
+        self.assertFalse(items["visible"])
+        self.assertEqual(d["columns"], ["description", "qty"])   # 'evil' dropped
+
+    def test_clean_design_rejects_bad_colour_and_font(self):
+        with self.assertRaises(dt.TemplateError):
+            dt.clean_design({"branding": {"accent_color": "red"}})
+        with self.assertRaises(dt.TemplateError):
+            dt.clean_design({"branding": {"font_family": "Comic Sans"}})
+
+    def test_design_hides_a_section(self):
+        from .html_render import build_context, design_to_html
+        c = make_company()
+        with tenant_scope(c.id):
+            ctx = build_context(self._quote(c), "quotation")
+            shown = design_to_html(dt.clean_design(
+                {"sections": [{"key": "document_meta", "visible": True}]}), ctx)
+            hidden = design_to_html(dt.clean_design(
+                {"sections": [{"key": "document_meta", "visible": False}]}), ctx)
+            self.assertIn("QUOTATION", shown)          # the title block…
+            self.assertNotIn("QUOTATION", hidden)      # …gone when hidden
+
+    def test_html_template_dispatches_and_renders_a_pdf(self):
+        from .pdf import quotation_pdf_bytes
+        c = make_company()
+        with tenant_scope(c.id):
+            tpl = dt.create_html_template(c, None, doc_type="quotation", name="Mine",
+                                          design={"branding": {"accent_color": "#0A6ED1"}})
+            dt.set_default_template(tpl)
+            pdf = quotation_pdf_bytes(self._quote(c))   # engine=html → WeasyPrint
+            self.assertTrue(pdf.startswith(b"%PDF"))
+
+    def test_create_html_template_is_html_engine_with_a_design(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            tpl = dt.create_html_template(c, None, doc_type="invoice", name="Inv")
+            self.assertEqual(tpl.engine, "html")
+            self.assertEqual(tpl.origin, "custom")
+            self.assertTrue(tpl.current_version.design)   # design captured on v1
+
+    def test_pinned_html_version_is_immutable(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            tpl = dt.create_html_template(c, None, doc_type="quotation", name="Mine",
+                                          design={"branding": {"accent_color": "#111111"}})
+            dt.set_default_template(tpl)
+            q = self._quote(c, template=tpl)
+            dt.pin_template_version(q, "quotation")
+            q.refresh_from_db()
+            dt.update_html_design(tpl, None, design={"branding": {"accent_color": "#999999"}})
+            engine, design = dt.resolve_render(q, "quotation")
+            self.assertEqual(engine, "html")
+            self.assertEqual(design["branding"]["accent_color"], "#111111")   # frozen

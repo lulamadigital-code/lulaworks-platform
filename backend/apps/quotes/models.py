@@ -764,6 +764,77 @@ ALLOWED_FONTS = ["Helvetica", "Times-Roman", "Courier"]
 ALLOWED_LOGO_POSITIONS = ["left", "center", "right"]
 
 
+# ── HTML engine: the structured `design` a custom-built or AI-imported template
+# carries on its version. The visual builder edits this; the HTML renderer turns
+# it into a document deterministically. Kept as a small, validated schema (not
+# freeform HTML) so the no-code builder is simple and the output is always safe.
+
+#: Ordered document sections a design may show/hide/reorder. Each maps to a block
+#: the HTML renderer knows how to populate from real data — never freeform markup.
+TEMPLATE_SECTIONS = [
+    ("letterhead", "Letterhead (logo + company)"),
+    ("document_meta", "Document title, reference & date"),
+    ("parties", "Customer / bill-to"),
+    ("scope", "Scope of work"),
+    ("items", "Items table"),
+    ("totals", "Totals (subtotal / VAT / total)"),
+    ("banking", "Banking details"),
+    ("terms", "Terms & conditions"),
+    ("signature", "Signature area"),
+    ("footer", "Footer note"),
+]
+TEMPLATE_SECTION_KEYS = [k for k, _ in TEMPLATE_SECTIONS]
+
+#: Columns the items table may show, in order. `amount`/`unit_price` are dropped
+#: automatically on a delivery note (which carries quantities, never prices).
+TEMPLATE_ITEM_COLUMNS = [
+    ("item_no", "No."), ("description", "Description"), ("qty", "Qty"),
+    ("unit", "Unit"), ("unit_price", "Unit price"), ("amount", "Amount"),
+]
+TEMPLATE_ITEM_COLUMN_KEYS = [k for k, _ in TEMPLATE_ITEM_COLUMNS]
+
+ALLOWED_FONT_FAMILIES = ["Helvetica", "Arial", "Times New Roman", "Georgia",
+                         "Courier New", "Verdana", "Trebuchet MS"]
+ALLOWED_HEADER_STYLES = ["band", "plain", "minimal"]  # band = coloured header
+
+#: The design a new HTML template starts from — a clean, complete document.
+DEFAULT_DESIGN = {
+    "branding": {
+        "accent_color": "#0E6E6E",
+        "secondary_color": "",
+        "font_family": "Helvetica",
+        "logo_position": "left",
+        "header_style": "band",
+    },
+    "sections": [{"key": k, "visible": True} for k in TEMPLATE_SECTION_KEYS],
+    "columns": list(TEMPLATE_ITEM_COLUMN_KEYS),
+    "header_note": "",
+    "footer_note": "",
+}
+
+#: The field library the visual builder advertises (grouped {{tokens}}). These are
+#: documentation for the user; the renderer fills real values by key, so a token
+#: can never inject data from another tenant. Extensible — add a row, wire it in
+#: build_context. (Method 2/3 of the template system.)
+TEMPLATE_FIELD_LIBRARY = {
+    "Company": ["company.name", "company.registration_number", "company.tax_number",
+                "company.email", "company.phone", "company.website", "company.address",
+                "company.logo"],
+    "Customer": ["customer.name", "customer.vat_number", "customer.address",
+                 "customer.email"],
+    "Contact": ["contact.name", "contact.email", "contact.phone"],
+    "Document": ["document.reference", "document.date", "document.prepared_by",
+                 "document.title", "document.type"],
+    "Job": ["job.title", "job.site", "job.scope_of_work"],
+    "Items": ["items", "item.description", "item.quantity", "item.unit",
+              "item.unit_price", "item.amount"],
+    "Financial": ["subtotal", "discount", "vat", "total"],
+    "Banking": ["company.bank_name", "company.account_name", "company.account_number",
+                "company.branch_code"],
+    "Terms": ["terms_and_conditions"],
+}
+
+
 class TemplateEngine(models.TextChoices):
     """How a template is rendered. The ReportLab engine draws today's built-in
     looks from `config`; the HTML engine (WeasyPrint) renders a stored HTML/CSS
