@@ -46,6 +46,10 @@ def quotation_doc_upload_path(instance, filename):
     return f"c/{instance.company_id}/quotation_docs/{filename}"
 
 
+def template_import_upload_path(instance, filename):
+    return f"c/{instance.company_id}/template_imports/{filename}"
+
+
 class QuotationStatus(models.TextChoices):
     """The internal approval chain, then the customer's answer.
 
@@ -947,6 +951,47 @@ class DocumentTemplateVersion(TenantBaseModel):
         out = dict(DEFAULT_CONFIG)
         out.update(self.config or {})
         return out
+
+
+class TemplateImport(TenantBaseModel):
+    """Method 3 — a company uploads a document it already uses and LulaAI
+    reconstructs its VISUAL STRUCTURE into a reusable HTML template `design`.
+
+    The upload is analysed (deterministically first, AI-enriched when credits are
+    available) into a proposed `design` + `warnings` (low-confidence fields the
+    user must confirm). AI identifies layout only — it never invents business
+    data. On approval a DocumentTemplate (origin=imported) is created from the
+    design; the upload is kept tenant-isolated for the audit trail."""
+
+    class Status(models.TextChoices):
+        UPLOADED = "uploaded", "Uploaded"
+        READY = "ready", "Ready for review"
+        FAILED = "failed", "Analysis failed"
+        SAVED = "saved", "Saved as template"
+
+    doc_type = models.CharField(max_length=12, choices=DocumentType.choices)
+    source_file = models.FileField(upload_to=template_import_upload_path)
+    original_name = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices,
+                              default=Status.UPLOADED)
+    #: The reconstructed design (same schema the visual builder + renderer use).
+    design = models.JSONField(default=dict, blank=True)
+    #: Low-confidence findings for the user to confirm (list of {field, message}).
+    warnings = models.JSONField(default=list, blank=True)
+    #: The raw features the analyser pulled from the document (audit / debugging).
+    features = models.JSONField(default=dict, blank=True)
+    ai_used = models.BooleanField(default=False)
+    credits_used = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    error = models.CharField(max_length=255, blank=True)
+    saved_template = models.ForeignKey(DocumentTemplate, on_delete=models.SET_NULL,
+                                       null=True, blank=True, related_name="+")
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["company", "status"])]
+
+    def __str__(self):
+        return f"Import: {self.original_name or self.source_file.name}"
 
 
 #: The built-in library seeded for every company (services.seed_document_templates).

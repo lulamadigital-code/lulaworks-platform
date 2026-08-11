@@ -39,7 +39,9 @@ _SECTIONS = {
     "doc_template_preview": "company", "quotation_set_template": "quotations",
     "doc_template_duplicate": "company", "doc_template_archive": "company",
     "doc_template_restore": "company", "doc_template_build_new": "company",
-    "doc_template_builder": "company",
+    "doc_template_builder": "company", "doc_template_import": "company",
+    "doc_template_import_review": "company", "doc_template_import_save": "company",
+    "doc_template_import_original": "company", "doc_template_import_preview": "company",
     "billing": "billing", "billing_change_plan": "billing",
     "billing_cancel": "billing", "billing_buy_credits": "billing",
     # CRM — customers are one part of it; leads/pipeline/activities are the rest.

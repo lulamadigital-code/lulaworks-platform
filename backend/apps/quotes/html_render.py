@@ -21,6 +21,7 @@ import os
 from html import escape
 
 from django.contrib.staticfiles import finders
+from django.utils import timezone
 
 from .models import DEFAULT_DESIGN, TEMPLATE_ITEM_COLUMN_KEYS
 
@@ -128,6 +129,56 @@ def build_context(document, doc_type: str) -> dict:
     }
 
 
+def sample_context(company, doc_type: str) -> dict:
+    """A context of clearly-SAMPLE data for previewing a template that has no real
+    document yet (the import review screen, a blank builder). Uses the company's
+    own identity/logo/banking so branding shows true, with placeholder customer
+    and line items — plainly marked SAMPLE so it can't be mistaken for a real doc."""
+    from apps.identity.profile import document_header
+
+    header = document_header(company, kind=doc_type)
+    show_prices = doc_type != "delivery"
+    rows = [("Centrifugal pump overhaul — strip, inspect, rebuild", "2", 18500),
+            ("Mechanical seal replacement kit", "2", 4200),
+            ("Site labour — millwright (per shift)", "6", 3800)]
+    items = []
+    for i, (desc, qty, price) in enumerate(rows, start=1):
+        row = {"item_no": str(i), "description": desc, "qty": qty, "unit": "ea"}
+        row["unit_price"] = f"R{price:,.2f}" if show_prices else ""
+        row["amount"] = f"R{price * int(qty):,.2f}" if show_prices else ""
+        items.append(row)
+    financial = {} if doc_type == "delivery" else {
+        "subtotal": "R68,200.00", "discount": "", "vat_label": "VAT @ 15%",
+        "vat": "R10,230.00", "total": "R78,430.00"}
+    title = {"quotation": "QUOTATION", "invoice": "TAX INVOICE",
+             "delivery": "DELIVERY NOTE"}[doc_type]
+    return {
+        "doc_type": doc_type,
+        "company": {
+            "name": header["display_name"], "address": header["address_lines"],
+            "email": header["email"], "phone": header["phone"], "mobile": header["mobile"],
+            "website": header["website"], "vat_number": header["vat_no"],
+            "registration_number": header["registration_no"],
+            "tax_number": header["tax_reference_no"],
+        },
+        "logo_data_uri": _logo_data_uri(header),
+        "customer": {"name": "SAMPLE — Customer (Pty) Ltd",
+                     "address": "1 Sample Road, Johannesburg", "vat_number": "4990000000"},
+        "contact": {"name": "Sample Contact", "email": "buyer@example.co.za", "phone": "011 000 0000"},
+        "document": {"reference": "SAMPLE-0001",
+                     "date": timezone.now().strftime("%d/%m/%Y"),
+                     "prepared_by": "A. Preparer", "title": title, "type": doc_type,
+                     "po_number": "", "quotation_ref": "" if doc_type == "quotation" else "QT-SAMPLE",
+                     "valid_until": ""},
+        "job": {"title": "Sample scope", "site": "Sample Site",
+                "scope_of_work": "Sample scope of work — this is a preview with placeholder data."},
+        "items": items,
+        "financial": financial,
+        "banking": header["bank"],
+        "terms": "This is sample terms text shown only in the template preview.",
+    }
+
+
 def _logo_data_uri(header) -> str:
     """The company logo as a data: URI so WeasyPrint needs no filesystem access.
     Falls back to the bundled mark; empty string when there's nothing to show."""
@@ -158,6 +209,15 @@ def render_html_pdf(document, doc_type: str, design: dict) -> bytes:
 
     context = build_context(document, doc_type)
     html = design_to_html(design or DEFAULT_DESIGN, context)
+    return HTML(string=html).write_pdf()
+
+
+def render_design_preview_pdf(company, doc_type: str, design: dict) -> bytes:
+    """Render a design to PDF with SAMPLE data — for the import review screen and
+    a blank builder, where there's no real document to fill it with yet."""
+    from weasyprint import HTML
+
+    html = design_to_html(design or DEFAULT_DESIGN, sample_context(company, doc_type))
     return HTML(string=html).write_pdf()
 
 

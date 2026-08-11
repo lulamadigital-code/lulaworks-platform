@@ -279,6 +279,105 @@ def quotation_set_template(request, pk):
     return redirect("web:quotation_detail", pk=pk)
 
 
+#: What the importer accepts. PDFs give the richest layout signal; images degrade
+#: gracefully; DOCX carries no reliable layout (a standard look is applied).
+_IMPORT_EXTS = {".pdf", ".png", ".jpg", ".jpeg", ".webp", ".docx", ".doc"}
+_IMPORT_MAX_BYTES = 15 * 1024 * 1024
+
+
+@login_required
+def template_import_start(request):
+    """Method 3 — upload an existing document; LulaAI reconstructs its structure."""
+    from apps.quotes.models import TemplateImport
+    from apps.quotes.template_import import IMPORT_CREDIT_ESTIMATE, run_import
+
+    if request.method == "POST":
+        if not _can(request.user):
+            messages.error(request, "You do not have permission to import templates.")
+            return redirect("web:doc_templates")
+        upload = request.FILES.get("document")
+        doc_type = request.POST.get("doc_type", "")
+        if not upload:
+            messages.error(request, "Choose a document to import.")
+            return redirect("web:doc_template_import")
+        import os
+        ext = os.path.splitext(upload.name)[1].lower()
+        if ext not in _IMPORT_EXTS:
+            messages.error(request, "Unsupported file type. Upload a PDF, image or Word document.")
+            return redirect("web:doc_template_import")
+        if upload.size > _IMPORT_MAX_BYTES:
+            messages.error(request, "That file is too large (max 15 MB).")
+            return redirect("web:doc_template_import")
+        if doc_type not in dict(DocumentType.choices):
+            messages.error(request, "Choose which document type this is.")
+            return redirect("web:doc_template_import")
+
+        ti = TemplateImport.objects.create(
+            company=request.user.active_company, doc_type=doc_type,
+            source_file=upload, original_name=upload.name[:255],
+            created_by=request.user, updated_by=request.user)
+        run_import(ti, request.user)
+        return redirect("web:doc_template_import_review", pk=ti.id)
+
+    return render(request, "web/doctemplates/import.html", {
+        "doc_types": DocumentType.choices,
+        "credit_estimate": IMPORT_CREDIT_ESTIMATE,
+        "can_manage": _can(request.user),
+    })
+
+
+@login_required
+def template_import_review(request, pk):
+    """Side-by-side: the original vs the reconstructed template, with the warnings
+    LulaAI flagged for confirmation. Save it as a company template, or open it in
+    the builder to adjust first."""
+    from apps.quotes.models import TemplateImport
+    ti = get_object_or_404(TemplateImport.objects.all(), pk=pk)
+    return render(request, "web/doctemplates/import_review.html", {
+        "ti": ti, "can_manage": _can(request.user),
+    })
+
+
+@login_required
+@require_POST
+def template_import_save(request, pk):
+    from apps.quotes.models import TemplateImport
+    from apps.quotes.template_import import save_as_template
+    ti = get_object_or_404(TemplateImport.objects.all(), pk=pk)
+    if not _can(request.user):
+        messages.error(request, "You do not have permission to save templates.")
+        return redirect("web:doc_templates")
+    if ti.status != TemplateImport.Status.READY:
+        messages.error(request, "This import isn’t ready to save.")
+        return redirect("web:doc_template_import_review", pk=pk)
+    tpl = save_as_template(ti, request.user, name=request.POST.get("name", ""))
+    messages.success(request, "Saved as a company template — fine-tune it in the builder.")
+    return redirect("web:doc_template_builder", pk=tpl.id)
+
+
+@login_required
+def template_import_original(request, pk):
+    """Serve the uploaded original inline for the side-by-side view."""
+    from django.http import FileResponse
+    from apps.quotes.models import TemplateImport
+    ti = get_object_or_404(TemplateImport.objects.all(), pk=pk)
+    return FileResponse(ti.source_file.open("rb"),
+                        filename=ti.original_name or "original")
+
+
+@login_required
+def template_import_preview(request, pk):
+    """Render the reconstructed design to a PDF with sample data (no real document
+    exists yet), so the user can eyeball the template before saving."""
+    from apps.quotes.html_render import render_design_preview_pdf
+    from apps.quotes.models import TemplateImport
+    ti = get_object_or_404(TemplateImport.objects.all(), pk=pk)
+    pdf = render_design_preview_pdf(request.user.active_company, ti.doc_type, ti.design)
+    resp = HttpResponse(pdf, content_type="application/pdf")
+    resp["Content-Disposition"] = 'inline; filename="reconstructed.pdf"'
+    return resp
+
+
 @login_required
 def template_preview(request, pk):
     """Render a real PDF with this template applied, using the company's most

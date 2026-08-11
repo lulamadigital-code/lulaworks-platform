@@ -74,6 +74,9 @@ FEATURE_TASKS = {
     "search_assist": TaskType.REASONING,
     "chat_assistant": TaskType.CHAT,
     "image_understanding": TaskType.IMAGE,
+    # Template Studio — refine a document's reconstructed LAYOUT (reasons over
+    # deterministically-extracted features; never invents business data).
+    "template_layout_import": TaskType.REASONING,
 }
 
 #: Static tie-break priority when a task doesn't name a provider (or for the

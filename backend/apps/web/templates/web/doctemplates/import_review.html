@@ -1,0 +1,84 @@
+{% extends "web/base.html" %}
+{% block title %}Review reconstructed template{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>Review — {{ ti.original_name }}</h1>
+    <p class="sub" style="margin:0;">Original on the left, LulaWorks reconstruction (with sample data)
+      on the right. Confirm the warnings, then save it as a company template — or open it in the
+      builder to fine-tune first. Nothing is saved until you say so.</p>
+  </div>
+  <div><a class="btn ghost" href="{% url 'web:doc_template_import' %}">← New import</a></div>
+</div>
+
+{% if ti.status == 'failed' %}
+<div class="card" style="border-left:3px solid var(--danger,#c0392b);">
+  <strong>That document couldn’t be analysed.</strong>
+  <p class="muted" style="margin:6px 0 0;">{{ ti.error }}</p>
+  <p class="muted" style="margin:6px 0 0;">Try a PDF export of the document, or
+    <a href="{% url 'web:doc_template_build_new' %}">build a template from scratch</a>.</p>
+</div>
+{% else %}
+
+<div class="row" style="gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+  <span class="chip {% if ti.ai_used %}ok{% else %}info{% endif %}">
+    {% if ti.ai_used %}✨ LulaAI refined the layout{% else %}Reconstructed automatically (no AI){% endif %}</span>
+  <span class="chip">{{ ti.get_doc_type_display }}</span>
+  {% if ti.credits_used %}<span class="chip">{{ ti.credits_used }} credits</span>{% endif %}
+</div>
+
+<div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;">
+  <div class="card" style="padding:8px;">
+    <div class="muted" style="font-size:12px;margin:2px 4px 6px;">Your original</div>
+    <iframe src="{% url 'web:doc_template_import_original' ti.id %}" title="Original"
+            style="width:100%;height:640px;border:1px solid var(--border,#e2e2e2);border-radius:4px;"></iframe>
+  </div>
+  <div class="card" style="padding:8px;">
+    <div class="muted" style="font-size:12px;margin:2px 4px 6px;">LulaWorks reconstruction (sample data)</div>
+    <iframe src="{% url 'web:doc_template_import_preview' ti.id %}" title="Reconstructed"
+            style="width:100%;height:640px;border:1px solid var(--border,#e2e2e2);border-radius:4px;"></iframe>
+  </div>
+</div>
+
+<div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;align-items:start;">
+  <div class="card">
+    <h3 style="margin-top:0;">What LulaAI detected</h3>
+    <table>
+      <tr><td class="muted">Accent colour</td><td>
+        <span style="display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:middle;
+          background:{{ ti.design.branding.accent_color|default:'#0E6E6E' }};border:1px solid #ccc;"></span>
+        {{ ti.design.branding.accent_color|default:'—' }}</td></tr>
+      <tr><td class="muted">Logo position</td><td>{{ ti.design.branding.logo_position|title }}</td></tr>
+      <tr><td class="muted">Header style</td><td>{{ ti.design.branding.header_style|title }}</td></tr>
+      <tr><td class="muted">Sections shown</td><td>
+        {% for s in ti.design.sections %}{% if s.visible %}{{ s.key }}{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}</td></tr>
+      <tr><td class="muted">Item columns</td><td>{{ ti.design.columns|join:", " }}</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Please confirm {% if ti.warnings %}<span class="chip warn">{{ ti.warnings|length }}</span>{% endif %}</h3>
+    {% if ti.warnings %}
+    <ul style="margin:0;padding-left:18px;font-size:13px;">
+      {% for w in ti.warnings %}<li style="margin-bottom:6px;">⚠️ {{ w.message }}</li>{% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted" style="margin:0;">Nothing needed confirming — but always eyeball the preview.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if can_manage %}
+<div class="card" style="margin-top:14px;">
+  <form method="post" action="{% url 'web:doc_template_import_save' ti.id %}" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">{% csrf_token %}
+    <div style="flex:1;min-width:220px;"><label>Template name</label>
+      <input type="text" name="name" value="{{ ti.get_doc_type_display }} (imported)"></div>
+    <button class="btn primary" type="submit">Save as company template →</button>
+  </form>
+  <p class="muted" style="font-size:12px;margin:8px 0 0;">Saved templates open in the visual builder,
+    where you can adjust anything before making it your default.</p>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
