@@ -570,13 +570,33 @@ class SiteContactManagementTests(TestCase):
                                        seed_departments=False)
             contact = save_contact(customer, None, data=self._post({
                 "full_name": "Thabo Approver", "email": "thabo@client.co.za",
-                "roles": ["Procurement Officer", "Buyer"],
+                "roles": ["Procurement Officer", "Buyer", "Supreme Overlord"],
                 "responsibilities": ["approve_po", "approve_invoice", "bogus_key"],
             }))
+            # Both multi-value fields are whitelisted — a forged value is dropped.
             self.assertEqual(contact.roles, ["Procurement Officer", "Buyer"])
-            # The bogus responsibility is filtered — only known keys route documents.
             self.assertEqual(sorted(contact.responsibilities),
                              ["approve_invoice", "approve_po"])
+
+    def test_save_contact_rejects_unknown_method_and_never_sets_status(self):
+        """CharField choices aren't enforced on .save(); a forged preferred_method
+        must be ignored, and status must NOT be writable here — it has its own
+        audited path (set_contact_status)."""
+        from .services import save_contact
+        company = make_company()
+        with tenant_scope(company.id):
+            customer = create_customer(company, None, name="Sibanye",
+                                       seed_departments=False)
+            contact = save_contact(customer, None, data=self._post({
+                "full_name": "Nomsa Buyer",
+                "preferred_method": "carrier_pigeon",   # not a valid Method
+                "status": "do_not_contact",              # must be ignored here
+            }))
+            # Unknown method ignored → model default stands.
+            self.assertEqual(contact.preferred_method,
+                             CustomerContact.Method.EMAIL)
+            # Status was NOT taken from the POST — a new contact is ACTIVE.
+            self.assertEqual(contact.status, CustomerContact.Status.ACTIVE)
 
     def test_save_contact_requires_a_name(self):
         from .services import CRMError, save_contact

@@ -10,6 +10,7 @@ import re
 from django.db import transaction
 
 from .models import (
+    CONTACT_ROLES,
     RESPONSIBILITIES,
     Activity,
     Customer,
@@ -794,17 +795,23 @@ def save_contact(customer, user, *, contact=None, data):
     contact.department = (CustomerDepartment.objects.filter(
         customer=customer, pk=dept_id).first() if dept_id else None)
 
+    # Only a known contact method — CharField `choices` are not enforced on
+    # .save(), so a stray/forged value would otherwise persist unchecked. An
+    # unrecognised value is ignored (keeps the existing/default method).
     method = (data.get("preferred_method") or "").strip()
-    if method:
+    if method in CustomerContact.Method.values:
         contact.preferred_method = method
-    status = (data.get("status") or "").strip()
-    if status:
-        contact.status = status
 
-    # Multi-value fields (roles + functional responsibilities).
+    # Deliberately NOT taken from `data`: status is a behavioural state (routing
+    # skips non-active contacts) with its own audited path, set_contact_status().
+    # A new contact defaults to ACTIVE via the model.
+
+    # Multi-value fields. Both are whitelisted for the same reason — roles are
+    # labels, responsibilities drive document routing; neither should accept an
+    # arbitrary string a client happened to POST.
     getlist = getattr(data, "getlist", None)
     if getlist is not None:
-        contact.roles = [r for r in getlist("roles") if r]
+        contact.roles = [r for r in getlist("roles") if r in CONTACT_ROLES]
         contact.responsibilities = [r for r in getlist("responsibilities")
                                     if r in RESPONSIBILITIES]
     contact.is_primary = bool(data.get("is_primary"))
