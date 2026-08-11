@@ -21,6 +21,9 @@ from .models import (
     ALLOWED_FONTS,
     ALLOWED_HEADER_STYLES,
     ALLOWED_LOGO_POSITIONS,
+    ALLOWED_SECTION_STYLES,
+    ALLOWED_TABLE_STYLES,
+    ALLOWED_TOTALS_STYLES,
     BUILTIN_TEMPLATES,
     DEFAULT_CONFIG,
     DEFAULT_DESIGN,
@@ -131,8 +134,17 @@ def clean_design(raw: dict) -> dict:
     if not columns:
         columns = list(TEMPLATE_ITEM_COLUMN_KEYS)
 
+    def _choice(key, allowed):
+        val = (raw.get(key) or DEFAULT_DESIGN[key])
+        if key in raw and val not in allowed:
+            raise TemplateError(f"Unknown {key.replace('_', ' ')} “{val}”.")
+        return val if val in allowed else DEFAULT_DESIGN[key]
+
     return {
         "branding": branding, "sections": sections, "columns": columns,
+        "table_style": _choice("table_style", ALLOWED_TABLE_STYLES),
+        "totals_style": _choice("totals_style", ALLOWED_TOTALS_STYLES),
+        "section_title_style": _choice("section_title_style", ALLOWED_SECTION_STYLES),
         "header_note": (raw.get("header_note") or "").strip()[:200],
         "footer_note": (raw.get("footer_note") or "").strip()[:200],
     }
@@ -295,6 +307,29 @@ def pin_template_version(document, doc_type, actor=None):
 
 # ── Management ────────────────────────────────────────────────────────────────
 
+def _seed_html_looks(company, actor, existing) -> int:
+    """Create the built-in HTML-engine 'looks' (genuinely distinct structures) the
+    company is missing. `existing` is a set of (doc_type, name) already present and
+    is updated in place. Never a default — they sit alongside for the user to pick."""
+    from .models import BUILTIN_HTML_LOOKS
+    created = 0
+    for name, description, design in BUILTIN_HTML_LOOKS:
+        for doc_type in ("quotation", "invoice", "delivery"):
+            if (doc_type, name) in existing:
+                continue
+            tpl = DocumentTemplate.objects.create(
+                company=company, doc_type=doc_type, name=name,
+                description=description, is_default=False, is_builtin=True,
+                origin=TemplateOrigin.BUILTIN, engine=TemplateEngine.HTML,
+                config={}, created_by=actor, updated_by=actor,
+            )
+            _snapshot_version(tpl, actor, note="Built-in look",
+                              design=clean_design(design))
+            existing.add((doc_type, name))
+            created += 1
+    return created
+
+
 @transaction.atomic
 def seed_document_templates(company, actor=None) -> int:
     """Create the built-in library for a company that has none. Idempotent —
@@ -311,6 +346,9 @@ def seed_document_templates(company, actor=None) -> int:
         )
         _snapshot_version(tpl, actor, note="Built-in")
         created += 1
+    existing = {(t.doc_type, t.name)
+                for t in DocumentTemplate.objects.filter(company=company)}
+    created += _seed_html_looks(company, actor, existing)
     return created
 
 
@@ -340,6 +378,7 @@ def sync_builtin_templates(company, actor=None) -> int:
         _snapshot_version(tpl, actor, note="Built-in")
         existing.add((doc_type, name))
         created += 1
+    created += _seed_html_looks(company, actor, existing)
     return created
 
 

@@ -799,7 +799,13 @@ TEMPLATE_ITEM_COLUMN_KEYS = [k for k, _ in TEMPLATE_ITEM_COLUMNS]
 
 ALLOWED_FONT_FAMILIES = ["Helvetica", "Arial", "Times New Roman", "Georgia",
                          "Courier New", "Verdana", "Trebuchet MS"]
-ALLOWED_HEADER_STYLES = ["band", "plain", "minimal"]  # band = coloured header
+
+#: Structural knobs — what actually makes documents look DIFFERENT (not just
+#: recoloured). The HTML generator honours each; the visual builder exposes them.
+ALLOWED_HEADER_STYLES = ["band", "plain", "minimal", "centered", "split", "sidebar"]
+ALLOWED_TABLE_STYLES = ["lines", "striped", "bordered", "plain"]
+ALLOWED_TOTALS_STYLES = ["plain", "boxed", "highlighted"]
+ALLOWED_SECTION_STYLES = ["plain", "bar", "underline"]
 
 #: The design a new HTML template starts from — a clean, complete document.
 DEFAULT_DESIGN = {
@@ -812,6 +818,9 @@ DEFAULT_DESIGN = {
     },
     "sections": [{"key": k, "visible": True} for k in TEMPLATE_SECTION_KEYS],
     "columns": list(TEMPLATE_ITEM_COLUMN_KEYS),
+    "table_style": "lines",
+    "totals_style": "plain",
+    "section_title_style": "plain",
     "header_note": "",
     "footer_note": "",
 }
@@ -837,6 +846,43 @@ TEMPLATE_FIELD_LIBRARY = {
                 "company.branch_code"],
     "Terms": ["terms_and_conditions"],
 }
+
+#: Built-in HTML-engine "looks" — genuinely DIFFERENT structures (not recolours),
+#: seeded per company alongside the ReportLab presets. Each is (name, description,
+#: design). The design varies header layout, table style, totals and section-title
+#: treatment — the things that actually make documents look different.
+BUILTIN_HTML_LOOKS = [
+    ("Sidebar", "Coloured left rail with your logo; content on the right.", {
+        "branding": {"accent_color": "#0E6E6E", "header_style": "sidebar",
+                     "logo_position": "left", "font_family": "Helvetica"},
+        "table_style": "striped", "totals_style": "plain",
+        "section_title_style": "underline"}),
+    ("Centered", "Logo and company centred — formal and clean.", {
+        "branding": {"accent_color": "#1F3A5F", "header_style": "centered",
+                     "logo_position": "center", "font_family": "Georgia"},
+        "table_style": "plain", "totals_style": "plain",
+        "section_title_style": "underline"}),
+    ("Split Header", "Two-tone header band with a strong document title.", {
+        "branding": {"accent_color": "#0B72E7", "secondary_color": "#08356E",
+                     "header_style": "split", "logo_position": "left"},
+        "table_style": "lines", "totals_style": "boxed",
+        "section_title_style": "plain"}),
+    ("Bordered Ledger", "Ruled table and boxed totals — an accounting look.", {
+        "branding": {"accent_color": "#37474F", "header_style": "plain",
+                     "logo_position": "right", "font_family": "Arial"},
+        "table_style": "bordered", "totals_style": "boxed",
+        "section_title_style": "bar"}),
+    ("Minimal Line", "Thin rules and lots of whitespace — understated.", {
+        "branding": {"accent_color": "#111827", "header_style": "minimal",
+                     "logo_position": "left", "font_family": "Helvetica"},
+        "table_style": "plain", "totals_style": "plain",
+        "section_title_style": "plain"}),
+    ("Statement", "Striped rows and a highlighted total.", {
+        "branding": {"accent_color": "#2CA01C", "header_style": "band",
+                     "logo_position": "left"},
+        "table_style": "striped", "totals_style": "highlighted",
+        "section_title_style": "bar"}),
+]
 
 
 class TemplateEngine(models.TextChoices):

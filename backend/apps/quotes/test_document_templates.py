@@ -439,3 +439,57 @@ class HtmlEngineTests(TestCase):
             engine, design = dt.resolve_render(q, "quotation")
             self.assertEqual(engine, "html")
             self.assertEqual(design["branding"]["accent_color"], "#111111")   # frozen
+
+
+class StructuralLooksTests(TestCase):
+    """The distinct HTML 'looks' are genuinely different structures, and each
+    structural knob renders a valid document."""
+
+    def _quote(self, company):
+        from .models import Quotation
+        q = Quotation.objects.create(company=company, number="QT-L", client_name="X", site="S")
+        q.lines.create(company=company, position=1, description="Item", qty=2,
+                       unit="ea", unit_cost=500)
+        return q
+
+    def test_all_six_looks_are_seeded_as_html_templates(self):
+        from .models import BUILTIN_HTML_LOOKS, DocumentTemplate
+        c = make_company()
+        with tenant_scope(c.id):
+            dt.seed_document_templates(c)
+            for name, _desc, _design in BUILTIN_HTML_LOOKS:
+                for doc_type in ("quotation", "invoice", "delivery"):
+                    tpl = DocumentTemplate.objects.filter(
+                        company=c, doc_type=doc_type, name=name).first()
+                    self.assertIsNotNone(tpl, f"{name}/{doc_type}")
+                    self.assertEqual(tpl.engine, "html")
+                    self.assertTrue(tpl.current_version.design)
+
+    def test_each_look_renders_a_valid_pdf(self):
+        from .models import BUILTIN_HTML_LOOKS, DocumentTemplate
+        from .pdf import quotation_pdf_bytes
+        c = make_company()
+        with tenant_scope(c.id):
+            dt.seed_document_templates(c)
+            q = self._quote(c)
+            for name, _desc, _design in BUILTIN_HTML_LOOKS:
+                tpl = DocumentTemplate.objects.get(company=c, doc_type="quotation", name=name)
+                q.template = tpl
+                pdf = quotation_pdf_bytes(q)
+                self.assertTrue(pdf.startswith(b"%PDF"), name)
+
+    def test_sidebar_produces_a_two_column_layout(self):
+        from .html_render import design_to_html, sample_context
+        c = make_company()
+        with tenant_scope(c.id):
+            html = design_to_html(
+                dt.clean_design({"branding": {"header_style": "sidebar"}}),
+                sample_context(c, "quotation"))
+        self.assertIn("sidebar-layout", html)
+        self.assertIn("class='rail'", html)
+
+    def test_clean_design_rejects_unknown_style_knobs(self):
+        with self.assertRaises(dt.TemplateError):
+            dt.clean_design({"table_style": "rainbow"})
+        with self.assertRaises(dt.TemplateError):
+            dt.clean_design({"totals_style": "sparkle"})

@@ -13,7 +13,6 @@ import re
 from io import BytesIO
 from xml.sax.saxutils import escape
 
-from django.contrib.staticfiles import finders
 from reportlab.lib import colors, utils
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
@@ -135,11 +134,10 @@ def _brand_color(company):
 
 
 def _logo_flowable(header, max_h=60 * mm, max_w=70 * mm):
-    """The company's uploaded logo (Company Profile → branding, falling back to
-    the main logo), else the bundled static mark, else None (the caller prints
-    the company name as text instead). Sized to fill the letterhead — big and
-    visible — but capped in both height and width so a wide or tall logo keeps
-    its aspect ratio without overrunning the header."""
+    """The COMPANY'S OWN uploaded logo (Company Profile → branding), else None — the
+    caller then prints the company name as text. A customer-facing document must
+    never fall back to the bundled LulaWorks mark. Sized to fill the letterhead but
+    capped in height and width so a wide or tall logo keeps its aspect ratio."""
     path = None
     logo = header.get("logo")
     if logo:
@@ -147,7 +145,6 @@ def _logo_flowable(header, max_h=60 * mm, max_w=70 * mm):
             path = logo.path if os.path.exists(logo.path) else None
         except (ValueError, NotImplementedError):
             path = None
-    path = path or finders.find("web/logo.png")
     if not path:
         return None
     try:

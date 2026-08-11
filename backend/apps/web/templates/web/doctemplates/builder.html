@@ -39,8 +39,16 @@
           <select name="font_family">{% for f in fonts %}<option value="{{ f }}" {% if branding.font_family == f %}selected{% endif %}>{{ f }}</option>{% endfor %}</select></div>
         <div><label>Logo position</label>
           <select name="logo_position">{% for p in logo_positions %}<option value="{{ p }}" {% if branding.logo_position == p %}selected{% endif %}>{{ p|title }}</option>{% endfor %}</select></div>
-        <div><label>Header style</label>
+        <div><label>Header layout</label>
           <select name="header_style">{% for h in header_styles %}<option value="{{ h }}" {% if branding.header_style == h %}selected{% endif %}>{{ h|title }}</option>{% endfor %}</select></div>
+      </div>
+      <div class="two" style="margin-top:8px;">
+        <div><label>Item table style</label>
+          <select name="table_style">{% for t in table_styles %}<option value="{{ t }}" {% if design.table_style == t %}selected{% endif %}>{{ t|title }}</option>{% endfor %}</select></div>
+        <div><label>Totals style</label>
+          <select name="totals_style">{% for t in totals_styles %}<option value="{{ t }}" {% if design.totals_style == t %}selected{% endif %}>{{ t|title }}</option>{% endfor %}</select></div>
+        <div><label>Section headings</label>
+          <select name="section_title_style">{% for s in section_styles %}<option value="{{ s }}" {% if design.section_title_style == s %}selected{% endif %}>{{ s|title }}</option>{% endfor %}</select></div>
       </div>
       <div class="two" style="margin-top:8px;">
         <div><label>Header note</label><input type="text" name="header_note" value="{{ design.header_note }}" placeholder="e.g. Engineering & Technical Services"></div>

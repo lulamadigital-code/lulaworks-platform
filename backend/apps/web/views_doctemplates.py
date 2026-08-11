@@ -18,6 +18,9 @@ from apps.quotes.models import (
     ALLOWED_FONTS,
     ALLOWED_HEADER_STYLES,
     ALLOWED_LOGO_POSITIONS,
+    ALLOWED_SECTION_STYLES,
+    ALLOWED_TABLE_STYLES,
+    ALLOWED_TOTALS_STYLES,
     DEFAULT_CONFIG,
     TEMPLATE_ITEM_COLUMNS,
     TEMPLATE_FIELD_LIBRARY,
@@ -213,6 +216,8 @@ def template_builder(request, pk):
         "sections": sections, "columns": columns,
         "fonts": ALLOWED_FONT_FAMILIES, "logo_positions": ALLOWED_LOGO_POSITIONS,
         "header_styles": ALLOWED_HEADER_STYLES,
+        "table_styles": ALLOWED_TABLE_STYLES, "totals_styles": ALLOWED_TOTALS_STYLES,
+        "section_styles": ALLOWED_SECTION_STYLES,
         "field_library": TEMPLATE_FIELD_LIBRARY,
         "can_manage": _can(request.user),
     })
@@ -438,6 +443,9 @@ def _design_from_post(post) -> dict:
         "branding": branding,
         "sections": [entry for _, entry in ordered],
         "columns": post.getlist("columns"),
+        "table_style": post.get("table_style", ""),
+        "totals_style": post.get("totals_style", ""),
+        "section_title_style": post.get("section_title_style", ""),
         "header_note": post.get("header_note", ""),
         "footer_note": post.get("footer_note", ""),
     }
