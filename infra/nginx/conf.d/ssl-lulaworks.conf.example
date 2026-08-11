@@ -1,0 +1,58 @@
+# LulaWorks — production HTTPS for lulaworks.com.
+#
+# Canonical host is www.lulaworks.com; the bare domain and app.lulaworks.com
+# redirect to it. Enable ONLY after the certificate exists (see docs/DEPLOYMENT).
+#   cd /opt/lulaworks/infra/nginx/conf.d
+#   mv default.conf default.conf.disabled          # disable the HTTP-only block
+#   cp ssl-lulaworks.conf.example ssl.conf         # activate this one
+#   docker compose -f ../../../docker-compose.prod.yml --env-file ../../../.env.prod exec nginx nginx -t
+#   ... restart nginx
+
+# HTTP: serve the ACME challenge, redirect everything else to canonical HTTPS.
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name lulaworks.com www.lulaworks.com app.lulaworks.com;
+    location /.well-known/acme-challenge/ { root /var/www/certbot; default_type "text/plain"; }
+    location / { return 301 https://www.lulaworks.com$request_uri; }
+}
+
+# HTTPS canonical — www.lulaworks.com serves the app.
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name www.lulaworks.com;
+
+    ssl_certificate     /etc/letsencrypt/live/www.lulaworks.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/www.lulaworks.com/privkey.pem;
+    ssl_protocols        TLSv1.2 TLSv1.3;
+    ssl_ciphers          ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache    shared:SSL:10m;
+    ssl_session_timeout  1d;
+    ssl_session_tickets  off;
+
+    include /etc/nginx/snippets/security-headers.conf;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+    location /static/ { alias /app/staticfiles/; access_log off; include /etc/nginx/snippets/security-headers.conf; add_header Cache-Control "public, max-age=2592000, immutable"; }
+    location /media/  { alias /app/media/;       access_log off; include /etc/nginx/snippets/security-headers.conf; add_header Cache-Control "public, max-age=604800"; }
+    location = /health/     { include /etc/nginx/snippets/proxy.conf; proxy_pass http://django; access_log off; }
+    location = /login/      { limit_req zone=auth burst=10 nodelay; include /etc/nginx/snippets/proxy.conf; proxy_pass http://django; }
+    location /api/v1/auth/  { limit_req zone=auth burst=10 nodelay; include /etc/nginx/snippets/proxy.conf; proxy_pass http://django; }
+    location /api/          { limit_req zone=api burst=30 nodelay;  include /etc/nginx/snippets/proxy.conf; proxy_pass http://django; }
+    location /              { limit_req zone=general burst=50 nodelay; include /etc/nginx/snippets/proxy.conf; proxy_pass http://django; }
+}
+
+# HTTPS: bare domain + app subdomain redirect to canonical www.
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name lulaworks.com app.lulaworks.com;
+    ssl_certificate     /etc/letsencrypt/live/www.lulaworks.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/www.lulaworks.com/privkey.pem;
+    ssl_protocols        TLSv1.2 TLSv1.3;
+    return 301 https://www.lulaworks.com$request_uri;
+}
