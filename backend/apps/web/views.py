@@ -1652,6 +1652,13 @@ def _quotation_review(request, quote):
                                     fromlist=["templates_for"]).templates_for(
                                         quote.company, "quotation"),
     }
+    # Email: suggested recipient (CRM routing) + the send history for this doc.
+    from apps.quotes.email import send_history, suggested_recipient
+    context["email_to"] = suggested_recipient(quote.customer, "quotation")
+    context["email_history"] = list(send_history("Quotation", quote.id))
+    # You email the customer a FINALISED quotation, never a draft — same gate
+    # as download.
+    context["can_send"] = request.user.has_perm_code("quotes.create") and quote.is_finalized
     if quote.status == "awarded":
         context["trace"] = traceability(quote)
     return render(request, "web/quotation_detail.html", context)
@@ -1675,6 +1682,51 @@ def quotation_pdf(request, pk):
         from apps.core.audit import audit
         audit(request, "quotation.pdf_downloaded", entity=quote)
     return resp
+
+
+@login_required
+@require_POST
+def quotation_send(request, pk):
+    """Email a quotation to the customer with its PDF attached."""
+    quote = get_object_or_404(Quotation.objects.all(), pk=pk)
+    if not request.user.has_perm_code("quotes.create") or not quote.is_finalized:
+        messages.error(request, "Approve the quotation before emailing it to the customer.")
+        return redirect("web:quotation_detail", pk=pk)
+    from apps.identity.services import MemberError
+    from apps.quotes.email import send_quotation
+    try:
+        log = send_quotation(quote, request.user, to=request.POST.get("to", ""),
+                             message=request.POST.get("message", ""))
+    except MemberError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"Quotation emailed to {log.to_email}.")
+        from apps.core.audit import audit
+        audit(request, "quotation.emailed", entity=quote)
+    return redirect("web:quotation_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def commercial_document_send(request, pk):
+    """Email a tax invoice or delivery note with its PDF attached."""
+    from apps.quotes.models import CommercialDocument
+    doc = get_object_or_404(CommercialDocument.objects.select_related("quotation"), pk=pk)
+    if not request.user.has_perm_code("quotes.create"):
+        messages.error(request, "You do not have permission to send this document.")
+        return redirect("web:commercial_document_detail", pk=pk)
+    from apps.identity.services import MemberError
+    from apps.quotes.email import send_commercial_document
+    try:
+        log = send_commercial_document(doc, request.user, to=request.POST.get("to", ""),
+                                       message=request.POST.get("message", ""))
+    except MemberError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"{doc.get_kind_display()} emailed to {log.to_email}.")
+        from apps.core.audit import audit
+        audit(request, "commercial_document.emailed", entity=doc)
+    return redirect("web:commercial_document_detail", pk=pk)
 
 
 @login_required
@@ -3456,6 +3508,13 @@ def commercial_document_detail(request, pk):
             kind="delivery").first(),
         "next_statuses": commercial_document_next_statuses(doc),
         "timeline": timeline,
+        # Email: suggested recipient + send history for this document.
+        "email_to": __import__("apps.quotes.email", fromlist=["suggested_recipient"])
+            .suggested_recipient(doc.quotation.customer,
+                                 "invoice" if doc.kind == "invoice" else "progress_report"),
+        "email_history": list(__import__("apps.quotes.email", fromlist=["send_history"])
+                              .send_history("CommercialDocument", doc.id)),
+        "can_send": can_quote,
     })
 
 

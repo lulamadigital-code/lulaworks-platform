@@ -957,13 +957,14 @@ class QuotationReviewWorkflowTests(TestCase):
         self.assertNotContains(draft, "Export Excel")
         self.assertContains(draft, "Approve")
         self.assertNotContains(draft, "Finalize")
-        # Approved: the outputs appear; still no Finalize or Send.
+        # Approved: the outputs appear, and the customer email panel is now
+        # available (Email & Notification platform); still no Finalize step.
         self._set_status("approved")
         final = self.client.get(self._url())
         self.assertContains(final, "Download PDF")
         self.assertContains(final, "Export Excel")
         self.assertNotContains(final, "Finalize")
-        self.assertNotContains(final, "Send to customer")
+        self.assertContains(final, "Send to customer")   # email the finalised quote
 
     def test_commercial_timeline_is_shown_with_stages(self):
         resp = self.client.get(self._url())

@@ -71,22 +71,26 @@ def render_email(template: str, context: dict, company=None) -> tuple[str, str]:
 
 def send_email(*, to, subject, template="generic", context=None, company=None,
                to_name="", category=EmailCategory.SYSTEM, sent_by=None,
-               related=None, cc=None, reply_to="", now=False) -> EmailLog:
+               related=None, cc=None, reply_to="", attachment_specs=None,
+               now=False) -> EmailLog:
     """Queue a branded email and record it. Returns the EmailLog.
 
     `related` is any model instance the email concerns (stamped as entity_type/
-    id for the history). `now=True` sends synchronously (tests / management
-    commands); normally delivery runs on the Celery worker so the request never
-    blocks on SMTP.
+    id for the history). `attachment_specs` is a list of {kind,id,name} the
+    worker rebuilds into files at delivery (see notifications.attachments).
+    `now=True` sends synchronously (tests / management commands); normally
+    delivery runs on the Celery worker so the request never blocks on SMTP.
     """
     context = dict(context or {})
     context.setdefault("subject", subject)
     html, text = render_email(template, context, company)
 
+    specs = list(attachment_specs or [])
     log = EmailLog.objects.create(
         company=company, to_email=(to or "").strip().lower(), to_name=to_name,
         cc=list(cc or []), reply_to=reply_to, subject=subject, template=template,
         category=category, html_body=html, text_body=text,
+        attachment_spec=specs, attachment_names=[s.get("name", "") for s in specs],
         entity_type=related.__class__.__name__ if related is not None else "",
         entity_id=getattr(related, "id", None) if related is not None else None,
         sent_by=sent_by, status=EmailStatus.QUEUED,
@@ -128,6 +132,11 @@ def deliver_now(log_id) -> EmailLog:
             reply_to=[log.reply_to] if log.reply_to else None,
             connection=connection)
         msg.attach_alternative(log.html_body, "text/html")
+        # Rebuild attachments from their specs (the PDF is regenerated here, in
+        # the worker, from the live source record).
+        from .attachments import build_attachments
+        for filename, data, mimetype in build_attachments(log.attachment_spec):
+            msg.attach(filename, data, mimetype)
         msg.send()
     except Exception as exc:                     # noqa: BLE001 - recorded, retried by task
         log.error = str(exc)[:1000]

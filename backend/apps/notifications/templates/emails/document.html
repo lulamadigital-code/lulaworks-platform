@@ -1,0 +1,9 @@
+{% extends "emails/base.html" %}
+{% comment %}A document email: an optional personal message from the sender, then
+the standard "here's your document" body. The PDF is attached.{% endcomment %}
+{% block content %}
+{% if message %}<p>{{ message|linebreaksbr }}</p><hr style="border:none;border-top:1px solid #eef1f4;margin:16px 0;">{% endif %}
+<p>{{ body }}</p>
+<p style="font-size:13px;color:#8a97a1;">📎 The {{ doc_label|default:"document" }}{% if reference %}
+   ({{ reference }}){% endif %} is attached as a PDF.</p>
+{% endblock %}

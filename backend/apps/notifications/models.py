@@ -61,6 +61,11 @@ class EmailLog(PlatformBaseModel):
     text_body = models.TextField(blank=True)
     #: Attachment filenames only (never the bytes) — for the history view.
     attachment_names = models.JSONField(default=list, blank=True)
+    #: How to REBUILD attachments at delivery time: [{"kind","id","name"}]. The
+    #: worker regenerates each document (e.g. a quotation PDF) from its source
+    #: record, so large bytes never ride in the task queue and the attachment is
+    #: always the current version. See notifications.attachments.
+    attachment_spec = models.JSONField(default=list, blank=True)
 
     # Optional business record this email is about (Quotation, Invoice, …).
     entity_type = models.CharField(max_length=48, blank=True)

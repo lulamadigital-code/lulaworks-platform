@@ -125,6 +125,35 @@
   <iframe title="Quotation PDF preview" class="pdfframe"
           src="{% url 'web:quotation_pdf' quote.id %}?inline=1"></iframe>
 </div>
+
+{# ── Email this quotation to the customer, with the PDF attached ───────────── #}
+{% if can_send %}
+<h2>Send to customer</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:quotation_send' quote.id %}">{% csrf_token %}
+    <div class="two">
+      <div><label>To</label><input type="email" name="to" value="{{ email_to }}"
+             placeholder="customer@example.com" required></div>
+    </div>
+    <label style="margin-top:10px;">Message (optional)</label>
+    <textarea name="message" rows="3" placeholder="Add a short note to the customer…"></textarea>
+    <div style="margin-top:12px;"><button class="btn primary" type="submit">Email quotation (PDF attached)</button></div>
+  </form>
+</div>
+{% endif %}
+{% if email_history %}
+<div class="card" style="margin-top:10px;padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Sent to</th><th>When</th><th>Status</th></tr>
+    {% for e in email_history %}
+    <tr><td>{{ e.to_email }}</td><td class="muted">{{ e.created_at|date:"d M Y H:i" }}</td>
+      <td>{% if e.status == 'sent' %}<span class="chip ok">Sent</span>
+        {% elif e.status == 'failed' %}<span class="chip bad">Failed</span>
+        {% else %}<span class="chip">{{ e.get_status_display }}</span>{% endif %}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
 <p class="muted" style="font-size:12.5px;margin-top:6px;">This is the exact PDF the
   customer receives. To change it, use <strong>Edit</strong>{% if not can_edit %} (available while the quotation is still in preparation){% endif %}.</p>
 

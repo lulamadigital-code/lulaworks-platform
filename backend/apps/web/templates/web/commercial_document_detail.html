@@ -74,6 +74,35 @@
   customer, items{% if is_invoice %}, prices and VAT{% else %} and quantities{% endif %}
   come from the quotation, nothing re-entered.</p>
 
+{# ── Email this document to the customer, with the PDF attached ────────────── #}
+{% if can_send %}
+<h2>Send to customer</h2>
+<div class="card">
+  <form method="post" action="{% url 'web:commercial_document_send' doc.id %}">{% csrf_token %}
+    <div class="two">
+      <div><label>To</label><input type="email" name="to" value="{{ email_to }}"
+             placeholder="customer@example.com" required></div>
+    </div>
+    <label style="margin-top:10px;">Message (optional)</label>
+    <textarea name="message" rows="3" placeholder="Add a short note…"></textarea>
+    <div style="margin-top:12px;"><button class="btn primary" type="submit">Email {{ doc.get_kind_display|lower }} (PDF attached)</button></div>
+  </form>
+</div>
+{% endif %}
+{% if email_history %}
+<div class="card" style="margin-top:10px;padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Sent to</th><th>When</th><th>Status</th></tr>
+    {% for e in email_history %}
+    <tr><td>{{ e.to_email }}</td><td class="muted">{{ e.created_at|date:"d M Y H:i" }}</td>
+      <td>{% if e.status == 'sent' %}<span class="chip ok">Sent</span>
+        {% elif e.status == 'failed' %}<span class="chip bad">Failed</span>
+        {% else %}<span class="chip">{{ e.get_status_display }}</span>{% endif %}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
 <style>
   .statusbanner { display:flex; align-items:center; justify-content:space-between;
     gap:12px; padding:14px 18px; border-radius:var(--r); }
