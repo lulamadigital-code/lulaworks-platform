@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import EmailLog
+from .models import EmailLog, SmsLog
 
 
 @admin.register(EmailLog)
@@ -9,3 +9,11 @@ class EmailLogAdmin(admin.ModelAdmin):
     list_filter = ("status", "category", "template")
     search_fields = ("to_email", "subject")
     readonly_fields = ("html_body", "text_body", "created_at", "sent_at")
+
+
+@admin.register(SmsLog)
+class SmsLogAdmin(admin.ModelAdmin):
+    list_display = ("to_number", "category", "status", "provider", "created_at")
+    list_filter = ("status", "category")
+    search_fields = ("to_number", "body")
+    readonly_fields = ("created_at", "sent_at")

@@ -208,6 +208,14 @@ SUPPORT_EMAIL = config("SUPPORT_EMAIL", default="")
 #: Absolute base URL, used to build activation links and embed the logo in email.
 SITE_URL = config("SITE_URL", default="")
 
+# --- SMS channel (opt-in, time-critical field alerts) ---
+# Provider-abstracted like email: empty = SMS off (nothing sends). Twilio first;
+# a SA-local provider (Clickatell/BulkSMS/SMSPortal) drops in via one env var.
+SMS_PROVIDER = config("SMS_PROVIDER", default="")          # "" | "twilio"
+TWILIO_ACCOUNT_SID = config("TWILIO_ACCOUNT_SID", default="")
+TWILIO_AUTH_TOKEN = config("TWILIO_AUTH_TOKEN", default="")
+TWILIO_FROM_NUMBER = config("TWILIO_FROM_NUMBER", default="")
+
 # --- Celery / Redis (async boundary; DATA_MODEL §14) ---
 REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_BROKER_URL = REDIS_URL

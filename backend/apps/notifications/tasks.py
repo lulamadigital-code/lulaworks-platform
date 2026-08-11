@@ -25,6 +25,16 @@ def deliver_email(self, log_id):
         raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
 
 
+@shared_task(bind=True, max_retries=MAX_ATTEMPTS - 1, default_retry_delay=60)
+def deliver_sms(self, log_id):
+    """Deliver one queued SMS, with retry/backoff; leaves FAILED for inspection."""
+    from .sms import deliver_now as deliver_sms_now
+    try:
+        deliver_sms_now(log_id)
+    except Exception as exc:  # noqa: BLE001 - deliver_now already logged it FAILED
+        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+
+
 @shared_task
 def daily_reminders():
     """Once-a-day sweep (Celery beat): trial-ending / expired reminders and

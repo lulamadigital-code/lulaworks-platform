@@ -49,4 +49,25 @@
 </div>
 {% endif %}
 
+{% if sms_total %}
+<h2 style="margin-top:24px;">SMS <span class="muted" style="font-weight:400;font-size:14px;">· {{ sms_total }}</span></h2>
+<p class="sub" style="margin-top:0;">Short operational alerts to field staff (opt-in). Latest {{ sms_logs|length }}.</p>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>To</th><th>Message</th><th>Type</th><th>Status</th><th>When</th></tr>
+    {% for s in sms_logs %}
+    <tr>
+      <td class="muted">{{ s.to_number }}</td>
+      <td>{{ s.body|truncatechars:60 }}</td>
+      <td class="muted">{{ s.get_category_display }}</td>
+      <td>{% if s.status == 'sent' %}<span class="chip ok">Sent</span>
+        {% elif s.status == 'failed' %}<span class="chip bad">Failed</span>
+        {% else %}<span class="chip">{{ s.get_status_display }}</span>{% endif %}</td>
+      <td class="muted">{{ s.created_at|date:"d M H:i" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
 {% endblock %}

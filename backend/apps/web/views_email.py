@@ -32,9 +32,12 @@ def email_history(request):
              "count": EmailLog.objects.filter(company=company, status=s.value).count()}
             for s in EmailStatus]
     page = Paginator(logs, 30).get_page(request.GET.get("page"))
+    from apps.notifications.models import SmsLog
+    sms = list(SmsLog.objects.filter(company=company)[:20])
     return render(request, "web/email_history.html", {
         "page": page, "status": status, "tabs": tabs,
         "total": EmailLog.objects.filter(company=company).count(),
+        "sms_logs": sms, "sms_total": SmsLog.objects.filter(company=company).count(),
     })
 
 

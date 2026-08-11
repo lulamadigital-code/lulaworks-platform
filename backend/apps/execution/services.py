@@ -219,7 +219,7 @@ def create_work(company, user, *, name, origin=None, project=None, description="
     publish("WorkCreated", company=company, subject=task, actor=user,
             payload={"name": name, "origin": origin,
                      "standalone": project is None, "billable": is_billable})
-    notify_team(task, verb="task_assigned", title=f"New job: {task.name}", actor=user, email=True)
+    notify_team(task, verb="task_assigned", title=f"New job: {task.name}", actor=user, email=True, sms=True)
     return task
 
 
@@ -429,7 +429,7 @@ def add_member(task, user, role) -> Assignment:
     if created:
         notify(user, task=task, verb="task_assigned",
                title=f"You were added to {task.name}",
-               body=f"Role: {assignment.get_role_display()}", email=True)
+               body=f"Role: {assignment.get_role_display()}", email=True, sms=True)
     return assignment
 
 
@@ -671,11 +671,14 @@ def add_attachment(task, user, *, uploaded_file, comment=None, kind="document"):
 
 # ── Notifications ─────────────────────────────────────────────────────────────
 
-def notify(user, *, task=None, verb="", title="", body="", url="", email=False):
-    """Write an in-app notification (the canonical inbox) and — when `email` is
-    set — also send the branded email through the Email & Notification platform,
+def notify(user, *, task=None, verb="", title="", body="", url="", email=False,
+           sms=False):
+    """Write an in-app notification (the canonical inbox) and — per the flags —
+    also fan out to email and/or SMS through the Email & Notification platform,
     honouring the user's preferences and login access. In-app is always written;
-    email is opt-in per event so routine chatter (comments, files) doesn't spam."""
+    email is opt-in per event (routine chatter stays in-app); SMS is reserved for
+    time-critical field alerts and requires the user to have opted in + a mobile.
+    """
     from .models import Notification
     if user is None:
         return None
@@ -687,7 +690,28 @@ def notify(user, *, task=None, verb="", title="", body="", url="", email=False):
     )
     if email:
         _email_notification(user, company, title=title, body=body, url=full_url)
+    if sms:
+        _sms_notification(user, company, title=title, task=task)
     return note
+
+
+def _sms_notification(user, company, *, title, task=None):
+    """Send a short operational SMS if the user opted in + has a mobile. Never
+    raises — a text failing must not break the assignment that triggered it."""
+    from apps.notifications.sms import sms_allowed, send_sms
+    if not sms_allowed(user):
+        return
+    from django.conf import settings
+    from apps.notifications.models import EmailCategory
+    site = getattr(settings, "SITE_URL", "").rstrip("/")
+    body = f"LulaWorks: {title}."
+    if task is not None and site:
+        body += f" {site}/work/{task.id}/"
+    try:
+        send_sms(to=user.mobile, body=body[:320], company=company,
+                 category=EmailCategory.TASK, related=task)
+    except Exception:  # noqa: BLE001 - resilient
+        pass
 
 
 def _email_notification(user, company, *, title, body, url):
@@ -713,14 +737,14 @@ def _email_notification(user, company, *, title, body, url):
         pass
 
 
-def notify_team(task, *, verb, title, body="", actor=None, email=False):
+def notify_team(task, *, verb, title, body="", actor=None, email=False, sms=False):
     """Fan out to everyone attached to the work — including watchers, who exist
     precisely to be told without being able to change anything. The actor never
     notifies themselves."""
     recipients = {a.user for a in task.assignments.select_related("user")}
     recipients.discard(actor)
-    return [notify(u, task=task, verb=verb, title=title, body=body, email=email)
-            for u in recipients]
+    return [notify(u, task=task, verb=verb, title=title, body=body, email=email,
+                   sms=sms) for u in recipients]
 
 
 def run_overdue_reminders(today=None) -> int:
