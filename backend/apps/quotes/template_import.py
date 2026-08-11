@@ -97,20 +97,65 @@ def _analyse_pdf(path: str, doc_type: str):
         present = _sections_from_text(text)
         columns = _columns_from_text(text, doc_type)
 
+        # Tagline / header note — a short line near the top under the company name.
+        header_note = _detect_header_note(page, width, height)
+
     for key in ("banking", "terms", "scope", "signature"):
         if key not in present:
             warnings.append(_warn(key, f"Couldn’t confirm a “{key}” section — it’s left "
                                   "off; switch it on in the builder if the document has one."))
+    if header_note:
+        features["header_note"] = header_note
+        warnings.append(_warn("header_note", f"Detected a possible tagline — “{header_note}”. "
+                              "It’s been added under the letterhead; remove it in the builder "
+                              "if it isn’t yours."))
 
     sections = [{"key": k, "visible": (k in _CORE_SECTIONS or k in present)}
                 for k in TEMPLATE_SECTION_KEYS]
     features["sections_present"] = sorted(present)
-    design = clean_design({"branding": branding, "sections": sections, "columns": columns})
+    design = clean_design({"branding": branding, "sections": sections, "columns": columns,
+                           "header_note": header_note})
     return design, warnings, features
 
 
 def _warn(field: str, message: str) -> dict:
     return {"field": field, "message": message}
+
+
+#: Substrings that mark a top-region line as address/contact/statutory/title —
+#: never a tagline. Conservative on purpose: better to miss a tagline than to lift
+#: the customer's name or a reference into the template.
+_NOT_TAGLINE = (
+    "@", "tel", "cell", "fax", "phone", "vat", "reg", "www", ".co", "http",
+    "p.o", "po box", "street", "road", " ave", "avenue", "suite", "floor",
+    "quotation", "tax invoice", "invoice", "delivery note", "date", "no:",
+    "number", "client", "bill to", "customer", "attention", "ref",
+)
+
+
+def _detect_header_note(page, width, height) -> str:
+    """A conservative guess at the company tagline — a short alphabetic line in the
+    top band that isn't the name (line 0), an address, contact, statutory line or
+    the document title. Empty when nothing clearly qualifies; the caller warns the
+    user to confirm whatever is found, and the AI step can refine it."""
+    try:
+        cropped = page.crop((0, 0, float(width), float(height) * 0.26))
+        top = cropped.extract_text() or ""
+    except Exception:                # noqa: BLE001 - a crop quirk must not fail the import
+        return ""
+    lines = [ln.strip() for ln in top.splitlines() if ln.strip()]
+    for line in lines[1:6]:          # skip the first line (usually the company name)
+        low = line.lower()
+        if not (4 <= len(line) <= 60):
+            continue
+        if any(bad in low for bad in _NOT_TAGLINE):
+            continue
+        if sum(ch.isdigit() for ch in line) > len(line) * 0.25:
+            continue
+        if not any(ch.isalpha() for ch in line):
+            continue
+        return line
+    return ""
 
 
 def _rect_is_top_band(rect, width, height) -> bool:

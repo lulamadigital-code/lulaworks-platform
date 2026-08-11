@@ -57,6 +57,31 @@ class AnalyserTests(TestCase):
         # An accent colour was picked up from the coloured table header.
         self.assertTrue(design["branding"]["accent_color"].startswith("#"))
 
+    def test_detects_a_tagline_header_note(self):
+        import os
+        import tempfile
+        from .models import Quotation
+        from .pdf import quotation_pdf_bytes
+        c = make_company()
+        with tenant_scope(c.id):
+            tpl = dt.create_template(c, None, doc_type="quotation", name="Branded",
+                                     base_layout="modern",
+                                     config={"header_note": "Engineering & Technical Services"})
+            q = Quotation.objects.create(company=c, number="QT-HN", client_name="Anglo",
+                                         site="Site", template=tpl)
+            q.lines.create(company=c, position=1, description="Item", qty=1,
+                           unit="ea", unit_cost=100)
+            pdf = quotation_pdf_bytes(q)
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+        tmp.write(pdf)
+        tmp.close()
+        try:
+            design, warnings, features = ti_mod.analyse_document(tmp.name, "quotation")
+        finally:
+            os.unlink(tmp.name)
+        self.assertIn("Engineering", design.get("header_note", ""))
+        self.assertTrue(any(w["field"] == "header_note" for w in warnings))
+
     def test_image_upload_degrades_with_a_warning(self):
         design, warnings, features = ti_mod.analyse_document("logo.png", "quotation")
         self.assertIn("branding", design)
