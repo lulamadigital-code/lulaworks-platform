@@ -668,3 +668,42 @@ class SalesAnalyticsTests(TestCase):
             self.assertFalse(any(r["name"] == "Engineering" for r in a["sales_by_industry"]))
             # Top customer by won value = Mining.
             self.assertEqual(a["sales_by_customer"][0]["customer"].id, mining.id)
+
+
+class CustomerTimelineTests(TestCase):
+    """The unified timeline merges events from multiple modules into one
+    chronological history, newest first, and never crashes on a thin customer."""
+
+    def test_merges_and_orders_events(self):
+        from django.utils import timezone
+
+        from apps.quotes.models import Quotation
+
+        from .models import Activity, Opportunity, OpportunityStage
+        from .services import customer_timeline
+        company = make_company()
+        with tenant_scope(company.id):
+            cust = create_customer(company, None, name="Sibanye", seed_departments=False)
+            Quotation.objects.create(company=company, customer=cust, number="QT-1",
+                                     client_name="Sibanye", site="Plant")
+            Opportunity.objects.create(company=company, customer=cust, title="Pump job",
+                                       stage=OpportunityStage.QUALIFIED,
+                                       estimated_value=50000)
+            Activity.objects.create(company=company, customer=cust, subject="Called buyer",
+                                    activity_type=Activity.Type.CALL,
+                                    status=Activity.Status.DONE)
+            tl = customer_timeline(cust)
+            kinds = {e["kind"] for e in tl}
+            self.assertIn("Quotation", kinds)
+            self.assertIn("Opportunity", kinds)
+            self.assertIn("Call", kinds)
+            # Newest first.
+            whens = [e["when"] for e in tl]
+            self.assertEqual(whens, sorted(whens, reverse=True))
+
+    def test_empty_customer_timeline_is_empty_not_error(self):
+        from .services import customer_timeline
+        company = make_company()
+        with tenant_scope(company.id):
+            cust = create_customer(company, None, name="Fresh", seed_departments=False)
+            self.assertEqual(customer_timeline(cust), [])

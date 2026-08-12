@@ -205,13 +205,21 @@ def contact_timeline(contact) -> dict:
 
 def customer_overview(customer) -> dict:
     """The numbers a manager wants on the customer page."""
+    from decimal import Decimal
+
     from apps.finance.models import Invoice
     from apps.projects.models import Project
     from apps.quotes.models import Quotation
 
     quotations = Quotation.objects.filter(customer=customer)
     projects = Project.objects.filter(customer=customer)
-    invoices = Invoice.objects.filter(project__customer=customer)
+    invoices = list(Invoice.objects.filter(project__customer=customer))
+
+    outstanding = Decimal("0")
+    for inv in invoices:
+        bal = (getattr(inv, "total", None) or Decimal("0")) - (getattr(inv, "paid", None) or Decimal("0"))
+        if bal > 0:
+            outstanding += bal
 
     return {
         "contacts": customer.contacts.filter(
@@ -222,9 +230,115 @@ def customer_overview(customer) -> dict:
         "quotations": quotations.count(),
         "projects": projects.count(),
         "open_projects": projects.exclude(status__in=["complete", "cancelled"]).count(),
-        "invoices": invoices.count(),
+        "invoices": len(invoices),
+        "outstanding_value": outstanding,
         "contracts": customer.contracts.filter(status="active").count(),
     }
+
+
+#: Icon per CRM activity type for the timeline.
+_ACTIVITY_ICON = {
+    "call": "📞", "meeting": "🤝", "site_visit": "📍", "follow_up": "🔔",
+    "email": "✉️", "reminder": "⏰", "task": "✅",
+}
+
+
+def _rev(name, pk):
+    """A web URL for a timeline event, or "" if that route isn't available."""
+    from django.urls import NoReverseMatch, reverse
+    try:
+        return reverse(f"web:{name}", args=[pk])
+    except NoReverseMatch:
+        return ""
+
+
+def customer_timeline(customer, limit: int = 60) -> list:
+    """One chronological history of the customer, MERGED from the real workflow
+    objects across LulaWorks — quotations, commercial documents, jobs, invoices,
+    opportunities, and CRM activities/notes/interactions. Read-only: system events
+    are facts drawn from their source tables, never editable here. Each source is
+    isolated so a missing field can never break the whole timeline."""
+    events = []
+
+    def add(when, icon, kind, title, detail="", url="", amount=None):
+        if when is None:
+            return
+        money = ""
+        if amount not in (None, ""):
+            try:
+                money = f"R{amount:,.2f}"
+            except (TypeError, ValueError):
+                money = ""
+        events.append({"when": when, "icon": icon, "kind": kind, "title": title,
+                       "detail": (detail or "")[:160], "url": url, "amount": money})
+
+    try:
+        from apps.quotes.models import CommercialDocument, Quotation
+        for q in Quotation.objects.filter(customer=customer).order_by("-created_at")[:40]:
+            add(q.created_at, "📄", "Quotation", f"Quotation {q.number}",
+                q.title or "", _rev("quotation_detail", q.id), getattr(q, "total", None))
+        for d in (CommercialDocument.objects.filter(quotation__customer=customer)
+                  .select_related("quotation").order_by("-created_at")[:40]):
+            label = d.get_kind_display() if hasattr(d, "get_kind_display") else d.kind
+            add(d.created_at, "🧾", label, f"{label} {d.number}", "",
+                _rev("commercial_document_detail", d.id))
+    except Exception:                # noqa: BLE001 - one source failing must not break the rest
+        pass
+
+    try:
+        from apps.projects.models import Project
+        for p in Project.objects.filter(customer=customer).order_by("-created_at")[:40]:
+            add(p.created_at, "🔧", "Job", f"Job {p.number}",
+                getattr(p, "title", "") or "", _rev("project_detail", p.id))
+    except Exception:                # noqa: BLE001
+        pass
+
+    try:
+        from apps.finance.models import Invoice
+        for inv in (Invoice.objects.filter(project__customer=customer)
+                    .order_by("-created_at")[:40]):
+            add(inv.created_at, "💰", "Invoice", f"Invoice {inv.number}", "", "",
+                getattr(inv, "total", None))
+    except Exception:                # noqa: BLE001
+        pass
+
+    try:
+        from .models import OpportunityStage
+        for o in Opportunity.objects.filter(customer=customer).order_by("-created_at")[:40]:
+            url = _rev("crm_opportunity_detail", o.id)
+            add(o.created_at, "◎", "Opportunity", o.title, o.get_stage_display(),
+                url, o.estimated_value)
+            if o.closed_at and o.stage in (OpportunityStage.WON, OpportunityStage.LOST):
+                add(o.closed_at, "🏁", "Opportunity",
+                    f"{o.get_stage_display()}: {o.title}", "", url,
+                    o.estimated_value if o.stage == OpportunityStage.WON else None)
+    except Exception:                # noqa: BLE001
+        pass
+
+    try:
+        for a in Activity.objects.filter(customer=customer).order_by("-created_at")[:60]:
+            add(a.created_at, _ACTIVITY_ICON.get(a.activity_type, "•"),
+                a.get_activity_type_display(), a.subject,
+                getattr(a, "detail", "") or getattr(a, "outcome", "") or "")
+    except Exception:                # noqa: BLE001
+        pass
+
+    try:
+        for n in CustomerNote.objects.filter(customer=customer).order_by("-created_at")[:30]:
+            body = getattr(n, "body", "") or getattr(n, "text", "") or getattr(n, "note", "")
+            add(n.created_at, "🗒️", "Note", "Note added", body)
+    except Exception:                # noqa: BLE001
+        pass
+
+    try:
+        for i in Interaction.objects.filter(customer=customer).order_by("-created_at")[:30]:
+            summ = getattr(i, "summary", "") or getattr(i, "note", "") or ""
+            add(i.created_at, "💬", "Interaction", "Interaction logged", summ)
+    except Exception:                # noqa: BLE001
+        pass
+
+    events.sort(key=lambda e: e["when"], reverse=True)
+    return events[:limit]
 
 
 # ══════════════════════════════════════════════════════════════════════════════

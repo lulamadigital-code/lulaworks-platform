@@ -24,13 +24,48 @@
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">◫</div>
     <div class="n">{{ stats.contacts }}</div><div class="l">Contacts</div></div>
-  <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">⌗</div>
-    <div class="n">{{ stats.departments }}</div><div class="l">Departments</div></div>
-  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">▣</div>
-    <div class="n">{{ stats.sites }}</div><div class="l">Sites</div></div>
+  <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">◎</div>
+    <div class="n">{{ open_opp_count }}</div><div class="l">Open opportunities</div></div>
+  <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">R</div>
+    <div class="n">{{ open_opp_value|floatformat:0 }}</div><div class="l">Pipeline value</div></div>
   <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">▤</div>
-    <div class="n">{{ stats.open_projects }}</div><div class="l">Open projects</div></div>
+    <div class="n">{{ stats.open_projects }}</div><div class="l">Open jobs</div></div>
+  <div class="tile" style="{% if stats.outstanding_value %}border-color:var(--warn);{% endif %}">
+    <div class="ic" style="background:var(--primary-t);color:var(--primary-d);">R</div>
+    <div class="n">{{ stats.outstanding_value|floatformat:0 }}</div><div class="l">Outstanding</div></div>
 </div>
+
+{# ── Unified relationship timeline — merged from every module ─────────────── #}
+<h2>Relationship timeline</h2>
+<div class="card timeline">
+  {% for e in timeline %}
+  <div class="tl-row">
+    <div class="tl-ic">{{ e.icon }}</div>
+    <div class="tl-body">
+      <div>
+        {% if e.url %}<a href="{{ e.url }}"><strong>{{ e.title }}</strong></a>{% else %}<strong>{{ e.title }}</strong>{% endif %}
+        <span class="tl-kind">{{ e.kind }}</span>
+        {% if e.amount %}<span class="tl-amt">{{ e.amount }}</span>{% endif %}
+      </div>
+      {% if e.detail %}<div class="muted tl-detail">{{ e.detail }}</div>{% endif %}
+    </div>
+    <div class="tl-date muted">{{ e.when|date:"d M Y" }}</div>
+  </div>
+  {% empty %}<p class="muted" style="padding:14px;margin:0;">No history yet — quotations, jobs, invoices,
+    opportunities and CRM activities will appear here as they happen.</p>{% endfor %}
+</div>
+<style>
+.timeline{padding:4px 0;}
+.timeline .tl-row{display:flex;gap:12px;align-items:flex-start;padding:10px 14px;border-bottom:1px solid var(--line);}
+.timeline .tl-row:last-child{border-bottom:none;}
+.timeline .tl-ic{font-size:17px;line-height:1.2;flex:0 0 22px;text-align:center;}
+.timeline .tl-body{flex:1;min-width:0;}
+.timeline .tl-kind{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);
+  border:1px solid var(--line);border-radius:10px;padding:1px 7px;margin-left:6px;vertical-align:middle;}
+.timeline .tl-amt{font-size:12.5px;color:#0a8f57;font-weight:600;margin-left:8px;}
+.timeline .tl-detail{font-size:12.5px;margin-top:2px;}
+.timeline .tl-date{font-size:12px;white-space:nowrap;flex:0 0 auto;}
+</style>
 
 {# ── CRM: sales pipeline against this customer ───────────────────────────── #}
 <h2>Opportunities

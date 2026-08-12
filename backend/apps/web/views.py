@@ -2637,6 +2637,7 @@ def customer_detail(request, pk):
     from apps.customers.models import Customer, CustomerContact, RESPONSIBILITIES
     from apps.customers.services import (
         customer_overview,
+        customer_timeline,
         responsibility_matrix,
         route_document,
     )
@@ -2683,6 +2684,7 @@ def customer_detail(request, pk):
         "open_opp_count": len(open_opps),
         "open_opp_value": sum((o.estimated_value or 0) for o in open_opps),
         "next_activity": next_activity,
+        "timeline": customer_timeline(customer),
         "can_manage": request.user.has_perm_code("projects.create"),
     })
 
