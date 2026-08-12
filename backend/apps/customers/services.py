@@ -193,11 +193,31 @@ def contact_timeline(contact) -> dict:
     projects = list(Project.objects.filter(customer=customer)
                     .order_by("-created_at")[:50])
 
+    # The CRM relationship layer, tied to THIS person: deals they're on, the
+    # forward-looking to-dos, and the log of what has actually passed between us.
+    opportunities, activities, interactions = [], [], []
+    try:
+        opportunities = list(contact.opportunities.order_by("-created_at")[:50])
+    except Exception:
+        pass
+    try:
+        activities = list(contact.activities.order_by(
+            "status", "due_at", "-created_at")[:50])
+    except Exception:
+        pass
+    try:
+        interactions = list(contact.interactions.order_by("-occurred_at")[:50])
+    except Exception:
+        pass
+
     return {
         "contact": contact,
         "rfqs": rfqs,
         "quotations": quotations,
         "projects": projects,
+        "opportunities": opportunities,
+        "activities": activities,
+        "interactions": interactions,
         "rfq_count": len(rfqs),
         "responsibilities": contact.responsibility_labels(),
     }

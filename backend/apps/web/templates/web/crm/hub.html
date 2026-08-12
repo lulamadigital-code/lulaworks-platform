@@ -78,7 +78,7 @@
 {% if people %}
 <div class="people-grid">
   {% for p in people %}
-  <a class="person-card" href="{% url 'web:customer_detail' p.customer_id %}">
+  <a class="person-card" href="{% url 'web:customer_contact_detail' p.id %}">
     <span class="av init" style="width:42px;height:42px;font-size:16px;">{{ p.full_name|slice:":1"|upper }}</span>
     <div style="min-width:0;flex:1;">
       <div class="pc-name">{{ p.full_name }}{% if p.is_primary %} <span class="chip info" style="font-size:9.5px;padding:1px 6px;">Primary</span>{% endif %}</div>

@@ -32,7 +32,61 @@
       {% endif %}
     </div>
 
-    <h2>History</h2>
+    {% if timeline.opportunities %}
+    <h2>Deals</h2>
+    <div class="card" style="padding:0;">
+      <table>
+        <tr><th>Opportunity</th><th>Stage</th><th class="right">Value</th></tr>
+        {% for o in timeline.opportunities %}
+        <tr>
+          <td><a href="{% url 'web:crm_opportunity_detail' o.id %}"><strong>{{ o.title }}</strong></a></td>
+          <td><span class="chip info">{{ o.get_stage_display }}</span></td>
+          <td class="right muted">{% if o.estimated_value %}{{ o.currency }} {{ o.estimated_value|floatformat:0 }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endif %}
+
+    {% if timeline.interactions %}
+    <h2>Communication history</h2>
+    <div class="card" style="padding:0;">
+      {% for i in timeline.interactions %}
+      <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);">
+        <span class="chip {% if i.direction == 'in' %}ok{% elif i.direction == 'out' %}info{% else %}{% endif %}"
+              style="align-self:flex-start;white-space:nowrap;">{{ i.get_channel_display }}</span>
+        <div style="flex:1;min-width:0;">
+          {% if i.subject %}<strong>{{ i.subject }}</strong><br>{% endif %}
+          <span class="muted" style="font-size:13px;white-space:pre-wrap;">{{ i.summary }}</span>
+        </div>
+        <span class="muted" style="font-size:12px;white-space:nowrap;">{{ i.occurred_at|date:"d M Y" }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if timeline.activities %}
+    <h2>Calls, meetings &amp; follow-ups</h2>
+    <div class="card" style="padding:0;">
+      {% for a in timeline.activities %}
+      <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);">
+        {% if a.status == 'done' %}<span class="chip ok" style="align-self:flex-start;">✓ Done</span>
+        {% elif a.status == 'cancelled' %}<span class="chip" style="align-self:flex-start;">Cancelled</span>
+        {% elif a.is_overdue %}<span class="chip bad" style="align-self:flex-start;">Overdue</span>
+        {% else %}<span class="chip warn" style="align-self:flex-start;">Open</span>{% endif %}
+        <div style="flex:1;min-width:0;">
+          <strong>{{ a.subject }}</strong>
+          <div class="muted" style="font-size:12.5px;">{{ a.get_activity_type_display }}{% if a.detail %} · {{ a.detail }}{% endif %}</div>
+        </div>
+        <span class="muted" style="font-size:12px;white-space:nowrap;">
+          {% if a.status == 'done' and a.completed_at %}{{ a.completed_at|date:"d M Y" }}
+          {% elif a.due_at %}Due {{ a.due_at|date:"d M Y" }}{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <h2>Documents &amp; work</h2>
     <div class="card" style="padding:0;">
       <table>
         <tr><th>What</th><th>Reference</th><th>When</th></tr>
