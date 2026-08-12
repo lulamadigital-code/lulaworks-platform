@@ -320,17 +320,7 @@ def activity_schedule(request):
         messages.error(request, "You do not have permission to add activities.")
         return redirect("web:crm_activities")
     company = request.user.active_company
-    kwargs = {}
-    from apps.customers.models import Customer
-    if request.POST.get("customer"):
-        kwargs["customer"] = get_object_or_404(Customer.objects.all(),
-                                               pk=request.POST["customer"])
-    if request.POST.get("lead"):
-        kwargs["lead"] = get_object_or_404(Lead.objects.all(),
-                                           pk=request.POST["lead"])
-    if request.POST.get("opportunity"):
-        kwargs["opportunity"] = get_object_or_404(Opportunity.objects.all(),
-                                                  pk=request.POST["opportunity"])
+    kwargs = _anchor_kwargs(request)
     try:
         crm.schedule_activity(
             company, request.user,
@@ -400,8 +390,8 @@ def note_add(request):
 
 
 def _anchor_kwargs(request):
-    """Resolve the customer/lead/opportunity a note or interaction hangs off."""
-    from apps.customers.models import Customer
+    """Resolve the customer/lead/opportunity/contact a note or interaction hangs off."""
+    from apps.customers.models import Customer, CustomerContact
     kwargs = {}
     if request.POST.get("customer"):
         kwargs["customer"] = get_object_or_404(Customer.objects.all(),
@@ -412,6 +402,11 @@ def _anchor_kwargs(request):
     if request.POST.get("opportunity"):
         kwargs["opportunity"] = get_object_or_404(Opportunity.objects.all(),
                                                   pk=request.POST["opportunity"])
+    if request.POST.get("contact"):
+        contact = get_object_or_404(CustomerContact.objects.select_related("customer"),
+                                    pk=request.POST["contact"])
+        kwargs["contact"] = contact
+        kwargs.setdefault("customer", contact.customer)
     return kwargs
 
 

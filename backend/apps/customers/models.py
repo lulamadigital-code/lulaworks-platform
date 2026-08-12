@@ -713,6 +713,8 @@ class CustomerNote(TenantBaseModel):
                              related_name="crm_notes")
     opportunity = models.ForeignKey(Opportunity, on_delete=models.CASCADE, null=True,
                                     blank=True, related_name="crm_notes")
+    contact = models.ForeignKey(CustomerContact, on_delete=models.SET_NULL, null=True,
+                                blank=True, related_name="crm_notes")
     body = models.TextField()
     is_pinned = models.BooleanField(default=False)
 

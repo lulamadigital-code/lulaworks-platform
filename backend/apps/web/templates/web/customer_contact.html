@@ -1,6 +1,8 @@
 {% extends "web/base.html" %}
-{% block title %}{{ contact.full_name }}{% endblock %}
+{% block title %}{{ contact.full_name }} · Contact{% endblock %}
 {% block content %}
+{% url 'web:customer_contact_detail' contact.id as here %}
+
 <p class="sub" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
   <a href="{% url 'web:crm_hub' %}">CRM</a>
   <span class="muted">›</span>
@@ -9,41 +11,166 @@
   <span class="muted">{{ contact.full_name }}</span>
 </p>
 
-<div class="pagehead">
-  <div>
-    <h1 style="margin:0 0 4px;">{{ contact.full_name }}</h1>
-    <p class="sub" style="margin:0;">{{ contact.job_title|default:"—" }}
-      {% if contact.department %} · {{ contact.department.name }}{% endif %}
-      · {{ customer.display_name }}</p>
+{# ── Header ─────────────────────────────────────────────────────────────── #}
+<div class="card" style="margin-bottom:16px;">
+  <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+    <span class="av init" style="width:56px;height:56px;font-size:22px;">{{ contact.full_name|slice:":1"|upper }}</span>
+    <div style="flex:1;min-width:220px;">
+      <h1 style="margin:0 0 2px;">{{ contact.full_name }}</h1>
+      <p class="sub" style="margin:0;">{{ contact.job_title|default:"Contact" }}
+        {% if contact.department %} · {{ contact.department.name }}{% endif %}
+        · {{ customer.display_name }}</p>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        {% if contact.status == 'active' %}<span class="chip ok">● Active</span>
+        {% else %}<span class="chip bad">{{ contact.get_status_display }}</span>{% endif %}
+        <span class="chip info">Prefers {{ contact.get_preferred_method_display }}</span>
+        {% for key, label in relationship_roles %}{% if key in roles %}<span class="chip purple">{{ label }}</span>{% endif %}{% endfor %}
+      </div>
+    </div>
   </div>
-  {% if contact.status == 'active' %}<span class="chip ok">Active</span>
-  {% else %}<span class="chip bad">{{ contact.get_status_display }}</span>{% endif %}
+  {# Relationship actions — the working toolbar. #}
+  <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+    {% if contact.email %}<a class="btn ghost" href="mailto:{{ contact.email }}">✉ Email</a>{% endif %}
+    {% if contact.mobile or contact.telephone %}<a class="btn ghost" href="tel:{{ contact.mobile|default:contact.telephone }}">✆ Call</a>{% endif %}
+    {% if contact.whatsapp %}<a class="btn ghost" href="https://wa.me/{{ contact.whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
+    {% if can_manage %}
+    <button type="button" class="btn ghost" data-toggle="panel-log">＋ Log contact</button>
+    <button type="button" class="btn ghost" data-toggle="panel-note">＋ Add note</button>
+    <button type="button" class="btn primary" data-toggle="panel-followup">＋ Follow-up / meeting</button>
+    {% endif %}
+  </div>
+
+  {% if can_manage %}
+  {# Log an interaction that happened. #}
+  <div id="panel-log" class="actionpanel" style="display:none;">
+    <form method="post" action="{% url 'web:crm_interaction_log' %}">{% csrf_token %}
+      <input type="hidden" name="contact" value="{{ contact.id }}">
+      <input type="hidden" name="next" value="{{ here }}">
+      <div class="two">
+        <div><label>Channel</label><select name="channel">
+          <option value="phone">Call</option><option value="whatsapp">WhatsApp</option>
+          <option value="email">Email</option><option value="meeting">Meeting</option>
+          <option value="site_visit">Site visit</option><option value="note">Note</option>
+        </select></div>
+        <div><label>Direction</label><select name="direction">
+          <option value="out">Outbound (we contacted them)</option>
+          <option value="in">Inbound (they contacted us)</option>
+          <option value="internal">Internal</option>
+        </select></div>
+      </div>
+      <label>Subject (optional)</label><input type="text" name="subject" placeholder="e.g. Hydraulic maintenance quotation">
+      <label>What was said *</label><textarea name="summary" rows="2" required placeholder="Quotation received. Will review tomorrow."></textarea>
+      <div style="margin-top:10px;"><button class="btn primary" type="submit">Log it</button></div>
+    </form>
+  </div>
+  {# Internal note about this person. #}
+  <div id="panel-note" class="actionpanel" style="display:none;">
+    <form method="post" action="{% url 'web:crm_note_add' %}">{% csrf_token %}
+      <input type="hidden" name="contact" value="{{ contact.id }}">
+      <input type="hidden" name="next" value="{{ here }}">
+      <label>Internal note *</label>
+      <textarea name="body" rows="2" required placeholder="Prefers WhatsApp for urgent matters. Responds 08:00–16:00."></textarea>
+      <label class="inline" style="margin-top:8px;"><input type="checkbox" name="is_pinned"> Pin to top</label>
+      <div style="margin-top:10px;"><button class="btn primary" type="submit">Save note</button></div>
+      <p class="muted" style="font-size:12px;margin:6px 0 0;">Internal to LulaWorks — never shown to the customer.</p>
+    </form>
+  </div>
+  {# Schedule a follow-up / meeting. #}
+  <div id="panel-followup" class="actionpanel" style="display:none;">
+    <form method="post" action="{% url 'web:crm_activity_schedule' %}">{% csrf_token %}
+      <input type="hidden" name="contact" value="{{ contact.id }}">
+      <input type="hidden" name="next" value="{{ here }}">
+      <div class="two">
+        <div><label>Type</label><select name="activity_type">
+          <option value="follow_up">Follow-up</option><option value="meeting">Meeting</option>
+          <option value="call">Call</option><option value="site_visit">Site visit</option>
+          <option value="reminder">Reminder</option>
+        </select></div>
+        <div><label>Due</label><input type="datetime-local" name="due_at"></div>
+      </div>
+      <label>What needs doing *</label><input type="text" name="subject" required placeholder="Follow up on hydraulic quotation">
+      <label>Detail</label><textarea name="detail" rows="2"></textarea>
+      <div style="margin-top:10px;"><button class="btn primary" type="submit">Schedule</button></div>
+    </form>
+  </div>
+  {% endif %}
 </div>
 
-<div class="two-col">
+{# ── Relationship overview ──────────────────────────────────────────────── #}
+<div class="grid">
+  <div class="tile"><div class="l">Last contact</div><strong style="font-size:16px;">{% if overview.last_contact %}{{ overview.last_contact|date:"d M Y" }}{% else %}—{% endif %}</strong></div>
+  <div class="tile"><div class="l">Next follow-up</div><strong style="font-size:16px;">{% if overview.next_follow_up %}{{ overview.next_follow_up|date:"d M Y" }}{% else %}—{% endif %}</strong></div>
+  <div class="tile"><div class="n">{{ overview.calls }}</div><div class="l">Calls</div></div>
+  <div class="tile"><div class="n">{{ overview.meetings }}</div><div class="l">Meetings</div></div>
+  <div class="tile"><div class="n">{{ overview.emails }}</div><div class="l">Emails</div></div>
+  <div class="tile"><div class="n">{{ overview.whatsapp }}</div><div class="l">WhatsApp</div></div>
+  <div class="tile"><div class="n">{{ overview.open_opportunities }}</div><div class="l">Open opportunities</div></div>
+  <div class="tile"><div class="n">{{ overview.active_jobs }}</div><div class="l">Active jobs</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-top:6px;" class="ctwo">
+  {# ── Main column ──────────────────────────────────────────────────────── #}
   <div>
-    <h2 style="margin-top:0;">What they do here</h2>
-    <div class="card">
-      {% if timeline.responsibilities %}
-      {% for r in timeline.responsibilities %}
-      <div class="deprow"><span class="chip ok">✓</span> {{ r }}</div>
-      {% endfor %}
-      {% else %}
-      <p class="muted" style="margin:0;">No responsibilities recorded — LulaWorks
-        cannot route any document to this person yet.</p>
-      {% endif %}
-      {% if contact.roles %}
-      <p class="muted" style="margin:14px 0 6px;font-size:12.5px;">Roles</p>
-      {% for role in contact.roles %}<span class="chip info">{{ role }}</span> {% endfor %}
-      {% endif %}
+    <h2 style="margin-top:6px;">Activity timeline</h2>
+    <div class="card" style="padding:0;">
+      {% for e in feed %}
+      <div style="display:flex;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line);">
+        <div style="width:78px;flex:0 0 78px;" class="muted">
+          <div style="font-size:12px;font-weight:700;">{{ e.when|date:"d M" }}</div>
+          <div style="font-size:11px;">{{ e.when|date:"Y" }}</div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <span class="chip" style="font-size:10.5px;">{{ e.kind }}</span>
+          <div style="margin-top:4px;">
+            {% if e.url %}<a href="{% url 'web:quotation_detail' e.url.1 %}"><strong>{{ e.title }}</strong></a>
+            {% else %}<strong>{{ e.title }}</strong>{% endif %}
+          </div>
+          {% if e.detail %}<div class="muted" style="font-size:13px;white-space:pre-wrap;">{{ e.detail|truncatechars:220 }}</div>{% endif %}
+        </div>
+      </div>
+      {% empty %}<p class="muted" style="padding:18px;">Nothing recorded yet. Log a call, note or follow-up above.</p>{% endfor %}
     </div>
 
-    {% if timeline.opportunities %}
-    <h2>Deals</h2>
+    <h2>Communication history</h2>
+    <div class="filterbar" style="gap:6px;margin-bottom:12px;" id="comm-tabs">
+      <button class="btn ghost on" data-filter="all">All</button>
+      <button class="btn ghost" data-filter="email">Email</button>
+      <button class="btn ghost" data-filter="whatsapp">WhatsApp</button>
+      <button class="btn ghost" data-filter="phone">Calls</button>
+      <button class="btn ghost" data-filter="meeting">Meetings</button>
+      <button class="btn ghost" data-filter="note">Notes</button>
+    </div>
+    <div class="card" style="padding:0;" id="comm-list">
+      {% for i in interactions %}
+      <div class="commrow" data-chan="{{ i.channel }}" style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);">
+        <span class="chip {% if i.direction == 'in' %}ok{% elif i.direction == 'out' %}info{% endif %}" style="align-self:flex-start;white-space:nowrap;">{{ i.get_channel_display }}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;" class="muted">
+            {% if i.direction == 'in' %}{{ contact.full_name }} → You{% elif i.direction == 'out' %}You → {{ contact.full_name }}{% else %}Internal{% endif %}
+          </div>
+          {% if i.subject %}<strong>{{ i.subject }}</strong><br>{% endif %}
+          <span style="font-size:13.5px;white-space:pre-wrap;">{{ i.summary }}</span>
+        </div>
+        <span class="muted" style="font-size:12px;white-space:nowrap;">{{ i.occurred_at|date:"d M Y" }}</span>
+      </div>
+      {% endfor %}
+      {% for n in notes %}
+      <div class="commrow" data-chan="note" style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);">
+        <span class="chip" style="align-self:flex-start;">Note{% if n.is_pinned %} 📌{% endif %}</span>
+        <div style="flex:1;min-width:0;"><span style="font-size:13.5px;white-space:pre-wrap;">{{ n.body }}</span></div>
+        <span class="muted" style="font-size:12px;white-space:nowrap;">{{ n.created_at|date:"d M Y" }}</span>
+      </div>
+      {% endfor %}
+      <p class="muted commempty" style="padding:18px;display:none;">Nothing in this channel yet.</p>
+      {% if not interactions and not notes %}<p class="muted" style="padding:18px;">No communication logged yet.</p>{% endif %}
+    </div>
+
+    {% if opportunities %}
+    <h2>Opportunities</h2>
     <div class="card" style="padding:0;">
       <table>
         <tr><th>Opportunity</th><th>Stage</th><th class="right">Value</th></tr>
-        {% for o in timeline.opportunities %}
+        {% for o in opportunities %}
         <tr>
           <td><a href="{% url 'web:crm_opportunity_detail' o.id %}"><strong>{{ o.title }}</strong></a></td>
           <td><span class="chip info">{{ o.get_stage_display }}</span></td>
@@ -54,89 +181,143 @@
     </div>
     {% endif %}
 
-    {% if timeline.interactions %}
-    <h2>Communication history</h2>
-    <div class="card" style="padding:0;">
-      {% for i in timeline.interactions %}
-      <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);">
-        <span class="chip {% if i.direction == 'in' %}ok{% elif i.direction == 'out' %}info{% else %}{% endif %}"
-              style="align-self:flex-start;white-space:nowrap;">{{ i.get_channel_display }}</span>
-        <div style="flex:1;min-width:0;">
-          {% if i.subject %}<strong>{{ i.subject }}</strong><br>{% endif %}
-          <span class="muted" style="font-size:13px;white-space:pre-wrap;">{{ i.summary }}</span>
-        </div>
-        <span class="muted" style="font-size:12px;white-space:nowrap;">{{ i.occurred_at|date:"d M Y" }}</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-    {% if timeline.activities %}
-    <h2>Calls, meetings &amp; follow-ups</h2>
-    <div class="card" style="padding:0;">
-      {% for a in timeline.activities %}
-      <div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);">
-        {% if a.status == 'done' %}<span class="chip ok" style="align-self:flex-start;">✓ Done</span>
-        {% elif a.status == 'cancelled' %}<span class="chip" style="align-self:flex-start;">Cancelled</span>
-        {% elif a.is_overdue %}<span class="chip bad" style="align-self:flex-start;">Overdue</span>
-        {% else %}<span class="chip warn" style="align-self:flex-start;">Open</span>{% endif %}
-        <div style="flex:1;min-width:0;">
-          <strong>{{ a.subject }}</strong>
-          <div class="muted" style="font-size:12.5px;">{{ a.get_activity_type_display }}{% if a.detail %} · {{ a.detail }}{% endif %}</div>
-        </div>
-        <span class="muted" style="font-size:12px;white-space:nowrap;">
-          {% if a.status == 'done' and a.completed_at %}{{ a.completed_at|date:"d M Y" }}
-          {% elif a.due_at %}Due {{ a.due_at|date:"d M Y" }}{% endif %}</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-    <h2>Documents &amp; work</h2>
+    {% if quotations %}
+    <h2>Quotations</h2>
     <div class="card" style="padding:0;">
       <table>
-        <tr><th>What</th><th>Reference</th><th>When</th></tr>
-        {% for r in timeline.rfqs %}
-        <tr><td><span class="chip purple">RFQ released</span></td>
-          <td><a href="{% url 'web:rfq_detail' r.id %}">{{ r.original_name|default:"RFQ" }}</a></td>
-          <td class="muted">{{ r.created_at|date:"d M Y" }}</td></tr>
+        <tr><th>Number</th><th>Title</th><th>Status</th></tr>
+        {% for q in quotations %}
+        <tr>
+          <td><a href="{% url 'web:quotation_detail' q.id %}"><strong>{{ q.number }}</strong></a></td>
+          <td class="muted">{{ q.title|default:"—" }}</td>
+          <td><span class="chip">{{ q.get_status_display }}</span></td>
+        </tr>
         {% endfor %}
-        {% for q in timeline.quotations %}
-        <tr><td><span class="chip info">Quotation</span></td>
-          <td><a href="{% url 'web:quotation_detail' q.id %}">{{ q.number }}</a></td>
-          <td class="muted">{{ q.created_at|date:"d M Y" }}</td></tr>
-        {% endfor %}
-        {% for p in timeline.projects %}
-        <tr><td><span class="chip ok">Project</span></td>
-          <td><a href="{% url 'web:project_detail' p.id %}">{{ p.number }}</a></td>
-          <td class="muted">{{ p.created_at|date:"d M Y" }}</td></tr>
-        {% endfor %}
-        {% if not timeline.rfqs and not timeline.quotations and not timeline.projects %}
-        <tr><td colspan="3" class="muted" style="padding:20px;">
-          Nothing recorded against this person yet.</td></tr>
-        {% endif %}
       </table>
-      <p class="muted" style="padding:14px 16px;margin:0;font-size:12.5px;">
-        Read from the real RFQ, quotation and project records — not a separate
-        activity log that could disagree with them.</p>
     </div>
+    {% endif %}
+
+    {% if jobs %}
+    <h2>Jobs</h2>
+    <div class="card" style="padding:0;">
+      <table>
+        <tr><th>Job</th><th>Site</th><th>Status</th></tr>
+        {% for j in jobs %}
+        <tr>
+          <td><a href="{% url 'web:project_detail' j.id %}"><strong>{{ j.number }}</strong></a>
+            {% if j.title %}<br><span class="muted" style="font-size:12px;">{{ j.title }}</span>{% endif %}</td>
+          <td class="muted">{{ j.site|default:"—" }}</td>
+          <td><span class="chip">{{ j.get_status_display }}</span></td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endif %}
   </div>
 
+  {# ── Side column ──────────────────────────────────────────────────────── #}
   <div>
-    <h2 style="margin-top:0;">Reach them</h2>
+    <h2 style="margin-top:6px;">Contact information</h2>
     <div class="card">
       <table class="kv">
-        <tr><td class="muted">Prefers</td><td>{{ contact.get_preferred_method_display }}</td></tr>
-        <tr><td class="muted">Email</td><td>{{ contact.email|default:"—" }}</td></tr>
+        <tr><td class="muted">Email</td><td>{% if contact.email %}<a href="mailto:{{ contact.email }}">{{ contact.email }}</a>{% else %}—{% endif %}</td></tr>
         <tr><td class="muted">Telephone</td><td>{{ contact.telephone|default:"—" }}{% if contact.extension %} ext {{ contact.extension }}{% endif %}</td></tr>
         <tr><td class="muted">Mobile</td><td>{{ contact.mobile|default:"—" }}</td></tr>
         <tr><td class="muted">WhatsApp</td><td>{{ contact.whatsapp|default:"—" }}</td></tr>
+        <tr><td class="muted">Department</td><td>{% if contact.department %}{{ contact.department.name }}{% else %}—{% endif %}</td></tr>
+        <tr><td class="muted">Job title</td><td>{{ contact.job_title|default:"—" }}</td></tr>
+        <tr><td class="muted">Prefers</td><td>{{ contact.get_preferred_method_display }}</td></tr>
       </table>
     </div>
-    {% if contact.notes %}
-    <h2>Notes</h2>
-    <div class="card"><p style="margin:0;white-space:pre-wrap;">{{ contact.notes }}</p></div>
+
+    <h2>Relationship roles</h2>
+    <div class="card">
+      {% if can_manage %}
+      <form method="post" action="{% url 'web:contact_roles_save' contact.id %}">{% csrf_token %}
+        {% for key, label in relationship_roles %}
+        <label class="inline" style="display:flex;margin:6px 0;">
+          <input type="checkbox" name="role" value="{{ key }}" {% if key in roles %}checked{% endif %}> {{ label }}
+        </label>
+        {% endfor %}
+        <div style="margin-top:10px;"><button class="btn ghost" type="submit">Save roles</button></div>
+      </form>
+      {% else %}
+        {% for key, label in relationship_roles %}{% if key in roles %}<span class="chip purple">{{ label }}</span> {% endif %}{% empty %}<p class="muted" style="margin:0;">No roles set.</p>{% endfor %}
+      {% endif %}
+    </div>
+
+    {% if responsibilities %}
+    <h2>What they do here</h2>
+    <div class="card">
+      {% for r in responsibilities %}<span class="chip ok">✓ {{ r }}</span> {% endfor %}
+    </div>
     {% endif %}
+
+    <h2>Upcoming follow-ups</h2>
+    <div class="card" style="padding:0;">
+      {% for a in follow_ups %}
+      <div style="display:flex;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line);">
+        <div style="flex:1;min-width:0;">
+          <strong>{{ a.subject }}</strong>
+          <div class="muted" style="font-size:12px;">{{ a.get_activity_type_display }}</div>
+        </div>
+        {% if a.due_at %}<span class="chip {% if a.is_overdue %}bad{% else %}warn{% endif %}" style="white-space:nowrap;align-self:flex-start;">{{ a.due_at|date:"d M" }}</span>{% endif %}
+      </div>
+      {% empty %}<p class="muted" style="padding:14px 16px;margin:0;">Nothing scheduled.</p>{% endfor %}
+    </div>
+
+    <h2>Notes</h2>
+    <div class="card" style="padding:0;">
+      {% for n in notes %}
+      <div style="padding:12px 16px;border-bottom:1px solid var(--line);">
+        {% if n.is_pinned %}<span class="chip warn" style="font-size:10px;">📌 Pinned</span> {% endif %}
+        <div style="white-space:pre-wrap;font-size:13.5px;margin-top:4px;">{{ n.body }}</div>
+        <div class="muted" style="font-size:11.5px;margin-top:4px;">{{ n.created_at|date:"d M Y" }}</div>
+      </div>
+      {% empty %}<p class="muted" style="padding:14px 16px;margin:0;">No notes yet.</p>{% endfor %}
+    </div>
+    <p class="muted" style="font-size:12px;margin-top:-8px;">Internal notes — never shown to the customer.</p>
   </div>
 </div>
+
+<style>
+.actionpanel{border-top:1px solid var(--line);margin-top:14px;padding-top:14px;}
+#comm-tabs .btn.on{background:var(--primary);color:#fff;border-color:var(--primary);}
+@media(max-width:900px){.ctwo{grid-template-columns:1fr;}}
+</style>
+<script>
+(function () {
+  // Toggle the action panels in the header.
+  document.querySelectorAll('[data-toggle]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var id = btn.getAttribute('data-toggle');
+      var panel = document.getElementById(id);
+      if (!panel) return;
+      var showing = panel.style.display === 'block';
+      document.querySelectorAll('.actionpanel').forEach(function (p) { p.style.display = 'none'; });
+      panel.style.display = showing ? 'none' : 'block';
+      if (!showing) { var f = panel.querySelector('input,select,textarea'); if (f) f.focus(); }
+    });
+  });
+  // Communication-history channel filter.
+  var tabs = document.getElementById('comm-tabs');
+  if (tabs) {
+    tabs.querySelectorAll('button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        tabs.querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        var f = b.getAttribute('data-filter');
+        var shown = 0;
+        document.querySelectorAll('#comm-list .commrow').forEach(function (row) {
+          var ok = f === 'all' || row.getAttribute('data-chan') === f;
+          row.style.display = ok ? '' : 'none';
+          if (ok) shown++;
+        });
+        var empty = document.querySelector('#comm-list .commempty');
+        if (empty) empty.style.display = shown === 0 ? 'block' : 'none';
+      });
+    });
+  }
+})();
+</script>
 {% endblock %}

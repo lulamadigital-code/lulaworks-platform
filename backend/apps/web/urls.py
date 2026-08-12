@@ -70,6 +70,8 @@ urlpatterns = [
          name="customer_department"),
     path("contacts/<uuid:pk>/", views.customer_contact_detail,
          name="customer_contact_detail"),
+    path("contacts/<uuid:pk>/roles/", views.contact_roles_save,
+         name="contact_roles_save"),
     # Company profile — the identity every other module reads from
     path("company/", views.company_profile, name="company_profile"),
     path("company/hours/", views.company_hours_page, name="company_hours_page"),

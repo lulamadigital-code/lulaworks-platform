@@ -2869,15 +2869,37 @@ def customer_department(request, pk):
 @login_required
 def customer_contact_detail(request, pk):
     from apps.customers.models import CustomerContact
-    from apps.customers.services import contact_timeline
+    from apps.customers.services import contact_profile
 
     contact = get_object_or_404(
         CustomerContact.objects.select_related("customer", "department"), pk=pk)
-    return render(request, "web/customer_contact.html", {
-        "contact": contact,
-        "customer": contact.customer,
-        "timeline": contact_timeline(contact),
-    })
+    profile = contact_profile(contact)
+    profile["can_manage"] = request.user.has_perm_code("customers.manage") or \
+        request.user.has_perm_code("projects.create")
+    return render(request, "web/customer_contact.html", profile)
+
+
+@login_required
+@require_POST
+def contact_roles_save(request, pk):
+    """Set the configurable relationship roles a contact holds (primary,
+    decision maker, procurement, finance, operations) — labels, not people."""
+    from apps.customers.models import CustomerContact
+    from apps.customers.services import CONTACT_RELATIONSHIP_ROLES
+
+    contact = get_object_or_404(CustomerContact.objects.all(), pk=pk)
+    if not (request.user.has_perm_code("customers.manage")
+            or request.user.has_perm_code("projects.create")):
+        messages.error(request, "You do not have permission to change roles.")
+        return redirect("web:customer_contact_detail", pk=pk)
+    valid = {key for key, _ in CONTACT_RELATIONSHIP_ROLES}
+    chosen = [r for r in request.POST.getlist("role") if r in valid]
+    contact.roles = chosen
+    contact.is_primary = "primary" in chosen
+    contact.updated_by = request.user
+    contact.save(update_fields=["roles", "is_primary", "updated_by", "updated_at"])
+    messages.success(request, "Relationship roles updated.")
+    return redirect("web:customer_contact_detail", pk=pk)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

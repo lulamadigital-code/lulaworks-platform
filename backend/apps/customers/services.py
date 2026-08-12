@@ -223,6 +223,123 @@ def contact_timeline(contact) -> dict:
     }
 
 
+#: The standard relationship roles a contact may hold — configurable labels,
+#: not separate people. Stored on CustomerContact.roles (a JSON list).
+CONTACT_RELATIONSHIP_ROLES = [
+    ("primary", "Primary contact"),
+    ("decision_maker", "Decision maker"),
+    ("procurement", "Procurement contact"),
+    ("finance", "Finance contact"),
+    ("operations", "Operations contact"),
+]
+
+
+def contact_profile(contact) -> dict:
+    """Everything for the Contact Profile workspace — the relationship view.
+
+    The company page answers "what do we know about ABC Mining?"; this answers
+    "what is our relationship with this person, what have we discussed, and what
+    is next?". Reads the real workflow tables plus the CRM layer.
+    """
+    from django.utils import timezone
+
+    from apps.projects.models import Project
+    from apps.quotes.models import Quotation
+
+    customer = contact.customer
+
+    # CRM layer tied to this person.
+    opportunities, activities, interactions, notes = [], [], [], []
+    try:
+        opportunities = list(contact.opportunities.order_by("-created_at")[:50])
+    except Exception:
+        pass
+    try:
+        activities = list(contact.activities.select_related("assigned_to")
+                          .order_by("status", "due_at", "-created_at")[:100])
+    except Exception:
+        pass
+    try:
+        interactions = list(contact.interactions.select_related("created_by")
+                            .order_by("-occurred_at")[:100])
+    except Exception:
+        pass
+    try:
+        notes = list(contact.crm_notes.select_related("created_by")
+                     .order_by("-is_pinned", "-created_at")[:50])
+    except Exception:
+        pass
+
+    # Quotations addressed to this person; jobs for their company.
+    quotations = list(Quotation.objects.filter(contact=contact)
+                      .order_by("-created_at")[:50])
+    jobs = list(Project.objects.filter(customer=customer)
+                .order_by("-created_at")[:50])
+
+    open_opps = [o for o in opportunities if getattr(o, "is_open", False)]
+    open_activities_list = [a for a in activities if a.status == "open"]
+    active_jobs = [j for j in jobs if getattr(j, "status", "") not in
+                   ("completed", "closed", "cancelled", "archived")]
+
+    # Communication tallies.
+    def _chan(c):
+        return sum(1 for i in interactions if i.channel == c)
+    last_contact = interactions[0].occurred_at if interactions else None
+    next_follow = None
+    future = [a for a in open_activities_list if a.due_at]
+    if future:
+        next_follow = min(a.due_at for a in future)
+
+    overview = {
+        "last_contact": last_contact,
+        "next_follow_up": next_follow,
+        "calls": _chan("phone"),
+        "meetings": _chan("meeting"),
+        "emails": _chan("email"),
+        "whatsapp": _chan("whatsapp"),
+        "open_opportunities": len(open_opps),
+        "active_jobs": len(active_jobs),
+    }
+
+    # One merged, chronological activity feed (most recent first). Each entry:
+    # {when, kind, title, detail, url}.
+    feed = []
+    for i in interactions:
+        feed.append({"when": i.occurred_at, "kind": i.get_channel_display(),
+                     "title": i.subject or i.get_channel_display(),
+                     "detail": i.summary, "url": None})
+    for a in activities:
+        when = a.completed_at or a.due_at or a.created_at
+        feed.append({"when": when, "kind": a.get_activity_type_display(),
+                     "title": a.subject, "detail": a.detail or a.outcome, "url": None})
+    for q in quotations:
+        feed.append({"when": q.created_at, "kind": "Quotation",
+                     "title": f"Quotation {q.number}",
+                     "detail": getattr(q, "title", "") or "", "url": ("quotation", q.id)})
+    for n in notes:
+        feed.append({"when": n.created_at, "kind": "Note", "title": "Note",
+                     "detail": n.body, "url": None})
+    feed.sort(key=lambda e: e["when"] or timezone.now(), reverse=True)
+
+    return {
+        "contact": contact,
+        "customer": customer,
+        "responsibilities": contact.responsibility_labels(),
+        "roles": list(contact.roles or []),
+        "relationship_roles": CONTACT_RELATIONSHIP_ROLES,
+        "overview": overview,
+        "opportunities": opportunities,
+        "open_opportunities": open_opps,
+        "quotations": quotations,
+        "jobs": jobs,
+        "follow_ups": open_activities_list,
+        "activities": activities,
+        "interactions": interactions,
+        "notes": notes,
+        "feed": feed[:80],
+    }
+
+
 def customer_overview(customer) -> dict:
     """The numbers a manager wants on the customer page."""
     from decimal import Decimal
@@ -624,15 +741,17 @@ def log_interaction(company, user, *, summary, channel=Interaction.Channel.NOTE,
 
 @transaction.atomic
 def add_note(company, user, *, body, customer=None, lead=None, opportunity=None,
-             is_pinned=False) -> CustomerNote:
+             contact=None, is_pinned=False) -> CustomerNote:
     body = (body or "").strip()
     if not body:
         raise CRMError("A note can't be empty.")
-    if not any([customer, lead, opportunity]):
-        raise CRMError("Attach the note to a customer, lead or opportunity.")
+    if not any([customer, lead, opportunity, contact]):
+        raise CRMError("Attach the note to a customer, lead, opportunity or contact.")
+    if contact and not customer:
+        customer = contact.customer
     return CustomerNote.objects.create(
         company=company, body=body, customer=customer, lead=lead,
-        opportunity=opportunity, is_pinned=is_pinned,
+        opportunity=opportunity, contact=contact, is_pinned=is_pinned,
         created_by=user, updated_by=user,
     )
 
