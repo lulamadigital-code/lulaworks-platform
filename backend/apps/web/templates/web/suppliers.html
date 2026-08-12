@@ -30,7 +30,10 @@
 {% if can_manage %}
 <div class="two-col" id="add-supplier-panel" style="display:none;margin-bottom:16px;">
   <div><div class="card">
-    <strong>Add a supplier</strong>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <strong>Add a supplier</strong>
+      <button type="button" class="btn ghost" id="add-supplier-close" style="padding:2px 10px;">✕ Close</button>
+    </div>
     <form method="post" action="{% url 'web:supplier_create' %}" style="margin-top:10px;">
       {% csrf_token %}
       <input type="text" name="name" id="add-supplier-name" placeholder="Supplier name *" required>
@@ -62,6 +65,7 @@
   var btn = document.getElementById('add-supplier-btn');
   var panel = document.getElementById('add-supplier-panel');
   var name = document.getElementById('add-supplier-name');
+  var close = document.getElementById('add-supplier-close');
   if (!btn || !panel) return;
   btn.addEventListener('click', function () {
     var hidden = panel.style.display === 'none' || !panel.style.display;
@@ -69,6 +73,12 @@
     btn.setAttribute('aria-expanded', hidden ? 'true' : 'false');
     if (hidden && name) { name.focus(); }
   });
+  if (close) {
+    close.addEventListener('click', function () {
+      panel.style.display = 'none';
+      btn.setAttribute('aria-expanded', 'false');
+    });
+  }
 })();
 </script>
 {% endif %}
