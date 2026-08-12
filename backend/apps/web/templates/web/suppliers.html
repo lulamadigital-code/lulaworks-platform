@@ -1,9 +1,20 @@
 {% extends "web/base.html" %}
 {% block title %}Suppliers{% endblock %}
 {% block content %}
-<h1>Suppliers</h1>
-<p class="sub">Everyone you buy from — added automatically when you attach a receipt, or added by hand below.</p>
-{% include "web/_procurement_nav.html" %}
+<div class="pagehead">
+  <div>
+    <h1>Suppliers</h1>
+    <p class="sub" style="margin:0;">Everyone you buy from — added automatically when you attach a receipt, or added by hand.</p>
+  </div>
+  {% if can_manage %}<div><button type="button" class="btn primary" id="add-supplier-btn" aria-expanded="false" aria-controls="add-supplier-panel">+ Add supplier</button></div>{% endif %}
+</div>
+
+<form method="get" class="filterbar" style="margin-bottom:16px;">
+  <input type="search" name="q" value="{{ q }}"
+         placeholder="Search a supplier, or an item you buy (e.g. pipes)…" style="flex:2;min-width:200px;">
+  <button class="btn primary" type="submit">Search</button>
+  {% if q %}<a class="btn ghost" href="{% url 'web:suppliers' %}">Clear</a>{% endif %}
+</form>
 
 <div class="grid">
   <div class="tile"><div class="n">{{ active_suppliers }}</div><div class="l">Active suppliers</div></div>
@@ -17,12 +28,12 @@
 </div>
 
 {% if can_manage %}
-<div class="two-col">
+<div class="two-col" id="add-supplier-panel" style="display:none;margin-bottom:16px;">
   <div><div class="card">
     <strong>Add a supplier</strong>
     <form method="post" action="{% url 'web:supplier_create' %}" style="margin-top:10px;">
       {% csrf_token %}
-      <input type="text" name="name" placeholder="Supplier name *" required>
+      <input type="text" name="name" id="add-supplier-name" placeholder="Supplier name *" required>
       <div class="two" style="margin-top:8px;">
         <div><input type="text" name="contact_person" placeholder="Contact person"></div>
         <div><input type="text" name="phone" placeholder="Phone"></div>
@@ -46,13 +57,21 @@
     </form>
   </div></div>
 </div>
+<script>
+(function () {
+  var btn = document.getElementById('add-supplier-btn');
+  var panel = document.getElementById('add-supplier-panel');
+  var name = document.getElementById('add-supplier-name');
+  if (!btn || !panel) return;
+  btn.addEventListener('click', function () {
+    var hidden = panel.style.display === 'none' || !panel.style.display;
+    panel.style.display = hidden ? 'grid' : 'none';
+    btn.setAttribute('aria-expanded', hidden ? 'true' : 'false');
+    if (hidden && name) { name.focus(); }
+  });
+})();
+</script>
 {% endif %}
-
-<form method="get" class="filterbar">
-  <input type="search" name="q" value="{{ q }}"
-         placeholder="Search a supplier, or an item you buy (e.g. pipes)…" style="flex:2;min-width:200px;">
-  <button class="btn ghost" type="submit">Search</button>
-</form>
 
 {% if q and item_matches %}
 <h2>Where we buy “{{ q }}”</h2>
