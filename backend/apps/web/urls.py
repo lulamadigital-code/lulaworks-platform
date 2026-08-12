@@ -27,6 +27,7 @@ urlpatterns = [
     path("crm/", views_crm.crm_hub, name="crm_hub"),
     path("crm/search/", views_crm.crm_search, name="crm_search"),
     path("crm/reports/", views_crm.crm_reports, name="crm_reports"),
+    path("crm/analytics/", views_crm.crm_analytics, name="crm_analytics"),
     path("crm/leads/", views_crm.leads_list, name="crm_leads"),
     path("crm/leads/new/", views_crm.lead_create, name="crm_lead_create"),
     path("crm/leads/<uuid:pk>/", views_crm.lead_detail, name="crm_lead_detail"),

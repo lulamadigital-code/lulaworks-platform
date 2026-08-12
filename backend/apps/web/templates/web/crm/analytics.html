@@ -1,0 +1,94 @@
+{% extends "web/base.html" %}
+{% block title %}Analytics · CRM{% endblock %}
+{% block content %}
+
+<div class="pagehead"><div><h1>Sales analytics</h1>
+  <p class="sub" style="margin:0;">How sales are really performing — won value by
+    salesperson, customer and industry, the win/loss trend, deal size and cycle, and how
+    fast you're winning new customers. Computed from your opportunities and customers.</p></div></div>
+
+{% include "web/crm/_tabs.html" with active='analytics' %}
+
+<div class="grid">
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">R</div>
+    <div><div class="cap">Won value</div><strong>{{ a.won_value|floatformat:0 }}</strong></div></div>
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">✓</div>
+    <div><div class="cap">Won / lost</div><strong>{{ a.won_count }} / {{ a.lost_count }}</strong></div></div>
+  <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">%</div>
+    <div><div class="cap">Win rate</div><strong>{% if a.win_rate is not None %}{{ a.win_rate }}%{% else %}—{% endif %}</strong></div></div>
+  <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">Ø</div>
+    <div><div class="cap">Avg deal</div><strong>{{ a.avg_deal|floatformat:0 }}</strong></div></div>
+  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">⏱</div>
+    <div><div class="cap">Avg sales cycle</div><strong>{% if a.avg_cycle is not None %}{{ a.avg_cycle }}d{% else %}—{% endif %}</strong></div></div>
+</div>
+
+{% comment %}A reusable value-bar row: pass label, value, and the group max.{% endcomment %}
+
+<div class="ana-cols">
+  <div>
+    <h2>Sales by salesperson</h2>
+    <div class="card">
+      {% for r in a.sales_by_owner %}
+      <div class="barrow">
+        <div class="li" style="min-width:150px;">{{ r.name }}</div>
+        <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:{% if a.max_owner %}{% widthratio r.value a.max_owner 100 %}{% else %}0{% endif %}%;"></div></div>
+        <div class="right muted" style="min-width:130px;text-align:right;">R{{ r.value|floatformat:0 }} · {{ r.count }}</div>
+      </div>
+      {% empty %}<p class="muted" style="padding:14px;">No won deals yet.</p>{% endfor %}
+    </div>
+
+    <h2>Sales by industry</h2>
+    <div class="card">
+      {% for r in a.sales_by_industry %}
+      <div class="barrow">
+        <div class="li" style="min-width:150px;">{{ r.name }}</div>
+        <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:{% if a.max_industry %}{% widthratio r.value a.max_industry 100 %}{% else %}0{% endif %}%;"></div></div>
+        <div class="right muted" style="min-width:130px;text-align:right;">R{{ r.value|floatformat:0 }} · {{ r.count }}</div>
+      </div>
+      {% empty %}<p class="muted" style="padding:14px;">No won deals yet.</p>{% endfor %}
+    </div>
+  </div>
+
+  <div>
+    <h2>Top customers by won value</h2>
+    <div class="card">
+      {% for r in a.sales_by_customer %}
+      <div class="barrow">
+        <div class="li" style="min-width:150px;"><a href="{% url 'web:customer_detail' r.customer.id %}">{{ r.customer.display_name }}</a></div>
+        <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:{% if a.max_customer %}{% widthratio r.value a.max_customer 100 %}{% else %}0{% endif %}%;"></div></div>
+        <div class="right muted" style="min-width:130px;text-align:right;">R{{ r.value|floatformat:0 }} · {{ r.count }}</div>
+      </div>
+      {% empty %}<p class="muted" style="padding:14px;">No won deals yet.</p>{% endfor %}
+    </div>
+
+    <h2>Won vs lost — last 6 months</h2>
+    <div class="card">
+      {% for m in a.won_lost_trend %}
+      <div class="barrow">
+        <div class="li" style="min-width:64px;">{{ m.label }}</div>
+        <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:{% if a.max_trend %}{% widthratio m.won_value a.max_trend 100 %}{% else %}0{% endif %}%;"></div></div>
+        <div class="right muted" style="min-width:150px;text-align:right;">
+          <span style="color:#0a8f57;">▲ {{ m.won }}</span> · <span style="color:#c0392b;">▼ {{ m.lost }}</span>
+          · R{{ m.won_value|floatformat:0 }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <h2>New customers — last 6 months</h2>
+    <div class="card">
+      {% for m in a.acquisition %}
+      <div class="barrow">
+        <div class="li" style="min-width:64px;">{{ m.label }}</div>
+        <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:{% if a.max_acq %}{% widthratio m.count a.max_acq 100 %}{% else %}0{% endif %}%;background:#2f6fd0;"></div></div>
+        <div class="right muted" style="min-width:60px;text-align:right;">{{ m.count }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<style>
+.ana-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;}
+@media (max-width:820px){.ana-cols{grid-template-columns:1fr;}}
+</style>
+{% endblock %}

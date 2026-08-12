@@ -621,3 +621,50 @@ class SiteContactManagementTests(TestCase):
             set_contact_status(contact, None, status=CustomerContact.Status.ACTIVE)
             contact.refresh_from_db()
             self.assertTrue(contact.is_contactable)
+
+
+class SalesAnalyticsTests(TestCase):
+    """crm_analytics breakdowns compute from opportunities — won value by
+    salesperson, customer and industry, plus win rate and average deal."""
+
+    def test_breakdowns(self):
+        from decimal import Decimal
+
+        from django.utils import timezone
+
+        from apps.identity.models import User
+
+        from .models import Opportunity, OpportunityStage
+        from .services import crm_analytics
+        company = make_company()
+        with tenant_scope(company.id):
+            rep = User.objects.create_user("rep@lula.co", "x", active_company=company)
+            mining = create_customer(company, None, name="Mine Co", seed_departments=False)
+            mining.industry = "Mining"; mining.save()
+            eng = create_customer(company, None, name="Eng Co", seed_departments=False)
+            eng.industry = "Engineering"; eng.save()
+            now = timezone.now()
+            Opportunity.objects.create(company=company, customer=mining, title="A",
+                stage=OpportunityStage.WON, estimated_value=Decimal("100000"),
+                assigned_to=rep, closed_at=now)
+            Opportunity.objects.create(company=company, customer=mining, title="B",
+                stage=OpportunityStage.WON, estimated_value=Decimal("50000"),
+                assigned_to=rep, closed_at=now)
+            Opportunity.objects.create(company=company, customer=eng, title="C",
+                stage=OpportunityStage.LOST, estimated_value=Decimal("30000"),
+                assigned_to=rep, closed_at=now)
+
+            a = crm_analytics(company)
+            self.assertEqual(a["won_count"], 2)
+            self.assertEqual(a["lost_count"], 1)
+            self.assertEqual(a["win_rate"], 66.7)
+            self.assertEqual(a["won_value"], Decimal("150000"))
+            self.assertEqual(a["avg_deal"], Decimal("75000"))
+            # Salesperson total = both won deals.
+            self.assertEqual(a["sales_by_owner"][0]["value"], Decimal("150000"))
+            # Industry: Mining carries all the won value; Engineering only lost.
+            mining_row = next(r for r in a["sales_by_industry"] if r["name"] == "Mining")
+            self.assertEqual(mining_row["value"], Decimal("150000"))
+            self.assertFalse(any(r["name"] == "Engineering" for r in a["sales_by_industry"]))
+            # Top customer by won value = Mining.
+            self.assertEqual(a["sales_by_customer"][0]["customer"].id, mining.id)

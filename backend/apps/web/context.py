@@ -50,6 +50,7 @@ _SECTIONS = {
     "customer_create": "crm", "customer_contact_save": "crm",
     "customer_department": "crm", "customer_contact_detail": "crm",
     "crm_hub": "crm", "crm_search": "crm", "crm_reports": "crm",
+    "crm_analytics": "crm",
     "crm_leads": "crm", "crm_lead_create": "crm", "crm_lead_detail": "crm",
     "crm_lead_convert": "crm", "crm_lead_lost": "crm",
     "crm_pipeline": "crm", "crm_opportunity_create": "crm",

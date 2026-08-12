@@ -708,6 +708,120 @@ def crm_reports(company) -> dict:
     }
 
 
+def _recent_months(n: int):
+    """The last `n` calendar months, oldest → newest, as (year, month, "Mon YY")."""
+    from datetime import date
+
+    from django.utils import timezone
+    first = timezone.now().date().replace(day=1)
+    y, m, out = first.year, first.month, []
+    for _ in range(n):
+        out.append((y, m, date(y, m, 1).strftime("%b %y")))
+        m -= 1
+        if m == 0:
+            m, y = 12, y - 1
+    return list(reversed(out))
+
+
+def crm_analytics(company) -> dict:
+    """Sales analytics computed from the existing Opportunity/Customer data — no new
+    tables. Won value is the opportunity's estimated value at the WON stage. Every
+    breakdown is a list of dicts the template renders as a bar chart."""
+    from collections import defaultdict
+    from decimal import Decimal
+
+    ZERO = Decimal("0")
+    opps = list(Opportunity.objects.filter(company=company)
+                .select_related("customer", "assigned_to"))
+    won = [o for o in opps if o.stage == OpportunityStage.WON]
+    lost = [o for o in opps if o.stage == OpportunityStage.LOST]
+    open_opps = [o for o in opps
+                 if o.stage not in (OpportunityStage.WON, OpportunityStage.LOST)]
+
+    def val(o):
+        return o.estimated_value or ZERO
+
+    won_value = sum((val(o) for o in won), ZERO)
+    closed = len(won) + len(lost)
+    win_rate = round(100 * len(won) / closed, 1) if closed else None
+    avg_deal = (won_value / len(won)) if won else ZERO
+    cycles = [(o.closed_at - o.created_at).days for o in won
+              if o.closed_at and o.created_at]
+    avg_cycle = round(sum(cycles) / len(cycles)) if cycles else None
+
+    # ── Sales by salesperson ──────────────────────────────────────────────────
+    owners = defaultdict(lambda: {"count": 0, "value": ZERO})
+    for o in won:
+        name = ((o.assigned_to.get_full_name() or o.assigned_to.email)
+                if o.assigned_to else "Unassigned")
+        owners[name]["count"] += 1
+        owners[name]["value"] += val(o)
+    sales_by_owner = sorted(({"name": n, **d} for n, d in owners.items()),
+                            key=lambda r: r["value"], reverse=True)
+
+    # ── Sales by customer ─────────────────────────────────────────────────────
+    custs = defaultdict(lambda: {"count": 0, "value": ZERO, "customer": None})
+    for o in won:
+        if not o.customer:
+            continue
+        row = custs[o.customer_id]
+        row["customer"] = o.customer
+        row["count"] += 1
+        row["value"] += val(o)
+    sales_by_customer = sorted(custs.values(), key=lambda r: r["value"],
+                               reverse=True)[:10]
+
+    # ── Sales by industry ─────────────────────────────────────────────────────
+    inds = defaultdict(lambda: {"count": 0, "value": ZERO})
+    for o in won:
+        ind = (o.customer.industry.strip() if o.customer and o.customer.industry
+               else "Unspecified")
+        inds[ind]["count"] += 1
+        inds[ind]["value"] += val(o)
+    sales_by_industry = sorted(({"name": n, **d} for n, d in inds.items()),
+                               key=lambda r: r["value"], reverse=True)
+
+    # ── Won / lost trend (6 months) ───────────────────────────────────────────
+    months = _recent_months(6)
+    wl = {(y, m): {"won": 0, "won_value": ZERO, "lost": 0} for (y, m, _) in months}
+    for o in won:
+        when = o.closed_at or o.created_at
+        key = (when.year, when.month)
+        if key in wl:
+            wl[key]["won"] += 1
+            wl[key]["won_value"] += val(o)
+    for o in lost:
+        when = o.closed_at or o.created_at
+        key = (when.year, when.month)
+        if key in wl:
+            wl[key]["lost"] += 1
+    won_lost_trend = [{"label": lbl, **wl[(y, m)]} for (y, m, lbl) in months]
+
+    # ── Customer acquisition (6 months) ───────────────────────────────────────
+    acq = {(y, m): 0 for (y, m, _) in months}
+    for c in Customer.objects.filter(company=company):
+        key = (c.created_at.year, c.created_at.month)
+        if key in acq:
+            acq[key] += 1
+    acquisition = [{"label": lbl, "count": acq[(y, m)]} for (y, m, lbl) in months]
+
+    return {
+        "won_count": len(won), "lost_count": len(lost), "open_count": len(open_opps),
+        "won_value": won_value, "win_rate": win_rate,
+        "avg_deal": avg_deal, "avg_cycle": avg_cycle,
+        "sales_by_owner": sales_by_owner,
+        "sales_by_customer": sales_by_customer,
+        "sales_by_industry": sales_by_industry,
+        "won_lost_trend": won_lost_trend,
+        "acquisition": acquisition,
+        "max_owner": max((r["value"] for r in sales_by_owner), default=ZERO),
+        "max_customer": max((r["value"] for r in sales_by_customer), default=ZERO),
+        "max_industry": max((r["value"] for r in sales_by_industry), default=ZERO),
+        "max_trend": max((r["won_value"] for r in won_lost_trend), default=ZERO),
+        "max_acq": max((r["count"] for r in acquisition), default=0),
+    }
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Sites & contacts management — the dedicated CRM screens.
 #

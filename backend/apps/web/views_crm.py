@@ -415,6 +415,16 @@ def crm_reports(request):
     })
 
 
+@login_required
+def crm_analytics(request):
+    """Sales analytics — won value by salesperson / customer / industry, the
+    won-vs-lost trend, deal size & sales cycle, and customer acquisition. All
+    computed from existing opportunities and customers."""
+    return render(request, "web/crm/analytics.html", {
+        "a": crm.crm_analytics(request.user.active_company),
+    })
+
+
 # ── Customer Sites & Contacts management ──────────────────────────────────────
 
 @login_required

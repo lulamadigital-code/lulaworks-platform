@@ -14,6 +14,7 @@ activities|reports){% endcomment %}
 
   <span class="crm-sep"></span>
   <span class="crm-grp">Analytics</span>
+  <a class="btn {% if active == 'analytics' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_analytics' %}">Analytics</a>
   <a class="btn {% if active == 'reports' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_reports' %}">Reports</a>
   <span class="crm-grp soon" title="Marketing tools are coming next">Marketing · soon</span>
 
