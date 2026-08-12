@@ -2398,7 +2398,8 @@ def procurement_clients(request):
     """Procurement's 'Our Clients' — the SAME customer master used across LulaWorks,
     not a separate database. Search the master and drill into a client to see their
     record and job/procurement history (via the customer detail page)."""
-    from django.db.models import Q
+    from django.db.models import Count, Q
+    from django.utils import timezone
 
     from apps.customers.models import Customer
     q = (request.GET.get("q") or "").strip()
@@ -2408,8 +2409,25 @@ def procurement_clients(request):
     if q:
         clients = clients.filter(Q(name__icontains=q) | Q(trading_name__icontains=q))
     clients = clients.order_by("name")[:300]
+
+    # Client info that stays on this page (no jump to CRM). All defensive/cheap.
+    month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    new_this_month = base.filter(created_at__gte=month_start).count()
+    with_contact = base.filter(~Q(email="") | ~Q(telephone="")).count()
+    with_jobs = 0
+    try:
+        from apps.projects.models import Project
+        active_ids = Project.objects.values_list("customer_id", flat=True).distinct()
+        with_jobs = base.filter(id__in=active_ids).count()
+    except Exception:
+        pass
+    top_industries = list(
+        base.exclude(industry="").values("industry").annotate(n=Count("id")).order_by("-n")[:4])
+
     return render(request, "web/procurement/our_clients.html", {
         "clients": clients, "q": q, "total": total,
+        "new_this_month": new_this_month, "with_contact": with_contact,
+        "with_jobs": with_jobs, "top_industries": top_industries,
         "can_manage": request.user.has_perm_code("projects.create")})
 
 

@@ -8,22 +8,54 @@
       <strong>customer master</strong> used everywhere in LulaWorks (CRM, Quotations, Jobs,
       Invoices). Create and manage client records here; open one for their full record and history.</p>
   </div>
-  {% if can_manage %}<div><a class="btn primary" href="#new">+ New client</a></div>{% endif %}
+  {% if can_manage %}<div><button type="button" class="btn primary" id="new-client-btn" aria-expanded="false" aria-controls="new-client-panel">+ New client</button></div>{% endif %}
 </div>
 
-<form method="get" action="{% url 'web:procurement_clients' %}" class="filterbar" style="margin-bottom:10px;">
+{# Client info that stays on this page. #}
+<div class="grid" style="margin-bottom:16px;">
+  <div class="tile"><div class="n">{{ total }}</div><div class="l">Clients</div></div>
+  <div class="tile"><div class="n">{{ with_jobs }}</div><div class="l">With jobs</div></div>
+  <div class="tile"><div class="n">{{ with_contact }}</div><div class="l">With contact details</div></div>
+  <div class="tile"><div class="n">{{ new_this_month }}</div><div class="l">Added this month</div></div>
+</div>
+
+{% if top_industries %}
+<div class="filterbar" style="gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+  <span class="muted" style="font-size:12px;">Industries:</span>
+  {% for ind in top_industries %}
+  <a class="btn ghost" href="{% url 'web:procurement_clients' %}?q={{ ind.industry|urlencode }}"
+     style="padding:3px 10px;">{{ ind.industry }} <span class="muted">· {{ ind.n }}</span></a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if can_manage %}
+<div class="card" id="new-client-panel" style="max-width:640px;margin-bottom:16px;display:none;">
+  <strong>New client</strong>
+  <form method="post" action="{% url 'web:customer_create' %}" style="margin-top:10px;">{% csrf_token %}
+    <div class="two">
+      <div><label>Company name *</label><input type="text" name="name" id="new-client-name" required placeholder="ABC Mining Ltd"></div>
+      <div><label>Industry</label><input type="text" name="industry" placeholder="Mining"></div>
+      <div><label>Email</label><input type="email" name="email"></div>
+      <div><label>Telephone</label><input type="text" name="telephone"></div>
+      <div><label>City</label><input type="text" name="city"></div>
+      <div><label>Their vendor number for us</label><input type="text" name="vendor_number"></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;">
+      <button class="btn primary" type="submit">Add client</button>
+      <button class="btn ghost" type="button" id="new-client-cancel">Cancel</button>
+    </div>
+    <p class="muted" style="font-size:12px;margin:8px 0 0;">Creates the company with a standard
+      department structure. Add contacts, sites and documents on its record.</p>
+  </form>
+</div>
+{% endif %}
+
+<form method="get" action="{% url 'web:procurement_clients' %}" class="filterbar" style="margin-bottom:16px;">
   <input type="search" name="q" value="{{ q }}" placeholder="Search clients…" style="flex:1;min-width:220px;">
   <button class="btn primary" type="submit">Search</button>
   {% if q %}<a class="btn ghost" href="{% url 'web:procurement_clients' %}">Clear</a>{% endif %}
 </form>
-
-{# Client-related shortcuts — the relationship/sales side of your clients. #}
-<div class="filterbar" style="gap:6px;margin-bottom:16px;flex-wrap:wrap;">
-  <a class="btn ghost" href="{% url 'web:crm_pipeline' %}" title="Deals in progress with your clients">Sales pipeline</a>
-  <a class="btn ghost" href="{% url 'web:crm_leads' %}" title="Potential new clients">Leads</a>
-  <a class="btn ghost" href="{% url 'web:crm_activities' %}" title="Calls &amp; meetings with clients">Calls &amp; meetings</a>
-  <a class="btn ghost" href="{% url 'web:crm_analytics' %}" title="Client &amp; sales analytics">Client analytics</a>
-</div>
 
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
@@ -40,27 +72,33 @@
     </tr>
     {% empty %}
     <tr><td colspan="5" class="muted" style="padding:18px;">
-      {% if q %}No clients match “{{ q }}”.{% else %}No clients yet — add your first below.{% endif %}</td></tr>
+      {% if q %}No clients match “{{ q }}”.{% else %}No clients yet — press “+ New client” to add your first.{% endif %}</td></tr>
     {% endfor %}
   </table>
 </div>
 
 {% if can_manage %}
-<h2 id="new" style="scroll-margin-top:20px;">New client</h2>
-<div class="card" style="max-width:640px;">
-  <form method="post" action="{% url 'web:customer_create' %}">{% csrf_token %}
-    <div class="two">
-      <div><label>Company name *</label><input type="text" name="name" required placeholder="ABC Mining Ltd"></div>
-      <div><label>Industry</label><input type="text" name="industry" placeholder="Mining"></div>
-      <div><label>Email</label><input type="email" name="email"></div>
-      <div><label>Telephone</label><input type="text" name="telephone"></div>
-      <div><label>City</label><input type="text" name="city"></div>
-      <div><label>Their vendor number for us</label><input type="text" name="vendor_number"></div>
-    </div>
-    <div style="margin-top:12px;"><button class="btn primary" type="submit">Add client</button></div>
-    <p class="muted" style="font-size:12px;margin:8px 0 0;">Creates the company with a standard
-      department structure. Add contacts, sites and documents on its record.</p>
-  </form>
-</div>
+<script>
+(function () {
+  var btn = document.getElementById('new-client-btn');
+  var panel = document.getElementById('new-client-panel');
+  var name = document.getElementById('new-client-name');
+  var cancel = document.getElementById('new-client-cancel');
+  if (!btn || !panel) return;
+  function open() {
+    panel.style.display = 'block';
+    btn.setAttribute('aria-expanded', 'true');
+    if (name) { name.focus(); }
+  }
+  function close() {
+    panel.style.display = 'none';
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  btn.addEventListener('click', function () {
+    if (panel.style.display === 'none' || !panel.style.display) { open(); } else { close(); }
+  });
+  if (cancel) { cancel.addEventListener('click', close); }
+})();
+</script>
 {% endif %}
 {% endblock %}
