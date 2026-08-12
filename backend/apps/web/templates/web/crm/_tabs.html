@@ -1,13 +1,31 @@
-{% comment %}CRM section tabs. Param: active (hub|leads|pipeline|customers|activities|reports){% endcomment %}
-<div class="filterbar" style="gap:6px;margin-bottom:18px;">
+{% comment %}CRM tabs, grouped: the Customer MASTER plus the Sales / Relationships /
+Marketing / Analytics layers over it. Param: active (hub|leads|pipeline|customers|
+activities|reports){% endcomment %}
+<div class="crm-tabs">
   <a class="btn {% if active == 'hub' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_hub' %}">Overview</a>
+  <a class="btn {% if active == 'customers' %}primary{% else %}ghost{% endif %}"
+     href="{% url 'web:customers' %}" title="The customer master — company records reused across LulaWorks">Customers</a>
+
+  <span class="crm-sep"></span>
+  <span class="crm-grp">Sales</span>
   <a class="btn {% if active == 'leads' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_leads' %}">Leads</a>
   <a class="btn {% if active == 'pipeline' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_pipeline' %}">Pipeline</a>
-  <a class="btn {% if active == 'customers' %}primary{% else %}ghost{% endif %}" href="{% url 'web:customers' %}">Customers</a>
   <a class="btn {% if active == 'activities' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_activities' %}">Activities</a>
+
+  <span class="crm-sep"></span>
+  <span class="crm-grp">Analytics</span>
   <a class="btn {% if active == 'reports' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_reports' %}">Reports</a>
+  <span class="crm-grp soon" title="Marketing tools are coming next">Marketing · soon</span>
+
   <form method="get" action="{% url 'web:crm_search' %}" style="margin-left:auto;display:flex;gap:6px;">
-    <input type="search" name="q" placeholder="Search CRM…" value="{{ q|default:'' }}" style="min-width:180px;">
+    <input type="search" name="q" placeholder="Search CRM…" value="{{ q|default:'' }}" style="min-width:160px;">
     <button class="btn ghost" type="submit">Search</button>
   </form>
 </div>
+<style>
+.crm-tabs{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:18px;}
+.crm-tabs .crm-grp{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+  color:var(--muted);padding:0 2px 0 6px;}
+.crm-tabs .crm-grp.soon{opacity:.55;font-weight:600;text-transform:none;letter-spacing:0;}
+.crm-tabs .crm-sep{width:1px;height:20px;background:var(--line);margin:0 4px;}
+</style>

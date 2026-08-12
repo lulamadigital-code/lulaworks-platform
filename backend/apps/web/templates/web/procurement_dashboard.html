@@ -2,8 +2,24 @@
 {% block title %}Procurement{% endblock %}
 {% block content %}
 <h1>Procurement</h1>
-<p class="sub">Suppliers, products, purchases and requests — the whole buying picture.</p>
+<p class="sub">Two sides of buying — <strong>who you sell to</strong> and <strong>who you buy from</strong>.
+  Our clients come from the shared customer master; suppliers are their own master.</p>
 {% include "web/_procurement_nav.html" %}
+
+<div class="two-col" style="margin-bottom:18px;">
+  <a class="card" href="{% url 'web:procurement_clients' %}"
+     style="display:block;border-left:3px solid var(--primary);text-decoration:none;color:inherit;">
+    <strong style="font-size:15px;">🏢 Our clients →</strong>
+    <p class="muted" style="margin:6px 0 0;font-size:12.5px;">The companies you do work for —
+      from the customer master. Open one for their job &amp; procurement history.</p>
+  </a>
+  <a class="card" href="{% url 'web:suppliers' %}"
+     style="display:block;border-left:3px solid var(--green,#0a8f57);text-decoration:none;color:inherit;">
+    <strong style="font-size:15px;">🚚 Suppliers →</strong>
+    <p class="muted" style="margin:6px 0 0;font-size:12.5px;">The companies you buy from —
+      prices, performance, purchase orders and RFQs.</p>
+  </a>
+</div>
 
 <div class="grid">
   <div class="tile"><div class="n">{{ active_suppliers }}</div><div class="l">Suppliers</div></div>

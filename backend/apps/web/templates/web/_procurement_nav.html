@@ -2,6 +2,7 @@
 {% with u=request.resolver_match.url_name %}
 <div class="filterbar" style="gap:6px;margin-bottom:18px;flex-wrap:wrap;">
   <a class="btn {% if u == 'procurement' %}{% else %}ghost{% endif %}" href="{% url 'web:procurement' %}">Overview</a>
+  <a class="btn {% if u == 'procurement_clients' %}{% else %}ghost{% endif %}" href="{% url 'web:procurement_clients' %}" title="Your clients — from the shared customer master">Our clients</a>
   <a class="btn {% if u == 'suppliers' or u == 'supplier_detail' %}{% else %}ghost{% endif %}" href="{% url 'web:suppliers' %}">Suppliers</a>
   <a class="btn {% if u == 'products' or u == 'product_detail' %}{% else %}ghost{% endif %}" href="{% url 'web:products' %}">Products</a>
   <a class="btn {% if u == 'requests' or u == 'request_new' or u == 'request_detail' %}{% else %}ghost{% endif %}" href="{% url 'web:requests' %}">Requests</a>

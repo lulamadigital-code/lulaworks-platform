@@ -5,13 +5,60 @@
 <div class="pagehead">
   <div>
     <h1>CRM</h1>
-    <p class="sub" style="margin:0;">Every customer relationship in one place — from the
-      first enquiry, through the pipeline, to the deals you win. Lead → Opportunity →
-      Customer → Quotation → Job.</p>
+    <p class="sub" style="margin:0;">Sales and relationship management around your
+      <strong>customer master</strong>. A company is created once under <em>Customers</em>
+      and reused everywhere — CRM, Quotations, Jobs, Invoices, Procurement. CRM adds the
+      selling layer: Lead → Opportunity → Quotation → Won → Customer.</p>
   </div>
 </div>
 
 {% include "web/crm/_tabs.html" with active='hub' %}
+
+<div class="crm-areas">
+  <div class="card area">
+    <div class="area-h">🎯 Sales</div>
+    <p class="muted">Turn enquiries into won work.</p>
+    <div class="area-links">
+      <a href="{% url 'web:crm_leads' %}">Leads</a>
+      <a href="{% url 'web:crm_pipeline' %}">Opportunities &amp; pipeline</a>
+      <a href="{% url 'web:quotations' %}">Quotations</a>
+      <a href="{% url 'web:crm_activities' %}">Follow-ups &amp; activities</a>
+      <span class="soon">Sales forecast</span>
+    </div>
+  </div>
+  <div class="card area">
+    <div class="area-h">🤝 Relationships</div>
+    <p class="muted">The history behind every customer.</p>
+    <div class="area-links">
+      <a href="{% url 'web:customers' %}">Customers &amp; contacts</a>
+      <a href="{% url 'web:crm_activities' %}">Calls &amp; meetings</a>
+      <span class="soon">Communication history</span>
+    </div>
+  </div>
+  <div class="card area">
+    <div class="area-h">📣 Marketing <span class="chip info" style="font-size:10px;">soon</span></div>
+    <p class="muted">Reach the right customers.</p>
+    <div class="area-links">
+      <span class="soon">Campaigns</span><span class="soon">Segments</span>
+      <span class="soon">Email</span><span class="soon">WhatsApp</span><span class="soon">Lead sources</span>
+    </div>
+  </div>
+  <div class="card area">
+    <div class="area-h">📊 Analytics</div>
+    <p class="muted">How sales are really performing.</p>
+    <div class="area-links">
+      <a href="{% url 'web:crm_reports' %}">Pipeline &amp; conversion</a>
+      <span class="soon">Sales by salesperson / customer / industry</span>
+    </div>
+  </div>
+</div>
+<style>
+.crm-areas{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px;}
+.crm-areas .area .area-h{font-weight:700;font-size:15px;margin-bottom:2px;}
+.crm-areas .area p.muted{font-size:12.5px;margin:0 0 8px;}
+.crm-areas .area-links{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px;}
+.crm-areas .area-links .soon{color:var(--muted);opacity:.7;}
+</style>
 
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">◎</div>

@@ -2387,6 +2387,22 @@ def procurement_dashboard(request):
 
 
 @login_required
+def procurement_clients(request):
+    """Procurement's 'Our Clients' — the SAME customer master used across LulaWorks,
+    not a separate database. Search the master and drill into a client to see their
+    record and job/procurement history (via the customer detail page)."""
+    from django.db.models import Q
+
+    from apps.customers.models import Customer
+    q = (request.GET.get("q") or "").strip()
+    clients = Customer.objects.all()
+    if q:
+        clients = clients.filter(Q(name__icontains=q) | Q(trading_name__icontains=q))
+    clients = clients.order_by("name")[:300]
+    return render(request, "web/procurement/our_clients.html", {"clients": clients, "q": q})
+
+
+@login_required
 def procurement_prices(request):
     """Price history — the append-only ledger of everything we've paid."""
     from apps.procurement.models import SupplierPrice
