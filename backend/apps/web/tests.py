@@ -1512,8 +1512,10 @@ class ProcurementDashboardTests(TestCase):
         self.client.force_login(user)
         r = self.client.get("/procurement/")
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Steel Co")          # top supplier card
         self.assertContains(r, "Price history")      # sub-nav present
+        r = self.client.get("/suppliers/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Steel Co")          # top supplier card lives here now
         r = self.client.get("/procurement/prices/")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Steel beam")

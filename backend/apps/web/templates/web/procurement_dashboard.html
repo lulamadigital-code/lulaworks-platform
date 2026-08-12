@@ -1,29 +1,27 @@
 {% extends "web/base.html" %}
-{% block title %}Procurement{% endblock %}
+{% block title %}Purchasing{% endblock %}
 {% block content %}
-<h1>Procurement</h1>
-<p class="sub">Two sides of buying — <strong>who you sell to</strong> and <strong>who you buy from</strong>.
-  Our clients come from the shared customer master; suppliers are their own master.</p>
+<h1>Purchasing</h1>
+<p class="sub">Two sides of buying — <strong>who you sell to</strong> and <strong>who you buy from</strong>. Pick a side.</p>
 {% include "web/_procurement_nav.html" %}
 
-<div class="two-col" style="margin-bottom:18px;">
+<div class="two-col" style="margin-bottom:20px;">
   <a class="card" href="{% url 'web:procurement_clients' %}"
      style="display:block;border-left:3px solid var(--primary);text-decoration:none;color:inherit;">
-    <strong style="font-size:15px;">🏢 Our clients →</strong>
+    <strong style="font-size:16px;">🏢 Our clients →</strong>
     <p class="muted" style="margin:6px 0 0;font-size:12.5px;">The companies you do work for —
-      from the customer master. Open one for their job &amp; procurement history.</p>
+      the shared customer master. Open one for their record and job/procurement history.</p>
   </a>
   <a class="card" href="{% url 'web:suppliers' %}"
      style="display:block;border-left:3px solid var(--green,#0a8f57);text-decoration:none;color:inherit;">
-    <strong style="font-size:15px;">🚚 Suppliers →</strong>
+    <strong style="font-size:16px;">🚚 Suppliers →</strong>
     <p class="muted" style="margin:6px 0 0;font-size:12.5px;">The companies you buy from —
       prices, performance, purchase orders and RFQs.</p>
   </a>
 </div>
 
+{# Procurement-wide activity only. Supplier-specific numbers live on Suppliers. #}
 <div class="grid">
-  <div class="tile"><div class="n">{{ active_suppliers }}</div><div class="l">Suppliers</div></div>
-  <div class="tile"><div class="n">{{ products }}</div><div class="l">Products tracked</div></div>
   <div class="tile"><div class="n">{{ todays_purchases }}</div><div class="l">Purchases today</div></div>
   <div class="tile"><div class="n">R{{ month_spend }}</div><div class="l">Spend this month</div></div>
   <div class="tile" style="{% if awaiting_approval %}border-color:var(--warn);{% endif %}">
@@ -32,55 +30,21 @@
   <div class="tile"><div class="n">{{ open_requests }}</div><div class="l">Open requests</div></div>
 </div>
 
-<div class="two-col">
-  <div><div class="card">
-    <strong>Most purchased</strong>
-    {% if most_purchased %}
-    <p style="margin:8px 0 0;"><a href="{% url 'web:product_detail' most_purchased.id %}">{{ most_purchased.name }}</a></p>
-    {% else %}<p class="muted" style="margin:8px 0 0;">No purchases yet.</p>{% endif %}
-  </div></div>
-  <div><div class="card">
-    <strong>Top supplier</strong>
-    {% if top_supplier %}
-    <p style="margin:8px 0 0;"><a href="{% url 'web:supplier_detail' top_supplier.id %}">{% if top_supplier.preferred %}★ {% endif %}{{ top_supplier.name }}</a></p>
-    {% else %}<p class="muted" style="margin:8px 0 0;">No suppliers yet.</p>{% endif %}
-  </div></div>
-</div>
-
-<div class="two-col">
-  <div>
-    <h2>Recent requests</h2>
-    <div class="card" style="padding:0;">
-      <table>
-        {% for r in recent_requests %}
-        <tr>
-          <td><a href="{% url 'web:request_detail' r.id %}">{{ r.number }}</a>
-            <br><span class="muted" style="font-size:12px;">{{ r.title }}</span></td>
-          <td class="right">
-            {% if r.status == 'submitted' %}<span class="chip warn">Awaiting</span>
-            {% elif r.status == 'approved' %}<span class="chip ok">Approved</span>
-            {% elif r.status == 'fulfilled' %}<span class="chip ok">Fulfilled</span>
-            {% else %}<span class="chip">{{ r.get_status_display }}</span>{% endif %}</td>
-        </tr>
-        {% empty %}<tr><td class="muted" style="padding:16px;">No requests yet. <a href="{% url 'web:request_new' %}">Raise one →</a></td></tr>
-        {% endfor %}
-      </table>
-    </div>
-  </div>
-  <div>
-    <h2>Latest prices</h2>
-    <div class="card" style="padding:0;">
-      <table>
-        {% for p in recent_prices %}
-        <tr>
-          <td>{% if p.product %}<a href="{% url 'web:product_detail' p.product.id %}">{{ p.description }}</a>{% else %}{{ p.description }}{% endif %}
-            <br><span class="muted" style="font-size:12px;">{{ p.supplier.name }} · {{ p.date|date:"d M Y" }}</span></td>
-          <td class="right">{{ p.currency }} {{ p.unit_price }}</td>
-        </tr>
-        {% empty %}<tr><td class="muted" style="padding:16px;">No prices recorded yet.</td></tr>
-        {% endfor %}
-      </table>
-    </div>
-  </div>
+<h2>Recent purchase requests</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    {% for r in recent_requests %}
+    <tr>
+      <td><a href="{% url 'web:request_detail' r.id %}">{{ r.number }}</a>
+        <br><span class="muted" style="font-size:12px;">{{ r.title }}</span></td>
+      <td class="right">
+        {% if r.status == 'submitted' %}<span class="chip warn">Awaiting</span>
+        {% elif r.status == 'approved' %}<span class="chip ok">Approved</span>
+        {% elif r.status == 'fulfilled' %}<span class="chip ok">Fulfilled</span>
+        {% else %}<span class="chip">{{ r.get_status_display }}</span>{% endif %}</td>
+    </tr>
+    {% empty %}<tr><td class="muted" style="padding:16px;">No requests yet. <a href="{% url 'web:request_new' %}">Raise one →</a></td></tr>
+    {% endfor %}
+  </table>
 </div>
 {% endblock %}

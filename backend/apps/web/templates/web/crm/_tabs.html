@@ -3,10 +3,7 @@ Marketing / Analytics layers over it. Param: active (hub|leads|pipeline|customer
 activities|reports){% endcomment %}
 <div class="crm-tabs">
   <a class="btn {% if active == 'hub' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_hub' %}">Overview</a>
-  <a class="btn {% if active == 'customers' %}primary{% else %}ghost{% endif %}"
-     href="{% url 'web:customers' %}" title="The customer master — company records reused across LulaWorks">Customers</a>
 
-  <span class="crm-sep"></span>
   <span class="crm-grp">Sales</span>
   <a class="btn {% if active == 'leads' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_leads' %}">Leads</a>
   <a class="btn {% if active == 'pipeline' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_pipeline' %}">Pipeline</a>

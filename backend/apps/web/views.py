@@ -1984,8 +1984,15 @@ def suppliers_list(request):
             if key not in seen:          # latest price per supplier+item
                 seen.add(key)
                 item_matches.append(p)
+    # Supplier-side headline numbers (moved here from the procurement home, which
+    # now shows only the two entry points + procurement-wide activity).
+    from apps.procurement.services import procurement_dashboard_metrics
+    m = procurement_dashboard_metrics(request.user.active_company)
     return render(request, "web/suppliers.html", {
         "suppliers": suppliers, "q": q, "item_matches": item_matches,
+        "active_suppliers": m.get("active_suppliers"), "products": m.get("products"),
+        "top_supplier": m.get("top_supplier"), "most_purchased": m.get("most_purchased"),
+        "recent_prices": m.get("recent_prices"),
         "can_manage": request.user.has_perm_code("procurement.manage")})
 
 
@@ -2395,11 +2402,15 @@ def procurement_clients(request):
 
     from apps.customers.models import Customer
     q = (request.GET.get("q") or "").strip()
-    clients = Customer.objects.all()
+    base = Customer.objects.all()
+    total = base.count()
+    clients = base
     if q:
         clients = clients.filter(Q(name__icontains=q) | Q(trading_name__icontains=q))
     clients = clients.order_by("name")[:300]
-    return render(request, "web/procurement/our_clients.html", {"clients": clients, "q": q})
+    return render(request, "web/procurement/our_clients.html", {
+        "clients": clients, "q": q, "total": total,
+        "can_manage": request.user.has_perm_code("projects.create")})
 
 
 @login_required
@@ -2737,11 +2748,11 @@ def customer_create(request):
     from apps.customers.services import create_customer
     if not request.user.has_perm_code("projects.create"):
         messages.error(request, "You do not have permission to add customers.")
-        return redirect("web:customers")
+        return redirect("web:procurement_clients")
     name = request.POST.get("name", "").strip()
     if not name:
         messages.error(request, "A company name is required.")
-        return redirect("web:customers")
+        return redirect("web:procurement_clients")
     customer = create_customer(
         request.user.active_company, request.user, name=name,
         industry=request.POST.get("industry", "").strip(),

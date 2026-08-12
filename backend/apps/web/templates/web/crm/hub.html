@@ -5,10 +5,10 @@
 <div class="pagehead">
   <div>
     <h1>CRM</h1>
-    <p class="sub" style="margin:0;">Sales and relationship management around your
-      <strong>customer master</strong>. A company is created once under <em>Customers</em>
-      and reused everywhere — CRM, Quotations, Jobs, Invoices, Procurement. CRM adds the
-      selling layer: Lead → Opportunity → Quotation → Won → Customer.</p>
+    <p class="sub" style="margin:0;">The selling layer over your customer master:
+      Lead → Opportunity → Quotation → Won → Customer. Company records live in
+      <a href="{% url 'web:procurement_clients' %}">Purchasing → Our Clients</a> and are
+      reused everywhere — CRM never keeps a second copy.</p>
   </div>
 </div>
 
@@ -30,8 +30,8 @@
     <div class="area-h">🤝 Relationships</div>
     <p class="muted">The history behind every customer.</p>
     <div class="area-links">
-      <a href="{% url 'web:customers' %}">Customers &amp; contacts</a>
       <a href="{% url 'web:crm_activities' %}">Calls &amp; meetings</a>
+      <a href="{% url 'web:procurement_clients' %}">Client records</a>
       <span class="soon">Communication history</span>
     </div>
   </div>

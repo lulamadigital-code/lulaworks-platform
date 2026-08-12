@@ -1,10 +1,15 @@
 {% extends "web/base.html" %}
-{% block title %}Our clients · Procurement{% endblock %}
+{% block title %}Our clients · Purchasing{% endblock %}
 {% block content %}
-<h1>Our clients</h1>
-<p class="sub">The companies you do work for — drawn straight from the shared
-  <strong>customer master</strong>, not a separate list. Open a client to see their
-  record and job history. New clients are created under CRM → Customers.</p>
+<div class="pagehead">
+  <div>
+    <h1>Our clients <span class="muted" style="font-weight:400;font-size:15px;">· {{ total }}</span></h1>
+    <p class="sub" style="margin:0;">The companies you do work for — the shared
+      <strong>customer master</strong> used everywhere in LulaWorks (CRM, Quotations, Jobs,
+      Invoices). Create and manage client records here; open one for their full record and history.</p>
+  </div>
+  {% if can_manage %}<div><a class="btn primary" href="#new">+ New client</a></div>{% endif %}
+</div>
 {% include "web/_procurement_nav.html" %}
 
 <form method="get" action="{% url 'web:procurement_clients' %}" class="filterbar" style="margin-bottom:14px;">
@@ -28,9 +33,27 @@
     </tr>
     {% empty %}
     <tr><td colspan="5" class="muted" style="padding:18px;">
-      {% if q %}No clients match “{{ q }}”.{% else %}No clients yet — add one under
-      <a href="{% url 'web:customers' %}">CRM → Customers</a>.{% endif %}</td></tr>
+      {% if q %}No clients match “{{ q }}”.{% else %}No clients yet — add your first below.{% endif %}</td></tr>
     {% endfor %}
   </table>
 </div>
+
+{% if can_manage %}
+<h2 id="new" style="scroll-margin-top:20px;">New client</h2>
+<div class="card" style="max-width:640px;">
+  <form method="post" action="{% url 'web:customer_create' %}">{% csrf_token %}
+    <div class="two">
+      <div><label>Company name *</label><input type="text" name="name" required placeholder="ABC Mining Ltd"></div>
+      <div><label>Industry</label><input type="text" name="industry" placeholder="Mining"></div>
+      <div><label>Email</label><input type="email" name="email"></div>
+      <div><label>Telephone</label><input type="text" name="telephone"></div>
+      <div><label>City</label><input type="text" name="city"></div>
+      <div><label>Their vendor number for us</label><input type="text" name="vendor_number"></div>
+    </div>
+    <div style="margin-top:12px;"><button class="btn primary" type="submit">Add client</button></div>
+    <p class="muted" style="font-size:12px;margin:8px 0 0;">Creates the company with a standard
+      department structure. Add contacts, sites and documents on its record.</p>
+  </form>
+</div>
+{% endif %}
 {% endblock %}
