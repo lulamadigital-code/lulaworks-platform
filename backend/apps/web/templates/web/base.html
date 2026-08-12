@@ -343,10 +343,10 @@
     <nav class="nav">
       {% include "web/_navlink.html" with url='web:dashboard' key='dashboard' label='Dashboard' icon='grid' %}
       {% if perms_procurement %}{% include "web/_navlink.html" with url='web:procurement' key='procurement' label='Procurement' icon='cart' %}{% endif %}
+      {% include "web/_navlink.html" with url='web:crm_hub' key='crm' label='CRM' icon='org' %}
       {% include "web/_navlink.html" with url='web:notifications' key='notifications' label='Inbox' icon='bell' badge=unread_notifications %}
 
       <span class="nav-gap"></span>
-      {% include "web/_navlink.html" with url='web:crm_hub' key='crm' label='CRM' icon='org' %}
       {% include "web/_navlink.html" with url='web:quotations' key='quotations' label='Quotations' icon='doc' %}
 
       <span class="nav-gap"></span>
