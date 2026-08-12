@@ -294,8 +294,8 @@
     tr.dim td{opacity:.55}
     tr.dim td strong{font-weight:600}
 
-    /* ---- Back to top (long pages) ---- */
-    .totop{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;
+    /* ---- Back to top (long pages) — sits above the LulaAI button ---- */
+    .totop{position:fixed;right:22px;bottom:82px;width:44px;height:44px;border-radius:50%;
            background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-lg);
            display:flex;align-items:center;justify-content:center;color:var(--muted);
            opacity:0;pointer-events:none;transform:translateY(10px);z-index:40;
@@ -303,6 +303,20 @@
     .totop.on{opacity:1;pointer-events:auto;transform:none}
     .totop:hover{color:var(--primary-d);text-decoration:none;border-color:var(--primary)}
     .totop svg{width:19px;height:19px}
+
+    /* ---- Floating LulaAI assistant button (bottom-right, all pages) ---- */
+    .lula-fab{position:fixed;right:22px;bottom:22px;z-index:41;display:inline-flex;
+              align-items:center;gap:8px;padding:12px 18px 12px 14px;border-radius:28px;
+              background:var(--primary);color:#fff;font-weight:700;font-size:14px;
+              box-shadow:var(--shadow-lg);transition:transform .15s ease,box-shadow .15s ease,background .15s ease}
+    .lula-fab:hover{background:var(--primary-d);color:#fff;text-decoration:none;
+                    transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,.22)}
+    .lula-fab svg{width:20px;height:20px;flex:0 0 auto}
+    @media (max-width:640px){
+      .lula-fab{right:14px;bottom:14px;padding:12px;gap:0}
+      .lula-fab .lula-label{display:none}          /* icon-only on small screens */
+      .totop{right:14px;bottom:74px}
+    }
 
     /* ---- Login ---- */
     .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
@@ -328,8 +342,8 @@
     {% endcomment %}
     <nav class="nav">
       {% include "web/_navlink.html" with url='web:dashboard' key='dashboard' label='Dashboard' icon='grid' %}
+      {% if perms_procurement %}{% include "web/_navlink.html" with url='web:procurement' key='procurement' label='Procurement' icon='cart' %}{% endif %}
       {% include "web/_navlink.html" with url='web:notifications' key='notifications' label='Inbox' icon='bell' badge=unread_notifications %}
-      {% include "web/_navlink.html" with url='web:lulama' key='lulama' label='LulaAI' icon='spark' %}
 
       <span class="nav-gap"></span>
       {% include "web/_navlink.html" with url='web:crm_hub' key='crm' label='CRM' icon='org' %}
@@ -339,10 +353,9 @@
       {% include "web/_navlink.html" with url='web:work' key='jobs' label='Jobs' icon='check' %}
       {% include "web/_navlink.html" with url='web:projects' key='projects' label='Projects' icon='folder' %}
 
-      {% if perms_procurement or perms_money %}
+      {% if perms_money %}
       <span class="nav-gap"></span>
-      {% if perms_procurement %}{% include "web/_navlink.html" with url='web:procurement' key='procurement' label='Procurement' icon='cart' %}{% endif %}
-      {% if perms_money %}{% include "web/_navlink.html" with url='web:commercial' key='commercial' label='Commercial' icon='cash' %}{% endif %}
+      {% include "web/_navlink.html" with url='web:commercial' key='commercial' label='Commercial' icon='cash' %}
       {% endif %}
 
       <span class="nav-gap"></span>
@@ -375,6 +388,14 @@
     </div>
   </main>
   {% if user.is_authenticated %}
+  <a class="lula-fab" href="{% url 'web:lulama' %}" title="Ask LulaAI">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3z"/>
+      <path d="M18 15l.7 1.7 1.8.8-1.8.8L18 20l-.7-1.7-1.8-.8 1.8-.8L18 15z"/>
+    </svg>
+    <span class="lula-label">LulaAI</span>
+  </a>
   <a class="totop" href="#top" aria-label="Back to top" title="Back to top">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
