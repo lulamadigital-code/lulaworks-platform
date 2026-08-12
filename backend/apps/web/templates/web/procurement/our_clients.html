@@ -10,7 +10,6 @@
   </div>
   {% if can_manage %}<div><a class="btn primary" href="#new">+ New client</a></div>{% endif %}
 </div>
-{% include "web/_procurement_nav.html" %}
 
 <form method="get" action="{% url 'web:procurement_clients' %}" class="filterbar" style="margin-bottom:10px;">
   <input type="search" name="q" value="{{ q }}" placeholder="Search clients…" style="flex:1;min-width:220px;">
@@ -20,7 +19,6 @@
 
 {# Client-related shortcuts — the relationship/sales side of your clients. #}
 <div class="filterbar" style="gap:6px;margin-bottom:16px;flex-wrap:wrap;">
-  {% if can_manage %}<a class="btn ghost" href="#new" title="Add a new client">+ New client</a>{% endif %}
   <a class="btn ghost" href="{% url 'web:crm_pipeline' %}" title="Deals in progress with your clients">Sales pipeline</a>
   <a class="btn ghost" href="{% url 'web:crm_leads' %}" title="Potential new clients">Leads</a>
   <a class="btn ghost" href="{% url 'web:crm_activities' %}" title="Calls &amp; meetings with clients">Calls &amp; meetings</a>
