@@ -169,7 +169,7 @@ class ProcurementTests(TestCase):
                                        lines=[{"description": "Steel", "qty": 12, "unit_price": 485}])
         user = user_with(c, ["projects.view", "finance.view_money"])
         self.client.force_login(user)
-        self.assertContains(self.client.get("/suppliers/"), "NJR Steel")
+        self.assertContains(self.client.get("/procurement/suppliers/"), "NJR Steel")
         detail = self.client.get(f"/purchase-orders/{po.id}/")
         self.assertContains(detail, "3-way match")
         self.assertContains(detail, po.number)
@@ -1222,7 +1222,7 @@ class SuppliersDirectoryTests(TestCase):
     def test_item_search_finds_where_we_buy_it(self):
         c, user = self._seed()
         self.client.force_login(user)
-        resp = self.client.get("/suppliers/?q=pipes")     # plural still finds "pipe"
+        resp = self.client.get("/procurement/suppliers/?q=pipes")     # plural still finds "pipe"
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Where we buy")
         self.assertContains(resp, "Hydraulic pipe 50mm")
@@ -1235,7 +1235,7 @@ class SuppliersDirectoryTests(TestCase):
         with tenant_scope(c.id):
             sid = Supplier.objects.get(name="Hydraulics SA").id
         self.client.force_login(user)
-        resp = self.client.get(f"/suppliers/{sid}/")
+        resp = self.client.get(f"/procurement/suppliers/{sid}/")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "185")          # price recorded
         self.assertContains(resp, "Inv 4471")     # the receipt
@@ -1248,7 +1248,7 @@ class SuppliersDirectoryTests(TestCase):
         self.client.force_login(user)
 
         # add a supplier by hand
-        resp = self.client.post("/suppliers/new/",
+        resp = self.client.post("/procurement/suppliers/new/",
                                 {"name": "Steel Co", "categories": "Steel, Beams"})
         self.assertEqual(resp.status_code, 302)
         with tenant_scope(c.id):
@@ -1256,7 +1256,7 @@ class SuppliersDirectoryTests(TestCase):
                              ["Steel", "Beams"])
 
         # confirm an old-invoice import → seeds supplier + prices (blank/zero skipped)
-        resp = self.client.post("/suppliers/import/confirm/", {
+        resp = self.client.post("/procurement/suppliers/import/confirm/", {
             "supplier_name": "Bolt Traders", "doc_date": "2026-01-15",
             "description": ["M12 bolt", "Hex nut", ""],
             "unit": ["ea", "ea", "ea"],
@@ -1278,7 +1278,7 @@ class SuppliersDirectoryTests(TestCase):
             s = Supplier.objects.create(company=c, name="Docs Co")
         self.client.force_login(user)
         f = SimpleUploadedFile("bee.pdf", b"%PDF-1.4 test", content_type="application/pdf")
-        resp = self.client.post(f"/suppliers/{s.id}/documents/",
+        resp = self.client.post(f"/procurement/suppliers/{s.id}/documents/",
                                 {"file": f, "doc_type": "certificate"})
         self.assertEqual(resp.status_code, 302)
         with tenant_scope(c.id):
@@ -1512,8 +1512,8 @@ class ProcurementDashboardTests(TestCase):
         self.client.force_login(user)
         r = self.client.get("/procurement/")
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Price history")      # sub-nav present
-        r = self.client.get("/suppliers/")
+        self.assertContains(r, "Suppliers")          # entry button to the supplier side
+        r = self.client.get("/procurement/suppliers/")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Steel Co")          # top supplier card lives here now
         r = self.client.get("/procurement/prices/")

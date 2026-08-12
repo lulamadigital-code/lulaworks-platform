@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 
 from . import (
     views,
@@ -225,15 +226,17 @@ urlpatterns = [
     path("procurement/", views.procurement_dashboard, name="procurement"),
     path("procurement/clients/", views.procurement_clients, name="procurement_clients"),
     path("procurement/prices/", views.procurement_prices, name="procurement_prices"),
-    path("suppliers/", views.suppliers_list, name="suppliers"),
-    path("suppliers/new/", views.supplier_create, name="supplier_create"),
-    path("suppliers/import/", views.supplier_import, name="supplier_import"),
-    path("suppliers/import/confirm/", views.supplier_import_confirm,
+    path("procurement/suppliers/", views.suppliers_list, name="suppliers"),
+    path("procurement/suppliers/new/", views.supplier_create, name="supplier_create"),
+    path("procurement/suppliers/import/", views.supplier_import, name="supplier_import"),
+    path("procurement/suppliers/import/confirm/", views.supplier_import_confirm,
          name="supplier_import_confirm"),
-    path("suppliers/<uuid:pk>/", views.supplier_detail, name="supplier_detail"),
-    path("suppliers/<uuid:pk>/edit/", views.supplier_edit, name="supplier_edit"),
-    path("suppliers/<uuid:pk>/documents/", views.supplier_document,
+    path("procurement/suppliers/<uuid:pk>/", views.supplier_detail, name="supplier_detail"),
+    path("procurement/suppliers/<uuid:pk>/edit/", views.supplier_edit, name="supplier_edit"),
+    path("procurement/suppliers/<uuid:pk>/documents/", views.supplier_document,
          name="supplier_document"),
+    # Keep old /suppliers/* links working.
+    path("suppliers/", RedirectView.as_view(pattern_name="web:suppliers", permanent=False)),
     # Products (procurement intelligence — built from the price ledger)
     path("products/", views.products_list, name="products"),
     path("products/<uuid:pk>/", views.product_detail, name="product_detail"),
