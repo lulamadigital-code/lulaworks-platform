@@ -71,6 +71,45 @@
     <div><div class="cap">Win rate</div><strong>{% if reports.conversion_rate is not None %}{{ reports.conversion_rate }}%{% else %}—{% endif %}</strong></div></div>
 </div>
 
+<div class="people-head">
+  <h2 style="margin:0;">People we work with{% if people_total %} <span class="muted" style="font-weight:400;font-size:14px;">· {{ people_total }}</span>{% endif %}</h2>
+  <span class="muted" style="font-size:12.5px;">The real humans at your clients — kept on each <a href="{% url 'web:procurement_clients' %}">client record</a>.</span>
+</div>
+{% if people %}
+<div class="people-grid">
+  {% for p in people %}
+  <a class="person-card" href="{% url 'web:customer_detail' p.customer_id %}">
+    <span class="av init" style="width:42px;height:42px;font-size:16px;">{{ p.full_name|slice:":1"|upper }}</span>
+    <div style="min-width:0;flex:1;">
+      <div class="pc-name">{{ p.full_name }}{% if p.is_primary %} <span class="chip info" style="font-size:9.5px;padding:1px 6px;">Primary</span>{% endif %}</div>
+      <div class="muted pc-role">{{ p.job_title|default:"Contact" }}{% if p.customer %} · {{ p.customer.display_name }}{% endif %}</div>
+      <div class="pc-links">
+        {% if p.email %}<span title="{{ p.email }}">✉ Email</span>{% endif %}
+        {% if p.mobile or p.telephone %}<span title="{{ p.mobile|default:p.telephone }}">✆ Call</span>{% endif %}
+        {% if p.whatsapp %}<span title="{{ p.whatsapp }}">WhatsApp</span>{% endif %}
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% if people_total > 12 %}<p style="margin:0 0 20px;"><a class="btn ghost" href="{% url 'web:procurement_clients' %}">See all clients &amp; their people →</a></p>{% endif %}
+{% else %}
+<div class="card" style="margin-bottom:20px;">
+  <p class="muted" style="margin:0;">No contacts yet. Add the people you deal with on each
+    <a href="{% url 'web:procurement_clients' %}">client record</a> — they'll show up here.</p>
+</div>
+{% endif %}
+<style>
+.people-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:22px 0 12px;}
+.people-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:14px;}
+.person-card{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r);padding:13px 14px;box-shadow:var(--shadow);color:var(--ink);}
+.person-card:hover{text-decoration:none;box-shadow:var(--shadow-lg);border-color:var(--primary);}
+.person-card .pc-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.person-card .pc-role{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.person-card .pc-links{display:flex;gap:10px;margin-top:5px;font-size:11.5px;color:var(--primary-d);font-weight:600;}
+</style>
+
 <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-top:18px;">
   <div>
     <h2>Pipeline by stage</h2>

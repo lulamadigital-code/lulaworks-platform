@@ -68,11 +68,27 @@ def crm_hub(request):
     my_activities = crm.open_activities(company, assigned_to=request.user, limit=12)
     recent_leads = list(Lead.objects.filter(status__in=[
         Lead.Status.NEW, Lead.Status.CONTACTED, Lead.Status.QUALIFIED])[:8])
+
+    # People we work with — the human contacts at our clients. Key people
+    # (primary first) plus a headcount so the page shows real relationships.
+    people = []
+    people_total = 0
+    try:
+        from apps.customers.models import CustomerContact
+        active = CustomerContact.objects.filter(status=CustomerContact.Status.ACTIVE)
+        people_total = active.count()
+        people = list(active.select_related("customer")
+                      .order_by("-is_primary", "full_name")[:12])
+    except Exception:
+        pass
+
     return render(request, "web/crm/hub.html", {
         "reports": reports,
         "pipeline": reports["pipeline"],
         "my_activities": my_activities,
         "recent_leads": recent_leads,
+        "people": people,
+        "people_total": people_total,
         "can_manage": _can_manage(request.user),
     })
 
