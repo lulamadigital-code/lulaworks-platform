@@ -1,9 +1,8 @@
 {% extends "web/base.html" %}
-{% block title %}Purchasing{% endblock %}
+{% block title %}Procurement{% endblock %}
 {% block content %}
-<h1>Purchasing</h1>
+<h1>Procurement</h1>
 <p class="sub">Two sides of buying — <strong>who you sell to</strong> and <strong>who you buy from</strong>. Pick a side.</p>
-{% include "web/_procurement_nav.html" %}
 
 <div class="two-col" style="margin-bottom:20px;">
   <a class="card" href="{% url 'web:procurement_clients' %}"
