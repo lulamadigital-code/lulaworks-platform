@@ -31,6 +31,7 @@ THIRD_PARTY_APPS = [
     "drf_spectacular",
     "corsheaders",
     "simple_history",
+    "anymail",
 ]
 LOCAL_APPS = [
     "apps.core",
@@ -205,6 +206,18 @@ EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=15, cast=int)
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="LulaWorks <no-reply@lulaworks.com>")
 SERVER_EMAIL = config("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 SUPPORT_EMAIL = config("SUPPORT_EMAIL", default="")
+
+# HTTP-API email (Anymail). When outbound SMTP is blocked (e.g. DigitalOcean),
+# set EMAIL_BACKEND=anymail.backends.brevo.EmailBackend and BREVO_API_KEY in the
+# environment — Anymail then sends over HTTPS. The app's send_email()/worker path
+# is unchanged; only this backend swap and the API key differ. Keys are ENV-only.
+ANYMAIL = {
+    "BREVO_API_KEY": config("BREVO_API_KEY", default=""),
+    "SENDGRID_API_KEY": config("SENDGRID_API_KEY", default=""),
+    "MAILGUN_API_KEY": config("MAILGUN_API_KEY", default=""),
+    "MAILGUN_SENDER_DOMAIN": config("MAILGUN_SENDER_DOMAIN", default=""),
+    "POSTMARK_SERVER_TOKEN": config("POSTMARK_SERVER_TOKEN", default=""),
+}
 #: Absolute base URL, used to build activation links and embed the logo in email.
 SITE_URL = config("SITE_URL", default="")
 
