@@ -862,6 +862,10 @@ def company_profile(request):
             messages.error(request, "You do not have permission to edit the company profile.")
             return redirect("web:company_profile")
         section = request.POST.get("section", "")
+        if section == "contact" and not (request.POST.get("email", "").strip()):
+            messages.error(request, "A company email is required — it's the address "
+                           "your customers reply to on quotations and invoices.")
+            return redirect("web:company_profile")
         if section in _PROFILE_SECTIONS:
             _save_profile_section(request, company, section)
             messages.success(request, "Company profile updated.")

@@ -13,6 +13,16 @@
     {{ score.overall }}% complete</span>
 </div>
 
+{% if not company.email %}
+<div class="card" style="border-left:4px solid var(--orange);border-radius:0 var(--r) var(--r) 0;
+     background:var(--orange-t);">
+  <strong style="color:#a8620a;">⚠ Add your company email</strong>
+  <p style="margin:6px 0 0;font-size:13.5px;">Without it, when a customer replies to a
+    quotation or invoice you send, the reply won't reach you. Set it in
+    <a href="#contact-section"><strong>Contact details</strong></a> below.</p>
+</div>
+{% endif %}
+
 {% if score.blocks %}
 <div class="card" style="border-left:4px solid var(--red);border-radius:0 var(--r) var(--r) 0;">
   <strong style="color:#c22a41;">What is missing actually costs you</strong>
@@ -107,13 +117,16 @@
 </div>
 
 {# ── 2 · Contact ────────────────────────────────────────────────────────── #}
-<h2>Contact details</h2>
+<h2 id="contact-section" style="scroll-margin-top:20px;">Contact details</h2>
 <div class="card">
   <form method="post">{% csrf_token %}
     <input type="hidden" name="section" value="contact">
     <div class="two">
-      <div><label>Primary email</label>
-        <input type="email" name="email" value="{{ company.email }}"></div>
+      <div><label>Primary email <span style="color:var(--red);">*</span></label>
+        <input type="email" name="email" value="{{ company.email }}" required
+               placeholder="accounts@yourcompany.co.za">
+        <p class="muted" style="font-size:11.5px;margin:4px 0 0;">Required — this is the
+          address your customers reply to on quotations and invoices.</p></div>
       <div><label>Primary phone</label>
         <input type="text" name="phone" value="{{ company.phone }}"></div>
       <div><label>Secondary phone</label>
