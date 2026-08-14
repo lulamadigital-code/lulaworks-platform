@@ -103,10 +103,16 @@ def nav_flags(request):
     rm = getattr(request, "resolver_match", None)
     section = _SECTIONS.get(rm.url_name, "") if rm else ""
 
+    # Unread is a tenant-scoped query — only run it when the user actually has
+    # an active company. A platform superuser browsing /admin/ has no tenant in
+    # context, so guard against it (and fail soft) rather than 500 the page.
     unread = 0
-    if signed_in:
+    if signed_in and getattr(user, "active_company_id", None):
         from apps.execution.services import unread_count
-        unread = unread_count(user)
+        try:
+            unread = unread_count(user)
+        except Exception:
+            unread = 0
 
     return {"perms_money": can, "perms_procurement": can_proc,
             "has_logo": has_logo_file(),
