@@ -85,6 +85,13 @@ def send_email(*, to, subject, template="generic", context=None, company=None,
     context.setdefault("subject", subject)
     html, text = render_email(template, context, company)
 
+    # "Sent on behalf of" the tenant: platform mail all goes out from the one
+    # authenticated address (DEFAULT_FROM_EMAIL), but a recipient who replies
+    # should reach the tenant, not the platform. So when a company sends and no
+    # explicit reply-to is given, default it to the company's own email.
+    if not reply_to and company is not None and getattr(company, "email", ""):
+        reply_to = company.email
+
     specs = list(attachment_specs or [])
     log = EmailLog.objects.create(
         company=company, to_email=(to or "").strip().lower(), to_name=to_name,

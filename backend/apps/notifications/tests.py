@@ -53,6 +53,30 @@ class SendEmailTests(TestCase):
         self.assertEqual(log.status, EmailStatus.SENT)
         self.assertIsNone(log.company_id)
 
+    def test_tenant_mail_replies_to_the_tenant(self):
+        # "Sent on behalf of": platform address sends, but a reply reaches the
+        # tenant — so a customer answering Lulama's invoice reaches Lulama.
+        tenant = Company.objects.create(name="Lulama", email="info@lulama.co.za")
+        service.send_email(to="client@example.com", subject="Invoice",
+                           template="generic", context={"body": "See attached."},
+                           company=tenant)
+        msg = mail.outbox[-1]
+        self.assertEqual(msg.reply_to, ["info@lulama.co.za"])   # replies → tenant
+        self.assertIn("Lulama", msg.from_email)                 # branded From name
+
+    def test_explicit_reply_to_wins(self):
+        tenant = Company.objects.create(name="Lulama", email="info@lulama.co.za")
+        service.send_email(to="c@example.com", subject="Q", template="generic",
+                           context={"body": "x"}, company=tenant,
+                           reply_to="sales@lulama.co.za")
+        self.assertEqual(mail.outbox[-1].reply_to, ["sales@lulama.co.za"])
+
+    def test_no_reply_to_when_tenant_has_no_email(self):
+        tenant = Company.objects.create(name="NoEmail Co")   # email blank
+        service.send_email(to="c@example.com", subject="Q", template="generic",
+                           context={"body": "x"}, company=tenant)
+        self.assertEqual(mail.outbox[-1].reply_to, [])
+
     def test_failed_send_is_recorded(self):
         with override_settings(
                 EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend",
