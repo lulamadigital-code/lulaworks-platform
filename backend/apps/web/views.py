@@ -122,9 +122,17 @@ from apps.rfq.services import (
 )
 
 
+def _post_login_home(user):
+    """Where a user lands after signing in. A platform superuser with no tenant
+    would 500 on the tenant dashboard, so send them to the Platform Console."""
+    if user.is_superuser and not getattr(user, "active_company_id", None):
+        return "web:platform_home"
+    return "web:dashboard"
+
+
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect("web:dashboard")
+        return redirect(_post_login_home(request.user))
     if request.method == "POST":
         user = authenticate(
             request,
@@ -133,7 +141,7 @@ def login_view(request):
         )
         if user is not None:
             login(request, user)
-            return redirect("web:dashboard")
+            return redirect(_post_login_home(user))
         messages.error(request, "Invalid email or password.")
     return render(request, "web/login.html")
 

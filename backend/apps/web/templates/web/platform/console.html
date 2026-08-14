@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platform Console · LulaWorks</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --surface:#fff; --ink:#292f4c; --muted:#676879; --line:#e6e9ef;
+    --primary:#17a2b8; --primary-d:#0e7c8c; --primary-t:#e6f6f9;
+    --green:#00c875; --green-t:#e2f9ee; --orange:#fdab3d; --orange-t:#fff3e2;
+    --red:#e2445c; --red-t:#fde8eb; --blue:#579bfc; --blue-t:#e9f1ff;
+    --purple:#a25ddc; --purple-t:#f3ebfb; --r:14px;
+    --shadow:0 4px 16px rgba(41,47,76,.06); --shadow-lg:0 8px 30px rgba(41,47,76,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14.5px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+       color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;display:flex;min-height:100vh}
+  a{color:var(--primary-d);text-decoration:none} a:hover{text-decoration:underline}
+  h1{font-size:24px;margin:0 0 4px;letter-spacing:-.02em} h2{font-size:16px;margin:26px 0 12px}
+  .sub{color:var(--muted);margin:0 0 22px}
+
+  .sidebar{width:236px;background:linear-gradient(180deg,#0e7c8c,#0b6070);color:#fff;
+           position:sticky;top:0;height:100vh;display:flex;flex-direction:column;flex:0 0 236px}
+  .sidebar .logo{display:flex;align-items:baseline;gap:8px;padding:20px;font-weight:800;font-size:19px;letter-spacing:-.02em}
+  .sidebar .logo small{font-size:12px;font-weight:600;opacity:.8}
+  .nav{padding:6px 12px;display:flex;flex-direction:column;gap:2px}
+  .nav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;color:rgba(255,255,255,.82);font-weight:600;font-size:14px}
+  .nav a:hover{background:rgba(255,255,255,.12);color:#fff;text-decoration:none}
+  .nav a.active{background:rgba(255,255,255,.18);color:#fff}
+  .nav .grp{padding:14px 12px 5px;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+  .side-foot{margin-top:auto;padding:14px 16px;border-top:1px solid rgba(255,255,255,.14);font-size:12.5px;color:rgba(255,255,255,.8)}
+  .side-foot a{color:#fff}
+  .main{flex:1;min-width:0} .content{max-width:1160px;margin:0 auto;padding:30px 34px 70px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:18px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);position:relative}
+  .tile .n{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+  .tile .l{color:var(--muted);font-size:13px;margin-top:3px;font-weight:600}
+  .tile .s{color:var(--muted);font-size:12px;margin-top:6px}
+  .tile .ic{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .two{display:grid;grid-template-columns:1.4fr 1fr;gap:18px} @media(max-width:900px){.two{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse} th,td{text-align:left;padding:11px 6px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  tr:last-child td{border-bottom:0}
+  .barrow{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .barrow .cap{width:44px;font-size:13px;color:var(--muted)}
+  .barrow .track{flex:1;background:#eef0f5;border-radius:7px;height:22px;overflow:hidden}
+  .barrow .fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#0e7c8c,#17a2b8);display:flex;align-items:center;padding-left:9px;color:#fff;font-size:12px;font-weight:700;min-width:26px}
+  .chip{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;background:#eef0f5;color:var(--muted)}
+  .chip.ok{background:var(--green-t);color:#0a8f57}
+  .seccards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+  .seccard{display:block;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);color:var(--ink)}
+  .seccard:hover{text-decoration:none;box-shadow:var(--shadow-lg);border-color:var(--primary)}
+  .seccard .t{font-weight:700} .seccard .d{color:var(--muted);font-size:12.5px;margin-top:3px}
+  @media(max-width:820px){body{display:block}.sidebar{width:auto;height:auto;flex-direction:row;overflow-x:auto;position:sticky}.nav{flex-direction:row}.nav .grp,.side-foot{display:none}}
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo">◆ LulaWorks <small>Platform</small></div>
+    <nav class="nav">
+      <a class="active" href="{% url 'web:platform_home' %}">Overview</a>
+      <span class="grp">Manage</span>
+      <a href="/admin/identity/company/">Companies</a>
+      <a href="/admin/identity/user/">Users</a>
+      <a href="/admin/billing/plan/">Plans</a>
+      <a href="/admin/billing/subscription/">Subscriptions</a>
+      <a href="/admin/notifications/emaillog/">Email logs</a>
+      <a href="/admin/administration/auditlog/">Audit logs</a>
+      <span class="grp">Tools</span>
+      <a href="/admin/">Django admin →</a>
+    </nav>
+    <div class="side-foot">
+      Signed in as<br><strong>{{ request.user.email }}</strong><br><br>
+      <a href="{% url 'web:dashboard' %}">← Back to app</a> · <a href="/logout/">Sign out</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="content">
+      <h1>Platform Console</h1>
+      <p class="sub">Every tenant, at a glance. The owner view over the whole platform —
+        drill into <a href="/admin/">Django admin</a> for raw records.</p>
+
+      <div class="grid">
+        <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">🏢</div>
+          <div class="n">{{ companies_total }}</div><div class="l">Companies</div>
+          <div class="s">{{ companies_active }} active</div></div>
+        <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">👤</div>
+          <div class="n">{{ users_total }}</div><div class="l">Users</div>
+          <div class="s">{{ users_active }} active</div></div>
+        <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div>
+          <div class="n">{{ subs_active }}</div><div class="l">Active subscriptions</div>
+          <div class="s">{{ subs_trial }} on trial</div></div>
+        <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">R</div>
+          <div class="n">R{{ mrr|floatformat:0 }}</div><div class="l">MRR (active plans)</div></div>
+        <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">✨</div>
+          <div class="n">{{ ai_calls_30d }}</div><div class="l">AI calls · 30d</div>
+          <div class="s">{{ ai_credits_30d|floatformat:0 }} credits used</div></div>
+        <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">✉</div>
+          <div class="n">{{ emails_30d }}</div><div class="l">Emails sent · 30d</div></div>
+      </div>
+
+      <div class="two">
+        <div>
+          <h2 style="margin-top:6px;">New companies</h2>
+          <div class="card">
+            {% for b in signups %}
+            <div class="barrow">
+              <div class="cap">{{ b.label }}</div>
+              <div class="track"><div class="fill" style="width:{{ b.pct }}%;">{{ b.n }}</div></div>
+            </div>
+            {% empty %}<p class="muted" style="margin:0;color:var(--muted);">No signups yet.</p>{% endfor %}
+          </div>
+        </div>
+        <div>
+          <h2 style="margin-top:6px;">Newest companies</h2>
+          <div class="card" style="padding:0;">
+            <table>
+              {% for c in recent_companies %}
+              <tr><td><a href="/admin/identity/company/{{ c.id }}/change/"><strong>{{ c.name }}</strong></a></td>
+                <td style="text-align:right;">{% if c.is_active %}<span class="chip ok">Active</span>{% else %}<span class="chip">Inactive</span>{% endif %}</td></tr>
+              {% empty %}<tr><td style="padding:16px;color:var(--muted);">No companies yet.</td></tr>{% endfor %}
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <h2>Manage</h2>
+      <div class="seccards">
+        <a class="seccard" href="/admin/identity/company/"><div class="t">🏢 Companies</div><div class="d">Tenants, status, profiles</div></a>
+        <a class="seccard" href="/admin/identity/user/"><div class="t">👤 Users</div><div class="d">Accounts, staff, superusers</div></a>
+        <a class="seccard" href="/admin/billing/plan/"><div class="t">📦 Plans</div><div class="d">Pricing & AI credit allowances</div></a>
+        <a class="seccard" href="/admin/billing/subscription/"><div class="t">💳 Subscriptions</div><div class="d">Who's on what, trials</div></a>
+        <a class="seccard" href="/admin/notifications/emaillog/"><div class="t">✉ Email logs</div><div class="d">Delivery history & resend</div></a>
+        <a class="seccard" href="/admin/administration/auditlog/"><div class="t">🛡 Audit logs</div><div class="d">Security & change trail</div></a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
