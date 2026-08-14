@@ -72,8 +72,12 @@ div.breadcrumbs a{color:#fff;opacity:.9;}
   border-radius:14px;box-shadow:0 4px 16px rgba(41,47,76,.06);overflow:hidden;}
 .module caption,.module h2,.inline-group h2,.inline-related h3{
   background:#fff!important;color:var(--body-loud-color)!important;font-weight:700;
-  font-size:13px;letter-spacing:.01em;text-transform:none;
+  font-size:14px;letter-spacing:.01em;text-transform:none;
   border-bottom:1px solid var(--hairline-color);padding:13px 16px;}
+/* App section titles are <caption><a class="section"> and inherit the header's
+   white link colour → invisible on white. Force them dark. */
+.module caption a,.module caption a.section,td .section,.column-header a{
+  color:var(--body-loud-color)!important;font-weight:800;}
 .module table{border:0;}
 .module table th,.module table td{padding:11px 16px;border-bottom:1px solid var(--hairline-color);}
 .module tr:last-child th,.module tr:last-child td{border-bottom:0;}
