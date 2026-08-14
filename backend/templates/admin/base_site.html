@@ -12,120 +12,112 @@
 
 {% block extrastyle %}{{ block.super }}
 <style>
-/* ── LulaWorks admin theme — matches the app's teal design system ───────── */
-:root, html[data-theme="light"] {
-  --primary: #17a2b8;
-  --secondary: #0e7c8c;
-  --accent: #17a2b8;
-  --primary-fg: #ffffff;
-
-  --body-fg: #292f4c;
-  --body-bg: #f6f7fb;
-  --body-quiet-color: #676879;
-  --body-loud-color: #292f4c;
-
-  --header-color: #ffffff;
-  --header-branding-color: #ffffff;
-  --header-bg: #0e7c8c;
-  --header-link-color: #ffffff;
-
-  --breadcrumbs-fg: #ffffff;
-  --breadcrumbs-link-fg: #ffffff;
-  --breadcrumbs-bg: #17a2b8;
-
-  --link-fg: #0e7c8c;
-  --link-hover-color: #17a2b8;
-  --link-selected-fg: #0e7c8c;
-
-  --button-bg: #17a2b8;
-  --button-fg: #ffffff;
-  --button-hover-bg: #0e7c8c;
-  --default-button-bg: #17a2b8;
-  --default-button-hover-bg: #0e7c8c;
-  --close-button-bg: #8a90a2;
-  --close-button-hover-bg: #676879;
-  --delete-button-bg: #e2445c;
-  --delete-button-hover-bg: #c22a41;
-
-  --object-tools-bg: #0e7c8c;
-  --object-tools-hover-bg: #17a2b8;
-
-  --border-color: #e6e9ef;
-  --hairline-color: #eef0f5;
-  --selected-bg: #e6f6f9;
-  --selected-row: #eaf8fb;
-
-  --font-family-primary: system-ui, -apple-system, "Segoe UI", Roboto,
-                         "Helvetica Neue", sans-serif;
-  --link-hover-color: #17a2b8;
+/* ══ LulaWorks admin — one consistent teal theme in light AND dark ═══════ */
+:root,
+:root[data-theme="light"],
+:root[data-theme="dark"]{
+  color-scheme: light;
+  --primary:#17a2b8; --secondary:#0e7c8c; --accent:#17a2b8; --primary-fg:#fff;
+  --body-fg:#292f4c; --body-bg:#f6f7fb; --body-quiet-color:#676879; --body-loud-color:#292f4c;
+  --header-color:#fff; --header-branding-color:#fff; --header-bg:#0e7c8c; --header-link-color:#fff;
+  --breadcrumbs-fg:#fff; --breadcrumbs-link-fg:#fff; --breadcrumbs-bg:#17a2b8;
+  --link-fg:#0e7c8c; --link-hover-color:#17a2b8; --link-selected-fg:#0e7c8c;
+  --button-bg:#17a2b8; --button-fg:#fff; --button-hover-bg:#0e7c8c;
+  --default-button-bg:#17a2b8; --default-button-hover-bg:#0e7c8c;
+  --close-button-bg:#8a90a2; --close-button-hover-bg:#676879;
+  --delete-button-bg:#e2445c; --delete-button-hover-bg:#c22a41;
+  --object-tools-bg:#0e7c8c; --object-tools-hover-bg:#17a2b8;
+  --border-color:#e6e9ef; --hairline-color:#eef0f5;
+  --selected-bg:#e6f6f9; --selected-row:#eaf8fb;
+  --message-success-bg:#e2f9ee; --message-error-bg:#fde8eb; --message-warning-bg:#fff3e2;
+  --darkened-bg:#eef1f6; --font-family-primary:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme: light;
+    --body-fg:#292f4c; --body-bg:#f6f7fb; --body-quiet-color:#676879; --body-loud-color:#292f4c;
+    --border-color:#e6e9ef; --hairline-color:#eef0f5; --darkened-bg:#eef1f6;
+    --link-fg:#0e7c8c; --primary:#17a2b8; --secondary:#0e7c8c;
+  }
 }
 
-body { font-family: var(--font-family-primary); }
+html,body{background:var(--body-bg)!important;color:var(--body-fg)!important;
+  font-family:var(--font-family-primary);}
+a:link,a:visited{color:var(--link-fg);}
 
-/* Header: brand mark + subtitle */
-#header {
-  background: linear-gradient(90deg, #0e7c8c 0%, #17a2b8 100%);
-  box-shadow: 0 2px 12px rgba(41,47,76,.12);
-  padding: 14px 40px;
-}
-#branding #site-name { margin: 0; font-weight: 800; letter-spacing: -.02em; }
-#branding #site-name a { color: #fff; display: inline-flex; align-items: baseline; gap: 8px; }
-.lw-logo { font-size: 20px; }
-.lw-sub { font-size: 13px; font-weight: 600; opacity: .85; }
+/* ── Header ─────────────────────────────────────────────────────────── */
+#header{background:linear-gradient(90deg,#0e7c8c 0%,#17a2b8 100%)!important;
+  color:#fff;box-shadow:0 2px 14px rgba(41,47,76,.14);padding:16px 40px;}
+#branding #site-name{margin:0;font-weight:800;letter-spacing:-.02em;font-size:20px;}
+#branding #site-name a{color:#fff;display:inline-flex;align-items:baseline;gap:9px;}
+.lw-logo{font-size:20px;}
+.lw-sub{font-size:12.5px;font-weight:600;opacity:.85;}
+#user-tools{font-size:12.5px;font-weight:600;}
+#user-tools a{border-bottom-color:rgba(255,255,255,.5);}
 
-/* Cards / module boxes → rounded, soft-shadowed like the app dashboard */
-.module,
-.dashboard .module,
-div.module {
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(41,47,76,.06);
-  overflow: hidden;
-  background: #fff;
-}
-.module h2, .module caption, .inline-group .tabular caption {
-  background: #fff;
-  color: var(--body-loud-color);
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: .02em;
-  text-transform: none;
-  border-bottom: 1px solid var(--hairline-color);
-  padding: 12px 16px;
-}
-.dashboard #content { max-width: 1160px; }
+/* ── Breadcrumbs ────────────────────────────────────────────────────── */
+div.breadcrumbs{background:#17a2b8;color:#fff;font-weight:600;padding:11px 40px;}
+div.breadcrumbs a{color:#fff;opacity:.9;}
 
-/* Buttons — pill-ish, teal */
-.button, input[type=submit], input[type=button], .submit-row input, a.button {
-  border-radius: 9px;
-  font-weight: 700;
-  box-shadow: 0 2px 6px rgba(23,162,184,.28);
-}
-.button:active, input[type=submit]:active { box-shadow: none; }
-.object-tools a { border-radius: 20px; font-weight: 700; }
+.main{background:var(--body-bg);}
+#content{padding:26px 40px 60px;}
 
-/* Rows + tables */
-#changelist table thead th { background: #fafbfd; }
-tr:hover > td, tr:hover > th { background: #fafbfd; }
+/* ── Dashboard index → card grid ────────────────────────────────────── */
+.dashboard #content-main{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  gap:18px;align-items:start;}
+.dashboard #content-main .module{margin:0;}
 
-/* Breadcrumbs bar */
-div.breadcrumbs { border-radius: 0; font-weight: 600; }
+/* ── Cards / modules ────────────────────────────────────────────────── */
+.module,div.module,.inline-group{background:#fff;border:1px solid var(--border-color);
+  border-radius:14px;box-shadow:0 4px 16px rgba(41,47,76,.06);overflow:hidden;}
+.module caption,.module h2,.inline-group h2,.inline-related h3{
+  background:#fff!important;color:var(--body-loud-color)!important;font-weight:700;
+  font-size:13px;letter-spacing:.01em;text-transform:none;
+  border-bottom:1px solid var(--hairline-color);padding:13px 16px;}
+.module table{border:0;}
+.module table th,.module table td{padding:11px 16px;border-bottom:1px solid var(--hairline-color);}
+.module tr:last-child th,.module tr:last-child td{border-bottom:0;}
+.module a.addlink,.module a.changelink,.module a.viewlink{font-weight:600;}
 
-/* Sidebar nav (recent actions / app list) */
-#content-related .module { border-radius: 14px; }
+/* ── Tables (changelists) ───────────────────────────────────────────── */
+#changelist .results{border-radius:12px;overflow:hidden;border:1px solid var(--border-color);
+  box-shadow:0 4px 16px rgba(41,47,76,.06);}
+#changelist table{border:0;}
+#changelist table thead th{background:#fafbfd;color:var(--body-quiet-color);
+  text-transform:uppercase;font-size:11px;letter-spacing:.04em;border-bottom:1px solid var(--border-color);}
+#changelist table tbody tr:hover>td,#changelist table tbody tr:hover>th{background:#fafbfd;}
+#changelist-filter{background:#fff;border:1px solid var(--border-color);border-radius:14px;
+  box-shadow:0 4px 16px rgba(41,47,76,.06);}
+#changelist-filter h2{background:#fff;color:var(--body-loud-color);border-radius:14px 14px 0 0;
+  border-bottom:1px solid var(--hairline-color);text-transform:none;font-weight:700;}
+#changelist-filter h3{font-weight:700;}
 
-/* Login page — center card, branded */
-body.login #container {
-  box-shadow: 0 8px 30px rgba(41,47,76,.12);
-  border-radius: 16px;
-  border: 1px solid var(--border-color);
-  overflow: hidden;
-}
-body.login #header { border-radius: 16px 16px 0 0; }
-body.login .submit-row input { width: 100%; }
+/* ── Buttons ────────────────────────────────────────────────────────── */
+.button,input[type=submit],input[type=button],.submit-row input,a.button{
+  border-radius:9px;font-weight:700;box-shadow:0 2px 6px rgba(23,162,184,.28);}
+.button:hover,input[type=submit]:hover{box-shadow:0 4px 10px rgba(23,162,184,.34);}
+.button.default,input[type=submit].default,.submit-row input.default{background:var(--primary);}
+.object-tools a{border-radius:20px;font-weight:700;text-transform:none;letter-spacing:0;}
+.submit-row{border-radius:12px;background:#fff;border:1px solid var(--border-color);
+  box-shadow:0 4px 16px rgba(41,47,76,.06);}
 
-/* Selector / filters */
-#changelist-filter { border-radius: 14px; }
-#changelist-filter h2 { border-radius: 14px 14px 0 0; }
+/* ── Forms ──────────────────────────────────────────────────────────── */
+.form-row{border-bottom:1px solid var(--hairline-color);}
+fieldset.module{padding-bottom:6px;}
+input,select,textarea{border-radius:8px!important;border:1px solid var(--border-color)!important;}
+input:focus,select:focus,textarea:focus{border-color:var(--primary)!important;
+  box-shadow:0 0 0 3px var(--selected-bg)!important;outline:0;}
+
+/* ── Messages ───────────────────────────────────────────────────────── */
+ul.messagelist li{border-radius:10px;font-weight:600;box-shadow:0 2px 8px rgba(41,47,76,.06);}
+
+/* ── Login ──────────────────────────────────────────────────────────── */
+body.login{background:radial-gradient(1200px 500px at 50% -10%,#e6f6f9,#f6f7fb)!important;}
+body.login #container{max-width:420px;border:1px solid var(--border-color);border-radius:16px;
+  box-shadow:0 12px 40px rgba(41,47,76,.16);overflow:hidden;background:#fff;}
+body.login #header{border-radius:0;padding:20px;}
+body.login .form-row{border:0;}
+body.login .submit-row{border:0;box-shadow:none;background:transparent;padding-top:6px;}
+body.login .submit-row input{width:100%;}
 </style>
 {% endblock %}
