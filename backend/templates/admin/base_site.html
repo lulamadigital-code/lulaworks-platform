@@ -1,0 +1,131 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ title }} · LulaWorks Admin{% endblock %}
+
+{% block branding %}
+<div id="site-name">
+  <a href="{% url 'admin:index' %}">
+    <span class="lw-logo">◆</span> LulaWorks <span class="lw-sub">Platform Admin</span>
+  </a>
+</div>
+{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+<style>
+/* ── LulaWorks admin theme — matches the app's teal design system ───────── */
+:root, html[data-theme="light"] {
+  --primary: #17a2b8;
+  --secondary: #0e7c8c;
+  --accent: #17a2b8;
+  --primary-fg: #ffffff;
+
+  --body-fg: #292f4c;
+  --body-bg: #f6f7fb;
+  --body-quiet-color: #676879;
+  --body-loud-color: #292f4c;
+
+  --header-color: #ffffff;
+  --header-branding-color: #ffffff;
+  --header-bg: #0e7c8c;
+  --header-link-color: #ffffff;
+
+  --breadcrumbs-fg: #ffffff;
+  --breadcrumbs-link-fg: #ffffff;
+  --breadcrumbs-bg: #17a2b8;
+
+  --link-fg: #0e7c8c;
+  --link-hover-color: #17a2b8;
+  --link-selected-fg: #0e7c8c;
+
+  --button-bg: #17a2b8;
+  --button-fg: #ffffff;
+  --button-hover-bg: #0e7c8c;
+  --default-button-bg: #17a2b8;
+  --default-button-hover-bg: #0e7c8c;
+  --close-button-bg: #8a90a2;
+  --close-button-hover-bg: #676879;
+  --delete-button-bg: #e2445c;
+  --delete-button-hover-bg: #c22a41;
+
+  --object-tools-bg: #0e7c8c;
+  --object-tools-hover-bg: #17a2b8;
+
+  --border-color: #e6e9ef;
+  --hairline-color: #eef0f5;
+  --selected-bg: #e6f6f9;
+  --selected-row: #eaf8fb;
+
+  --font-family-primary: system-ui, -apple-system, "Segoe UI", Roboto,
+                         "Helvetica Neue", sans-serif;
+  --link-hover-color: #17a2b8;
+}
+
+body { font-family: var(--font-family-primary); }
+
+/* Header: brand mark + subtitle */
+#header {
+  background: linear-gradient(90deg, #0e7c8c 0%, #17a2b8 100%);
+  box-shadow: 0 2px 12px rgba(41,47,76,.12);
+  padding: 14px 40px;
+}
+#branding #site-name { margin: 0; font-weight: 800; letter-spacing: -.02em; }
+#branding #site-name a { color: #fff; display: inline-flex; align-items: baseline; gap: 8px; }
+.lw-logo { font-size: 20px; }
+.lw-sub { font-size: 13px; font-weight: 600; opacity: .85; }
+
+/* Cards / module boxes → rounded, soft-shadowed like the app dashboard */
+.module,
+.dashboard .module,
+div.module {
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(41,47,76,.06);
+  overflow: hidden;
+  background: #fff;
+}
+.module h2, .module caption, .inline-group .tabular caption {
+  background: #fff;
+  color: var(--body-loud-color);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: .02em;
+  text-transform: none;
+  border-bottom: 1px solid var(--hairline-color);
+  padding: 12px 16px;
+}
+.dashboard #content { max-width: 1160px; }
+
+/* Buttons — pill-ish, teal */
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+  border-radius: 9px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(23,162,184,.28);
+}
+.button:active, input[type=submit]:active { box-shadow: none; }
+.object-tools a { border-radius: 20px; font-weight: 700; }
+
+/* Rows + tables */
+#changelist table thead th { background: #fafbfd; }
+tr:hover > td, tr:hover > th { background: #fafbfd; }
+
+/* Breadcrumbs bar */
+div.breadcrumbs { border-radius: 0; font-weight: 600; }
+
+/* Sidebar nav (recent actions / app list) */
+#content-related .module { border-radius: 14px; }
+
+/* Login page — center card, branded */
+body.login #container {
+  box-shadow: 0 8px 30px rgba(41,47,76,.12);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+body.login #header { border-radius: 16px 16px 0 0; }
+body.login .submit-row input { width: 100%; }
+
+/* Selector / filters */
+#changelist-filter { border-radius: 14px; }
+#changelist-filter h2 { border-radius: 14px 14px 0 0; }
+</style>
+{% endblock %}
