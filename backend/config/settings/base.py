@@ -185,7 +185,9 @@ ANTHROPIC_API_KEY = config("ANTHROPIC_API_KEY", default="")
 ANTHROPIC_MODEL = config("ANTHROPIC_MODEL", default="claude-sonnet-5")
 OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
 GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
-GEMINI_MODEL = config("GEMINI_MODEL", default="gemini-2.5-flash")
+# Rolling alias — Google gates specific dated models (e.g. gemini-2.5-flash) for
+# new API keys, so point at the latest flash model, overridable per-env.
+GEMINI_MODEL = config("GEMINI_MODEL", default="gemini-flash-latest")
 # 0 disables "thinking" — those tokens share the output budget and can
 # starve the answer on long extraction prompts.
 GEMINI_THINKING_BUDGET = config("GEMINI_THINKING_BUDGET", default="0", cast=str)
