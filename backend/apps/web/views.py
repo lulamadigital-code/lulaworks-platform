@@ -859,6 +859,18 @@ _INT_FIELDS = {"year_established", "employee_count", "vehicle_count", "site_coun
 
 
 @login_required
+def settings_home(request):
+    """One place for every setting — company details, documents, communication,
+    procurement and account. Each card links to the page that owns it; those
+    pages enforce their own permissions."""
+    u = request.user
+    return render(request, "web/settings.html", {
+        "can_company": u.has_perm_code("company.manage"),
+        "can_money": u.has_perm_code("finance.view_money"),
+    })
+
+
+@login_required
 def company_profile(request):
     """One page, many sections. Everything here is read by quotations, invoices,
     purchase orders and every generated PDF — it is entered once, here."""

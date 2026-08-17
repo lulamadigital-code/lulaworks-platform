@@ -19,6 +19,7 @@ urlpatterns = [
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
     path("platform/", views_platform.platform_home, name="platform_home"),
+    path("settings/", views.settings_home, name="settings"),
     # Public account lifecycle — invitation activation + password reset (no login)
     path("activate/<str:token>/", views_account.activate, name="activate"),
     path("reset/", views_account.password_reset_request, name="password_reset_request"),

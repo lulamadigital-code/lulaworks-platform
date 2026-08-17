@@ -17,6 +17,7 @@ def logo_static_name() -> str:
 
 _SECTIONS = {
     "dashboard": "dashboard",
+    "settings": "settings",
     "work": "jobs", "work_new": "jobs", "work_detail": "jobs",
     "work_start": "jobs", "work_complete": "jobs", "work_transition": "jobs",
     "work_subtask_add": "jobs", "work_checklist_add": "jobs",

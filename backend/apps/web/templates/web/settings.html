@@ -1,0 +1,73 @@
+{% extends "web/base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Settings</h1>
+    <p class="sub" style="margin:0;">Everything that configures LulaWorks for your business —
+      set it once here and every screen and document reads from it.</p>
+  </div>
+</div>
+
+<h2 style="margin-top:6px;">Company</h2>
+<div class="setgrid">
+  <a class="setcard" href="{% url 'web:company_profile' %}">
+    <div class="t">🏢 Company profile</div>
+    <div class="d">Name, registration, address, branding & logo — read by every document.</div></a>
+  <a class="setcard" href="{% url 'web:company_hours_page' %}">
+    <div class="t">🕒 Business hours</div>
+    <div class="d">Operating days and times.</div></a>
+  <a class="setcard" href="{% url 'web:company_bank' %}">
+    <div class="t">🏦 Banking</div>
+    <div class="d">Bank accounts shown on invoices for payment.</div></a>
+  <a class="setcard" href="{% url 'web:company_tax' %}">
+    <div class="t">🧾 Tax</div>
+    <div class="d">VAT number, tax settings and jurisdictions.</div></a>
+</div>
+
+<h2>Documents</h2>
+<div class="setgrid">
+  <a class="setcard" href="{% url 'web:doc_templates' %}">
+    <div class="t">📄 Document templates</div>
+    <div class="d">Design your quotation, invoice & delivery-note look — pick, customise or import.</div></a>
+</div>
+
+<h2>Communication &amp; AI</h2>
+<div class="setgrid">
+  <a class="setcard" href="{% url 'web:ai_settings' %}">
+    <div class="t">✨ LulaAI settings</div>
+    <div class="d">AI provider status, model, health and usage.</div></a>
+  <a class="setcard" href="{% url 'web:email_history' %}">
+    <div class="t">✉ Email history</div>
+    <div class="d">Every email sent, delivery status and resend.</div></a>
+</div>
+
+<h2>Procurement</h2>
+<div class="setgrid">
+  <a class="setcard" href="{% url 'web:request_settings' %}">
+    <div class="t">🛒 Purchase request settings</div>
+    <div class="d">Approval thresholds and request routing.</div></a>
+</div>
+
+<h2>Account</h2>
+<div class="setgrid">
+  <a class="setcard" href="{% url 'web:people' %}">
+    <div class="t">👥 People &amp; roles</div>
+    <div class="d">Team members, invites and permissions.</div></a>
+  <a class="setcard" href="{% url 'web:billing' %}">
+    <div class="t">💳 Billing &amp; plan</div>
+    <div class="d">Subscription, AI credits and invoices.</div></a>
+  <a class="setcard" href="{% url 'web:profile' %}">
+    <div class="t">🙂 My profile</div>
+    <div class="d">Your own name, avatar and password.</div></a>
+</div>
+
+<style>
+.setgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:8px;}
+.setcard{display:block;background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:16px 18px;box-shadow:var(--shadow);color:var(--ink);}
+.setcard:hover{text-decoration:none;box-shadow:var(--shadow-lg);border-color:var(--primary);}
+.setcard .t{font-weight:700;font-size:15px;}
+.setcard .d{color:var(--muted);font-size:12.5px;margin-top:4px;line-height:1.4;}
+</style>
+{% endblock %}
