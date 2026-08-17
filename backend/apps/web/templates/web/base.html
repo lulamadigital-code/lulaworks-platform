@@ -360,12 +360,12 @@
       {% if perms_procurement %}{% include "web/_navlink.html" with url='web:procurement' key='procurement' label='Procurement' icon='cart' %}{% endif %}
       {% include "web/_navlink.html" with url='web:projects' key='projects' label='Projects' icon='folder' %}
       {% include "web/_navlink.html" with url='web:work' key='jobs' label='Job Card' icon='check' %}
+      {% include "web/_navlink.html" with url='web:quotations' key='quotations' label='Quotations' icon='doc' %}
       {% include "web/_navlink.html" with url='web:company_profile' key='company' label='Company' icon='building' %}
       {% if perms_money %}{% include "web/_navlink.html" with url='web:commercial' key='commercial' label='Commercial' icon='cash' %}{% endif %}
       {% include "web/_navlink.html" with url='web:people' key='people' label='People' icon='users' %}
 
       <span class="nav-gap"></span>
-      {% include "web/_navlink.html" with url='web:quotations' key='quotations' label='Quotations' icon='doc' %}
       {% include "web/_navlink.html" with url='web:billing' key='billing' label='Billing' icon='cash' %}
     </nav>
     <div class="side-foot">
