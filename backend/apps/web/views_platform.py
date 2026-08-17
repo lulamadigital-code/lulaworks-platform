@@ -71,6 +71,23 @@ def platform_home(request):
         ctx["emails_30d"] = EmailLog.objects.filter(
             created_at__gte=d30, status=EmailStatus.SENT).count()
 
+        # Churn (cancelled tenants + cancellations this month) and storage used.
+        ctx["subs_cancelled"] = subs.filter(status=SubscriptionStatus.CANCELLED).count()
+        try:
+            from apps.billing.models import BillingTransaction as _BT
+            ctx["cancels_30d"] = _BT.objects.filter(
+                kind=_BT.Kind.CANCELLATION, created_at__gte=d30).count()
+        except Exception:
+            ctx["cancels_30d"] = 0
+        try:
+            from apps.storage.models import StorageFile
+            total_bytes = StorageFile.objects.aggregate(s=Sum("file_size"))["s"] or 0
+        except Exception:
+            total_bytes = 0
+        gb = total_bytes / (1024 ** 3)
+        ctx["storage_display"] = (f"{gb:.1f} GB" if gb >= 1
+                                  else f"{total_bytes / (1024 ** 2):.0f} MB")
+
         # New companies per month, last 6 months → a simple bar chart.
         buckets = []
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -136,3 +153,47 @@ def platform_home(request):
         ctx["ai_by_tenant"] = ai_rows
 
     return render(request, "web/platform/console.html", ctx)
+
+
+@login_required
+def platform_tenants_csv(request):
+    """Download every tenant with plan, users, AI credits + 30-day usage."""
+    import csv
+
+    from django.http import HttpResponse
+
+    if not request.user.is_superuser:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+
+    from apps.core.context import system_scope
+
+    now = timezone.now()
+    d30 = now - timedelta(days=30)
+    resp = HttpResponse(content_type="text/csv")
+    resp["Content-Disposition"] = f'attachment; filename="lulaworks-tenants-{now:%Y%m%d}.csv"'
+    w = csv.writer(resp)
+    w.writerow(["Company", "Active", "Plan", "Status", "Users",
+                "AI credits", "AI credits used (30d)", "Created"])
+
+    with system_scope():
+        from apps.ai_platform.gateway import credit_balance
+        from apps.ai_platform.models import AIUsageLog
+        from apps.billing.models import Subscription
+        from apps.identity.models import Company, Membership
+
+        user_counts = dict(Membership.objects.values_list("company").annotate(n=Count("id")))
+        used = dict(AIUsageLog.objects.filter(created_at__gte=d30)
+                    .values_list("company").annotate(s=Sum("credits_used")))
+        subs = {s.company_id: s for s in Subscription.objects.select_related("plan")}
+        for c in Company.objects.order_by("name"):
+            sub = subs.get(c.id)
+            w.writerow([
+                c.name, "yes" if c.is_active else "no",
+                getattr(getattr(sub, "plan", None), "name", ""),
+                sub.status if sub else "none",
+                user_counts.get(c.id, 0), credit_balance(c),
+                used.get(c.id) or 0,
+                c.created_at.strftime("%Y-%m-%d") if getattr(c, "created_at", None) else "",
+            ])
+    return resp

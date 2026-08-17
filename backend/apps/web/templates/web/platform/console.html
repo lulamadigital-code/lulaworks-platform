@@ -117,6 +117,11 @@
           <div class="s">{{ ai_credits_30d|floatformat:0 }} credits used</div></div>
         <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">✉</div>
           <div class="n">{{ emails_30d }}</div><div class="l">Emails sent · 30d</div></div>
+        <div class="tile"><div class="ic" style="background:var(--red-t);color:#c22a41;">↓</div>
+          <div class="n">{{ subs_cancelled }}</div><div class="l">Cancelled</div>
+          <div class="s">{{ cancels_30d }} this month</div></div>
+        <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▤</div>
+          <div class="n">{{ storage_display }}</div><div class="l">Storage used</div></div>
       </div>
 
       <div class="two">
@@ -175,7 +180,10 @@
         </div>
       </div>
 
-      <h2>Tenants</h2>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;">
+        <h2>Tenants</h2>
+        <a class="btn" href="{% url 'web:platform_tenants_csv' %}" style="padding:8px 14px;">⤓ Export CSV</a>
+      </div>
       <div class="card" style="padding:0;overflow-x:auto;">
         <table>
           <tr><th>Company</th><th>Plan</th><th class="right">Users</th><th class="right">AI credits</th><th class="right">Used · 30d</th><th></th></tr>
