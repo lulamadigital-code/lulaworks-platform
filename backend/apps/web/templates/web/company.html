@@ -206,7 +206,7 @@
     </table>
   </div>
   {% if can_edit %}
-  <div id="form-bank" style="display:none;border-top:1px solid var(--line);margin-top:14px;padding-top:16px;">
+  <div id="form-bank" style="{% if bank_accounts %}display:none;{% endif %}border-top:1px solid var(--line);margin-top:14px;padding-top:16px;">
     <form method="post" action="{% url 'web:company_bank' %}">{% csrf_token %}
       <div class="two">
         <div><label>Bank name</label><input type="text" name="bank_name" required></div>
@@ -247,7 +247,7 @@
     </table>
   </div>
   {% if can_edit %}
-  <div id="form-contactp" style="display:none;border-top:1px solid var(--line);margin-top:14px;padding-top:16px;">
+  <div id="form-contactp" style="{% if contacts %}display:none;{% endif %}border-top:1px solid var(--line);margin-top:14px;padding-top:16px;">
     <form method="post" action="{% url 'web:company_contact' %}">{% csrf_token %}
       <div class="two">
         <div><label>Full name</label><input type="text" name="full_name" required></div>
@@ -323,7 +323,7 @@
     </table>
   </div>
   {% if can_edit %}
-  <div id="form-doc" style="display:none;border-top:1px solid var(--line);margin-top:14px;padding-top:16px;">
+  <div id="form-doc" style="{% if documents %}display:none;{% endif %}border-top:1px solid var(--line);margin-top:14px;padding-top:16px;">
     <form method="post" action="{% url 'web:company_document' %}" enctype="multipart/form-data">{% csrf_token %}
       <div class="two">
         <div><label>File</label><input type="file" name="file" required></div>
