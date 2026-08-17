@@ -13,7 +13,29 @@
 
 <div class="two-col">
   <div>
-    <div class="card">
+    {# ── Read view ─────────────────────────────────────────────────────── #}
+    <div class="card" id="profile-view">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div class="personhead" style="margin:0;">
+          {% include "web/_avatar.html" with p=person size=72 %}
+          <div>
+            <div style="font-weight:800;font-size:20px;letter-spacing:-.01em;">
+              {{ person.get_full_name|default:person.email }}</div>
+            <div class="muted">{{ membership.job_title|default:membership.role.name|default:"Team member" }}</div>
+          </div>
+        </div>
+        <button type="button" class="btn ghost" id="profile-edit-btn">✎ Edit profile</button>
+      </div>
+      <table class="kv" style="margin-top:16px;">
+        <tr><td class="muted">First name</td><td>{{ person.first_name|default:"—" }}</td></tr>
+        <tr><td class="muted">Last name</td><td>{{ person.last_name|default:"—" }}</td></tr>
+        <tr><td class="muted">Mobile</td><td>{{ person.mobile|default:"—" }}</td></tr>
+        <tr><td class="muted">Email</td><td>{{ person.email }}</td></tr>
+      </table>
+    </div>
+
+    {# ── Edit form (hidden until Edit is pressed) ──────────────────────── #}
+    <div class="card" id="profile-edit" style="display:none;">
       <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
@@ -32,7 +54,7 @@
         <div class="two" style="margin-top:8px;">
           <div>
             <label>First name</label>
-            <input type="text" name="first_name" value="{{ person.first_name }}">
+            <input type="text" name="first_name" id="pf-first" value="{{ person.first_name }}">
           </div>
           <div>
             <label>Last name</label>
@@ -49,6 +71,7 @@
 
         <div class="row" style="margin-top:18px;gap:12px;">
           <button class="btn" type="submit">Save profile</button>
+          <button class="btn ghost" type="button" id="profile-cancel-btn">Cancel</button>
           {% if person.avatar %}
           <button class="btn ghost" type="submit" name="remove_avatar" value="1"
                   data-confirm="Remove your profile photo?">Remove photo</button>
@@ -56,6 +79,22 @@
         </div>
       </form>
     </div>
+    <script>
+    (function () {
+      var view = document.getElementById('profile-view');
+      var edit = document.getElementById('profile-edit');
+      var openB = document.getElementById('profile-edit-btn');
+      var cancelB = document.getElementById('profile-cancel-btn');
+      if (!view || !edit || !openB) return;
+      openB.addEventListener('click', function () {
+        view.style.display = 'none'; edit.style.display = 'block';
+        var f = document.getElementById('pf-first'); if (f) f.focus();
+      });
+      if (cancelB) cancelB.addEventListener('click', function () {
+        edit.style.display = 'none'; view.style.display = 'block';
+      });
+    })();
+    </script>
   </div>
 
   <div>
