@@ -90,6 +90,20 @@ def platform_home(request):
             b["pct"] = int(round(b["n"] * 100 / peak))
         ctx["signups"] = buckets
 
+        # Revenue per month (actual billed amounts) → trend chart.
+        from apps.billing.models import BillingTransaction
+        rev = []
+        for i, start in enumerate(starts):
+            end = starts[i + 1] if i + 1 < len(starts) else (now + timedelta(days=1))
+            amt = (BillingTransaction.objects.filter(created_at__gte=start, created_at__lt=end)
+                   .aggregate(s=Sum("amount"))["s"] or Decimal("0"))
+            rev.append({"label": start.strftime("%b"), "amt": amt})
+        peak_rev = max((r["amt"] for r in rev), default=Decimal("0")) or Decimal("1")
+        for r in rev:
+            r["pct"] = int(round(r["amt"] * 100 / peak_rev))
+        ctx["revenue"] = rev
+        ctx["revenue_total"] = sum((r["amt"] for r in rev), Decimal("0"))
+
         # ── Per-tenant table: plan, users, AI credits + 30-day usage ────────
         user_counts = dict(
             Membership.objects.values_list("company").annotate(n=Count("id")))
@@ -109,6 +123,16 @@ def platform_home(request):
                 "used_30d": used_by_company.get(c.id) or Decimal("0"),
             })
         ctx["tenants"] = tenants
-        ctx["recent_companies"] = list(companies.order_by("-created_at")[:8])
+
+        # AI usage by tenant (top consumers, last 30 days).
+        name_by_id = {c.id: c.name for c in companies}
+        ai_rows = sorted(
+            ({"name": name_by_id.get(cid, "—"), "used": used}
+             for cid, used in used_by_company.items() if used),
+            key=lambda r: -r["used"])[:8]
+        peak_ai = max((r["used"] for r in ai_rows), default=Decimal("0")) or Decimal("1")
+        for r in ai_rows:
+            r["pct"] = int(round(r["used"] * 100 / peak_ai))
+        ctx["ai_by_tenant"] = ai_rows
 
     return render(request, "web/platform/console.html", ctx)

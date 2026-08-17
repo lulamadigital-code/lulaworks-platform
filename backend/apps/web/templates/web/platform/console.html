@@ -121,6 +121,17 @@
 
       <div class="two">
         <div>
+          <h2 style="margin-top:6px;">Revenue <span class="muted" style="font-weight:400;font-size:14px;">· R{{ revenue_total|floatformat:0 }} in 6 months</span></h2>
+          <div class="card">
+            {% for r in revenue %}
+            <div class="barrow">
+              <div class="cap">{{ r.label }}</div>
+              <div class="track"><div class="fill" style="width:{{ r.pct }}%;background:linear-gradient(90deg,#7c3fb8,#a25ddc);">R{{ r.amt|floatformat:0 }}</div></div>
+            </div>
+            {% empty %}<p class="muted" style="margin:0;">No billing yet.</p>{% endfor %}
+          </div>
+        </div>
+        <div>
           <h2 style="margin-top:6px;">New companies</h2>
           <div class="card">
             {% for b in signups %}
@@ -129,6 +140,20 @@
               <div class="track"><div class="fill" style="width:{{ b.pct }}%;">{{ b.n }}</div></div>
             </div>
             {% empty %}<p class="muted" style="margin:0;color:var(--muted);">No signups yet.</p>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="two">
+        <div>
+          <h2 style="margin-top:6px;">AI usage by tenant <span class="muted" style="font-weight:400;font-size:13px;">· 30d</span></h2>
+          <div class="card">
+            {% for r in ai_by_tenant %}
+            <div class="barrow">
+              <div class="cap" style="width:130px;">{{ r.name|truncatechars:16 }}</div>
+              <div class="track"><div class="fill" style="width:{{ r.pct }}%;background:linear-gradient(90deg,#b9711a,#fdab3d);">{{ r.used|floatformat:0 }}</div></div>
+            </div>
+            {% empty %}<p class="muted" style="margin:0;">No AI usage in the last 30 days.</p>{% endfor %}
           </div>
         </div>
         <div>
