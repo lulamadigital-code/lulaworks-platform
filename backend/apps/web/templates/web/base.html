@@ -312,10 +312,24 @@
     .lula-fab:hover{background:var(--primary-d);color:#fff;text-decoration:none;
                     transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,.22)}
     .lula-fab svg{width:20px;height:20px;flex:0 0 auto}
+    /* ---- Floating Inbox bell (top-right, all pages) ---- */
+    .inbox-fab{position:fixed;top:20px;right:22px;z-index:42;width:44px;height:44px;
+               border-radius:50%;background:var(--surface);border:1px solid var(--line);
+               box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;
+               color:var(--muted);transition:color .15s ease,border-color .15s ease,transform .15s ease}
+    .inbox-fab:hover{color:var(--primary-d);border-color:var(--primary);text-decoration:none;
+                     transform:translateY(-1px)}
+    .inbox-fab.active{color:var(--primary-d);border-color:var(--primary);background:var(--primary-t)}
+    .inbox-fab svg{width:20px;height:20px}
+    .inbox-badge{position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;
+                 border-radius:20px;min-width:19px;height:19px;padding:0 5px;font-size:11px;
+                 font-weight:800;display:flex;align-items:center;justify-content:center;
+                 border:2px solid var(--bg);box-shadow:0 2px 6px rgba(226,68,92,.4)}
     @media (max-width:640px){
       .lula-fab{right:14px;bottom:14px;padding:12px;gap:0}
       .lula-fab .lula-label{display:none}          /* icon-only on small screens */
       .totop{right:14px;bottom:74px}
+      .inbox-fab{top:14px;right:14px;width:40px;height:40px}
     }
 
     /* ---- Login ---- */
@@ -344,7 +358,6 @@
       {% include "web/_navlink.html" with url='web:dashboard' key='dashboard' label='Dashboard' icon='grid' %}
       {% if perms_procurement %}{% include "web/_navlink.html" with url='web:procurement' key='procurement' label='Procurement' icon='cart' %}{% endif %}
       {% include "web/_navlink.html" with url='web:crm_hub' key='crm' label='CRM' icon='org' %}
-      {% include "web/_navlink.html" with url='web:notifications' key='notifications' label='Inbox' icon='bell' badge=unread_notifications %}
 
       <span class="nav-gap"></span>
       {% include "web/_navlink.html" with url='web:quotations' key='quotations' label='Quotations' icon='doc' %}
@@ -388,6 +401,14 @@
     </div>
   </main>
   {% if user.is_authenticated %}
+  <a class="inbox-fab {% if nav_section == 'notifications' %}active{% endif %}"
+     href="{% url 'web:notifications' %}" title="Inbox" aria-label="Inbox">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>
+    </svg>
+    {% if unread_notifications %}<span class="inbox-badge">{{ unread_notifications }}</span>{% endif %}
+  </a>
   <a class="lula-fab" href="{% url 'web:lulama' %}" title="Ask LulaAI">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
