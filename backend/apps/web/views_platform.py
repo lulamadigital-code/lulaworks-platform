@@ -10,7 +10,7 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
@@ -28,10 +28,26 @@ def platform_home(request):
     ctx = {}
 
     with system_scope():
+        from apps.ai_platform.gateway import credit_balance, topup_credits
         from apps.ai_platform.models import AIUsageLog
         from apps.billing.models import Subscription, SubscriptionStatus
-        from apps.identity.models import Company, User
+        from apps.identity.models import Company, Membership, User
         from apps.notifications.models import EmailLog, EmailStatus
+
+        # ── Owner action: grant AI credits to a tenant ──────────────────────
+        if request.method == "POST" and request.POST.get("action") == "grant_credits":
+            try:
+                target = Company.objects.get(pk=request.POST.get("company"))
+                amount = Decimal(request.POST.get("amount") or "0")
+                if amount <= 0:
+                    raise ValueError
+                new_balance = topup_credits(target, amount, source="platform_grant")
+                messages.success(
+                    request, f"Granted {amount:g} AI credits to {target.name} "
+                    f"(new balance {new_balance:g}).")
+            except (Company.DoesNotExist, ValueError, Exception):
+                messages.error(request, "Enter a valid company and a positive credit amount.")
+            return redirect("web:platform_home")
 
         companies = Company.objects.all()
         ctx["companies_total"] = companies.count()
@@ -74,6 +90,25 @@ def platform_home(request):
             b["pct"] = int(round(b["n"] * 100 / peak))
         ctx["signups"] = buckets
 
+        # ── Per-tenant table: plan, users, AI credits + 30-day usage ────────
+        user_counts = dict(
+            Membership.objects.values_list("company").annotate(n=Count("id")))
+        used_by_company = dict(
+            AIUsageLog.objects.filter(created_at__gte=d30)
+            .values_list("company").annotate(s=Sum("credits_used")))
+        subs_by_company = {s.company_id: s for s in subs}
+        tenants = []
+        for c in companies.order_by("name")[:100]:
+            sub = subs_by_company.get(c.id)
+            tenants.append({
+                "company": c,
+                "plan": getattr(getattr(sub, "plan", None), "name", "—"),
+                "status": sub.status if sub else "none",
+                "users": user_counts.get(c.id, 0),
+                "credits": credit_balance(c),
+                "used_30d": used_by_company.get(c.id) or Decimal("0"),
+            })
+        ctx["tenants"] = tenants
         ctx["recent_companies"] = list(companies.order_by("-created_at")[:8])
 
     return render(request, "web/platform/console.html", ctx)
