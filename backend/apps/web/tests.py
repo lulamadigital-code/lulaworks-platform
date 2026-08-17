@@ -1084,6 +1084,51 @@ class CompanyBrandingTests(TestCase):
             self.assertEqual(Company.objects.get(id=self.company.id).brand_primary, "#a5127f")
 
 
+class CompanyValidationTests(TestCase):
+    """Server-side guard rails — the browser's HTML5 checks are not trusted."""
+
+    def setUp(self):
+        self.company = make_company()
+        self.admin = user_with(self.company, ["company.manage"], email="a@lulama.co.za")
+        self.client.force_login(self.admin)
+
+    def _name(self):
+        from apps.identity.models import Company
+        with tenant_scope(self.company.id):
+            return Company.objects.get(id=self.company.id).name
+
+    def test_blank_registered_name_is_rejected(self):
+        original = self._name()
+        r = self.client.post("/company/", {"section": "identity", "name": "  "}, follow=True)
+        self.assertContains(r, "Registered company name is required")
+        self.assertEqual(self._name(), original)          # unchanged
+
+    def test_invalid_company_email_is_rejected(self):
+        r = self.client.post("/company/", {"section": "contact", "email": "not-an-email"}, follow=True)
+        self.assertContains(r, "valid company email")
+
+    def test_tax_rate_out_of_range_is_rejected(self):
+        r = self.client.post("/company/", {"section": "defaults", "tax_rate": "250"}, follow=True)
+        self.assertContains(r, "between 0 and 100")
+
+    def test_financial_year_month_out_of_range_is_rejected(self):
+        r = self.client.post("/company/",
+                             {"section": "defaults", "financial_year_start_month": "13"}, follow=True)
+        self.assertContains(r, "between 1 and 12")
+
+    def test_valid_contact_section_saves(self):
+        from apps.identity.models import Company
+        self.client.post("/company/", {"section": "contact", "email": "hi@lulama.co.za",
+                                       "website": "https://lulama.co.za"}, follow=True)
+        with tenant_scope(self.company.id):
+            self.assertEqual(Company.objects.get(id=self.company.id).email, "hi@lulama.co.za")
+
+    def test_company_contact_bad_email_is_rejected(self):
+        r = self.client.post("/company/contacts/",
+                             {"action": "add", "full_name": "Sam", "email": "nope"}, follow=True)
+        self.assertContains(r, "valid email address for the contact")
+
+
 class CustomerEditTests(TestCase):
     def setUp(self):
         from apps.customers.services import create_customer

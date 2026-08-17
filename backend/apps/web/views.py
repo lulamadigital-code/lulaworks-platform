@@ -882,9 +882,9 @@ def company_profile(request):
             messages.error(request, "You do not have permission to edit the company profile.")
             return redirect("web:company_profile")
         section = request.POST.get("section", "")
-        if section == "contact" and not (request.POST.get("email", "").strip()):
-            messages.error(request, "A company email is required — it's the address "
-                           "your customers reply to on quotations and invoices.")
+        error = _validate_company_section(request, section)
+        if error:
+            messages.error(request, error)
             return redirect("web:company_profile")
         if section in _PROFILE_SECTIONS:
             _save_profile_section(request, company, section)
@@ -921,6 +921,84 @@ def company_profile(request):
     })
 
 
+def _bad_email(value):
+    """True if a non-empty value is not a valid email address."""
+    from django.core.validators import validate_email
+    from django.core.exceptions import ValidationError
+    value = (value or "").strip()
+    if not value:
+        return False
+    try:
+        validate_email(value)
+        return False
+    except ValidationError:
+        return True
+
+
+def _bad_url(value):
+    from django.core.validators import URLValidator
+    from django.core.exceptions import ValidationError
+    value = (value or "").strip()
+    if not value:
+        return False
+    try:
+        URLValidator()(value)
+        return False
+    except ValidationError:
+        return True
+
+
+def _validate_company_section(request, section):
+    """Server-side guard rails for the company-profile sections — never trust the
+    browser's HTML5 validation. Returns an error string, or None if valid."""
+    p = request.POST
+    if section == "identity":
+        if not p.get("name", "").strip():
+            return "Registered company name is required."
+        yr = p.get("year_established", "").strip()
+        if yr and (not yr.isdigit() or not (1800 <= int(yr) <= 2100)):
+            return "Year established must be a year between 1800 and 2100."
+    elif section == "contact":
+        if not p.get("email", "").strip():
+            return ("A company email is required — it's the address your customers "
+                    "reply to on quotations and invoices.")
+        if _bad_email(p.get("email")):
+            return "Enter a valid company email address."
+        if _bad_url(p.get("website")):
+            return "Enter a valid website URL (including https://)."
+    elif section == "business":
+        for f in ("employee_count", "vehicle_count", "site_count"):
+            v = p.get(f, "").strip()
+            if v and not v.isdigit():
+                return "Employee, vehicle and site counts must be whole numbers (0 or more)."
+    elif section == "defaults":
+        tr = p.get("tax_rate", "").strip()
+        if tr:
+            d = _decimal_or_none(tr)
+            if d is None or d < 0 or d > 100:
+                return "Default tax rate must be a number between 0 and 100."
+        fy = p.get("financial_year_start_month", "").strip()
+        if fy and (not fy.isdigit() or not (1 <= int(fy) <= 12)):
+            return "Financial year start month must be between 1 and 12."
+        wk = p.get("week_starts_on", "").strip()
+        if wk and (not wk.isdigit() or not (0 <= int(wk) <= 6)):
+            return "Week starts on must be between 0 (Monday) and 6 (Sunday)."
+    elif section == "compliance":
+        for f in ("coida_expiry", "bbbee_expiry"):
+            v = p.get(f, "").strip()
+            if v and not _parse_iso_date(v):
+                return "Expiry dates must be valid dates."
+    return None
+
+
+def _parse_iso_date(value):
+    from datetime import date
+    try:
+        return date.fromisoformat((value or "").strip())
+    except ValueError:
+        return None
+
+
 def _save_profile_section(request, company, section):
     for field in _PROFILE_SECTIONS[section]:
         if field not in request.POST and field != "postal_same_as_physical":
@@ -945,7 +1023,7 @@ def _save_compliance(request, company):
                   "bbbee_level", "csd_supplier_no", "cidb_grading"):
         setattr(c, field, request.POST.get(field, "").strip())
     for field in ("coida_expiry", "bbbee_expiry"):
-        setattr(c, field, request.POST.get(field) or None)
+        setattr(c, field, _parse_iso_date(request.POST.get(field)))
     for field in ("iso_certifications", "industry_certifications"):
         raw = request.POST.get(field, "")
         setattr(c, field, [v.strip() for v in raw.split(",") if v.strip()])
@@ -1185,8 +1263,10 @@ def company_contact(request):
 
     action = request.POST.get("action", "add")
     if action == "add":
-        if not request.POST.get("full_name"):
+        if not request.POST.get("full_name", "").strip():
             messages.error(request, "A name is required.")
+        elif _bad_email(request.POST.get("email")):
+            messages.error(request, "Enter a valid email address for the contact.")
         else:
             add_contact(
                 company,
