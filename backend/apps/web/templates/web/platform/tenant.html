@@ -1,4 +1,5 @@
 <!doctype html>
+{% load static %}
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -22,6 +23,9 @@
   .top{background:linear-gradient(90deg,#0e7c8c,#17a2b8);color:#fff;padding:16px 24px;
        display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow)}
   .top a{color:#fff}
+  .top .brand{display:inline-flex;align-items:center;gap:9px}
+  .top .brand img{height:24px;width:auto;background:#fff;border-radius:8px;padding:5px 8px;display:block}
+  .top .brand small{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
   .msg{border-radius:10px;padding:12px 14px;margin-bottom:14px;font-weight:600;font-size:13.5px;
        background:var(--surface);border-left:4px solid var(--grey);box-shadow:var(--shadow)}
   .msg.success{background:var(--green-t);color:#0a8f57;border-left-color:var(--green)}
@@ -46,7 +50,7 @@
 </head>
 <body>
   <div class="top">
-    <strong>◆ LulaWorks Platform</strong>
+    <span class="brand"><img src="{% static 'web/logo.png' %}" alt="LulaWorks"><small>Platform</small></span>
     <span><a href="{% url 'web:platform_home' %}">← Console</a> · <a href="/admin/identity/company/{{ company.id }}/change/">Django admin</a></span>
   </div>
   <div class="wrap">
