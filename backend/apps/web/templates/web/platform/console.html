@@ -180,6 +180,19 @@
         </div>
       </div>
 
+      <div class="card">
+        <h2 style="margin-top:6px;">Create a tenant</h2>
+        <form method="post" action="{% url 'web:platform_create_tenant' %}">{% csrf_token %}
+          <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:12px;">
+            <div><label>Company name</label><input type="text" name="company_name" required placeholder="ABC Mining Ltd"></div>
+            <div><label>Owner email</label><input type="email" name="owner_email" required placeholder="owner@abcmining.co.za"></div>
+            <div><label>Owner name</label><input type="text" name="owner_name" placeholder="Thabo Nkosi"></div>
+          </div>
+          <button class="btn" type="submit">Create &amp; invite owner</button>
+          <p class="muted" style="font-size:12px;margin:10px 0 0;">Starts a trial and emails the owner a secure activation link — no password is set or emailed.</p>
+        </form>
+      </div>
+
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;">
         <h2>Tenants</h2>
         <a class="btn" href="{% url 'web:platform_tenants_csv' %}" style="padding:8px 14px;">⤓ Export CSV</a>

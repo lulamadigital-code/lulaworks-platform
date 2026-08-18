@@ -10,7 +10,7 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
@@ -171,7 +171,8 @@ def platform_tenant(request, pk):
         from apps.ai_platform.gateway import credit_balance, topup_credits
         from apps.billing import services as billing
         from apps.billing.models import BillingTransaction, Plan
-        from apps.identity.models import Company, Membership
+        from apps.identity import services as identity
+        from apps.identity.models import Company, Membership, Role
 
         company = Company.objects.filter(pk=pk).first()
         if company is None:
@@ -181,6 +182,23 @@ def platform_tenant(request, pk):
         if request.method == "POST":
             action = request.POST.get("action")
             try:
+                if action == "invite_user":
+                    role = Role.objects.filter(pk=request.POST.get("role")).first()
+                    identity.invite_member(
+                        company, request.user,
+                        email=request.POST.get("email", ""), role=role,
+                        first_name=request.POST.get("first_name", "").strip(),
+                        last_name=request.POST.get("last_name", "").strip())
+                    messages.success(request, "Invitation sent.")
+                    return redirect("web:platform_tenant", pk=pk)
+                if action == "member_status":
+                    m = Membership.objects.filter(company=company,
+                                                  pk=request.POST.get("membership")).first()
+                    if m:
+                        identity.set_member_status(
+                            m, request.user, active=request.POST.get("active") == "1")
+                        messages.success(request, "Member updated.")
+                    return redirect("web:platform_tenant", pk=pk)
                 if action == "grant_credits":
                     amt = Decimal(request.POST.get("amount") or "0")
                     if amt <= 0:
@@ -216,8 +234,53 @@ def platform_tenant(request, pk):
             "plans": list(Plan.objects.filter(is_active=True).order_by("tier")),
             "history": list(BillingTransaction.objects.filter(company=company)
                             .order_by("-created_at")[:10]),
+            "members": list(Membership.objects.filter(company=company)
+                            .select_related("user", "role").order_by("user__email")),
+            "roles": list(Role.objects.filter(Q(company=company) | Q(company=None))
+                          .order_by("name")),
         }
     return render(request, "web/platform/tenant.html", ctx)
+
+
+@login_required
+def platform_create_tenant(request):
+    """Onboard a new tenant from the console — creates the company on a trial
+    and invites the owner by activation link (no password is ever set/emailed)."""
+    if not request.user.is_superuser:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+    if request.method != "POST":
+        return redirect("web:platform_home")
+
+    from apps.core.context import system_scope
+
+    name = request.POST.get("company_name", "").strip()
+    email = request.POST.get("owner_email", "").strip()
+    full = request.POST.get("owner_name", "").strip()
+    if not name or not email:
+        messages.error(request, "A company name and an owner email are required.")
+        return redirect("web:platform_home")
+
+    with system_scope():
+        from apps.billing.services import start_trial
+        from apps.identity import services as identity
+        from apps.identity.models import Company, Role, User
+
+        if User.objects.filter(email__iexact=email).exists():
+            messages.error(request, "A user with that email already exists.")
+            return redirect("web:platform_home")
+        try:
+            company = Company.objects.create(name=name)
+            start_trial(company, actor=request.user)
+            first, _, last = full.partition(" ")
+            owner_role = Role.objects.filter(company=None, name="Company Owner").first()
+            identity.invite_member(company, request.user, email=email, role=owner_role,
+                                   first_name=first, last_name=last)
+            messages.success(request, f"Created {name} on a trial and invited {email}.")
+            return redirect("web:platform_tenant", pk=company.id)
+        except Exception as exc:                           # noqa: BLE001
+            messages.error(request, f"Could not create the tenant: {exc}")
+            return redirect("web:platform_home")
 
 
 @login_required

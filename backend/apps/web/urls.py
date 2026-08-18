@@ -21,6 +21,7 @@ urlpatterns = [
     path("platform/", views_platform.platform_home, name="platform_home"),
     path("platform/tenants.csv", views_platform.platform_tenants_csv, name="platform_tenants_csv"),
     path("platform/tenant/<uuid:pk>/", views_platform.platform_tenant, name="platform_tenant"),
+    path("platform/new-tenant/", views_platform.platform_create_tenant, name="platform_create_tenant"),
     path("settings/", views.settings_home, name="settings"),
     # Public account lifecycle — invitation activation + password reset (no login)
     path("activate/<str:token>/", views_account.activate, name="activate"),

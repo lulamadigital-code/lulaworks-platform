@@ -96,6 +96,42 @@
       </div>
     </div>
 
+    <h2>Users</h2>
+    <div class="card" style="padding:0;">
+      <table>
+        <tr><th>Email</th><th>Name</th><th>Role</th><th>Status</th><th></th></tr>
+        {% for m in members %}
+        <tr>
+          <td>{{ m.user.email }}</td>
+          <td>{{ m.user.get_full_name|default:"—" }}</td>
+          <td>{{ m.role.name|default:"—" }}</td>
+          <td>{% if m.status == 'active' %}<span class="chip ok">Active</span>{% else %}<span class="chip bad">{{ m.status|title }}</span>{% endif %}</td>
+          <td style="text-align:right;">
+            <form method="post" style="display:inline;">{% csrf_token %}
+              <input type="hidden" name="action" value="member_status">
+              <input type="hidden" name="membership" value="{{ m.id }}">
+              <input type="hidden" name="active" value="{% if m.status == 'active' %}0{% else %}1{% endif %}">
+              <button class="btn ghost" type="submit" style="padding:5px 10px;">{% if m.status == 'active' %}Deactivate{% else %}Activate{% endif %}</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="5" style="padding:16px;color:var(--muted);">No users yet.</td></tr>{% endfor %}
+      </table>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0;">Invite a user</h2>
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="invite_user">
+        <div class="two">
+          <div><label>Email</label><input type="email" name="email" required placeholder="person@company.co.za"></div>
+          <div><label>Role</label><select name="role" required>{% for r in roles %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}</select></div>
+          <div><label>First name</label><input type="text" name="first_name"></div>
+          <div><label>Last name</label><input type="text" name="last_name"></div>
+        </div>
+        <div style="margin-top:12px;"><button class="btn" type="submit">Send invitation</button></div>
+        <p class="sub" style="font-size:12px;margin:10px 0 0;">Sends a secure activation link — no password is ever set or emailed.</p>
+      </form>
+    </div>
+
     <h2>Billing history</h2>
     <div class="card" style="padding:0;">
       <table>
