@@ -557,14 +557,38 @@ def platform_settings(request):
     ]
 
     # AI status (read-only — provider/model/keys are environment-controlled).
+    _now = timezone.now()
     with system_scope():
         from apps.ai_platform.models import AIUsageLog
-        recent = AIUsageLog.objects.filter(created_at__gte=timezone.now() - timedelta(days=30))
+        recent = AIUsageLog.objects.filter(created_at__gte=_now - timedelta(days=30))
         ai_calls_30d = recent.count()
         by_prov = list(recent.values("provider").annotate(
             calls=Count("id"), tin=Sum("tokens_in"), tout=Sum("tokens_out"),
             spend=Sum("cost"), credits=Sum("credits_used"),
             errors=Count("id", filter=Q(status="error"))).order_by("-calls"))
+        # Which tenants drive AI spend (30d, top 8).
+        ai_tenant_spend = list(recent.values("company__name").annotate(
+            spend=Sum("cost"), calls=Count("id"), credits=Sum("credits_used"))
+            .order_by("-spend")[:8])
+        # Monthly AI spend trend (last 6 months).
+        month0 = _now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        starts, s = [], month0
+        for _ in range(6):
+            starts.append(s)
+            s = (s - timedelta(days=1)).replace(day=1)
+        starts.reverse()
+        ai_trend = []
+        for i, start in enumerate(starts):
+            end = starts[i + 1] if i + 1 < len(starts) else (_now + timedelta(days=1))
+            amt = (AIUsageLog.objects.filter(created_at__gte=start, created_at__lt=end)
+                   .aggregate(s=Sum("cost"))["s"] or 0)
+            ai_trend.append({"label": start.strftime("%b"), "amt": amt})
+    _peak_t = max((r["spend"] or 0 for r in ai_tenant_spend), default=0) or 1
+    for r in ai_tenant_spend:
+        r["pct"] = int(round((r["spend"] or 0) * 100 / _peak_t))
+    _peak_m = max((r["amt"] for r in ai_trend), default=0) or 1
+    for r in ai_trend:
+        r["pct"] = int(round(r["amt"] * 100 / _peak_m))
     ai_status = [
         ("Provider", (getattr(dj, "AI_PROVIDER", "") or "—").title()),
         ("Model", getattr(dj, "GEMINI_MODEL", "") or getattr(dj, "ANTHROPIC_MODEL", "") or "default"),
@@ -632,6 +656,7 @@ def platform_settings(request):
         "counts": counts, "cfg": cfg, "plans": plans,
         "integrations": integrations, "system": system_rows,
         "ai_status": ai_status, "ai_providers": ai_providers,
+        "ai_tenant_spend": ai_tenant_spend, "ai_trend": ai_trend,
         "security_posture": security_posture,
         "test_email_to": request.user.email,
     })

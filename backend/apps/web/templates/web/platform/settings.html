@@ -201,6 +201,30 @@
     </div>
     {% else %}<p class="muted" style="margin:8px 0 0;">No AI usage recorded in the last 30 days.</p>{% endif %}
 
+    <div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;">
+      <div>
+        <h3 style="font-size:14px;margin:0 0 8px;">Monthly spend trend</h3>
+        {% for m in ai_trend %}
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <span class="muted" style="width:34px;font-size:12px;">{{ m.label }}</span>
+          <span style="flex:1;background:#eef0f5;border-radius:6px;height:20px;overflow:hidden;">
+            <span style="display:block;height:100%;width:{{ m.pct }}%;background:linear-gradient(90deg,#0e7c8c,#17a2b8);"></span></span>
+          <span style="width:64px;text-align:right;font-size:12px;font-weight:700;">${{ m.amt|floatformat:2 }}</span>
+        </div>
+        {% empty %}<p class="muted" style="margin:0;">No spend yet.</p>{% endfor %}
+      </div>
+      <div>
+        <h3 style="font-size:14px;margin:0 0 8px;">Top tenants by AI spend · 30d</h3>
+        {% for t in ai_tenant_spend %}
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <span style="flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ t.company__name|default:"—" }}</span>
+          <span class="muted" style="font-size:12px;">{{ t.calls }} calls</span>
+          <span style="width:64px;text-align:right;font-size:12px;font-weight:700;">${{ t.spend|floatformat:2 }}</span>
+        </div>
+        {% empty %}<p class="muted" style="margin:0;">No AI usage in the last 30 days.</p>{% endfor %}
+      </div>
+    </div>
+
     <p class="muted" style="font-size:12px;margin:14px 0 0;">Est. spend is calculated from our own request logs — the AI vendors don't
       expose a live balance via API. Follow a provider's <strong>Billing ↗</strong> link for its real account balance.
       Provider, model and keys are set in the server environment; the AI credits new tenants start with are in <a href="#onboarding">Onboarding</a>.</p>
