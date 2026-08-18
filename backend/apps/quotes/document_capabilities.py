@@ -19,7 +19,7 @@ INVOICE = "invoice"
 DELIVERY = "delivery"
 
 #: Sign-off treatments — what the signature block *means* for each document type.
-SIGNOFF_ACCEPTANCE = "acceptance"   # quotation: optional customer acceptance
+SIGNOFF_COMPILED = "compiled"       # quotation: supplier "compiled by" only
 SIGNOFF_NONE = "none"               # invoice: no acknowledgement / sign-off box
 SIGNOFF_DELIVERY = "delivery"       # delivery note: received-in-good-order + delivered-by
 
@@ -39,7 +39,7 @@ _CAP = {
         "terms_kind": "quotation",
         "allow_prices": True,
         "item_mode": ITEMS_PRICED,
-        "signoff": SIGNOFF_ACCEPTANCE,
+        "signoff": SIGNOFF_COMPILED,
         "allowed_sections": {"letterhead", "document_meta", "parties", "scope",
                              "items", "totals", "banking", "terms", "signature", "footer"},
     },

@@ -396,15 +396,17 @@ def _base_css(accent, secondary, font, st) -> str:
     h1.title {{ color:{accent}; font-size:22px; margin:14px 0 4px; }}
     .muted {{ color:#555; }}
     {lh}
-    .letterhead .lh-row {{ display:flex; align-items:center; gap:16px; justify-content:{justify}; }}
-    .letterhead img.logo {{ max-height:46px; max-width:150px; order:{logo_order}; }}
+    .letterhead .lh-row {{ display:flex; align-items:center; gap:20px; justify-content:{justify}; }}
+    .letterhead img.logo {{ height:auto; max-height:62px; max-width:220px;
+                            object-fit:contain; order:{logo_order}; }}
     .letterhead .ident {{ order:{ident_order}; }}
     .coname {{ font-size:16px; font-weight:bold; }}
     .sidebar-layout {{ display:flex; gap:0; align-items:stretch; }}
     .sidebar-layout .rail {{ width:32%; background:{accent}; color:#fff; padding:18px 14px; border-radius:4px 0 0 4px; }}
     .sidebar-layout .rail .muted {{ color:rgba(255,255,255,.85); }}
     .sidebar-layout .rail .lh-row {{ flex-direction:column; align-items:flex-start; gap:12px; }}
-    .sidebar-layout .rail img.logo {{ max-width:130px; max-height:44px; }}
+    .sidebar-layout .rail img.logo {{ max-width:160px; max-height:58px; height:auto;
+                                      object-fit:contain; margin-bottom:4px; }}
     .sidebar-layout .rail .coname {{ font-size:15px; line-height:1.25; }}
     .sidebar-layout main {{ width:68%; padding:8px 0 0 18px; }}
     .meta {{ display:flex; justify-content:space-between; gap:20px; margin-top:12px; }}
@@ -569,14 +571,13 @@ def _s_signature(ctx, st):
     mode = caps.signoff_mode(ctx["doc_type"])
     prep = escape(ctx["document"].get("prepared_by", "") or "")
     date = escape(ctx["document"]["date"])
-    if mode == caps.SIGNOFF_ACCEPTANCE:
-        # A quotation is an OFFER — the customer accepts it. Not a delivery receipt.
+    if mode == caps.SIGNOFF_COMPILED:
+        # A quotation is an OFFER issued by the supplier — it carries only who
+        # compiled it, never a customer counter-sign or a delivery receipt.
         return ("<div class='boxes'>"
-                f"<div class='b'><b>Quotation compiled by</b><br><br>{prep}<br>"
-                f"Date: {date}</div>"
-                "<div class='b'><b>Accepted by (customer)</b><br><br>"
-                "Name: ____________________<br>"
-                "Signature: ____________________<br>Date: ______________</div></div>")
+                f"<div class='b' style='flex:0 0 60%;'><b>Quotation compiled by</b><br><br>"
+                f"{prep}<br>Signature: ____________________"
+                f"&nbsp;&nbsp;Date: {date}</div></div>")
     if mode == caps.SIGNOFF_DELIVERY:
         # A delivery note records physical hand-over.
         return ("<div class='boxes'>"
@@ -593,9 +594,14 @@ def _s_signature(ctx, st):
 def _s_footer(ctx, st):
     ref = ctx["document"]["reference"]
     note = f"{escape(st['fnote'])}<br>" if st["fnote"] else ""
-    # Nothing is paid against a delivery note — don't ask for a payment reference.
-    if not caps.allows_prices(ctx["doc_type"]):
+    # The closing line matches the document's purpose: a delivery note isn't paid
+    # against, and a quotation is an offer (not yet an invoice), so neither asks
+    # for a payment reference.
+    dt = ctx["doc_type"]
+    if dt == "delivery":
         tail = f"Please quote reference <b>{escape(ref)}</b> on any delivery query."
+    elif dt == "quotation":
+        tail = f"Please quote reference <b>{escape(ref)}</b> in all correspondence."
     else:
         tail = f"Please use reference <b>{escape(ref)}</b> when making payment."
     return f"<div class='foot'>{note}{tail}</div>"

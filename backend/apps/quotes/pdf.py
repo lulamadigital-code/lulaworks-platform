@@ -539,15 +539,15 @@ def quotation_pdf_bytes(quote) -> bytes:
     # Standard terms & conditions, configured once per company and inserted here.
     story += _terms_flowables(company, "quotation", small, muted, cfg)
 
-    # ── Sign-off and banking — two separate boxes. "Compiled by" fills itself in;
-    # the counter-sign is CUSTOMER ACCEPTANCE (a quotation is an offer, not a
-    # delivery receipt — it must never say "received in good order").
+    # ── Sign-off and banking. A quotation is an OFFER issued by the supplier: it
+    # carries only who compiled it (plus banking), never a customer counter-sign
+    # and never a delivery acknowledgement.
     prep_name = _initials_surname(_name(prep.get_full_name())) if prep and prep.get_full_name() \
         else (prep.email if prep else "")
     footer = _signoff_banking_boxes(
         header, brand, small, muted, compiled_label="Quotation Compiled By:",
         prep_name=prep_name, today=quote.created_at.strftime("%d/%m/%Y"),
-        received_label="Accepted By (Customer):",
+        show_received=False,
         show_signature=cfg.get("show_signature", True),
         show_banking=cfg.get("show_banking", True))
     if footer is not None:

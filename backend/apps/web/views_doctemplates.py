@@ -224,7 +224,7 @@ def template_builder(request, pk):
     # what it actually means for this type.
     allowed = caps.allowed_sections(tpl.doc_type)
     signoff = caps.signoff_mode(tpl.doc_type)
-    sig_label = {"acceptance": "Customer acceptance",
+    sig_label = {"compiled": "Compiled-by",
                  "delivery": "Delivery acknowledgement"}.get(signoff, "Sign-off")
     labels = dict(TEMPLATE_SECTIONS)
     labels["signature"] = f"{sig_label} area"

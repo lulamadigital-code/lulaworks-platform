@@ -764,10 +764,10 @@ class VendorNumberTests(TestCase):
         self.assertIn("Thabo Nkosi", text)               # contact person
         self.assertIn("head-pulley", text)               # scope of work
         self.assertIn("Sam Dlamini", text)               # prepared by
-        self.assertIn("Compiled By", text)               # sign-off block
-        # A quotation is an OFFER: it carries customer ACCEPTANCE, never a delivery
-        # acknowledgement ("received in good order" belongs to a delivery note).
-        self.assertIn("Accepted By", text)
+        self.assertIn("Compiled By", text)               # supplier sign-off only
+        # A quotation is the supplier's OFFER: no customer counter-sign, and never
+        # a delivery acknowledgement ("received in good order" is a delivery note).
+        self.assertNotIn("Accepted By", text)
         self.assertNotIn("Received in Good Order", text)
 
 

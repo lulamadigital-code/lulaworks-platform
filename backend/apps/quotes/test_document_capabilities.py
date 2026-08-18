@@ -31,7 +31,7 @@ class CapabilityRulesTests(SimpleTestCase):
         self.assertNotIn("banking", caps.allowed_sections("delivery"))
 
     def test_signoff_and_price_modes(self):
-        self.assertEqual(caps.signoff_mode("quotation"), caps.SIGNOFF_ACCEPTANCE)
+        self.assertEqual(caps.signoff_mode("quotation"), caps.SIGNOFF_COMPILED)
         self.assertEqual(caps.signoff_mode("invoice"), caps.SIGNOFF_NONE)
         self.assertEqual(caps.signoff_mode("delivery"), caps.SIGNOFF_DELIVERY)
         self.assertTrue(caps.allows_prices("quotation"))
@@ -73,10 +73,11 @@ class RenderedContentTests(TestCase):
                 inv = design_to_html(cd, sample_context(c, "invoice")).lower()
                 dn = design_to_html(cd, sample_context(c, "delivery")).lower()
 
-                # Quotation: an offer with customer acceptance — never a delivery receipt.
-                self.assertIn("accepted by", q, name)
-                for bad in ("received in good order", "delivered by", "outstanding",
-                            "proof of delivery"):
+                # Quotation: a supplier's offer — "compiled by" only. Never a
+                # customer acceptance box, a delivery receipt, or delivered/outstanding.
+                self.assertIn("compiled by", q, name)
+                for bad in ("accepted by", "received in good order", "delivered by",
+                            "outstanding", "proof of delivery"):
                     self.assertNotIn(bad, q, f"{name} quotation leaked {bad!r}")
 
                 # Invoice: payment document — no delivery acknowledgement.
