@@ -367,9 +367,11 @@ def _base_css(accent, secondary, font, st, compact=False) -> str:
                   ".letterhead .coname{font-weight:bold;}",
     }.get(hs, "")
 
-    justify = {"left": "flex-start", "center": "center", "right": "flex-end"}.get(st["logo_pos"], "flex-start")
     logo_order = "1" if st["logo_pos"] == "left" else "2"
     ident_order = "2" if st["logo_pos"] == "left" else "1"
+    # Identity text hugs the edge opposite the logo, so the letterhead spans the
+    # full width and stays balanced (logo left → details right, and vice-versa).
+    ident_align = "right" if st["logo_pos"] == "left" else "left"
 
     # Item table per table style.
     table = {
@@ -393,14 +395,16 @@ def _base_css(accent, secondary, font, st, compact=False) -> str:
                        "padding:6px 8px;border-radius:3px;}",
     }.get(tot, "")
 
-    # Section titles per style.
+    # Section titles per style — quiet uppercase labels for a professional read.
     st_top = S["sec_top"]
     title = {
-        "plain": f".section-title{{color:{accent};font-weight:bold;margin:{st_top} 0 3px;font-size:12.5px;}}",
-        "bar": f".section-title{{background:{accent};color:#fff;font-weight:bold;margin:{st_top} 0 4px;"
-               "padding:3px 8px;border-radius:3px;font-size:12px;}",
-        "underline": f".section-title{{color:{accent};font-weight:bold;margin:{st_top} 0 3px;font-size:12.5px;"
-                     f"border-bottom:1.5px solid {accent};padding-bottom:2px;}}",
+        "plain": f".section-title{{color:{accent};font-weight:700;text-transform:uppercase;"
+                 f"letter-spacing:.07em;margin:{st_top} 0 4px;font-size:10.5px;}}",
+        "bar": f".section-title{{background:{accent};color:#fff;font-weight:700;text-transform:uppercase;"
+               f"letter-spacing:.06em;margin:{st_top} 0 5px;padding:4px 9px;border-radius:3px;font-size:10.5px;}}",
+        "underline": f".section-title{{color:{accent};font-weight:700;text-transform:uppercase;"
+                     f"letter-spacing:.07em;margin:{st_top} 0 4px;font-size:10.5px;"
+                     f"border-bottom:1.5px solid {accent};padding-bottom:3px;}}",
     }.get(tis, "")
 
     return f"""
@@ -417,29 +421,42 @@ def _base_css(accent, secondary, font, st, compact=False) -> str:
     .section-title {{ page-break-after: avoid; }}
     h1.title {{ color:{accent}; font-size:{S['h1_fs']}; margin:{S['h1_m']}; }}
     .muted {{ color:#555; }}
+    .nb {{ white-space:nowrap; }}
     {lh}
-    .letterhead .lh-row {{ display:flex; align-items:center; gap:20px; justify-content:{justify}; }}
-    .letterhead img.logo {{ height:auto; max-height:62px; max-width:220px;
+    .letterhead .lh-row {{ display:flex; align-items:flex-start; gap:24px; justify-content:space-between; }}
+    .letterhead img.logo {{ height:auto; max-height:64px; max-width:230px;
                             object-fit:contain; order:{logo_order}; }}
-    .letterhead .ident {{ order:{ident_order}; }}
-    .coname {{ font-size:16px; font-weight:bold; }}
+    .letterhead .ident {{ order:{ident_order}; text-align:{ident_align}; line-height:1.42; }}
+    .coname {{ font-size:17px; font-weight:700; letter-spacing:.01em; }}
+    .hnote {{ margin-top:5px; font-weight:600; font-size:11px; opacity:.9; }}
     .sidebar-layout {{ display:flex; gap:0; align-items:stretch; }}
     .sidebar-layout .rail {{ width:32%; background:{accent}; color:#fff; padding:18px 14px; border-radius:4px 0 0 4px; }}
     .sidebar-layout .rail .muted {{ color:rgba(255,255,255,.85); }}
     .sidebar-layout .rail .lh-row {{ flex-direction:column; align-items:flex-start; gap:12px; }}
+    .sidebar-layout .rail .ident {{ text-align:left; }}
     .sidebar-layout .rail img.logo {{ max-width:160px; max-height:58px; height:auto;
                                       object-fit:contain; margin-bottom:4px; }}
     .sidebar-layout .rail .coname {{ font-size:15px; line-height:1.25; }}
     .sidebar-layout main {{ width:68%; padding:8px 0 0 18px; }}
-    .meta {{ display:flex; justify-content:space-between; gap:20px; margin-top:{S['meta_top']}; }}
-    .meta .box p {{ margin:1px 0; }}
+    .meta {{ display:flex; justify-content:space-between; align-items:flex-start;
+             gap:24px; margin-top:{S['meta_top']}; }}
+    .meta .title-box {{ flex:1; }}
+    .meta .detail-box {{ text-align:right; min-width:38%; }}
+    .meta .detail-box p {{ margin:1.5px 0; }}
+    .meta .dl {{ color:#8a8a8a; text-transform:uppercase; font-size:9px;
+                 letter-spacing:.05em; margin-right:8px; }}
+    .meta .dv {{ font-weight:600; }}
+    .party-name {{ font-weight:700; font-size:13px; margin-bottom:1px; }}
     table.items {{ width:100%; border-collapse:collapse; margin-top:{S['items_top']}; }}
-    table.items th {{ text-align:left; padding:{S['th_pad']}; font-size:11px; }}
+    table.items th {{ text-align:left; padding:{S['th_pad']}; font-size:10px;
+                      text-transform:uppercase; letter-spacing:.03em; font-weight:700; }}
     table.items td {{ padding:{S['td_pad']}; }}
     table.items td.num, table.items th.num {{ text-align:right; }}
     {table}
-    .totals {{ width:46%; margin-left:auto; margin-top:{S['totals_top']}; border-collapse:collapse; }}
-    .totals td {{ padding:{S['totals_td']}; text-align:right; }}
+    .totals {{ width:44%; margin-left:auto; margin-top:{S['totals_top']}; border-collapse:collapse; }}
+    .totals td {{ padding:{S['totals_td']}; }}
+    .totals td:first-child {{ text-align:left; color:#555; }}
+    .totals td:last-child {{ text-align:right; font-weight:600; }}
     {totals}
     {title}
     .boxes {{ display:flex; gap:12px; margin-top:{S['boxes_top']}; }}
@@ -448,19 +465,22 @@ def _base_css(accent, secondary, font, st, compact=False) -> str:
 
     /* Per-family structural overrides — these are what make one family look
        genuinely different, not merely recoloured. */
+    /* Centred families (hero / centered): the whole letterhead centres, so the
+       company details sit centred under the logo, not flush-left. */
+    .hs-hero .letterhead .ident, .hs-centered .letterhead .ident {{ text-align:center; }}
     /* Elevate: a large, centred document title in its own band. */
     .hs-hero .meta {{ flex-direction:column; align-items:center; text-align:center;
-        gap:2px; border-top:2px solid {accent}; border-bottom:2px solid {accent};
-        padding:14px 0; margin:18px 0 6px; }}
-    .hs-hero .meta .box:first-child {{ display:none; }}
-    .hs-hero h1.title {{ font-size:30px; letter-spacing:3px; text-transform:uppercase;
-        margin:0 0 8px; }}
+        gap:4px; border-top:2px solid {accent}; border-bottom:2px solid {accent};
+        padding:12px 0; margin:14px 0 6px; }}
+    .hs-hero .title-box {{ flex:none; }}
+    .hs-hero .detail-box {{ text-align:center; min-width:0; }}
+    .hs-hero .detail-box p {{ display:inline-block; margin:0 9px; }}
+    .hs-hero h1.title {{ font-size:30px; letter-spacing:3px; text-transform:uppercase; margin:0 0 4px; }}
     .hs-hero .section-title {{ text-align:center; }}
-    /* Ledger: the reference/date become a bordered card, pushed to the right. */
-    .hs-ledger .meta {{ justify-content:space-between; }}
-    .hs-ledger .meta .box:last-child {{ border:1.5px solid {accent}; border-radius:4px;
-        padding:10px 12px; background:#f8fafa; min-width:44%; }}
-    .hs-ledger h1.title {{ font-size:20px; margin-top:0; }}
+    /* Ledger: the reference/date sit in a bordered card on the right. */
+    .hs-ledger .detail-box {{ border:1.5px solid {accent}; border-radius:4px;
+        padding:9px 12px; background:#f8fafa; }}
+    .hs-ledger h1.title {{ font-size:22px; margin-top:0; }}
     """
 
 
@@ -472,46 +492,69 @@ def _title(text, st):
 
 def _s_letterhead(ctx, st):
     c = ctx["company"]
-    lines = "".join(f"<p class='muted'>{escape(x)}</p>" for x in c["address"])
-    for label, key in (("Tel ", "phone"), ("Email ", "email"),
-                       ("VAT ", "vat_number"), ("Reg ", "registration_number")):
-        if c.get(key):
-            lines += f"<p class='muted'>{escape(label)}{escape(c[key])}</p>"
+    # Compact identity: address on one line, contact grouped, statutory numbers
+    # grouped — four tidy lines instead of ten, so the letterhead reads like a
+    # professional letterhead, not a stacked list.
+    def _row(tokens):
+        # Join with dot separators; each token stays on one line (a URL or phone
+        # number never breaks mid-way), so only the separators are break points.
+        toks = [f"<span class='nb'>{escape(t)}</span>" for t in tokens if t]
+        return " · ".join(toks)
+
+    addr = escape(", ".join(x for x in c["address"] if x))
+    contact = _row([f"Tel {c['phone']}" if c.get("phone") else "",
+                    f"Cell {c['mobile']}" if c.get("mobile") else "",
+                    c.get("email", ""), c.get("website", "")])
+    statutory = _row([f"VAT {c['vat_number']}" if c.get("vat_number") else "",
+                      f"Reg {c['registration_number']}" if c.get("registration_number") else ""])
+    lines = "".join(f"<p class='muted'>{x}</p>"
+                    for x in (addr, contact, statutory) if x)
     logo = (f"<img class='logo' src='{ctx['logo_data_uri']}'>"
             if ctx["logo_data_uri"] else "")
     ident = f"<div class='ident'><div class='coname'>{escape(c['name'])}</div>{lines}</div>"
-    note = f"<p class='muted' style='margin-top:6px;'><b>{escape(st['hnote'])}</b></p>" if st["hnote"] else ""
+    note = f"<p class='hnote'>{escape(st['hnote'])}</p>" if st["hnote"] else ""
     return f"<div class='letterhead'><div class='lh-row'>{logo}{ident}</div>{note}</div>"
 
 
 def _s_document_meta(ctx, st):
+    """The document header row: the big document TITLE on the left, its reference
+    details in a neat right-aligned column — the balanced masthead a professional
+    document leads with."""
     d = ctx["document"]
-    right = [f"<h1 class='title'>{escape(d['title'])}</h1>",
-             f"<p><b>Reference:</b> {escape(d['reference'])}</p>",
-             f"<p><b>Date:</b> {escape(d['date'])}</p>"]
-    if d["quotation_ref"]:
-        right.append(f"<p><b>Quotation ref:</b> {escape(d['quotation_ref'])}</p>")
-    if d["po_number"]:
-        right.append(f"<p><b>PO number:</b> {escape(d['po_number'])}</p>")
-    if d["prepared_by"]:
-        right.append(f"<p><b>Prepared by:</b> {escape(d['prepared_by'])}</p>")
+    detail = [("Reference", d["reference"]), ("Date", d["date"])]
     if d["valid_until"]:
-        right.append(f"<p><b>Valid until:</b> {escape(d['valid_until'])}</p>")
-    return f"<div class='meta'><div class='box'></div><div class='box'>{''.join(right)}</div></div>"
+        detail.append(("Valid until", d["valid_until"]))
+    if d["quotation_ref"]:
+        detail.append(("Quotation", d["quotation_ref"]))
+    if d["po_number"]:
+        detail.append(("PO number", d["po_number"]))
+    if d["prepared_by"]:
+        detail.append(("Prepared by", d["prepared_by"]))
+    rows = "".join(f"<p><span class='dl'>{escape(k)}</span>"
+                   f"<span class='dv'>{escape(v)}</span></p>" for k, v in detail)
+    return (f"<div class='meta'>"
+            f"<div class='title-box'><h1 class='title'>{escape(d['title'])}</h1></div>"
+            f"<div class='detail-box'>{rows}</div></div>")
 
 
 def _s_parties(ctx, st):
     cu = ctx["customer"]
-    parts = [_title("Bill to", st), f"<p><b>{escape(cu['name'])}</b></p>"]
+    parts = [_title("Bill to", st), f"<p class='party-name'>{escape(cu['name'])}</p>"]
     if cu["address"]:
         parts.append(f"<p class='muted'>{escape(cu['address'])}</p>")
+    bits = []
     if cu["vat_number"]:
-        parts.append(f"<p class='muted'>VAT: {escape(cu['vat_number'])}</p>")
+        bits.append(f"VAT {escape(cu['vat_number'])}")
     if ctx["contact"]:
         ct = ctx["contact"]
-        parts.append(f"<p>Contact: {escape(ct['name'])}"
-                     + (f" · {escape(ct['email'])}" if ct["email"] else "")
-                     + (f" · {escape(ct['phone'])}" if ct["phone"] else "") + "</p>")
+        c = "Attn: " + escape(ct["name"])
+        if ct["email"]:
+            c += f" · {escape(ct['email'])}"
+        if ct["phone"]:
+            c += f" · {escape(ct['phone'])}"
+        bits.append(c)
+    if bits:
+        parts.append(f"<p class='muted'>{' &nbsp;·&nbsp; '.join(bits)}</p>")
     return "".join(parts)
 
 

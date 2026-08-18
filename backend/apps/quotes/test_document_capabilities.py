@@ -124,8 +124,10 @@ class MultiPageTests(TestCase):
         with pdfplumber.open(io.BytesIO(pdf)) as doc:
             pages = [p.extract_text() or "" for p in doc.pages]
         self.assertGreater(len(pages), 1)                       # spilled to page 2
-        self.assertIn("Rate", pages[0])                         # job-type column label
-        self.assertIn("Description", pages[1])                  # header repeated
+        # Column headers render uppercase (CSS text-transform), so the extracted
+        # text is "RATE"/"DESCRIPTION".
+        self.assertIn("RATE", pages[0])                         # job-type column label
+        self.assertIn("DESCRIPTION", pages[1])                 # header repeated on p2
         self.assertIn("Page 1 of", "\n".join(pages))            # page numbering
 
 
