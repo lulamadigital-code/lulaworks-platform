@@ -943,10 +943,39 @@ def platform_analytics(request):
     top_sources = list(qs.filter(created_at__gte=d30).exclude(source="")
                        .values("source").annotate(n=Count("id")).order_by("-n")[:6])
     recent = list(qs.select_related("user", "company").order_by("-created_at")[:20])
+
+    from apps.analytics import reports
+    adoption = reports.feature_adoption()
+    funnel = reports.activation_funnel()
     return render(request, "web/platform/analytics.html", {
-        "active": "analytics", "kpis": kpis, "top_events": top_events,
+        "active": "analytics", "sub": "overview", "kpis": kpis, "top_events": top_events,
         "top_modules": top_modules, "top_sources": top_sources, "recent": recent,
+        "adoption": adoption, "funnel": funnel,
     })
+
+
+@login_required
+def platform_analytics_retention(request):
+    if not request.user.platform_level:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+    from apps.analytics import reports
+    return render(request, "web/platform/analytics_retention.html", {
+        "active": "analytics", "sub": "retention", "data": reports.retention_cohorts()})
+
+
+@login_required
+def platform_analytics_health(request):
+    if not request.user.platform_level:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+    from apps.analytics import reports
+    rows = reports.company_health()
+    counts = {"healthy": 0, "active": 0, "at_risk": 0, "dormant": 0, "new": 0}
+    for r in rows:
+        counts[r["status"]] = counts.get(r["status"], 0) + 1
+    return render(request, "web/platform/analytics_health.html", {
+        "active": "analytics", "sub": "health", "rows": rows, "counts": counts})
 
 
 @login_required

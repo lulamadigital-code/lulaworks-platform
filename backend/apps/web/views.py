@@ -522,6 +522,9 @@ def work_new(request):
             add_attachment(task, request.user, uploaded_file=f)
 
         messages.success(request, f"Job created: {task.name}.")
+        from apps.analytics.services import track
+        track("job_created", request=request, module="jobs", feature="create",
+              metadata={"origin": getattr(task, "origin", "")})
         return redirect("web:work_detail", pk=task.id)
 
     return render(request, "web/work_new.html", {
@@ -3194,6 +3197,9 @@ def quotation_new(request, pk=None):
         if added:
             parts.append(f"{added} item(s) added")
         messages.success(request, ". ".join(parts) + ".")
+        from apps.analytics.services import track
+        track("quotation_created", request=request, module="quotations",
+              feature="create", metadata={"items": added, "seeded": seeded})
 
         # Remind the estimator to set up standard terms — the quotation prints
         # without a Terms & Conditions section until they do. The nudge stops on

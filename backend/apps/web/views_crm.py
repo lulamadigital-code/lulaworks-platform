@@ -165,6 +165,8 @@ def lead_convert(request, pk):
         opportunity_title=request.POST.get("opportunity_title", "").strip(),
     )
     messages.success(request, f"“{lead.company_name}” is now a customer.")
+    from apps.analytics.services import track
+    track("customer_created", request=request, module="crm", feature="convert_lead")
     return redirect("web:customer_detail", pk=customer.id)
 
 
@@ -229,6 +231,9 @@ def opportunity_create(request):
         messages.error(request, str(exc))
         return redirect("web:customer_detail", pk=customer.id)
     messages.success(request, f"Opportunity “{opp.title}” opened.")
+    from apps.analytics.services import track
+    track("opportunity_created", request=request, module="crm", feature="opportunity",
+          metadata={"stage": opp.stage})
     return redirect("web:crm_opportunity_detail", pk=opp.id)
 
 

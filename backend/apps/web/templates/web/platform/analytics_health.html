@@ -1,0 +1,58 @@
+{% extends "web/base.html" %}
+{% block title %}Company health · Analytics{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="analytics" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em} .sub{color:var(--muted);margin:0 0 16px} .muted{color:var(--muted)}
+  .subnav{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px}
+  .subnav a{padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;color:var(--muted)} .subnav a.on{background:var(--primary-t);color:var(--primary-d)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin-bottom:18px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+  .tile .n{font-size:24px;font-weight:800} .tile .l{color:var(--muted);font-size:12.5px;margin-top:3px;font-weight:600}
+  table.h{width:100%;border-collapse:collapse} .h th,.h td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);font-size:13.5px}
+  .h th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em} .h td.r,.h th.r{text-align:right}
+  .s{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .s.healthy{background:var(--green-t);color:#0a8f57} .s.active{background:var(--primary-t);color:var(--primary-d)}
+  .s.at_risk{background:var(--orange-t);color:#b9711a} .s.dormant{background:var(--red-t);color:#c22a41} .s.new{background:#eef0f5;color:var(--muted)}
+  .bar{display:inline-block;width:60px;height:8px;border-radius:4px;background:#eef0f5;overflow:hidden;vertical-align:middle}
+  .bar span{display:block;height:100%;background:linear-gradient(90deg,#0e7c8c,#17a2b8)}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Analytics</h1><p class="sub">Company health — spot power users, at-risk and dormant accounts.</p>
+<div class="subnav">
+  <a href="{% url 'web:platform_analytics' %}">Overview</a>
+  <a href="{% url 'web:platform_analytics_retention' %}">Retention</a>
+  <a class="on" href="{% url 'web:platform_analytics_health' %}">Company health</a>
+</div>
+
+<div class="grid">
+  <div class="tile"><div class="n" style="color:#0a8f57;">{{ counts.healthy|add:counts.active }}</div><div class="l">Healthy / active</div></div>
+  <div class="tile"><div class="n" style="color:#b9711a;">{{ counts.at_risk }}</div><div class="l">At risk (14–30d)</div></div>
+  <div class="tile"><div class="n" style="color:#c22a41;">{{ counts.dormant }}</div><div class="l">Dormant (30d+)</div></div>
+  <div class="tile"><div class="n muted">{{ counts.new }}</div><div class="l">New / no activity</div></div>
+</div>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table class="h">
+    <tr><th>Company</th><th>Status</th><th class="r">Users</th><th class="r">Quotes</th><th class="r">Jobs</th><th class="r">Events 30d</th><th class="r">Last seen</th><th>Engagement</th></tr>
+    {% for r in rows %}
+    <tr>
+      <td><a href="{% url 'web:platform_tenant' r.company.id %}"><strong>{{ r.company.name }}</strong></a></td>
+      <td><span class="s {{ r.status }}">{{ r.status|cut:"_"|capfirst }}</span></td>
+      <td class="r muted">{{ r.users }}</td>
+      <td class="r muted">{{ r.quotes }}</td>
+      <td class="r muted">{{ r.jobs }}</td>
+      <td class="r muted">{{ r.events_30d }}</td>
+      <td class="r muted">{% if r.days_since == 0 %}today{% elif r.days_since %}{{ r.days_since }}d ago{% else %}never{% endif %}</td>
+      <td><span class="bar"><span style="width:{{ r.score }}%;"></span></span></td>
+    </tr>
+    {% empty %}<tr><td colspan="8" class="muted" style="padding:18px;">No companies yet.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

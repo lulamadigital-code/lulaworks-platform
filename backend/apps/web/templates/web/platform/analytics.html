@@ -32,6 +32,12 @@
 <h1>Analytics</h1>
 <p class="sub">Product &amp; website event stream — the LulaWorks command center.</p>
 
+<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;">
+  <a href="{% url 'web:platform_analytics' %}" style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;{% if sub == 'overview' %}background:var(--primary-t);color:var(--primary-d);{% else %}color:var(--muted);{% endif %}">Overview</a>
+  <a href="{% url 'web:platform_analytics_retention' %}" style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;color:var(--muted);">Retention</a>
+  <a href="{% url 'web:platform_analytics_health' %}" style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;color:var(--muted);">Company health</a>
+</div>
+
 <div class="grid">
   <div class="tile"><div class="n">{{ kpis.events_today }}</div><div class="l">Events today</div></div>
   <div class="tile"><div class="n">{{ kpis.events_7d }}</div><div class="l">Events · 7d</div></div>
@@ -63,6 +69,30 @@
       <div class="chips">
         {% for s in top_sources %}<span class="chip">{{ s.source }}<b>{{ s.n }}</b></span>{% empty %}<span class="muted">No source data yet.</span>{% endfor %}
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="two">
+  <div>
+    <h2 style="margin-top:6px;">Feature adoption <span class="muted" style="font-weight:400;font-size:13px;">· {{ adoption.active_companies }} active companies · 30d</span></h2>
+    <div class="card">
+      {% for r in adoption.rows %}
+      <div class="barrow"><span class="cap">{{ r.module }}</span>
+        <span class="track"><span class="fill" style="width:{{ r.pct }}%;"></span></span>
+        <span class="v">{{ r.pct }}%</span></div>
+      {% empty %}<p class="muted" style="margin:0;">No usage yet.</p>{% endfor %}
+    </div>
+  </div>
+  <div>
+    <h2 style="margin-top:6px;">Activation funnel <span class="muted" style="font-weight:400;font-size:13px;">· {{ funnel.activation_rate }}% activated</span></h2>
+    <div class="card">
+      {% for s in funnel.steps %}
+      <div class="barrow"><span class="cap" style="flex:0 0 160px;">{{ s.label }}</span>
+        <span class="track"><span class="fill" style="width:{{ s.pct }}%;background:linear-gradient(90deg,#7c3fb8,#a25ddc);"></span></span>
+        <span class="v">{{ s.n }}</span></div>
+      {% endfor %}
+      <p class="muted" style="font-size:12px;margin:8px 0 0;">Activated = added a customer &amp; created a quotation. Funnel counts real accounts, so it's meaningful from day one.</p>
     </div>
   </div>
 </div>
