@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
+from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework import permissions
 
@@ -19,6 +20,11 @@ def health(_request):
 
 
 urlpatterns = [
+    # The Platform Console is the real admin home. The bare Django admin index
+    # is the generic, un-branded page, so send "/admin/" straight to the Console.
+    # Deeper Django model pages ("/admin/identity/company/", …) still resolve via
+    # the admin include below and stay reachable from the Console's links.
+    path("admin/", RedirectView.as_view(url="/platform/", permanent=False)),
     path("admin/", admin.site.urls),
     path("health/", health, name="health"),
     # Auth (JWT)
