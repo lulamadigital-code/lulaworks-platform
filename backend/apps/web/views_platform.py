@@ -327,6 +327,88 @@ def platform_create_tenant(request):
 
 
 @login_required
+def platform_list(request, section):
+    """Console-native, read-only list pages for the platform records (users,
+    plans, subscriptions, email logs, audit logs) — same app shell as the rest
+    of the console, so every sidebar link lands on a consistent page. Full CRUD
+    stays in Django admin, one click away. Superuser only."""
+    if not request.user.is_superuser:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+
+    from apps.core.context import system_scope
+
+    def _dt(v, fmt="%d %b %Y"):
+        return v.strftime(fmt) if v else "—"
+
+    ctx = {"active": section}
+    with system_scope():
+        if section == "users":
+            from apps.identity.models import User
+            ctx.update(
+                title="Users", subtitle="Every account across all tenants.",
+                columns=["Email", "Name", "Access", "Active", "Joined"],
+                admin_url="/admin/identity/user/",
+                rows=[[
+                    u.email, u.get_full_name() or "—",
+                    "Superuser" if u.is_superuser else ("Staff" if u.is_staff else "Member"),
+                    "Yes" if u.is_active else "No", _dt(getattr(u, "date_joined", None)),
+                ] for u in User.objects.order_by("email")[:500]])
+
+        elif section == "plans":
+            from apps.billing.models import Plan
+            ctx.update(
+                title="Plans", subtitle="Pricing and AI-credit allowances.",
+                columns=["Name", "Tier", "Price / mo", "Annual", "AI credits / mo", "Active"],
+                admin_url="/admin/billing/plan/",
+                rows=[[
+                    p.name, p.tier, f"R{p.price:.0f}", f"R{p.annual_price:.0f}",
+                    f"{p.monthly_ai_credits:.0f}", "Yes" if p.is_active else "No",
+                ] for p in Plan.objects.order_by("tier", "price")])
+
+        elif section == "subscriptions":
+            from apps.billing.models import Subscription
+            ctx.update(
+                title="Subscriptions", subtitle="Which tenant is on which plan.",
+                columns=["Company", "Plan", "Status", "Period start", "Period end"],
+                admin_url="/admin/billing/subscription/",
+                rows=[[
+                    getattr(s.company, "name", "—"), getattr(s.plan, "name", "—"),
+                    s.get_status_display() if hasattr(s, "get_status_display") else s.status,
+                    _dt(s.current_period_start), _dt(s.current_period_end),
+                ] for s in Subscription.objects.select_related("company", "plan")
+                    .order_by("company__name")[:500]])
+
+        elif section == "emails":
+            from apps.notifications.models import EmailLog
+            ctx.update(
+                title="Email logs", subtitle="Delivery history across the platform.",
+                columns=["When", "To", "Subject", "Category", "Status"],
+                admin_url="/admin/notifications/emaillog/",
+                rows=[[
+                    _dt(e.created_at, "%d %b %Y %H:%M"), e.to_email, e.subject,
+                    e.get_category_display() if hasattr(e, "get_category_display") else getattr(e, "category", ""),
+                    e.get_status_display() if hasattr(e, "get_status_display") else e.status,
+                ] for e in EmailLog.objects.select_related("company").order_by("-created_at")[:300]])
+
+        elif section == "audit":
+            from apps.administration.models import AuditLog
+            ctx.update(
+                title="Audit logs", subtitle="Security and change trail.",
+                columns=["When", "Actor", "Action", "Entity", "IP"],
+                admin_url="/admin/administration/auditlog/",
+                rows=[[
+                    _dt(a.created_at, "%d %b %Y %H:%M"), getattr(a.user, "email", "—") or "—",
+                    a.action, a.entity_type or "—", a.ip_address or "—",
+                ] for a in AuditLog.objects.select_related("user").order_by("-created_at")[:300]])
+        else:
+            messages.error(request, "Unknown section.")
+            return redirect("web:platform_home")
+
+    return render(request, "web/platform/list.html", ctx)
+
+
+@login_required
 def platform_tenants_csv(request):
     """Download every tenant with plan, users, AI credits + 30-day usage."""
     import csv

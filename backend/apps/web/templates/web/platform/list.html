@@ -1,0 +1,46 @@
+{% extends "web/base.html" %}
+{% block title %}{{ title }} · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em}
+  .sub{color:var(--muted);margin:0} .muted{color:var(--muted)}
+  .head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-size:13.5px}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;background:#fafbfd}
+  tbody tr:hover td{background:#fafbfd}
+  tr:last-child td{border-bottom:0}
+  .btn.ghost{background:#fff;color:var(--primary-d);border:1px solid var(--line)}
+  .btn.ghost svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .count{color:var(--muted);font-size:13px;margin-top:12px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="head-row">
+  <div>
+    <h1>{{ title }}</h1>
+    <p class="sub">{{ subtitle }}</p>
+  </div>
+  <a class="btn ghost" href="{{ admin_url }}"><svg viewBox="0 0 24 24"><path d="M14 3h7v7M21 3l-9 9M10 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/></svg> Open in Django admin</a>
+</div>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <thead><tr>{% for c in columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+      {% empty %}
+      <tr><td colspan="{{ columns|length }}" style="padding:18px;color:var(--muted);">Nothing here yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if rows %}<p class="count">Showing {{ rows|length }} record{{ rows|length|pluralize }}.</p>{% endif %}
+{% endblock %}

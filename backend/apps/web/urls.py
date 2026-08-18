@@ -22,6 +22,11 @@ urlpatterns = [
     path("platform/tenants.csv", views_platform.platform_tenants_csv, name="platform_tenants_csv"),
     path("platform/tenant/<uuid:pk>/", views_platform.platform_tenant, name="platform_tenant"),
     path("platform/new-tenant/", views_platform.platform_create_tenant, name="platform_create_tenant"),
+    path("platform/users/", views_platform.platform_list, {"section": "users"}, name="platform_users"),
+    path("platform/plans/", views_platform.platform_list, {"section": "plans"}, name="platform_plans"),
+    path("platform/subscriptions/", views_platform.platform_list, {"section": "subscriptions"}, name="platform_subscriptions"),
+    path("platform/emails/", views_platform.platform_list, {"section": "emails"}, name="platform_emails"),
+    path("platform/audit/", views_platform.platform_list, {"section": "audit"}, name="platform_audit"),
     path("settings/", views.settings_home, name="settings"),
     # Public account lifecycle — invitation activation + password reset (no login)
     path("activate/<str:token>/", views_account.activate, name="activate"),
