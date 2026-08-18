@@ -25,9 +25,12 @@
   .sidebar .logo{display:flex;align-items:baseline;gap:8px;padding:20px;font-weight:800;font-size:19px;letter-spacing:-.02em}
   .sidebar .logo small{font-size:12px;font-weight:600;opacity:.8}
   .nav{padding:6px 12px;display:flex;flex-direction:column;gap:2px}
-  .nav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;color:rgba(255,255,255,.82);font-weight:600;font-size:14px}
+  .nav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;color:rgba(255,255,255,.82);font-weight:600;font-size:14px}
   .nav a:hover{background:rgba(255,255,255,.12);color:#fff;text-decoration:none}
   .nav a.active{background:rgba(255,255,255,.18);color:#fff}
+  .nav a svg{width:18px;height:18px;flex:0 0 18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .tile .ic svg,.seccard .t svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .seccard .t{display:flex;align-items:center;gap:9px}
   .nav .grp{padding:14px 12px 5px;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.5)}
   .side-foot{margin-top:auto;padding:14px 16px;border-top:1px solid rgba(255,255,255,.14);font-size:12.5px;color:rgba(255,255,255,.8)}
   .side-foot a{color:#fff}
@@ -76,16 +79,16 @@
   <aside class="sidebar">
     <div class="logo">◆ LulaWorks <small>Platform</small></div>
     <nav class="nav">
-      <a class="active" href="{% url 'web:platform_home' %}">Overview</a>
+      <a class="active" href="{% url 'web:platform_home' %}"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
       <span class="grp">Manage</span>
-      <a href="/admin/identity/company/">Companies</a>
-      <a href="/admin/identity/user/">Users</a>
-      <a href="/admin/billing/plan/">Plans</a>
-      <a href="/admin/billing/subscription/">Subscriptions</a>
-      <a href="/admin/notifications/emaillog/">Email logs</a>
-      <a href="/admin/administration/auditlog/">Audit logs</a>
+      <a href="/admin/identity/company/"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 21V10h2a2 2 0 0 1 2 2v9"/></svg>Companies</a>
+      <a href="/admin/identity/user/"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M17 5.5a3 3 0 0 1 0 5.6M19 20a5 5 0 0 0-3-4.6"/></svg>Users</a>
+      <a href="/admin/billing/plan/"><svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>Plans</a>
+      <a href="/admin/billing/subscription/"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg>Subscriptions</a>
+      <a href="/admin/notifications/emaillog/"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>Email logs</a>
+      <a href="/admin/administration/auditlog/"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3zM9.5 12l1.8 1.8L15 10"/></svg>Audit logs</a>
       <span class="grp">Tools</span>
-      <a href="/admin/">Django admin →</a>
+      <a href="/admin/"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L16 3H8l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 3 12a7 7 0 0 0 .1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L8 21h8l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6A7 7 0 0 0 19 12z"/></svg>Django admin</a>
     </nav>
     <div class="side-foot">
       Signed in as<br><strong>{{ request.user.email }}</strong><br><br>
@@ -106,26 +109,26 @@
       {% endif %}
 
       <div class="grid">
-        <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">🏢</div>
+        <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 21V10h2a2 2 0 0 1 2 2v9"/></svg></div>
           <div class="n">{{ companies_total }}</div><div class="l">Companies</div>
           <div class="s">{{ companies_active }} active</div></div>
-        <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">👤</div>
+        <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M17 5.5a3 3 0 0 1 0 5.6M19 20a5 5 0 0 0-3-4.6"/></svg></div>
           <div class="n">{{ users_total }}</div><div class="l">Users</div>
           <div class="s">{{ users_active }} active</div></div>
-        <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div>
+        <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
           <div class="n">{{ subs_active }}</div><div class="l">Active subscriptions</div>
           <div class="s">{{ subs_trial }} on trial</div></div>
-        <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">R</div>
+        <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;"><svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
           <div class="n">R{{ mrr|floatformat:0 }}</div><div class="l">MRR (active plans)</div></div>
-        <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">✨</div>
+        <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9L18 15z"/></svg></div>
           <div class="n">{{ ai_calls_30d }}</div><div class="l">AI calls · 30d</div>
           <div class="s">{{ ai_credits_30d|floatformat:0 }} credits used</div></div>
-        <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">✉</div>
+        <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg></div>
           <div class="n">{{ emails_30d }}</div><div class="l">Emails sent · 30d</div></div>
-        <div class="tile"><div class="ic" style="background:var(--red-t);color:#c22a41;">↓</div>
+        <div class="tile"><div class="ic" style="background:var(--red-t);color:#c22a41;"><svg viewBox="0 0 24 24"><path d="M3 7l6 6 4-4 8 8M21 17v-5h-5"/></svg></div>
           <div class="n">{{ subs_cancelled }}</div><div class="l">Cancelled</div>
           <div class="s">{{ cancels_30d }} this month</div></div>
-        <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▤</div>
+        <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>
           <div class="n">{{ storage_display }}</div><div class="l">Storage used</div></div>
       </div>
 
@@ -234,7 +237,7 @@
 
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;">
         <h2>Tenants</h2>
-        <a class="btn" href="{% url 'web:platform_tenants_csv' %}" style="padding:8px 14px;">⤓ Export CSV</a>
+        <a class="btn" href="{% url 'web:platform_tenants_csv' %}" style="padding:8px 14px;"><svg viewBox="0 0 24 24" width="15" height="15" style="stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg> Export CSV</a>
       </div>
       <div class="card" style="padding:0;overflow-x:auto;">
         <table>
@@ -255,12 +258,12 @@
 
       <h2>Manage</h2>
       <div class="seccards">
-        <a class="seccard" href="/admin/identity/company/"><div class="t">🏢 Companies</div><div class="d">Tenants, status, profiles</div></a>
-        <a class="seccard" href="/admin/identity/user/"><div class="t">👤 Users</div><div class="d">Accounts, staff, superusers</div></a>
-        <a class="seccard" href="/admin/billing/plan/"><div class="t">📦 Plans</div><div class="d">Pricing & AI credit allowances</div></a>
-        <a class="seccard" href="/admin/billing/subscription/"><div class="t">💳 Subscriptions</div><div class="d">Who's on what, trials</div></a>
-        <a class="seccard" href="/admin/notifications/emaillog/"><div class="t">✉ Email logs</div><div class="d">Delivery history & resend</div></a>
-        <a class="seccard" href="/admin/administration/auditlog/"><div class="t">🛡 Audit logs</div><div class="d">Security & change trail</div></a>
+        <a class="seccard" href="/admin/identity/company/"><div class="t"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 21V10h2a2 2 0 0 1 2 2v9"/></svg>Companies</div><div class="d">Tenants, status, profiles</div></a>
+        <a class="seccard" href="/admin/identity/user/"><div class="t"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M17 5.5a3 3 0 0 1 0 5.6M19 20a5 5 0 0 0-3-4.6"/></svg>Users</div><div class="d">Accounts, staff, superusers</div></a>
+        <a class="seccard" href="/admin/billing/plan/"><div class="t"><svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>Plans</div><div class="d">Pricing &amp; AI credit allowances</div></a>
+        <a class="seccard" href="/admin/billing/subscription/"><div class="t"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg>Subscriptions</div><div class="d">Who's on what, trials</div></a>
+        <a class="seccard" href="/admin/notifications/emaillog/"><div class="t"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>Email logs</div><div class="d">Delivery history &amp; resend</div></a>
+        <a class="seccard" href="/admin/administration/auditlog/"><div class="t"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3zM9.5 12l1.8 1.8L15 10"/></svg>Audit logs</div><div class="d">Security &amp; change trail</div></a>
       </div>
     </div>
   </main>
