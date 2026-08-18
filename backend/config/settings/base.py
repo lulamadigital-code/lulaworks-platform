@@ -237,6 +237,8 @@ SMS_PROVIDER = config("SMS_PROVIDER", default="")          # "" | "twilio"
 TWILIO_ACCOUNT_SID = config("TWILIO_ACCOUNT_SID", default="")
 TWILIO_AUTH_TOKEN = config("TWILIO_AUTH_TOKEN", default="")
 TWILIO_FROM_NUMBER = config("TWILIO_FROM_NUMBER", default="")
+# WhatsApp sender (Twilio) — e.g. "whatsapp:+14155238886". Empty = WhatsApp off.
+TWILIO_WHATSAPP_FROM = config("TWILIO_WHATSAPP_FROM", default="")
 
 # --- Celery / Redis (async boundary; DATA_MODEL §14) ---
 REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")

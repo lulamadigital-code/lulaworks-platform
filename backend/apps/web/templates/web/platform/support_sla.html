@@ -1,0 +1,53 @@
+{% extends "web/base.html" %}
+{% block title %}Support SLA · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="support" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em} .sub{color:var(--muted);margin:0 0 18px} .muted{color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:18px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .tile .n{font-size:28px;font-weight:800;letter-spacing:-.02em} .tile .l{color:var(--muted);font-size:13px;margin-top:3px;font-weight:600}
+  .tile.bad .n{color:#c22a41}
+  table.sla{width:100%;border-collapse:collapse}
+  .sla th,.sla td{text-align:left;padding:12px 12px;border-bottom:1px solid var(--line);font-size:13.5px}
+  .sla th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .sla tr:last-child td{border-bottom:0} .sla td.r,.sla th.r{text-align:right}
+  .p{font-weight:700} .p.high,.p.urgent{color:#c22a41}
+  .ok{color:#0a8f57;font-weight:700} .warn{color:#c22a41;font-weight:700}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Support SLA &amp; analytics</h1>
+<p class="sub">First-response and resolution performance across all tenants (hours).</p>
+
+<div class="grid">
+  <div class="tile"><div class="n">{{ kpis.open }}</div><div class="l">Open tickets</div></div>
+  <div class="tile {% if kpis.breaching %}bad{% endif %}"><div class="n">{{ kpis.breaching }}</div><div class="l">Breaching SLA</div></div>
+  <div class="tile"><div class="n">{{ kpis.avg_response|default:"—" }}{% if kpis.avg_response %}h{% endif %}</div><div class="l">Avg first response</div></div>
+  <div class="tile"><div class="n">{{ kpis.avg_resolution|default:"—" }}{% if kpis.avg_resolution %}h{% endif %}</div><div class="l">Avg resolution</div></div>
+  <div class="tile"><div class="n">{{ kpis.resolved_30d }}</div><div class="l">Resolved · 30d</div></div>
+</div>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table class="sla">
+    <tr><th>Priority</th><th class="r">Tickets</th><th class="r">Open</th><th class="r">Target (1st resp.)</th><th class="r">Avg 1st response</th><th class="r">Avg resolution</th><th class="r">Breaching</th></tr>
+    {% for r in rows %}
+    <tr>
+      <td><span class="p {{ r.value }}">{{ r.label }}</span></td>
+      <td class="r muted">{{ r.count }}</td>
+      <td class="r muted">{{ r.open }}</td>
+      <td class="r muted">{{ r.target }}h</td>
+      <td class="r">{% if r.avg_response %}<span class="{% if r.avg_response <= r.target %}ok{% else %}warn{% endif %}">{{ r.avg_response }}h</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="r muted">{% if r.avg_resolution %}{{ r.avg_resolution }}h{% else %}—{% endif %}</td>
+      <td class="r">{% if r.breaching %}<span class="warn">{{ r.breaching }}</span>{% else %}<span class="ok">0</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+<p class="muted" style="font-size:12px;margin-top:12px;">Targets are the built-in defaults (Urgent 1h · High 4h · Normal 24h · Low 48h) — the foundation for formal, plan-based SLAs later.</p>
+{% endblock %}

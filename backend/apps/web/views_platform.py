@@ -862,6 +862,60 @@ def platform_support_detail(request, pk):
 
 
 @login_required
+def platform_support_sla(request):
+    """Support SLA & analytics — first-response and resolution times per priority,
+    against target SLAs, plus current breaches. Read for any platform staff."""
+    if not request.user.can_platform("support"):
+        messages.error(request, "The support desk is for platform staff only.")
+        return redirect("web:dashboard")
+
+    from apps.support.models import OPEN_STATUSES, SupportTicket, TicketPriority
+
+    # First-response SLA targets (hours) — the basis for future paid SLAs.
+    TARGETS = {"urgent": 1, "high": 4, "normal": 24, "low": 48}
+
+    now = timezone.now()
+    d30 = now - timedelta(days=30)
+
+    def _avg_hours(deltas):
+        return round(sum(deltas) / len(deltas), 1) if deltas else None
+
+    rows, breaches_total = [], 0
+    all_open = 0
+    for value, label in TicketPriority.choices:
+        tks = list(SupportTicket.all_objects.filter(priority=value))
+        resp = [(t.first_response_at - t.created_at).total_seconds() / 3600
+                for t in tks if t.first_response_at]
+        res = [(t.resolved_at - t.created_at).total_seconds() / 3600
+               for t in tks if t.resolved_at]
+        target = TARGETS.get(value, 24)
+        # Breaching = still open, no first response, and past the target.
+        breaching = [t for t in tks if t.status in OPEN_STATUSES and not t.first_response_at
+                     and (now - t.created_at).total_seconds() / 3600 > target]
+        open_n = sum(1 for t in tks if t.status in OPEN_STATUSES)
+        all_open += open_n
+        breaches_total += len(breaching)
+        rows.append({
+            "label": label, "value": value, "count": len(tks), "open": open_n,
+            "target": target, "avg_response": _avg_hours(resp),
+            "avg_resolution": _avg_hours(res), "breaching": len(breaching),
+        })
+
+    allt = SupportTicket.all_objects
+    resolved_30 = allt.filter(resolved_at__gte=d30)
+    all_resp = [(t.first_response_at - t.created_at).total_seconds() / 3600
+                for t in allt.filter(first_response_at__isnull=False)]
+    all_res = [(t.resolved_at - t.created_at).total_seconds() / 3600 for t in resolved_30]
+    kpis = {
+        "open": all_open, "breaching": breaches_total,
+        "resolved_30d": resolved_30.count(),
+        "avg_response": _avg_hours(all_resp), "avg_resolution": _avg_hours(all_res),
+    }
+    return render(request, "web/platform/support_sla.html", {
+        "active": "support", "rows": rows, "kpis": kpis})
+
+
+@login_required
 def platform_kb(request):
     """Manage the LulaWorks Knowledge Base — the articles tenants read and the AI
     assistant is grounded in. View for any platform staff; edit needs settings."""

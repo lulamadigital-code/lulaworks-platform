@@ -177,6 +177,23 @@ def _ticket_url(ticket):
     return f"{base}/support/{ticket.id}/" if base else ""
 
 
+def _push_mobile(user, text, company=None):
+    """Best-effort WhatsApp (preferred) or SMS to a user who has opted in and has
+    a mobile number. Silent when the channel isn't configured."""
+    try:
+        from apps.notifications.sms import (
+            send_sms, sms_allowed, sms_configured, whatsapp_configured,
+        )
+        if not (user and sms_allowed(user)):
+            return
+        if whatsapp_configured():
+            send_sms(to=user.mobile, body=text, company=company, channel="whatsapp")
+        elif sms_configured():
+            send_sms(to=user.mobile, body=text, company=company)
+    except Exception:                                          # noqa: BLE001
+        pass
+
+
 def _notify_support_new(ticket):
     """Tell the platform support desk a new ticket arrived."""
     from django.conf import settings
@@ -190,20 +207,26 @@ def _notify_support_new(ticket):
 def _notify_reply(ticket, *, from_support):
     if from_support:
         creator = getattr(ticket, "created_by", None)
+        company = getattr(ticket, "company", None)
         _send(getattr(creator, "email", ""),
               f"LulaWorks Support Ticket {ticket.number} updated",
               f"Support replied to {ticket.number}",
               "LulaWorks Support has replied to your ticket.",
-              cta_url=_ticket_url(ticket), company=getattr(ticket, "company", None))
+              cta_url=_ticket_url(ticket), company=company)
+        _push_mobile(creator, f"LulaWorks Support replied to ticket {ticket.number}. "
+                              f"View: {_ticket_url(ticket)}", company=company)
 
 
 def _notify_status(ticket):
     creator = getattr(ticket, "created_by", None)
+    company = getattr(ticket, "company", None)
     _send(getattr(creator, "email", ""),
           f"LulaWorks Support Ticket {ticket.number} — {ticket.get_status_display()}",
           f"{ticket.number} is now {ticket.get_status_display()}",
           f"Your support ticket status changed to {ticket.get_status_display()}.",
-          cta_url=_ticket_url(ticket), company=getattr(ticket, "company", None))
+          cta_url=_ticket_url(ticket), company=company)
+    _push_mobile(creator, f"LulaWorks ticket {ticket.number} is now "
+                          f"{ticket.get_status_display()}.", company=company)
 
 
 # ── Knowledge Base search + grounded AI assist ───────────────────────────────

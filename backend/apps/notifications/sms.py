@@ -46,7 +46,16 @@ class TwilioProvider(SmsProvider):
     def send(self, to, body):
         sid = settings.TWILIO_ACCOUNT_SID
         token = settings.TWILIO_AUTH_TOKEN
-        sender = settings.TWILIO_FROM_NUMBER
+        # A `whatsapp:`-prefixed recipient routes over WhatsApp using the WhatsApp
+        # sender; otherwise it's a normal SMS. Same Twilio account either way.
+        is_whatsapp = (to or "").startswith("whatsapp:")
+        if is_whatsapp:
+            wa = getattr(settings, "TWILIO_WHATSAPP_FROM", "")
+            sender = wa if wa.startswith("whatsapp:") else f"whatsapp:{wa}"
+            if not wa:
+                raise NotConfiguredError("TWILIO_WHATSAPP_FROM is not set.")
+        else:
+            sender = settings.TWILIO_FROM_NUMBER
         if not (sid and token and sender):
             raise NotConfiguredError("Twilio credentials are not set.")
         try:
@@ -68,6 +77,13 @@ def sms_configured() -> bool:
         return bool(settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN
                     and settings.TWILIO_FROM_NUMBER)
     return False
+
+
+def whatsapp_configured() -> bool:
+    """True when Twilio is set up with a WhatsApp sender."""
+    return bool(getattr(settings, "SMS_PROVIDER", "") == "twilio"
+                and settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN
+                and getattr(settings, "TWILIO_WHATSAPP_FROM", ""))
 
 
 def get_sms_provider() -> SmsProvider:
@@ -95,12 +111,16 @@ def sms_allowed(user) -> bool:
 # ── Service ───────────────────────────────────────────────────────────────────
 
 def send_sms(*, to, body, company=None, category=None, sent_by=None, related=None,
-             now=False) -> SmsLog:
-    """Queue an SMS and record it. Returns the SmsLog. `now=True` sends inline
-    (tests / commands); otherwise the Celery worker delivers it."""
+             channel="sms", now=False) -> SmsLog:
+    """Queue an SMS (or WhatsApp with channel='whatsapp') and record it. Returns
+    the SmsLog. `now=True` sends inline (tests / commands); otherwise the Celery
+    worker delivers it."""
     from .models import EmailCategory
+    dest = (to or "").strip()
+    if channel == "whatsapp" and dest and not dest.startswith("whatsapp:"):
+        dest = f"whatsapp:{dest}"
     log = SmsLog.objects.create(
-        company=company, to_number=(to or "").strip(), body=body[:480],
+        company=company, to_number=dest, body=body[:480],
         category=category or EmailCategory.TASK,
         entity_type=related.__class__.__name__ if related is not None else "",
         entity_id=getattr(related, "id", None) if related is not None else None,
