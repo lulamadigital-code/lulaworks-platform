@@ -21,22 +21,22 @@
   h1{font-size:24px;margin:0 0 4px;letter-spacing:-.02em} h2{font-size:16px;margin:26px 0 12px}
   .sub{color:var(--muted);margin:0 0 22px}
 
-  .sidebar{width:236px;background:linear-gradient(180deg,#0e7c8c,#0b6070);color:#fff;
+  .sidebar{width:236px;background:var(--surface);border-right:1px solid var(--line);
            position:sticky;top:0;height:100vh;display:flex;flex-direction:column;flex:0 0 236px}
-  .sidebar .logo{padding:18px 16px 8px}
-  .sidebar .logo .chip{background:#fff;border-radius:12px;padding:11px 14px;display:block;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-  .sidebar .logo .chip img{height:28px;width:auto;display:block}
-  .sidebar .logo .tag{margin:10px 3px 0;font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.62)}
+  .sidebar .logo{padding:20px 20px 14px}
+  .sidebar .logo img{height:34px;width:auto;display:block}
+  .sidebar .logo .tag{margin:9px 2px 0;font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#9aa0b0}
   .nav{padding:6px 12px;display:flex;flex-direction:column;gap:2px}
-  .nav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;color:rgba(255,255,255,.82);font-weight:600;font-size:14px}
-  .nav a:hover{background:rgba(255,255,255,.12);color:#fff;text-decoration:none}
-  .nav a.active{background:rgba(255,255,255,.18);color:#fff}
+  .nav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;color:var(--muted);font-weight:600;font-size:14px;position:relative}
+  .nav a:hover{background:#f2f3f8;color:var(--ink);text-decoration:none}
+  .nav a.active{background:var(--primary-t);color:var(--primary-d)}
+  .nav a.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--primary)}
   .nav a svg{width:18px;height:18px;flex:0 0 18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
   .tile .ic svg,.seccard .t svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .seccard .t{display:flex;align-items:center;gap:9px}
-  .nav .grp{padding:14px 12px 5px;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.5)}
-  .side-foot{margin-top:auto;padding:14px 16px;border-top:1px solid rgba(255,255,255,.14);font-size:12.5px;color:rgba(255,255,255,.8)}
-  .side-foot a{color:#fff}
+  .nav .grp{padding:16px 12px 5px;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#9aa0b0}
+  .side-foot{margin-top:auto;padding:14px 16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+  .side-foot a{color:var(--primary-d)}
   .main{flex:1;min-width:0} .content{max-width:1160px;margin:0 auto;padding:30px 34px 70px}
 
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:18px}
@@ -81,7 +81,7 @@
 <body>
   <aside class="sidebar">
     <div class="logo">
-      <span class="chip"><img src="{% static 'web/logo.png' %}" alt="LulaWorks"></span>
+      <img src="{% static 'web/logo.png' %}" alt="LulaWorks">
       <div class="tag">Platform Console</div>
     </div>
     <nav class="nav">
