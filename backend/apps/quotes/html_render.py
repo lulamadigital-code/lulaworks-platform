@@ -22,6 +22,7 @@ from html import escape
 
 from django.utils import timezone
 
+from . import document_capabilities as caps
 from .models import DEFAULT_DESIGN, TEMPLATE_ITEM_COLUMN_KEYS
 
 
@@ -50,8 +51,11 @@ def build_context(document, doc_type: str) -> dict:
     customer = quote.customer
     contact = quote.contact
 
-    # Items — prices on quotation/invoice, quantities only on a delivery note.
-    show_prices = doc_type != "delivery"
+    # Items — prices on quotation/invoice; a delivery note carries QUANTITIES only
+    # (ordered / delivered / outstanding), never prices. Ordered comes from the
+    # quotation; delivered defaults to full and outstanding to zero — the normal
+    # complete delivery — mirroring the ReportLab delivery-note builder.
+    show_prices = caps.allows_prices(doc_type)
     items = []
     for ln in quote.lines.all():
         row = {"item_no": str(ln.position), "description": ln.description,
@@ -61,6 +65,9 @@ def build_context(document, doc_type: str) -> dict:
             row["amount"] = f"R{ln.line_total:,.2f}"
         else:
             row["unit_price"] = row["amount"] = ""
+            row["ordered"] = f"{ln.qty:g}"
+            row["delivered"] = f"{ln.qty:g}"
+            row["outstanding"] = "0"
         items.append(row)
 
     # Totals.
@@ -145,6 +152,10 @@ def sample_context(company, doc_type: str) -> dict:
         row = {"item_no": str(i), "description": desc, "qty": qty, "unit": "ea"}
         row["unit_price"] = f"R{price:,.2f}" if show_prices else ""
         row["amount"] = f"R{price * int(qty):,.2f}" if show_prices else ""
+        if not show_prices:
+            row["ordered"] = qty
+            row["delivered"] = qty
+            row["outstanding"] = "0"
         items.append(row)
     financial = {} if doc_type == "delivery" else {
         "subtotal": "R68,200.00", "discount": "", "vat_label": "VAT @ 15%",
@@ -208,6 +219,7 @@ def render_html_pdf(document, doc_type: str, design: dict) -> bytes:
     from weasyprint import HTML
 
     context = build_context(document, doc_type)
+    caps.assert_renderable(context, doc_type)   # never emit a misleading document
     html = design_to_html(design or DEFAULT_DESIGN, context)
     return HTML(string=html).write_pdf()
 
@@ -244,8 +256,14 @@ def design_to_html(design: dict, context: dict) -> str:
         "title_style": design.get("section_title_style") or "plain",
     }
 
+    # Document-type capabilities are authoritative: whatever a template lists, only
+    # the sections this document type is ALLOWED to show are rendered. This is what
+    # stops a quotation from ever showing a delivery acknowledgement, or a delivery
+    # note from showing totals/banking — regardless of the stored design.
+    doc_type = context.get("doc_type") or caps.QUOTATION
     sections = design.get("sections") or DEFAULT_DESIGN["sections"]
-    visible = [e.get("key") for e in sections if e.get("visible", True)]
+    requested = [e.get("key") for e in sections if e.get("visible", True)]
+    visible = caps.filter_sections(doc_type, requested)
     css = _base_css(accent, secondary, font, st)
 
     # The 'sidebar' header wraps the WHOLE page in two columns: the identity lives
@@ -453,12 +471,19 @@ def _s_scope(ctx, st):
 
 def _s_items(ctx, st):
     from .models import TEMPLATE_ITEM_COLUMNS
-    labels = dict(TEMPLATE_ITEM_COLUMNS)
-    active = [c for c in st["cols"] if c in TEMPLATE_ITEM_COLUMN_KEYS
-              and not (ctx["doc_type"] == "delivery" and c in ("unit_price", "amount"))]
-    if not active:
-        active = ["item_no", "description", "qty", "unit"]
-    num_cols = {"qty", "unit_price", "amount"}
+    # A delivery note is quantity-based: Ordered / Delivered / Outstanding, never
+    # priced. Every other type uses the template's chosen priced columns.
+    if caps.item_mode(ctx["doc_type"]) == caps.ITEMS_DELIVERY:
+        active = ["item_no", "description", "ordered", "delivered", "outstanding", "unit"]
+        labels = {"item_no": "No.", "description": "Description", "ordered": "Ordered",
+                  "delivered": "Delivered", "outstanding": "Outstanding", "unit": "Unit"}
+        num_cols = {"ordered", "delivered", "outstanding"}
+    else:
+        labels = dict(TEMPLATE_ITEM_COLUMNS)
+        active = [c for c in st["cols"] if c in TEMPLATE_ITEM_COLUMN_KEYS]
+        if not active:
+            active = ["item_no", "description", "qty", "unit"]
+        num_cols = {"qty", "unit_price", "amount"}
     head = "".join(f"<th class='{'num' if c in num_cols else ''}'>{escape(labels[c])}</th>"
                    for c in active)
     body = []
@@ -504,18 +529,43 @@ def _s_terms(ctx, st):
 
 
 def _s_signature(ctx, st):
-    return ("<div class='boxes'>"
-            "<div class='b'><b>Prepared by</b><br><br>Signature: ____________________<br>"
-            f"Date: {escape(ctx['document']['date'])}</div>"
-            "<div class='b'><b>Received in good order by</b><br><br>"
-            "Signature: ____________________<br>Date: ______________</div></div>")
+    """The sign-off block, worded by DOCUMENT TYPE — never a fixed label. A
+    quotation offers customer ACCEPTANCE; a delivery note records DELIVERY
+    acknowledgement ("received in good order"); an invoice has neither (its
+    section is dropped upstream by the capability filter)."""
+    mode = caps.signoff_mode(ctx["doc_type"])
+    prep = escape(ctx["document"].get("prepared_by", "") or "")
+    date = escape(ctx["document"]["date"])
+    if mode == caps.SIGNOFF_ACCEPTANCE:
+        # A quotation is an OFFER — the customer accepts it. Not a delivery receipt.
+        return ("<div class='boxes'>"
+                f"<div class='b'><b>Quotation compiled by</b><br><br>{prep}<br>"
+                f"Date: {date}</div>"
+                "<div class='b'><b>Accepted by (customer)</b><br><br>"
+                "Name: ____________________<br>"
+                "Signature: ____________________<br>Date: ______________</div></div>")
+    if mode == caps.SIGNOFF_DELIVERY:
+        # A delivery note records physical hand-over.
+        return ("<div class='boxes'>"
+                f"<div class='b'><b>Delivered by</b><br><br>{prep}<br>"
+                f"Date: {date}</div>"
+                "<div class='b'><b>Received in good order by</b><br><br>"
+                "Name: ____________________<br>"
+                "Signature: ____________________<br>"
+                "Date: ______________&nbsp;&nbsp;Time: __________<br>"
+                "Comments: ____________________</div></div>")
+    return ""      # SIGNOFF_NONE (e.g. invoice) — no acknowledgement block
 
 
 def _s_footer(ctx, st):
     ref = ctx["document"]["reference"]
     note = f"{escape(st['fnote'])}<br>" if st["fnote"] else ""
-    return (f"<div class='foot'>{note}Please use reference "
-            f"<b>{escape(ref)}</b> when making payment.</div>")
+    # Nothing is paid against a delivery note — don't ask for a payment reference.
+    if not caps.allows_prices(ctx["doc_type"]):
+        tail = f"Please quote reference <b>{escape(ref)}</b> on any delivery query."
+    else:
+        tail = f"Please use reference <b>{escape(ref)}</b> when making payment."
+    return f"<div class='foot'>{note}{tail}</div>"
 
 
 _SECTION_BUILDERS = {

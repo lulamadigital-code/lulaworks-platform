@@ -214,20 +214,44 @@ def template_builder(request, pk):
             messages.success(request, "Template saved.")
             return redirect("web:doc_template_builder", pk=pk)
 
+    from apps.quotes import document_capabilities as caps
+
     design = dts.current_design(tpl)
     branding = design.get("branding", {})
-    # Sections in the design's current order, each with its label.
+    # Only the sections this DOCUMENT TYPE is allowed to show appear in the builder —
+    # so a quotation template can't be given a delivery acknowledgement, and a
+    # delivery note can't be given totals. The signature block is relabelled to
+    # what it actually means for this type.
+    allowed = caps.allowed_sections(tpl.doc_type)
+    signoff = caps.signoff_mode(tpl.doc_type)
+    sig_label = {"acceptance": "Customer acceptance",
+                 "delivery": "Delivery acknowledgement"}.get(signoff, "Sign-off")
     labels = dict(TEMPLATE_SECTIONS)
+    labels["signature"] = f"{sig_label} area"
     ordered = design.get("sections") or [{"key": k, "visible": True} for k, _ in TEMPLATE_SECTIONS]
     sections = [{"key": s["key"], "label": labels.get(s["key"], s["key"]),
                  "visible": s.get("visible", True)} for s in ordered
-                if s["key"] in labels]
+                if s["key"] in labels and s["key"] in allowed]
+
+    # A delivery note is quantity-based (Ordered/Delivered/Outstanding) — never let
+    # the builder offer price columns for it.
+    priced = caps.allows_prices(tpl.doc_type)
     active_cols = set(design.get("columns") or [])
     columns = [{"key": k, "label": lbl, "on": k in active_cols}
-               for k, lbl in TEMPLATE_ITEM_COLUMNS]
+               for k, lbl in TEMPLATE_ITEM_COLUMNS
+               if priced or k not in ("unit_price", "amount")]
+
+    doc_type_note = {
+        "quotation": "This is a QUOTATION — a commercial offer. It shows pricing and "
+                     "an optional customer-acceptance area, never a delivery receipt.",
+        "invoice": "This is a TAX INVOICE — a payment document. It shows pricing and "
+                   "banking, never a delivery acknowledgement.",
+        "delivery": "This is a DELIVERY NOTE — it records physical delivery with "
+                    "Ordered / Delivered / Outstanding quantities, never prices.",
+    }.get(tpl.doc_type, "")
     return render(request, "web/doctemplates/builder.html", {
         "tpl": tpl, "design": design, "branding": branding,
-        "sections": sections, "columns": columns,
+        "sections": sections, "columns": columns, "doc_type_note": doc_type_note,
         "fonts": ALLOWED_FONT_FAMILIES, "logo_positions": ALLOWED_LOGO_POSITIONS,
         "header_styles": ALLOWED_HEADER_STYLES,
         "table_styles": ALLOWED_TABLE_STYLES, "totals_styles": ALLOWED_TOTALS_STYLES,

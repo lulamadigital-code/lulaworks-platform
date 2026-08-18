@@ -16,6 +16,13 @@
   </div>
 </div>
 
+{% if doc_type_note %}
+<div class="card" style="border-left:3px solid var(--accent,#0E6E6E);background:var(--primary-t,#e6f6f9);margin-bottom:14px;">
+  <span style="font-size:12.5px;">{{ doc_type_note }} Only the components valid for this
+  document type are shown below.</span>
+</div>
+{% endif %}
+
 <form method="post" action="{% url 'web:doc_template_builder' tpl.id %}">{% csrf_token %}
 <div class="two-col" style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start;">
 

@@ -1,0 +1,108 @@
+"""Document-type correctness — the capability layer that keeps business meaning
+independent of the visual template.
+
+The guarantees these lock in:
+  • a QUOTATION never shows a delivery acknowledgement or delivered/outstanding qty
+  • a TAX INVOICE never shows a delivery acknowledgement
+  • a DELIVERY NOTE never shows prices, and always shows ordered/delivered/outstanding
+across EVERY template family, whatever the template's design happens to contain.
+"""
+
+from django.test import SimpleTestCase, TestCase
+
+from apps.core.context import tenant_scope
+from apps.identity.models import Company
+
+from . import document_capabilities as caps
+from . import document_templates as dt
+from .html_render import design_to_html, sample_context
+from .models import TEMPLATE_FAMILIES
+
+
+def make_company(name="CapCo"):
+    return Company.objects.create(name=name)
+
+
+class CapabilityRulesTests(SimpleTestCase):
+    def test_allowed_sections_per_type(self):
+        self.assertIn("signature", caps.allowed_sections("quotation"))
+        self.assertNotIn("signature", caps.allowed_sections("invoice"))  # no acknowledgement
+        self.assertNotIn("totals", caps.allowed_sections("delivery"))    # no prices
+        self.assertNotIn("banking", caps.allowed_sections("delivery"))
+
+    def test_signoff_and_price_modes(self):
+        self.assertEqual(caps.signoff_mode("quotation"), caps.SIGNOFF_ACCEPTANCE)
+        self.assertEqual(caps.signoff_mode("invoice"), caps.SIGNOFF_NONE)
+        self.assertEqual(caps.signoff_mode("delivery"), caps.SIGNOFF_DELIVERY)
+        self.assertTrue(caps.allows_prices("quotation"))
+        self.assertTrue(caps.allows_prices("invoice"))
+        self.assertFalse(caps.allows_prices("delivery"))
+        self.assertEqual(caps.item_mode("delivery"), caps.ITEMS_DELIVERY)
+
+    def test_filter_sections_drops_forbidden(self):
+        # A template that (wrongly) asks for a delivery acknowledgement + totals on a
+        # quotation still can't have banking on a delivery note, etc.
+        self.assertNotIn("totals", caps.filter_sections("delivery",
+                         ["letterhead", "items", "totals", "banking", "signature"]))
+        self.assertNotIn("signature", caps.filter_sections("invoice",
+                         ["letterhead", "items", "signature"]))
+
+    def test_validate_flags_missing_and_prohibited(self):
+        ok = {"company": {"name": "X"}, "document": {"reference": "R1"},
+              "customer": {"name": "C"}, "items": []}
+        self.assertEqual(caps.validate_render_context(ok, "quotation"), [])
+        missing = {"company": {"name": ""}, "document": {"reference": ""},
+                   "customer": {"name": ""}, "items": []}
+        self.assertTrue(caps.validate_render_context(missing, "quotation"))
+        priced_delivery = {"company": {"name": "X"}, "document": {"reference": "R"},
+                           "customer": {"name": "C"},
+                           "items": [{"unit_price": "R10", "amount": "R10"}]}
+        self.assertTrue(caps.validate_render_context(priced_delivery, "delivery"))
+
+
+class RenderedContentTests(TestCase):
+    """Render every family for every document type with sample data and assert the
+    document-type rules hold in the actual output."""
+
+    def test_no_family_leaks_wrong_content(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            for _key, name, _desc, _tags, design in TEMPLATE_FAMILIES:
+                cd = dt.clean_design(design)
+                q = design_to_html(cd, sample_context(c, "quotation")).lower()
+                inv = design_to_html(cd, sample_context(c, "invoice")).lower()
+                dn = design_to_html(cd, sample_context(c, "delivery")).lower()
+
+                # Quotation: an offer with customer acceptance — never a delivery receipt.
+                self.assertIn("accepted by", q, name)
+                for bad in ("received in good order", "delivered by", "outstanding",
+                            "proof of delivery"):
+                    self.assertNotIn(bad, q, f"{name} quotation leaked {bad!r}")
+
+                # Invoice: payment document — no delivery acknowledgement.
+                for bad in ("received in good order", "delivered by"):
+                    self.assertNotIn(bad, inv, f"{name} invoice leaked {bad!r}")
+
+                # Delivery note: quantities, never prices.
+                for token in ("ordered", "delivered", "outstanding",
+                              "received in good order"):
+                    self.assertIn(token, dn, f"{name} delivery missing {token!r}")
+                for bad in ("unit price", "total due", "subtotal", "r18", "r78"):
+                    self.assertNotIn(bad, dn, f"{name} delivery leaked price {bad!r}")
+
+
+class ReportLabSignoffTests(SimpleTestCase):
+    """The shared ReportLab sign-off column omits the counter-sign line for a tax
+    invoice (no acknowledgement) but keeps it for quotation/delivery."""
+
+    def test_show_received_toggle(self):
+        from reportlab.lib.styles import getSampleStyleSheet
+        from .pdf import _signoff_column
+        styles = getSampleStyleSheet()
+        small, muted = styles["Normal"], styles["Normal"]
+        with_recv = _signoff_column(small, muted, compiled_label="By:",
+                                    prep_name="A B", today="01/01/2026")
+        without = _signoff_column(small, muted, compiled_label="By:",
+                                  prep_name="A B", today="01/01/2026",
+                                  show_received=False)
+        self.assertLess(len(without), len(with_recv))

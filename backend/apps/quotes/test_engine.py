@@ -765,7 +765,10 @@ class VendorNumberTests(TestCase):
         self.assertIn("head-pulley", text)               # scope of work
         self.assertIn("Sam Dlamini", text)               # prepared by
         self.assertIn("Compiled By", text)               # sign-off block
-        self.assertIn("Received in Good Order", text)    # sign-off block
+        # A quotation is an OFFER: it carries customer ACCEPTANCE, never a delivery
+        # acknowledgement ("received in good order" belongs to a delivery note).
+        self.assertIn("Accepted By", text)
+        self.assertNotIn("Received in Good Order", text)
 
 
 class QuotationPdfLayoutTests(TestCase):
