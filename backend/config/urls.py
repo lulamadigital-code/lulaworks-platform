@@ -19,6 +19,10 @@ def health(_request):
     return JsonResponse({"status": "ok", "service": "lulaworks-api"})
 
 
+# Custom 500 handler — captures a safe error reference + offers Contact Support.
+handler500 = "apps.web.views.server_error"
+
+
 urlpatterns = [
     # The Platform Console is the real admin home. The bare Django admin index
     # is the generic, un-branded page, so send "/admin/" straight to the Console.

@@ -112,6 +112,51 @@ class SupportMessage(TenantBaseModel):
         return f"msg on {self.ticket_id}"
 
 
+class ErrorEvent(models.Model):
+    """A safe technical snapshot of an unexpected application error, captured by
+    the 500 handler. The customer only ever sees `reference`; support staff see
+    the module/time/browser/version/request-id for correlation. No stack traces,
+    secrets or database contents are stored here — those stay in the server log,
+    correlated by `request_id`."""
+    import uuid as _uuid
+
+    id = models.UUIDField(primary_key=True, default=_uuid.uuid4, editable=False)
+    reference = models.CharField(max_length=24, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    request_id = models.CharField(max_length=32, blank=True)
+    path = models.CharField(max_length=300, blank=True)
+    method = models.CharField(max_length=8, blank=True)
+    view_name = models.CharField(max_length=120, blank=True)   # the "module"
+    status_code = models.PositiveSmallIntegerField(default=500)
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                             null=True, blank=True, related_name="+")
+    company = models.ForeignKey("identity.Company", on_delete=models.SET_NULL,
+                                null=True, blank=True, related_name="+")
+    user_agent = models.CharField(max_length=300, blank=True)
+    app_version = models.CharField(max_length=32, blank=True)
+    # Exception class name only (e.g. "IntegrityError") — safe; never the message.
+    exception_type = models.CharField(max_length=120, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.reference
+
+    def safe_context(self):
+        """The support-safe fields to attach to a ticket (no secrets/traces)."""
+        return {
+            "Error reference": self.reference,
+            "When": self.created_at.strftime("%Y-%m-%d %H:%M UTC") if self.created_at else "",
+            "Module": self.view_name or self.path,
+            "Request ID": self.request_id,
+            "App version": self.app_version,
+            "Error type": self.exception_type,
+        }
+
+
 class SupportAttachment(TenantBaseModel):
     ticket = models.ForeignKey(SupportTicket, on_delete=models.CASCADE, related_name="attachments")
     message = models.ForeignKey(SupportMessage, on_delete=models.CASCADE, null=True, blank=True,

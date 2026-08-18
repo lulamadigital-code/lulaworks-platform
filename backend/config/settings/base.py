@@ -61,6 +61,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "apps.web.middleware.RequestIDMiddleware",
     # WhiteNoise serves static files from inside the container (no separate web
     # server needed) — container-first. In prod, static/media go to S3/CDN.
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -123,6 +124,9 @@ DATABASES = {
 }
 
 AUTH_USER_MODEL = "identity.User"
+
+# Application version — surfaced on error references and platform settings.
+APP_VERSION = config("APP_VERSION", default="1.0.0")
 
 # Session-authenticated manager web (server-rendered HTML + HTMX). Separate from
 # the JWT API used by the Flutter field app.

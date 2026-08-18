@@ -37,3 +37,29 @@ class ForcePasswordChangeMiddleware:
         allowed = {reverse("web:change_password"), reverse("web:logout"),
                    reverse("web:login")}
         return path not in allowed
+
+
+class RequestIDMiddleware:
+    """Stamp every request with a short correlation id (request.request_id) and
+    echo it as the X-Request-ID response header. It ties a customer's error
+    reference to the matching server log line without exposing anything sensitive.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        import uuid
+        request.request_id = uuid.uuid4().hex[:12]
+        response = self.get_response(request)
+        try:
+            response["X-Request-ID"] = request.request_id
+        except Exception:                                      # noqa: BLE001
+            pass
+        return response
+
+    def process_exception(self, request, exception):
+        # Stash the exception CLASS NAME only (never the message/trace) so the
+        # 500 handler can record safe technical context.
+        request._lw_exc_type = type(exception).__name__
+        return None

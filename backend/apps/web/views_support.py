@@ -51,6 +51,15 @@ def support_company(request):
 def support_create(request):
     if request.method == "POST":
         try:
+            # If the ticket came from an error page, attach the safe technical
+            # context captured by the 500 handler (module, request id, version…).
+            err_ref = request.POST.get("error_reference", "").strip()
+            err_ctx = {}
+            if err_ref:
+                from apps.support.models import ErrorEvent
+                ev = ErrorEvent.objects.filter(reference=err_ref).first()
+                if ev:
+                    err_ctx = ev.safe_context()
             ticket = support.create_ticket(
                 company=request.user.active_company, user=request.user,
                 subject=request.POST.get("subject", ""),
@@ -59,7 +68,7 @@ def support_create(request):
                 description=request.POST.get("description", ""),
                 related_module=request.POST.get("related_module", ""),
                 related_ref=request.POST.get("related_ref", ""),
-                error_reference=request.POST.get("error_reference", ""),
+                error_reference=err_ref, error_context=err_ctx,
                 ip=_client_ip(request))
             for f in request.FILES.getlist("attachments"):
                 support.add_message(ticket=ticket, sender=request.user, body="",
@@ -70,12 +79,14 @@ def support_create(request):
             messages.error(request, str(exc))
         except Exception as exc:                               # noqa: BLE001
             messages.error(request, f"Could not create the ticket: {exc}")
+    ref = request.GET.get("ref", "").strip()
     return render(request, "web/support/create.html", {
         "nav_section": "support",
         "categories": TicketCategory.choices, "priorities": TicketPriority.choices,
         "prefill": {"subject": request.GET.get("subject", ""),
-                    "category": request.GET.get("category", ""),
-                    "error_reference": request.GET.get("ref", "")},
+                    # Errors default to the Technical Problem category.
+                    "category": request.GET.get("category", "") or ("technical" if ref else ""),
+                    "error_reference": ref},
     })
 
 

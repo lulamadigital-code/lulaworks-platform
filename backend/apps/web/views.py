@@ -3919,3 +3919,41 @@ def quotation_lines_bulk(request, pk):
     else:
         messages.success(request, f"Added {created} item(s).")
     return redirect(_edit_url(pk))
+
+
+def server_error(request, template_name="500.html"):
+    """Custom 500 handler — captures a SAFE error snapshot (no traces/secrets),
+    hands the user a friendly page with an Error Reference and a one-click
+    "Contact Support" that pre-fills a ticket. Never raises."""
+    import uuid
+
+    from django.conf import settings
+    from django.http import HttpResponse
+    from django.template import loader
+
+    reference = f"ERR-{uuid.uuid4().hex[:8].upper()}"
+    try:
+        from apps.support.models import ErrorEvent
+        exc = getattr(request, "_lw_exc_type", "") or ""
+        user = getattr(request, "user", None)
+        ErrorEvent.objects.create(
+            reference=reference,
+            request_id=getattr(request, "request_id", "") or "",
+            path=request.path[:300], method=request.method or "",
+            view_name=getattr(request, "resolver_match", None)
+                      and request.resolver_match.view_name or "",
+            user=user if getattr(user, "is_authenticated", False) else None,
+            company_id=getattr(user, "active_company_id", None),
+            user_agent=request.META.get("HTTP_USER_AGENT", "")[:300],
+            app_version=getattr(settings, "APP_VERSION", ""),
+            exception_type=exc[:120])
+    except Exception:                                          # noqa: BLE001
+        pass
+
+    ctx = {"reference": reference}
+    try:
+        html = loader.render_to_string(template_name, ctx, request)
+    except Exception:                                          # noqa: BLE001
+        html = (f"<h1>Something went wrong</h1><p>Reference: {reference}</p>"
+                f"<p><a href='/support/new/?ref={reference}'>Contact Support</a></p>")
+    return HttpResponse(html, status=500)

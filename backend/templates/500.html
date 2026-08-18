@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Something went wrong · LulaWorks</title>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       font:15px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#292f4c;
+       background:radial-gradient(1000px 500px at 50% -10%,#e6f6f9,#f6f7fb);padding:24px}
+  .box{max-width:460px;width:100%;background:#fff;border:1px solid #e6e9ef;border-radius:16px;
+       box-shadow:0 12px 40px rgba(41,47,76,.12);padding:34px 30px;text-align:center}
+  .ic{width:56px;height:56px;border-radius:50%;background:#fde8eb;color:#e2445c;display:flex;
+      align-items:center;justify-content:center;margin:0 auto 14px}
+  .ic svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:20px;margin:0 0 6px;letter-spacing:-.01em}
+  p{color:#676879;margin:0 0 16px}
+  .ref{display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;
+       background:#f6f7fb;border:1px solid #e6e9ef;border-radius:8px;padding:8px 14px;margin-bottom:20px;letter-spacing:.04em}
+  .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  a.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 18px;border-radius:10px;font-weight:700;
+        font-size:14px;text-decoration:none}
+  a.primary{background:#17a2b8;color:#fff} a.primary:hover{background:#0e7c8c}
+  a.ghost{background:#fff;color:#0e7c8c;border:1px solid #e6e9ef}
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="ic"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+    <h1>Something went wrong</h1>
+    <p>Sorry — an unexpected error occurred. Our team can look into it using the reference below.</p>
+    <div class="ref">Reference: {{ reference }}</div>
+    <div class="btns">
+      <a class="btn primary" href="/support/new/?ref={{ reference }}">Contact Support</a>
+      <a class="btn ghost" href="/dashboard/">Back to app</a>
+    </div>
+  </div>
+</body>
+</html>
