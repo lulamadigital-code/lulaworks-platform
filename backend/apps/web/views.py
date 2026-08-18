@@ -197,6 +197,14 @@ def dashboard(request):
     The commercial panel is finance-only (Golden Rule)."""
     from collections import Counter
 
+    # A platform superuser has no tenant company, so the tenant-scoped queries
+    # below would raise. Send them to the console (their real home) instead.
+    if not getattr(request.user, "active_company_id", None):
+        if request.user.is_superuser:
+            return redirect("web:platform_home")
+        messages.info(request, "Your account isn't linked to a company yet.")
+        return redirect("web:profile")
+
     projects = list(Project.objects.all().select_related("quotation"))
     attention = []
     for p in projects:
@@ -1471,11 +1479,17 @@ def profile(request):
         messages.success(request, "Profile updated.")
         return redirect("web:profile")
 
-    membership = Membership.objects.filter(
-        company=user.active_company, user=user).select_related("role").first()
+    # Platform superusers (and anyone not yet linked to a company) still get
+    # their own profile — just without the tenant-scoped membership/work, which
+    # would otherwise raise without an active company.
+    membership = None
+    work = []
+    if getattr(user, "active_company_id", None):
+        membership = Membership.objects.filter(
+            company=user.active_company, user=user).select_related("role").first()
+        work = member_work(user, user.active_company)
     return render(request, "web/profile.html", {
-        "person": user, "membership": membership,
-        "work": member_work(user, user.active_company),
+        "person": user, "membership": membership, "work": work,
     })
 
 

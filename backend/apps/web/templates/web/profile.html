@@ -21,7 +21,7 @@
           <div>
             <div style="font-weight:800;font-size:20px;letter-spacing:-.01em;">
               {{ person.get_full_name|default:person.email }}</div>
-            <div class="muted">{{ membership.job_title|default:membership.role.name|default:"Team member" }}</div>
+            <div class="muted">{% if membership %}{{ membership.job_title|default:membership.role.name|default:"Team member" }}{% elif person.is_superuser %}Platform administrator{% else %}Team member{% endif %}</div>
           </div>
         </div>
         <button type="button" class="btn ghost" id="profile-edit-btn">✎ Edit profile</button>
@@ -100,6 +100,7 @@
   <div>
     <h2 style="margin-top:0;">Where you stand</h2>
     <div class="card">
+      {% if membership %}
       <table class="kv">
         <tr><td class="muted">Company</td><td>{{ person.active_company.name }}</td></tr>
         <tr><td class="muted">Role</td><td>{{ membership.role.name|default:"—" }}</td></tr>
@@ -110,6 +111,17 @@
       <p class="muted" style="margin:12px 0 0;font-size:12.5px;">
         Your role is set by an administrator — it decides what you can see and do.
       </p>
+      {% else %}
+      <table class="kv">
+        <tr><td class="muted">Access</td><td>{% if person.is_superuser %}Platform administrator{% else %}No company linked{% endif %}</td></tr>
+        <tr><td class="muted">Email</td><td>{{ person.email }}</td></tr>
+      </table>
+      <p class="muted" style="margin:12px 0 0;font-size:12.5px;">
+        {% if person.is_superuser %}You manage the whole platform from the
+        <a href="{% url 'web:platform_home' %}">Console</a>.{% else %}
+        Your account isn't linked to a company yet.{% endif %}
+      </p>
+      {% endif %}
     </div>
 
     {% if work.current %}
