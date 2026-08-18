@@ -115,7 +115,9 @@ def nav_flags(request):
         except Exception:
             unread = 0
 
+    from django.conf import settings as _s
     return {"perms_money": can, "perms_procurement": can_proc,
             "has_logo": has_logo_file(),
             "logo_static": logo_static_name(), "nav_section": section,
-            "unread_notifications": unread}
+            "unread_notifications": unread,
+            "ga4_id": getattr(_s, "GA4_MEASUREMENT_ID", "")}

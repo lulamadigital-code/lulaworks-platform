@@ -955,6 +955,77 @@ def platform_analytics(request):
 
 
 @login_required
+def platform_analytics_live(request):
+    """Real-time JSON — activity in the last 5 minutes (polled by the dashboard)."""
+    from django.http import JsonResponse
+
+    if not request.user.platform_level:
+        return JsonResponse({}, status=403)
+    from apps.analytics.models import AnalyticsEvent
+    since = timezone.now() - timedelta(minutes=5)
+    recent = AnalyticsEvent.objects.filter(created_at__gte=since)
+    top_ev = (recent.exclude(event_name="").values("event_name")
+              .annotate(n=Count("id")).order_by("-n").first())
+    top_pg = (recent.exclude(path="").values("path")
+              .annotate(n=Count("id")).order_by("-n").first())
+    return JsonResponse({
+        "online": recent.exclude(session_id="").values("session_id").distinct().count()
+                  + recent.exclude(anonymous_id="").filter(session_id="").values("anonymous_id").distinct().count(),
+        "users": recent.filter(user__isnull=False).values("user").distinct().count(),
+        "companies": recent.filter(company__isnull=False).values("company").distinct().count(),
+        "events_5m": recent.count(),
+        "per_min": round(recent.count() / 5, 1),
+        "top_event": top_ev["event_name"] if top_ev else "—",
+        "top_page": top_pg["path"] if top_pg else "—",
+    })
+
+
+@login_required
+def platform_analytics_export(request, kind):
+    """CSV export of an analytics view (events | health | adoption)."""
+    import csv
+
+    from django.http import HttpResponse
+
+    if not request.user.platform_level:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+
+    now = timezone.now()
+    resp = HttpResponse(content_type="text/csv")
+    resp["Content-Disposition"] = f'attachment; filename="lulaworks-{kind}-{now:%Y%m%d}.csv"'
+    w = csv.writer(resp)
+
+    if kind == "events":
+        from apps.analytics.models import AnalyticsEvent
+        w.writerow(["When", "Event", "Module", "Feature", "Company", "User", "Source", "Device"])
+        for e in (AnalyticsEvent.objects.select_related("user", "company")
+                  .order_by("-created_at")[:5000]):
+            w.writerow([e.created_at.strftime("%Y-%m-%d %H:%M:%S"), e.event_name, e.module,
+                        e.feature, getattr(e.company, "name", ""), getattr(e.user, "email", ""),
+                        e.source, e.device])
+    elif kind == "health":
+        from apps.analytics import reports
+        w.writerow(["Company", "Status", "Users", "Quotes", "Jobs", "Events 30d",
+                    "Days since active", "Score"])
+        for r in reports.company_health(limit=1000):
+            w.writerow([r["company"].name, r["status"], r["users"], r["quotes"], r["jobs"],
+                        r["events_30d"], r["days_since"] if r["days_since"] is not None else "",
+                        r["score"]])
+    elif kind == "adoption":
+        from apps.analytics import reports
+        a = reports.feature_adoption()
+        w.writerow(["Module", "Companies using", "Adoption %",
+                    f"(of {a['active_companies']} active)"])
+        for r in a["rows"]:
+            w.writerow([r["module"], r["companies"], r["pct"], ""])
+    else:
+        messages.error(request, "Unknown export.")
+        return redirect("web:platform_analytics")
+    return resp
+
+
+@login_required
 def platform_analytics_retention(request):
     if not request.user.platform_level:
         messages.error(request, "The platform console is for platform administrators only.")

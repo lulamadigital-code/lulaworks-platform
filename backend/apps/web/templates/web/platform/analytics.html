@@ -32,10 +32,27 @@
 <h1>Analytics</h1>
 <p class="sub">Product &amp; website event stream — the LulaWorks command center.</p>
 
-<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;">
-  <a href="{% url 'web:platform_analytics' %}" style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;{% if sub == 'overview' %}background:var(--primary-t);color:var(--primary-d);{% else %}color:var(--muted);{% endif %}">Overview</a>
-  <a href="{% url 'web:platform_analytics_retention' %}" style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;color:var(--muted);">Retention</a>
-  <a href="{% url 'web:platform_analytics_health' %}" style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;color:var(--muted);">Company health</a>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;">
+  <div style="display:flex;gap:4px;flex-wrap:wrap;">
+    <a href="{% url 'web:platform_analytics' %}" style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;{% if sub == 'overview' %}background:var(--primary-t);color:var(--primary-d);{% else %}color:var(--muted);{% endif %}">Overview</a>
+    <a href="{% url 'web:platform_analytics_retention' %}" style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;color:var(--muted);">Retention</a>
+    <a href="{% url 'web:platform_analytics_health' %}" style="padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;color:var(--muted);">Company health</a>
+  </div>
+  <div style="display:flex;gap:6px;">
+    <a class="btn ghost" style="background:#fff;color:var(--primary-d);border:1px solid var(--line);padding:7px 12px;font-size:12.5px;" href="{% url 'web:platform_analytics_export' 'events' %}">⤓ Events CSV</a>
+    <a class="btn ghost" style="background:#fff;color:var(--primary-d);border:1px solid var(--line);padding:7px 12px;font-size:12.5px;" href="{% url 'web:platform_analytics_export' 'adoption' %}">⤓ Adoption CSV</a>
+  </div>
+</div>
+
+{# Real-time: polls the live JSON every 15s. #}
+<div class="card" id="live" style="display:flex;gap:22px;flex-wrap:wrap;align-items:center;border-left:3px solid var(--green);">
+  <span style="display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:13px;color:#0a8f57;">
+    <span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;"></span>LIVE</span>
+  <span><strong id="lv-online">–</strong> <span class="muted" style="font-size:12px;">online</span></span>
+  <span><strong id="lv-users">–</strong> <span class="muted" style="font-size:12px;">signed-in</span></span>
+  <span><strong id="lv-companies">–</strong> <span class="muted" style="font-size:12px;">companies</span></span>
+  <span><strong id="lv-permin">–</strong> <span class="muted" style="font-size:12px;">events/min</span></span>
+  <span class="muted" style="font-size:12px;">top: <strong id="lv-top" style="color:var(--ink);">–</strong></span>
 </div>
 
 <div class="grid">
@@ -115,4 +132,22 @@
   </table>
 </div>
 <p class="muted" style="font-size:12px;margin-top:12px;">Privacy-conscious: events store metadata only — never passwords, tokens, or document/quotation/invoice contents. Company data stays isolated.</p>
+
+<script>
+(function () {
+  function poll() {
+    fetch("{% url 'web:platform_analytics_live' %}", {headers: {"X-Requested-With": "fetch"}})
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) return;
+        function set(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+        set("lv-online", d.online); set("lv-users", d.users);
+        set("lv-companies", d.companies); set("lv-permin", d.per_min);
+        set("lv-top", d.top_event);
+      }).catch(function () {});
+  }
+  poll();
+  setInterval(poll, 15000);
+})();
+</script>
 {% endblock %}

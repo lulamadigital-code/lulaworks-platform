@@ -129,6 +129,10 @@ AUTH_USER_MODEL = "identity.User"
 # Application version — surfaced on error references and platform settings.
 APP_VERSION = config("APP_VERSION", default="1.0.0")
 
+# Google Analytics 4 for the public website. Empty = GA4 off (nothing loads).
+# Consent Mode defaults to denied until the visitor accepts the cookie banner.
+GA4_MEASUREMENT_ID = config("GA4_MEASUREMENT_ID", default="")
+
 # Session-authenticated manager web (server-rendered HTML + HTMX). Separate from
 # the JWT API used by the Flutter field app.
 LOGIN_URL = "web:login"

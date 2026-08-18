@@ -200,6 +200,24 @@
       .mock .body{grid-template-columns:repeat(2,1fr)}
     }
   </style>
+  {% if ga4_id %}
+  {# Google Analytics 4 with Consent Mode v2 — analytics_storage starts DENIED
+     and is only granted once the visitor accepts the cookie banner. #}
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      ad_storage: 'denied', analytics_storage: 'denied',
+      ad_user_data: 'denied', ad_personalization: 'denied'
+    });
+    if (localStorage.getItem('lw_consent') === 'granted') {
+      gtag('consent', 'update', {analytics_storage: 'granted'});
+    }
+    gtag('js', new Date());
+    gtag('config', '{{ ga4_id }}');
+  </script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga4_id }}"></script>
+  {% endif %}
 </head>
 <body>
   <header class="site">
@@ -274,5 +292,45 @@
       </div>
     </div>
   </footer>
+
+  {# Cookie consent banner — controls GA4 Consent Mode + records the choice. #}
+  <div id="lw-consent" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:60;
+       max-width:720px;margin:0 auto;background:#fff;border:1px solid var(--line,#e6e9ef);border-radius:14px;
+       box-shadow:0 12px 40px rgba(41,47,76,.16);padding:16px 18px;font-size:13.5px;color:var(--ink,#292f4c);
+       display:none;gap:12px;align-items:center;flex-wrap:wrap;">
+    <span style="flex:1;min-width:220px;">We use cookies to understand site traffic and improve LulaWorks.
+      See our <a href="/cookies/">cookie policy</a>.</span>
+    <span style="display:flex;gap:8px;">
+      <button id="lw-decline" style="padding:9px 15px;border-radius:9px;border:1px solid var(--line,#e6e9ef);background:#fff;font-weight:700;cursor:pointer;">Decline</button>
+      <button id="lw-accept" style="padding:9px 15px;border-radius:9px;border:0;background:#17a2b8;color:#fff;font-weight:700;cursor:pointer;">Accept</button>
+    </span>
+  </div>
+
+  <script>
+  (function () {
+    // Consent banner
+    var choice = localStorage.getItem("lw_consent");
+    var bar = document.getElementById("lw-consent");
+    if (!choice && bar) { bar.style.display = "flex"; }
+    function decide(v) {
+      localStorage.setItem("lw_consent", v);
+      if (bar) bar.style.display = "none";
+      if (v === "granted" && typeof gtag === "function") {
+        gtag("consent", "update", {analytics_storage: "granted"});
+      }
+    }
+    var a = document.getElementById("lw-accept"), d = document.getElementById("lw-decline");
+    if (a) a.addEventListener("click", function () { decide("granted"); });
+    if (d) d.addEventListener("click", function () { decide("denied"); });
+
+    // First-party website beacon (anonymous) — same collector as the app.
+    try {
+      var body = JSON.stringify({event: "page_view", path: location.pathname});
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon("/e/collect/", new Blob([body], {type: "application/json"}));
+      }
+    } catch (e) {}
+  })();
+  </script>
 </body>
 </html>
