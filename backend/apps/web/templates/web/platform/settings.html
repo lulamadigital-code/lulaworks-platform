@@ -32,6 +32,50 @@
 <h1>Settings</h1>
 <p class="sub">Platform configuration and your LulaWorks team.</p>
 
+{% if can_manage %}
+<div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+  <div>
+    <h2 style="margin-top:6px;">Branding &amp; support</h2>
+    <div class="card">
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="save_branding">
+        <label>Platform name</label>
+        <input type="text" name="platform_name" value="{{ cfg.platform_name }}" placeholder="LulaWorks">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+          <div><label>Support email</label><input type="email" name="support_email" value="{{ cfg.support_email }}" placeholder="support@lulaworks.com"></div>
+          <div><label>Sales email</label><input type="email" name="sales_email" value="{{ cfg.sales_email }}" placeholder="sales@lulaworks.com"></div>
+          <div><label>Billing email</label><input type="email" name="billing_email" value="{{ cfg.billing_email }}" placeholder="billing@lulaworks.com"></div>
+          <div><label>Reply-to</label><input type="email" name="reply_to" value="{{ cfg.reply_to }}" placeholder="no-reply@lulaworks.com"></div>
+          <div><label>Terms URL</label><input type="url" name="terms_url" value="{{ cfg.terms_url }}" placeholder="https://…"></div>
+          <div><label>Privacy URL</label><input type="url" name="privacy_url" value="{{ cfg.privacy_url }}" placeholder="https://…"></div>
+        </div>
+        <div style="margin-top:12px;"><button class="btn" type="submit">Save branding</button></div>
+      </form>
+    </div>
+  </div>
+  <div>
+    <h2 style="margin-top:6px;">New-tenant defaults</h2>
+    <div class="card">
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="save_defaults">
+        <label>Default plan</label>
+        <select name="default_plan">
+          <option value="">— Trial plan (default) —</option>
+          {% for p in plans %}<option value="{{ p.id }}" {% if cfg.default_plan_id == p.id %}selected{% endif %}>{{ p.name }} — R{{ p.price|floatformat:0 }}/mo</option>{% endfor %}
+        </select>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+          <div><label>Trial length (days)</label><input type="number" name="trial_days" min="0" step="1" value="{{ cfg.trial_days }}"></div>
+          <div><label>Starting AI credits</label><input type="number" name="starting_ai_credits" min="0" step="1" value="{{ cfg.starting_ai_credits|floatformat:0 }}"></div>
+        </div>
+        <label class="inline" style="margin-top:12px;font-weight:600;color:var(--ink);">
+          <input type="checkbox" name="auto_welcome" style="width:auto;" {% if cfg.auto_welcome %}checked{% endif %}> Send a welcome email to new owners
+        </label>
+        <div style="margin-top:12px;"><button class="btn" type="submit">Save defaults</button></div>
+        <p class="muted" style="font-size:12px;margin:10px 0 0;">Applied when you create a tenant from the Console. Trial length is governed by the trial plan.</p>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
   <div>
     <h2 style="margin-top:6px;">Platform</h2>

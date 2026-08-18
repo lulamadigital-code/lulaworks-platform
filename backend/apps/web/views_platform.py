@@ -335,6 +335,18 @@ def platform_create_tenant(request):
         try:
             company = Company.objects.create(name=name)
             start_trial(company, actor=request.user)
+            # Apply platform defaults (best-effort — never block onboarding).
+            from apps.administration.models import PlatformSettings
+            cfg = PlatformSettings.load()
+            try:
+                if cfg.default_plan:
+                    from apps.billing import services as billing
+                    billing.change_plan(company, cfg.default_plan.code, actor=request.user)
+                if cfg.starting_ai_credits and cfg.starting_ai_credits > 0:
+                    from apps.ai_platform.gateway import topup_credits
+                    topup_credits(company, cfg.starting_ai_credits, source="platform_default")
+            except Exception:                                  # noqa: BLE001
+                pass
             first, _, last = full.partition(" ")
             owner_role = Role.objects.filter(company=None, name="Company Owner").first()
             identity.invite_member(company, request.user, email=email, role=owner_role,
@@ -439,20 +451,33 @@ def platform_settings(request):
 
     from django.conf import settings as dj
 
+    from apps.administration.models import PlatformSettings
     from apps.core.context import system_scope
     from apps.identity import services as identity
     from apps.identity.models import User
 
     is_owner = _is_owner(request.user)
+    can_manage = _can_manage(request.user)
 
     if request.method == "POST":
-        if not is_owner:
+        action = request.POST.get("action")
+        team_actions = {"invite_staff", "set_role", "revoke"}
+        config_actions = {"save_branding", "save_defaults"}
+        if action in team_actions and not is_owner:
             messages.error(request, "Only a Platform Owner can manage the team.")
             return redirect("web:platform_settings")
-        action = request.POST.get("action")
+        if action in config_actions and not can_manage:
+            messages.error(request, "Your access level is read-only.")
+            return redirect("web:platform_settings")
         try:
             with system_scope():
-                if action == "invite_staff":
+                if action == "save_branding":
+                    _save_platform_branding(request)
+                    messages.success(request, "Branding & support details saved.")
+                elif action == "save_defaults":
+                    _save_platform_defaults(request)
+                    messages.success(request, "New-tenant defaults saved.")
+                elif action == "invite_staff":
                     identity.invite_platform_staff(
                         request.user,
                         email=request.POST.get("email", ""),
@@ -476,11 +501,13 @@ def platform_settings(request):
                         messages.error(request, "You can't revoke your own access.")
                 else:
                     messages.error(request, "Unknown action.")
-        except identity.PlatformStaffError as exc:
+        except (identity.PlatformStaffError, ValueError) as exc:
             messages.error(request, str(exc))
         except Exception as exc:                               # noqa: BLE001
             messages.error(request, f"Could not complete that: {exc}")
         return redirect("web:platform_settings")
+
+    cfg = PlatformSettings.load()
 
     # ── Relevant platform info (read-only) ──────────────────────────────────
     def _mask(v):
@@ -499,10 +526,12 @@ def platform_settings(request):
     ]
 
     with system_scope():
+        from apps.billing.models import Plan
         team = list(User.objects.filter(Q(platform_role__in=["owner", "admin", "support"])
                                         | Q(is_superuser=True)).order_by("email"))
         counts = {"companies": _safe_count("identity", "Company"),
                   "users": User.objects.count()}
+        plans = list(Plan.objects.filter(is_active=True).order_by("tier", "price"))
 
     role_labels = dict(User.PlatformRole.choices)
     team_rows = [{
@@ -516,8 +545,71 @@ def platform_settings(request):
 
     return render(request, "web/platform/settings.html", {
         "active": "settings", "info": info, "team": team_rows,
-        "roles": User.PlatformRole.choices, "is_owner": is_owner, "counts": counts,
+        "roles": User.PlatformRole.choices, "is_owner": is_owner,
+        "can_manage": can_manage, "counts": counts, "cfg": cfg, "plans": plans,
     })
+
+
+def _save_platform_branding(request):
+    """Validate and persist branding & support details from the Settings form."""
+    from django.core.exceptions import ValidationError
+    from django.core.validators import EmailValidator, URLValidator
+
+    from apps.administration.models import PlatformSettings
+
+    ev, uv = EmailValidator(), URLValidator()
+
+    def _email(name, label):
+        v = (request.POST.get(name) or "").strip()
+        if v:
+            try:
+                ev(v)
+            except ValidationError:
+                raise ValueError(f"{label} is not a valid email address.")
+        return v
+
+    def _url(name, label):
+        v = (request.POST.get(name) or "").strip()
+        if v:
+            try:
+                uv(v)
+            except ValidationError:
+                raise ValueError(f"{label} is not a valid URL (include https://).")
+        return v
+
+    s = PlatformSettings.load()
+    s.platform_name = (request.POST.get("platform_name") or "").strip() or "LulaWorks"
+    s.support_email = _email("support_email", "Support email")
+    s.sales_email = _email("sales_email", "Sales email")
+    s.billing_email = _email("billing_email", "Billing email")
+    s.reply_to = _email("reply_to", "Reply-to")
+    s.terms_url = _url("terms_url", "Terms URL")
+    s.privacy_url = _url("privacy_url", "Privacy URL")
+    s.updated_by = request.user
+    s.save()
+
+
+def _save_platform_defaults(request):
+    """Validate and persist the defaults new tenants inherit."""
+    from decimal import Decimal, InvalidOperation
+
+    from apps.administration.models import PlatformSettings
+    from apps.billing.models import Plan
+
+    s = PlatformSettings.load()
+    plan_id = (request.POST.get("default_plan") or "").strip()
+    s.default_plan = Plan.objects.filter(pk=plan_id).first() if plan_id else None
+    try:
+        s.trial_days = max(0, int(request.POST.get("trial_days") or 0))
+    except (TypeError, ValueError):
+        raise ValueError("Trial length must be a whole number of days.")
+    try:
+        s.starting_ai_credits = max(Decimal("0"), Decimal(request.POST.get("starting_ai_credits") or "0"))
+    except (InvalidOperation, ValueError):
+        raise ValueError("Starting AI credits must be a number.")
+    s.auto_welcome = request.POST.get("auto_welcome") == "on"
+    s.updated_by = request.user
+    s.save()
 
 
 def _safe_count(app_label, model_name):

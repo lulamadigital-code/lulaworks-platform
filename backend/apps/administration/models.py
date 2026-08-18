@@ -190,3 +190,42 @@ class NotificationPreference(PlatformBaseModel):
 
     def __str__(self):
         return f"Prefs: {self.user}"
+
+
+class PlatformSettings(models.Model):
+    """Singleton — platform-wide owner configuration the SaaS operator edits from
+    the Console Settings page: branding, support addresses, and the defaults new
+    tenants inherit. Always one row (pk=1); read/write via ``load()``."""
+
+    # ── Branding & support ──────────────────────────────────────────────────
+    platform_name = models.CharField(max_length=120, default="LulaWorks")
+    support_email = models.EmailField(blank=True)
+    sales_email = models.EmailField(blank=True)
+    billing_email = models.EmailField(blank=True)
+    reply_to = models.EmailField(blank=True)
+    terms_url = models.URLField(blank=True)
+    privacy_url = models.URLField(blank=True)
+
+    # ── New-tenant defaults ─────────────────────────────────────────────────
+    default_plan = models.ForeignKey(
+        "billing.Plan", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    trial_days = models.PositiveSmallIntegerField(default=30)
+    starting_ai_credits = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    auto_welcome = models.BooleanField(default=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="+")
+
+    class Meta:
+        verbose_name = "Platform settings"
+        verbose_name_plural = "Platform settings"
+
+    def __str__(self):
+        return self.platform_name
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
