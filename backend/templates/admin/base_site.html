@@ -1,11 +1,13 @@
 {% extends "admin/base.html" %}
+{% load static %}
 
 {% block title %}{{ title }} · LulaWorks Admin{% endblock %}
 
 {% block branding %}
 <div id="site-name">
   <a href="{% url 'admin:index' %}">
-    <span class="lw-logo">◆</span> LulaWorks <span class="lw-sub">Platform Admin</span>
+    <img src="{% static 'web/logo.png' %}" alt="LulaWorks" class="lw-logo-img">
+    <span class="lw-sub">Platform Admin</span>
   </a>
 </div>
 {% endblock %}
@@ -49,9 +51,9 @@ a:link,a:visited{color:var(--link-fg);}
 #header{background:linear-gradient(90deg,#0e7c8c 0%,#17a2b8 100%)!important;
   color:#fff;box-shadow:0 2px 14px rgba(41,47,76,.14);padding:16px 40px;}
 #branding #site-name{margin:0;font-weight:800;letter-spacing:-.02em;font-size:20px;}
-#branding #site-name a{color:#fff;display:inline-flex;align-items:baseline;gap:9px;}
-.lw-logo{font-size:20px;}
-.lw-sub{font-size:12.5px;font-weight:600;opacity:.85;}
+#branding #site-name a{color:#fff;display:inline-flex;align-items:center;gap:11px;}
+.lw-logo-img{height:28px;width:auto;background:#fff;border-radius:8px;padding:5px 9px;display:block;}
+.lw-sub{font-size:12.5px;font-weight:700;opacity:.9;letter-spacing:.06em;text-transform:uppercase;}
 #user-tools{font-size:12.5px;font-weight:600;}
 #user-tools a{border-bottom-color:rgba(255,255,255,.5);}
 
@@ -114,6 +116,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--primary)!important;
 
 /* ── Messages ───────────────────────────────────────────────────────── */
 ul.messagelist li{border-radius:10px;font-weight:600;box-shadow:0 2px 8px rgba(41,47,76,.06);}
+
+/* ── Left nav sidebar (changelist/form pages) → match the app sidebar ── */
+#nav-sidebar{background:#fff!important;border-right:1px solid var(--border-color);}
+#nav-sidebar .module{background:#fff;border:0;border-radius:0;box-shadow:none;margin:0;}
+#nav-sidebar .module caption,#nav-sidebar .module th[scope="row"]{padding:6px 12px;}
+#nav-sidebar .module caption a.section{font-size:10.5px!important;font-weight:800!important;
+  letter-spacing:.09em;text-transform:uppercase;color:#9aa0b0!important;}
+#nav-sidebar a{color:var(--body-quiet-color);font-weight:600;border-radius:9px;padding:8px 12px;display:block;}
+#nav-sidebar a:hover{background:#f2f3f8;color:var(--body-loud-color);text-decoration:none;}
+#nav-sidebar tr.selected a,#nav-sidebar .current-model>th a,#nav-sidebar tr.current-model a{
+  background:var(--selected-bg);color:var(--secondary)!important;font-weight:700;}
+#nav-sidebar .module tr:last-child th,#nav-sidebar .module tr:last-child td{border-bottom:0;}
+#toggle-nav-sidebar{background:#fff;border-right:1px solid var(--border-color);color:var(--body-quiet-color);}
+#toggle-nav-sidebar:hover{background:#f2f3f8;color:var(--secondary);}
+#nav-filter{border-radius:9px;border:1px solid var(--border-color)!important;margin:8px 12px;width:auto;}
 
 /* ── Login ──────────────────────────────────────────────────────────── */
 body.login{background:radial-gradient(1200px 500px at 50% -10%,#e6f6f9,#f6f7fb)!important;}
