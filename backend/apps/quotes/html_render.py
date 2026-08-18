@@ -95,6 +95,11 @@ def build_context(document, doc_type: str) -> dict:
     ref = getattr(document, "number", "") or getattr(quote, "number", "")
     po = getattr(document, "purchase_order", None)
 
+    # The unit-price column heading follows the quotation's JOB TYPE ("Rate" for
+    # service/time work, "Unit price" for goods); an invoice always reads "Rate".
+    job_key = quote.quotation_type.key if getattr(quote, "quotation_type_id", None) else None
+    price_lbl = "Rate" if doc_type == "invoice" else caps.price_label(job_key)
+
     return {
         "doc_type": doc_type,
         "company": {
@@ -129,6 +134,7 @@ def build_context(document, doc_type: str) -> dict:
             "scope_of_work": _scope_text(quote),
         },
         "items": items,
+        "price_label": price_lbl,
         "financial": financial,
         "banking": header["bank"],
         "terms": document_terms(company, kind=doc_type),
@@ -183,6 +189,7 @@ def sample_context(company, doc_type: str) -> dict:
         "job": {"title": "Sample scope", "site": "Sample Site",
                 "scope_of_work": "Sample scope of work — this is a preview with placeholder data."},
         "items": items,
+        "price_label": "Rate" if doc_type == "invoice" else "Unit price",
         "financial": financial,
         "banking": header["bank"],
         "terms": "This is sample terms text shown only in the template preview.",
@@ -266,6 +273,15 @@ def design_to_html(design: dict, context: dict) -> str:
     visible = caps.filter_sections(doc_type, requested)
     css = _base_css(accent, secondary, font, st)
 
+    # A running footer repeated on EVERY page: company + document reference on the
+    # left, "Page N of M" on the right — so a multi-page document stays identified
+    # and numbered. Values are baked in as escaped CSS strings.
+    ident = f"{context['company']['name']} · {context['document']['reference']}"
+    css += (f"@page {{ @bottom-left {{ content: '{_css_string(ident)}';"
+            " font-size: 8pt; color: #8a8a8a; }"
+            " @bottom-right { content: 'Page ' counter(page) ' of ' counter(pages);"
+            " font-size: 8pt; color: #8a8a8a; } }")
+
     # The 'sidebar' header wraps the WHOLE page in two columns: the identity lives
     # in a coloured left rail, everything else in the main column.
     if header_style == "sidebar":
@@ -284,6 +300,13 @@ def design_to_html(design: dict, context: dict) -> str:
             f"<style>{css}</style></head><body>"
             f"<div class='doc hs-{escape(header_style)}'>{body}</div>"
             f"</body></html>")
+
+
+def _css_string(text: str) -> str:
+    """Escape a value for use inside a CSS `content: '...'` string — so a company
+    name with an apostrophe or backslash can't break out of the rule."""
+    return (str(text).replace("\\", "\\\\").replace("'", "\\'")
+            .replace("\n", " ").replace("\r", " "))
 
 
 def _shade(hexcolor: str) -> str:
@@ -361,9 +384,15 @@ def _base_css(accent, secondary, font, st) -> str:
     }.get(tis, "")
 
     return f"""
-    @page {{ size: A4; margin: 14mm 12mm; }}
+    @page {{ size: A4; margin: 16mm 12mm 18mm; }}
     * {{ box-sizing: border-box; }}
     body {{ font-family: {font}, Arial, sans-serif; color:#111; font-size:12px; margin:0; }}
+    /* Multi-page: repeat the item-table header on each page and never split a row
+       or orphan the totals from the table. */
+    table.items thead {{ display: table-header-group; }}
+    table.items tbody tr {{ page-break-inside: avoid; }}
+    .totals, .boxes {{ page-break-inside: avoid; }}
+    .section-title {{ page-break-after: avoid; }}
     h1.title {{ color:{accent}; font-size:22px; margin:14px 0 4px; }}
     .muted {{ color:#555; }}
     {lh}
@@ -480,6 +509,8 @@ def _s_items(ctx, st):
         num_cols = {"ordered", "delivered", "outstanding"}
     else:
         labels = dict(TEMPLATE_ITEM_COLUMNS)
+        # The unit-price heading follows the job type ("Rate" vs "Unit price").
+        labels["unit_price"] = ctx.get("price_label") or labels["unit_price"]
         active = [c for c in st["cols"] if c in TEMPLATE_ITEM_COLUMN_KEYS]
         if not active:
             active = ["item_no", "description", "qty", "unit"]
@@ -493,7 +524,9 @@ def _s_items(ctx, st):
         body.append(f"<tr>{tds}</tr>")
     if not body:
         body.append(f"<tr><td colspan='{len(active)}' class='muted'>No line items.</td></tr>")
-    return f"<table class='items'><tr>{head}</tr>{''.join(body)}</table>"
+    # <thead> is repeated on every page by WeasyPrint; rows avoid mid-split.
+    return (f"<table class='items'><thead><tr>{head}</tr></thead>"
+            f"<tbody>{''.join(body)}</tbody></table>")
 
 
 def _s_totals(ctx, st):

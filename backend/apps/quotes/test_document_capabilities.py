@@ -91,6 +91,43 @@ class RenderedContentTests(TestCase):
                     self.assertNotIn(bad, dn, f"{name} delivery leaked price {bad!r}")
 
 
+class JobTypeColumnTests(SimpleTestCase):
+    def test_price_label_follows_job_type(self):
+        self.assertEqual(caps.price_label("labour_hire"), "Rate")
+        self.assertEqual(caps.price_label("plant_hire"), "Rate")
+        self.assertEqual(caps.price_label("supply"), "Unit price")
+        self.assertEqual(caps.price_label(None), "Unit price")
+
+
+class MultiPageTests(TestCase):
+    """A long quotation spans pages, repeats the item-table header, and numbers
+    every page."""
+
+    def test_long_quotation_paginates_with_repeated_header(self):
+        import io
+
+        import pdfplumber
+
+        from .html_render import render_html_pdf
+        from .models import FAMILY_BY_KEY, QuotationType, Quotation
+
+        c = make_company("MP")
+        with tenant_scope(c.id):
+            qt = QuotationType.objects.create(company=c, key="labour_hire", label="Labour Hire")
+            q = Quotation.objects.create(company=c, number="QT-MP", client_name="Big Co",
+                                         site="S", quotation_type=qt)
+            for i in range(1, 46):
+                q.lines.create(company=c, position=i, description=f"Shift {i}",
+                               qty=1, unit="shift", unit_cost=1500)
+            pdf = render_html_pdf(q, "quotation", dt.clean_design(FAMILY_BY_KEY["horizon"][3]))
+        with pdfplumber.open(io.BytesIO(pdf)) as doc:
+            pages = [p.extract_text() or "" for p in doc.pages]
+        self.assertGreater(len(pages), 1)                       # spilled to page 2
+        self.assertIn("Rate", pages[0])                         # job-type column label
+        self.assertIn("Description", pages[1])                  # header repeated
+        self.assertIn("Page 1 of", "\n".join(pages))            # page numbering
+
+
 class ReportLabSignoffTests(SimpleTestCase):
     """The shared ReportLab sign-off column omits the counter-sign line for a tax
     invoice (no acknowledgement) but keeps it for quotation/delivery."""

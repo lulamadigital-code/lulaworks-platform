@@ -481,9 +481,11 @@ def quotation_pdf_bytes(quote) -> bytes:
     meta.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP")]))
     story += [meta, Spacer(1, 6 * mm)]
 
-    # ── Item table ───────────────────────────────────────────────────────────
+    # ── Item table — the price column reads "Rate" or "Unit Price" by job type ──
+    from . import document_capabilities as caps
     cell = small.clone("cell")
-    rows = [["Item No", "Description of job", "Quantity", "Unit", "Unit Price", "Amount"]]
+    plabel = caps.price_label(quote.quotation_type.key if quote.quotation_type_id else None)
+    rows = [["Item No", "Description of job", "Quantity", "Unit", plabel, "Amount"]]
     for ln in quote.lines.all():
         # The price the customer actually pays — cost + markup when no explicit
         # price was set — so the Unit Price column and the Amount agree.

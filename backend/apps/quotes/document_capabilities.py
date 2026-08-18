@@ -78,6 +78,23 @@ _FORBIDDEN_TEXT = {
 }
 
 
+#: Job types whose quotation price column reads "Rate" (time / service based)
+#: rather than "Unit price" (goods). A Labour-Hire or Plant-Hire quote quotes a
+#: rate; a Supply quote quotes a unit price. Keeps the item table honest to the
+#: kind of work without inventing empty columns.
+_RATE_JOB_TYPES = {
+    "labour_hire", "plant_hire", "mechanical_repair", "electrical_repair",
+    "maintenance", "project_management", "inspection", "emergency",
+    "preventative", "transport",
+}
+
+
+def price_label(job_type_key) -> str:
+    """The column heading for the unit-price column, chosen by the quotation's job
+    type: "Rate" for service/time work, "Unit price" for goods."""
+    return "Rate" if (job_type_key or "") in _RATE_JOB_TYPES else "Unit price"
+
+
 class DocumentValidationError(Exception):
     """A document cannot be rendered because it would be semantically wrong or is
     missing required information. The message is safe to show the user."""
