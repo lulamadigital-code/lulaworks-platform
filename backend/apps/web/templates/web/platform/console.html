@@ -1,277 +1,225 @@
-<!doctype html>
+{% extends "web/base.html" %}
 {% load static %}
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Platform Console · LulaWorks</title>
+{% block title %}Platform Console{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+
+{# Platform superusers have no tenant context, so the LulaAI/inbox FABs don't apply. #}
+{% block floating %}{% endblock %}
+
+{% block sidebar_nav %}
+<nav class="nav">
+  <a class="active" href="{% url 'web:platform_home' %}"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
+  <span class="nav-group">Manage</span>
+  <a href="/admin/identity/company/"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 21V10h2a2 2 0 0 1 2 2v9"/></svg>Companies</a>
+  <a href="/admin/identity/user/"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M17 5.5a3 3 0 0 1 0 5.6M19 20a5 5 0 0 0-3-4.6"/></svg>Users</a>
+  <a href="/admin/billing/plan/"><svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>Plans</a>
+  <a href="/admin/billing/subscription/"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg>Subscriptions</a>
+  <a href="/admin/notifications/emaillog/"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>Email logs</a>
+  <a href="/admin/administration/auditlog/"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3zM9.5 12l1.8 1.8L15 10"/></svg>Audit logs</a>
+  <span class="nav-gap"></span>
+  <a href="/admin/identity/company/"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L16 3H8l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 3 12a7 7 0 0 0 .1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L8 21h8l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6A7 7 0 0 0 19 12z"/></svg>Django admin</a>
+  <a href="{% url 'web:dashboard' %}"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Back to app</a>
+</nav>
+{% endblock %}
+
+{% block extra_head %}
 <style>
-  :root{
-    --bg:#f6f7fb; --surface:#fff; --ink:#292f4c; --muted:#676879; --line:#e6e9ef;
-    --primary:#17a2b8; --primary-d:#0e7c8c; --primary-t:#e6f6f9;
-    --green:#00c875; --green-t:#e2f9ee; --orange:#fdab3d; --orange-t:#fff3e2;
-    --red:#e2445c; --red-t:#fde8eb; --blue:#579bfc; --blue-t:#e9f1ff;
-    --purple:#a25ddc; --purple-t:#f3ebfb; --r:14px;
-    --shadow:0 4px 16px rgba(41,47,76,.06); --shadow-lg:0 8px 30px rgba(41,47,76,.10);
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font:14.5px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
-       color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;display:flex;min-height:100vh}
-  a{color:var(--primary-d);text-decoration:none} a:hover{text-decoration:underline}
-  h1{font-size:24px;margin:0 0 4px;letter-spacing:-.02em} h2{font-size:16px;margin:26px 0 12px}
+  /* Platform nav icons pick up the shell's colours. */
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 4px;letter-spacing:-.02em}
   .sub{color:var(--muted);margin:0 0 22px}
-
-  .sidebar{width:236px;background:var(--surface);border-right:1px solid var(--line);
-           position:sticky;top:0;height:100vh;display:flex;flex-direction:column;flex:0 0 236px}
-  .sidebar .logo{padding:20px 20px 14px}
-  .sidebar .logo img{height:34px;width:auto;display:block}
-  .sidebar .logo .tag{margin:9px 2px 0;font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#9aa0b0}
-  .nav{padding:6px 12px;display:flex;flex-direction:column;gap:2px}
-  .nav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;color:var(--muted);font-weight:600;font-size:14px;position:relative}
-  .nav a:hover{background:#f2f3f8;color:var(--ink);text-decoration:none}
-  .nav a.active{background:var(--primary-t);color:var(--primary-d)}
-  .nav a.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--primary)}
-  .nav a svg{width:18px;height:18px;flex:0 0 18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-  .tile .ic svg,.seccard .t svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .seccard .t{display:flex;align-items:center;gap:9px}
-  .nav .grp{padding:16px 12px 5px;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#9aa0b0}
-  .side-foot{margin-top:auto;padding:14px 16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
-  .side-foot a{color:var(--primary-d)}
-  .main{flex:1;min-width:0} .content{max-width:1160px;margin:0 auto;padding:30px 34px 70px}
-
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:18px}
-  .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);position:relative}
+  .muted{color:var(--muted)} .right{text-align:right}
+  /* KPI tile icon badge */
+  .tile .ic{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .tile .ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .tile .n{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
   .tile .l{color:var(--muted);font-size:13px;margin-top:3px;font-weight:600}
   .tile .s{color:var(--muted);font-size:12px;margin-top:6px}
-  .tile .ic{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
-
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:18px;box-shadow:var(--shadow)}
   .two{display:grid;grid-template-columns:1.4fr 1fr;gap:18px} @media(max-width:900px){.two{grid-template-columns:1fr}}
   table{width:100%;border-collapse:collapse} th,td{text-align:left;padding:11px 6px;border-bottom:1px solid var(--line)}
   th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
   tr:last-child td{border-bottom:0}
   .barrow{display:flex;align-items:center;gap:12px;margin-bottom:12px}
   .barrow .cap{width:44px;font-size:13px;color:var(--muted)}
+  .barrow .track{flex:1;background:#eef0f5;border-radius:7px;height:22px;overflow:hidden}
+  .barrow .fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#0e7c8c,#17a2b8);display:flex;align-items:center;padding-left:9px;color:#fff;font-size:12px;font-weight:700;min-width:26px}
   .charts{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
   @media(max-width:820px){.charts{grid-template-columns:1fr}}
   .legend{display:flex;flex-direction:column;gap:9px;min-width:180px}
   .legend .li{display:flex;align-items:center;gap:9px;font-size:13.5px}
   .legend .dot{width:11px;height:11px;border-radius:4px;flex:0 0 11px}
-  .barrow .track{flex:1;background:#eef0f5;border-radius:7px;height:22px;overflow:hidden}
-  .barrow .fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#0e7c8c,#17a2b8);display:flex;align-items:center;padding-left:9px;color:#fff;font-size:12px;font-weight:700;min-width:26px}
   .chip{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;background:#eef0f5;color:var(--muted)}
   .chip.ok{background:var(--green-t);color:#0a8f57}
   .seccards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
   .seccard{display:block;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow);color:var(--ink)}
   .seccard:hover{text-decoration:none;box-shadow:var(--shadow-lg);border-color:var(--primary)}
-  .seccard .t{font-weight:700} .seccard .d{color:var(--muted);font-size:12.5px;margin-top:3px}
-  .msg{border-radius:10px;padding:12px 14px;margin-bottom:14px;font-weight:600;font-size:13.5px;
-       background:var(--surface);border-left:4px solid var(--grey,#c4c7d0);box-shadow:var(--shadow)}
-  .msg.success{background:var(--green-t);color:#0a8f57;border-left-color:var(--green)}
-  .msg.error{background:var(--red-t);color:#c22a41;border-left-color:var(--red)}
+  .seccard .t{font-weight:700;display:flex;align-items:center;gap:9px} .seccard .d{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .seccard .t svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 5px;font-weight:600}
   input,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff;color:var(--ink)}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--primary);color:#fff;
-       padding:10px 17px;border:0;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer}
-  .btn:hover{background:var(--primary-d);color:#fff;text-decoration:none}
-  @media(max-width:820px){body{display:block}.sidebar{width:auto;height:auto;flex-direction:row;overflow-x:auto;position:sticky}.nav{flex-direction:row}.nav .grp,.side-foot{display:none}}
 </style>
-</head>
-<body>
-  <aside class="sidebar">
-    <div class="logo">
-      <img src="{% static 'web/logo.png' %}" alt="LulaWorks">
-      <div class="tag">Platform Console</div>
-    </div>
-    <nav class="nav">
-      <a class="active" href="{% url 'web:platform_home' %}"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
-      <span class="grp">Manage</span>
-      <a href="/admin/identity/company/"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 21V10h2a2 2 0 0 1 2 2v9"/></svg>Companies</a>
-      <a href="/admin/identity/user/"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M17 5.5a3 3 0 0 1 0 5.6M19 20a5 5 0 0 0-3-4.6"/></svg>Users</a>
-      <a href="/admin/billing/plan/"><svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>Plans</a>
-      <a href="/admin/billing/subscription/"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg>Subscriptions</a>
-      <a href="/admin/notifications/emaillog/"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>Email logs</a>
-      <a href="/admin/administration/auditlog/"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3zM9.5 12l1.8 1.8L15 10"/></svg>Audit logs</a>
-      <span class="grp">Tools</span>
-      <a href="/admin/identity/company/"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L16 3H8l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 3 12a7 7 0 0 0 .1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L8 21h8l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6A7 7 0 0 0 19 12z"/></svg>Django admin</a>
-    </nav>
-    <div class="side-foot">
-      Signed in as<br><strong>{{ request.user.email }}</strong><br><br>
-      <a href="{% url 'web:dashboard' %}">← Back to app</a> · <a href="/logout/">Sign out</a>
-    </div>
-  </aside>
+{% endblock %}
 
-  <main class="main">
-    <div class="content">
-      <h1>Platform Console</h1>
-      <p class="sub">Every tenant, at a glance. The owner view over the whole platform —
-        drill into <a href="/admin/identity/company/">Django admin</a> for raw records.</p>
+{% block content %}
+<h1>Platform Console</h1>
+<p class="sub">Every tenant, at a glance. The owner view over the whole platform —
+  drill into <a href="/admin/identity/company/">Django admin</a> for raw records.</p>
 
-      {% if messages %}
-      {% for m in messages %}
-      <div class="msg {{ m.tags }}">{{ m }}</div>
-      {% endfor %}
-      {% endif %}
+<div class="grid">
+  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 21V10h2a2 2 0 0 1 2 2v9"/></svg></div>
+    <div class="n">{{ companies_total }}</div><div class="l">Companies</div>
+    <div class="s">{{ companies_active }} active</div></div>
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M17 5.5a3 3 0 0 1 0 5.6M19 20a5 5 0 0 0-3-4.6"/></svg></div>
+    <div class="n">{{ users_total }}</div><div class="l">Users</div>
+    <div class="s">{{ users_active }} active</div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
+    <div class="n">{{ subs_active }}</div><div class="l">Active subscriptions</div>
+    <div class="s">{{ subs_trial }} on trial</div></div>
+  <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;"><svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+    <div class="n">R{{ mrr|floatformat:0 }}</div><div class="l">MRR (active plans)</div></div>
+  <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9L18 15z"/></svg></div>
+    <div class="n">{{ ai_calls_30d }}</div><div class="l">AI calls · 30d</div>
+    <div class="s">{{ ai_credits_30d|floatformat:0 }} credits used</div></div>
+  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg></div>
+    <div class="n">{{ emails_30d }}</div><div class="l">Emails sent · 30d</div></div>
+  <div class="tile"><div class="ic" style="background:var(--red-t);color:#c22a41;"><svg viewBox="0 0 24 24"><path d="M3 7l6 6 4-4 8 8M21 17v-5h-5"/></svg></div>
+    <div class="n">{{ subs_cancelled }}</div><div class="l">Cancelled</div>
+    <div class="s">{{ cancels_30d }} this month</div></div>
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>
+    <div class="n">{{ storage_display }}</div><div class="l">Storage used</div></div>
+</div>
 
-      <div class="grid">
-        <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 21V10h2a2 2 0 0 1 2 2v9"/></svg></div>
-          <div class="n">{{ companies_total }}</div><div class="l">Companies</div>
-          <div class="s">{{ companies_active }} active</div></div>
-        <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M17 5.5a3 3 0 0 1 0 5.6M19 20a5 5 0 0 0-3-4.6"/></svg></div>
-          <div class="n">{{ users_total }}</div><div class="l">Users</div>
-          <div class="s">{{ users_active }} active</div></div>
-        <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
-          <div class="n">{{ subs_active }}</div><div class="l">Active subscriptions</div>
-          <div class="s">{{ subs_trial }} on trial</div></div>
-        <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;"><svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-          <div class="n">R{{ mrr|floatformat:0 }}</div><div class="l">MRR (active plans)</div></div>
-        <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9L18 15z"/></svg></div>
-          <div class="n">{{ ai_calls_30d }}</div><div class="l">AI calls · 30d</div>
-          <div class="s">{{ ai_credits_30d|floatformat:0 }} credits used</div></div>
-        <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg></div>
-          <div class="n">{{ emails_30d }}</div><div class="l">Emails sent · 30d</div></div>
-        <div class="tile"><div class="ic" style="background:var(--red-t);color:#c22a41;"><svg viewBox="0 0 24 24"><path d="M3 7l6 6 4-4 8 8M21 17v-5h-5"/></svg></div>
-          <div class="n">{{ subs_cancelled }}</div><div class="l">Cancelled</div>
-          <div class="s">{{ cancels_30d }} this month</div></div>
-        <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>
-          <div class="n">{{ storage_display }}</div><div class="l">Storage used</div></div>
-      </div>
-
-      {# Hero charts — donut + plan mix, like the operations dashboard. #}
-      <div class="charts">
-        <div class="card">
-          <h2 style="margin:0 0 16px;">Subscriptions</h2>
-          {% if donut.segments %}
-          <div style="display:flex;align-items:center;gap:26px;flex-wrap:wrap;">
-            <svg viewBox="0 0 140 140" width="150" height="150" style="flex:0 0 150px;">
-              <circle cx="70" cy="70" r="54" fill="none" stroke="#eef0f5" stroke-width="18"/>
-              {% for s in donut.segments %}
-              <circle cx="70" cy="70" r="54" fill="none" stroke="{{ s.color }}" stroke-width="18"
-                      stroke-dasharray="{{ s.dash }} {{ s.gap }}" transform="rotate({{ s.rotate }} 70 70)"/>
-              {% endfor %}
-              <text x="70" y="66" text-anchor="middle" font-size="26" font-weight="800" fill="#292f4c">{{ donut.total }}</text>
-              <text x="70" y="84" text-anchor="middle" font-size="10" fill="#676879">tenants</text>
-            </svg>
-            <div class="legend">
-              {% for s in donut.segments %}
-              <div class="li"><span class="dot" style="background:{{ s.color }};"></span>
-                {{ s.label }} <strong style="margin-left:auto;">{{ s.count }}</strong>
-                <span class="muted" style="width:38px;text-align:right;">{{ s.pct }}%</span></div>
-              {% endfor %}
-            </div>
-          </div>
-          {% else %}<p class="muted">No subscriptions yet.</p>{% endif %}
-        </div>
-        <div class="card">
-          <h2 style="margin:0 0 16px;">Tenants by plan</h2>
-          {% for p in plan_rows %}
-          <div class="barrow"><span class="cap" style="width:120px;">{{ p.name|truncatechars:16 }}</span>
-            <div class="track"><div class="fill" style="width:{{ p.pct }}%;">{{ p.count }}</div></div></div>
-          {% empty %}<p class="muted" style="margin:0;">No plans in use yet.</p>{% endfor %}
-        </div>
-      </div>
-
-      <div class="two">
-        <div>
-          <h2 style="margin-top:6px;">Revenue <span class="muted" style="font-weight:400;font-size:14px;">· R{{ revenue_total|floatformat:0 }} in 6 months</span></h2>
-          <div class="card">
-            {% for r in revenue %}
-            <div class="barrow">
-              <div class="cap">{{ r.label }}</div>
-              <div class="track"><div class="fill" style="width:{{ r.pct }}%;background:linear-gradient(90deg,#7c3fb8,#a25ddc);">R{{ r.amt|floatformat:0 }}</div></div>
-            </div>
-            {% empty %}<p class="muted" style="margin:0;">No billing yet.</p>{% endfor %}
-          </div>
-        </div>
-        <div>
-          <h2 style="margin-top:6px;">New companies</h2>
-          <div class="card">
-            {% for b in signups %}
-            <div class="barrow">
-              <div class="cap">{{ b.label }}</div>
-              <div class="track"><div class="fill" style="width:{{ b.pct }}%;">{{ b.n }}</div></div>
-            </div>
-            {% empty %}<p class="muted" style="margin:0;color:var(--muted);">No signups yet.</p>{% endfor %}
-          </div>
-        </div>
-      </div>
-
-      <div class="two">
-        <div>
-          <h2 style="margin-top:6px;">AI usage by tenant <span class="muted" style="font-weight:400;font-size:13px;">· 30d</span></h2>
-          <div class="card">
-            {% for r in ai_by_tenant %}
-            <div class="barrow">
-              <div class="cap" style="width:130px;">{{ r.name|truncatechars:16 }}</div>
-              <div class="track"><div class="fill" style="width:{{ r.pct }}%;background:linear-gradient(90deg,#b9711a,#fdab3d);">{{ r.used|floatformat:0 }}</div></div>
-            </div>
-            {% empty %}<p class="muted" style="margin:0;">No AI usage in the last 30 days.</p>{% endfor %}
-          </div>
-        </div>
-        <div>
-          <h2 style="margin-top:6px;">Grant AI credits</h2>
-          <div class="card">
-            <form method="post" action="{% url 'web:platform_home' %}">{% csrf_token %}
-              <input type="hidden" name="action" value="grant_credits">
-              <label>Company</label>
-              <select name="company" required>
-                <option value="">Choose a tenant…</option>
-                {% for t in tenants %}<option value="{{ t.company.id }}">{{ t.company.name }} ({{ t.credits|floatformat:0 }} cr)</option>{% endfor %}
-              </select>
-              <label style="margin-top:10px;">Credits to add</label>
-              <input type="number" name="amount" min="1" step="1" placeholder="e.g. 500" required>
-              <div style="margin-top:12px;"><button class="btn" type="submit" style="width:100%;">Grant credits</button></div>
-              <p class="muted" style="font-size:12px;margin:10px 0 0;">Tops up the tenant's balance immediately so their LulaAI features work.</p>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2 style="margin-top:6px;">Create a tenant</h2>
-        <form method="post" action="{% url 'web:platform_create_tenant' %}">{% csrf_token %}
-          <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:12px;">
-            <div><label>Company name</label><input type="text" name="company_name" required placeholder="ABC Mining Ltd"></div>
-            <div><label>Owner email</label><input type="email" name="owner_email" required placeholder="owner@abcmining.co.za"></div>
-            <div><label>Owner name</label><input type="text" name="owner_name" placeholder="Thabo Nkosi"></div>
-          </div>
-          <button class="btn" type="submit">Create &amp; invite owner</button>
-          <p class="muted" style="font-size:12px;margin:10px 0 0;">Starts a trial and emails the owner a secure activation link — no password is set or emailed.</p>
-        </form>
-      </div>
-
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;">
-        <h2>Tenants</h2>
-        <a class="btn" href="{% url 'web:platform_tenants_csv' %}" style="padding:8px 14px;"><svg viewBox="0 0 24 24" width="15" height="15" style="stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg> Export CSV</a>
-      </div>
-      <div class="card" style="padding:0;overflow-x:auto;">
-        <table>
-          <tr><th>Company</th><th>Plan</th><th class="right">Users</th><th class="right">AI credits</th><th class="right">Used · 30d</th><th></th></tr>
-          {% for t in tenants %}
-          <tr>
-            <td><a href="{% url 'web:platform_tenant' t.company.id %}"><strong>{{ t.company.name }}</strong></a>
-              {% if not t.company.is_active %} <span class="chip">Inactive</span>{% endif %}</td>
-            <td class="muted">{{ t.plan }}{% if t.status == 'trial' %} <span class="chip">trial</span>{% endif %}</td>
-            <td class="right muted">{{ t.users }}</td>
-            <td class="right"><strong>{{ t.credits|floatformat:0 }}</strong></td>
-            <td class="right muted">{{ t.used_30d|floatformat:0 }}</td>
-            <td class="right"><a href="{% url 'web:platform_tenant' t.company.id %}" style="font-size:12px;">manage →</a></td>
-          </tr>
-          {% empty %}<tr><td colspan="6" style="padding:18px;color:var(--muted);">No tenants yet.</td></tr>{% endfor %}
-        </table>
-      </div>
-
-      <h2>Manage</h2>
-      <div class="seccards">
-        <a class="seccard" href="/admin/identity/company/"><div class="t"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 21V10h2a2 2 0 0 1 2 2v9"/></svg>Companies</div><div class="d">Tenants, status, profiles</div></a>
-        <a class="seccard" href="/admin/identity/user/"><div class="t"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M17 5.5a3 3 0 0 1 0 5.6M19 20a5 5 0 0 0-3-4.6"/></svg>Users</div><div class="d">Accounts, staff, superusers</div></a>
-        <a class="seccard" href="/admin/billing/plan/"><div class="t"><svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>Plans</div><div class="d">Pricing &amp; AI credit allowances</div></a>
-        <a class="seccard" href="/admin/billing/subscription/"><div class="t"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg>Subscriptions</div><div class="d">Who's on what, trials</div></a>
-        <a class="seccard" href="/admin/notifications/emaillog/"><div class="t"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>Email logs</div><div class="d">Delivery history &amp; resend</div></a>
-        <a class="seccard" href="/admin/administration/auditlog/"><div class="t"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3zM9.5 12l1.8 1.8L15 10"/></svg>Audit logs</div><div class="d">Security &amp; change trail</div></a>
+{# Hero charts — donut + plan mix, like the operations dashboard. #}
+<div class="charts">
+  <div class="card">
+    <h2 style="margin:0 0 16px;">Subscriptions</h2>
+    {% if donut.segments %}
+    <div style="display:flex;align-items:center;gap:26px;flex-wrap:wrap;">
+      <svg viewBox="0 0 140 140" width="150" height="150" style="flex:0 0 150px;">
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#eef0f5" stroke-width="18"/>
+        {% for s in donut.segments %}
+        <circle cx="70" cy="70" r="54" fill="none" stroke="{{ s.color }}" stroke-width="18"
+                stroke-dasharray="{{ s.dash }} {{ s.gap }}" transform="rotate({{ s.rotate }} 70 70)"/>
+        {% endfor %}
+        <text x="70" y="66" text-anchor="middle" font-size="26" font-weight="800" fill="#292f4c">{{ donut.total }}</text>
+        <text x="70" y="84" text-anchor="middle" font-size="10" fill="#676879">tenants</text>
+      </svg>
+      <div class="legend">
+        {% for s in donut.segments %}
+        <div class="li"><span class="dot" style="background:{{ s.color }};"></span>
+          {{ s.label }} <strong style="margin-left:auto;">{{ s.count }}</strong>
+          <span class="muted" style="width:38px;text-align:right;">{{ s.pct }}%</span></div>
+        {% endfor %}
       </div>
     </div>
-  </main>
-</body>
-</html>
+    {% else %}<p class="muted">No subscriptions yet.</p>{% endif %}
+  </div>
+  <div class="card">
+    <h2 style="margin:0 0 16px;">Tenants by plan</h2>
+    {% for p in plan_rows %}
+    <div class="barrow"><span class="cap" style="width:120px;">{{ p.name|truncatechars:16 }}</span>
+      <div class="track"><div class="fill" style="width:{{ p.pct }}%;">{{ p.count }}</div></div></div>
+    {% empty %}<p class="muted" style="margin:0;">No plans in use yet.</p>{% endfor %}
+  </div>
+</div>
+
+<div class="two">
+  <div>
+    <h2 style="margin-top:6px;">Revenue <span class="muted" style="font-weight:400;font-size:14px;">· R{{ revenue_total|floatformat:0 }} in 6 months</span></h2>
+    <div class="card">
+      {% for r in revenue %}
+      <div class="barrow">
+        <div class="cap">{{ r.label }}</div>
+        <div class="track"><div class="fill" style="width:{{ r.pct }}%;background:linear-gradient(90deg,#7c3fb8,#a25ddc);">R{{ r.amt|floatformat:0 }}</div></div>
+      </div>
+      {% empty %}<p class="muted" style="margin:0;">No billing yet.</p>{% endfor %}
+    </div>
+  </div>
+  <div>
+    <h2 style="margin-top:6px;">New companies</h2>
+    <div class="card">
+      {% for b in signups %}
+      <div class="barrow">
+        <div class="cap">{{ b.label }}</div>
+        <div class="track"><div class="fill" style="width:{{ b.pct }}%;">{{ b.n }}</div></div>
+      </div>
+      {% empty %}<p class="muted" style="margin:0;">No signups yet.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="two">
+  <div>
+    <h2 style="margin-top:6px;">AI usage by tenant <span class="muted" style="font-weight:400;font-size:13px;">· 30d</span></h2>
+    <div class="card">
+      {% for r in ai_by_tenant %}
+      <div class="barrow">
+        <div class="cap" style="width:130px;">{{ r.name|truncatechars:16 }}</div>
+        <div class="track"><div class="fill" style="width:{{ r.pct }}%;background:linear-gradient(90deg,#b9711a,#fdab3d);">{{ r.used|floatformat:0 }}</div></div>
+      </div>
+      {% empty %}<p class="muted" style="margin:0;">No AI usage in the last 30 days.</p>{% endfor %}
+    </div>
+  </div>
+  <div>
+    <h2 style="margin-top:6px;">Grant AI credits</h2>
+    <div class="card">
+      <form method="post" action="{% url 'web:platform_home' %}">{% csrf_token %}
+        <input type="hidden" name="action" value="grant_credits">
+        <label>Company</label>
+        <select name="company" required>
+          <option value="">Choose a tenant…</option>
+          {% for t in tenants %}<option value="{{ t.company.id }}">{{ t.company.name }} ({{ t.credits|floatformat:0 }} cr)</option>{% endfor %}
+        </select>
+        <label style="margin-top:10px;">Credits to add</label>
+        <input type="number" name="amount" min="1" step="1" placeholder="e.g. 500" required>
+        <div style="margin-top:12px;"><button class="btn" type="submit" style="width:100%;">Grant credits</button></div>
+        <p class="muted" style="font-size:12px;margin:10px 0 0;">Tops up the tenant's balance immediately so their LulaAI features work.</p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:6px;">Create a tenant</h2>
+  <form method="post" action="{% url 'web:platform_create_tenant' %}">{% csrf_token %}
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:12px;">
+      <div><label>Company name</label><input type="text" name="company_name" required placeholder="ABC Mining Ltd"></div>
+      <div><label>Owner email</label><input type="email" name="owner_email" required placeholder="owner@abcmining.co.za"></div>
+      <div><label>Owner name</label><input type="text" name="owner_name" placeholder="Thabo Nkosi"></div>
+    </div>
+    <button class="btn" type="submit">Create &amp; invite owner</button>
+    <p class="muted" style="font-size:12px;margin:10px 0 0;">Starts a trial and emails the owner a secure activation link — no password is set or emailed.</p>
+  </form>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;">
+  <h2>Tenants</h2>
+  <a class="btn" href="{% url 'web:platform_tenants_csv' %}" style="padding:8px 14px;"><svg viewBox="0 0 24 24" width="15" height="15" style="stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg> Export CSV</a>
+</div>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Company</th><th>Plan</th><th class="right">Users</th><th class="right">AI credits</th><th class="right">Used · 30d</th><th></th></tr>
+    {% for t in tenants %}
+    <tr>
+      <td><a href="{% url 'web:platform_tenant' t.company.id %}"><strong>{{ t.company.name }}</strong></a>
+        {% if not t.company.is_active %} <span class="chip">Inactive</span>{% endif %}</td>
+      <td class="muted">{{ t.plan }}{% if t.status == 'trial' %} <span class="chip">trial</span>{% endif %}</td>
+      <td class="right muted">{{ t.users }}</td>
+      <td class="right"><strong>{{ t.credits|floatformat:0 }}</strong></td>
+      <td class="right muted">{{ t.used_30d|floatformat:0 }}</td>
+      <td class="right"><a href="{% url 'web:platform_tenant' t.company.id %}" style="font-size:12px;">manage →</a></td>
+    </tr>
+    {% empty %}<tr><td colspan="6" style="padding:18px;color:var(--muted);">No tenants yet.</td></tr>{% endfor %}
+  </table>
+</div>
+
+<h2>Manage</h2>
+<div class="seccards">
+  <a class="seccard" href="/admin/identity/company/"><div class="t"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 21V10h2a2 2 0 0 1 2 2v9"/></svg>Companies</div><div class="d">Tenants, status, profiles</div></a>
+  <a class="seccard" href="/admin/identity/user/"><div class="t"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M17 5.5a3 3 0 0 1 0 5.6M19 20a5 5 0 0 0-3-4.6"/></svg>Users</div><div class="d">Accounts, staff, superusers</div></a>
+  <a class="seccard" href="/admin/billing/plan/"><div class="t"><svg viewBox="0 0 24 24"><path d="M3 8l9-5 9 5-9 5-9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>Plans</div><div class="d">Pricing &amp; AI credit allowances</div></a>
+  <a class="seccard" href="/admin/billing/subscription/"><div class="t"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg>Subscriptions</div><div class="d">Who's on what, trials</div></a>
+  <a class="seccard" href="/admin/notifications/emaillog/"><div class="t"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>Email logs</div><div class="d">Delivery history &amp; resend</div></a>
+  <a class="seccard" href="/admin/administration/auditlog/"><div class="t"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3zM9.5 12l1.8 1.8L15 10"/></svg>Audit logs</div><div class="d">Security &amp; change trail</div></a>
+</div>
+{% endblock %}

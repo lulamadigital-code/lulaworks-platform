@@ -339,11 +339,12 @@
     .login-logo .mark{height:58px;width:auto} .login-logo .brand-img{height:66px;width:auto}
     .login-logo .word{font-size:34px;font-weight:800;letter-spacing:-.03em}
   </style>
+  {% block extra_head %}{% endblock %}
 </head>
 <body class="{% if user.is_authenticated %}shell{% else %}auth{% endif %}">
   {% if user.is_authenticated %}
   <aside class="sidebar">
-    <a class="logo" href="{% url 'web:dashboard' %}">
+    <a class="logo" href="{% block logo_href %}{% url 'web:dashboard' %}{% endblock %}">
       {% if has_logo %}<img src="{% static logo_static %}" class="brand-img" alt="LulaWorks">
       {% else %}{% include "web/_mark.svg" %}<span>lulaworks</span>{% endif %}
     </a>
@@ -354,6 +355,7 @@
     Note: {# #} is single-line only in Django — a multi-line one renders as
     literal text in the sidebar, which is exactly what happened here.
     {% endcomment %}
+    {% block sidebar_nav %}
     <nav class="nav">
       {% include "web/_navlink.html" with url='web:dashboard' key='dashboard' label='Dashboard' icon='grid' %}
       {% include "web/_navlink.html" with url='web:crm_hub' key='crm' label='CRM' icon='org' %}
@@ -367,6 +369,7 @@
       <span class="nav-gap"></span>
       {% include "web/_navlink.html" with url='web:settings' key='settings' label='Settings' icon='gear' %}
     </nav>
+    {% endblock %}
     <div class="side-foot">
       <a class="me" href="{% url 'web:profile' %}" title="My profile">
         {% include "web/_avatar.html" with p=user size=28 %}
@@ -392,6 +395,7 @@
     </div>
   </main>
   {% if user.is_authenticated %}
+  {% block floating %}
   <a class="inbox-fab {% if nav_section == 'notifications' %}active{% endif %}"
      href="{% url 'web:notifications' %}" title="Inbox" aria-label="Inbox">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -414,6 +418,7 @@
       <path d="M12 19V5M5 12l7-7 7 7"/>
     </svg>
   </a>
+  {% endblock %}
   <script src="{% static 'web/app.js' %}" defer></script>
   {% endif %}
   <script>
