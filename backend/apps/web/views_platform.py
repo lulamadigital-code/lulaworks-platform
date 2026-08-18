@@ -152,7 +152,50 @@ def platform_home(request):
             r["pct"] = int(round(r["used"] * 100 / peak_ai))
         ctx["ai_by_tenant"] = ai_rows
 
+        # Subscriptions donut (active / trial / cancelled / none) — the
+        # dashboard's signature visual, coloured by status.
+        none_count = ctx["companies_total"] - subs.count()
+        donut_items = [
+            ("Active", ctx["subs_active"], "#00c875"),
+            ("Trial", ctx["subs_trial"], "#fdab3d"),
+            ("Cancelled", ctx["subs_cancelled"], "#e2445c"),
+            ("No plan", max(none_count, 0), "#c4c7d0"),
+        ]
+        ctx["donut"] = _donut_segments(donut_items)
+
+        # Tenants per plan (bar).
+        from collections import Counter
+        plan_counts = Counter()
+        for s in subs.select_related("plan"):
+            plan_counts[getattr(s.plan, "name", "—")] += 1
+        plan_rows = sorted(({"name": n, "count": c} for n, c in plan_counts.items()),
+                           key=lambda r: -r["count"])
+        pk_peak = max((r["count"] for r in plan_rows), default=0) or 1
+        for r in plan_rows:
+            r["pct"] = int(round(r["count"] * 100 / pk_peak))
+        ctx["plan_rows"] = plan_rows
+
     return render(request, "web/platform/console.html", ctx)
+
+
+def _donut_segments(items):
+    """SVG donut segments for (label, count, colour) tuples — dash/gap/rotate
+    computed server-side, matching the operations dashboard."""
+    from math import pi
+    circ = 2 * pi * 54
+    total = sum(c for _, c, _ in items) or 0
+    segs, cum = [], 0.0
+    for label, count, color in items:
+        if not count:
+            continue
+        pct = count / total if total else 0
+        segs.append({
+            "label": label, "count": count, "color": color, "pct": round(pct * 100),
+            "dash": round(pct * circ, 2), "gap": round((1 - pct) * circ, 2),
+            "rotate": round(-90 + cum * 360, 2),
+        })
+        cum += pct
+    return {"segments": segs, "total": total}
 
 
 @login_required
