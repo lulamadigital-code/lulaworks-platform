@@ -57,6 +57,9 @@
   <a href="#general">General</a>
   <a href="#onboarding">Onboarding</a>
   <a href="#billing">Billing &amp; tax</a>
+  <a href="#ai">AI</a>
+  <a href="#email">Email</a>
+  <a href="#security">Security</a>
   <a href="#integrations">Integrations</a>
   <a href="#system">System</a>
   <a href="#records">Records &amp; tools</a>
@@ -157,6 +160,62 @@
       <div class="acts"><button class="btn" type="submit">Save changes</button>
         <button type="button" class="btn ghost" data-cancel="billing">Cancel</button></div>
       <p class="muted" style="font-size:12px;margin:8px 0 0;">Currency seeds new tenants; VAT &amp; prefix are the platform defaults.</p>
+    </form>
+    {% endif %}
+  </div>
+</section>
+
+{# ── AI status ──────────────────────────────────────────────────────────── #}
+<section id="ai" class="setsec">
+  <div class="sec-head"><h2>AI · LulaAI</h2></div>
+  <div class="card">
+    <table class="kv">
+      {% for label, value in ai_status %}<tr><td class="k">{{ label }}</td><td><strong>{{ value }}</strong></td></tr>{% endfor %}
+    </table>
+    <p class="muted" style="font-size:12px;margin:12px 0 0;">Provider, model and keys are set in the server environment (never here).
+      The AI credits new tenants start with are in <a href="#onboarding">Onboarding</a>.</p>
+  </div>
+</section>
+
+{# ── Email · test-send ──────────────────────────────────────────────────── #}
+<section id="email" class="setsec">
+  <div class="sec-head"><h2>Email</h2></div>
+  <div class="card">
+    <table class="kv">
+      <tr><td class="k">From address</td><td><strong>{{ cfg.reply_to|default:"(system default)" }}</strong></td></tr>
+      <tr><td class="k">Delivery</td><td>{% for i in integrations %}{% if i.name == 'Email · Brevo' %}{{ i.detail }} · {% if i.ok %}<span class="chip ok">Configured</span>{% else %}<span class="chip off">Not set</span>{% endif %}{% endif %}{% endfor %}</td></tr>
+    </table>
+    {% if can_settings %}
+    <form method="post" style="margin-top:14px;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">{% csrf_token %}
+      <input type="hidden" name="action" value="send_test_email">
+      <div style="flex:1;min-width:220px;"><label>Send a test email to</label>
+        <input type="email" name="test_email_to" value="{{ test_email_to }}" required></div>
+      <button class="btn" type="submit">Send test</button>
+    </form>
+    <p class="muted" style="font-size:12px;margin:10px 0 0;">Verifies outbound delivery. The result also lands in <a href="#records">Email logs</a>.</p>
+    {% endif %}
+  </div>
+</section>
+
+{# ── Security policy ────────────────────────────────────────────────────── #}
+<section id="security" class="setsec">
+  <div class="sec-head"><h2>Security</h2>
+    {% if can_settings %}<button class="btn ghost sm" data-edit="security">Edit</button>{% endif %}</div>
+  <div class="card">
+    <div class="read" id="security-read">
+      <table class="kv">
+        <tr><td class="k">Minimum password length</td><td><strong>{{ cfg.password_min_length }} characters</strong></td></tr>
+        {% for label, value in security_posture %}<tr><td class="k">{{ label }}</td><td>{{ value }}</td></tr>{% endfor %}
+      </table>
+    </div>
+    {% if can_settings %}
+    <form class="edit" id="security-edit" method="post" style="display:none;">{% csrf_token %}
+      <input type="hidden" name="action" value="save_security">
+      <label>Minimum password length</label>
+      <input type="number" name="password_min_length" min="6" max="128" value="{{ cfg.password_min_length }}">
+      <div class="acts"><button class="btn" type="submit">Save changes</button>
+        <button type="button" class="btn ghost" data-cancel="security">Cancel</button></div>
+      <p class="muted" style="font-size:12px;margin:8px 0 0;">Enforced everywhere a password is set. Other posture items (HTTPS, cookies, session) are set in the server environment.</p>
     </form>
     {% endif %}
   </div>

@@ -131,7 +131,9 @@ LOGOUT_REDIRECT_URL = "web:login"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    # Minimum length is set from the Platform Console (Settings → Security),
+    # enforced everywhere passwords are set.
+    {"NAME": "apps.identity.validators.DynamicMinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]

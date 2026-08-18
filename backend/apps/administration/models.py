@@ -218,6 +218,11 @@ class PlatformSettings(models.Model):
     default_vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=15)
     invoice_prefix = models.CharField(max_length=12, blank=True, default="")
 
+    # ── Security policy ──────────────────────────────────────────────────────
+    # Minimum password length is enforced platform-wide by a custom validator
+    # (apps.identity.validators.DynamicMinimumLengthValidator).
+    password_min_length = models.PositiveSmallIntegerField(default=8)
+
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True,

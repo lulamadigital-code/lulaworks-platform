@@ -474,7 +474,8 @@ def platform_settings(request):
     if request.method == "POST":
         action = request.POST.get("action")
         team_actions = {"invite_staff", "set_role", "revoke"}
-        config_actions = {"save_branding", "save_defaults", "save_billing"}
+        config_actions = {"save_branding", "save_defaults", "save_billing",
+                          "save_security", "send_test_email"}
         if action in team_actions and not can_team:
             messages.error(request, "You don't have team-management access.")
             return redirect("web:platform_settings")
@@ -492,6 +493,11 @@ def platform_settings(request):
                 elif action == "save_billing":
                     _save_platform_billing(request)
                     messages.success(request, "Billing & tax defaults saved.")
+                elif action == "save_security":
+                    _save_platform_security(request)
+                    messages.success(request, "Security policy saved.")
+                elif action == "send_test_email":
+                    _send_test_email(request)
                 elif action == "invite_staff":
                     identity.invite_platform_staff(
                         request.user,
@@ -550,6 +556,29 @@ def platform_settings(request):
         ("Time zone", getattr(dj, "TIME_ZONE", "UTC")),
     ]
 
+    # AI status (read-only — provider/model/keys are environment-controlled).
+    with system_scope():
+        from apps.ai_platform.models import AIUsageLog
+        ai_calls_30d = AIUsageLog.objects.filter(
+            created_at__gte=timezone.now() - timedelta(days=30)).count()
+    ai_status = [
+        ("Provider", (getattr(dj, "AI_PROVIDER", "") or "—").title()),
+        ("Model", getattr(dj, "GEMINI_MODEL", "") or getattr(dj, "ANTHROPIC_MODEL", "") or "default"),
+        ("API key", "Configured" if (getattr(dj, "GEMINI_API_KEY", "")
+                                     or getattr(dj, "ANTHROPIC_API_KEY", "")) else "Not set"),
+        ("Calls · 30d", ai_calls_30d),
+    ]
+
+    # Security posture — the live auth configuration (read-only) plus the one
+    # tunable control (minimum password length).
+    session_age = getattr(dj, "SESSION_COOKIE_AGE", 0) or 0
+    security_posture = [
+        ("HTTPS enforced", "Yes" if getattr(dj, "SECURE_SSL_REDIRECT", False) else "No"),
+        ("Secure cookies", "Yes" if getattr(dj, "SESSION_COOKIE_SECURE", False) else "No"),
+        ("Session lifetime", f"{session_age // 3600} h" if session_age else "Browser session"),
+        ("Password rules", f"{len(getattr(dj, 'AUTH_PASSWORD_VALIDATORS', []))} active"),
+    ]
+
     with system_scope():
         from apps.billing.models import Plan
         team = list(User.objects.filter(Q(platform_role__in=["owner", "admin", "support"])
@@ -584,6 +613,8 @@ def platform_settings(request):
         "is_owner": is_owner, "can_team": can_team, "can_settings": can_settings,
         "counts": counts, "cfg": cfg, "plans": plans,
         "integrations": integrations, "system": system_rows,
+        "ai_status": ai_status, "security_posture": security_posture,
+        "test_email_to": request.user.email,
     })
 
 
@@ -668,6 +699,49 @@ def _save_platform_billing(request):
     s.invoice_prefix = (request.POST.get("invoice_prefix") or "").strip().upper()[:12]
     s.updated_by = request.user
     s.save()
+
+
+def _save_platform_security(request):
+    """Persist the security policy (currently the platform-wide minimum password
+    length, enforced by the dynamic validator)."""
+    from apps.administration.models import PlatformSettings
+
+    s = PlatformSettings.load()
+    try:
+        n = int(request.POST.get("password_min_length") or 0)
+        if n < 6 or n > 128:
+            raise ValueError
+        s.password_min_length = n
+    except (TypeError, ValueError):
+        raise ValueError("Minimum password length must be between 6 and 128.")
+    s.updated_by = request.user
+    s.save()
+
+
+def _send_test_email(request):
+    """Send a branded test email to verify delivery from the Console."""
+    from django.core.exceptions import ValidationError
+    from django.core.validators import EmailValidator
+
+    from apps.notifications.models import EmailCategory
+    from apps.notifications.service import send_email
+
+    to = (request.POST.get("test_email_to") or request.user.email or "").strip()
+    try:
+        EmailValidator()(to)
+    except ValidationError:
+        messages.error(request, "Enter a valid email address to test.")
+        return
+    try:
+        send_email(
+            to=to, subject="LulaWorks — test email", template="generic", company=None,
+            sent_by=request.user, category=EmailCategory.ACCOUNT,
+            context={"heading": "It works ✓",
+                     "body": "This is a test email sent from the LulaWorks Platform "
+                             "Console. If you received it, outbound email is working."})
+        messages.success(request, f"Test email sent to {to}. Check the inbox (and Email logs).")
+    except Exception as exc:                                   # noqa: BLE001
+        messages.error(request, f"Test email failed: {exc}")
 
 
 def _safe_count(app_label, model_name):
