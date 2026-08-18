@@ -1,0 +1,112 @@
+{% extends "web/base.html" %}
+{% block title %}Settings · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="settings" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em}
+  .sub{color:var(--muted);margin:0 0 20px} .muted{color:var(--muted)}
+  .kv{width:100%;border-collapse:collapse}
+  .kv td{padding:11px 6px;border-bottom:1px solid var(--line);font-size:14px}
+  .kv tr:last-child td{border-bottom:0}
+  .kv td.k{color:var(--muted);width:42%}
+  table.team{width:100%;border-collapse:collapse}
+  .team th,.team td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);font-size:13.5px}
+  .team th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .team tr:last-child td{border-bottom:0}
+  .chip{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;background:#eef0f5;color:var(--muted)}
+  .chip.owner{background:var(--primary-t);color:var(--primary-d)} .chip.admin{background:var(--blue-t);color:#2f6fd0}
+  .chip.support{background:var(--green-t);color:#0a8f57} .chip.pending{background:var(--orange-t);color:#b9711a}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 5px;font-weight:600}
+  input,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff;color:var(--ink)}
+  .btn.ghost{background:#fff;color:var(--primary-d);border:1px solid var(--line)}
+  .btn.sm{padding:6px 11px;font-size:12.5px}
+  .inline{display:inline-flex;gap:6px;align-items:center}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Settings</h1>
+<p class="sub">Platform configuration and your LulaWorks team.</p>
+
+<div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+  <div>
+    <h2 style="margin-top:6px;">Platform</h2>
+    <div class="card">
+      <table class="kv">
+        {% for label, value in info %}
+        <tr><td class="k">{{ label }}</td><td><strong>{{ value }}</strong></td></tr>
+        {% endfor %}
+        <tr><td class="k">Companies</td><td><strong>{{ counts.companies }}</strong></td></tr>
+        <tr><td class="k">Users</td><td><strong>{{ counts.users }}</strong></td></tr>
+      </table>
+      <p class="muted" style="font-size:12px;margin:12px 0 0;">API keys are set in the
+        server environment only — never shown or editable here.</p>
+    </div>
+  </div>
+  <div>
+    <h2 style="margin-top:6px;">Add a team member</h2>
+    <div class="card">
+      {% if is_owner %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="invite_staff">
+        <label>Email</label>
+        <input type="email" name="email" required placeholder="person@lulaworks.com">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+          <div><label>First name</label><input type="text" name="first_name"></div>
+          <div><label>Last name</label><input type="text" name="last_name"></div>
+        </div>
+        <label style="margin-top:10px;">Access level</label>
+        <select name="role" required>
+          {% for value, label in roles %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+        </select>
+        <div style="margin-top:12px;"><button class="btn" type="submit">Send invitation</button></div>
+        <p class="muted" style="font-size:12px;margin:10px 0 0;">Sends a secure activation link —
+          they choose their own password. Owner = full access incl. Django admin;
+          Admin = full console; Support = read-only.</p>
+      </form>
+      {% else %}
+      <p class="muted" style="margin:0;">Only a Platform Owner can add or change team members.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<h2>Team</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table class="team">
+    <tr><th>Member</th><th>Access</th><th>Status</th>{% if is_owner %}<th></th>{% endif %}</tr>
+    {% for m in team %}
+    <tr>
+      <td><strong>{{ m.user.get_full_name|default:m.user.email }}</strong>
+        {% if m.is_me %}<span class="muted">(you)</span>{% endif %}
+        <div class="muted" style="font-size:12px;">{{ m.user.email }}</div></td>
+      <td><span class="chip {{ m.level }}">{{ m.role_label }}</span></td>
+      <td>{% if m.pending %}<span class="chip pending">Invite pending</span>
+        {% elif m.user.is_active %}<span class="chip support">Active</span>
+        {% else %}<span class="chip">Inactive</span>{% endif %}</td>
+      {% if is_owner %}
+      <td style="text-align:right;">
+        {% if not m.is_me %}
+        <form method="post" class="inline" style="justify-content:flex-end;">{% csrf_token %}
+          <input type="hidden" name="action" value="set_role">
+          <input type="hidden" name="user" value="{{ m.user.id }}">
+          <select name="role" onchange="this.form.submit()" style="width:auto;padding:6px 8px;">
+            {% for value, label in roles %}<option value="{{ value }}" {% if m.user.platform_role == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </form>
+        <form method="post" style="display:inline;" onsubmit="return confirm('Revoke platform access for {{ m.user.email }}?');">{% csrf_token %}
+          <input type="hidden" name="action" value="revoke">
+          <input type="hidden" name="user" value="{{ m.user.id }}">
+          <button class="btn ghost sm" type="submit">Revoke</button>
+        </form>
+        {% else %}<span class="muted" style="font-size:12px;">—</span>{% endif %}
+      </td>
+      {% endif %}
+    </tr>
+    {% empty %}<tr><td colspan="4" style="padding:16px;color:var(--muted);">No platform team members yet.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

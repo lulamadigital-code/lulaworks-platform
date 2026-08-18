@@ -327,6 +327,96 @@ def _send_added_email(company, user):
         })
 
 
+class PlatformStaffError(Exception):
+    """Raised for platform-team management problems (bad email, role, etc.)."""
+
+
+# Which Django flags each platform access level carries. Owners are full Django
+# superusers; admin/support reach the Console through `platform_role` alone, with
+# no superuser powers and no Django-admin access.
+_PLATFORM_ROLE_FLAGS = {
+    "owner": {"is_superuser": True, "is_staff": True},
+    "admin": {"is_superuser": False, "is_staff": False},
+    "support": {"is_superuser": False, "is_staff": False},
+}
+
+
+@transaction.atomic
+def invite_platform_staff(actor, *, email, role, first_name="", last_name=""):
+    """Add a LulaWorks platform-team member by secure activation link.
+
+    Creates the account with NO usable password (they set it via the link),
+    stamps the platform role + matching Django flags, mints an invite token and
+    emails it. Returns (user, token). Superuser owners keep Django-admin access;
+    admin/support are Console-only.
+    """
+    from .models import AccountToken
+
+    email = (email or "").strip().lower()
+    if not email:
+        raise PlatformStaffError("An email address is required.")
+    if role not in _PLATFORM_ROLE_FLAGS:
+        raise PlatformStaffError("Choose a valid role.")
+    if User.objects.filter(email__iexact=email).exists():
+        raise PlatformStaffError("A user with that email already exists.")
+
+    user = User(
+        email=email, first_name=first_name.strip(), last_name=last_name.strip(),
+        platform_role=role, is_active=True, must_change_password=True,
+        **_PLATFORM_ROLE_FLAGS[role])
+    user.set_unusable_password()                # activation link sets the real one
+    user.save()
+
+    from datetime import timedelta
+    token = _mint_token(
+        purpose=AccountToken.Purpose.INVITE, email=email, user=user,
+        company=None, role=None, invited_by=actor,
+        ttl=timedelta(days=INVITE_TTL_DAYS))
+    _send_platform_invite(actor, user, token)
+    return user, token
+
+
+def _send_platform_invite(actor, user, token):
+    from apps.notifications.models import EmailCategory
+    from apps.notifications.service import send_email
+    inviter = (actor.get_full_name() or actor.email) if actor else "LulaWorks"
+    role_label = dict(User.PlatformRole.choices).get(user.platform_role, "team member")
+    send_email(
+        to=user.email, subject="You're invited to the LulaWorks platform team",
+        template="invitation", company=None, sent_by=actor,
+        to_name=(user.get_full_name() or "").strip(), category=EmailCategory.ACCOUNT,
+        context={
+            "heading": "Join the LulaWorks platform team",
+            "inviter": inviter, "company_name_display": "LulaWorks",
+            "role": role_label,
+            "cta_url": _activation_url(token), "cta_label": "Set your password",
+            "cta_note": f"This invitation expires in {INVITE_TTL_DAYS} days. "
+                        "You'll choose your own password — we never send one.",
+        })
+
+
+def set_platform_role(user, role) -> User:
+    """Change a platform-team member's access level (and sync Django flags)."""
+    if role not in _PLATFORM_ROLE_FLAGS:
+        raise PlatformStaffError("Choose a valid role.")
+    user.platform_role = role
+    for field, value in _PLATFORM_ROLE_FLAGS[role].items():
+        setattr(user, field, value)
+    user.save(update_fields=["platform_role", "is_superuser", "is_staff"])
+    return user
+
+
+def revoke_platform_staff(user) -> User:
+    """Remove platform-team access — clears the role and superuser/staff flags.
+    The account stays (they may still be a tenant member); it just loses the
+    Console. Deactivating entirely is a separate action."""
+    user.platform_role = ""
+    user.is_superuser = False
+    user.is_staff = False
+    user.save(update_fields=["platform_role", "is_superuser", "is_staff"])
+    return user
+
+
 @transaction.atomic
 def accept_invitation(token_str, *, password):
     """Complete an invitation: validate the token, set the user's chosen

@@ -145,6 +145,18 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+
+    # Platform team access (LulaWorks' own staff, not tenant members). Blank for
+    # ordinary tenant users. Owners get is_superuser too; admin/support reach the
+    # Platform Console through this field without Django-superuser powers.
+    class PlatformRole(models.TextChoices):
+        OWNER = "owner", "Platform Owner"
+        ADMIN = "admin", "Platform Admin"
+        SUPPORT = "support", "Support"
+
+    platform_role = models.CharField(
+        max_length=16, blank=True, default="", choices=PlatformRole.choices)
+
     # Set when a manager creates the account with a temporary password. Every
     # web page redirects to the change-password screen until it is cleared, so
     # an admin-chosen credential is never a usable long-lived password.
@@ -164,6 +176,14 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
+
+    @property
+    def platform_level(self):
+        """owner | admin | support | None — who may use the Platform Console.
+        Superusers are always owners; otherwise it follows platform_role."""
+        if self.is_superuser or self.platform_role == self.PlatformRole.OWNER:
+            return "owner"
+        return self.platform_role or None
 
     @property
     def initials(self) -> str:

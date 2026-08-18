@@ -15,9 +15,20 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 
 
+def _can_manage(user):
+    """Owners and admins may run platform actions (grant credits, create tenants,
+    change plans). Support is read-only."""
+    return getattr(user, "platform_level", None) in ("owner", "admin")
+
+
+def _is_owner(user):
+    """Only owners manage the platform team and touch Django-superuser powers."""
+    return getattr(user, "platform_level", None) == "owner"
+
+
 @login_required
 def platform_home(request):
-    if not request.user.is_superuser:
+    if not request.user.platform_level:
         messages.error(request, "The platform console is for platform administrators only.")
         return redirect("web:dashboard")
 
@@ -36,6 +47,9 @@ def platform_home(request):
 
         # ── Owner action: grant AI credits to a tenant ──────────────────────
         if request.method == "POST" and request.POST.get("action") == "grant_credits":
+            if not _can_manage(request.user):
+                messages.error(request, "Your access level is read-only.")
+                return redirect("web:platform_home")
             try:
                 target = Company.objects.get(pk=request.POST.get("company"))
                 amount = Decimal(request.POST.get("amount") or "0")
@@ -202,7 +216,7 @@ def _donut_segments(items):
 def platform_tenant(request, pk):
     """Branded management page for one tenant — plan, credits, status — so the
     owner rarely needs Django admin. Superuser only."""
-    if not request.user.is_superuser:
+    if not request.user.platform_level:
         messages.error(request, "The platform console is for platform administrators only.")
         return redirect("web:dashboard")
 
@@ -223,6 +237,9 @@ def platform_tenant(request, pk):
             return redirect("web:platform_home")
 
         if request.method == "POST":
+            if not _can_manage(request.user):
+                messages.error(request, "Your access level is read-only.")
+                return redirect("web:platform_tenant", pk=pk)
             action = request.POST.get("action")
             try:
                 if action == "invite_user":
@@ -289,9 +306,12 @@ def platform_tenant(request, pk):
 def platform_create_tenant(request):
     """Onboard a new tenant from the console — creates the company on a trial
     and invites the owner by activation link (no password is ever set/emailed)."""
-    if not request.user.is_superuser:
+    if not request.user.platform_level:
         messages.error(request, "The platform console is for platform administrators only.")
         return redirect("web:dashboard")
+    if not _can_manage(request.user):
+        messages.error(request, "Your access level is read-only.")
+        return redirect("web:platform_home")
     if request.method != "POST":
         return redirect("web:platform_home")
 
@@ -332,7 +352,7 @@ def platform_list(request, section):
     plans, subscriptions, email logs, audit logs) — same app shell as the rest
     of the console, so every sidebar link lands on a consistent page. Full CRUD
     stays in Django admin, one click away. Superuser only."""
-    if not request.user.is_superuser:
+    if not request.user.platform_level:
         messages.error(request, "The platform console is for platform administrators only.")
         return redirect("web:dashboard")
 
@@ -409,13 +429,113 @@ def platform_list(request, section):
 
 
 @login_required
+def platform_settings(request):
+    """Platform Settings — environment/integration status (relevant info) plus
+    the platform TEAM: add LulaWorks staff with an access level, change roles,
+    or revoke access. Any platform staff can view; only owners manage the team."""
+    if not request.user.platform_level:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+
+    from django.conf import settings as dj
+
+    from apps.core.context import system_scope
+    from apps.identity import services as identity
+    from apps.identity.models import User
+
+    is_owner = _is_owner(request.user)
+
+    if request.method == "POST":
+        if not is_owner:
+            messages.error(request, "Only a Platform Owner can manage the team.")
+            return redirect("web:platform_settings")
+        action = request.POST.get("action")
+        try:
+            with system_scope():
+                if action == "invite_staff":
+                    identity.invite_platform_staff(
+                        request.user,
+                        email=request.POST.get("email", ""),
+                        role=request.POST.get("role", ""),
+                        first_name=request.POST.get("first_name", "").strip(),
+                        last_name=request.POST.get("last_name", "").strip())
+                    messages.success(request, "Invitation sent — they'll set their own password.")
+                elif action == "set_role":
+                    u = User.objects.filter(pk=request.POST.get("user")).first()
+                    if u and u.id != request.user.id:
+                        identity.set_platform_role(u, request.POST.get("role", ""))
+                        messages.success(request, "Access level updated.")
+                    else:
+                        messages.error(request, "You can't change your own access here.")
+                elif action == "revoke":
+                    u = User.objects.filter(pk=request.POST.get("user")).first()
+                    if u and u.id != request.user.id:
+                        identity.revoke_platform_staff(u)
+                        messages.success(request, "Platform access revoked.")
+                    else:
+                        messages.error(request, "You can't revoke your own access.")
+                else:
+                    messages.error(request, "Unknown action.")
+        except identity.PlatformStaffError as exc:
+            messages.error(request, str(exc))
+        except Exception as exc:                               # noqa: BLE001
+            messages.error(request, f"Could not complete that: {exc}")
+        return redirect("web:platform_settings")
+
+    # ── Relevant platform info (read-only) ──────────────────────────────────
+    def _mask(v):
+        return "Configured" if v else "Not set"
+
+    email_backend = getattr(dj, "EMAIL_BACKEND", "")
+    info = [
+        ("Environment", "Production" if not dj.DEBUG else "Development"),
+        ("Site URL", getattr(dj, "SITE_URL", "") or "—"),
+        ("From address", getattr(dj, "DEFAULT_FROM_EMAIL", "") or "—"),
+        ("Email delivery", "Live (HTTP API)" if "anymail" in email_backend.lower()
+         else ("Console (dev)" if "console" in email_backend.lower() else "SMTP")),
+        ("AI provider", (getattr(dj, "AI_PROVIDER", "") or "—").title()),
+        ("AI key", _mask(getattr(dj, "GEMINI_API_KEY", "") or getattr(dj, "ANTHROPIC_API_KEY", ""))),
+        ("Email API key", _mask((getattr(dj, "ANYMAIL", {}) or {}).get("BREVO_API_KEY"))),
+    ]
+
+    with system_scope():
+        team = list(User.objects.filter(Q(platform_role__in=["owner", "admin", "support"])
+                                        | Q(is_superuser=True)).order_by("email"))
+        counts = {"companies": _safe_count("identity", "Company"),
+                  "users": User.objects.count()}
+
+    role_labels = dict(User.PlatformRole.choices)
+    team_rows = [{
+        "user": u,
+        "level": u.platform_level,
+        "role_label": ("Platform Owner" if u.platform_level == "owner"
+                       else role_labels.get(u.platform_role, "—")),
+        "is_me": u.id == request.user.id,
+        "pending": not u.has_usable_password(),
+    } for u in team]
+
+    return render(request, "web/platform/settings.html", {
+        "active": "settings", "info": info, "team": team_rows,
+        "roles": User.PlatformRole.choices, "is_owner": is_owner, "counts": counts,
+    })
+
+
+def _safe_count(app_label, model_name):
+    try:
+        from django.apps import apps as _apps
+        return _apps.get_model(app_label, model_name).objects.count()
+    except Exception:
+        return 0
+
+
+@login_required
 def platform_tenants_csv(request):
     """Download every tenant with plan, users, AI credits + 30-day usage."""
     import csv
 
     from django.http import HttpResponse
 
-    if not request.user.is_superuser:
+    if not request.user.platform_level:
         messages.error(request, "The platform console is for platform administrators only.")
         return redirect("web:dashboard")
 

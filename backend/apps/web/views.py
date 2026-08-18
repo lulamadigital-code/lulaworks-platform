@@ -123,9 +123,10 @@ from apps.rfq.services import (
 
 
 def _post_login_home(user):
-    """Where a user lands after signing in. A platform superuser with no tenant
-    would 500 on the tenant dashboard, so send them to the Platform Console."""
-    if user.is_superuser and not getattr(user, "active_company_id", None):
+    """Where a user lands after signing in. A platform staff member with no
+    tenant company would 500 on the tenant dashboard, so send them to the
+    Platform Console instead."""
+    if getattr(user, "platform_level", None) and not getattr(user, "active_company_id", None):
         return "web:platform_home"
     return "web:dashboard"
 
