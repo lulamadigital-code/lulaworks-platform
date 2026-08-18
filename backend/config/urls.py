@@ -6,6 +6,7 @@ from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework import permissions
 
+from apps.analytics.views import collect as analytics_collect
 from apps.marketing import views as marketing_views
 from rest_framework_simplejwt.views import (
     TokenBlacklistView,
@@ -68,6 +69,8 @@ urlpatterns = [
     # SEO endpoints for the public site.
     path("robots.txt", marketing_views.robots_txt, name="robots_txt"),
     path("sitemap.xml", marketing_views.sitemap_xml, name="sitemap_xml"),
+    # Analytics client beacon (browser events).
+    path("e/collect/", analytics_collect, name="analytics_collect"),
     # Payments (checkout return/cancel + provider webhooks).
     path("", include("apps.payments.urls")),
     # Manager web (session-auth, server-rendered HTML + HTMX). Mounted before the

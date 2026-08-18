@@ -906,6 +906,50 @@ def platform_support_detail(request, pk):
 
 
 @login_required
+def platform_analytics(request):
+    """Analytics overview — product & website event stream at a glance. Read for
+    any platform staff."""
+    if not request.user.platform_level:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+
+    from apps.analytics.models import AnalyticsEvent
+
+    now = timezone.now()
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    d7, d30 = now - timedelta(days=7), now - timedelta(days=30)
+    qs = AnalyticsEvent.objects
+
+    def _dau(since):
+        return qs.filter(created_at__gte=since, user__isnull=False).values("user").distinct().count()
+
+    dau, wau, mau = _dau(today), _dau(d7), _dau(d30)
+    kpis = {
+        "events_today": qs.filter(created_at__gte=today).count(),
+        "events_7d": qs.filter(created_at__gte=d7).count(),
+        "events_30d": qs.filter(created_at__gte=d30).count(),
+        "dau": dau, "wau": wau, "mau": mau,
+        "stickiness": round(dau * 100 / mau) if mau else 0,
+        "active_companies": qs.filter(created_at__gte=d30, company__isnull=False)
+                              .values("company").distinct().count(),
+    }
+    top_events = list(qs.filter(created_at__gte=d30).values("event_name")
+                      .annotate(n=Count("id")).order_by("-n")[:10])
+    peak = max((r["n"] for r in top_events), default=0) or 1
+    for r in top_events:
+        r["pct"] = int(round(r["n"] * 100 / peak))
+    top_modules = list(qs.filter(created_at__gte=d30).exclude(module="")
+                       .values("module").annotate(n=Count("id")).order_by("-n")[:8])
+    top_sources = list(qs.filter(created_at__gte=d30).exclude(source="")
+                       .values("source").annotate(n=Count("id")).order_by("-n")[:6])
+    recent = list(qs.select_related("user", "company").order_by("-created_at")[:20])
+    return render(request, "web/platform/analytics.html", {
+        "active": "analytics", "kpis": kpis, "top_events": top_events,
+        "top_modules": top_modules, "top_sources": top_sources, "recent": recent,
+    })
+
+
+@login_required
 def platform_support_sla(request):
     """Support SLA & analytics — first-response and resolution times per priority,
     against target SLAs, plus current breaches. Read for any platform staff."""

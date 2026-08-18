@@ -77,6 +77,11 @@ def support_create(request):
             for f in request.FILES.getlist("attachments"):
                 support.add_message(ticket=ticket, sender=request.user, body="",
                                     files=[f])
+            from apps.analytics.services import track
+            track("support_ticket_created", request=request, module="support",
+                  feature="create_ticket",
+                  metadata={"category": ticket.category, "priority": ticket.priority,
+                            "from_error": bool(err_ref)})
             messages.success(request, f"Ticket {ticket.number} created — we'll be in touch.")
             return redirect("web:support_detail", pk=ticket.id)
         except support.SupportError as exc:

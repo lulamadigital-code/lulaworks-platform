@@ -142,12 +142,17 @@ def login_view(request):
         )
         if user is not None:
             login(request, user)
+            from apps.analytics.services import track
+            track("login", request=request, user=user, module="auth")
             return redirect(_post_login_home(user))
         messages.error(request, "Invalid email or password.")
     return render(request, "web/login.html")
 
 
 def logout_view(request):
+    from apps.analytics.services import track
+    if request.user.is_authenticated:
+        track("logout", request=request, module="auth")
     logout(request)
     return redirect("web:login")
 

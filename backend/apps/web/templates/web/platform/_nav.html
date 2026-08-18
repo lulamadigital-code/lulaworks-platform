@@ -1,6 +1,7 @@
 {# Shared Platform Console sidebar nav. Pass `active` = overview|companies|users|plans|subscriptions|emails|audit. #}
 <nav class="nav">
   <a {% if active == 'overview' %}class="active"{% endif %} href="{% url 'web:platform_home' %}"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
+  <a {% if active == 'analytics' %}class="active"{% endif %} href="{% url 'web:platform_analytics' %}"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 8l-5 6-3-3-4 5"/></svg>Analytics</a>
   <a {% if active == 'companies' %}class="active"{% endif %} href="{% url 'web:platform_home' %}#tenants"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 21V10h2a2 2 0 0 1 2 2v9"/></svg>Companies</a>
   <span class="nav-group">Records</span>
   <a {% if active == 'users' %}class="active"{% endif %} href="{% url 'web:platform_users' %}"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M17 5.5a3 3 0 0 1 0 5.6M19 20a5 5 0 0 0-3-4.6"/></svg>Users</a>

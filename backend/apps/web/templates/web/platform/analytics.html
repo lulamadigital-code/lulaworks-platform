@@ -1,0 +1,88 @@
+{% extends "web/base.html" %}
+{% block title %}Analytics · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="analytics" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em} .sub{color:var(--muted);margin:0 0 18px} .muted{color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:18px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .tile .n{font-size:26px;font-weight:800;letter-spacing:-.02em} .tile .l{color:var(--muted);font-size:12.5px;margin-top:3px;font-weight:600}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:900px){.two{grid-template-columns:1fr}}
+  .barrow{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  .barrow .cap{flex:0 0 150px;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .barrow .track{flex:1;background:#eef0f5;border-radius:6px;height:20px;overflow:hidden}
+  .barrow .fill{height:100%;background:linear-gradient(90deg,#0e7c8c,#17a2b8);}
+  .barrow .v{width:52px;text-align:right;font-size:12px;font-weight:700}
+  table.ev{width:100%;border-collapse:collapse}
+  .ev th,.ev td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .ev th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .ev tr:last-child td{border-bottom:0}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:var(--primary-t);color:var(--primary-d)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{display:inline-flex;padding:4px 11px;border-radius:20px;font-size:12.5px;font-weight:600;background:#eef0f5;color:var(--ink)}
+  .chip b{margin-left:6px;color:var(--muted)}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Analytics</h1>
+<p class="sub">Product &amp; website event stream — the LulaWorks command center.</p>
+
+<div class="grid">
+  <div class="tile"><div class="n">{{ kpis.events_today }}</div><div class="l">Events today</div></div>
+  <div class="tile"><div class="n">{{ kpis.events_7d }}</div><div class="l">Events · 7d</div></div>
+  <div class="tile"><div class="n">{{ kpis.dau }}</div><div class="l">DAU</div></div>
+  <div class="tile"><div class="n">{{ kpis.wau }}</div><div class="l">WAU</div></div>
+  <div class="tile"><div class="n">{{ kpis.mau }}</div><div class="l">MAU</div></div>
+  <div class="tile"><div class="n">{{ kpis.stickiness }}%</div><div class="l">Stickiness (DAU/MAU)</div></div>
+  <div class="tile"><div class="n">{{ kpis.active_companies }}</div><div class="l">Active companies · 30d</div></div>
+</div>
+
+<div class="two">
+  <div>
+    <h2 style="margin-top:6px;">Top events · 30d</h2>
+    <div class="card">
+      {% for e in top_events %}
+      <div class="barrow"><span class="cap">{{ e.event_name }}</span>
+        <span class="track"><span class="fill" style="width:{{ e.pct }}%;"></span></span>
+        <span class="v">{{ e.n }}</span></div>
+      {% empty %}<p class="muted" style="margin:0;">No events captured yet.</p>{% endfor %}
+    </div>
+  </div>
+  <div>
+    <h2 style="margin-top:6px;">By module · 30d</h2>
+    <div class="card">
+      <div class="chips">
+        {% for m in top_modules %}<span class="chip">{{ m.module }}<b>{{ m.n }}</b></span>{% empty %}<span class="muted">No module events yet.</span>{% endfor %}
+      </div>
+      <h3 style="font-size:13px;margin:16px 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Traffic sources</h3>
+      <div class="chips">
+        {% for s in top_sources %}<span class="chip">{{ s.source }}<b>{{ s.n }}</b></span>{% empty %}<span class="muted">No source data yet.</span>{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>Live event stream</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table class="ev">
+    <tr><th>When</th><th>Event</th><th>Module</th><th>Company</th><th>User</th><th>Source</th><th>Device</th></tr>
+    {% for e in recent %}
+    <tr>
+      <td class="muted">{{ e.created_at|date:"H:i:s" }}</td>
+      <td><span class="pill">{{ e.event_name }}</span></td>
+      <td class="muted">{{ e.module|default:"—" }}</td>
+      <td class="muted">{{ e.company.name|default:"—" }}</td>
+      <td class="muted">{{ e.user.email|default:"anon" }}</td>
+      <td class="muted">{{ e.source|default:"—" }}</td>
+      <td class="muted">{{ e.device|default:"—" }}</td>
+    </tr>
+    {% empty %}<tr><td colspan="7" style="padding:18px;text-align:center;color:var(--muted);">No events yet — they'll appear as people use the site and app.</td></tr>{% endfor %}
+  </table>
+</div>
+<p class="muted" style="font-size:12px;margin-top:12px;">Privacy-conscious: events store metadata only — never passwords, tokens, or document/quotation/invoice contents. Company data stays isolated.</p>
+{% endblock %}
