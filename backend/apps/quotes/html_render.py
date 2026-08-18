@@ -327,14 +327,14 @@ def _base_css(accent, secondary, font, st) -> str:
 
     # Letterhead per header style.
     lh = {
-        "band": f".letterhead{{background:{accent};color:#fff;padding:14px 16px;border-radius:4px;}}"
+        "band": f".letterhead{{background:{accent};color:#fff;padding:11px 14px;border-radius:4px;}}"
                 f".letterhead .muted{{color:rgba(255,255,255,.85);}}",
-        "plain": f".letterhead{{border-bottom:2.5px solid {accent};padding-bottom:8px;}}",
+        "plain": f".letterhead{{border-bottom:2.5px solid {accent};padding-bottom:6px;}}",
         "minimal": ".letterhead{border-bottom:1px solid #ddd;padding-bottom:10px;}"
                    ".letterhead .coname{font-weight:600;letter-spacing:.5px;}",
         "centered": f".letterhead{{text-align:center;border-bottom:2px solid {accent};padding-bottom:10px;}}"
                     ".letterhead .lh-row{justify-content:center;flex-direction:column;gap:6px;}",
-        "split": f".letterhead{{background:{accent};color:#fff;padding:14px 16px;border-radius:4px;"
+        "split": f".letterhead{{background:{accent};color:#fff;padding:11px 14px;border-radius:4px;"
                  f"border-bottom:6px solid {secondary};}}.letterhead .muted{{color:rgba(255,255,255,.85);}}",
         "sidebar": "",     # styled via .rail below
         # 'hero' — a quiet, centred identity; the DRAMA is the big centred title
@@ -376,24 +376,28 @@ def _base_css(accent, secondary, font, st) -> str:
 
     # Section titles per style.
     title = {
-        "plain": f".section-title{{color:{accent};font-weight:bold;margin:14px 0 4px;font-size:12.5px;}}",
-        "bar": f".section-title{{background:{accent};color:#fff;font-weight:bold;margin:14px 0 6px;"
-               "padding:4px 8px;border-radius:3px;font-size:12px;}",
-        "underline": f".section-title{{color:{accent};font-weight:bold;margin:14px 0 4px;font-size:12.5px;"
+        "plain": f".section-title{{color:{accent};font-weight:bold;margin:9px 0 3px;font-size:12.5px;}}",
+        "bar": f".section-title{{background:{accent};color:#fff;font-weight:bold;margin:9px 0 4px;"
+               "padding:3px 8px;border-radius:3px;font-size:12px;}",
+        "underline": f".section-title{{color:{accent};font-weight:bold;margin:9px 0 3px;font-size:12.5px;"
                      f"border-bottom:1.5px solid {accent};padding-bottom:2px;}}",
     }.get(tis, "")
 
     return f"""
-    @page {{ size: A4; margin: 16mm 12mm 18mm; }}
+    @page {{ size: A4; margin: 12mm 12mm 14mm; }}
     * {{ box-sizing: border-box; }}
-    body {{ font-family: {font}, Arial, sans-serif; color:#111; font-size:12px; margin:0; }}
+    body {{ font-family: {font}, Arial, sans-serif; color:#111; font-size:11.5px;
+            line-height:1.32; margin:0; }}
+    /* Compact by default so a normal quotation fits one page — every line and
+       paragraph is tight; long documents still flow to more pages cleanly. */
+    p {{ margin: 1.5px 0; }}
     /* Multi-page: repeat the item-table header on each page and never split a row
        or orphan the totals from the table. */
     table.items thead {{ display: table-header-group; }}
     table.items tbody tr {{ page-break-inside: avoid; }}
     .totals, .boxes {{ page-break-inside: avoid; }}
     .section-title {{ page-break-after: avoid; }}
-    h1.title {{ color:{accent}; font-size:22px; margin:14px 0 4px; }}
+    h1.title {{ color:{accent}; font-size:20px; margin:6px 0 2px; }}
     .muted {{ color:#555; }}
     {lh}
     .letterhead .lh-row {{ display:flex; align-items:center; gap:20px; justify-content:{justify}; }}
@@ -409,20 +413,20 @@ def _base_css(accent, secondary, font, st) -> str:
                                       object-fit:contain; margin-bottom:4px; }}
     .sidebar-layout .rail .coname {{ font-size:15px; line-height:1.25; }}
     .sidebar-layout main {{ width:68%; padding:8px 0 0 18px; }}
-    .meta {{ display:flex; justify-content:space-between; gap:20px; margin-top:12px; }}
+    .meta {{ display:flex; justify-content:space-between; gap:20px; margin-top:8px; }}
     .meta .box p {{ margin:1px 0; }}
-    table.items {{ width:100%; border-collapse:collapse; margin-top:10px; }}
-    table.items th {{ text-align:left; padding:6px 8px; font-size:11px; }}
-    table.items td {{ padding:5px 8px; }}
+    table.items {{ width:100%; border-collapse:collapse; margin-top:7px; }}
+    table.items th {{ text-align:left; padding:4px 8px; font-size:11px; }}
+    table.items td {{ padding:3px 8px; }}
     table.items td.num, table.items th.num {{ text-align:right; }}
     {table}
-    .totals {{ width:46%; margin-left:auto; margin-top:8px; border-collapse:collapse; }}
-    .totals td {{ padding:3px 8px; text-align:right; }}
+    .totals {{ width:46%; margin-left:auto; margin-top:6px; border-collapse:collapse; }}
+    .totals td {{ padding:2.5px 8px; text-align:right; }}
     {totals}
     {title}
-    .boxes {{ display:flex; gap:12px; margin-top:14px; }}
-    .boxes .b {{ flex:1; border:1px solid #ccc; border-radius:4px; padding:10px; font-size:11px; }}
-    .foot {{ margin-top:16px; font-size:10.5px; color:#555; }}
+    .boxes {{ display:flex; gap:12px; margin-top:10px; }}
+    .boxes .b {{ flex:1; border:1px solid #ccc; border-radius:4px; padding:8px 10px; font-size:11px; }}
+    .foot {{ margin-top:10px; font-size:10.5px; color:#555; }}
 
     /* Per-family structural overrides — these are what make one family look
        genuinely different, not merely recoloured. */
