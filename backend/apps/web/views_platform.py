@@ -559,8 +559,12 @@ def platform_settings(request):
     # AI status (read-only — provider/model/keys are environment-controlled).
     with system_scope():
         from apps.ai_platform.models import AIUsageLog
-        ai_calls_30d = AIUsageLog.objects.filter(
-            created_at__gte=timezone.now() - timedelta(days=30)).count()
+        recent = AIUsageLog.objects.filter(created_at__gte=timezone.now() - timedelta(days=30))
+        ai_calls_30d = recent.count()
+        by_prov = list(recent.values("provider").annotate(
+            calls=Count("id"), tin=Sum("tokens_in"), tout=Sum("tokens_out"),
+            spend=Sum("cost"), credits=Sum("credits_used"),
+            errors=Count("id", filter=Q(status="error"))).order_by("-calls"))
     ai_status = [
         ("Provider", (getattr(dj, "AI_PROVIDER", "") or "—").title()),
         ("Model", getattr(dj, "GEMINI_MODEL", "") or getattr(dj, "ANTHROPIC_MODEL", "") or "default"),
@@ -568,6 +572,20 @@ def platform_settings(request):
                                      or getattr(dj, "ANTHROPIC_API_KEY", "")) else "Not set"),
         ("Calls · 30d", ai_calls_30d),
     ]
+    # Per-provider usage & estimated spend (30d) from OUR logs — vendors don't
+    # expose a live balance; the billing link goes to where the real one lives.
+    _p_label = {"claude": "Claude · Anthropic", "openai": "ChatGPT · OpenAI",
+                "gemini": "Gemini · Google"}
+    _p_billing = {"claude": "https://console.anthropic.com/settings/billing",
+                  "openai": "https://platform.openai.com/settings/organization/billing",
+                  "gemini": "https://console.cloud.google.com/billing"}
+    ai_providers = [{
+        "key": r["provider"],
+        "label": _p_label.get(r["provider"], (r["provider"] or "—").title()),
+        "calls": r["calls"], "tokens": (r["tin"] or 0) + (r["tout"] or 0),
+        "spend": r["spend"] or 0, "credits": r["credits"] or 0, "errors": r["errors"],
+        "billing": _p_billing.get(r["provider"], ""),
+    } for r in by_prov]
 
     # Security posture — the live auth configuration (read-only) plus the one
     # tunable control (minimum password length).
@@ -613,7 +631,8 @@ def platform_settings(request):
         "is_owner": is_owner, "can_team": can_team, "can_settings": can_settings,
         "counts": counts, "cfg": cfg, "plans": plans,
         "integrations": integrations, "system": system_rows,
-        "ai_status": ai_status, "security_posture": security_posture,
+        "ai_status": ai_status, "ai_providers": ai_providers,
+        "security_posture": security_posture,
         "test_email_to": request.user.email,
     })
 

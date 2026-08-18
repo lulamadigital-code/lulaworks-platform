@@ -172,8 +172,38 @@
     <table class="kv">
       {% for label, value in ai_status %}<tr><td class="k">{{ label }}</td><td><strong>{{ value }}</strong></td></tr>{% endfor %}
     </table>
-    <p class="muted" style="font-size:12px;margin:12px 0 0;">Provider, model and keys are set in the server environment (never here).
-      The AI credits new tenants start with are in <a href="#onboarding">Onboarding</a>.</p>
+
+    <h3 style="font-size:14px;margin:18px 0 8px;">Usage &amp; spend by provider · last 30 days</h3>
+    {% if ai_providers %}
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13.5px;">
+        <tr>
+          <th style="text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;">Provider</th>
+          <th style="text-align:right;padding:9px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;text-transform:uppercase;">Calls</th>
+          <th style="text-align:right;padding:9px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;text-transform:uppercase;">Tokens</th>
+          <th style="text-align:right;padding:9px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;text-transform:uppercase;">Est. spend</th>
+          <th style="text-align:right;padding:9px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;text-transform:uppercase;">Credits</th>
+          <th style="text-align:right;padding:9px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;text-transform:uppercase;">Errors</th>
+          <th style="border-bottom:1px solid var(--line);"></th>
+        </tr>
+        {% for p in ai_providers %}
+        <tr>
+          <td style="padding:10px 8px;border-bottom:1px solid var(--line);"><strong>{{ p.label }}</strong></td>
+          <td style="padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;">{{ p.calls }}</td>
+          <td style="padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;" class="muted">{{ p.tokens }}</td>
+          <td style="padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;">${{ p.spend|floatformat:2 }}</td>
+          <td style="padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;" class="muted">{{ p.credits|floatformat:0 }}</td>
+          <td style="padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;">{% if p.errors %}<span style="color:#c22a41;font-weight:700;">{{ p.errors }}</span>{% else %}0{% endif %}</td>
+          <td style="padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;">{% if p.billing %}<a href="{{ p.billing }}" target="_blank" rel="noopener">Billing ↗</a>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% else %}<p class="muted" style="margin:8px 0 0;">No AI usage recorded in the last 30 days.</p>{% endif %}
+
+    <p class="muted" style="font-size:12px;margin:14px 0 0;">Est. spend is calculated from our own request logs — the AI vendors don't
+      expose a live balance via API. Follow a provider's <strong>Billing ↗</strong> link for its real account balance.
+      Provider, model and keys are set in the server environment; the AI credits new tenants start with are in <a href="#onboarding">Onboarding</a>.</p>
   </div>
 </section>
 
