@@ -34,9 +34,12 @@ urlpatterns = [
     path("support/", views_support.support_home, name="support_home"),
     path("support/new/", views_support.support_create, name="support_create"),
     path("support/company/", views_support.support_company, name="support_company"),
+    path("support/kb/", views_support.support_kb, name="support_kb"),
+    path("support/kb/<slug:slug>/", views_support.support_kb_article, name="support_kb_article"),
     path("support/<uuid:pk>/", views_support.support_detail, name="support_detail"),
     # Support desk (platform side)
     path("platform/support/", views_platform.platform_support, name="platform_support"),
+    path("platform/support/kb/", views_platform.platform_kb, name="platform_kb"),
     path("platform/support/<uuid:pk>/", views_platform.platform_support_detail, name="platform_support_detail"),
     # Public account lifecycle — invitation activation + password reset (no login)
     path("activate/<str:token>/", views_account.activate, name="activate"),

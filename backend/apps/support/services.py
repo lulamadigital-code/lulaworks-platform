@@ -204,3 +204,67 @@ def _notify_status(ticket):
           f"{ticket.number} is now {ticket.get_status_display()}",
           f"Your support ticket status changed to {ticket.get_status_display()}.",
           cta_url=_ticket_url(ticket), company=getattr(ticket, "company", None))
+
+
+# ── Knowledge Base search + grounded AI assist ───────────────────────────────
+_STOP = {"the", "a", "an", "is", "are", "to", "of", "and", "or", "i", "my", "me",
+         "in", "on", "it", "cant", "can't", "cannot", "not", "how", "do", "does",
+         "with", "for", "why", "when", "this", "that", "was", "were", "have"}
+
+
+def _tokens(text):
+    import re
+    return [w for w in re.findall(r"[a-z0-9]+", (text or "").lower()) if w not in _STOP and len(w) > 1]
+
+
+def search_kb(query, *, limit=4):
+    """Deterministic keyword search over published KB articles. Ranks by matches
+    in title/tags (weighted) then summary/body. Returns a list of KBArticle."""
+    from .models import KBArticle
+    from apps.core.context import system_scope
+
+    terms = set(_tokens(query))
+    with system_scope():
+        articles = list(KBArticle.objects.filter(is_published=True))
+    if not terms:
+        return articles[:limit]
+    scored = []
+    for a in articles:
+        title = set(_tokens(a.title)) | set(_tokens(a.tags))
+        body = set(_tokens(a.summary)) | set(_tokens(a.body))
+        score = 3 * len(terms & title) + len(terms & body)
+        if score:
+            scored.append((score, a))
+    scored.sort(key=lambda t: -t[0])
+    return [a for _, a in scored[:limit]]
+
+
+def assist(company, user, query):
+    """Pre-ticket help: find relevant KB articles, and — if AI is available and
+    the tenant has credits — add a concise suggestion GROUNDED ONLY in those
+    articles. Never claims the problem is resolved. Always degrades gracefully to
+    the deterministic KB matches. Returns {articles, ai_answer, used_ai}."""
+    articles = search_kb(query, limit=4)
+    result = {"articles": articles, "ai_answer": "", "used_ai": False, "query": query}
+    if not articles:
+        return result
+    try:
+        from apps.ai_platform.gateway import run_task
+        excerpts = "\n\n".join(
+            f"[{i+1}] {a.title}\n{a.summary or a.body[:400]}" for i, a in enumerate(articles))
+        prompt = (
+            "You are the LulaWorks Support Assistant. Answer the user's question "
+            "using ONLY the knowledge base excerpts below. If they do not clearly "
+            "answer it, say you're not certain and suggest opening a support ticket. "
+            "Never say the problem is solved — the user will confirm. Reply in at "
+            "most 3 short sentences, plain and friendly.\n\n"
+            f"KNOWLEDGE BASE:\n{excerpts}\n\nUSER QUESTION: {query}\n\nAnswer:")
+        resp = run_task(company, user, task="support_assist", prompt=prompt,
+                        prompt_name="support_assist")
+        text = (getattr(resp, "text", "") or "").strip()
+        if text:
+            result["ai_answer"] = text
+            result["used_ai"] = True
+    except Exception:                                          # noqa: BLE001
+        pass  # deterministic KB matches are the guaranteed fallback
+    return result

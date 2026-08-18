@@ -9,8 +9,43 @@
 </style>
 
 <p class="sub" style="margin:0 0 6px;"><a href="{% url 'web:support_home' %}">← Help &amp; Support</a></p>
-<h1>Create a support ticket</h1>
-<p class="sub">Tell LulaWorks Support what's happening. We'll reply here and by email.</p>
+<h1>How can we help?</h1>
+<p class="sub">Describe your problem — LulaAI checks our Knowledge Base first, so you might get an instant answer.</p>
+
+<div class="card" style="max-width:720px;margin-bottom:16px;">
+  <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;">
+    <input type="text" name="ask" value="{{ ask }}" placeholder="e.g. I can't create a quotation" style="flex:1;min-width:220px;padding:11px 13px;border:1px solid var(--line);border-radius:9px;font-size:14px;">
+    <button class="btn" type="submit">Get help</button>
+  </form>
+
+  {% if assist %}
+  <div style="margin-top:16px;">
+    {% if assist.ai_answer %}
+    <div style="background:var(--primary-t);border:1px solid #cdeef4;border-radius:12px;padding:14px 16px;">
+      <div style="font-weight:800;font-size:13px;color:var(--primary-d);margin-bottom:5px;">✨ LulaAI suggests</div>
+      <div style="font-size:14px;line-height:1.55;">{{ assist.ai_answer|linebreaksbr }}</div>
+    </div>
+    {% endif %}
+    {% if assist.articles %}
+    <div style="margin-top:12px;">
+      <div class="muted" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Relevant articles</div>
+      {% for a in assist.articles %}
+      <a href="{% url 'web:support_kb_article' a.slug %}" style="display:block;border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:8px;color:var(--ink);">
+        <strong>{{ a.title }}</strong><div class="muted" style="font-size:12.5px;">{{ a.summary }}</div></a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted" style="margin-top:12px;">No articles matched — open a ticket below and we'll help.</p>
+    {% endif %}
+    <p class="muted" style="font-size:13px;margin-top:12px;">Did this solve your problem?
+      <a href="{% url 'web:support_home' %}" style="font-weight:700;">Yes, thanks 👍</a> ·
+      <span style="color:var(--muted);">No — create a ticket below ↓</span></p>
+  </div>
+  {% endif %}
+</div>
+
+<h2 style="margin:0 0 8px;">Create a support ticket</h2>
+<p class="sub">Still need help? Tell LulaWorks Support what's happening — we'll reply here and by email.</p>
 
 <div class="card" style="max-width:720px;">
   <form method="post" enctype="multipart/form-data">{% csrf_token %}
@@ -25,8 +60,9 @@
       <div class="fld"><label>Priority</label>
         <select name="priority">{% for value, label in priorities %}<option value="{{ value }}" {% if value == 'normal' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
     </div>
+    {% if assist %}<input type="hidden" name="assist_summary" value="Asked: {{ ask }}{% if assist.ai_answer %} · LulaAI: {{ assist.ai_answer|truncatechars:280 }}{% endif %}{% if assist.articles %} · Suggested: {% for a in assist.articles %}{{ a.title }}{% if not forloop.last %}; {% endif %}{% endfor %}{% endif %}">{% endif %}
     <div class="fld"><label>What happened?</label>
-      <textarea name="description" required placeholder="Describe the problem, what you expected, and any steps to reproduce it."></textarea></div>
+      <textarea name="description" required placeholder="Describe the problem, what you expected, and any steps to reproduce it.">{{ prefill.description }}</textarea></div>
     <div class="row2">
       <div class="fld"><label>Related area (optional)</label>
         <input type="text" name="related_module" placeholder="e.g. Quotations"></div>

@@ -8,7 +8,7 @@ internal/external flag so support's private notes never reach the customer.
 from django.conf import settings
 from django.db import models
 
-from apps.core.models import TenantBaseModel
+from apps.core.models import PlatformBaseModel, TenantBaseModel
 
 
 def support_upload_path(instance, filename):
@@ -52,6 +52,27 @@ class TicketStatus(models.TextChoices):
 
 #: Statuses a customer still counts as "an open matter".
 OPEN_STATUSES = {TicketStatus.OPEN, TicketStatus.IN_PROGRESS, TicketStatus.WAITING_CUSTOMER}
+
+
+class KBArticle(PlatformBaseModel):
+    """A LulaWorks Knowledge Base article — authored by support, read by every
+    tenant, and the ONLY source the AI assistant is allowed to answer from."""
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=220, unique=True)
+    category = models.CharField(max_length=20, choices=TicketCategory.choices,
+                                default=TicketCategory.OTHER)
+    summary = models.CharField(max_length=300, blank=True)
+    body = models.TextField()
+    tags = models.CharField(max_length=200, blank=True)   # comma-separated keywords
+    is_published = models.BooleanField(default=True)
+    views = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["title"]
+        indexes = [models.Index(fields=["is_published", "category"])]
+
+    def __str__(self):
+        return self.title
 
 
 class SupportTicket(TenantBaseModel):

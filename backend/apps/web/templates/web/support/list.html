@@ -30,6 +30,7 @@
 <div class="tabs">
   <a class="{% if scope == 'mine' %}on{% endif %}" href="{% url 'web:support_home' %}">My tickets</a>
   {% if can_company %}<a class="{% if scope == 'company' %}on{% endif %}" href="{% url 'web:support_company' %}">Company tickets</a>{% endif %}
+  <a href="{% url 'web:support_kb' %}">Knowledge Base</a>
 </div>
 
 <div class="card" style="padding:0;overflow-x:auto;">

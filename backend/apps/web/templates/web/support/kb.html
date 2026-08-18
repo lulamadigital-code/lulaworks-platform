@@ -1,0 +1,32 @@
+{% extends "web/base.html" %}
+{% block title %}Knowledge Base{% endblock %}
+{% block content %}
+<style>
+  .kbcard{display:block;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px;color:var(--ink);background:var(--surface)}
+  .kbcard:hover{border-color:var(--primary);box-shadow:var(--shadow);text-decoration:none}
+  .kbcard .t{font-weight:700;font-size:15px} .kbcard .d{color:var(--muted);font-size:13px;margin-top:3px}
+  .kbcard .c{display:inline-block;margin-top:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--primary-d);background:var(--primary-t);padding:2px 9px;border-radius:20px}
+</style>
+
+<p class="sub" style="margin:0 0 6px;"><a href="{% url 'web:support_home' %}">← Help &amp; Support</a></p>
+<h1>Knowledge Base</h1>
+<p class="sub">Answers to common questions. Can't find it? <a href="{% url 'web:support_create' %}">Create a ticket</a>.</p>
+
+<form method="get" style="display:flex;gap:8px;margin:12px 0 18px;max-width:560px;">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search the Knowledge Base…" style="flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:9px;font-size:14px;">
+  <button class="btn" type="submit">Search</button>
+</form>
+
+{% for a in articles %}
+<a class="kbcard" href="{% url 'web:support_kb_article' a.slug %}">
+  <div class="t">{{ a.title }}</div>
+  <div class="d">{{ a.summary }}</div>
+  <span class="c">{{ a.get_category_display }}</span>
+</a>
+{% empty %}
+<div class="card" style="text-align:center;color:var(--muted);">
+  {% if q %}No articles matched “{{ q }}”. <a href="{% url 'web:support_create' %}?ask={{ q|urlencode }}">Get help or create a ticket</a>.
+  {% else %}No articles yet.{% endif %}
+</div>
+{% endfor %}
+{% endblock %}

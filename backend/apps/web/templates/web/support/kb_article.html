@@ -1,0 +1,14 @@
+{% extends "web/base.html" %}
+{% block title %}{{ article.title }} · Knowledge Base{% endblock %}
+{% block content %}
+<p class="sub" style="margin:0 0 6px;"><a href="{% url 'web:support_kb' %}">← Knowledge Base</a></p>
+<div class="card" style="max-width:760px;">
+  <span style="display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--primary-d);background:var(--primary-t);padding:2px 9px;border-radius:20px;">{{ article.get_category_display }}</span>
+  <h1 style="margin:10px 0 6px;">{{ article.title }}</h1>
+  {% if article.summary %}<p class="sub" style="margin:0 0 14px;">{{ article.summary }}</p>{% endif %}
+  <div style="font-size:15px;line-height:1.65;">{{ article.body|linebreaksbr }}</div>
+  <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;">
+    Did this help? If not, <a href="{% url 'web:support_create' %}?ask={{ article.title|urlencode }}">create a support ticket</a> and we'll assist.
+  </div>
+</div>
+{% endblock %}

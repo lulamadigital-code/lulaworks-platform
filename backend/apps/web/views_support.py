@@ -60,6 +60,10 @@ def support_create(request):
                 ev = ErrorEvent.objects.filter(reference=err_ref).first()
                 if ev:
                     err_ctx = ev.safe_context()
+            # Carry the pre-ticket AI/KB assist so the customer needn't repeat it.
+            assist_summary = request.POST.get("assist_summary", "").strip()
+            if assist_summary:
+                err_ctx["AI assist"] = assist_summary[:800]
             ticket = support.create_ticket(
                 company=request.user.active_company, user=request.user,
                 subject=request.POST.get("subject", ""),
@@ -80,14 +84,49 @@ def support_create(request):
         except Exception as exc:                               # noqa: BLE001
             messages.error(request, f"Could not create the ticket: {exc}")
     ref = request.GET.get("ref", "").strip()
+    # LulaAI pre-ticket assist: search the KB (and, if available, add a grounded
+    # AI suggestion) before the user commits to a ticket.
+    ask = request.GET.get("ask", "").strip()
+    assist = support.assist(request.user.active_company, request.user, ask) if ask else None
     return render(request, "web/support/create.html", {
         "nav_section": "support",
         "categories": TicketCategory.choices, "priorities": TicketPriority.choices,
-        "prefill": {"subject": request.GET.get("subject", ""),
+        "ask": ask, "assist": assist,
+        "prefill": {"subject": request.GET.get("subject", "") or ask,
+                    "description": ask,
                     # Errors default to the Technical Problem category.
                     "category": request.GET.get("category", "") or ("technical" if ref else ""),
                     "error_reference": ref},
     })
+
+
+@login_required
+def support_kb(request):
+    """Knowledge Base — browse & search LulaWorks help articles."""
+    q = request.GET.get("q", "").strip()
+    if q:
+        articles = support.search_kb(q, limit=30)
+    else:
+        from apps.core.context import system_scope
+        from apps.support.models import KBArticle
+        with system_scope():
+            articles = list(KBArticle.objects.filter(is_published=True))
+    return render(request, "web/support/kb.html", {
+        "nav_section": "support", "articles": articles, "q": q})
+
+
+@login_required
+def support_kb_article(request, slug):
+    from apps.core.context import system_scope
+    from apps.support.models import KBArticle
+    with system_scope():
+        article = KBArticle.objects.filter(slug=slug, is_published=True).first()
+        if article is None:
+            messages.error(request, "Article not found.")
+            return redirect("web:support_kb")
+        KBArticle.objects.filter(pk=article.pk).update(views=article.views + 1)
+    return render(request, "web/support/kb_article.html", {
+        "nav_section": "support", "article": article})
 
 
 @login_required

@@ -862,6 +862,69 @@ def platform_support_detail(request, pk):
 
 
 @login_required
+def platform_kb(request):
+    """Manage the LulaWorks Knowledge Base — the articles tenants read and the AI
+    assistant is grounded in. View for any platform staff; edit needs settings."""
+    if not request.user.can_platform("support"):
+        messages.error(request, "The support desk is for platform staff only.")
+        return redirect("web:dashboard")
+
+    from django.utils.text import slugify
+
+    from apps.core.context import system_scope
+    from apps.support.models import KBArticle, TicketCategory
+
+    can_edit = request.user.can_platform("settings")
+    with system_scope():
+        if request.method == "POST":
+            if not can_edit:
+                messages.error(request, "You don't have settings access.")
+                return redirect("web:platform_kb")
+            action = request.POST.get("action")
+            try:
+                if action == "save":
+                    pk = request.POST.get("id") or ""
+                    title = (request.POST.get("title") or "").strip()
+                    if not title:
+                        raise ValueError("A title is required.")
+                    art = KBArticle.objects.filter(pk=pk).first() if pk else KBArticle()
+                    art.title = title[:200]
+                    if not art.slug:
+                        base = slugify(title)[:200] or "article"
+                        slug, i = base, 1
+                        while KBArticle.objects.filter(slug=slug).exclude(pk=art.pk).exists():
+                            i += 1
+                            slug = f"{base}-{i}"
+                        art.slug = slug
+                    art.category = request.POST.get("category", "other")
+                    art.summary = (request.POST.get("summary") or "")[:300]
+                    art.body = request.POST.get("body", "")
+                    art.tags = (request.POST.get("tags") or "")[:200]
+                    art.is_published = request.POST.get("is_published") == "on"
+                    art.save()
+                    messages.success(request, "Article saved.")
+                elif action == "delete":
+                    KBArticle.objects.filter(pk=request.POST.get("id")).delete()
+                    messages.success(request, "Article deleted.")
+            except ValueError as exc:
+                messages.error(request, str(exc))
+            return redirect("web:platform_kb")
+
+        editing = None
+        eid = request.GET.get("edit")
+        if eid == "new":
+            editing = KBArticle(is_published=True)
+        elif eid:
+            editing = KBArticle.objects.filter(pk=eid).first()
+        articles = list(KBArticle.objects.all())
+
+    return render(request, "web/platform/kb.html", {
+        "active": "support", "articles": articles, "editing": editing,
+        "categories": TicketCategory.choices, "can_edit": can_edit,
+    })
+
+
+@login_required
 def platform_tenants_csv(request):
     """Download every tenant with plan, users, AI credits + 30-day usage."""
     import csv
