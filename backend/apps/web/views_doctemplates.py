@@ -450,7 +450,8 @@ def template_thumb(request, pk):
     tpl = get_object_or_404(DocumentTemplate.objects.all(), pk=pk)
     company = request.user.active_company
     if tpl.engine == TemplateEngine.HTML:
-        html = design_to_html(current_design(tpl), sample_context(company, tpl.doc_type))
+        html = design_to_html(current_design(tpl), sample_context(company, tpl.doc_type),
+                              compact=True)
     else:
         html = ("<!doctype html><meta charset='utf-8'><body "
                 "style='font-family:system-ui;color:#94a3b8;display:flex;height:100%;"

@@ -232,15 +232,18 @@ def render_html_pdf(document, doc_type: str, design: dict) -> bytes:
 
 
 def render_design_preview_pdf(company, doc_type: str, design: dict) -> bytes:
-    """Render a design to PDF with SAMPLE data — for the import review screen and
-    a blank builder, where there's no real document to fill it with yet."""
+    """Render a design to PDF with SAMPLE data — for the import review screen, the
+    blank builder and gallery previews. The preview uses the COMPACT profile so it
+    always presents as a tidy one-pager, even though a real document renders at
+    comfortable spacing and paginates naturally."""
     from weasyprint import HTML
 
-    html = design_to_html(design or DEFAULT_DESIGN, sample_context(company, doc_type))
+    html = design_to_html(design or DEFAULT_DESIGN,
+                          sample_context(company, doc_type), compact=True)
     return HTML(string=html).write_pdf()
 
 
-def design_to_html(design: dict, context: dict) -> str:
+def design_to_html(design: dict, context: dict, *, compact: bool = False) -> str:
     """Turn a validated design + a real-data context into a complete HTML string.
     Deterministic, fully escaped — no user markup is ever interpolated raw. The
     structural knobs (header layout, table/totals/section-title style) are what
@@ -271,7 +274,7 @@ def design_to_html(design: dict, context: dict) -> str:
     sections = design.get("sections") or DEFAULT_DESIGN["sections"]
     requested = [e.get("key") for e in sections if e.get("visible", True)]
     visible = caps.filter_sections(doc_type, requested)
-    css = _base_css(accent, secondary, font, st)
+    css = _base_css(accent, secondary, font, st, compact=compact)
 
     # A running footer repeated on EVERY page: company + document reference on the
     # left, "Page N of M" on the right — so a multi-page document stays identified
@@ -321,15 +324,31 @@ def _shade(hexcolor: str) -> str:
         return "#222222"
 
 
-def _base_css(accent, secondary, font, st) -> str:
+def _base_css(accent, secondary, font, st, compact=False) -> str:
     hs, ts, tot = st["header_style"], st["table_style"], st["totals_style"]
     tis = st["title_style"]
 
+    # Spacing profile. Real documents render at COMFORTABLE spacing and paginate
+    # naturally when long; only the SAMPLE preview (gallery thumbnail / preview
+    # screen) uses the COMPACT profile so it presents as a tidy one-pager.
+    if compact:
+        S = dict(page="12mm 12mm 14mm", body_fs="11.5px", body_lh="1.32", p_m="1.5px",
+                 h1_fs="20px", h1_m="6px 0 2px", sec_top="9px", band_pad="11px 14px",
+                 plain_pb="6px", th_pad="4px 8px", td_pad="3px 8px", meta_top="8px",
+                 items_top="7px", totals_top="6px", totals_td="2.5px 8px",
+                 boxes_top="10px", foot_top="10px")
+    else:
+        S = dict(page="16mm 12mm 16mm", body_fs="12px", body_lh="1.45", p_m="3px",
+                 h1_fs="22px", h1_m="12px 0 4px", sec_top="14px", band_pad="14px 16px",
+                 plain_pb="8px", th_pad="6px 8px", td_pad="5px 8px", meta_top="12px",
+                 items_top="10px", totals_top="8px", totals_td="3px 8px",
+                 boxes_top="14px", foot_top="16px")
+
     # Letterhead per header style.
     lh = {
-        "band": f".letterhead{{background:{accent};color:#fff;padding:11px 14px;border-radius:4px;}}"
+        "band": f".letterhead{{background:{accent};color:#fff;padding:{S['band_pad']};border-radius:4px;}}"
                 f".letterhead .muted{{color:rgba(255,255,255,.85);}}",
-        "plain": f".letterhead{{border-bottom:2.5px solid {accent};padding-bottom:6px;}}",
+        "plain": f".letterhead{{border-bottom:2.5px solid {accent};padding-bottom:{S['plain_pb']};}}",
         "minimal": ".letterhead{border-bottom:1px solid #ddd;padding-bottom:10px;}"
                    ".letterhead .coname{font-weight:600;letter-spacing:.5px;}",
         "centered": f".letterhead{{text-align:center;border-bottom:2px solid {accent};padding-bottom:10px;}}"
@@ -375,29 +394,28 @@ def _base_css(accent, secondary, font, st) -> str:
     }.get(tot, "")
 
     # Section titles per style.
+    st_top = S["sec_top"]
     title = {
-        "plain": f".section-title{{color:{accent};font-weight:bold;margin:9px 0 3px;font-size:12.5px;}}",
-        "bar": f".section-title{{background:{accent};color:#fff;font-weight:bold;margin:9px 0 4px;"
+        "plain": f".section-title{{color:{accent};font-weight:bold;margin:{st_top} 0 3px;font-size:12.5px;}}",
+        "bar": f".section-title{{background:{accent};color:#fff;font-weight:bold;margin:{st_top} 0 4px;"
                "padding:3px 8px;border-radius:3px;font-size:12px;}",
-        "underline": f".section-title{{color:{accent};font-weight:bold;margin:9px 0 3px;font-size:12.5px;"
+        "underline": f".section-title{{color:{accent};font-weight:bold;margin:{st_top} 0 3px;font-size:12.5px;"
                      f"border-bottom:1.5px solid {accent};padding-bottom:2px;}}",
     }.get(tis, "")
 
     return f"""
-    @page {{ size: A4; margin: 12mm 12mm 14mm; }}
+    @page {{ size: A4; margin: {S['page']}; }}
     * {{ box-sizing: border-box; }}
-    body {{ font-family: {font}, Arial, sans-serif; color:#111; font-size:11.5px;
-            line-height:1.32; margin:0; }}
-    /* Compact by default so a normal quotation fits one page — every line and
-       paragraph is tight; long documents still flow to more pages cleanly. */
-    p {{ margin: 1.5px 0; }}
+    body {{ font-family: {font}, Arial, sans-serif; color:#111; font-size:{S['body_fs']};
+            line-height:{S['body_lh']}; margin:0; }}
+    p {{ margin: {S['p_m']} 0; }}
     /* Multi-page: repeat the item-table header on each page and never split a row
        or orphan the totals from the table. */
     table.items thead {{ display: table-header-group; }}
     table.items tbody tr {{ page-break-inside: avoid; }}
     .totals, .boxes {{ page-break-inside: avoid; }}
     .section-title {{ page-break-after: avoid; }}
-    h1.title {{ color:{accent}; font-size:20px; margin:6px 0 2px; }}
+    h1.title {{ color:{accent}; font-size:{S['h1_fs']}; margin:{S['h1_m']}; }}
     .muted {{ color:#555; }}
     {lh}
     .letterhead .lh-row {{ display:flex; align-items:center; gap:20px; justify-content:{justify}; }}
@@ -413,20 +431,20 @@ def _base_css(accent, secondary, font, st) -> str:
                                       object-fit:contain; margin-bottom:4px; }}
     .sidebar-layout .rail .coname {{ font-size:15px; line-height:1.25; }}
     .sidebar-layout main {{ width:68%; padding:8px 0 0 18px; }}
-    .meta {{ display:flex; justify-content:space-between; gap:20px; margin-top:8px; }}
+    .meta {{ display:flex; justify-content:space-between; gap:20px; margin-top:{S['meta_top']}; }}
     .meta .box p {{ margin:1px 0; }}
-    table.items {{ width:100%; border-collapse:collapse; margin-top:7px; }}
-    table.items th {{ text-align:left; padding:4px 8px; font-size:11px; }}
-    table.items td {{ padding:3px 8px; }}
+    table.items {{ width:100%; border-collapse:collapse; margin-top:{S['items_top']}; }}
+    table.items th {{ text-align:left; padding:{S['th_pad']}; font-size:11px; }}
+    table.items td {{ padding:{S['td_pad']}; }}
     table.items td.num, table.items th.num {{ text-align:right; }}
     {table}
-    .totals {{ width:46%; margin-left:auto; margin-top:6px; border-collapse:collapse; }}
-    .totals td {{ padding:2.5px 8px; text-align:right; }}
+    .totals {{ width:46%; margin-left:auto; margin-top:{S['totals_top']}; border-collapse:collapse; }}
+    .totals td {{ padding:{S['totals_td']}; text-align:right; }}
     {totals}
     {title}
-    .boxes {{ display:flex; gap:12px; margin-top:10px; }}
+    .boxes {{ display:flex; gap:12px; margin-top:{S['boxes_top']}; }}
     .boxes .b {{ flex:1; border:1px solid #ccc; border-radius:4px; padding:8px 10px; font-size:11px; }}
-    .foot {{ margin-top:10px; font-size:10.5px; color:#555; }}
+    .foot {{ margin-top:{S['foot_top']}; font-size:10.5px; color:#555; }}
 
     /* Per-family structural overrides — these are what make one family look
        genuinely different, not merely recoloured. */
