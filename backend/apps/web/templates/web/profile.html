@@ -1,5 +1,16 @@
 {% extends "web/base.html" %}
 {% block title %}My profile{% endblock %}
+
+{% comment %}A platform superuser with no tenant company gets the platform
+sidebar here, so their whole experience (console -> profile) stays consistent
+and none of the tenant-only nav links (which would 500 for them) show. The
+condition lives INSIDE each block on purpose: a block override wrapped in an if
+would apply to everyone, since Django registers overrides at parse time.
+{% endcomment %}
+{% block logo_href %}{% if user.is_superuser and not user.active_company_id %}{% url 'web:platform_home' %}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block sidebar_nav %}{% if user.is_superuser and not user.active_company_id %}{% include "web/platform/_nav.html" %}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block floating %}{% if user.is_superuser and not user.active_company_id %}{% else %}{{ block.super }}{% endif %}{% endblock %}
+
 {% block content %}
 
 <div class="pagehead">
