@@ -36,13 +36,22 @@ class SeedAndDefaultTests(TestCase):
         c = make_company()
         with tenant_scope(c.id):
             dt.seed_document_templates(c)
-            modern = DocumentTemplate.objects.get(company=c, doc_type="quotation",
-                                                  name="Modern")
-            dt.set_default_template(modern)
-            modern.refresh_from_db()
-            self.assertTrue(modern.is_default)
+            elevate = DocumentTemplate.objects.get(company=c, doc_type="quotation",
+                                                   name="Elevate")
+            dt.set_default_template(elevate)
+            elevate.refresh_from_db()
+            self.assertTrue(elevate.is_default)
             self.assertEqual(DocumentTemplate.objects.filter(
                 company=c, doc_type="quotation", is_default=True).count(), 1)
+
+    def test_default_family_is_horizon(self):
+        c = make_company()
+        with tenant_scope(c.id):
+            dt.seed_document_templates(c)
+            for doc_type in ("quotation", "invoice", "delivery"):
+                d = DocumentTemplate.objects.get(company=c, doc_type=doc_type,
+                                                 is_default=True)
+                self.assertEqual((d.name, d.family), ("Horizon", "horizon"))
 
 
 class ResolutionTests(TestCase):
@@ -60,9 +69,11 @@ class ResolutionTests(TestCase):
         c = make_company()
         with tenant_scope(c.id):
             dt.seed_document_templates(c)
-            mining = DocumentTemplate.objects.get(company=c, doc_type="quotation",
-                                                  name="Mining")
-            cfg = dt.effective_config(c, "quotation", override=mining)
+            override = dt.create_template(
+                c, None, doc_type="quotation", name="Bespoke override",
+                base_layout="modern",
+                config={"accent_color": "#B9711A", "show_project_reference": True})
+            cfg = dt.effective_config(c, "quotation", override=override)
             self.assertEqual(cfg["accent_color"], "#B9711A")
             self.assertTrue(cfg["show_project_reference"])
 
@@ -70,9 +81,10 @@ class ResolutionTests(TestCase):
         c = make_company()
         with tenant_scope(c.id):
             dt.seed_document_templates(c)
-            corp = DocumentTemplate.objects.get(company=c, doc_type="invoice",
-                                                name="Corporate")
-            dt.set_default_template(corp)
+            serif = dt.create_template(
+                c, None, doc_type="invoice", name="Bespoke serif",
+                base_layout="classic", config={"font": "Times-Roman"})
+            dt.set_default_template(serif)
             cfg = dt.effective_config(c, "invoice")   # no override
             self.assertEqual(cfg["font"], "Times-Roman")
 
@@ -125,14 +137,14 @@ class PdfRenderingTests(TestCase):
             pdf = quotation_pdf_bytes(self._quote(c))
             self.assertTrue(pdf.startswith(b"%PDF"))
 
-    def test_quotation_renders_with_a_preset_template(self):
+    def test_quotation_renders_with_a_family_template(self):
         from .pdf import quotation_pdf_bytes
         c = make_company()
         with tenant_scope(c.id):
             dt.seed_document_templates(c)
-            mining = DocumentTemplate.objects.get(company=c, doc_type="quotation",
-                                                  name="Mining")
-            pdf = quotation_pdf_bytes(self._quote(c, template=mining))
+            forge = DocumentTemplate.objects.get(company=c, doc_type="quotation",
+                                                 name="Forge")
+            pdf = quotation_pdf_bytes(self._quote(c, template=forge))
             self.assertTrue(pdf.startswith(b"%PDF"))
 
     def test_template_toggles_and_watermark_render(self):
@@ -184,49 +196,34 @@ class LetterheadLogoPositionTests(SimpleTestCase):
         self.assertIs(table._cellvalues[0][0], ident)          # identity left
 
 
-class HouseStyleTests(TestCase):
-    """The FreshBooks/Xero/QuickBooks/Sage/SAP/Ariba/Jira house styles: registered
-    across all three doc types, and they render valid documents (modern = band,
-    compact = dense)."""
+class FamilyTests(TestCase):
+    """The twelve original LulaWorks families: every family is seeded across all
+    three document types as an HTML-engine template, they render valid documents,
+    and the built-in name guard is an allowlist (no borrowed product names)."""
 
-    def _quote(self, company, **extra):
-        from .models import Quotation
-        q = Quotation.objects.create(company=company, number="QT-9",
-                                     client_name="Sibanye", site="Driefontein", **extra)
-        q.lines.create(company=company, position=1, description="Pump overhaul",
-                       qty=1, unit="ea", unit_cost=1000)
-        return q
-
-    def test_every_house_style_is_registered_for_all_doc_types(self):
-        from .models import BUILTIN_TEMPLATES
-        names = {(d, n) for d, n, _, _, _ in BUILTIN_TEMPLATES}
-        for label in ("FreshBooks Blue", "Xero Teal", "QuickBooks Green", "Sage Green",
-                      "Jira Blue", "SAP Blue", "Ariba Procurement"):
-            for doc_type in ("quotation", "invoice", "delivery"):
-                self.assertIn((doc_type, label), names, f"{label}/{doc_type}")
-
-    def test_modern_band_house_style_renders(self):
-        from .pdf import quotation_pdf_bytes
+    def test_every_family_is_seeded_for_all_doc_types(self):
+        from .models import TEMPLATE_FAMILIES
         c = make_company()
         with tenant_scope(c.id):
-            tpl = dt.create_template(c, None, doc_type="quotation", name="Xero Teal",
-                                     base_layout="modern",
-                                     config={"accent_color": "#13B5EA",
-                                             "logo_position": "left"})
-            self.assertTrue(quotation_pdf_bytes(self._quote(c, template=tpl))
-                            .startswith(b"%PDF"))
+            dt.seed_document_templates(c)
+            for key, name, _desc, _tags, _design in TEMPLATE_FAMILIES:
+                for doc_type in ("quotation", "invoice", "delivery"):
+                    tpl = DocumentTemplate.objects.filter(
+                        company=c, doc_type=doc_type, name=name, family=key).first()
+                    self.assertIsNotNone(tpl, f"{name}/{doc_type}")
+                    self.assertEqual(tpl.engine, "html")
+                    self.assertTrue(tpl.is_builtin)
 
-    def test_compact_procurement_house_style_renders(self):
-        from .pdf import quotation_pdf_bytes
-        c = make_company()
-        with tenant_scope(c.id):
-            tpl = dt.create_template(c, None, doc_type="quotation", name="SAP Blue",
-                                     base_layout="compact",
-                                     config={"accent_color": "#0A6ED1",
-                                             "logo_position": "right",
-                                             "show_project_reference": True})
-            self.assertTrue(quotation_pdf_bytes(self._quote(c, template=tpl))
-                            .startswith(b"%PDF"))
+    def test_name_guard_is_an_allowlist_for_builtins(self):
+        # Any name that is not one of the twelve families is refused for a built-in
+        # (this makes it impossible to ship a third-party product name), but a
+        # customer may still use any name on their OWN custom template.
+        for bad in ("Anything Else", "My Own Style", "Nonsense"):
+            with self.assertRaises(dt.TemplateError):
+                dt.assert_allowed_template_name(bad, is_builtin=True)
+        dt.assert_allowed_template_name("Anything Else", is_builtin=False)  # no raise
+        for family in ("Horizon", "Elevate", "Forge", "Canvas"):
+            dt.assert_allowed_template_name(family, is_builtin=True)  # no raise
 
 
 class LetterheadBandTests(SimpleTestCase):
@@ -260,13 +257,13 @@ class SyncBuiltinsTests(TestCase):
         c = make_company()
         with tenant_scope(c.id):
             dt.seed_document_templates(c)
-            # Simulate a company seeded before the house styles existed.
-            DocumentTemplate.objects.filter(name="Xero Teal").delete()
+            # Simulate a company seeded before a family shipped.
+            DocumentTemplate.objects.filter(name="Vector").delete()
             default_before = DocumentTemplate.objects.get(
                 company=c, doc_type="quotation", is_default=True).name
 
             added = dt.sync_builtin_templates(c)
-            self.assertEqual(added, 3)   # Xero Teal for all 3 doc types
+            self.assertEqual(added, 3)   # Vector for all 3 doc types
             self.assertEqual(dt.sync_builtin_templates(c), 0)   # idempotent
 
             # The company's chosen default is untouched, still exactly one per type.
@@ -452,12 +449,12 @@ class StructuralLooksTests(TestCase):
                        unit="ea", unit_cost=500)
         return q
 
-    def test_all_six_looks_are_seeded_as_html_templates(self):
-        from .models import BUILTIN_HTML_LOOKS, DocumentTemplate
+    def test_all_families_are_seeded_as_html_templates(self):
+        from .models import TEMPLATE_FAMILIES, DocumentTemplate
         c = make_company()
         with tenant_scope(c.id):
             dt.seed_document_templates(c)
-            for name, _desc, _design in BUILTIN_HTML_LOOKS:
+            for _key, name, _desc, _tags, _design in TEMPLATE_FAMILIES:
                 for doc_type in ("quotation", "invoice", "delivery"):
                     tpl = DocumentTemplate.objects.filter(
                         company=c, doc_type=doc_type, name=name).first()
@@ -465,14 +462,14 @@ class StructuralLooksTests(TestCase):
                     self.assertEqual(tpl.engine, "html")
                     self.assertTrue(tpl.current_version.design)
 
-    def test_each_look_renders_a_valid_pdf(self):
-        from .models import BUILTIN_HTML_LOOKS, DocumentTemplate
+    def test_each_family_renders_a_valid_pdf(self):
+        from .models import TEMPLATE_FAMILIES, DocumentTemplate
         from .pdf import quotation_pdf_bytes
         c = make_company()
         with tenant_scope(c.id):
             dt.seed_document_templates(c)
             q = self._quote(c)
-            for name, _desc, _design in BUILTIN_HTML_LOOKS:
+            for _key, name, _desc, _tags, _design in TEMPLATE_FAMILIES:
                 tpl = DocumentTemplate.objects.get(company=c, doc_type="quotation", name=name)
                 q.template = tpl
                 pdf = quotation_pdf_bytes(q)

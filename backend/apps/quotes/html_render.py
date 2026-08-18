@@ -259,8 +259,13 @@ def design_to_html(design: dict, context: dict) -> str:
         body = "".join(_SECTION_BUILDERS[k](context, st) or ""
                        for k in visible if k in _SECTION_BUILDERS)
 
+    # A wrapper class keyed on the header style lets the CSS restyle the title/meta
+    # and information blocks per family — the structural differences (e.g. Elevate's
+    # centred hero title, Ledger's boxed reference) live in `hs-*` rules.
     return (f"<!doctype html><html><head><meta charset='utf-8'>"
-            f"<style>{css}</style></head><body>{body}</body></html>")
+            f"<style>{css}</style></head><body>"
+            f"<div class='doc hs-{escape(header_style)}'>{body}</div>"
+            f"</body></html>")
 
 
 def _shade(hexcolor: str) -> str:
@@ -291,6 +296,15 @@ def _base_css(accent, secondary, font, st) -> str:
         "split": f".letterhead{{background:{accent};color:#fff;padding:14px 16px;border-radius:4px;"
                  f"border-bottom:6px solid {secondary};}}.letterhead .muted{{color:rgba(255,255,255,.85);}}",
         "sidebar": "",     # styled via .rail below
+        # 'hero' — a quiet, centred identity; the DRAMA is the big centred title
+        # band the meta section becomes (see hs-hero overrides). Premium & spacious.
+        "hero": ".letterhead{text-align:center;padding-bottom:4px;}"
+                ".letterhead .lh-row{flex-direction:column;gap:8px;}"
+                ".letterhead .coname{font-size:18px;letter-spacing:1px;}",
+        # 'ledger' — corporate letterhead with an accent underline; the reference/
+        # date sit in a bordered box (hs-ledger overrides) for a finance look.
+        "ledger": f".letterhead{{border-bottom:2.5px solid {accent};padding-bottom:8px;}}"
+                  ".letterhead .coname{font-weight:bold;}",
     }.get(hs, "")
 
     justify = {"left": "flex-start", "center": "center", "right": "flex-end"}.get(st["logo_pos"], "flex-start")
@@ -360,6 +374,22 @@ def _base_css(accent, secondary, font, st) -> str:
     .boxes {{ display:flex; gap:12px; margin-top:14px; }}
     .boxes .b {{ flex:1; border:1px solid #ccc; border-radius:4px; padding:10px; font-size:11px; }}
     .foot {{ margin-top:16px; font-size:10.5px; color:#555; }}
+
+    /* Per-family structural overrides — these are what make one family look
+       genuinely different, not merely recoloured. */
+    /* Elevate: a large, centred document title in its own band. */
+    .hs-hero .meta {{ flex-direction:column; align-items:center; text-align:center;
+        gap:2px; border-top:2px solid {accent}; border-bottom:2px solid {accent};
+        padding:14px 0; margin:18px 0 6px; }}
+    .hs-hero .meta .box:first-child {{ display:none; }}
+    .hs-hero h1.title {{ font-size:30px; letter-spacing:3px; text-transform:uppercase;
+        margin:0 0 8px; }}
+    .hs-hero .section-title {{ text-align:center; }}
+    /* Ledger: the reference/date become a bordered card, pushed to the right. */
+    .hs-ledger .meta {{ justify-content:space-between; }}
+    .hs-ledger .meta .box:last-child {{ border:1.5px solid {accent}; border-radius:4px;
+        padding:10px 12px; background:#f8fafa; min-width:44%; }}
+    .hs-ledger h1.title {{ font-size:20px; margin-top:0; }}
     """
 
 

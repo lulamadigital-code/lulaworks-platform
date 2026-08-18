@@ -1,10 +1,12 @@
 """Top-up the built-in document-template library for existing companies.
 
 seed_document_templates only runs for a company that has NONE, so when new
-built-ins ship (e.g. the house styles that echo FreshBooks / Xero / QuickBooks /
-Sage / SAP / Ariba / Jira) already-seeded companies never receive them. This
-command adds only the missing ones, touching nothing a company already has and
-never moving a chosen default. Idempotent — safe to run on every deploy.
+built-in template families ship, already-seeded companies never receive them.
+This command adds only the missing ones, touching nothing a company already has
+and never moving a chosen default. Idempotent — safe to run on every deploy.
+
+(To also RETIRE the old catalogue and repair defaults, use the one-shot
+`refresh_document_templates` command instead.)
 
     python manage.py sync_document_templates                # every company
     python manage.py sync_document_templates --company <id>  # just one

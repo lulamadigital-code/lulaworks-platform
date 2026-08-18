@@ -1776,14 +1776,19 @@ class DocTemplateWebTests(TestCase):
         with tenant_scope(self.company.id):
             self.assertTrue(DocumentTemplate.objects.filter(company=self.company).exists())
 
-    def test_edit_saves_config(self):
-        from apps.quotes.models import DocumentTemplate
-        self.client.get("/company/templates/")   # seed
+    def _reportlab_tpl(self, name="Bespoke reportlab"):
+        # The config form (edit view) is for ReportLab templates; the built-in
+        # families are HTML-engine and edit in the visual builder instead.
+        from apps.quotes import document_templates as dts
         with tenant_scope(self.company.id):
-            tpl = DocumentTemplate.objects.get(company=self.company,
-                                               doc_type="quotation", name="Modern")
+            return dts.create_template(self.company, None, doc_type="quotation",
+                                       name=name, base_layout="modern")
+
+    def test_edit_saves_config(self):
+        self.client.get("/company/templates/")   # seed families
+        tpl = self._reportlab_tpl()
         r = self.client.post(f"/company/templates/{tpl.id}/", {
-            "name": "Modern", "base_layout": "modern",
+            "name": tpl.name, "base_layout": "modern",
             "accent_color": "#123456", "font": "Times-Roman",
             "logo_position": "center", "show_banking": "on"})
         self.assertEqual(r.status_code, 302)
@@ -1794,13 +1799,10 @@ class DocTemplateWebTests(TestCase):
             self.assertFalse(tpl.config["show_signature"])   # checkbox absent → off
 
     def test_edit_rejects_bad_colour(self):
-        from apps.quotes.models import DocumentTemplate
         self.client.get("/company/templates/")
-        with tenant_scope(self.company.id):
-            tpl = DocumentTemplate.objects.get(company=self.company,
-                                               doc_type="quotation", name="Modern")
+        tpl = self._reportlab_tpl()
         r = self.client.post(f"/company/templates/{tpl.id}/", {
-            "name": "Modern", "base_layout": "modern", "accent_color": "red"},
+            "name": tpl.name, "base_layout": "modern", "accent_color": "red"},
             follow=True)
         self.assertContains(r, "valid colour")
 
@@ -1808,20 +1810,20 @@ class DocTemplateWebTests(TestCase):
         from apps.quotes.models import DocumentTemplate
         self.client.get("/company/templates/")
         with tenant_scope(self.company.id):
-            corp = DocumentTemplate.objects.get(company=self.company,
-                                                doc_type="quotation", name="Corporate")
-        r = self.client.post(f"/company/templates/{corp.id}/default/")
+            fam = DocumentTemplate.objects.get(company=self.company,
+                                               doc_type="quotation", name="Summit")
+        r = self.client.post(f"/company/templates/{fam.id}/default/")
         self.assertEqual(r.status_code, 302)
         with tenant_scope(self.company.id):
-            corp.refresh_from_db()
-            self.assertTrue(corp.is_default)
+            fam.refresh_from_db()
+            self.assertTrue(fam.is_default)
 
     def test_quotation_template_override(self):
         from apps.quotes.models import DocumentTemplate, Quotation
         self.client.get("/company/templates/")
         with tenant_scope(self.company.id):
             tpl = DocumentTemplate.objects.get(company=self.company,
-                                               doc_type="quotation", name="Mining")
+                                               doc_type="quotation", name="Forge")
             quote = Quotation.objects.create(company=self.company, number="QT-9",
                                              client_name="X", site="Y")
         r = self.client.post(f"/quotations/{quote.id}/template/",
@@ -1838,7 +1840,7 @@ class DocTemplateWebTests(TestCase):
             Quotation.objects.create(company=self.company, number="QT-7",
                                      client_name="Prev", site="Z")
             tpl = DocumentTemplate.objects.get(company=self.company,
-                                               doc_type="quotation", name="Classic")
+                                               doc_type="quotation", name="Horizon")
         r = self.client.get(f"/company/templates/{tpl.id}/preview/")
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r["Content-Type"], "application/pdf")

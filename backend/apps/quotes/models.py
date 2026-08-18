@@ -802,7 +802,16 @@ ALLOWED_FONT_FAMILIES = ["Helvetica", "Arial", "Times New Roman", "Georgia",
 
 #: Structural knobs — what actually makes documents look DIFFERENT (not just
 #: recoloured). The HTML generator honours each; the visual builder exposes them.
-ALLOWED_HEADER_STYLES = ["band", "plain", "minimal", "centered", "split", "sidebar"]
+#:   band     — solid colour letterhead bar
+#:   plain    — accent underline under the letterhead
+#:   minimal  — hairline rule, understated
+#:   centered — logo + company centred
+#:   split    — two-tone band with a strong document title
+#:   sidebar  — coloured left rail carries the identity, content on the right
+#:   hero     — big centred document title in its own band (premium, spacious)
+#:   ledger   — corporate letterhead with the reference/date in a bordered box
+ALLOWED_HEADER_STYLES = ["band", "plain", "minimal", "centered", "split",
+                         "sidebar", "hero", "ledger"]
 ALLOWED_TABLE_STYLES = ["lines", "striped", "bordered", "plain"]
 ALLOWED_TOTALS_STYLES = ["plain", "boxed", "highlighted"]
 ALLOWED_SECTION_STYLES = ["plain", "bar", "underline"]
@@ -847,42 +856,150 @@ TEMPLATE_FIELD_LIBRARY = {
     "Terms": ["terms_and_conditions"],
 }
 
-#: Built-in HTML-engine "looks" — genuinely DIFFERENT structures (not recolours),
-#: seeded per company alongside the ReportLab presets. Each is (name, description,
-#: design). The design varies header layout, table style, totals and section-title
-#: treatment — the things that actually make documents look different.
-BUILTIN_HTML_LOOKS = [
-    ("Sidebar", "Coloured left rail with your logo; content on the right.", {
-        "branding": {"accent_color": "#0E6E6E", "header_style": "sidebar",
-                     "logo_position": "left", "font_family": "Helvetica"},
-        "table_style": "striped", "totals_style": "plain",
-        "section_title_style": "underline"}),
-    ("Centered", "Logo and company centred — formal and clean.", {
-        "branding": {"accent_color": "#1F3A5F", "header_style": "centered",
-                     "logo_position": "center", "font_family": "Georgia"},
-        "table_style": "plain", "totals_style": "plain",
-        "section_title_style": "underline"}),
-    ("Split Header", "Two-tone header band with a strong document title.", {
-        "branding": {"accent_color": "#0B72E7", "secondary_color": "#08356E",
-                     "header_style": "split", "logo_position": "left"},
-        "table_style": "lines", "totals_style": "boxed",
-        "section_title_style": "plain"}),
-    ("Bordered Ledger", "Ruled table and boxed totals — an accounting look.", {
-        "branding": {"accent_color": "#37474F", "header_style": "plain",
-                     "logo_position": "right", "font_family": "Arial"},
-        "table_style": "bordered", "totals_style": "boxed",
-        "section_title_style": "bar"}),
-    ("Minimal Line", "Thin rules and lots of whitespace — understated.", {
-        "branding": {"accent_color": "#111827", "header_style": "minimal",
-                     "logo_position": "left", "font_family": "Helvetica"},
-        "table_style": "plain", "totals_style": "plain",
-        "section_title_style": "plain"}),
-    ("Statement", "Striped rows and a highlighted total.", {
-        "branding": {"accent_color": "#2CA01C", "header_style": "band",
-                     "logo_position": "left"},
-        "table_style": "striped", "totals_style": "highlighted",
-        "section_title_style": "bar"}),
+# ══════════════════════════════════════════════════════════════════════════════
+# The LulaWorks template families — the entire customer-facing catalogue.
+#
+# Twelve ORIGINAL design families, each with its OWN visual structure (not a
+# recolour of one layout). A family carries a single visual identity across all
+# three document types (quotation / tax invoice / delivery note), so a company's
+# documents read as one professional system rather than three unrelated PDFs.
+#
+# Hard rule: every built-in template name is one of the twelve original families
+# below (ALLOWED_TEMPLATE_FAMILY_NAMES). The guard is an ALLOWLIST — anything not
+# on it is refused for a built-in — so no third-party product name can ever enter
+# the shipped catalogue (see document_templates.assert_allowed_template_name).
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Each family: (key, name, description, tags, design). `design` is the shared
+#: visual identity — validated by clean_design and rendered by html_render. The
+#: seeder expands every family across the three document types; the renderer
+#: adapts each type's content (a delivery note carries quantities, never prices).
+#: `default` marks the family a fresh company opens on.
+TEMPLATE_FAMILIES = [
+    ("horizon", "Horizon",
+     "Clean professional corporate layout — strong header, logo left, document "
+     "title right, crisp item table and firm totals.",
+     ["Professional", "Corporate"], {
+         "branding": {"accent_color": "#1F3A5F", "secondary_color": "#0E2439",
+                      "header_style": "plain", "logo_position": "left",
+                      "font_family": "Helvetica"},
+         "table_style": "lines", "totals_style": "plain",
+         "section_title_style": "underline"}),
+    ("elevate", "Elevate",
+     "Premium modern design — a large centred document title, generous whitespace "
+     "and refined typography. Built for professional services.",
+     ["Premium", "Modern"], {
+         "branding": {"accent_color": "#5B4B8A", "secondary_color": "#2E2547",
+                      "header_style": "hero", "logo_position": "center",
+                      "font_family": "Georgia"},
+         "table_style": "plain", "totals_style": "plain",
+         "section_title_style": "underline"}),
+    ("forge", "Forge",
+     "Industrial / technical layout — structured information blocks and strong "
+     "tables. Suits engineering, mining, construction and industrial work.",
+     ["Industrial", "Technical"], {
+         "branding": {"accent_color": "#37474F", "secondary_color": "#1B2429",
+                      "header_style": "band", "logo_position": "left",
+                      "font_family": "Helvetica"},
+         "table_style": "bordered", "totals_style": "boxed",
+         "section_title_style": "bar"}),
+    ("summit", "Summit",
+     "Premium corporate design — an elegant centred letterhead, strong company "
+     "identity and balanced whitespace.",
+     ["Premium", "Corporate"], {
+         "branding": {"accent_color": "#14314F", "secondary_color": "#0A1E33",
+                      "header_style": "centered", "logo_position": "center",
+                      "font_family": "Georgia"},
+         "table_style": "lines", "totals_style": "plain",
+         "section_title_style": "underline"}),
+    ("grid", "Grid",
+     "Data-focused layout — a tight, high-density item table for documents with "
+     "many lines. Suits supply businesses.",
+     ["Data", "Compact"], {
+         "branding": {"accent_color": "#0F766E", "secondary_color": "#0A4A45",
+                      "header_style": "minimal", "logo_position": "left",
+                      "font_family": "Arial"},
+         "table_style": "striped", "totals_style": "boxed",
+         "section_title_style": "bar"}),
+    ("atlas", "Atlas",
+     "Project-focused layout — prominent scope and reference blocks over large "
+     "item tables. Built for construction and project work.",
+     ["Projects", "Construction"], {
+         "branding": {"accent_color": "#1D4ED8", "secondary_color": "#0B2F7A",
+                      "header_style": "split", "logo_position": "left",
+                      "font_family": "Helvetica"},
+         "table_style": "lines", "totals_style": "boxed",
+         "section_title_style": "bar"}),
+    ("flow", "Flow",
+     "Simple modern layout — lots of whitespace, thin lines and minimal clutter. "
+     "Effortless to read.",
+     ["Minimal", "Modern"], {
+         "branding": {"accent_color": "#0EA5E9", "secondary_color": "#075985",
+                      "header_style": "minimal", "logo_position": "left",
+                      "font_family": "Helvetica"},
+         "table_style": "plain", "totals_style": "plain",
+         "section_title_style": "plain"}),
+    ("ledger", "Ledger",
+     "Finance-focused layout — reference in a bordered box, ruled tables, a "
+     "highlighted total and prominent banking. Strong financial hierarchy.",
+     ["Finance", "Accounting"], {
+         "branding": {"accent_color": "#065F46", "secondary_color": "#043024",
+                      "header_style": "ledger", "logo_position": "right",
+                      "font_family": "Arial"},
+         "table_style": "bordered", "totals_style": "highlighted",
+         "section_title_style": "bar"}),
+    ("vector", "Vector",
+     "Technical modern layout — geometric two-tone header and strongly grouped "
+     "sections. Suits engineering businesses.",
+     ["Technical", "Modern"], {
+         "branding": {"accent_color": "#0891B2", "secondary_color": "#08313B",
+                      "header_style": "split", "logo_position": "left",
+                      "font_family": "Helvetica"},
+         "table_style": "lines", "totals_style": "boxed",
+         "section_title_style": "bar"}),
+    ("terra", "Terra",
+     "Industrial / field-services layout — bold section headers and site / "
+     "project blocks. Built for mining, construction and field work.",
+     ["Industrial", "Field services"], {
+         "branding": {"accent_color": "#B45309", "secondary_color": "#3B2A1A",
+                      "header_style": "band", "logo_position": "left",
+                      "font_family": "Helvetica"},
+         "table_style": "striped", "totals_style": "boxed",
+         "section_title_style": "bar"}),
+    ("slate", "Slate",
+     "Compact professional layout — dense but readable, efficient with page "
+     "space. Built for large quotations and invoices.",
+     ["Compact", "Professional"], {
+         "branding": {"accent_color": "#334155", "secondary_color": "#1E293B",
+                      "header_style": "plain", "logo_position": "left",
+                      "font_family": "Helvetica"},
+         "table_style": "striped", "totals_style": "plain",
+         "section_title_style": "underline"}),
+    ("canvas", "Canvas",
+     "A clean, neutral starting point — the recommended base for building your "
+     "own design in the visual editor.",
+     ["Customisable", "Starter"], {
+         "branding": {"accent_color": "#0E6E6E", "secondary_color": "#094A4A",
+                      "header_style": "band", "logo_position": "left",
+                      "font_family": "Helvetica"},
+         "table_style": "lines", "totals_style": "plain",
+         "section_title_style": "plain"}),
 ]
+
+#: The family a fresh company's documents default to.
+DEFAULT_FAMILY_KEY = "horizon"
+
+#: key → (name, description, tags, design) for quick lookup in views/services.
+FAMILY_BY_KEY = {key: (name, desc, tags, design)
+                 for key, name, desc, tags, design in TEMPLATE_FAMILIES}
+
+#: The ONLY names a built-in (LulaWorks-shipped) template may carry. Enforced by
+#: document_templates.assert_allowed_template_name as an allowlist, so the shipped
+#: catalogue can never contain a third-party product name. A neutral label used
+#: when retiring an old template is permitted too (see RETIRED_TEMPLATE_LABEL).
+RETIRED_TEMPLATE_LABEL = "Retired style"
+ALLOWED_TEMPLATE_FAMILY_NAMES = ({name for _key, name, *_ in TEMPLATE_FAMILIES}
+                                 | {RETIRED_TEMPLATE_LABEL})
 
 
 class TemplateEngine(models.TextChoices):
@@ -916,6 +1033,10 @@ class DocumentTemplate(TenantBaseModel):
     doc_type = models.CharField(max_length=12, choices=DocumentType.choices)
     name = models.CharField(max_length=80)
     description = models.CharField(max_length=255, blank=True)
+    #: The design family this template belongs to (e.g. "horizon"), shared across
+    #: its quotation / invoice / delivery variants so a company's documents read as
+    #: one system. Blank for a bespoke custom/imported template with no family.
+    family = models.CharField(max_length=40, blank=True)
     engine = models.CharField(max_length=12, choices=TemplateEngine.choices,
                               default=TemplateEngine.REPORTLAB)
     origin = models.CharField(max_length=12, choices=TemplateOrigin.choices,
@@ -1040,99 +1161,9 @@ class TemplateImport(TenantBaseModel):
         return f"Import: {self.original_name or self.source_file.name}"
 
 
-#: The built-in library seeded for every company (services.seed_document_templates).
-#: (doc_type, name, base_layout, is_default, config-overrides). Configs are sparse
-#: — only what differs from DEFAULT_CONFIG — because that is exactly what a preset
-#: IS: a small, named set of deviations from the plain document.
-BUILTIN_TEMPLATES = [
-    # Quotations
-    ("quotation", "Classic", "classic", True, {}),
-    ("quotation", "Modern", "modern", False,
-     {"logo_position": "left", "accent_color": "#0E6E6E"}),
-    ("quotation", "Corporate", "classic", False,
-     {"accent_color": "#1F3A5F", "font": "Times-Roman"}),
-    ("quotation", "Engineering", "modern", False,
-     {"accent_color": "#14549B", "show_project_reference": True,
-      "header_note": "Engineering & Technical Services"}),
-    ("quotation", "Minimal", "compact", False,
-     {"accent_color": "#333333", "show_banking": False, "show_signature": False}),
-    ("quotation", "Mining", "modern", False,
-     {"accent_color": "#B9711A", "secondary_color": "#22303B",
-      "show_project_reference": True}),
-    # Tax invoices
-    ("invoice", "Standard", "classic", True, {}),
-    ("invoice", "Corporate", "classic", False,
-     {"accent_color": "#1F3A5F", "font": "Times-Roman"}),
-    ("invoice", "Compact", "compact", False, {"show_signature": False}),
-    # Delivery notes
-    ("delivery", "Standard", "classic", True, {}),
-    ("delivery", "Warehouse", "compact", False,
-     {"show_signature": True, "header_note": "Goods received in good order"}),
-    ("delivery", "Logistics", "modern", False,
-     {"accent_color": "#0A8F57", "header_note": "Proof of Delivery"}),
-]
-
-
-#: House styles that echo the look of well-known billing / procurement tools, so a
-#: company can pick a familiar, professional document without a designer. These are
-#: LAYOUT + CONFIG only — the rendered document carries the company's OWN name,
-#: logo and details; no third-party brand appears on it. The names are colour-led
-#: style labels shown only in the template picker. Each expands across all three
-#: document types so a company gets a consistent set.
-#:   (label, base_layout, config-overrides)
-HOUSE_STYLES = [
-    # Clean invoicing tools → the 'modern' coloured-band look, logo on the left.
-    ("FreshBooks Blue", "modern",
-     {"accent_color": "#0B72E7", "logo_position": "left"}),
-    ("Xero Teal", "modern",
-     {"accent_color": "#13B5EA", "logo_position": "left"}),
-    ("QuickBooks Green", "modern",
-     {"accent_color": "#2CA01C", "logo_position": "left"}),
-    ("Sage Green", "modern",
-     {"accent_color": "#00875A", "logo_position": "left"}),
-    ("Jira Blue", "modern",
-     {"accent_color": "#0052CC", "logo_position": "left"}),
-    # Enterprise procurement → the 'compact' dense look, logo right, order refs on.
-    ("SAP Blue", "compact",
-     {"accent_color": "#0A6ED1", "logo_position": "right",
-      "show_project_reference": True, "show_customer_po": True}),
-    ("Ariba Procurement", "compact",
-     {"accent_color": "#1A5276", "logo_position": "right",
-      "show_project_reference": True, "show_customer_po": True}),
-]
-
-#: Expand every house style across the three document types (never a default —
-#: they sit alongside the built-in defaults for the company to choose).
-BUILTIN_TEMPLATES += [
-    (doc_type, label, layout, False, cfg)
-    for label, layout, cfg in HOUSE_STYLES
-    for doc_type in ("quotation", "invoice", "delivery")
-]
-
-#: The named LulaWorks library the picker groups by document type. These round out
-#: the industry looks the market expects (Modern / Corporate / Engineering /
-#: Construction / Industrial / Minimal). Only entries not already present above are
-#: added — sync matches on (doc_type, name), so there are no duplicates.
-BUILTIN_TEMPLATES += [
-    # Quotation — Modern/Corporate/Engineering/Minimal already exist above.
-    ("quotation", "Construction", "modern", False,
-     {"accent_color": "#B45309", "show_project_reference": True,
-      "header_note": "Construction & Civil Works"}),
-    ("quotation", "Industrial", "compact", False,
-     {"accent_color": "#37474F", "show_project_reference": True}),
-    # Tax invoice.
-    ("invoice", "Modern", "modern", False, {"accent_color": "#0B72E7"}),
-    ("invoice", "Engineering", "modern", False,
-     {"accent_color": "#14549B", "show_project_reference": True,
-      "header_note": "Engineering & Technical Services"}),
-    ("invoice", "Industrial", "compact", False, {"accent_color": "#37474F"}),
-    ("invoice", "Minimal", "compact", False,
-     {"accent_color": "#333333", "show_signature": False}),
-    # Delivery note.
-    ("delivery", "Modern", "modern", False, {"accent_color": "#0B72E7"}),
-    ("delivery", "Corporate", "classic", False,
-     {"accent_color": "#1F3A5F", "font": "Times-Roman"}),
-    ("delivery", "Industrial", "compact", False,
-     {"accent_color": "#37474F", "header_note": "Goods received in good order"}),
-    ("delivery", "Minimal", "compact", False, {"accent_color": "#333333"}),
-]
+# NOTE: the previous ReportLab preset catalogue (BUILTIN_TEMPLATES) and the old
+# borrowed-name "house styles" have been RETIRED. The customer-facing catalogue is
+# now the twelve original TEMPLATE_FAMILIES above (HTML engine). The ReportLab
+# engine remains in code for backward-compatibility and for documents pinned to an
+# older version. refresh_document_templates (management command) migrates existing
+# companies off the retired templates and seeds the families.

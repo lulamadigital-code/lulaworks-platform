@@ -23,10 +23,12 @@ from .models import (
     ALLOWED_LOGO_POSITIONS,
     ALLOWED_SECTION_STYLES,
     ALLOWED_TABLE_STYLES,
+    ALLOWED_TEMPLATE_FAMILY_NAMES,
     ALLOWED_TOTALS_STYLES,
-    BUILTIN_TEMPLATES,
     DEFAULT_CONFIG,
     DEFAULT_DESIGN,
+    DEFAULT_FAMILY_KEY,
+    TEMPLATE_FAMILIES,
     TEMPLATE_ITEM_COLUMN_KEYS,
     TEMPLATE_SECTION_KEYS,
     BaseLayout,
@@ -35,6 +37,18 @@ from .models import (
     TemplateEngine,
     TemplateOrigin,
 )
+
+
+def assert_allowed_template_name(name: str, *, is_builtin: bool) -> None:
+    """Allowlist gate for BUILT-IN template names: a LulaWorks-shipped template must
+    carry one of the twelve original family names. This makes it impossible for any
+    third-party product name to enter the shipped catalogue — without the code ever
+    having to enumerate competitor names. Customers may still name their own custom
+    templates freely (this is a no-op unless `is_builtin`)."""
+    if is_builtin and (name or "").strip() not in ALLOWED_TEMPLATE_FAMILY_NAMES:
+        raise TemplateError(
+            f"“{name}” isn’t a LulaWorks design family — built-in templates must "
+            f"use one of the original family names.")
 
 _HEX = re.compile(r"^#(?:[0-9a-fA-F]{6})$")
 #: Keys whose value is a colour string ("" allowed → fall back to brand).
@@ -256,6 +270,7 @@ def create_html_template(company, actor, *, doc_type, name, design=None,
     name = (name or "").strip()
     if not name:
         raise TemplateError("A template needs a name.")
+    assert_allowed_template_name(name, is_builtin=(origin == TemplateOrigin.BUILTIN))
     if doc_type not in dict(DocumentTemplate._meta.get_field("doc_type").choices):
         raise TemplateError("Unknown document type.")
     tpl = DocumentTemplate.objects.create(
@@ -307,24 +322,31 @@ def pin_template_version(document, doc_type, actor=None):
 
 # ── Management ────────────────────────────────────────────────────────────────
 
-def _seed_html_looks(company, actor, existing) -> int:
-    """Create the built-in HTML-engine 'looks' (genuinely distinct structures) the
-    company is missing. `existing` is a set of (doc_type, name) already present and
-    is updated in place. Never a default — they sit alongside for the user to pick."""
-    from .models import BUILTIN_HTML_LOOKS
+def _seed_families(company, actor, existing) -> int:
+    """Create the built-in LulaWorks template FAMILIES the company is missing —
+    each family expanded across the three document types, sharing one visual
+    identity (HTML engine). `existing` is a set of (doc_type, name) already present
+    and is updated in place. The default family (Horizon) is made the company
+    default for a document type ONLY when that type has no default yet, so a
+    top-up never overrides a chosen default. Returns how many were created."""
     created = 0
-    for name, description, design in BUILTIN_HTML_LOOKS:
+    for key, name, description, _tags, design in TEMPLATE_FAMILIES:
+        clean = clean_design(design)
         for doc_type in ("quotation", "invoice", "delivery"):
             if (doc_type, name) in existing:
                 continue
+            wants_default = (
+                key == DEFAULT_FAMILY_KEY
+                and not DocumentTemplate.objects.filter(
+                    company=company, doc_type=doc_type, is_default=True,
+                    archived_at__isnull=True).exists())
             tpl = DocumentTemplate.objects.create(
-                company=company, doc_type=doc_type, name=name,
-                description=description, is_default=False, is_builtin=True,
+                company=company, doc_type=doc_type, name=name, family=key,
+                description=description, is_default=wants_default, is_builtin=True,
                 origin=TemplateOrigin.BUILTIN, engine=TemplateEngine.HTML,
                 config={}, created_by=actor, updated_by=actor,
             )
-            _snapshot_version(tpl, actor, note="Built-in look",
-                              design=clean_design(design))
+            _snapshot_version(tpl, actor, note="Family", design=clean)
             existing.add((doc_type, name))
             created += 1
     return created
@@ -332,54 +354,22 @@ def _seed_html_looks(company, actor, existing) -> int:
 
 @transaction.atomic
 def seed_document_templates(company, actor=None) -> int:
-    """Create the built-in library for a company that has none. Idempotent —
+    """Create the built-in family library for a company that has none. Idempotent —
     returns how many were created (0 if they already exist)."""
     if DocumentTemplate.objects.filter(company=company).exists():
         return 0
-    created = 0
-    for doc_type, name, layout, is_default, cfg in BUILTIN_TEMPLATES:
-        tpl = DocumentTemplate.objects.create(
-            company=company, doc_type=doc_type, name=name, base_layout=layout,
-            is_default=is_default, is_builtin=True, origin=TemplateOrigin.BUILTIN,
-            engine=TemplateEngine.REPORTLAB, config=clean_config(cfg),
-            created_by=actor, updated_by=actor,
-        )
-        _snapshot_version(tpl, actor, note="Built-in")
-        created += 1
-    existing = {(t.doc_type, t.name)
-                for t in DocumentTemplate.objects.filter(company=company)}
-    created += _seed_html_looks(company, actor, existing)
-    return created
+    return _seed_families(company, actor, set())
 
 
 @transaction.atomic
 def sync_builtin_templates(company, actor=None) -> int:
-    """Top-up: add any built-in templates the company is missing, WITHOUT touching
-    what it already has. Unlike seed_document_templates (which only runs for a
-    company that has none), this reaches already-seeded companies when new
-    built-ins ship — e.g. the house styles. Never changes an existing row, never
-    moves the default flag. Matches on (doc_type, name). Returns how many added."""
+    """Top-up: add any built-in family variants the company is missing, WITHOUT
+    touching what it already has. Reaches already-seeded companies when new
+    families ship. Never changes an existing row; only sets a default where a
+    document type has none. Matches on (doc_type, name). Returns how many added."""
     existing = {(t.doc_type, t.name)
                 for t in DocumentTemplate.objects.filter(company=company)}
-    created = 0
-    for doc_type, name, layout, is_default, cfg in BUILTIN_TEMPLATES:
-        if (doc_type, name) in existing:
-            continue
-        # Only seed a default when the company genuinely has none for that type,
-        # so a top-up never overrides a chosen default.
-        wants_default = is_default and not DocumentTemplate.objects.filter(
-            company=company, doc_type=doc_type, is_default=True).exists()
-        tpl = DocumentTemplate.objects.create(
-            company=company, doc_type=doc_type, name=name, base_layout=layout,
-            is_default=wants_default, is_builtin=True, origin=TemplateOrigin.BUILTIN,
-            engine=TemplateEngine.REPORTLAB, config=clean_config(cfg),
-            created_by=actor, updated_by=actor,
-        )
-        _snapshot_version(tpl, actor, note="Built-in")
-        existing.add((doc_type, name))
-        created += 1
-    created += _seed_html_looks(company, actor, existing)
-    return created
+    return _seed_families(company, actor, existing)
 
 
 @transaction.atomic
@@ -389,6 +379,7 @@ def create_template(company, actor, *, doc_type, name, base_layout, config=None,
     name = (name or "").strip()
     if not name:
         raise TemplateError("A template needs a name.")
+    assert_allowed_template_name(name, is_builtin=(origin == TemplateOrigin.BUILTIN))
     if doc_type not in dict(DocumentTemplate._meta.get_field("doc_type").choices):
         raise TemplateError("Unknown document type.")
     tpl = DocumentTemplate.objects.create(
