@@ -189,13 +189,13 @@
           <tr><th>Company</th><th>Plan</th><th class="right">Users</th><th class="right">AI credits</th><th class="right">Used · 30d</th><th></th></tr>
           {% for t in tenants %}
           <tr>
-            <td><a href="/admin/identity/company/{{ t.company.id }}/change/"><strong>{{ t.company.name }}</strong></a>
+            <td><a href="{% url 'web:platform_tenant' t.company.id %}"><strong>{{ t.company.name }}</strong></a>
               {% if not t.company.is_active %} <span class="chip">Inactive</span>{% endif %}</td>
             <td class="muted">{{ t.plan }}{% if t.status == 'trial' %} <span class="chip">trial</span>{% endif %}</td>
             <td class="right muted">{{ t.users }}</td>
             <td class="right"><strong>{{ t.credits|floatformat:0 }}</strong></td>
             <td class="right muted">{{ t.used_30d|floatformat:0 }}</td>
-            <td class="right"><a href="/admin/billing/subscription/?q={{ t.company.name|urlencode }}" class="muted" style="font-size:12px;">manage →</a></td>
+            <td class="right"><a href="{% url 'web:platform_tenant' t.company.id %}" style="font-size:12px;">manage →</a></td>
           </tr>
           {% empty %}<tr><td colspan="6" style="padding:18px;color:var(--muted);">No tenants yet.</td></tr>{% endfor %}
         </table>

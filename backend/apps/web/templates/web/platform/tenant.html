@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ company.name }} · Platform</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --surface:#fff; --ink:#292f4c; --muted:#676879; --line:#e6e9ef;
+    --primary:#17a2b8; --primary-d:#0e7c8c; --primary-t:#e6f6f9;
+    --green:#00c875; --green-t:#e2f9ee; --red:#e2445c; --red-t:#fde8eb;
+    --orange:#fdab3d; --orange-t:#fff3e2; --grey:#c4c7d0; --r:14px;
+    --shadow:0 4px 16px rgba(41,47,76,.06); --shadow-lg:0 8px 30px rgba(41,47,76,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14.5px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+  a{color:var(--primary-d);text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:960px;margin:0 auto;padding:26px 24px 70px}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em} h2{font-size:16px;margin:24px 0 12px}
+  .sub{color:var(--muted);margin:0}
+  .top{background:linear-gradient(90deg,#0e7c8c,#17a2b8);color:#fff;padding:16px 24px;
+       display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow)}
+  .top a{color:#fff}
+  .msg{border-radius:10px;padding:12px 14px;margin-bottom:14px;font-weight:600;font-size:13.5px;
+       background:var(--surface);border-left:4px solid var(--grey);box-shadow:var(--shadow)}
+  .msg.success{background:var(--green-t);color:#0a8f57;border-left-color:var(--green)}
+  .msg.error{background:var(--red-t);color:#c22a41;border-left-color:var(--red)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:6px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--shadow)}
+  .tile .n{font-size:24px;font-weight:800;letter-spacing:-.02em} .tile .l{color:var(--muted);font-size:12.5px;margin-top:3px;font-weight:600}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:720px){.two{grid-template-columns:1fr}}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 5px;font-weight:600}
+  input,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff;color:var(--ink)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--primary);color:#fff;
+       padding:10px 16px;border:0;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer}
+  .btn:hover{background:var(--primary-d);color:#fff;text-decoration:none}
+  .btn.ghost{background:#fff;color:var(--primary-d);border:1px solid var(--line)}
+  .btn.danger{background:var(--red)} .btn.danger:hover{background:#c22a41}
+  .chip{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;background:#eef0f5;color:var(--muted)}
+  .chip.ok{background:var(--green-t);color:#0a8f57} .chip.bad{background:var(--red-t);color:#c22a41}
+  table{width:100%;border-collapse:collapse} th,td{text-align:left;padding:10px 6px;border-bottom:1px solid var(--line);font-size:13.5px}
+  th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em} tr:last-child td{border-bottom:0}
+</style>
+</head>
+<body>
+  <div class="top">
+    <strong>◆ LulaWorks Platform</strong>
+    <span><a href="{% url 'web:platform_home' %}">← Console</a> · <a href="/admin/identity/company/{{ company.id }}/change/">Django admin</a></span>
+  </div>
+  <div class="wrap">
+    {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+
+    <h1>{{ company.name }}
+      {% if company.is_active %}<span class="chip ok">Active</span>{% else %}<span class="chip bad">Inactive</span>{% endif %}</h1>
+    <p class="sub">{{ company.email|default:"no email" }}{% if company.created_at %} · joined {{ company.created_at|date:"d M Y" }}{% endif %}</p>
+
+    <div class="grid" style="margin-top:16px;">
+      <div class="tile"><div class="n">{{ plan }}</div><div class="l">Plan · {{ status }}</div></div>
+      <div class="tile"><div class="n">{{ users }}</div><div class="l">Users</div></div>
+      <div class="tile"><div class="n">{{ credits|floatformat:0 }}</div><div class="l">AI credits</div></div>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <h2 style="margin-top:0;">Grant AI credits</h2>
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="grant_credits">
+          <label>Credits to add</label>
+          <input type="number" name="amount" min="1" step="1" placeholder="e.g. 500" required>
+          <div style="margin-top:12px;"><button class="btn" type="submit">Grant credits</button></div>
+        </form>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0;">Change plan</h2>
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="change_plan">
+          <label>Plan</label>
+          <select name="plan_code" required>
+            {% for p in plans %}<option value="{{ p.code }}" {% if sub and sub.plan_id == p.id %}selected{% endif %}>{{ p.name }} — R{{ p.price|floatformat:0 }}/mo</option>{% endfor %}
+          </select>
+          <div style="margin-top:12px;"><button class="btn" type="submit">Apply plan</button></div>
+          <p class="sub" style="font-size:12px;margin:10px 0 0;">Upgrades top up credits immediately; data is always preserved.</p>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">Account actions</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle_active">
+          <button class="btn ghost" type="submit">{% if company.is_active %}Deactivate company{% else %}Activate company{% endif %}</button></form>
+        {% if sub and status != 'cancelled' %}
+        <form method="post" onsubmit="return confirm('Cancel this subscription at period end?');">{% csrf_token %}<input type="hidden" name="action" value="cancel_subscription">
+          <button class="btn danger" type="submit">Cancel subscription</button></form>
+        {% endif %}
+      </div>
+    </div>
+
+    <h2>Billing history</h2>
+    <div class="card" style="padding:0;">
+      <table>
+        <tr><th>When</th><th>Event</th><th class="right">Amount</th><th class="right">Credits</th></tr>
+        {% for t in history %}
+        <tr><td>{{ t.created_at|date:"d M Y" }}</td><td>{{ t.get_kind_display }}{% if t.description %} · {{ t.description }}{% endif %}</td>
+          <td style="text-align:right;">R{{ t.amount|floatformat:0 }}</td>
+          <td style="text-align:right;">{{ t.credits|floatformat:0 }}</td></tr>
+        {% empty %}<tr><td colspan="4" style="padding:16px;color:var(--muted);">No billing history yet.</td></tr>{% endfor %}
+      </table>
+    </div>
+  </div>
+</body>
+</html>

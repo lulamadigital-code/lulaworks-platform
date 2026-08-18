@@ -156,6 +156,71 @@ def platform_home(request):
 
 
 @login_required
+def platform_tenant(request, pk):
+    """Branded management page for one tenant — plan, credits, status — so the
+    owner rarely needs Django admin. Superuser only."""
+    if not request.user.is_superuser:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+
+    from decimal import Decimal
+
+    from apps.core.context import system_scope
+
+    with system_scope():
+        from apps.ai_platform.gateway import credit_balance, topup_credits
+        from apps.billing import services as billing
+        from apps.billing.models import BillingTransaction, Plan
+        from apps.identity.models import Company, Membership
+
+        company = Company.objects.filter(pk=pk).first()
+        if company is None:
+            messages.error(request, "Tenant not found.")
+            return redirect("web:platform_home")
+
+        if request.method == "POST":
+            action = request.POST.get("action")
+            try:
+                if action == "grant_credits":
+                    amt = Decimal(request.POST.get("amount") or "0")
+                    if amt <= 0:
+                        raise ValueError
+                    bal = topup_credits(company, amt, source="platform_grant")
+                    messages.success(request, f"Granted {amt:g} credits (balance {bal:g}).")
+                elif action == "change_plan":
+                    billing.change_plan(company, request.POST.get("plan_code", ""),
+                                        actor=request.user)
+                    messages.success(request, "Plan changed.")
+                elif action == "toggle_active":
+                    company.is_active = not company.is_active
+                    company.save(update_fields=["is_active", "updated_at"])
+                    messages.success(request, "Company "
+                                     + ("activated." if company.is_active else "deactivated."))
+                elif action == "cancel_subscription":
+                    billing.cancel_subscription(company, actor=request.user)
+                    messages.success(request, "Subscription set to cancel at period end.")
+                else:
+                    messages.error(request, "Unknown action.")
+            except Exception as exc:                       # noqa: BLE001
+                messages.error(request, f"Could not complete that: {exc}")
+            return redirect("web:platform_tenant", pk=pk)
+
+        sub = getattr(company, "subscription", None)
+        ctx = {
+            "company": company,
+            "sub": sub,
+            "plan": getattr(getattr(sub, "plan", None), "name", "—"),
+            "status": sub.status if sub else "none",
+            "credits": credit_balance(company),
+            "users": Membership.objects.filter(company=company).count(),
+            "plans": list(Plan.objects.filter(is_active=True).order_by("tier")),
+            "history": list(BillingTransaction.objects.filter(company=company)
+                            .order_by("-created_at")[:10]),
+        }
+    return render(request, "web/platform/tenant.html", ctx)
+
+
+@login_required
 def platform_tenants_csv(request):
     """Download every tenant with plan, users, AI credits + 30-day usage."""
     import csv
