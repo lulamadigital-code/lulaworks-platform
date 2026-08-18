@@ -337,6 +337,8 @@ class PlatformStaffError(Exception):
 _PLATFORM_ROLE_FLAGS = {
     "owner": {"is_superuser": True, "is_staff": True},
     "admin": {"is_superuser": False, "is_staff": False},
+    "finance": {"is_superuser": False, "is_staff": False},
+    "hr": {"is_superuser": False, "is_staff": False},
     "support": {"is_superuser": False, "is_staff": False},
 }
 

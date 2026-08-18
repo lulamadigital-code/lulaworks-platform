@@ -213,6 +213,11 @@ class PlatformSettings(models.Model):
     starting_ai_credits = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     auto_welcome = models.BooleanField(default=True)
 
+    # ── Billing & tax defaults (currency + VAT applied to new tenants) ───────
+    default_currency = models.CharField(max_length=3, default="ZAR")
+    default_vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=15)
+    invoice_prefix = models.CharField(max_length=12, blank=True, default="")
+
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True,

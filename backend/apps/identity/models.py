@@ -147,11 +147,14 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
 
     # Platform team access (LulaWorks' own staff, not tenant members). Blank for
-    # ordinary tenant users. Owners get is_superuser too; admin/support reach the
-    # Platform Console through this field without Django-superuser powers.
+    # ordinary tenant users. Owners get is_superuser too; every other department
+    # reaches the Platform Console through this field with scoped capabilities and
+    # no Django-superuser powers.
     class PlatformRole(models.TextChoices):
         OWNER = "owner", "Platform Owner"
-        ADMIN = "admin", "Platform Admin"
+        ADMIN = "admin", "Administration"
+        FINANCE = "finance", "Finance"
+        HR = "hr", "People / HR"
         SUPPORT = "support", "Support"
 
     platform_role = models.CharField(
@@ -177,13 +180,40 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
 
+    # What each platform department may DO. The Console gates actions on these
+    # capabilities, not on the raw role — so responsibilities are explicit and a
+    # new department is just a new row here.
+    #   console  — sign into the Platform Console (everyone with a role)
+    #   tenants  — create / activate / deactivate companies, invite their users
+    #   billing  — plans, subscriptions, AI credit grants, revenue
+    #   ai       — AI/LulaAI configuration
+    #   team     — add / change / revoke platform staff
+    #   settings — edit platform settings (branding, defaults, billing config)
+    #   support  — read tenants, users and email logs to help customers
+    PLATFORM_CAPS = {
+        "owner":   {"console", "tenants", "billing", "ai", "team", "settings", "support"},
+        "admin":   {"console", "tenants", "ai", "settings", "support"},
+        "finance": {"console", "billing", "support"},
+        "hr":      {"console", "team", "support"},
+        "support": {"console", "support"},
+    }
+
     @property
     def platform_level(self):
-        """owner | admin | support | None — who may use the Platform Console.
-        Superusers are always owners; otherwise it follows platform_role."""
+        """owner | admin | finance | hr | support | None — the department, which
+        drives Console access. Superusers are always owners."""
         if self.is_superuser or self.platform_role == self.PlatformRole.OWNER:
             return "owner"
         return self.platform_role or None
+
+    @property
+    def platform_caps(self):
+        """The set of capabilities this user has in the Platform Console."""
+        lvl = self.platform_level
+        return set(self.PLATFORM_CAPS.get(lvl, set())) if lvl else set()
+
+    def can_platform(self, cap):
+        return cap in self.platform_caps
 
     @property
     def initials(self) -> str:

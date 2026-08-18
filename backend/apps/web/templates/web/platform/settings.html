@@ -8,149 +8,268 @@
 <style>
   .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
   h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em}
-  .sub{color:var(--muted);margin:0 0 20px} .muted{color:var(--muted)}
+  .sub{color:var(--muted);margin:0 0 16px} .muted{color:var(--muted)}
+  /* Sticky in-page settings nav */
+  .subnav{position:sticky;top:0;z-index:5;display:flex;gap:4px;flex-wrap:wrap;
+          background:var(--bg);padding:10px 0 12px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+  .subnav a{padding:7px 13px;border-radius:20px;font-size:13px;font-weight:600;color:var(--muted)}
+  .subnav a:hover{background:#eef0f5;color:var(--ink);text-decoration:none}
+  .setsec{scroll-margin-top:64px;margin-bottom:8px}
+  .sec-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:22px 0 10px}
+  .sec-head h2{margin:0;font-size:16px}
   .kv{width:100%;border-collapse:collapse}
-  .kv td{padding:11px 6px;border-bottom:1px solid var(--line);font-size:14px}
-  .kv tr:last-child td{border-bottom:0}
-  .kv td.k{color:var(--muted);width:42%}
+  .kv td{padding:10px 6px;border-bottom:1px solid var(--line);font-size:14px}
+  .kv tr:last-child td{border-bottom:0} .kv td.k{color:var(--muted);width:40%}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 5px;font-weight:600}
+  input,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff;color:var(--ink)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .acts{margin-top:14px;display:flex;gap:8px}
+  .btn.ghost{background:#fff;color:var(--primary-d);border:1px solid var(--line)}
+  .btn.sm{padding:6px 12px;font-size:12.5px}
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;background:#eef0f5;color:var(--muted)}
+  .chip.ok{background:var(--green-t);color:#0a8f57} .chip.off{background:var(--red-t);color:#c22a41}
+  .chip.owner{background:var(--primary-t);color:var(--primary-d)} .chip.admin{background:var(--blue-t);color:#2f6fd0}
+  .chip.finance{background:var(--purple-t);color:#7c3fb8} .chip.hr{background:var(--orange-t);color:#b9711a}
+  .chip.support{background:var(--green-t);color:#0a8f57} .chip.pending{background:var(--orange-t);color:#b9711a}
+  .intgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+  .intcard{border:1px solid var(--line);border-radius:12px;padding:14px}
+  .intcard .n{font-weight:700;font-size:13.5px} .intcard .d{color:var(--muted);font-size:12px;margin-top:2px}
+  .links{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+  .lk{display:block;border:1px solid var(--line);border-radius:12px;padding:14px;color:var(--ink)}
+  .lk:hover{border-color:var(--primary);box-shadow:var(--shadow);text-decoration:none}
+  .lk .t{font-weight:700} .lk .d{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:14px}
+  .legend .r{border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  .legend .r .lbl{font-weight:700;font-size:13.5px} .legend .r .cap{color:var(--muted);font-size:12px;margin-top:2px}
   table.team{width:100%;border-collapse:collapse}
   .team th,.team td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);font-size:13.5px}
   .team th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
   .team tr:last-child td{border-bottom:0}
-  .chip{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;background:#eef0f5;color:var(--muted)}
-  .chip.owner{background:var(--primary-t);color:var(--primary-d)} .chip.admin{background:var(--blue-t);color:#2f6fd0}
-  .chip.support{background:var(--green-t);color:#0a8f57} .chip.pending{background:var(--orange-t);color:#b9711a}
-  label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 5px;font-weight:600}
-  input,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff;color:var(--ink)}
-  .btn.ghost{background:#fff;color:var(--primary-d);border:1px solid var(--line)}
-  .btn.sm{padding:6px 11px;font-size:12.5px}
   .inline{display:inline-flex;gap:6px;align-items:center}
 </style>
 {% endblock %}
 
 {% block content %}
 <h1>Settings</h1>
-<p class="sub">Platform configuration and your LulaWorks team.</p>
+<p class="sub">Everything that governs the whole platform — configuration, integrations and your team.</p>
 
-{% if can_manage %}
-<div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-  <div>
-    <h2 style="margin-top:6px;">Branding &amp; support</h2>
-    <div class="card">
-      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="save_branding">
-        <label>Platform name</label>
-        <input type="text" name="platform_name" value="{{ cfg.platform_name }}" placeholder="LulaWorks">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
-          <div><label>Support email</label><input type="email" name="support_email" value="{{ cfg.support_email }}" placeholder="support@lulaworks.com"></div>
-          <div><label>Sales email</label><input type="email" name="sales_email" value="{{ cfg.sales_email }}" placeholder="sales@lulaworks.com"></div>
-          <div><label>Billing email</label><input type="email" name="billing_email" value="{{ cfg.billing_email }}" placeholder="billing@lulaworks.com"></div>
-          <div><label>Reply-to</label><input type="email" name="reply_to" value="{{ cfg.reply_to }}" placeholder="no-reply@lulaworks.com"></div>
-          <div><label>Terms URL</label><input type="url" name="terms_url" value="{{ cfg.terms_url }}" placeholder="https://…"></div>
-          <div><label>Privacy URL</label><input type="url" name="privacy_url" value="{{ cfg.privacy_url }}" placeholder="https://…"></div>
-        </div>
-        <div style="margin-top:12px;"><button class="btn" type="submit">Save branding</button></div>
-      </form>
-    </div>
-  </div>
-  <div>
-    <h2 style="margin-top:6px;">New-tenant defaults</h2>
-    <div class="card">
-      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="save_defaults">
-        <label>Default plan</label>
-        <select name="default_plan">
-          <option value="">— Trial plan (default) —</option>
-          {% for p in plans %}<option value="{{ p.id }}" {% if cfg.default_plan_id == p.id %}selected{% endif %}>{{ p.name }} — R{{ p.price|floatformat:0 }}/mo</option>{% endfor %}
-        </select>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
-          <div><label>Trial length (days)</label><input type="number" name="trial_days" min="0" step="1" value="{{ cfg.trial_days }}"></div>
-          <div><label>Starting AI credits</label><input type="number" name="starting_ai_credits" min="0" step="1" value="{{ cfg.starting_ai_credits|floatformat:0 }}"></div>
-        </div>
-        <label class="inline" style="margin-top:12px;font-weight:600;color:var(--ink);">
-          <input type="checkbox" name="auto_welcome" style="width:auto;" {% if cfg.auto_welcome %}checked{% endif %}> Send a welcome email to new owners
-        </label>
-        <div style="margin-top:12px;"><button class="btn" type="submit">Save defaults</button></div>
-        <p class="muted" style="font-size:12px;margin:10px 0 0;">Applied when you create a tenant from the Console. Trial length is governed by the trial plan.</p>
-      </form>
-    </div>
-  </div>
+<div class="subnav">
+  <a href="#general">General</a>
+  <a href="#onboarding">Onboarding</a>
+  <a href="#billing">Billing &amp; tax</a>
+  <a href="#integrations">Integrations</a>
+  <a href="#system">System</a>
+  <a href="#records">Records &amp; tools</a>
+  <a href="#team">Team &amp; roles</a>
 </div>
-{% endif %}
 
-<div class="two" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-  <div>
-    <h2 style="margin-top:6px;">Platform</h2>
-    <div class="card">
+{# ── General / Branding ─────────────────────────────────────────────────── #}
+<section id="general" class="setsec">
+  <div class="sec-head"><h2>General · Branding &amp; support</h2>
+    {% if can_settings %}<button class="btn ghost sm" data-edit="general">Edit</button>{% endif %}</div>
+  <div class="card">
+    <div class="read" id="general-read">
       <table class="kv">
-        {% for label, value in info %}
-        <tr><td class="k">{{ label }}</td><td><strong>{{ value }}</strong></td></tr>
-        {% endfor %}
-        <tr><td class="k">Companies</td><td><strong>{{ counts.companies }}</strong></td></tr>
-        <tr><td class="k">Users</td><td><strong>{{ counts.users }}</strong></td></tr>
+        <tr><td class="k">Platform name</td><td><strong>{{ cfg.platform_name }}</strong></td></tr>
+        <tr><td class="k">Support email</td><td>{{ cfg.support_email|default:"—" }}</td></tr>
+        <tr><td class="k">Sales email</td><td>{{ cfg.sales_email|default:"—" }}</td></tr>
+        <tr><td class="k">Billing email</td><td>{{ cfg.billing_email|default:"—" }}</td></tr>
+        <tr><td class="k">Reply-to</td><td>{{ cfg.reply_to|default:"—" }}</td></tr>
+        <tr><td class="k">Terms URL</td><td>{{ cfg.terms_url|default:"—" }}</td></tr>
+        <tr><td class="k">Privacy URL</td><td>{{ cfg.privacy_url|default:"—" }}</td></tr>
       </table>
-      <p class="muted" style="font-size:12px;margin:12px 0 0;">API keys are set in the
-        server environment only — never shown or editable here.</p>
     </div>
+    {% if can_settings %}
+    <form class="edit" id="general-edit" method="post" style="display:none;">{% csrf_token %}
+      <input type="hidden" name="action" value="save_branding">
+      <label>Platform name</label>
+      <input type="text" name="platform_name" value="{{ cfg.platform_name }}" placeholder="LulaWorks">
+      <div class="grid2" style="margin-top:10px;">
+        <div><label>Support email</label><input type="email" name="support_email" value="{{ cfg.support_email }}" placeholder="support@lulaworks.com"></div>
+        <div><label>Sales email</label><input type="email" name="sales_email" value="{{ cfg.sales_email }}" placeholder="sales@lulaworks.com"></div>
+        <div><label>Billing email</label><input type="email" name="billing_email" value="{{ cfg.billing_email }}" placeholder="billing@lulaworks.com"></div>
+        <div><label>Reply-to</label><input type="email" name="reply_to" value="{{ cfg.reply_to }}" placeholder="no-reply@lulaworks.com"></div>
+        <div><label>Terms URL</label><input type="url" name="terms_url" value="{{ cfg.terms_url }}" placeholder="https://…"></div>
+        <div><label>Privacy URL</label><input type="url" name="privacy_url" value="{{ cfg.privacy_url }}" placeholder="https://…"></div>
+      </div>
+      <div class="acts"><button class="btn" type="submit">Save changes</button>
+        <button type="button" class="btn ghost" data-cancel="general">Cancel</button></div>
+    </form>
+    {% endif %}
   </div>
-  <div>
-    <h2 style="margin-top:6px;">Add a team member</h2>
-    <div class="card">
-      {% if is_owner %}
-      <form method="post">{% csrf_token %}<input type="hidden" name="action" value="invite_staff">
-        <label>Email</label>
-        <input type="email" name="email" required placeholder="person@lulaworks.com">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
-          <div><label>First name</label><input type="text" name="first_name"></div>
-          <div><label>Last name</label><input type="text" name="last_name"></div>
-        </div>
-        <label style="margin-top:10px;">Access level</label>
-        <select name="role" required>
-          {% for value, label in roles %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
-        </select>
-        <div style="margin-top:12px;"><button class="btn" type="submit">Send invitation</button></div>
-        <p class="muted" style="font-size:12px;margin:10px 0 0;">Sends a secure activation link —
-          they choose their own password. Owner = full access incl. Django admin;
-          Admin = full console; Support = read-only.</p>
-      </form>
-      {% else %}
-      <p class="muted" style="margin:0;">Only a Platform Owner can add or change team members.</p>
-      {% endif %}
-    </div>
-  </div>
-</div>
+</section>
 
-<h2>Team</h2>
-<div class="card" style="padding:0;overflow-x:auto;">
-  <table class="team">
-    <tr><th>Member</th><th>Access</th><th>Status</th>{% if is_owner %}<th></th>{% endif %}</tr>
-    {% for m in team %}
-    <tr>
-      <td><strong>{{ m.user.get_full_name|default:m.user.email }}</strong>
-        {% if m.is_me %}<span class="muted">(you)</span>{% endif %}
-        <div class="muted" style="font-size:12px;">{{ m.user.email }}</div></td>
-      <td><span class="chip {{ m.level }}">{{ m.role_label }}</span></td>
-      <td>{% if m.pending %}<span class="chip pending">Invite pending</span>
-        {% elif m.user.is_active %}<span class="chip support">Active</span>
-        {% else %}<span class="chip">Inactive</span>{% endif %}</td>
-      {% if is_owner %}
-      <td style="text-align:right;">
-        {% if not m.is_me %}
-        <form method="post" class="inline" style="justify-content:flex-end;">{% csrf_token %}
-          <input type="hidden" name="action" value="set_role">
-          <input type="hidden" name="user" value="{{ m.user.id }}">
-          <select name="role" onchange="this.form.submit()" style="width:auto;padding:6px 8px;">
-            {% for value, label in roles %}<option value="{{ value }}" {% if m.user.platform_role == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
-          </select>
-        </form>
-        <form method="post" style="display:inline;" onsubmit="return confirm('Revoke platform access for {{ m.user.email }}?');">{% csrf_token %}
-          <input type="hidden" name="action" value="revoke">
-          <input type="hidden" name="user" value="{{ m.user.id }}">
-          <button class="btn ghost sm" type="submit">Revoke</button>
-        </form>
-        {% else %}<span class="muted" style="font-size:12px;">—</span>{% endif %}
-      </td>
-      {% endif %}
-    </tr>
-    {% empty %}<tr><td colspan="4" style="padding:16px;color:var(--muted);">No platform team members yet.</td></tr>{% endfor %}
-  </table>
-</div>
+{# ── Onboarding defaults ────────────────────────────────────────────────── #}
+<section id="onboarding" class="setsec">
+  <div class="sec-head"><h2>Onboarding · New-tenant defaults</h2>
+    {% if can_settings %}<button class="btn ghost sm" data-edit="onboarding">Edit</button>{% endif %}</div>
+  <div class="card">
+    <div class="read" id="onboarding-read">
+      <table class="kv">
+        <tr><td class="k">Default plan</td><td>{% if cfg.default_plan %}{{ cfg.default_plan.name }}{% else %}Trial plan{% endif %}</td></tr>
+        <tr><td class="k">Trial length</td><td>{{ cfg.trial_days }} days</td></tr>
+        <tr><td class="k">Starting AI credits</td><td>{{ cfg.starting_ai_credits|floatformat:0 }}</td></tr>
+        <tr><td class="k">Welcome email</td><td>{% if cfg.auto_welcome %}On{% else %}Off{% endif %}</td></tr>
+      </table>
+    </div>
+    {% if can_settings %}
+    <form class="edit" id="onboarding-edit" method="post" style="display:none;">{% csrf_token %}
+      <input type="hidden" name="action" value="save_defaults">
+      <label>Default plan</label>
+      <select name="default_plan">
+        <option value="">— Trial plan (default) —</option>
+        {% for p in plans %}<option value="{{ p.id }}" {% if cfg.default_plan_id == p.id %}selected{% endif %}>{{ p.name }} — R{{ p.price|floatformat:0 }}/mo</option>{% endfor %}
+      </select>
+      <div class="grid2" style="margin-top:10px;">
+        <div><label>Trial length (days)</label><input type="number" name="trial_days" min="0" step="1" value="{{ cfg.trial_days }}"></div>
+        <div><label>Starting AI credits</label><input type="number" name="starting_ai_credits" min="0" step="1" value="{{ cfg.starting_ai_credits|floatformat:0 }}"></div>
+      </div>
+      <label class="inline" style="margin-top:12px;font-weight:600;color:var(--ink);">
+        <input type="checkbox" name="auto_welcome" style="width:auto;" {% if cfg.auto_welcome %}checked{% endif %}> Send a welcome email to new owners</label>
+      <div class="acts"><button class="btn" type="submit">Save changes</button>
+        <button type="button" class="btn ghost" data-cancel="onboarding">Cancel</button></div>
+      <p class="muted" style="font-size:12px;margin:8px 0 0;">Applied when a tenant is created from the Console.</p>
+    </form>
+    {% endif %}
+  </div>
+</section>
+
+{# ── Billing & tax ──────────────────────────────────────────────────────── #}
+<section id="billing" class="setsec">
+  <div class="sec-head"><h2>Billing &amp; tax</h2>
+    {% if can_settings %}<button class="btn ghost sm" data-edit="billing">Edit</button>{% endif %}</div>
+  <div class="card">
+    <div class="read" id="billing-read">
+      <table class="kv">
+        <tr><td class="k">Base currency</td><td><strong>{{ cfg.default_currency }}</strong></td></tr>
+        <tr><td class="k">Default VAT rate</td><td>{{ cfg.default_vat_rate|floatformat:2 }}%</td></tr>
+        <tr><td class="k">Invoice prefix</td><td>{{ cfg.invoice_prefix|default:"—" }}</td></tr>
+      </table>
+    </div>
+    {% if can_settings %}
+    <form class="edit" id="billing-edit" method="post" style="display:none;">{% csrf_token %}
+      <input type="hidden" name="action" value="save_billing">
+      <div class="grid2">
+        <div><label>Base currency</label><input type="text" name="default_currency" value="{{ cfg.default_currency }}" maxlength="3" placeholder="ZAR"></div>
+        <div><label>Default VAT rate (%)</label><input type="number" name="default_vat_rate" min="0" max="100" step="0.01" value="{{ cfg.default_vat_rate|floatformat:2 }}"></div>
+        <div><label>Invoice prefix</label><input type="text" name="invoice_prefix" value="{{ cfg.invoice_prefix }}" maxlength="12" placeholder="INV"></div>
+      </div>
+      <div class="acts"><button class="btn" type="submit">Save changes</button>
+        <button type="button" class="btn ghost" data-cancel="billing">Cancel</button></div>
+      <p class="muted" style="font-size:12px;margin:8px 0 0;">Currency seeds new tenants; VAT &amp; prefix are the platform defaults.</p>
+    </form>
+    {% endif %}
+  </div>
+</section>
+
+{# ── Integrations status ────────────────────────────────────────────────── #}
+<section id="integrations" class="setsec">
+  <div class="sec-head"><h2>Integrations</h2></div>
+  <div class="card">
+    <div class="intgrid">
+      {% for i in integrations %}
+      <div class="intcard">
+        <div class="n">{{ i.name }}</div>
+        <div class="d">{{ i.detail }}</div>
+        <div style="margin-top:8px;"><span class="chip {% if i.ok %}ok{% else %}off{% endif %}">{% if i.ok %}Configured{% else %}Not set{% endif %}</span></div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="muted" style="font-size:12px;margin:12px 0 0;">Keys live in the server environment only — never shown or editable here.</p>
+  </div>
+</section>
+
+{# ── System & health ────────────────────────────────────────────────────── #}
+<section id="system" class="setsec">
+  <div class="sec-head"><h2>System &amp; health</h2></div>
+  <div class="card">
+    <table class="kv">
+      {% for label, value in system %}<tr><td class="k">{{ label }}</td><td><strong>{{ value }}</strong></td></tr>{% endfor %}
+      <tr><td class="k">Companies</td><td><strong>{{ counts.companies }}</strong></td></tr>
+      <tr><td class="k">Users</td><td><strong>{{ counts.users }}</strong></td></tr>
+    </table>
+  </div>
+</section>
+
+{# ── Records & tools ────────────────────────────────────────────────────── #}
+<section id="records" class="setsec">
+  <div class="sec-head"><h2>Records &amp; tools</h2></div>
+  <div class="links">
+    <a class="lk" href="{% url 'web:platform_plans' %}"><div class="t">Plans</div><div class="d">Pricing &amp; credit allowances</div></a>
+    <a class="lk" href="{% url 'web:platform_subscriptions' %}"><div class="t">Subscriptions</div><div class="d">Who's on what</div></a>
+    <a class="lk" href="{% url 'web:platform_emails' %}"><div class="t">Email logs</div><div class="d">Delivery history</div></a>
+    <a class="lk" href="{% url 'web:platform_audit' %}"><div class="t">Audit logs</div><div class="d">Security &amp; change trail</div></a>
+    <a class="lk" href="/admin/administration/featureflag/"><div class="t">Feature flags</div><div class="d">Platform-wide toggles</div></a>
+  </div>
+</section>
+
+{# ── Team & roles ───────────────────────────────────────────────────────── #}
+<section id="team" class="setsec">
+  <div class="sec-head"><h2>Team &amp; roles</h2></div>
+
+  <div class="legend">
+    {% for r in role_caps %}
+    <div class="r"><div class="lbl"><span class="chip {{ r.value }}">{{ r.label }}</span></div>
+      <div class="cap">{{ r.summary }}</div></div>
+    {% endfor %}
+  </div>
+
+  {% if can_team %}
+  <div class="card" style="margin-bottom:16px;">
+    <h2 style="margin-top:0;font-size:15px;">Add a team member</h2>
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="invite_staff">
+      <div class="grid2">
+        <div><label>Email</label><input type="email" name="email" required placeholder="person@lulaworks.com"></div>
+        <div><label>Department / access</label><select name="role" required>{% for value, label in roles %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
+        <div><label>First name</label><input type="text" name="first_name"></div>
+        <div><label>Last name</label><input type="text" name="last_name"></div>
+      </div>
+      <div class="acts"><button class="btn" type="submit">Send invitation</button></div>
+      <p class="muted" style="font-size:12px;margin:8px 0 0;">Sends a secure activation link — they choose their own password.</p>
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table class="team">
+      <tr><th>Member</th><th>Department</th><th>Status</th>{% if can_team %}<th></th>{% endif %}</tr>
+      {% for m in team %}
+      <tr>
+        <td><strong>{{ m.user.get_full_name|default:m.user.email }}</strong>
+          {% if m.is_me %}<span class="muted">(you)</span>{% endif %}
+          <div class="muted" style="font-size:12px;">{{ m.user.email }}</div></td>
+        <td><span class="chip {{ m.level }}">{{ m.role_label }}</span></td>
+        <td>{% if m.pending %}<span class="chip pending">Invite pending</span>
+          {% elif m.user.is_active %}<span class="chip support">Active</span>
+          {% else %}<span class="chip">Inactive</span>{% endif %}</td>
+        {% if can_team %}
+        <td style="text-align:right;">
+          {% if not m.is_me %}
+          <form method="post" class="inline" style="justify-content:flex-end;">{% csrf_token %}
+            <input type="hidden" name="action" value="set_role"><input type="hidden" name="user" value="{{ m.user.id }}">
+            <select name="role" onchange="this.form.submit()" style="width:auto;padding:6px 8px;">
+              {% for value, label in roles %}<option value="{{ value }}" {% if m.user.platform_role == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+          </form>
+          <form method="post" style="display:inline;" onsubmit="return confirm('Revoke platform access for {{ m.user.email }}?');">{% csrf_token %}
+            <input type="hidden" name="action" value="revoke"><input type="hidden" name="user" value="{{ m.user.id }}">
+            <button class="btn ghost sm" type="submit">Revoke</button>
+          </form>
+          {% else %}<span class="muted" style="font-size:12px;">—</span>{% endif %}
+        </td>
+        {% endif %}
+      </tr>
+      {% empty %}<tr><td colspan="4" style="padding:16px;color:var(--muted);">No platform team members yet.</td></tr>{% endfor %}
+    </table>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('[data-edit]').forEach(function(b){b.addEventListener('click',function(){
+    var k=b.dataset.edit; document.getElementById(k+'-read').style.display='none';
+    document.getElementById(k+'-edit').style.display='block';});});
+  document.querySelectorAll('[data-cancel]').forEach(function(b){b.addEventListener('click',function(){
+    var k=b.dataset.cancel; document.getElementById(k+'-edit').style.display='none';
+    document.getElementById(k+'-read').style.display='block';});});
+</script>
 {% endblock %}

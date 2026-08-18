@@ -47,8 +47,8 @@ def platform_home(request):
 
         # ── Owner action: grant AI credits to a tenant ──────────────────────
         if request.method == "POST" and request.POST.get("action") == "grant_credits":
-            if not _can_manage(request.user):
-                messages.error(request, "Your access level is read-only.")
+            if not request.user.can_platform("billing"):
+                messages.error(request, "You don't have billing access.")
                 return redirect("web:platform_home")
             try:
                 target = Company.objects.get(pk=request.POST.get("company"))
@@ -237,10 +237,15 @@ def platform_tenant(request, pk):
             return redirect("web:platform_home")
 
         if request.method == "POST":
-            if not _can_manage(request.user):
-                messages.error(request, "Your access level is read-only.")
-                return redirect("web:platform_tenant", pk=pk)
             action = request.POST.get("action")
+            _cap_for = {
+                "invite_user": "tenants", "member_status": "tenants",
+                "toggle_active": "tenants", "grant_credits": "billing",
+                "change_plan": "billing", "cancel_subscription": "billing"}
+            need = _cap_for.get(action)
+            if need and not request.user.can_platform(need):
+                messages.error(request, "You don't have access for that action.")
+                return redirect("web:platform_tenant", pk=pk)
             try:
                 if action == "invite_user":
                     role = Role.objects.filter(pk=request.POST.get("role")).first()
@@ -309,8 +314,8 @@ def platform_create_tenant(request):
     if not request.user.platform_level:
         messages.error(request, "The platform console is for platform administrators only.")
         return redirect("web:dashboard")
-    if not _can_manage(request.user):
-        messages.error(request, "Your access level is read-only.")
+    if not request.user.can_platform("tenants"):
+        messages.error(request, "You don't have tenant-management access.")
         return redirect("web:platform_home")
     if request.method != "POST":
         return redirect("web:platform_home")
@@ -334,10 +339,16 @@ def platform_create_tenant(request):
             return redirect("web:platform_home")
         try:
             company = Company.objects.create(name=name)
-            start_trial(company, actor=request.user)
             # Apply platform defaults (best-effort — never block onboarding).
             from apps.administration.models import PlatformSettings
             cfg = PlatformSettings.load()
+            if cfg.default_currency and hasattr(company, "currency"):
+                try:
+                    company.currency = cfg.default_currency
+                    company.save(update_fields=["currency"])
+                except Exception:                              # noqa: BLE001
+                    pass
+            start_trial(company, actor=request.user)
             try:
                 if cfg.default_plan:
                     from apps.billing import services as billing
@@ -456,18 +467,19 @@ def platform_settings(request):
     from apps.identity import services as identity
     from apps.identity.models import User
 
+    can_team = request.user.can_platform("team")
+    can_settings = request.user.can_platform("settings")
     is_owner = _is_owner(request.user)
-    can_manage = _can_manage(request.user)
 
     if request.method == "POST":
         action = request.POST.get("action")
         team_actions = {"invite_staff", "set_role", "revoke"}
-        config_actions = {"save_branding", "save_defaults"}
-        if action in team_actions and not is_owner:
-            messages.error(request, "Only a Platform Owner can manage the team.")
+        config_actions = {"save_branding", "save_defaults", "save_billing"}
+        if action in team_actions and not can_team:
+            messages.error(request, "You don't have team-management access.")
             return redirect("web:platform_settings")
-        if action in config_actions and not can_manage:
-            messages.error(request, "Your access level is read-only.")
+        if action in config_actions and not can_settings:
+            messages.error(request, "You don't have settings access.")
             return redirect("web:platform_settings")
         try:
             with system_scope():
@@ -477,6 +489,9 @@ def platform_settings(request):
                 elif action == "save_defaults":
                     _save_platform_defaults(request)
                     messages.success(request, "New-tenant defaults saved.")
+                elif action == "save_billing":
+                    _save_platform_billing(request)
+                    messages.success(request, "Billing & tax defaults saved.")
                 elif action == "invite_staff":
                     identity.invite_platform_staff(
                         request.user,
@@ -509,20 +524,30 @@ def platform_settings(request):
 
     cfg = PlatformSettings.load()
 
-    # ── Relevant platform info (read-only) ──────────────────────────────────
-    def _mask(v):
-        return "Configured" if v else "Not set"
-
-    email_backend = getattr(dj, "EMAIL_BACKEND", "")
-    info = [
+    # ── Read-only status: integrations + system/health ──────────────────────
+    anymail = getattr(dj, "ANYMAIL", {}) or {}
+    email_backend = getattr(dj, "EMAIL_BACKEND", "").lower()
+    integrations = [
+        {"name": "AI · LulaAI", "ok": bool(getattr(dj, "GEMINI_API_KEY", "")
+                                           or getattr(dj, "ANTHROPIC_API_KEY", "")),
+         "detail": (getattr(dj, "AI_PROVIDER", "") or "—").title()},
+        {"name": "Email · Brevo", "ok": bool(anymail.get("BREVO_API_KEY")),
+         "detail": "HTTP API" if "anymail" in email_backend
+                   else ("Console (dev)" if "console" in email_backend else "SMTP")},
+        {"name": "SMS · Twilio", "ok": bool(getattr(dj, "TWILIO_AUTH_TOKEN", "")),
+         "detail": "Task alerts"},
+        {"name": "Payments", "ok": bool(getattr(dj, "PAYFAST_MERCHANT_ID", "")
+                                        or getattr(dj, "STRIPE_SECRET_KEY", "")),
+         "detail": "Checkout"},
+        {"name": "Storage", "ok": bool(getattr(dj, "AWS_STORAGE_BUCKET_NAME", "")
+                                       or not dj.DEBUG),
+         "detail": "S3 / Spaces" if getattr(dj, "AWS_STORAGE_BUCKET_NAME", "") else "Local"},
+    ]
+    system_rows = [
         ("Environment", "Production" if not dj.DEBUG else "Development"),
         ("Site URL", getattr(dj, "SITE_URL", "") or "—"),
         ("From address", getattr(dj, "DEFAULT_FROM_EMAIL", "") or "—"),
-        ("Email delivery", "Live (HTTP API)" if "anymail" in email_backend.lower()
-         else ("Console (dev)" if "console" in email_backend.lower() else "SMTP")),
-        ("AI provider", (getattr(dj, "AI_PROVIDER", "") or "—").title()),
-        ("AI key", _mask(getattr(dj, "GEMINI_API_KEY", "") or getattr(dj, "ANTHROPIC_API_KEY", ""))),
-        ("Email API key", _mask((getattr(dj, "ANYMAIL", {}) or {}).get("BREVO_API_KEY"))),
+        ("Time zone", getattr(dj, "TIME_ZONE", "UTC")),
     ]
 
     with system_scope():
@@ -543,10 +568,22 @@ def platform_settings(request):
         "pending": not u.has_usable_password(),
     } for u in team]
 
+    # Legend: what each department can do (plain-language capability summary).
+    _cap_words = {"tenants": "Tenants", "billing": "Billing", "ai": "AI",
+                  "team": "Team", "settings": "Settings", "support": "Support (read)"}
+    role_caps = []
+    for value, label in User.PlatformRole.choices:
+        caps = User.PLATFORM_CAPS.get(value, set())
+        words = [w for k, w in _cap_words.items() if k in caps]
+        role_caps.append({"value": value, "label": label,
+                          "summary": ", ".join(words) if words else "Console only"})
+
     return render(request, "web/platform/settings.html", {
-        "active": "settings", "info": info, "team": team_rows,
-        "roles": User.PlatformRole.choices, "is_owner": is_owner,
-        "can_manage": can_manage, "counts": counts, "cfg": cfg, "plans": plans,
+        "active": "settings", "team": team_rows,
+        "roles": User.PlatformRole.choices, "role_caps": role_caps,
+        "is_owner": is_owner, "can_team": can_team, "can_settings": can_settings,
+        "counts": counts, "cfg": cfg, "plans": plans,
+        "integrations": integrations, "system": system_rows,
     })
 
 
@@ -608,6 +645,27 @@ def _save_platform_defaults(request):
     except (InvalidOperation, ValueError):
         raise ValueError("Starting AI credits must be a number.")
     s.auto_welcome = request.POST.get("auto_welcome") == "on"
+    s.updated_by = request.user
+    s.save()
+
+
+def _save_platform_billing(request):
+    """Validate and persist billing & tax defaults for new tenants."""
+    from decimal import Decimal, InvalidOperation
+
+    from apps.administration.models import PlatformSettings
+
+    s = PlatformSettings.load()
+    cur = (request.POST.get("default_currency") or "ZAR").strip().upper()[:3]
+    s.default_currency = cur or "ZAR"
+    try:
+        vat = Decimal(request.POST.get("default_vat_rate") or "0")
+        if vat < 0 or vat > 100:
+            raise ValueError
+        s.default_vat_rate = vat
+    except (InvalidOperation, ValueError):
+        raise ValueError("VAT rate must be a percentage between 0 and 100.")
+    s.invoice_prefix = (request.POST.get("invoice_prefix") or "").strip().upper()[:12]
     s.updated_by = request.user
     s.save()
 
