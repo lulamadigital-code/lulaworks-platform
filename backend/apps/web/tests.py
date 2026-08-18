@@ -1772,7 +1772,7 @@ class DocTemplateWebTests(TestCase):
         from apps.quotes.models import DocumentTemplate
         r = self.client.get("/company/templates/")
         self.assertEqual(r.status_code, 200)
-        self.assertContains(r, "Document templates")
+        self.assertContains(r, "Document Designer")
         with tenant_scope(self.company.id):
             self.assertTrue(DocumentTemplate.objects.filter(company=self.company).exists())
 
@@ -1832,6 +1832,24 @@ class DocTemplateWebTests(TestCase):
         with tenant_scope(self.company.id):
             quote.refresh_from_db()
             self.assertEqual(quote.template_id, tpl.id)
+
+    def test_gallery_shows_family_cards_and_thumbnails(self):
+        r = self.client.get("/company/templates/")
+        self.assertContains(r, "Document Designer")
+        for family in ("Horizon", "Elevate", "Forge", "Canvas"):
+            self.assertContains(r, family)
+        self.assertContains(r, "/thumb/")   # live preview iframes on the cards
+
+    def test_thumb_renders_html_for_a_family(self):
+        from apps.quotes.models import DocumentTemplate
+        self.client.get("/company/templates/")
+        with tenant_scope(self.company.id):
+            tpl = DocumentTemplate.objects.get(company=self.company,
+                                               doc_type="quotation", name="Ledger")
+        r = self.client.get(f"/company/templates/{tpl.id}/thumb/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "text/html; charset=utf-8")
+        self.assertIn(b"letterhead", r.content)
 
     def test_preview_returns_pdf(self):
         from apps.quotes.models import DocumentTemplate, Quotation

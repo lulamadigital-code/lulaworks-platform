@@ -68,12 +68,26 @@ def templates_list(request):
     """One section per document type. Seeds the built-in library on first view
     (and tops up any newly shipped built-ins) so a company always opens to a full
     set of looks. Active templates show as a gallery; archived ones collapse below."""
+    from apps.quotes.models import FAMILY_BY_KEY, TEMPLATE_FAMILIES
+
     company = request.user.active_company
     if dts.seed_document_templates(company, actor=request.user) == 0:
         dts.sync_builtin_templates(company, actor=request.user)
+
+    family_order = {key: i for i, (key, *_rest) in enumerate(TEMPLATE_FAMILIES)}
+
+    def _decorate(t):
+        # Attach the family's tag chips for the gallery card; order built-in
+        # families by the catalogue, custom/imported templates after them.
+        meta = FAMILY_BY_KEY.get(t.family)
+        t.tags = meta[2] if meta else []
+        t.sort_key = (0, family_order.get(t.family, 999)) if t.family else (1, t.name.lower())
+        return t
+
     groups = []
     for value, label in DocumentType.choices:
-        active = dts.templates_for(company, value)
+        active = sorted((_decorate(t) for t in dts.templates_for(company, value)),
+                        key=lambda t: t.sort_key)
         archived = [t for t in dts.templates_for(company, value, include_archived=True)
                     if t.is_archived]
         groups.append({
@@ -396,6 +410,30 @@ def template_preview(request, pk):
         return redirect("web:doc_template_edit", pk=pk)
     resp = HttpResponse(pdf, content_type="application/pdf")
     resp["Content-Disposition"] = f'inline; filename="preview-{tpl.name}.pdf"'
+    return resp
+
+
+@login_required
+def template_thumb(request, pk):
+    """A lightweight, embeddable HTML render of the template with SAMPLE data — the
+    live thumbnail shown on each gallery card. HTML (no WeasyPrint), so a page full
+    of these stays cheap. Falls back to a plain note for a ReportLab template, which
+    has no HTML design to render inline (its 'Preview' opens a real PDF instead)."""
+    from apps.quotes.document_templates import current_design
+    from apps.quotes.html_render import design_to_html, sample_context
+    from apps.quotes.models import TemplateEngine
+
+    tpl = get_object_or_404(DocumentTemplate.objects.all(), pk=pk)
+    company = request.user.active_company
+    if tpl.engine == TemplateEngine.HTML:
+        html = design_to_html(current_design(tpl), sample_context(company, tpl.doc_type))
+    else:
+        html = ("<!doctype html><meta charset='utf-8'><body "
+                "style='font-family:system-ui;color:#94a3b8;display:flex;height:100%;"
+                "align-items:center;justify-content:center;text-align:center;padding:20px;'>"
+                "<div>Built-in ReportLab layout<br><small>Use “Preview” for a full PDF</small></div>")
+    resp = HttpResponse(html, content_type="text/html; charset=utf-8")
+    resp["X-Frame-Options"] = "SAMEORIGIN"      # embeddable in our own gallery only
     return resp
 
 

@@ -133,6 +133,8 @@ urlpatterns = [
          name="doc_template_default"),
     path("company/templates/<uuid:pk>/preview/", views_doctemplates.template_preview,
          name="doc_template_preview"),
+    path("company/templates/<uuid:pk>/thumb/", views_doctemplates.template_thumb,
+         name="doc_template_thumb"),
     path("company/templates/import/", views_doctemplates.template_import_start,
          name="doc_template_import"),
     path("company/templates/import/<uuid:pk>/", views_doctemplates.template_import_review,
