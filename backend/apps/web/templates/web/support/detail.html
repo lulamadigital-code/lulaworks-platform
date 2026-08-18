@@ -1,0 +1,71 @@
+{% extends "web/base.html" %}
+{% block title %}{{ ticket.number }} · Support{% endblock %}
+{% block content %}
+<style>
+  .thead{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 0}
+  .s{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .s.open{background:var(--blue-t);color:#2f6fd0} .s.in_progress{background:var(--primary-t);color:var(--primary-d)}
+  .s.waiting_customer{background:var(--orange-t);color:#b9711a} .s.resolved{background:var(--green-t);color:#0a8f57}
+  .s.closed{background:#eef0f5;color:var(--muted)}
+  .chip{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;background:#eef0f5;color:var(--muted)}
+  .thread{display:flex;flex-direction:column;gap:12px;margin:6px 0 16px}
+  .bub{max-width:80%;padding:12px 14px;border-radius:14px;font-size:14px;line-height:1.5}
+  .bub .who{font-size:12px;font-weight:700;margin-bottom:3px} .bub .when{font-size:11px;color:var(--muted);margin-top:5px}
+  .cust{align-self:flex-end;background:var(--primary-t);border:1px solid #cdeef4}
+  .supp{align-self:flex-start;background:#fff;border:1px solid var(--line)}
+  .bub .att{display:block;font-size:12px;margin-top:6px}
+  .reply textarea{width:100%;min-height:90px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;resize:vertical}
+</style>
+
+<p class="sub" style="margin:0 0 6px;"><a href="{% url 'web:support_home' %}">← Help &amp; Support</a></p>
+<div class="thead">
+  <div>
+    <h1 style="margin:0;">{{ ticket.subject }}</h1>
+    <div class="meta">
+      <span class="chip">{{ ticket.number }}</span>
+      <span class="s {{ ticket.status }}">{{ ticket.get_status_display }}</span>
+      <span class="chip">{{ ticket.get_priority_display }} priority</span>
+      <span class="chip">{{ ticket.get_category_display }}</span>
+    </div>
+    <p class="sub" style="margin:8px 0 0;">Opened {{ ticket.created_at|date:"d M Y, H:i" }}
+      by {{ ticket.created_by.get_full_name|default:ticket.created_by.email }}
+      {% if ticket.assigned_agent %} · handled by LulaWorks Support{% endif %}</p>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+  <div class="thread">
+    {% for m in thread %}
+    <div class="bub {% if m.from_support %}supp{% else %}cust{% endif %}">
+      <div class="who">{% if m.from_support %}LulaWorks Support{% else %}{{ m.sender.get_full_name|default:m.sender.email|default:"You" }}{% endif %}</div>
+      <div>{{ m.body|linebreaksbr }}</div>
+      {% for a in m.attachments.all %}<a class="att" href="{{ a.file.url }}" target="_blank">📎 {{ a.name }}</a>{% endfor %}
+      <div class="when">{{ m.created_at|date:"d M, H:i" }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if ticket.status != 'closed' %}
+  <form class="reply" method="post" enctype="multipart/form-data">{% csrf_token %}
+    <input type="hidden" name="action" value="reply">
+    <textarea name="body" placeholder="Write a reply to LulaWorks Support…"></textarea>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
+      <input type="file" name="attachments" multiple>
+      <button class="btn" type="submit">Send reply</button>
+    </div>
+  </form>
+  {% endif %}
+
+  <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+    {% if can_reopen %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="reopen">
+      <button class="btn ghost" type="submit">Reopen ticket</button></form>
+    {% endif %}
+    {% if ticket.status != 'closed' %}
+    <form method="post" onsubmit="return confirm('Close this ticket?');">{% csrf_token %}<input type="hidden" name="action" value="close">
+      <button class="btn ghost" type="submit">Close ticket</button></form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

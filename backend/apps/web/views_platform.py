@@ -753,6 +753,115 @@ def _safe_count(app_label, model_name):
 
 
 @login_required
+def platform_support(request):
+    """LulaWorks Support desk — every ticket across all tenants, with a triage
+    board. Any platform staff (all departments carry the 'support' capability)
+    can view and work tickets."""
+    if not request.user.can_platform("support"):
+        messages.error(request, "The support desk is for platform staff only.")
+        return redirect("web:dashboard")
+
+    from apps.support.models import OPEN_STATUSES, SupportTicket, TicketStatus
+
+    status = request.GET.get("status", "")
+    priority = request.GET.get("priority", "")
+    q = request.GET.get("q", "").strip()
+
+    qs = SupportTicket.all_objects.select_related("company", "created_by", "assigned_agent")
+    if status:
+        qs = qs.filter(status=status)
+    if priority:
+        qs = qs.filter(priority=priority)
+    if q:
+        qs = qs.filter(Q(number__icontains=q) | Q(subject__icontains=q))
+    tickets = list(qs[:200])
+
+    now = timezone.now()
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    allt = SupportTicket.all_objects
+    kpis = {
+        "open": allt.filter(status__in=OPEN_STATUSES).count(),
+        "high": allt.filter(status__in=OPEN_STATUSES,
+                            priority__in=["high", "urgent"]).count(),
+        "waiting": allt.filter(status=TicketStatus.WAITING_CUSTOMER).count(),
+        "resolved_today": allt.filter(resolved_at__gte=today).count(),
+    }
+    return render(request, "web/platform/support.html", {
+        "active": "support", "tickets": tickets, "kpis": kpis,
+        "statuses": TicketStatus.choices, "f_status": status, "f_priority": priority, "q": q,
+    })
+
+
+@login_required
+def platform_support_detail(request, pk):
+    if not request.user.can_platform("support"):
+        messages.error(request, "The support desk is for platform staff only.")
+        return redirect("web:dashboard")
+
+    from apps.identity.models import User
+    from apps.support import services as support
+    from apps.support.models import (
+        SupportTicket, TicketPriority, TicketStatus,
+    )
+
+    ticket = (SupportTicket.all_objects
+              .select_related("company", "created_by", "assigned_agent").filter(pk=pk).first())
+    if ticket is None:
+        messages.error(request, "Ticket not found.")
+        return redirect("web:platform_support")
+
+    ip = request.META.get("REMOTE_ADDR")
+    if request.method == "POST":
+        action = request.POST.get("action")
+        try:
+            if action == "reply":
+                support.add_message(ticket=ticket, sender=request.user,
+                                    body=request.POST.get("body", ""), from_support=True,
+                                    files=request.FILES.getlist("attachments"), ip=ip)
+                messages.success(request, "Reply sent to the customer.")
+            elif action == "note":
+                support.add_message(ticket=ticket, sender=request.user,
+                                    body=request.POST.get("body", ""), is_internal=True,
+                                    from_support=True, ip=ip)
+                messages.success(request, "Internal note added.")
+            elif action == "assign":
+                agent = User.objects.filter(pk=request.POST.get("agent")).first() \
+                    if request.POST.get("agent") else request.user
+                support.assign(ticket=ticket, agent=agent, actor=request.user, ip=ip)
+                messages.success(request, "Ticket assigned.")
+            elif action == "status":
+                support.set_status(ticket=ticket, actor=request.user,
+                                   status=request.POST.get("status", ""),
+                                   from_support=True, ip=ip)
+                messages.success(request, "Status updated.")
+            elif action == "priority":
+                support.set_priority(ticket=ticket, priority=request.POST.get("priority", ""),
+                                    actor=request.user, ip=ip)
+                messages.success(request, "Priority updated.")
+            elif action == "escalate":
+                support.set_priority(ticket=ticket, priority=TicketPriority.URGENT,
+                                    actor=request.user, ip=ip)
+                support.set_status(ticket=ticket, actor=request.user,
+                                   status=TicketStatus.IN_PROGRESS, from_support=True, ip=ip)
+                messages.success(request, "Ticket escalated.")
+        except support.SupportError as exc:
+            messages.error(request, str(exc))
+        except Exception as exc:                               # noqa: BLE001
+            messages.error(request, f"Could not complete that: {exc}")
+        return redirect("web:platform_support_detail", pk=pk)
+
+    from apps.core.context import system_scope
+    with system_scope():
+        agents = list(User.objects.filter(Q(platform_role__in=["owner", "admin", "support"])
+                                          | Q(is_superuser=True)).order_by("email"))
+    thread = list(ticket.messages.select_related("sender").prefetch_related("attachments"))
+    return render(request, "web/platform/support_detail.html", {
+        "active": "support", "ticket": ticket, "thread": thread, "agents": agents,
+        "statuses": TicketStatus.choices, "priorities": TicketPriority.choices,
+    })
+
+
+@login_required
 def platform_tenants_csv(request):
     """Download every tenant with plan, users, AI credits + 30-day usage."""
     import csv

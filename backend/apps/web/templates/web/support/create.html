@@ -1,0 +1,41 @@
+{% extends "web/base.html" %}
+{% block title %}New support ticket{% endblock %}
+{% block content %}
+<style>
+  .fld{margin-bottom:14px} .fld label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 5px;font-weight:600}
+  .fld input,.fld select,.fld textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff;color:var(--ink)}
+  .fld textarea{min-height:130px;resize:vertical}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:640px){.row2{grid-template-columns:1fr}}
+</style>
+
+<p class="sub" style="margin:0 0 6px;"><a href="{% url 'web:support_home' %}">← Help &amp; Support</a></p>
+<h1>Create a support ticket</h1>
+<p class="sub">Tell LulaWorks Support what's happening. We'll reply here and by email.</p>
+
+<div class="card" style="max-width:720px;">
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    {% if prefill.error_reference %}<input type="hidden" name="error_reference" value="{{ prefill.error_reference }}">
+    <div class="msg" style="background:var(--orange-t);color:#b9711a;border-radius:9px;padding:10px 12px;margin-bottom:14px;font-size:13px;">
+      Error reference <strong>{{ prefill.error_reference }}</strong> will be attached to help us investigate.</div>{% endif %}
+    <div class="fld"><label>Subject</label>
+      <input type="text" name="subject" required maxlength="200" value="{{ prefill.subject }}" placeholder="Short summary of the problem"></div>
+    <div class="row2">
+      <div class="fld"><label>Category</label>
+        <select name="category">{% for value, label in categories %}<option value="{{ value }}" {% if prefill.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div class="fld"><label>Priority</label>
+        <select name="priority">{% for value, label in priorities %}<option value="{{ value }}" {% if value == 'normal' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    </div>
+    <div class="fld"><label>What happened?</label>
+      <textarea name="description" required placeholder="Describe the problem, what you expected, and any steps to reproduce it."></textarea></div>
+    <div class="row2">
+      <div class="fld"><label>Related area (optional)</label>
+        <input type="text" name="related_module" placeholder="e.g. Quotations"></div>
+      <div class="fld"><label>Related record (optional)</label>
+        <input type="text" name="related_ref" placeholder="e.g. QUO-000123"></div>
+    </div>
+    <div class="fld"><label>Attachments (optional)</label>
+      <input type="file" name="attachments" multiple></div>
+    <button class="btn" type="submit">Submit ticket</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "web/base.html" %}
+{% block title %}{{ ticket.number }} · Support desk{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="support" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:22px;margin:0 0 2px;letter-spacing:-.02em} .muted{color:var(--muted)} .sub{color:var(--muted);margin:0}
+  .cols{display:grid;grid-template-columns:1.6fr 1fr;gap:18px}@media(max-width:900px){.cols{grid-template-columns:1fr}}
+  .s{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .s.open{background:var(--blue-t);color:#2f6fd0} .s.in_progress{background:var(--primary-t);color:var(--primary-d)}
+  .s.waiting_customer{background:var(--orange-t);color:#b9711a} .s.resolved{background:var(--green-t);color:#0a8f57}
+  .s.closed{background:#eef0f5;color:var(--muted)}
+  .chip{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;background:#eef0f5;color:var(--muted)}
+  .thread{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
+  .bub{max-width:82%;padding:11px 13px;border-radius:13px;font-size:14px;line-height:1.5}
+  .bub .who{font-size:12px;font-weight:700;margin-bottom:3px} .bub .when{font-size:11px;color:var(--muted);margin-top:5px}
+  .cust{align-self:flex-start;background:#fff;border:1px solid var(--line)}
+  .supp{align-self:flex-end;background:var(--primary-t);border:1px solid #cdeef4}
+  .note{align-self:center;background:var(--orange-t);border:1px solid #f6dfb8;max-width:92%}
+  .att{display:block;font-size:12px;margin-top:6px}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 5px;font-weight:600}
+  textarea,select,input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff}
+  textarea{min-height:80px;resize:vertical}
+  .kv td{padding:8px 4px;border-bottom:1px solid var(--line);font-size:13.5px} .kv td.k{color:var(--muted);width:42%} .kv tr:last-child td{border-bottom:0}
+  .tabbtn{display:inline-flex;gap:6px} .btn.ghost{background:#fff;color:var(--primary-d);border:1px solid var(--line)}
+  .inlineform{display:flex;gap:6px;margin-bottom:10px}
+</style>
+{% endblock %}
+
+{% block content %}
+<p class="sub" style="margin-bottom:6px;"><a href="{% url 'web:platform_support' %}">← Support desk</a></p>
+<h1>{{ ticket.subject }}</h1>
+<p class="sub">{{ ticket.number }} · {{ ticket.company.name }} · opened {{ ticket.created_at|date:"d M Y, H:i" }}
+  by {{ ticket.created_by.get_full_name|default:ticket.created_by.email }}</p>
+
+<div class="cols" style="margin-top:16px;">
+  <div>
+    <div class="card">
+      <div class="thread">
+        {% for m in thread %}
+        <div class="bub {% if m.is_internal %}note{% elif m.from_support %}supp{% else %}cust{% endif %}">
+          <div class="who">{% if m.is_internal %}🔒 Internal note{% elif m.from_support %}LulaWorks Support{% else %}{{ m.sender.get_full_name|default:m.sender.email }}{% endif %}
+            {% if not m.is_internal %}<span class="muted">· {{ m.sender.get_full_name|default:m.sender.email }}</span>{% endif %}</div>
+          <div>{{ m.body|linebreaksbr }}</div>
+          {% for a in m.attachments.all %}<a class="att" href="{{ a.file.url }}" target="_blank">📎 {{ a.name }}</a>{% endfor %}
+          <div class="when">{{ m.created_at|date:"d M, H:i" }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      <form method="post" enctype="multipart/form-data">{% csrf_token %}
+        <input type="hidden" name="action" value="reply">
+        <label>Reply to the customer</label>
+        <textarea name="body" placeholder="Type your reply…"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
+          <input type="file" name="attachments" multiple style="width:auto;border:0;padding:0;">
+          <button class="btn" type="submit">Send reply</button>
+        </div>
+      </form>
+      <form method="post" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">{% csrf_token %}
+        <input type="hidden" name="action" value="note">
+        <label>Internal note (customer never sees this)</label>
+        <textarea name="body" placeholder="Note for the support team…"></textarea>
+        <div style="margin-top:8px;"><button class="btn ghost" type="submit">Add internal note</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2 style="margin-top:0;font-size:15px;">Ticket</h2>
+      <table class="kv" style="width:100%;">
+        <tr><td class="k">Status</td><td><span class="s {{ ticket.status }}">{{ ticket.get_status_display }}</span></td></tr>
+        <tr><td class="k">Priority</td><td>{{ ticket.get_priority_display }}</td></tr>
+        <tr><td class="k">Category</td><td>{{ ticket.get_category_display }}</td></tr>
+        {% if ticket.related_module %}<tr><td class="k">Related</td><td>{{ ticket.related_module }} {{ ticket.related_ref }}</td></tr>{% endif %}
+        <tr><td class="k">Agent</td><td>{% if ticket.assigned_agent %}{{ ticket.assigned_agent.get_full_name|default:ticket.assigned_agent.email }}{% else %}<span class="muted">Unassigned</span>{% endif %}</td></tr>
+        {% if ticket.error_reference %}<tr><td class="k">Error ref</td><td><span class="chip">{{ ticket.error_reference }}</span></td></tr>{% endif %}
+        <tr><td class="k">First response</td><td class="muted">{{ ticket.first_response_at|date:"d M, H:i"|default:"—" }}</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;font-size:15px;">Actions</h2>
+      <form class="inlineform" method="post">{% csrf_token %}<input type="hidden" name="action" value="status">
+        <select name="status">{% for value, label in statuses %}<option value="{{ value }}" {% if ticket.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        <button class="btn ghost" type="submit">Set</button></form>
+      <form class="inlineform" method="post">{% csrf_token %}<input type="hidden" name="action" value="priority">
+        <select name="priority">{% for value, label in priorities %}<option value="{{ value }}" {% if ticket.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        <button class="btn ghost" type="submit">Set</button></form>
+      <form class="inlineform" method="post">{% csrf_token %}<input type="hidden" name="action" value="assign">
+        <select name="agent"><option value="">— Assign to —</option>{% for a in agents %}<option value="{{ a.id }}" {% if ticket.assigned_agent_id == a.id %}selected{% endif %}>{{ a.get_full_name|default:a.email }}</option>{% endfor %}</select>
+        <button class="btn ghost" type="submit">Assign</button></form>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="escalate"><button class="btn" type="submit" style="background:var(--red);">Escalate</button></form>
+      </div>
+    </div>
+
+    {% if ticket.error_context %}
+    <div class="card">
+      <h2 style="margin-top:0;font-size:15px;">Error context</h2>
+      <table class="kv" style="width:100%;">
+        {% for k, v in ticket.error_context.items %}<tr><td class="k">{{ k }}</td><td class="muted" style="word-break:break-all;">{{ v }}</td></tr>{% endfor %}
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

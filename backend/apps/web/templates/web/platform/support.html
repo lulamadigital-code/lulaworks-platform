@@ -1,0 +1,75 @@
+{% extends "web/base.html" %}
+{% block title %}Support desk · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="support" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em}
+  .sub{color:var(--muted);margin:0 0 18px} .muted{color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:18px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .tile .n{font-size:28px;font-weight:800;letter-spacing:-.02em} .tile .l{color:var(--muted);font-size:13px;margin-top:3px;font-weight:600}
+  .tile.hi .n{color:#c22a41}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .filters input,.filters select{padding:8px 11px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;background:#fff}
+  table.tk{width:100%;border-collapse:collapse}
+  .tk th,.tk td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);font-size:13.5px}
+  .tk th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .tk tr:last-child td{border-bottom:0} .tk a.subj{font-weight:700;color:var(--ink)} .tk a.subj:hover{color:var(--primary-d)}
+  .s{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700}
+  .s.open{background:var(--blue-t);color:#2f6fd0} .s.in_progress{background:var(--primary-t);color:var(--primary-d)}
+  .s.waiting_customer{background:var(--orange-t);color:#b9711a} .s.resolved{background:var(--green-t);color:#0a8f57}
+  .s.closed{background:#eef0f5;color:var(--muted)}
+  .p.high,.p.urgent{color:#c22a41;font-weight:700} .p.normal,.p.low{color:var(--muted)}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Support desk</h1>
+<p class="sub">Every ticket across all tenants.</p>
+
+<div class="grid">
+  <div class="tile"><div class="n">{{ kpis.open }}</div><div class="l">Open</div></div>
+  <div class="tile hi"><div class="n">{{ kpis.high }}</div><div class="l">High priority</div></div>
+  <div class="tile"><div class="n">{{ kpis.waiting }}</div><div class="l">Waiting on customer</div></div>
+  <div class="tile"><div class="n">{{ kpis.resolved_today }}</div><div class="l">Resolved today</div></div>
+</div>
+
+<form class="filters" method="get">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search number or subject…">
+  <select name="status" onchange="this.form.submit()">
+    <option value="">All statuses</option>
+    {% for value, label in statuses %}<option value="{{ value }}" {% if f_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="priority" onchange="this.form.submit()">
+    <option value="">All priorities</option>
+    {% for v in "low,normal,high,urgent"|slice:":0" %}{% endfor %}
+    <option value="urgent" {% if f_priority == 'urgent' %}selected{% endif %}>Urgent</option>
+    <option value="high" {% if f_priority == 'high' %}selected{% endif %}>High</option>
+    <option value="normal" {% if f_priority == 'normal' %}selected{% endif %}>Normal</option>
+    <option value="low" {% if f_priority == 'low' %}selected{% endif %}>Low</option>
+  </select>
+  <button class="btn ghost" type="submit" style="background:#fff;color:var(--primary-d);border:1px solid var(--line);">Filter</button>
+</form>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table class="tk">
+    <tr><th>Ticket</th><th>Subject</th><th>Company</th><th>Priority</th><th>Status</th><th>Agent</th><th>Updated</th></tr>
+    {% for t in tickets %}
+    <tr>
+      <td><a class="subj" href="{% url 'web:platform_support_detail' t.id %}">{{ t.number }}</a></td>
+      <td><a class="subj" href="{% url 'web:platform_support_detail' t.id %}">{{ t.subject }}</a>
+        <div class="muted" style="font-size:12px;">{{ t.get_category_display }}</div></td>
+      <td class="muted">{{ t.company.name }}</td>
+      <td><span class="p {{ t.priority }}">{{ t.get_priority_display }}</span></td>
+      <td><span class="s {{ t.status }}">{{ t.get_status_display }}</span></td>
+      <td class="muted">{% if t.assigned_agent %}{{ t.assigned_agent.get_full_name|default:t.assigned_agent.email }}{% else %}—{% endif %}</td>
+      <td class="muted">{{ t.last_activity_at|date:"d M, H:i" }}</td>
+    </tr>
+    {% empty %}<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--muted);">No tickets match.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

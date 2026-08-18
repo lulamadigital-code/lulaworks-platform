@@ -1,0 +1,54 @@
+{% extends "web/base.html" %}
+{% block title %}Help & Support{% endblock %}
+{% block content %}
+<style>
+  .st-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+  .tabs{display:flex;gap:4px;margin:10px 0 16px}
+  .tabs a{padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;color:var(--muted)}
+  .tabs a.on{background:var(--primary-t);color:var(--primary-d)}
+  .tabs a:hover{text-decoration:none;background:#eef0f5;color:var(--ink)}
+  table.tk{width:100%;border-collapse:collapse}
+  .tk th,.tk td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);font-size:13.5px}
+  .tk th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .tk tr:last-child td{border-bottom:0}
+  .tk a.subj{font-weight:700;color:var(--ink)} .tk a.subj:hover{color:var(--primary-d)}
+  .s{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .s.open{background:var(--blue-t);color:#2f6fd0} .s.in_progress{background:var(--primary-t);color:var(--primary-d)}
+  .s.waiting_customer{background:var(--orange-t);color:#b9711a} .s.resolved{background:var(--green-t);color:#0a8f57}
+  .s.closed{background:#eef0f5;color:var(--muted)}
+  .p{font-size:12px;font-weight:700} .p.high,.p.urgent{color:#c22a41} .p.normal{color:var(--muted)} .p.low{color:var(--muted)}
+</style>
+
+<div class="st-head">
+  <div>
+    <h1>Help &amp; Support</h1>
+    <p class="sub" style="margin:0;">Report a problem to LulaWorks Support and follow the conversation.</p>
+  </div>
+  <a class="btn" href="{% url 'web:support_create' %}">+ New ticket</a>
+</div>
+
+<div class="tabs">
+  <a class="{% if scope == 'mine' %}on{% endif %}" href="{% url 'web:support_home' %}">My tickets</a>
+  {% if can_company %}<a class="{% if scope == 'company' %}on{% endif %}" href="{% url 'web:support_company' %}">Company tickets</a>{% endif %}
+</div>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table class="tk">
+    <tr><th>Ticket</th><th>Subject</th>{% if scope == 'company' %}<th>Raised by</th>{% endif %}<th>Category</th><th>Priority</th><th>Status</th><th>Updated</th></tr>
+    {% for t in tickets %}
+    <tr>
+      <td><a class="subj" href="{% url 'web:support_detail' t.id %}">{{ t.number }}</a></td>
+      <td><a class="subj" href="{% url 'web:support_detail' t.id %}">{{ t.subject }}</a></td>
+      {% if scope == 'company' %}<td class="muted">{{ t.created_by.get_full_name|default:t.created_by.email }}</td>{% endif %}
+      <td class="muted">{{ t.get_category_display }}</td>
+      <td><span class="p {{ t.priority }}">{{ t.get_priority_display }}</span></td>
+      <td><span class="s {{ t.status }}">{{ t.get_status_display }}</span></td>
+      <td class="muted">{{ t.last_activity_at|date:"d M, H:i" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" style="padding:22px;text-align:center;color:var(--muted);">
+      No tickets yet. <a href="{% url 'web:support_create' %}">Create one</a> if you need help.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

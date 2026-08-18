@@ -10,6 +10,7 @@ from . import (
     views_doctemplates,
     views_email,
     views_platform,
+    views_support,
     views_tax,
 )
 
@@ -29,6 +30,14 @@ urlpatterns = [
     path("platform/emails/", views_platform.platform_list, {"section": "emails"}, name="platform_emails"),
     path("platform/audit/", views_platform.platform_list, {"section": "audit"}, name="platform_audit"),
     path("settings/", views.settings_home, name="settings"),
+    # Help & Support (tenant side)
+    path("support/", views_support.support_home, name="support_home"),
+    path("support/new/", views_support.support_create, name="support_create"),
+    path("support/company/", views_support.support_company, name="support_company"),
+    path("support/<uuid:pk>/", views_support.support_detail, name="support_detail"),
+    # Support desk (platform side)
+    path("platform/support/", views_platform.platform_support, name="platform_support"),
+    path("platform/support/<uuid:pk>/", views_platform.platform_support_detail, name="platform_support_detail"),
     # Public account lifecycle — invitation activation + password reset (no login)
     path("activate/<str:token>/", views_account.activate, name="activate"),
     path("reset/", views_account.password_reset_request, name="password_reset_request"),
