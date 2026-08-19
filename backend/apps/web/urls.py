@@ -160,6 +160,9 @@ urlpatterns = [
          name="doc_template_restore"),
     path("company/templates/<uuid:pk>/delete/", views_doctemplates.template_delete,
          name="doc_template_delete"),
+    path("company/templates/<uuid:pk>/apply-set/",
+         views_doctemplates.template_apply_default_set,
+         name="doc_template_apply_set"),
     path("quotations/<uuid:pk>/template/", views_doctemplates.quotation_set_template,
          name="quotation_set_template"),
     # Billing & subscription

@@ -309,6 +309,21 @@ def template_restore(request, pk):
 
 @login_required
 @require_POST
+def template_apply_default_set(request, pk):
+    """Make this template's look the company default across all three document types
+    — creating the matching quotation, tax invoice and delivery note."""
+    tpl = get_object_or_404(DocumentTemplate.objects.all(), pk=pk)
+    if not _can(request.user):
+        messages.error(request, "You do not have permission to change defaults.")
+        return redirect("web:doc_templates")
+    n = dts.apply_as_default_set(tpl, request.user)
+    messages.success(request, "Set as your default across all documents — the matching "
+                     f"quotation, tax invoice and delivery note are ready ({n} templates).")
+    return redirect("web:doc_templates")
+
+
+@login_required
+@require_POST
 def template_delete(request, pk):
     """Permanently delete a template (safe: never the default, never one an issued
     document is pinned to)."""

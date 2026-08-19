@@ -134,6 +134,20 @@
 </div>
 </form>
 
+{% if can_manage %}
+<div class="card" style="margin-top:14px;border-left:3px solid var(--accent,#0E6E6E);">
+  <strong style="font-size:13px;">Use this look for all your documents</strong>
+  <p class="muted" style="font-size:12px;margin:4px 0 9px;">Create a matching
+    <strong>quotation, tax invoice and delivery note</strong> in this style and set them all as
+    your company defaults — each adapted to its type (a delivery note shows quantities, not prices).
+    Save your changes first, then apply.</p>
+  <form method="post" action="{% url 'web:doc_template_apply_set' tpl.id %}"
+        onsubmit="return confirm('Set this design as your default for quotations, tax invoices and delivery notes? This creates the matching templates.');">{% csrf_token %}
+    <button class="btn primary" type="submit">Set as default for all documents →</button>
+  </form>
+</div>
+{% endif %}
+
 <style>
 .chips{display:flex;flex-wrap:wrap;gap:6px;}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--border,#e2e2e2);

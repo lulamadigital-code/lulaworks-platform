@@ -520,6 +520,35 @@ def restore_template(template, actor):
     return template
 
 
+#: Human labels for the per-type templates a default set creates.
+_SET_LABELS = {"quotation": "Quotation", "invoice": "Tax Invoice", "delivery": "Delivery Note"}
+
+
+@transaction.atomic
+def apply_as_default_set(template, actor):
+    """Make this design the company's default across ALL THREE document types: set it
+    as the default for its own type, and create a matching template (same structured
+    design) for each other type, each set as its default. One shared look renders
+    correctly per type — the capability layer adapts content (a delivery note shows
+    quantities not prices, etc.). Returns how many templates the set now has."""
+    ver = template.current_version
+    design = dict(ver.design) if (ver and ver.design) else {}
+    set_default_template(template)
+    base = re.sub(r"\s·\s(Quotation|Tax Invoice|Delivery Note)$", "",
+                  template.name).strip() or template.name
+    count = 1
+    for dt in ("quotation", "invoice", "delivery"):
+        if dt == template.doc_type:
+            continue
+        tpl = create_html_template(
+            template.company, actor, doc_type=dt,
+            name=f"{base} · {_SET_LABELS[dt]}"[:80], design=design,
+            description=template.description or "", origin=TemplateOrigin.CUSTOM)
+        set_default_template(tpl)
+        count += 1
+    return count
+
+
 def _is_pinned(template) -> bool:
     """True if any finalised document is pinned to a version of this template —
     deleting it would delete that version and silently change an issued document."""
