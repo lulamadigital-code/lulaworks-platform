@@ -495,11 +495,20 @@ def _base_css(accent, secondary, font, st, compact=False) -> str:
     {title}
     .boxes {{ display:flex; gap:12px; margin-top:{S['boxes_top']}; }}
     .boxes .b {{ flex:1; border:1px solid #ccc; border-radius:4px; padding:8px 10px; font-size:11px; }}
+    /* The compiled-by box is ~58% wide on its own; when paired with banking it
+       fills its column instead. */
+    .boxes .signoff-box {{ flex:0 0 58%; }}
+    .sig-name {{ margin-top:10px; min-height:13px; }}
+    .sig-line {{ border-bottom:1px solid #999; margin-top:12px; }}
+    .sig-line.short {{ width:60%; }}
+    .sig-cap {{ font-size:9px; color:#777; margin-top:2px; text-transform:uppercase; letter-spacing:.03em; }}
+    .sig-two {{ display:flex; gap:12px; }}
+    .sig-two > div {{ flex:1; }}
     /* Split footer: sign-off and banking on one line. */
     .pairrow {{ display:flex; gap:14px; align-items:stretch; margin-top:{S['boxes_top']}; }}
     .pairrow .pcol {{ flex:1; min-width:0; }}
     .pairrow .boxes {{ margin-top:0; height:100%; }}
-    .pairrow .boxes .b {{ flex:1 1 auto; }}
+    .pairrow .boxes .b, .pairrow .boxes .signoff-box {{ flex:1 1 auto; }}
     .pairrow .pcol-bank {{ border:1px solid #ccc; border-radius:4px; padding:8px 10px; }}
     .pairrow .pcol-bank .section-title {{ margin-top:0; }}
     .foot {{ margin-top:{S['foot_top']}; font-size:10.5px; color:#555; }}
@@ -680,26 +689,33 @@ def _s_signature(ctx, st):
     mode = caps.signoff_mode(ctx["doc_type"])
     prep = escape(ctx["document"].get("prepared_by", "") or "")
     date = escape(ctx["document"]["date"])
+    # Ruled blank lines (a bottom border) that scale to the box width — they never
+    # overflow or wrap, however narrow the column (e.g. beside banking in a split
+    # footer), unlike a run of underscores.
+    def _line(cap, short=False):
+        cls = "sig-line short" if short else "sig-line"
+        return f"<div class='{cls}'></div><div class='sig-cap'>{cap}</div>"
+
     if mode == caps.SIGNOFF_COMPILED:
         # A supplier-issued document (quotation / tax invoice) carries only who
         # compiled it — never a customer counter-sign or a delivery receipt.
         label = {"quotation": "Quotation compiled by",
                  "invoice": "Invoice compiled by"}.get(ctx["doc_type"], "Compiled by")
         return ("<div class='boxes'>"
-                f"<div class='b' style='flex:0 0 60%;'><b>{label}</b><br><br>"
-                f"{prep}<br>Signature: ____________________"
-                f"&nbsp;&nbsp;Date: {date}</div></div>")
+                f"<div class='b signoff-box'><b>{label}</b>"
+                f"<div class='sig-name'>{prep}</div>"
+                f"{_line('Signature')}{_line('Date &nbsp; ' + date, short=True)}</div></div>")
     if mode == caps.SIGNOFF_DELIVERY:
         # A delivery note records physical hand-over.
         return ("<div class='boxes'>"
-                f"<div class='b'><b>Delivered by</b><br><br>{prep}<br>"
-                f"Date: {date}</div>"
-                "<div class='b'><b>Received in good order by</b><br><br>"
-                "Name: ____________________<br>"
-                "Signature: ____________________<br>"
-                "Date: ______________&nbsp;&nbsp;Time: __________<br>"
-                "Comments: ____________________</div></div>")
-    return ""      # SIGNOFF_NONE (e.g. invoice) — no acknowledgement block
+                f"<div class='b'><b>Delivered by</b><div class='sig-name'>{prep}</div>"
+                f"{_line('Signature')}{_line('Date &nbsp; ' + date, short=True)}</div>"
+                "<div class='b'><b>Received in good order by</b>"
+                f"{_line('Name')}{_line('Signature')}"
+                "<div class='sig-two'>"
+                f"<div>{_line('Date')}</div><div>{_line('Time')}</div></div>"
+                f"{_line('Comments')}</div></div>")
+    return ""      # SIGNOFF_NONE — no sign-off block
 
 
 def _s_footer(ctx, st):

@@ -983,16 +983,16 @@ TEMPLATE_FAMILIES = [
      "sections. Suits engineering businesses.",
      ["Technical", "Modern"], {
          "branding": {"accent_color": "#0891B2", "secondary_color": "#08313B",
-                      "header_style": "split", "logo_position": "left",
+                      "header_style": "sidebar", "logo_position": "left",
                       "font_family": "Helvetica"},
          "table_style": "lines", "totals_style": "boxed",
-         "section_title_style": "bar", "footer_layout": "split"}),
+         "section_title_style": "bar"}),
     ("terra", "Terra",
      "Industrial / field-services layout — bold section headers and site / "
      "project blocks. Built for mining, construction and field work.",
      ["Industrial", "Field services"], {
          "branding": {"accent_color": "#B45309", "secondary_color": "#3B2A1A",
-                      "header_style": "band", "logo_position": "left",
+                      "header_style": "band", "logo_position": "right",
                       "font_family": "Helvetica"},
          "table_style": "striped", "totals_style": "boxed",
          "section_title_style": "bar", "sections": _secs(_SEC_BANK_LOW)}),
@@ -1010,7 +1010,7 @@ TEMPLATE_FAMILIES = [
      "own design in the visual editor.",
      ["Customisable", "Starter"], {
          "branding": {"accent_color": "#0E6E6E", "secondary_color": "#094A4A",
-                      "header_style": "band", "logo_position": "left",
+                      "header_style": "centered", "logo_position": "center",
                       "font_family": "Helvetica"},
          "table_style": "lines", "totals_style": "plain",
          "section_title_style": "plain"}),
