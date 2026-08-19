@@ -177,7 +177,11 @@ def sample_context(company, doc_type: str) -> dict:
             "registration_number": header["registration_no"],
             "tax_number": header["tax_reference_no"],
         },
-        "logo_data_uri": _logo_data_uri(header),
+        # Sample previews (thumbnails / builder / import review) show a clear
+        # PLACEHOLDER when the company has no logo yet, so the logo slot, size and
+        # position are visible. A real document never does this — it prints the
+        # company name as text (see build_context / _logo_data_uri).
+        "logo_data_uri": _logo_data_uri(header) or _placeholder_logo_data_uri(),
         "customer": {"name": "SAMPLE — Customer (Pty) Ltd",
                      "address": "1 Sample Road, Johannesburg", "vat_number": "4990000000"},
         "contact": {"name": "Sample Contact", "email": "buyer@example.co.za", "phone": "011 000 0000"},
@@ -191,9 +195,21 @@ def sample_context(company, doc_type: str) -> dict:
         "items": items,
         "price_label": "Rate" if doc_type == "invoice" else "Unit price",
         "financial": financial,
-        "banking": header["bank"],
+        # Placeholder banking (and terms) when the company hasn't set its own, so
+        # the preview shows those slots. A real document only shows configured
+        # banking / terms.
+        "banking": header["bank"] or _placeholder_banking(),
         "terms": "This is sample terms text shown only in the template preview.",
     }
+
+
+def _placeholder_banking() -> dict:
+    """Sample banking shown ONLY in a preview when the company has no bank account
+    yet — so the banking slot is visible. Never used on a real document."""
+    return {"bank_name": "Your bank (set in Company Profile)",
+            "account_name": "Your Company (Pty) Ltd", "account_number": "0000000000",
+            "branch_code": "000000", "branch_name": "", "account_type": "Cheque",
+            "swift_code": "", "currency": "ZAR"}
 
 
 def _logo_data_uri(header) -> str:
@@ -217,6 +233,24 @@ def _logo_data_uri(header) -> str:
         return f"data:{mime};base64,{data}"
     except OSError:
         return ""
+
+
+def _placeholder_logo_data_uri() -> str:
+    """A neutral "YOUR LOGO" placeholder (SVG data: URI) shown only in SAMPLE
+    previews when the company hasn't uploaded a logo — so the reader sees where the
+    logo will sit and how big it is. Never used on a real document."""
+    svg = (
+        "<svg xmlns='http://www.w3.org/2000/svg' width='240' height='84' "
+        "viewBox='0 0 240 84'>"
+        "<rect x='1.5' y='1.5' width='237' height='81' rx='10' fill='#eef1f5' "
+        "stroke='#c3ccd6' stroke-width='1.5' stroke-dasharray='6 4'/>"
+        "<text x='120' y='40' font-family='Helvetica,Arial,sans-serif' font-size='19' "
+        "font-weight='700' fill='#8a94a1' text-anchor='middle'>YOUR LOGO</text>"
+        "<text x='120' y='59' font-family='Helvetica,Arial,sans-serif' font-size='10' "
+        "fill='#a6afba' text-anchor='middle'>upload one in Company Profile</text>"
+        "</svg>")
+    data = base64.b64encode(svg.encode("utf-8")).decode("ascii")
+    return f"data:image/svg+xml;base64,{data}"
 
 
 # ── Design → HTML → PDF ────────────────────────────────────────────────────────
