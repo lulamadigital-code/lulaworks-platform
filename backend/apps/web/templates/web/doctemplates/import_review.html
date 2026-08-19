@@ -12,7 +12,18 @@
   <div><a class="btn ghost" href="{% url 'web:doc_template_import' %}">← New import</a></div>
 </div>
 
-{% if ti.status == 'failed' %}
+{% if ti.status == 'uploaded' %}
+<div class="card" style="text-align:center;padding:34px 20px;">
+  <div style="width:34px;height:34px;margin:0 auto 14px;border:3px solid var(--line,#e3e5ea);
+       border-top-color:var(--accent,#0E6E6E);border-radius:50%;animation:lwspin 0.8s linear infinite;"></div>
+  <strong>Reconstructing your document…</strong>
+  <p class="muted" style="margin:6px 0 0;">LulaAI is reading the layout and rebuilding it as a template.
+    This usually takes 10–30 seconds — the page refreshes automatically.</p>
+</div>
+<style>@keyframes lwspin{to{transform:rotate(360deg)}}</style>
+<script>setTimeout(function(){location.reload();}, 4000);</script>
+
+{% elif ti.status == 'failed' %}
 <div class="card" style="border-left:3px solid var(--danger,#c0392b);">
   <strong>That document couldn’t be analysed.</strong>
   <p class="muted" style="margin:6px 0 0;">{{ ti.error }}</p>

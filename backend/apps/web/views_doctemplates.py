@@ -334,11 +334,23 @@ _IMPORT_EXTS = {".pdf", ".png", ".jpg", ".jpeg", ".webp", ".docx", ".doc"}
 _IMPORT_MAX_BYTES = 15 * 1024 * 1024
 
 
+def _enqueue_import(ti, user):
+    """Run the analysis + AI recreation OFF the request path (it's slow). Enqueue the
+    Celery task; if the broker is unreachable, fall back to running it inline so the
+    import still completes (just slower)."""
+    from apps.quotes.tasks import run_import_task
+    from apps.quotes.template_import import run_import
+    try:
+        run_import_task.delay(str(ti.id), str(user.id) if user else None)
+    except Exception:                # noqa: BLE001 - broker down → do it inline
+        run_import(ti, user)
+
+
 @login_required
 def template_import_start(request):
     """Method 3 — upload an existing document; LulaAI reconstructs its structure."""
     from apps.quotes.models import TemplateImport
-    from apps.quotes.template_import import IMPORT_CREDIT_ESTIMATE, run_import
+    from apps.quotes.template_import import IMPORT_CREDIT_ESTIMATE
 
     if request.method == "POST":
         if not _can(request.user):
@@ -365,7 +377,7 @@ def template_import_start(request):
             company=request.user.active_company, doc_type=doc_type,
             source_file=upload, original_name=upload.name[:255],
             created_by=request.user, updated_by=request.user)
-        run_import(ti, request.user)
+        _enqueue_import(ti, request.user)      # runs in the background (Celery)
         return redirect("web:doc_template_import_review", pk=ti.id)
 
     return render(request, "web/doctemplates/import.html", {
@@ -417,7 +429,6 @@ def template_import_regenerate(request, pk):
     first one isn't quite right (the model is non-deterministic, so a re-run
     usually differs). Only before it's been saved."""
     from apps.quotes.models import TemplateImport
-    from apps.quotes.template_import import run_import
     ti = get_object_or_404(TemplateImport.objects.all(), pk=pk)
     if not _can(request.user):
         messages.error(request, "You do not have permission to import templates.")
@@ -426,8 +437,10 @@ def template_import_regenerate(request, pk):
         messages.info(request, "This import was already saved — import the document "
                       "again to make a fresh version.")
         return redirect("web:doc_template_import_review", pk=pk)
-    run_import(ti, request.user)
-    messages.success(request, "Re-created from your document — here's a fresh attempt.")
+    ti.status = TemplateImport.Status.UPLOADED       # back to "analysing"
+    ti.save(update_fields=["status", "updated_at"])
+    _enqueue_import(ti, request.user)
+    messages.success(request, "Re-creating from your document — a fresh attempt is on the way.")
     return redirect("web:doc_template_import_review", pk=pk)
 
 
