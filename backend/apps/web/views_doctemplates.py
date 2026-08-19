@@ -529,6 +529,7 @@ def _design_from_post(post) -> dict:
         "table_style": post.get("table_style", ""),
         "totals_style": post.get("totals_style", ""),
         "section_title_style": post.get("section_title_style", ""),
+        "footer_layout": post.get("footer_layout", ""),
         "header_note": post.get("header_note", ""),
         "footer_note": post.get("footer_note", ""),
     }
