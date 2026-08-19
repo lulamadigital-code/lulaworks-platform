@@ -231,15 +231,16 @@ def render_html_pdf(document, doc_type: str, design: dict) -> bytes:
     return HTML(string=html).write_pdf()
 
 
-def render_design_preview_pdf(company, doc_type: str, design: dict) -> bytes:
+def render_design_preview_pdf(company, doc_type: str, design: dict, *,
+                              compact: bool = True) -> bytes:
     """Render a design to PDF with SAMPLE data — for the import review screen, the
-    blank builder and gallery previews. The preview uses the COMPACT profile so it
-    always presents as a tidy one-pager, even though a real document renders at
-    comfortable spacing and paginates naturally."""
+    blank builder and gallery previews. `compact` (default) presents a tidy
+    one-pager for thumbnails; pass compact=False for the full "Preview PDF" button,
+    which shows the true comfortable spacing a real document uses."""
     from weasyprint import HTML
 
     html = design_to_html(design or DEFAULT_DESIGN,
-                          sample_context(company, doc_type), compact=True)
+                          sample_context(company, doc_type), compact=compact)
     return HTML(string=html).write_pdf()
 
 
@@ -260,7 +261,8 @@ def design_to_html(design: dict, context: dict, *, compact: bool = False) -> str
         "accent": accent, "secondary": secondary,
         "cols": design.get("columns") or list(TEMPLATE_ITEM_COLUMN_KEYS),
         "hnote": design.get("header_note", ""), "fnote": design.get("footer_note", ""),
-        "logo_pos": logo_pos, "header_style": header_style,
+        "logo_pos": logo_pos, "logo_size": branding.get("logo_size") or "medium",
+        "header_style": header_style,
         "table_style": design.get("table_style") or "lines",
         "totals_style": design.get("totals_style") or "plain",
         "title_style": design.get("section_title_style") or "plain",
@@ -367,11 +369,19 @@ def _base_css(accent, secondary, font, st, compact=False) -> str:
                   ".letterhead .coname{font-weight:bold;}",
     }.get(hs, "")
 
-    logo_order = "1" if st["logo_pos"] == "left" else "2"
-    ident_order = "2" if st["logo_pos"] == "left" else "1"
     # Identity text hugs the edge opposite the logo, so the letterhead spans the
     # full width and stays balanced (logo left → details right, and vice-versa).
-    ident_align = "right" if st["logo_pos"] == "left" else "left"
+    # The logo/identity DOM order (in _s_letterhead) does the actual placement,
+    # since WeasyPrint's flexbox ignores CSS `order`.
+    ident_align = {"left": "right", "right": "left", "center": "center"}.get(
+        st["logo_pos"], "right")
+    # Logo size — the letterhead's logo can be made bigger for a strong brand mark.
+    logo_dims = {"small": ("46px", "170px"), "medium": ("64px", "230px"),
+                 "large": ("84px", "290px"), "xlarge": ("108px", "340px")}.get(
+                     st.get("logo_size", "medium"), ("64px", "230px"))
+    # Logo centred → stack the letterhead in a centred column, whatever the header.
+    center_lh = (".letterhead .lh-row{flex-direction:column;align-items:center;text-align:center;}"
+                 ".letterhead .ident{text-align:center;}") if st["logo_pos"] == "center" else ""
 
     # Item table per table style.
     table = {
@@ -424,9 +434,10 @@ def _base_css(accent, secondary, font, st, compact=False) -> str:
     .nb {{ white-space:nowrap; }}
     {lh}
     .letterhead .lh-row {{ display:flex; align-items:flex-start; gap:24px; justify-content:space-between; }}
-    .letterhead img.logo {{ height:auto; max-height:64px; max-width:230px;
-                            object-fit:contain; order:{logo_order}; }}
-    .letterhead .ident {{ order:{ident_order}; text-align:{ident_align}; line-height:1.42; }}
+    .letterhead img.logo {{ height:auto; max-height:{logo_dims[0]}; max-width:{logo_dims[1]};
+                            object-fit:contain; }}
+    .letterhead .ident {{ text-align:{ident_align}; line-height:1.42; }}
+    {center_lh}
     .coname {{ font-size:17px; font-weight:700; letter-spacing:.01em; }}
     .hnote {{ margin-top:5px; font-weight:600; font-size:11px; opacity:.9; }}
     .sidebar-layout {{ display:flex; gap:0; align-items:stretch; }}
@@ -513,7 +524,10 @@ def _s_letterhead(ctx, st):
             if ctx["logo_data_uri"] else "")
     ident = f"<div class='ident'><div class='coname'>{escape(c['name'])}</div>{lines}</div>"
     note = f"<p class='hnote'>{escape(st['hnote'])}</p>" if st["hnote"] else ""
-    return f"<div class='letterhead'><div class='lh-row'>{logo}{ident}</div>{note}</div>"
+    # DOM order carries the logo position — WeasyPrint's flexbox ignores CSS
+    # `order`, so a logo-right template puts the identity first, then the logo.
+    row = f"{ident}{logo}" if st.get("logo_pos") == "right" else f"{logo}{ident}"
+    return f"<div class='letterhead'><div class='lh-row'>{row}</div>{note}</div>"
 
 
 def _s_document_meta(ctx, st):

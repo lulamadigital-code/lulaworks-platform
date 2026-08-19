@@ -46,6 +46,8 @@
           <select name="font_family">{% for f in fonts %}<option value="{{ f }}" {% if branding.font_family == f %}selected{% endif %}>{{ f }}</option>{% endfor %}</select></div>
         <div><label>Logo position</label>
           <select name="logo_position">{% for p in logo_positions %}<option value="{{ p }}" {% if branding.logo_position == p %}selected{% endif %}>{{ p|title }}</option>{% endfor %}</select></div>
+        <div><label>Logo size</label>
+          <select name="logo_size">{% for s in logo_sizes %}<option value="{{ s }}" {% if branding.logo_size == s %}selected{% endif %}>{{ s|title }}</option>{% endfor %}</select></div>
         <div><label>Header layout</label>
           <select name="header_style">{% for h in header_styles %}<option value="{{ h }}" {% if branding.header_style == h %}selected{% endif %}>{{ h|title }}</option>{% endfor %}</select></div>
       </div>

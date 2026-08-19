@@ -21,6 +21,7 @@ from .models import (
     ALLOWED_FONTS,
     ALLOWED_HEADER_STYLES,
     ALLOWED_LOGO_POSITIONS,
+    ALLOWED_LOGO_SIZES,
     ALLOWED_SECTION_STYLES,
     ALLOWED_TABLE_STYLES,
     ALLOWED_TEMPLATE_FAMILY_NAMES,
@@ -128,6 +129,11 @@ def clean_design(raw: dict) -> dict:
         if lp not in ALLOWED_LOGO_POSITIONS:
             raise TemplateError(f"Unknown logo position “{lp}”.")
         branding["logo_position"] = lp
+    if "logo_size" in b_in:
+        ls = (b_in.get("logo_size") or "").strip() or "medium"
+        if ls not in ALLOWED_LOGO_SIZES:
+            raise TemplateError(f"Unknown logo size “{ls}”.")
+        branding["logo_size"] = ls
     if "header_style" in b_in:
         hs = (b_in.get("header_style") or "").strip() or "band"
         if hs not in ALLOWED_HEADER_STYLES:

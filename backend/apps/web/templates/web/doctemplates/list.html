@@ -46,7 +46,7 @@
   {% for t in g.templates %}
   <div class="tplcard{% if t.is_default %} is-default{% endif %}">
     <div class="thumb-wrap">
-      <iframe src="{% url 'web:doc_template_thumb' t.id %}" loading="lazy" scrolling="no" tabindex="-1" title="{{ t.name }} preview"></iframe>
+      <iframe src="{% url 'web:doc_template_thumb' t.id %}?v={{ t.current_version_id }}" loading="lazy" scrolling="no" tabindex="-1" title="{{ t.name }} preview"></iframe>
       <a class="thumb-cover" href="{% url 'web:doc_template_preview' t.id %}" target="_blank" title="Open full preview"></a>
       {% if t.is_default %}<span class="badge">Default</span>{% endif %}
     </div>

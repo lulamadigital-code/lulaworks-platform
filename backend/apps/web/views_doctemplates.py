@@ -18,6 +18,7 @@ from apps.quotes.models import (
     ALLOWED_FONTS,
     ALLOWED_HEADER_STYLES,
     ALLOWED_LOGO_POSITIONS,
+    ALLOWED_LOGO_SIZES,
     ALLOWED_SECTION_STYLES,
     ALLOWED_TABLE_STYLES,
     ALLOWED_TOTALS_STYLES,
@@ -253,7 +254,7 @@ def template_builder(request, pk):
         "tpl": tpl, "design": design, "branding": branding,
         "sections": sections, "columns": columns, "doc_type_note": doc_type_note,
         "fonts": ALLOWED_FONT_FAMILIES, "logo_positions": ALLOWED_LOGO_POSITIONS,
-        "header_styles": ALLOWED_HEADER_STYLES,
+        "logo_sizes": ALLOWED_LOGO_SIZES, "header_styles": ALLOWED_HEADER_STYLES,
         "table_styles": ALLOWED_TABLE_STYLES, "totals_styles": ALLOWED_TOTALS_STYLES,
         "section_styles": ALLOWED_SECTION_STYLES,
         "field_library": TEMPLATE_FIELD_LIBRARY,
@@ -423,17 +424,28 @@ def template_import_preview(request, pk):
 
 @login_required
 def template_preview(request, pk):
-    """Render a real PDF with this template applied, using the company's most
-    recent document of the matching type — so what you see is what you'll send.
-    Falls back to a message when there's nothing yet to preview."""
+    """Preview the TEMPLATE — its current saved design rendered with sample data —
+    so what you see always reflects the latest edit. (Rendering a real document
+    here was wrong: a finalised document is pinned to an older template version, so
+    it ignored edits and showed the "old design".) ReportLab templates, which have
+    no HTML design, still preview off the newest matching document."""
+    from apps.quotes.document_templates import current_design
+    from apps.quotes.html_render import render_design_preview_pdf
+    from apps.quotes.models import TemplateEngine
+
     tpl = get_object_or_404(DocumentTemplate.objects.all(), pk=pk)
     company = request.user.active_company
-    pdf = _preview_pdf(company, tpl)
-    if pdf is None:
-        messages.info(request, "Create a quotation first to preview this template.")
-        return redirect("web:doc_template_edit", pk=pk)
+    if tpl.engine == TemplateEngine.HTML:
+        pdf = render_design_preview_pdf(company, tpl.doc_type, current_design(tpl),
+                                        compact=False)
+    else:
+        pdf = _preview_pdf(company, tpl)
+        if pdf is None:
+            messages.info(request, "Create a quotation first to preview this template.")
+            return redirect("web:doc_template_edit", pk=pk)
     resp = HttpResponse(pdf, content_type="application/pdf")
     resp["Content-Disposition"] = f'inline; filename="preview-{tpl.name}.pdf"'
+    resp["Cache-Control"] = "no-store"      # never show a stale preview
     return resp
 
 
@@ -459,6 +471,7 @@ def template_thumb(request, pk):
                 "<div>Built-in ReportLab layout<br><small>Use “Preview” for a full PDF</small></div>")
     resp = HttpResponse(html, content_type="text/html; charset=utf-8")
     resp["X-Frame-Options"] = "SAMEORIGIN"      # embeddable in our own gallery only
+    resp["Cache-Control"] = "no-store"          # always the latest saved design
     return resp
 
 
@@ -492,6 +505,7 @@ def _design_from_post(post) -> dict:
         "secondary_color": post.get("secondary_color", ""),
         "font_family": post.get("font_family", ""),
         "logo_position": post.get("logo_position", ""),
+        "logo_size": post.get("logo_size", ""),
         "header_style": post.get("header_style", ""),
     }
     ordered = []

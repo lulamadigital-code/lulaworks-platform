@@ -815,6 +815,8 @@ ALLOWED_HEADER_STYLES = ["band", "plain", "minimal", "centered", "split",
 ALLOWED_TABLE_STYLES = ["lines", "striped", "bordered", "plain"]
 ALLOWED_TOTALS_STYLES = ["plain", "boxed", "highlighted"]
 ALLOWED_SECTION_STYLES = ["plain", "bar", "underline"]
+#: How large the company logo prints in the letterhead.
+ALLOWED_LOGO_SIZES = ["small", "medium", "large", "xlarge"]
 
 #: The design a new HTML template starts from — a clean, complete document.
 DEFAULT_DESIGN = {
@@ -823,6 +825,7 @@ DEFAULT_DESIGN = {
         "secondary_color": "",
         "font_family": "Helvetica",
         "logo_position": "left",
+        "logo_size": "medium",
         "header_style": "band",
     },
     "sections": [{"key": k, "visible": True} for k in TEMPLATE_SECTION_KEYS],
