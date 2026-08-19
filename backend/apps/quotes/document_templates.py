@@ -520,6 +520,28 @@ def restore_template(template, actor):
     return template
 
 
+def _is_pinned(template) -> bool:
+    """True if any finalised document is pinned to a version of this template —
+    deleting it would delete that version and silently change an issued document."""
+    from .models import CommercialDocument, Quotation
+    return (Quotation.objects.filter(template_version__template=template).exists()
+            or CommercialDocument.objects.filter(template_version__template=template).exists())
+
+
+@transaction.atomic
+def delete_template(template, actor):
+    """Permanently remove a template. Refused for the company default (set another
+    first) and for any template an already-issued document is pinned to (archive it
+    instead) — so deleting can never break a finalised document."""
+    if template.is_default:
+        raise TemplateError("This is the default — set another template as the "
+                            "default before deleting it.")
+    if _is_pinned(template):
+        raise TemplateError("An already-issued document uses this template, so it "
+                            "can't be deleted — archive it instead.")
+    template.delete()      # cascades its versions (none are pinned)
+
+
 @transaction.atomic
 def set_default_template(template):
     """Make this the company's default for its type; unset the others. An archived

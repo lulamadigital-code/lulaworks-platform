@@ -309,6 +309,25 @@ def template_restore(request, pk):
 
 @login_required
 @require_POST
+def template_delete(request, pk):
+    """Permanently delete a template (safe: never the default, never one an issued
+    document is pinned to)."""
+    tpl = get_object_or_404(DocumentTemplate.objects.all(), pk=pk)
+    if not _can(request.user):
+        messages.error(request, "You do not have permission to delete templates.")
+        return redirect("web:doc_templates")
+    name = tpl.name
+    try:
+        dts.delete_template(tpl, request.user)
+    except dts.TemplateError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"“{name}” deleted.")
+    return redirect("web:doc_templates")
+
+
+@login_required
+@require_POST
 def quotation_set_template(request, pk):
     """Per-document override: point one quotation at a specific template (or back
     to the company default). Blocked once the quotation is locked."""
