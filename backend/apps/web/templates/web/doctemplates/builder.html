@@ -97,6 +97,17 @@
   </div>
 
   <div>
+    <div class="card prev-card">
+      <h3 style="margin-top:0;">Live preview</h3>
+      <p class="muted" style="font-size:11.5px;margin:0 0 8px;">Sample data in your current
+        saved design. Click to open the full PDF; <strong>Save</strong> to refresh after a change.</p>
+      <a class="prev-frame" href="{% url 'web:doc_template_preview' tpl.id %}" target="_blank"
+         title="Open full preview">
+        <iframe src="{% url 'web:doc_template_thumb' tpl.id %}?v={{ tpl.current_version_id }}"
+                scrolling="no" tabindex="-1" title="Template preview"></iframe>
+      </a>
+    </div>
+
     <div class="card">
       <h3 style="margin-top:0;">Data fields</h3>
       <p class="muted" style="font-size:12px;margin:0 0 8px;">LulaWorks fills these from
@@ -120,5 +131,11 @@
 .chips{display:flex;flex-wrap:wrap;gap:6px;}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--border,#e2e2e2);
   border-radius:14px;font-size:12.5px;background:var(--surface,#fff);}
+/* Live preview: a scaled A4 page of the current saved design. */
+.prev-card{position:sticky;top:14px;}
+.prev-frame{display:block;position:relative;width:340px;max-width:100%;height:481px;
+  border:1px solid var(--line,#e3e5ea);border-radius:8px;overflow:hidden;background:#fff;}
+.prev-frame iframe{position:absolute;top:0;left:0;width:794px;height:1123px;border:0;
+  transform:scale(.4282);transform-origin:top left;pointer-events:none;background:#fff;}
 </style>
 {% endblock %}
