@@ -108,7 +108,7 @@ class GeminiProvider(AIProvider):
     name = "gemini"
 
     def complete(self, prompt: str, *, system: str = "", max_tokens: int = 2000,
-                 json_mode: bool = False, **_) -> AIResponse:
+                 json_mode: bool = False, images: list | None = None, **_) -> AIResponse:
         if not settings.GEMINI_API_KEY:
             raise NotConfiguredError("GEMINI_API_KEY is not set.")
         try:
@@ -139,8 +139,16 @@ class GeminiProvider(AIProvider):
         if json_mode:
             config.response_mime_type = "application/json"
 
+        # Vision: when image bytes are supplied (e.g. a rendered page of an uploaded
+        # document), send them alongside the prompt so the model can SEE the layout.
+        if images:
+            contents = [types.Part.from_bytes(data=img, mime_type="image/png")
+                        for img in images] + [prompt]
+        else:
+            contents = prompt
+
         resp = client.models.generate_content(
-            model=settings.GEMINI_MODEL, contents=prompt, config=config,
+            model=settings.GEMINI_MODEL, contents=contents, config=config,
         )
 
         usage = getattr(resp, "usage_metadata", None)

@@ -311,6 +311,118 @@ def _parse_design(text: str):
         return None
 
 
+# ── Vision enrichment: let a multimodal model SEE the page ─────────────────────
+
+def _page_image_bytes(path: str, original_name: str) -> bytes | None:
+    """Render the first page of the upload to PNG bytes for a vision model — a PDF
+    via pdf2image (poppler), an uploaded image used directly. Downscaled to keep the
+    request small. None when it can't be rendered (e.g. DOCX), so the caller falls
+    back to the text-feature path."""
+    low = (original_name or path or "").lower()
+    try:
+        if low.endswith(".pdf"):
+            from pdf2image import convert_from_path
+            pages = convert_from_path(path, dpi=110, first_page=1, last_page=1)
+            if not pages:
+                return None
+            img = pages[0]
+        elif low.endswith((".png", ".jpg", ".jpeg", ".webp")):
+            from PIL import Image
+            img = Image.open(path)
+        else:
+            return None
+        import io
+        img = img.convert("RGB")
+        img.thumbnail((1000, 1400))           # cap the payload
+        buf = io.BytesIO()
+        img.save(buf, "PNG")
+        return buf.getvalue()
+    except Exception:                # noqa: BLE001 - vision is best-effort
+        return None
+
+
+def _vision_prompt(doc_type: str) -> str:
+    return (
+        f"You are shown an image of a company's existing {doc_type} document. "
+        "Pick the LulaWorks template settings whose VISUAL STYLE best matches it — "
+        "the brand colour, header treatment, logo placement, and table/totals look. "
+        "Identify STYLE ONLY. Never copy or output any company, customer, address, "
+        "reference, or money value from the image.\n\n"
+        "Return ONLY this JSON object:\n"
+        "{\n"
+        '  "branding": {\n'
+        '    "accent_color": "#RRGGBB (the dominant brand colour)",\n'
+        '    "secondary_color": "#RRGGBB or empty string",\n'
+        '    "font_family": one of ["Helvetica","Arial","Times New Roman","Georgia","Courier New","Verdana","Trebuchet MS"],\n'
+        '    "logo_position": "left" | "center" | "right",\n'
+        '    "logo_size": "small" | "medium" | "large" | "xlarge",\n'
+        '    "header_style": "band" | "plain" | "minimal" | "centered" | "split" | "sidebar" | "hero" | "ledger"\n'
+        "  },\n"
+        '  "table_style": "lines" | "striped" | "bordered" | "plain",\n'
+        '  "totals_style": "plain" | "boxed" | "highlighted",\n'
+        '  "section_title_style": "plain" | "bar" | "underline",\n'
+        '  "footer_layout": "stacked" | "split"\n'
+        "}\n\n"
+        "How to choose:\n"
+        "- header_style: a solid colour bar across the whole top = band; a coloured "
+        "vertical column down the left = sidebar; a big centred document title = hero "
+        "(or centered for a smaller centred one); a two-tone header = split; a thin "
+        "rule under the letterhead = plain; almost no colour = minimal; a boxed "
+        "reference panel = ledger.\n"
+        "- table_style: zebra/alternating rows = striped; full borders around every "
+        "cell = bordered; only horizontal rules = lines; no lines = plain.\n"
+        "- totals_style: the grand total in a filled colour block = highlighted; in a "
+        "bordered box = boxed; just a rule above it = plain.\n"
+        "- section_title_style: headings in filled colour bars = bar; underlined "
+        "headings = underline; plain coloured headings = plain.\n"
+        "- logo_position/size: match where the logo sits and how large it is.\n"
+        "JSON:"
+    )
+
+
+def _merge_design(design: dict, refined: dict) -> dict:
+    """Layer the AI's style choices over the deterministic draft — branding merged
+    key-by-key, top-level style knobs overridden, sections/columns kept from the
+    deterministic pass (structure) unless the AI clearly returned them."""
+    out = dict(design)
+    b = dict(design.get("branding") or {})
+    b.update({k: v for k, v in (refined.get("branding") or {}).items() if v not in (None, "")})
+    out["branding"] = b
+    for key in ("table_style", "totals_style", "section_title_style", "footer_layout"):
+        if refined.get(key):
+            out[key] = refined[key]
+    return out
+
+
+def vision_enrich(company, user, image_bytes: bytes, design: dict, doc_type: str):
+    """Refine the design by having a multimodal model LOOK at the page. Same
+    fail-open contract as enrich_design — any problem returns the deterministic
+    design unchanged with ai_used=False."""
+    from apps.ai_platform.gateway import (
+        AllProvidersFailedError,
+        InsufficientCreditsError,
+        run_task,
+    )
+    try:
+        resp = run_task(company, user, task="template_layout_import",
+                        prompt=_vision_prompt(doc_type),
+                        prompt_name="template_layout_vision",
+                        images=[image_bytes], json_mode=True)
+    except (InsufficientCreditsError, AllProvidersFailedError):
+        return design, False, Decimal("0")
+    except Exception:                # noqa: BLE001 - AI is best-effort, never fatal
+        return design, False, Decimal("0")
+
+    refined = _parse_design(resp.text)
+    if refined is None:
+        return design, False, getattr(resp, "credits_used", Decimal("0"))
+    try:
+        cleaned = clean_design(_merge_design(design, refined))
+    except Exception:                # noqa: BLE001 - reject unsafe AI output
+        return design, False, getattr(resp, "credits_used", Decimal("0"))
+    return cleaned, True, getattr(resp, "credits_used", Decimal("0"))
+
+
 # ── Orchestration: analyse an upload, then save the approved design ─────────────
 
 def _local_path(template_import) -> str:
@@ -336,13 +448,28 @@ def run_import(template_import, user):
     try:
         path = _local_path(ti)
         design, warnings, features = analyse_document(path, ti.doc_type)
-        design, ai_used, credits = enrich_design(ti.company, user, features, design)
+        # Prefer VISION — let the model see the actual page — when we can render one;
+        # fall back to reasoning over text features (e.g. a DOCX with no image).
+        image = _page_image_bytes(path, ti.original_name)
+        if image is not None:
+            design, ai_used, credits = vision_enrich(ti.company, user, image, design, ti.doc_type)
+        else:
+            design, ai_used, credits = enrich_design(ti.company, user, features, design)
     except Exception as exc:          # noqa: BLE001 - surface, never crash the request
         ti.status = ti.Status.FAILED
         ti.error = str(exc)[:255]
         ti.updated_by = user
         ti.save(update_fields=["status", "error", "updated_by", "updated_at"])
         return ti
+
+    # When the AI set the branding, the deterministic "couldn't detect colour/logo"
+    # notes are stale — drop them. Also drop the deterministic tagline guess: the
+    # vision model handles branding and the text-scan can lift a stray line (a
+    # letterhead word, or nothing) that isn't really a tagline.
+    if ai_used:
+        warnings = [w for w in warnings
+                    if w.get("field") not in ("accent_color", "logo", "header_note")]
+        design = {**design, "header_note": ""}
 
     ti.design = design
     ti.warnings = warnings
