@@ -390,6 +390,35 @@ def sync_builtin_templates(company, actor=None) -> int:
 
 
 @transaction.atomic
+def resync_builtin_family_designs(company, actor=None) -> int:
+    """Refresh each built-in FAMILY template's design to the latest code definition
+    — so shipped improvements (new section orders, footer layouts, larger logo
+    controls) reach companies seeded earlier. SAFE: a family the user has customised
+    in the builder is left untouched, and finalised documents keep their pinned
+    version. Returns how many templates were refreshed."""
+    from .models import FAMILY_BY_KEY
+    updated = 0
+    qs = (DocumentTemplate.objects.filter(company=company, is_builtin=True,
+                                          engine=TemplateEngine.HTML)
+          .exclude(family=""))
+    for tpl in qs:
+        meta = FAMILY_BY_KEY.get(tpl.family)
+        if not meta:
+            continue
+        # A pristine built-in family only carries seed ("Family") / auto-pin notes;
+        # any other note means the user edited it — leave those alone.
+        notes = set(tpl.versions.values_list("note", flat=True))
+        if notes - {"Family", "auto-pin"}:
+            continue
+        new_design = clean_design(meta[3])
+        if current_design(tpl) == new_design:
+            continue      # already current
+        _snapshot_version(tpl, actor, note="Family", design=new_design)
+        updated += 1
+    return updated
+
+
+@transaction.atomic
 def create_template(company, actor, *, doc_type, name, base_layout, config=None,
                     description="", origin=TemplateOrigin.CUSTOM,
                     engine=TemplateEngine.REPORTLAB):

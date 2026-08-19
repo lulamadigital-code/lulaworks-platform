@@ -883,10 +883,27 @@ TEMPLATE_FIELD_LIBRARY = {
 # the shipped catalogue (see document_templates.assert_allowed_template_name).
 # ══════════════════════════════════════════════════════════════════════════════
 
+#: Section orders the families draw on, so banking (and the sign-off) genuinely
+#: sit in DIFFERENT places from one family to the next — not merely recoloured.
+def _secs(order):
+    return [{"key": k, "visible": True} for k in order]
+
+
+_SEC_STD = ["letterhead", "document_meta", "parties", "scope", "items",
+            "totals", "banking", "terms", "signature", "footer"]
+#: Banking pushed down beneath the terms (a lighter, form-like footer).
+_SEC_BANK_LOW = ["letterhead", "document_meta", "parties", "scope", "items",
+                 "totals", "terms", "banking", "signature", "footer"]
+#: Banking last of all, right above the footer line.
+_SEC_BANK_LAST = ["letterhead", "document_meta", "parties", "scope", "items",
+                  "totals", "terms", "signature", "banking", "footer"]
+
 #: Each family: (key, name, description, tags, design). `design` is the shared
 #: visual identity — validated by clean_design and rendered by html_render. The
 #: seeder expands every family across the three document types; the renderer
 #: adapts each type's content (a delivery note carries quantities, never prices).
+#: Families deliberately differ in SECTION ORDER and FOOTER LAYOUT too, so banking
+#: and the sign-off land in different places across the catalogue.
 #: `default` marks the family a fresh company opens on.
 TEMPLATE_FAMILIES = [
     ("horizon", "Horizon",
@@ -906,7 +923,7 @@ TEMPLATE_FAMILIES = [
                       "header_style": "hero", "logo_position": "center",
                       "font_family": "Georgia"},
          "table_style": "plain", "totals_style": "plain",
-         "section_title_style": "underline"}),
+         "section_title_style": "underline", "sections": _secs(_SEC_BANK_LOW)}),
     ("forge", "Forge",
      "Industrial / technical layout — structured information blocks and strong "
      "tables. Suits engineering, mining, construction and industrial work.",
@@ -915,7 +932,7 @@ TEMPLATE_FAMILIES = [
                       "header_style": "band", "logo_position": "left",
                       "font_family": "Helvetica"},
          "table_style": "bordered", "totals_style": "boxed",
-         "section_title_style": "bar"}),
+         "section_title_style": "bar", "footer_layout": "split"}),
     ("summit", "Summit",
      "Premium corporate design — an elegant centred letterhead, strong company "
      "identity and balanced whitespace.",
@@ -924,7 +941,7 @@ TEMPLATE_FAMILIES = [
                       "header_style": "centered", "logo_position": "center",
                       "font_family": "Georgia"},
          "table_style": "lines", "totals_style": "plain",
-         "section_title_style": "underline"}),
+         "section_title_style": "underline", "sections": _secs(_SEC_BANK_LAST)}),
     ("grid", "Grid",
      "Data-focused layout — a tight, high-density item table for documents with "
      "many lines. Suits supply businesses.",
@@ -933,7 +950,7 @@ TEMPLATE_FAMILIES = [
                       "header_style": "minimal", "logo_position": "left",
                       "font_family": "Arial"},
          "table_style": "striped", "totals_style": "boxed",
-         "section_title_style": "bar"}),
+         "section_title_style": "bar", "footer_layout": "split"}),
     ("atlas", "Atlas",
      "Project-focused layout — prominent scope and reference blocks over large "
      "item tables. Built for construction and project work.",
@@ -942,7 +959,7 @@ TEMPLATE_FAMILIES = [
                       "header_style": "split", "logo_position": "left",
                       "font_family": "Helvetica"},
          "table_style": "lines", "totals_style": "boxed",
-         "section_title_style": "bar"}),
+         "section_title_style": "bar", "sections": _secs(_SEC_BANK_LOW)}),
     ("flow", "Flow",
      "Simple modern layout — lots of whitespace, thin lines and minimal clutter. "
      "Effortless to read.",
@@ -951,7 +968,7 @@ TEMPLATE_FAMILIES = [
                       "header_style": "minimal", "logo_position": "left",
                       "font_family": "Helvetica"},
          "table_style": "plain", "totals_style": "plain",
-         "section_title_style": "plain"}),
+         "section_title_style": "plain", "sections": _secs(_SEC_BANK_LOW)}),
     ("ledger", "Ledger",
      "Finance-focused layout — reference in a bordered box, ruled tables, a "
      "highlighted total and prominent banking. Strong financial hierarchy.",
@@ -960,7 +977,7 @@ TEMPLATE_FAMILIES = [
                       "header_style": "ledger", "logo_position": "right",
                       "font_family": "Arial"},
          "table_style": "bordered", "totals_style": "highlighted",
-         "section_title_style": "bar"}),
+         "section_title_style": "bar", "footer_layout": "split"}),
     ("vector", "Vector",
      "Technical modern layout — geometric two-tone header and strongly grouped "
      "sections. Suits engineering businesses.",
@@ -969,7 +986,7 @@ TEMPLATE_FAMILIES = [
                       "header_style": "split", "logo_position": "left",
                       "font_family": "Helvetica"},
          "table_style": "lines", "totals_style": "boxed",
-         "section_title_style": "bar"}),
+         "section_title_style": "bar", "footer_layout": "split"}),
     ("terra", "Terra",
      "Industrial / field-services layout — bold section headers and site / "
      "project blocks. Built for mining, construction and field work.",
@@ -978,7 +995,7 @@ TEMPLATE_FAMILIES = [
                       "header_style": "band", "logo_position": "left",
                       "font_family": "Helvetica"},
          "table_style": "striped", "totals_style": "boxed",
-         "section_title_style": "bar"}),
+         "section_title_style": "bar", "sections": _secs(_SEC_BANK_LOW)}),
     ("slate", "Slate",
      "Compact professional layout — dense but readable, efficient with page "
      "space. Built for large quotations and invoices.",
@@ -987,7 +1004,7 @@ TEMPLATE_FAMILIES = [
                       "header_style": "plain", "logo_position": "left",
                       "font_family": "Helvetica"},
          "table_style": "striped", "totals_style": "plain",
-         "section_title_style": "underline"}),
+         "section_title_style": "underline", "footer_layout": "split"}),
     ("canvas", "Canvas",
      "A clean, neutral starting point — the recommended base for building your "
      "own design in the visual editor.",

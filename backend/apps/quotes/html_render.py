@@ -681,10 +681,12 @@ def _s_signature(ctx, st):
     prep = escape(ctx["document"].get("prepared_by", "") or "")
     date = escape(ctx["document"]["date"])
     if mode == caps.SIGNOFF_COMPILED:
-        # A quotation is an OFFER issued by the supplier — it carries only who
-        # compiled it, never a customer counter-sign or a delivery receipt.
+        # A supplier-issued document (quotation / tax invoice) carries only who
+        # compiled it — never a customer counter-sign or a delivery receipt.
+        label = {"quotation": "Quotation compiled by",
+                 "invoice": "Invoice compiled by"}.get(ctx["doc_type"], "Compiled by")
         return ("<div class='boxes'>"
-                f"<div class='b' style='flex:0 0 60%;'><b>Quotation compiled by</b><br><br>"
+                f"<div class='b' style='flex:0 0 60%;'><b>{label}</b><br><br>"
                 f"{prep}<br>Signature: ____________________"
                 f"&nbsp;&nbsp;Date: {date}</div></div>")
     if mode == caps.SIGNOFF_DELIVERY:

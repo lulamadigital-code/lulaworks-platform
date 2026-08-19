@@ -28,6 +28,7 @@ from django.db import transaction
 from apps.core.context import tenant_scope
 from apps.identity.models import Company
 from apps.quotes.document_templates import (
+    resync_builtin_family_designs,
     set_default_template,
     sync_builtin_templates,
 )
@@ -59,24 +60,25 @@ class Command(BaseCommand):
             companies = list(Company.objects.all())
 
         dry = options.get("dry_run")
-        seeded = deleted = archived = fixed = 0
+        seeded = deleted = archived = fixed = resynced = 0
         for company in companies:
             with tenant_scope(company.id):
-                s, d, a, f = self._refresh_company(company, dry)
+                s, d, a, f, r = self._refresh_company(company, dry)
             seeded += s
             deleted += d
             archived += a
             fixed += f
-            if s or d or a or f:
+            resynced += r
+            if s or d or a or f or r:
                 self.stdout.write(
                     f"  {company.name}: +{s} family, -{d} deleted, "
-                    f"{a} archived, {f} default(s) repaired")
+                    f"{a} archived, {f} default(s) repaired, {r} design(s) refreshed")
 
         verb = "Would apply" if dry else "Applied"
         self.stdout.write(self.style.SUCCESS(
             f"{verb}: +{seeded} family template(s), {deleted} deleted, "
-            f"{archived} archived, {fixed} default(s) repaired across "
-            f"{len(companies)} company(ies)."))
+            f"{archived} archived, {fixed} default(s) repaired, {resynced} design(s) "
+            f"refreshed across {len(companies)} company(ies)."))
 
     def _refresh_company(self, company, dry):
         # 1. Ensure the families exist (never touches existing rows).
@@ -106,7 +108,11 @@ class Command(BaseCommand):
 
         # 3. Repair the default for any document type that now lacks one.
         fixed = 0 if dry else self._repair_defaults(company)
-        return seeded, deleted, archived, fixed
+
+        # 4. Refresh pristine built-in family designs to the latest code (new
+        #    section orders / footer layouts). Never touches user-customised ones.
+        resynced = 0 if dry else resync_builtin_family_designs(company)
+        return seeded, deleted, archived, fixed, resynced
 
     @staticmethod
     def _is_pinned(tpl) -> bool:

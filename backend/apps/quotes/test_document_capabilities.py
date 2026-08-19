@@ -26,13 +26,16 @@ def make_company(name="CapCo"):
 class CapabilityRulesTests(SimpleTestCase):
     def test_allowed_sections_per_type(self):
         self.assertIn("signature", caps.allowed_sections("quotation"))
-        self.assertNotIn("signature", caps.allowed_sections("invoice"))  # no acknowledgement
+        self.assertIn("signature", caps.allowed_sections("invoice"))  # compiled-by
         self.assertNotIn("totals", caps.allowed_sections("delivery"))    # no prices
         self.assertNotIn("banking", caps.allowed_sections("delivery"))
 
     def test_signoff_and_price_modes(self):
+        # Quotation and invoice both carry a supplier "compiled by" sign-off; a
+        # delivery note carries a delivery acknowledgement. None is a customer
+        # counter-sign or, for invoice/quotation, a delivery receipt.
         self.assertEqual(caps.signoff_mode("quotation"), caps.SIGNOFF_COMPILED)
-        self.assertEqual(caps.signoff_mode("invoice"), caps.SIGNOFF_NONE)
+        self.assertEqual(caps.signoff_mode("invoice"), caps.SIGNOFF_COMPILED)
         self.assertEqual(caps.signoff_mode("delivery"), caps.SIGNOFF_DELIVERY)
         self.assertTrue(caps.allows_prices("quotation"))
         self.assertTrue(caps.allows_prices("invoice"))
@@ -40,12 +43,13 @@ class CapabilityRulesTests(SimpleTestCase):
         self.assertEqual(caps.item_mode("delivery"), caps.ITEMS_DELIVERY)
 
     def test_filter_sections_drops_forbidden(self):
-        # A template that (wrongly) asks for a delivery acknowledgement + totals on a
-        # quotation still can't have banking on a delivery note, etc.
-        self.assertNotIn("totals", caps.filter_sections("delivery",
-                         ["letterhead", "items", "totals", "banking", "signature"]))
-        self.assertNotIn("signature", caps.filter_sections("invoice",
-                         ["letterhead", "items", "signature"]))
+        # A delivery note can never be given totals or banking, whatever a template
+        # asks for (it's quantity-based and nothing is paid against it).
+        dn = caps.filter_sections("delivery",
+                                  ["letterhead", "items", "totals", "banking", "signature"])
+        self.assertNotIn("totals", dn)
+        self.assertNotIn("banking", dn)
+        self.assertIn("signature", dn)      # delivery keeps its acknowledgement
 
     def test_validate_flags_missing_and_prohibited(self):
         ok = {"company": {"name": "X"}, "document": {"reference": "R1"},

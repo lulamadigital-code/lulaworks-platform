@@ -48,11 +48,11 @@ _CAP = {
         "terms_kind": "invoice",
         "allow_prices": True,
         "item_mode": ITEMS_PRICED,
-        "signoff": SIGNOFF_NONE,
-        # No delivery acknowledgement on an invoice — the signature section is
-        # dropped entirely (it can only mean acknowledgement, which is forbidden).
+        # A tax invoice carries a supplier "compiled by" sign-off (who issued it) —
+        # but NEVER a delivery acknowledgement ("received in good order").
+        "signoff": SIGNOFF_COMPILED,
         "allowed_sections": {"letterhead", "document_meta", "parties", "scope",
-                             "items", "totals", "banking", "terms", "footer"},
+                             "items", "totals", "banking", "terms", "signature", "footer"},
     },
     DELIVERY: {
         "title": "DELIVERY NOTE",
