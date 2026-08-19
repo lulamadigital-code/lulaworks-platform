@@ -411,6 +411,27 @@ def template_import_save(request, pk):
 
 
 @login_required
+@require_POST
+def template_import_regenerate(request, pk):
+    """Re-run the AI on the SAME uploaded document — a fresh recreation when the
+    first one isn't quite right (the model is non-deterministic, so a re-run
+    usually differs). Only before it's been saved."""
+    from apps.quotes.models import TemplateImport
+    from apps.quotes.template_import import run_import
+    ti = get_object_or_404(TemplateImport.objects.all(), pk=pk)
+    if not _can(request.user):
+        messages.error(request, "You do not have permission to import templates.")
+        return redirect("web:doc_templates")
+    if ti.status == TemplateImport.Status.SAVED:
+        messages.info(request, "This import was already saved — import the document "
+                      "again to make a fresh version.")
+        return redirect("web:doc_template_import_review", pk=pk)
+    run_import(ti, request.user)
+    messages.success(request, "Re-created from your document — here's a fresh attempt.")
+    return redirect("web:doc_template_import_review", pk=pk)
+
+
+@login_required
 def template_import_original(request, pk):
     """Serve the uploaded original inline for the side-by-side view."""
     from django.http import FileResponse

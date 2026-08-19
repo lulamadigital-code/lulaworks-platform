@@ -76,6 +76,12 @@
       <input type="text" name="name" value="{{ ti.get_doc_type_display }} (imported)"></div>
     <button class="btn primary" type="submit">Save as company template →</button>
   </form>
+  {% if ti.ai_used %}
+  <form method="post" action="{% url 'web:doc_template_import_regenerate' ti.id %}" style="margin-top:10px;">{% csrf_token %}
+    <button class="btn ghost" type="submit">↻ Regenerate</button>
+    <span class="muted" style="font-size:12px;margin-left:8px;">Not quite right? Re-run the AI on your document for a fresh attempt.</span>
+  </form>
+  {% endif %}
   <p class="muted" style="font-size:12px;margin:8px 0 0;">Saved templates open in the visual builder,
     where you can adjust anything before making it your default.</p>
 </div>
