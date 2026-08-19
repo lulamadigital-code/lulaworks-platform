@@ -425,77 +425,110 @@ def vision_enrich(company, user, image_bytes: bytes, design: dict, doc_type: str
 
 # ── Faithful recreation: the model writes an HTML/CSS template of the page ──────
 
-def _html_gen_prompt(doc_type: str) -> str:
-    price_tokens = ("{{item.ordered}} {{item.delivered}} {{item.outstanding}} — and NO "
-                    "prices/amounts on a delivery note"
-                    if doc_type == "delivery"
-                    else "{{item.unit_price}} {{item.amount}}")
+_TOKENS_HELP = (
+    "Use ONLY these placeholders for DATA — never copy real text, names, numbers or "
+    "money values:\n"
+    "{{company.name}} {{company.address}} {{company.email}} {{company.phone}} "
+    "{{company.website}} {{company.vat}} {{company.reg}} {{logo}} {{customer.name}} "
+    "{{customer.address}} {{customer.vat}} {{contact.name}} {{contact.email}} "
+    "{{contact.phone}} {{document.title}} {{document.reference}} {{document.date}} "
+    "{{document.prepared_by}} {{document.po}} {{document.quotation_ref}} "
+    "{{document.valid_until}} {{job.scope}} {{terms}} {{totals.subtotal}} "
+    "{{totals.discount}} {{totals.vat_label}} {{totals.vat}} {{totals.total}} "
+    "{{banking.bank_name}} {{banking.account_name}} {{banking.account_number}} "
+    "{{banking.branch_code}}\n"
+    "For item rows wrap EXACTLY ONE row in {{#items}} … {{/items}}. {{document.title}} "
+    "already resolves to QUOTATION / TAX INVOICE / DELIVERY NOTE. {{logo}} becomes the "
+    "company logo image.\n")
+_LAYOUT_RULES = (
+    "Rules: NO <script>, <img>, <link>, <style>, external URLs or fonts (styling goes "
+    "in css; inline styles are fine). Placeholders only. Use NORMAL flow — flexbox and "
+    "tables only, NEVER position absolute/fixed or negative margins. Keep within a "
+    "~186mm-wide page, logo at most ~200px, every label and value clearly spaced, one "
+    "A4 page.\n")
+
+
+def _primary_prompt(doc_type: str) -> str:
+    price = ("{{item.ordered}} {{item.delivered}} {{item.outstanding}} — NO prices"
+             if doc_type == "delivery" else "{{item.unit_price}} {{item.amount}}")
     return (
         f"You are shown an image of a company's existing {doc_type}. Recreate its "
-        "LAYOUT as an HTML+CSS template so a document generated from it looks like "
-        "the original.\n\n"
-        "Reproduce the visual structure as closely as you can: the letterhead and "
-        "where the logo sits, the colours, how the company and customer blocks are "
-        "arranged, the item-table columns and their styling, the totals block, "
-        "banking, terms and any sign-off.\n\n"
-        "Use ONLY these placeholders for DATA — never copy real text, names, numbers "
-        "or money values from the image:\n"
-        "{{company.name}} {{company.address}} {{company.email}} {{company.phone}} "
-        "{{company.website}} {{company.vat}} {{company.reg}} {{logo}}\n"
-        "{{customer.name}} {{customer.address}} {{customer.vat}} "
-        "{{contact.name}} {{contact.email}} {{contact.phone}}\n"
-        "{{document.title}} {{document.reference}} {{document.date}} "
-        "{{document.prepared_by}} {{document.po}} {{document.quotation_ref}} "
-        "{{document.valid_until}} {{job.scope}} {{terms}}\n"
-        "{{totals.subtotal}} {{totals.discount}} {{totals.vat_label}} {{totals.vat}} "
-        "{{totals.total}}\n"
-        "{{banking.bank_name}} {{banking.account_name}} {{banking.account_number}} "
-        "{{banking.branch_code}}\n"
-        "For the line items, wrap EXACTLY ONE table row in {{#items}} … {{/items}} and "
-        f"inside it use {{item.no}} {{item.description}} {{item.qty}} {{item.unit}} {price_tokens}.\n"
-        "{{logo}} is replaced with the company's logo image — put it where the logo goes.\n\n"
-        "Rules:\n"
-        "- NO <script>, <img>, <link>, <style>, external URLs, or fonts. Put styling "
-        "in the css field (inline style attributes are fine). Placeholders only, "
-        "never real data.\n"
-        "- Use NORMAL document flow — flexbox and tables only. Do NOT use position "
-        "absolute/fixed or negative margins (they push content off the page).\n"
-        "- Content is inside a page ~186mm wide; never set fixed widths wider than "
-        "that, and let the logo be at most ~200px.\n"
-        "- Give every label and its value a clear gap (a table cell, or a colon and "
-        "space) so they never overlap. Reference/date/prepared-by read as rows.\n"
-        "- Keep it to a single A4 page where possible.\n\n"
-        'Return ONLY JSON: {"html": "<body html here>", "css": "<css here>"}'
+        "LAYOUT as an HTML+CSS template so a generated document looks like the "
+        "original — reproduce the letterhead, logo placement, colours, the company and "
+        "customer blocks, the item table columns and styling, totals, banking, terms "
+        "and any sign-off.\n\n" + _TOKENS_HELP +
+        f"Inside the item row use {{item.no}} {{item.description}} {{item.qty}} {{item.unit}} {price}.\n\n"
+        + _LAYOUT_RULES +
+        '\nReturn ONLY JSON: {"html":"<body html>","css":"<css>"}'
     )
 
 
-def vision_generate_html(company, user, image_bytes: bytes, doc_type: str):
-    """Have a multimodal model RECREATE the uploaded page as an HTML/CSS template.
-    Returns (html, css, ai_used, credits_used). Fails open — ('','',False,0) — when
-    the AI is unavailable or returns nothing usable, so the caller falls back."""
+def _sibling_prompt(primary_type: str, needed: list, primary_html: str) -> str:
+    want = ", ".join(f'"{t}_html"' for t in needed)
+    return (
+        f"Below is an HTML template for a {primary_type} (using {{placeholders}}). "
+        "Produce the matching versions for the other document types so the company has "
+        "a consistent SET. Keep the SAME visual style, CSS class names and structure — "
+        "change ONLY what each document type requires:\n"
+        "- quotation & tax invoice: keep the price columns {{item.unit_price}} "
+        "{{item.amount}} and the totals block; sign-off reads 'Quotation compiled by' "
+        "or 'Invoice compiled by'.\n"
+        "- delivery note: REMOVE every price — the item row becomes {{item.no}} "
+        "{{item.description}} {{item.ordered}} {{item.delivered}} {{item.outstanding}} "
+        "{{item.unit}}; REMOVE the totals block and banking; change the sign-off to a "
+        "'Received in good order by' acknowledgement.\n"
+        "{{document.title}} already gives the correct heading. Same placeholder and "
+        "layout rules as the input (no script/img/link, normal flow, single page).\n\n"
+        f"Return ONLY JSON mapping each needed type to its html body: {{{want}}}.\n\n"
+        f"INPUT TEMPLATE ({primary_type}):\n{primary_html}"
+    )
+
+
+def _run_ai(company, user, prompt, name, *, images=None, max_tokens=6000):
     from apps.ai_platform.gateway import (
         AllProvidersFailedError,
         InsufficientCreditsError,
         run_task,
     )
     try:
-        resp = run_task(company, user, task="template_layout_import",
-                        prompt=_html_gen_prompt(doc_type),
-                        prompt_name="template_html_recreate",
-                        images=[image_bytes], json_mode=True, max_tokens=6000)
+        resp = run_task(company, user, task="template_layout_import", prompt=prompt,
+                        prompt_name=name, images=images, json_mode=True, max_tokens=max_tokens)
     except (InsufficientCreditsError, AllProvidersFailedError):
-        return "", "", False, Decimal("0")
+        return None, Decimal("0")
     except Exception:                # noqa: BLE001 - AI is best-effort, never fatal
-        return "", "", False, Decimal("0")
+        return None, Decimal("0")
+    return resp, getattr(resp, "credits_used", Decimal("0"))
 
-    data = _parse_design(resp.text)      # same tolerant JSON-object extractor
-    credits = getattr(resp, "credits_used", Decimal("0"))
-    html = (data or {}).get("html")
-    if not isinstance(html, str) or "{{" not in html or len(html.strip()) < 40:
-        return "", "", False, credits    # nothing usable → fall back
-    css = (data or {}).get("css")
-    css = css[:40000] if isinstance(css, str) else ""
-    return html[:60000], css, True, credits
+
+def _usable_html(v):
+    return v[:60000] if (isinstance(v, str) and "{{" in v and len(v.strip()) >= 40) else None
+
+
+def vision_generate_all(company, user, image_bytes: bytes, primary_doc_type: str):
+    """Recreate the uploaded page as a MATCHING SET — quotation, invoice, delivery
+    note — sharing one style. Two steps: (1) faithfully recreate the uploaded type
+    from the image, then (2) adapt it to the other two types. Returns (by_type, css,
+    ai_used, credits). Fails open to {} when the primary can't be produced; a partial
+    set (primary only) is fine if the adapt step fails."""
+    resp, credits = _run_ai(company, user, _primary_prompt(primary_doc_type),
+                            "template_html_recreate", images=[image_bytes], max_tokens=6000)
+    data = _parse_design(resp.text) if resp else None
+    primary = _usable_html((data or {}).get("html"))
+    if primary is None:
+        return {}, "", False, credits
+    css = (data.get("css") or "") if isinstance(data.get("css"), str) else ""
+    by_type = {primary_doc_type: primary}
+
+    needed = [t for t in ("quotation", "invoice", "delivery") if t != primary_doc_type]
+    resp2, c2 = _run_ai(company, user, _sibling_prompt(primary_doc_type, needed, primary),
+                        "template_html_siblings", max_tokens=9000)
+    credits = credits + c2
+    sdata = _parse_design(resp2.text) if resp2 else None
+    for t in needed:
+        h = _usable_html((sdata or {}).get(f"{t}_html") or (sdata or {}).get(t))
+        if h:
+            by_type[t] = h
+    return by_type, css[:40000], True, credits
 
 
 # ── Orchestration: analyse an upload, then save the approved design ─────────────
@@ -520,16 +553,17 @@ def run_import(template_import, user):
     """Analyse the uploaded document (deterministic + optional AI) and store the
     proposed design, warnings and features on the import, ready for review."""
     ti = template_import
-    raw_html = raw_css = ""
+    by_type, raw_css = {}, ""
     try:
         path = _local_path(ti)
         design, warnings, features = analyse_document(path, ti.doc_type)
         image = _page_image_bytes(path, ti.original_name)
         if image is not None:
-            # First choice: FAITHFULLY recreate the page as an HTML/CSS template.
-            raw_html, raw_css, ai_used, credits = vision_generate_html(
+            # First choice: FAITHFULLY recreate the page as a MATCHING SET —
+            # quotation, invoice, delivery note — sharing one visual identity.
+            by_type, raw_css, ai_used, credits = vision_generate_all(
                 ti.company, user, image, ti.doc_type)
-            if not raw_html:
+            if not by_type:
                 # Recreation unavailable → match the closest structured design.
                 design, ai_used, credits = vision_enrich(
                     ti.company, user, image, design, ti.doc_type)
@@ -542,9 +576,9 @@ def run_import(template_import, user):
         ti.save(update_fields=["status", "error", "updated_by", "updated_at"])
         return ti
 
-    # Carry the recreated raw template on `features` (no schema change needed); the
-    # structured `design` remains as an editable fallback.
-    features["_raw_html"] = raw_html
+    # Carry the recreated set on `features` (no schema change needed); the structured
+    # `design` remains as an editable fallback.
+    features["_raw_by_type"] = by_type
     features["_raw_css"] = raw_css
 
     # When the AI set the branding, the deterministic "couldn't detect colour/logo"
@@ -568,22 +602,52 @@ def run_import(template_import, user):
     return ti
 
 
+#: Human labels for the per-type templates a set creates.
+_TYPE_LABELS = {"quotation": "Quotation", "invoice": "Tax Invoice", "delivery": "Delivery Note"}
+
+
 def save_as_template(template_import, user, *, name="", design=None):
-    """Turn an approved import into a company HTML template (origin=imported)."""
-    from .document_templates import create_html_template
+    """Turn an approved import into company HTML templates (origin=imported), and set
+    them as the company's defaults. When the AI produced a matching SET, ALL three
+    document types (quotation / invoice / delivery note) are created in one shared
+    style; otherwise a single template for the uploaded type. Returns the template
+    for the uploaded document type."""
+    from .document_templates import create_html_template, set_default_template
     from .models import TemplateOrigin
 
     ti = template_import
-    label = (name or "").strip() or f"{ti.get_doc_type_display()} (imported)"
     feats = ti.features or {}
-    tpl = create_html_template(
-        ti.company, user, doc_type=ti.doc_type, name=label,
-        design=design if design is not None else ti.design,
-        html=feats.get("_raw_html", ""), css=feats.get("_raw_css", ""),
-        description="Reconstructed from an uploaded document",
-        origin=TemplateOrigin.IMPORTED)
-    ti.saved_template = tpl
+    by_type = feats.get("_raw_by_type") or {}
+    css = feats.get("_raw_css", "")
+    base = (name or "").strip() or "Imported"
+    primary = None
+
+    if by_type:
+        for dt in ("quotation", "invoice", "delivery"):
+            html = by_type.get(dt)
+            if not html:
+                continue
+            tpl = create_html_template(
+                ti.company, user, doc_type=dt, name=f"{base} · {_TYPE_LABELS[dt]}"[:80],
+                design={}, html=html, css=css,
+                description="Recreated from an uploaded document",
+                origin=TemplateOrigin.IMPORTED)
+            set_default_template(tpl)                 # make it the default for its type
+            if dt == ti.doc_type:
+                primary = tpl
+        primary = primary or tpl
+    else:
+        tpl = create_html_template(
+            ti.company, user, doc_type=ti.doc_type,
+            name=f"{base} · {_TYPE_LABELS.get(ti.doc_type, 'Document')}"[:80],
+            design=design if design is not None else ti.design,
+            description="Reconstructed from an uploaded document",
+            origin=TemplateOrigin.IMPORTED)
+        set_default_template(tpl)
+        primary = tpl
+
+    ti.saved_template = primary
     ti.status = ti.Status.SAVED
     ti.updated_by = user
     ti.save(update_fields=["saved_template", "status", "updated_by", "updated_at"])
-    return tpl
+    return primary

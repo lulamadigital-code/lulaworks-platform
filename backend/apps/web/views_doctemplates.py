@@ -414,11 +414,14 @@ def template_import_save(request, pk):
     tpl = save_as_template(ti, request.user, name=request.POST.get("name", ""))
     # A faithful raw-HTML recreation isn't edited in the design builder; a
     # structured reconstruction can be fine-tuned there.
-    if (ti.features or {}).get("_raw_html"):
-        messages.success(request, "Saved — a faithful recreation of your document. "
-                         "Set it as a default or use it on a document.")
+    by = (ti.features or {}).get("_raw_by_type") or {}
+    if by:
+        messages.success(request, f"Saved a matching set — quotation, tax invoice and "
+                         f"delivery note ({len(by)} templates) in your document's style — "
+                         "and set them as your defaults.")
         return redirect("web:doc_templates")
-    messages.success(request, "Saved as a company template — fine-tune it in the builder.")
+    messages.success(request, "Saved as a company template and set as default — "
+                     "fine-tune it in the builder.")
     return redirect("web:doc_template_builder", pk=tpl.id)
 
 
@@ -464,9 +467,9 @@ def template_import_preview(request, pk):
     ti = get_object_or_404(TemplateImport.objects.all(), pk=pk)
     feats = ti.features or {}
     company = request.user.active_company
-    if feats.get("_raw_html"):
-        pdf = render_raw_preview_pdf(company, ti.doc_type,
-                                    feats["_raw_html"], feats.get("_raw_css", ""))
+    raw = (feats.get("_raw_by_type") or {}).get(ti.doc_type)
+    if raw:
+        pdf = render_raw_preview_pdf(company, ti.doc_type, raw, feats.get("_raw_css", ""))
     else:
         pdf = render_design_preview_pdf(company, ti.doc_type, ti.design)
     resp = HttpResponse(pdf, content_type="application/pdf")

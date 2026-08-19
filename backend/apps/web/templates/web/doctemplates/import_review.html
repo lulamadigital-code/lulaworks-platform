@@ -83,18 +83,21 @@
 {% if can_manage %}
 <div class="card" style="margin-top:14px;">
   <form method="post" action="{% url 'web:doc_template_import_save' ti.id %}" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">{% csrf_token %}
-    <div style="flex:1;min-width:220px;"><label>Template name</label>
-      <input type="text" name="name" value="{{ ti.get_doc_type_display }} (imported)"></div>
-    <button class="btn primary" type="submit">Save as company template →</button>
+    <div style="flex:1;min-width:220px;"><label>Name for this set</label>
+      <input type="text" name="name" value="{{ request.user.active_company.name }}"></div>
+    <button class="btn primary" type="submit">Save &amp; set as default →</button>
   </form>
+  <p class="muted" style="font-size:12px;margin:8px 0 0;">
+    {% if ti.features._raw_by_type %}Saves a <strong>matching set</strong> — quotation, tax
+    invoice and delivery note in this style — and makes each the default for its type.
+    {% else %}Saves this template and makes it the default for {{ ti.get_doc_type_display|lower }}s.{% endif %}
+  </p>
   {% if ti.ai_used %}
-  <form method="post" action="{% url 'web:doc_template_import_regenerate' ti.id %}" style="margin-top:10px;">{% csrf_token %}
+  <form method="post" action="{% url 'web:doc_template_import_regenerate' ti.id %}" style="margin-top:12px;">{% csrf_token %}
     <button class="btn ghost" type="submit">↻ Regenerate</button>
     <span class="muted" style="font-size:12px;margin-left:8px;">Not quite right? Re-run the AI on your document for a fresh attempt.</span>
   </form>
   {% endif %}
-  <p class="muted" style="font-size:12px;margin:8px 0 0;">Saved templates open in the visual builder,
-    where you can adjust anything before making it your default.</p>
 </div>
 {% endif %}
 {% endif %}
