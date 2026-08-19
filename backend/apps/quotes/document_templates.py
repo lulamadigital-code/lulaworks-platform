@@ -530,9 +530,14 @@ def _is_pinned(template) -> bool:
 
 @transaction.atomic
 def delete_template(template, actor):
-    """Permanently remove a template. Refused for the company default (set another
-    first) and for any template an already-issued document is pinned to (archive it
+    """Permanently remove a template the company CREATED — one built in the visual
+    builder or reconstructed from an upload. The shipped LulaWorks built-ins can't
+    be deleted (archive to hide them). Also refused for the company default (set
+    another first) and for any template an issued document is pinned to (archive
     instead) — so deleting can never break a finalised document."""
+    if template.is_builtin:
+        raise TemplateError("This is a built-in LulaWorks template — it can't be "
+                            "deleted, but you can archive it to hide it.")
     if template.is_default:
         raise TemplateError("This is the default — set another template as the "
                             "default before deleting it.")

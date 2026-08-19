@@ -76,10 +76,12 @@
         <form method="post" action="{% url 'web:doc_template_archive' t.id %}" style="display:inline;"
               onsubmit="return confirm('Archive this template? It is hidden from the picker but kept — documents already issued with it are unaffected.');">{% csrf_token %}
           <button class="linkbtn" type="submit">Archive</button></form>
+        {% if t.origin != 'builtin' %}
         <span class="dot">·</span>
         <form method="post" action="{% url 'web:doc_template_delete' t.id %}" style="display:inline;"
               onsubmit="return confirm('Permanently delete “{{ t.name|escapejs }}”? This cannot be undone.');">{% csrf_token %}
           <button class="linkbtn linkbtn-danger" type="submit">Delete</button></form>
+        {% endif %}
         {% endif %}
       </div>
       {% endif %}
