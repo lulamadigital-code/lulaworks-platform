@@ -400,6 +400,12 @@ def template_import_save(request, pk):
         messages.error(request, "This import isn’t ready to save.")
         return redirect("web:doc_template_import_review", pk=pk)
     tpl = save_as_template(ti, request.user, name=request.POST.get("name", ""))
+    # A faithful raw-HTML recreation isn't edited in the design builder; a
+    # structured reconstruction can be fine-tuned there.
+    if (ti.features or {}).get("_raw_html"):
+        messages.success(request, "Saved — a faithful recreation of your document. "
+                         "Set it as a default or use it on a document.")
+        return redirect("web:doc_templates")
     messages.success(request, "Saved as a company template — fine-tune it in the builder.")
     return redirect("web:doc_template_builder", pk=tpl.id)
 
@@ -416,14 +422,22 @@ def template_import_original(request, pk):
 
 @login_required
 def template_import_preview(request, pk):
-    """Render the reconstructed design to a PDF with sample data (no real document
-    exists yet), so the user can eyeball the template before saving."""
-    from apps.quotes.html_render import render_design_preview_pdf
+    """Render the reconstruction to a PDF with sample data (no real document exists
+    yet), so the user can eyeball it before saving. Uses the AI-recreated raw
+    HTML/CSS when present, else the structured design fallback."""
+    from apps.quotes.html_render import render_design_preview_pdf, render_raw_preview_pdf
     from apps.quotes.models import TemplateImport
     ti = get_object_or_404(TemplateImport.objects.all(), pk=pk)
-    pdf = render_design_preview_pdf(request.user.active_company, ti.doc_type, ti.design)
+    feats = ti.features or {}
+    company = request.user.active_company
+    if feats.get("_raw_html"):
+        pdf = render_raw_preview_pdf(company, ti.doc_type,
+                                    feats["_raw_html"], feats.get("_raw_css", ""))
+    else:
+        pdf = render_design_preview_pdf(company, ti.doc_type, ti.design)
     resp = HttpResponse(pdf, content_type="application/pdf")
     resp["Content-Disposition"] = 'inline; filename="reconstructed.pdf"'
+    resp["Cache-Control"] = "no-store"
     return resp
 
 
@@ -435,12 +449,15 @@ def template_preview(request, pk):
     it ignored edits and showed the "old design".) ReportLab templates, which have
     no HTML design, still preview off the newest matching document."""
     from apps.quotes.document_templates import current_design
-    from apps.quotes.html_render import render_design_preview_pdf
+    from apps.quotes.html_render import render_design_preview_pdf, render_raw_preview_pdf
     from apps.quotes.models import TemplateEngine
 
     tpl = get_object_or_404(DocumentTemplate.objects.all(), pk=pk)
     company = request.user.active_company
-    if tpl.engine == TemplateEngine.HTML:
+    ver = tpl.current_version
+    if tpl.engine == TemplateEngine.HTML and ver and ver.html:
+        pdf = render_raw_preview_pdf(company, tpl.doc_type, ver.html, ver.css or "")
+    elif tpl.engine == TemplateEngine.HTML:
         pdf = render_design_preview_pdf(company, tpl.doc_type, current_design(tpl),
                                         compact=False)
     else:
@@ -466,7 +483,11 @@ def template_thumb(request, pk):
 
     tpl = get_object_or_404(DocumentTemplate.objects.all(), pk=pk)
     company = request.user.active_company
-    if tpl.engine == TemplateEngine.HTML:
+    ver = tpl.current_version
+    if tpl.engine == TemplateEngine.HTML and ver and ver.html:
+        from apps.quotes.html_render import render_raw_preview_html
+        html = render_raw_preview_html(company, tpl.doc_type, ver.html, ver.css or "")
+    elif tpl.engine == TemplateEngine.HTML:
         html = design_to_html(current_design(tpl), sample_context(company, tpl.doc_type),
                               compact=True)
     else:

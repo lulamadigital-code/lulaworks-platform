@@ -253,16 +253,166 @@ def _placeholder_logo_data_uri() -> str:
     return f"data:image/svg+xml;base64,{data}"
 
 
-# ── Design → HTML → PDF ────────────────────────────────────────────────────────
+# ── Raw-HTML engine — an AI-recreated template that reproduces an uploaded
+# document's actual layout. The stored HTML/CSS is UNTRUSTED (AI-generated), so it
+# is sanitised, and data is filled ONLY through a fixed, escaped token vocabulary
+# — a template can never run script, fetch an external resource, or inject data
+# from another tenant. ──────────────────────────────────────────────────────────
 
-def render_html_pdf(document, doc_type: str, design: dict) -> bytes:
-    """Render `document` to PDF using an HTML-engine `design`."""
+import re as _re
+
+_RAW_ITEMS_RE = _re.compile(r"\{\{\s*#items\s*\}\}(.*?)\{\{\s*/items\s*\}\}", _re.DOTALL)
+_RAW_TOKEN_RE = _re.compile(r"\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}")
+#: Tags dropped wholesale from AI HTML (script/embeds/external/anything active).
+_RAW_STRIP_TAGS = ("script", "iframe", "object", "embed", "link", "meta", "base",
+                   "form", "input", "button", "textarea", "select", "svg", "img",
+                   "audio", "video", "source", "style", "noscript", "template")
+
+#: The ONLY placeholders an AI template may use for data. Documented in the prompt.
+RAW_TEMPLATE_TOKENS = {
+    "company.name", "company.address", "company.email", "company.phone",
+    "company.mobile", "company.website", "company.vat", "company.reg", "logo",
+    "customer.name", "customer.address", "customer.vat",
+    "contact.name", "contact.email", "contact.phone",
+    "document.title", "document.reference", "document.date", "document.prepared_by",
+    "document.po", "document.quotation_ref", "document.valid_until",
+    "job.title", "job.site", "job.scope", "terms",
+    "totals.subtotal", "totals.discount", "totals.vat_label", "totals.vat", "totals.total",
+    "banking.bank_name", "banking.account_name", "banking.account_number", "banking.branch_code",
+    # inside {{#items}}…{{/items}}
+    "item.no", "item.description", "item.qty", "item.unit", "item.unit_price",
+    "item.amount", "item.ordered", "item.delivered", "item.outstanding",
+}
+
+
+def _raw_scalar_tokens(ctx: dict) -> dict:
+    c, cu = ctx["company"], ctx["customer"]
+    ct = ctx.get("contact") or {}
+    d, j = ctx["document"], ctx["job"]
+    f, b = (ctx.get("financial") or {}), (ctx.get("banking") or {})
+    raw = {
+        "company.name": c["name"], "company.address": ", ".join(c["address"]),
+        "company.email": c["email"], "company.phone": c["phone"],
+        "company.mobile": c.get("mobile", ""), "company.website": c["website"],
+        "company.vat": c["vat_number"], "company.reg": c["registration_number"],
+        "customer.name": cu["name"], "customer.address": cu["address"],
+        "customer.vat": cu["vat_number"],
+        "contact.name": ct.get("name", ""), "contact.email": ct.get("email", ""),
+        "contact.phone": ct.get("phone", ""),
+        "document.title": d["title"], "document.reference": d["reference"],
+        "document.date": d["date"], "document.prepared_by": d["prepared_by"],
+        "document.po": d["po_number"], "document.quotation_ref": d["quotation_ref"],
+        "document.valid_until": d["valid_until"],
+        "job.title": j["title"], "job.site": j["site"], "job.scope": j["scope_of_work"],
+        "terms": ctx.get("terms", ""),
+        "totals.subtotal": f.get("subtotal", ""), "totals.discount": f.get("discount", ""),
+        "totals.vat_label": f.get("vat_label", ""), "totals.vat": f.get("vat", ""),
+        "totals.total": f.get("total", ""),
+        "banking.bank_name": b.get("bank_name", ""), "banking.account_name": b.get("account_name", ""),
+        "banking.account_number": b.get("account_number", ""), "banking.branch_code": b.get("branch_code", ""),
+    }
+    # Every value is HTML-escaped; newlines in free text become <br> after escaping.
+    return {k: escape(str(v)).replace("\n", "<br>") for k, v in raw.items()}
+
+
+def _raw_item_tokens(it: dict) -> dict:
+    raw = {"item.no": it.get("item_no", ""), "item.description": it.get("description", ""),
+           "item.qty": it.get("qty", ""), "item.unit": it.get("unit", ""),
+           "item.unit_price": it.get("unit_price", ""), "item.amount": it.get("amount", ""),
+           "item.ordered": it.get("ordered", ""), "item.delivered": it.get("delivered", ""),
+           "item.outstanding": it.get("outstanding", "")}
+    return {k: escape(str(v)) for k, v in raw.items()}
+
+
+def _sanitize_raw_css(css: str) -> str:
+    """Strip anything that fetches or breaks out (@import, url(), tag-closers), and
+    neutralise absolute/fixed positioning — a safety net so AI CSS can't push
+    content off the page (it must lay out in normal flow)."""
+    css = _re.sub(r"@import[^;]+;", "", css or "", flags=_re.I)
+    css = _re.sub(r"url\s*\([^)]*\)", "none", css, flags=_re.I)
+    css = _re.sub(r"position\s*:\s*(absolute|fixed)", "position:static", css, flags=_re.I)
+    css = css.replace("</", "").replace("<", "")
+    return css[:40000]
+
+
+def _sanitize_raw_html(raw: str) -> str:
+    """Remove scripts/embeds/external references from AI HTML, keeping only inert
+    layout markup. Inline `style` attributes are kept (WeasyPrint runs no JS) but
+    scrubbed of url(); all src/href and on* handlers are dropped."""
+    from lxml import etree, html as lxml_html
+    try:
+        root = lxml_html.fragment_fromstring(raw or "", create_parent="lwroot")
+    except Exception:                # noqa: BLE001 - unparseable → escape it whole
+        return escape(raw or "")
+    etree.strip_elements(root, *_RAW_STRIP_TAGS, with_tail=False)
+    for el in root.iter():
+        for attr in list(el.attrib):
+            a = attr.lower()
+            if a.startswith("on") or a in ("src", "href", "xlink:href", "background",
+                                           "srcset", "action", "formaction", "poster"):
+                el.attrib.pop(attr, None)
+            elif a == "style":
+                el.set(attr, _sanitize_raw_css(el.get(attr, "")))
+    inner = "".join(lxml_html.tostring(ch, encoding="unicode") for ch in root)
+    if root.text:
+        inner = escape(root.text) + inner
+    return inner
+
+
+def fill_raw_template(html: str, css: str, context: dict) -> str:
+    """Turn a stored AI HTML/CSS template + a data context into a complete, safe
+    HTML document: items loop expanded, tokens filled with ESCAPED real values, the
+    logo injected as our controlled element, everything else sanitised."""
+    safe_html = _sanitize_raw_html(html)
+    safe_css = _sanitize_raw_css(css)
+
+    def _rows(m):
+        row = m.group(1)
+        return "".join(_RAW_TOKEN_RE.sub(lambda t: _raw_item_tokens(it).get(t.group(1), ""), row)
+                       for it in context["items"])
+    body = _RAW_ITEMS_RE.sub(_rows, safe_html)
+
+    scal = _raw_scalar_tokens(context)
+    scal["logo"] = (f"<img src='{context['logo_data_uri']}' class='lw-logo' "
+                    "style='max-height:70px;max-width:240px;object-fit:contain'>"
+                    if context.get("logo_data_uri") else "")
+    body = _RAW_TOKEN_RE.sub(lambda m: scal.get(m.group(1), ""), body)
+    body = _RAW_TOKEN_RE.sub("", body)      # drop any unknown leftover tokens
+
+    base = ("@page{size:A4;margin:14mm 12mm 16mm;}*{box-sizing:border-box;}"
+            "body{font-family:Helvetica,Arial,sans-serif;color:#111;font-size:12px;margin:0;}"
+            "table{border-collapse:collapse;}img{max-width:100%;}")
+    return (f"<!doctype html><html><head><meta charset='utf-8'>"
+            f"<style>{base}{safe_css}</style></head><body>{body}</body></html>")
+
+
+# ── Engine dispatch: design vs raw HTML ─────────────────────────────────────────
+
+def _spec_html_css(spec) -> tuple:
+    """(html, css) when `spec` carries an AI-recreated raw template, else ('','')."""
+    if isinstance(spec, dict):
+        return (spec.get("html") or "", spec.get("css") or "")
+    return "", ""
+
+
+def _spec_design(spec) -> dict:
+    if isinstance(spec, dict) and "design" in spec:
+        return spec.get("design") or DEFAULT_DESIGN
+    return spec or DEFAULT_DESIGN      # a bare design dict, or None
+
+
+def render_html_pdf(document, doc_type: str, spec) -> bytes:
+    """Render `document` with the HTML engine. `spec` is either a bare `design`
+    dict (structured engine) or {design, html, css} — when it carries raw `html`,
+    the AI-recreated template is rendered instead of the structured design."""
     from weasyprint import HTML
 
     context = build_context(document, doc_type)
     caps.assert_renderable(context, doc_type)   # never emit a misleading document
-    html = design_to_html(design or DEFAULT_DESIGN, context)
-    return HTML(string=html).write_pdf()
+    html, css = _spec_html_css(spec)
+    doc_html = (fill_raw_template(html, css, context) if html
+                else design_to_html(_spec_design(spec), context))
+    return HTML(string=doc_html).write_pdf()
 
 
 def render_design_preview_pdf(company, doc_type: str, design: dict, *,
@@ -276,6 +426,21 @@ def render_design_preview_pdf(company, doc_type: str, design: dict, *,
     html = design_to_html(design or DEFAULT_DESIGN,
                           sample_context(company, doc_type), compact=compact)
     return HTML(string=html).write_pdf()
+
+
+def render_raw_preview_pdf(company, doc_type: str, html: str, css: str) -> bytes:
+    """Preview an AI-recreated raw HTML/CSS template with SAMPLE data — for the
+    import review screen, gallery thumbnail and the saved template's Preview."""
+    from weasyprint import HTML
+
+    doc_html = fill_raw_template(html, css, sample_context(company, doc_type))
+    return HTML(string=doc_html).write_pdf()
+
+
+def render_raw_preview_html(company, doc_type: str, html: str, css: str) -> str:
+    """The embeddable HTML (no WeasyPrint) of a raw template with sample data —
+    used by the lightweight gallery/builder thumbnail iframe."""
+    return fill_raw_template(html, css, sample_context(company, doc_type))
 
 
 def design_to_html(design: dict, context: dict, *, compact: bool = False) -> str:

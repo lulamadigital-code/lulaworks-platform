@@ -423,6 +423,81 @@ def vision_enrich(company, user, image_bytes: bytes, design: dict, doc_type: str
     return cleaned, True, getattr(resp, "credits_used", Decimal("0"))
 
 
+# ── Faithful recreation: the model writes an HTML/CSS template of the page ──────
+
+def _html_gen_prompt(doc_type: str) -> str:
+    price_tokens = ("{{item.ordered}} {{item.delivered}} {{item.outstanding}} — and NO "
+                    "prices/amounts on a delivery note"
+                    if doc_type == "delivery"
+                    else "{{item.unit_price}} {{item.amount}}")
+    return (
+        f"You are shown an image of a company's existing {doc_type}. Recreate its "
+        "LAYOUT as an HTML+CSS template so a document generated from it looks like "
+        "the original.\n\n"
+        "Reproduce the visual structure as closely as you can: the letterhead and "
+        "where the logo sits, the colours, how the company and customer blocks are "
+        "arranged, the item-table columns and their styling, the totals block, "
+        "banking, terms and any sign-off.\n\n"
+        "Use ONLY these placeholders for DATA — never copy real text, names, numbers "
+        "or money values from the image:\n"
+        "{{company.name}} {{company.address}} {{company.email}} {{company.phone}} "
+        "{{company.website}} {{company.vat}} {{company.reg}} {{logo}}\n"
+        "{{customer.name}} {{customer.address}} {{customer.vat}} "
+        "{{contact.name}} {{contact.email}} {{contact.phone}}\n"
+        "{{document.title}} {{document.reference}} {{document.date}} "
+        "{{document.prepared_by}} {{document.po}} {{document.quotation_ref}} "
+        "{{document.valid_until}} {{job.scope}} {{terms}}\n"
+        "{{totals.subtotal}} {{totals.discount}} {{totals.vat_label}} {{totals.vat}} "
+        "{{totals.total}}\n"
+        "{{banking.bank_name}} {{banking.account_name}} {{banking.account_number}} "
+        "{{banking.branch_code}}\n"
+        "For the line items, wrap EXACTLY ONE table row in {{#items}} … {{/items}} and "
+        f"inside it use {{item.no}} {{item.description}} {{item.qty}} {{item.unit}} {price_tokens}.\n"
+        "{{logo}} is replaced with the company's logo image — put it where the logo goes.\n\n"
+        "Rules:\n"
+        "- NO <script>, <img>, <link>, <style>, external URLs, or fonts. Put styling "
+        "in the css field (inline style attributes are fine). Placeholders only, "
+        "never real data.\n"
+        "- Use NORMAL document flow — flexbox and tables only. Do NOT use position "
+        "absolute/fixed or negative margins (they push content off the page).\n"
+        "- Content is inside a page ~186mm wide; never set fixed widths wider than "
+        "that, and let the logo be at most ~200px.\n"
+        "- Give every label and its value a clear gap (a table cell, or a colon and "
+        "space) so they never overlap. Reference/date/prepared-by read as rows.\n"
+        "- Keep it to a single A4 page where possible.\n\n"
+        'Return ONLY JSON: {"html": "<body html here>", "css": "<css here>"}'
+    )
+
+
+def vision_generate_html(company, user, image_bytes: bytes, doc_type: str):
+    """Have a multimodal model RECREATE the uploaded page as an HTML/CSS template.
+    Returns (html, css, ai_used, credits_used). Fails open — ('','',False,0) — when
+    the AI is unavailable or returns nothing usable, so the caller falls back."""
+    from apps.ai_platform.gateway import (
+        AllProvidersFailedError,
+        InsufficientCreditsError,
+        run_task,
+    )
+    try:
+        resp = run_task(company, user, task="template_layout_import",
+                        prompt=_html_gen_prompt(doc_type),
+                        prompt_name="template_html_recreate",
+                        images=[image_bytes], json_mode=True, max_tokens=6000)
+    except (InsufficientCreditsError, AllProvidersFailedError):
+        return "", "", False, Decimal("0")
+    except Exception:                # noqa: BLE001 - AI is best-effort, never fatal
+        return "", "", False, Decimal("0")
+
+    data = _parse_design(resp.text)      # same tolerant JSON-object extractor
+    credits = getattr(resp, "credits_used", Decimal("0"))
+    html = (data or {}).get("html")
+    if not isinstance(html, str) or "{{" not in html or len(html.strip()) < 40:
+        return "", "", False, credits    # nothing usable → fall back
+    css = (data or {}).get("css")
+    css = css[:40000] if isinstance(css, str) else ""
+    return html[:60000], css, True, credits
+
+
 # ── Orchestration: analyse an upload, then save the approved design ─────────────
 
 def _local_path(template_import) -> str:
@@ -445,14 +520,19 @@ def run_import(template_import, user):
     """Analyse the uploaded document (deterministic + optional AI) and store the
     proposed design, warnings and features on the import, ready for review."""
     ti = template_import
+    raw_html = raw_css = ""
     try:
         path = _local_path(ti)
         design, warnings, features = analyse_document(path, ti.doc_type)
-        # Prefer VISION — let the model see the actual page — when we can render one;
-        # fall back to reasoning over text features (e.g. a DOCX with no image).
         image = _page_image_bytes(path, ti.original_name)
         if image is not None:
-            design, ai_used, credits = vision_enrich(ti.company, user, image, design, ti.doc_type)
+            # First choice: FAITHFULLY recreate the page as an HTML/CSS template.
+            raw_html, raw_css, ai_used, credits = vision_generate_html(
+                ti.company, user, image, ti.doc_type)
+            if not raw_html:
+                # Recreation unavailable → match the closest structured design.
+                design, ai_used, credits = vision_enrich(
+                    ti.company, user, image, design, ti.doc_type)
         else:
             design, ai_used, credits = enrich_design(ti.company, user, features, design)
     except Exception as exc:          # noqa: BLE001 - surface, never crash the request
@@ -461,6 +541,11 @@ def run_import(template_import, user):
         ti.updated_by = user
         ti.save(update_fields=["status", "error", "updated_by", "updated_at"])
         return ti
+
+    # Carry the recreated raw template on `features` (no schema change needed); the
+    # structured `design` remains as an editable fallback.
+    features["_raw_html"] = raw_html
+    features["_raw_css"] = raw_css
 
     # When the AI set the branding, the deterministic "couldn't detect colour/logo"
     # notes are stale — drop them. Also drop the deterministic tagline guess: the
@@ -490,9 +575,11 @@ def save_as_template(template_import, user, *, name="", design=None):
 
     ti = template_import
     label = (name or "").strip() or f"{ti.get_doc_type_display()} (imported)"
+    feats = ti.features or {}
     tpl = create_html_template(
         ti.company, user, doc_type=ti.doc_type, name=label,
         design=design if design is not None else ti.design,
+        html=feats.get("_raw_html", ""), css=feats.get("_raw_css", ""),
         description="Reconstructed from an uploaded document",
         origin=TemplateOrigin.IMPORTED)
     ti.saved_template = tpl

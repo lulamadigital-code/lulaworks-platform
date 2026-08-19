@@ -433,9 +433,10 @@ class HtmlEngineTests(TestCase):
             dt.pin_template_version(q, "quotation")
             q.refresh_from_db()
             dt.update_html_design(tpl, None, design={"branding": {"accent_color": "#999999"}})
-            engine, design = dt.resolve_render(q, "quotation")
+            engine, spec = dt.resolve_render(q, "quotation")
             self.assertEqual(engine, "html")
-            self.assertEqual(design["branding"]["accent_color"], "#111111")   # frozen
+            # resolve_render now returns a render spec {design, html, css}.
+            self.assertEqual(spec["design"]["branding"]["accent_color"], "#111111")  # frozen
 
 
 class StructuralLooksTests(TestCase):

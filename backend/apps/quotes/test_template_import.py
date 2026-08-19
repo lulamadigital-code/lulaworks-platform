@@ -147,3 +147,38 @@ class ImportIsolationTests(TestCase):
                                           source_file=SimpleUploadedFile("b.pdf", b"x"))
         with tenant_scope(a.id):
             self.assertEqual(TemplateImport.objects.count(), 0)
+
+
+class RawHtmlSafetyTests(TestCase):
+    """The AI-recreated raw HTML/CSS is UNTRUSTED: scripts/embeds are stripped, all
+    data is filled through escaped tokens, and the items loop expands per line."""
+
+    def test_fill_sanitizes_and_escapes(self):
+        from django.test import SimpleTestCase  # noqa: F401
+        from .html_render import fill_raw_template
+        ctx = {
+            "company": {"name": "Acme & Co", "address": ["1 St"], "email": "e@x.co",
+                        "phone": "011", "mobile": "", "website": "w", "vat_number": "V",
+                        "registration_number": "R"},
+            "customer": {"name": "Cust", "address": "", "vat_number": ""},
+            "contact": None,
+            "document": {"title": "TAX INVOICE", "reference": "INV-1", "date": "01/01/2026",
+                         "prepared_by": "", "po_number": "", "quotation_ref": "",
+                         "valid_until": ""},
+            "job": {"title": "", "site": "", "scope_of_work": ""},
+            "financial": {"subtotal": "R1", "discount": "", "vat_label": "VAT",
+                          "vat": "R0", "total": "R1"},
+            "banking": {}, "terms": "", "logo_data_uri": "",
+            "items": [{"item_no": "1", "description": "<b>x</b>", "qty": "2", "unit": "ea",
+                       "unit_price": "R1", "amount": "R2"}],
+        }
+        html = ("<div><script>alert(1)</script>"
+                "<h1>{{document.title}} — {{company.name}}</h1>"
+                "<table>{{#items}}<tr><td>{{item.no}}</td><td>{{item.description}}</td></tr>"
+                "{{/items}}</table></div>")
+        out = fill_raw_template(html, "h1{position:absolute;}", ctx)
+        self.assertNotIn("<script", out.lower())
+        self.assertNotIn("alert(1)", out)
+        self.assertIn("TAX INVOICE", out)
+        self.assertNotIn("<b>x</b>", out)          # item html escaped, not injected
+        self.assertNotIn("position:absolute", out)  # neutralised to static

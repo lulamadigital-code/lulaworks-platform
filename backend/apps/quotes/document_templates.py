@@ -236,42 +236,56 @@ def effective_config_for(document, doc_type) -> dict:
                             override=getattr(document, "template", None))
 
 
+def _html_spec(version):
+    """The HTML-engine render spec from a version: its structured `design` plus any
+    AI-recreated raw `html`/`css` (when present, the raw template is rendered)."""
+    return {"design": (version.design or {}) if version else {},
+            "html": (version.html or "") if version else "",
+            "css": (version.css or "") if version else ""}
+
+
 def resolve_render(document, doc_type):
-    """Which engine renders this document, and the HTML design when it's the HTML
-    engine. Honours a pinned version (immutability) first, else the live template
-    head. Returns (engine, design) — design is {} for the ReportLab engine."""
+    """Which engine renders this document, and the HTML render spec when it's the
+    HTML engine. Honours a pinned version (immutability) first, else the live
+    template head. Returns (engine, spec); spec is {} for the ReportLab engine and
+    {design, html, css} for the HTML engine."""
     from .models import TemplateEngine
 
     pinned = getattr(document, "template_version", None)
     if pinned is not None:
-        return pinned.engine, (pinned.design or {})
+        return pinned.engine, (_html_spec(pinned)
+                               if pinned.engine == TemplateEngine.HTML else {})
     tpl = resolve_template(document.company, doc_type,
                            override=getattr(document, "template", None))
     if tpl is None:
         return TemplateEngine.REPORTLAB, {}
     if tpl.engine == TemplateEngine.HTML:
-        version = tpl.current_version
-        return TemplateEngine.HTML, ((version.design if version else {}) or {})
+        return TemplateEngine.HTML, _html_spec(tpl.current_version)
     return TemplateEngine.REPORTLAB, {}
 
 
 # ── Versioning ────────────────────────────────────────────────────────────────
 
-def _snapshot_version(template, actor, *, note="", design=None):
+def _snapshot_version(template, actor, *, note="", design=None, html=None, css=None):
     """Freeze the template's current fields into a new immutable version and point
     the head at it. Called on every create/edit; the resulting version is what a
     finalised document pins so a later edit can't rewrite an issued document.
-    `design` carries the HTML-engine payload — inherited from the previous version
-    when not re-supplied, so a config-only edit keeps the design."""
+    `design` carries the HTML-engine payload; `html`/`css` carry an AI-recreated raw
+    template. All three are inherited from the previous version when not re-supplied,
+    so a config-only edit keeps the design and any raw template."""
     last = template.versions.order_by("-version").first()
     number = (last.version + 1) if last else 1
     if design is None:
         design = dict(last.design) if (last and last.design) else {}
+    if html is None:
+        html = (last.html if last else "") or ""
+    if css is None:
+        css = (last.css if last else "") or ""
     version = DocumentTemplateVersion.objects.create(
         company=template.company, template=template, version=number,
         engine=template.engine, base_layout=template.base_layout,
-        config=dict(template.config or {}), design=design, note=(note or "")[:200],
-        created_by=actor, updated_by=actor,
+        config=dict(template.config or {}), design=design, html=html, css=css,
+        note=(note or "")[:200], created_by=actor, updated_by=actor,
     )
     template.current_version = version
     template.updated_by = actor
@@ -281,9 +295,11 @@ def _snapshot_version(template, actor, *, note="", design=None):
 
 @transaction.atomic
 def create_html_template(company, actor, *, doc_type, name, design=None,
-                         description="", origin=TemplateOrigin.CUSTOM):
+                         html="", css="", description="", origin=TemplateOrigin.CUSTOM):
     """A company's own (or AI-imported) HTML-engine template. Same lifecycle as a
-    ReportLab template — versioned, default-able — but rendered from a `design`."""
+    ReportLab template — versioned, default-able. Rendered from a structured
+    `design`, or, when `html` is supplied, from an AI-recreated raw HTML/CSS
+    template that reproduces an uploaded document's layout."""
     name = (name or "").strip()
     if not name:
         raise TemplateError("A template needs a name.")
@@ -296,7 +312,8 @@ def create_html_template(company, actor, *, doc_type, name, design=None,
         engine=TemplateEngine.HTML, config={},
         created_by=actor, updated_by=actor,
     )
-    _snapshot_version(tpl, actor, note="Created", design=clean_design(design or {}))
+    _snapshot_version(tpl, actor, note="Created", design=clean_design(design or {}),
+                      html=html or "", css=css or "")
     if not DocumentTemplate.objects.filter(company=company, doc_type=doc_type,
                                            is_default=True, archived_at__isnull=True).exists():
         set_default_template(tpl)
