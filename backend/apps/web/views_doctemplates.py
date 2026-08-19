@@ -16,6 +16,7 @@ from apps.quotes import document_templates as dts
 from apps.quotes.models import (
     ALLOWED_FONT_FAMILIES,
     ALLOWED_FONTS,
+    ALLOWED_FOOTER_LAYOUTS,
     ALLOWED_HEADER_STYLES,
     ALLOWED_LOGO_POSITIONS,
     ALLOWED_LOGO_SIZES,
@@ -23,6 +24,8 @@ from apps.quotes.models import (
     ALLOWED_TABLE_STYLES,
     ALLOWED_TOTALS_STYLES,
     DEFAULT_CONFIG,
+    LOGO_HEIGHT_MAX,
+    LOGO_HEIGHT_MIN,
     TEMPLATE_ITEM_COLUMNS,
     TEMPLATE_FIELD_LIBRARY,
     TEMPLATE_SECTIONS,
@@ -255,6 +258,8 @@ def template_builder(request, pk):
         "sections": sections, "columns": columns, "doc_type_note": doc_type_note,
         "fonts": ALLOWED_FONT_FAMILIES, "logo_positions": ALLOWED_LOGO_POSITIONS,
         "logo_sizes": ALLOWED_LOGO_SIZES, "header_styles": ALLOWED_HEADER_STYLES,
+        "footer_layouts": ALLOWED_FOOTER_LAYOUTS,
+        "logo_h_min": LOGO_HEIGHT_MIN, "logo_h_max": LOGO_HEIGHT_MAX,
         "table_styles": ALLOWED_TABLE_STYLES, "totals_styles": ALLOWED_TOTALS_STYLES,
         "section_styles": ALLOWED_SECTION_STYLES,
         "field_library": TEMPLATE_FIELD_LIBRARY,
@@ -506,6 +511,7 @@ def _design_from_post(post) -> dict:
         "font_family": post.get("font_family", ""),
         "logo_position": post.get("logo_position", ""),
         "logo_size": post.get("logo_size", ""),
+        "logo_height": post.get("logo_height", "0"),
         "header_style": post.get("header_style", ""),
     }
     ordered = []

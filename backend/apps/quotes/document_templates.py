@@ -19,6 +19,7 @@ from django.utils import timezone
 from .models import (
     ALLOWED_FONT_FAMILIES,
     ALLOWED_FONTS,
+    ALLOWED_FOOTER_LAYOUTS,
     ALLOWED_HEADER_STYLES,
     ALLOWED_LOGO_POSITIONS,
     ALLOWED_LOGO_SIZES,
@@ -26,6 +27,8 @@ from .models import (
     ALLOWED_TABLE_STYLES,
     ALLOWED_TEMPLATE_FAMILY_NAMES,
     ALLOWED_TOTALS_STYLES,
+    LOGO_HEIGHT_MAX,
+    LOGO_HEIGHT_MIN,
     DEFAULT_CONFIG,
     DEFAULT_DESIGN,
     DEFAULT_FAMILY_KEY,
@@ -134,6 +137,13 @@ def clean_design(raw: dict) -> dict:
         if ls not in ALLOWED_LOGO_SIZES:
             raise TemplateError(f"Unknown logo size “{ls}”.")
         branding["logo_size"] = ls
+    if "logo_height" in b_in:
+        try:
+            h = int(float(b_in.get("logo_height") or 0))
+        except (TypeError, ValueError):
+            h = 0
+        # 0 = use the named preset; otherwise clamp to a printable range.
+        branding["logo_height"] = 0 if h <= 0 else max(LOGO_HEIGHT_MIN, min(LOGO_HEIGHT_MAX, h))
     if "header_style" in b_in:
         hs = (b_in.get("header_style") or "").strip() or "band"
         if hs not in ALLOWED_HEADER_STYLES:
@@ -165,6 +175,7 @@ def clean_design(raw: dict) -> dict:
         "table_style": _choice("table_style", ALLOWED_TABLE_STYLES),
         "totals_style": _choice("totals_style", ALLOWED_TOTALS_STYLES),
         "section_title_style": _choice("section_title_style", ALLOWED_SECTION_STYLES),
+        "footer_layout": _choice("footer_layout", ALLOWED_FOOTER_LAYOUTS),
         "header_note": (raw.get("header_note") or "").strip()[:200],
         "footer_note": (raw.get("footer_note") or "").strip()[:200],
     }

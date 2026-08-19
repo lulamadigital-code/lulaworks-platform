@@ -262,6 +262,7 @@ def design_to_html(design: dict, context: dict, *, compact: bool = False) -> str
         "cols": design.get("columns") or list(TEMPLATE_ITEM_COLUMN_KEYS),
         "hnote": design.get("header_note", ""), "fnote": design.get("footer_note", ""),
         "logo_pos": logo_pos, "logo_size": branding.get("logo_size") or "medium",
+        "logo_height": branding.get("logo_height") or 0,
         "header_style": header_style,
         "table_style": design.get("table_style") or "lines",
         "totals_style": design.get("totals_style") or "plain",
@@ -287,16 +288,34 @@ def design_to_html(design: dict, context: dict, *, compact: bool = False) -> str
             " @bottom-right { content: 'Page ' counter(page) ' of ' counter(pages);"
             " font-size: 8pt; color: #8a8a8a; } }")
 
+    # Footer layout: when "split" and both the sign-off and banking are shown, put
+    # them side by side on one line to save space (only a quotation shows both).
+    footer_layout = design.get("footer_layout") or "stacked"
+
+    def _render(keys):
+        pair = (footer_layout == "split" and "signature" in keys and "banking" in keys)
+        out, paired = [], False
+        for k in keys:
+            if pair and k in ("signature", "banking"):
+                if not paired:
+                    sig = _s_signature(context, st) or ""
+                    bank = _s_banking(context, st) or ""
+                    out.append(f"<div class='pairrow'><div class='pcol'>{sig}</div>"
+                               f"<div class='pcol pcol-bank'>{bank}</div></div>")
+                    paired = True
+                continue
+            if k in _SECTION_BUILDERS:
+                out.append(_SECTION_BUILDERS[k](context, st) or "")
+        return "".join(out)
+
     # The 'sidebar' header wraps the WHOLE page in two columns: the identity lives
     # in a coloured left rail, everything else in the main column.
     if header_style == "sidebar":
         rail = _s_letterhead(context, st)
-        main = "".join(_SECTION_BUILDERS[k](context, st) or ""
-                       for k in visible if k != "letterhead" and k in _SECTION_BUILDERS)
+        main = _render([k for k in visible if k != "letterhead"])
         body = f"<div class='sidebar-layout'><aside class='rail'>{rail}</aside><main>{main}</main></div>"
     else:
-        body = "".join(_SECTION_BUILDERS[k](context, st) or ""
-                       for k in visible if k in _SECTION_BUILDERS)
+        body = _render(visible)
 
     # A wrapper class keyed on the header style lets the CSS restyle the title/meta
     # and information blocks per family — the structural differences (e.g. Elevate's
@@ -375,10 +394,14 @@ def _base_css(accent, secondary, font, st, compact=False) -> str:
     # since WeasyPrint's flexbox ignores CSS `order`.
     ident_align = {"left": "right", "right": "left", "center": "center"}.get(
         st["logo_pos"], "right")
-    # Logo size — the letterhead's logo can be made bigger for a strong brand mark.
-    logo_dims = {"small": ("46px", "170px"), "medium": ("64px", "230px"),
-                 "large": ("84px", "290px"), "xlarge": ("108px", "340px")}.get(
-                     st.get("logo_size", "medium"), ("64px", "230px"))
+    # Logo size — an exact height in px (the slider) drives it; otherwise a named
+    # preset. Width is generous so a wide wordmark grows with the height rather than
+    # being clipped, letting the logo be made genuinely large.
+    lh_px = st.get("logo_height") or 0
+    if not lh_px:
+        lh_px = {"small": 46, "medium": 68, "large": 100, "xlarge": 140}.get(
+            st.get("logo_size", "medium"), 68)
+    logo_dims = (f"{int(lh_px)}px", f"{min(int(lh_px * 4.6), 460)}px")
     # Logo centred → stack the letterhead in a centred column, whatever the header.
     center_lh = (".letterhead .lh-row{flex-direction:column;align-items:center;text-align:center;}"
                  ".letterhead .ident{text-align:center;}") if st["logo_pos"] == "center" else ""
@@ -472,6 +495,13 @@ def _base_css(accent, secondary, font, st, compact=False) -> str:
     {title}
     .boxes {{ display:flex; gap:12px; margin-top:{S['boxes_top']}; }}
     .boxes .b {{ flex:1; border:1px solid #ccc; border-radius:4px; padding:8px 10px; font-size:11px; }}
+    /* Split footer: sign-off and banking on one line. */
+    .pairrow {{ display:flex; gap:14px; align-items:stretch; margin-top:{S['boxes_top']}; }}
+    .pairrow .pcol {{ flex:1; min-width:0; }}
+    .pairrow .boxes {{ margin-top:0; height:100%; }}
+    .pairrow .boxes .b {{ flex:1 1 auto; }}
+    .pairrow .pcol-bank {{ border:1px solid #ccc; border-radius:4px; padding:8px 10px; }}
+    .pairrow .pcol-bank .section-title {{ margin-top:0; }}
     .foot {{ margin-top:{S['foot_top']}; font-size:10.5px; color:#555; }}
 
     /* Per-family structural overrides — these are what make one family look

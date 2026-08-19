@@ -815,8 +815,16 @@ ALLOWED_HEADER_STYLES = ["band", "plain", "minimal", "centered", "split",
 ALLOWED_TABLE_STYLES = ["lines", "striped", "bordered", "plain"]
 ALLOWED_TOTALS_STYLES = ["plain", "boxed", "highlighted"]
 ALLOWED_SECTION_STYLES = ["plain", "bar", "underline"]
-#: How large the company logo prints in the letterhead.
+#: How large the company logo prints in the letterhead (named presets, kept for
+#: back-compat). `logo_height` (px) below is the precise control the slider sets.
 ALLOWED_LOGO_SIZES = ["small", "medium", "large", "xlarge"]
+#: Exact logo height in millimetres-ish px, when the slider is used (0 = fall back
+#: to the named preset). Clamped to this range.
+LOGO_HEIGHT_MIN, LOGO_HEIGHT_MAX = 30, 200
+#: How the sign-off ("compiled by") and banking sit relative to each other.
+#:   stacked — each on its own row (default)
+#:   split   — side by side on one line, to save space
+ALLOWED_FOOTER_LAYOUTS = ["stacked", "split"]
 
 #: The design a new HTML template starts from — a clean, complete document.
 DEFAULT_DESIGN = {
@@ -826,8 +834,10 @@ DEFAULT_DESIGN = {
         "font_family": "Helvetica",
         "logo_position": "left",
         "logo_size": "medium",
+        "logo_height": 0,
         "header_style": "band",
     },
+    "footer_layout": "stacked",
     "sections": [{"key": k, "visible": True} for k in TEMPLATE_SECTION_KEYS],
     "columns": list(TEMPLATE_ITEM_COLUMN_KEYS),
     "table_style": "lines",
