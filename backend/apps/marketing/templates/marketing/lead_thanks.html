@@ -1,0 +1,16 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap" style="max-width:640px;margin:0 auto;text-align:center;">
+    <div class="ic" style="margin:0 auto;">✓</div>
+    <h1 style="margin-top:14px;">You're on the list</h1>
+    <p class="lead" style="margin:0 auto;">Thanks for joining. The fastest way to put
+      this into practice is a free LulaWorks account — quote, invoice and track your
+      jobs in one place, with the admin done for you.</p>
+    <div style="margin-top:22px;">
+      <a class="btn lg" href="{% url 'marketing:trial' %}">Start Free with LulaWorks</a>
+    </div>
+    <p style="margin-top:16px;"><a href="{% url 'marketing:learn' %}">← Back to the Academy</a></p>
+  </div>
+</section>
+{% endblock %}

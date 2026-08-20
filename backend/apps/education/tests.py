@@ -125,3 +125,49 @@ class TemplatesLibraryTests(TestCase):
 
     def test_unknown_template_404s(self):
         self.assertEqual(self.client.get("/templates/nope/").status_code, 404)
+
+
+class LeadCaptureTests(TestCase):
+    def test_capture_creates_and_scores_lead(self):
+        from apps.education.leads import capture_lead
+        from apps.education.models import EducationLead
+        lead = capture_lead(email="Bob@Acme.CO.ZA", event="tool_used",
+                            detail="vat-calculator", name="Bob", company="Acme")
+        self.assertIsNotNone(lead)
+        self.assertEqual(lead.email, "bob@acme.co.za")     # normalised
+        self.assertEqual(lead.score, 3)                    # tool_used = 3
+        self.assertEqual(lead.name, "Bob")
+        # A second action on the same email accrues, doesn't duplicate the lead.
+        capture_lead(email="bob@acme.co.za", event="template_used", detail="rfq")
+        self.assertEqual(EducationLead.objects.count(), 1)
+        lead.refresh_from_db()
+        self.assertEqual(lead.score, 5)                    # 3 + 2
+        self.assertEqual(lead.events.count(), 2)
+
+    def test_capture_ignores_bad_email(self):
+        from apps.education.leads import capture_lead
+        self.assertIsNone(capture_lead(email="not-an-email"))
+        self.assertIsNone(capture_lead(email=""))
+
+    def test_does_not_overwrite_profile_with_blanks(self):
+        from apps.education.leads import capture_lead
+        capture_lead(email="c@c.co", event="opt_in", company="First Co")
+        lead = capture_lead(email="c@c.co", event="opt_in", company="")
+        self.assertEqual(lead.company, "First Co")
+
+    def test_capture_endpoint_redirects_to_thanks(self):
+        from apps.education.models import EducationLead
+        resp = self.client.post("/grow/", {"email": "lead@co.za", "event": "opt_in",
+                                           "source": "academy"})
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/grow/thanks/", resp.url)
+        self.assertTrue(EducationLead.objects.filter(email="lead@co.za").exists())
+
+    def test_signup_scores_existing_lead(self):
+        from apps.education.leads import capture_lead, score_signup
+        capture_lead(email="signup@co.za", event="tool_used", detail="x")
+        score_signup("signup@co.za")
+        from apps.education.models import EducationLead
+        lead = EducationLead.objects.get(email="signup@co.za")
+        self.assertTrue(lead.has_account)
+        self.assertEqual(lead.score, 8)                    # 3 (tool) + 5 (account)

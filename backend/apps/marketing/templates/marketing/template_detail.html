@@ -50,6 +50,8 @@
       <a class="btn" href="{{ tpl.cta_url }}">Start Free with LulaWorks</a>
     </div>
 
+    {% include "marketing/_lead_form.html" with source=tpl.slug event="template_used" heading="Get more free templates & guides" button="Send me templates" %}
+
     {% if others %}
     <h2 style="margin-top:40px;">More templates</h2>
     <div class="grid g3" style="margin-top:16px;">

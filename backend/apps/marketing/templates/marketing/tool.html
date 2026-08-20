@@ -71,6 +71,8 @@
       <a class="btn" href="{{ tool.cta_url }}">Start Free with LulaWorks</a>
     </div>
 
+    {% include "marketing/_lead_form.html" with source=tool.slug event="tool_used" heading="Get more free tools & guides" button="Send me tools" %}
+
     {% if other_tools %}
     <h2 style="margin-top:40px;">More free tools</h2>
     <div class="grid g3" style="margin-top:16px;">

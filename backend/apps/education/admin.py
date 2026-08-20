@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import LearningPath, LearningPathStep, Resource, ResourceCategory
+from .models import (
+    EducationLead,
+    LeadEvent,
+    LearningPath,
+    LearningPathStep,
+    Resource,
+    ResourceCategory,
+)
 
 
 @admin.register(ResourceCategory)
@@ -36,6 +43,27 @@ class LearningPathStepInline(admin.TabularInline):
     model = LearningPathStep
     extra = 1
     autocomplete_fields = ("resource",)
+
+
+class LeadEventInline(admin.TabularInline):
+    model = LeadEvent
+    extra = 0
+    readonly_fields = ("event", "points", "detail", "created_at")
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(EducationLead)
+class EducationLeadAdmin(admin.ModelAdmin):
+    list_display = ("email", "score", "company", "industry", "company_size",
+                    "has_account", "updated_at")
+    list_filter = ("has_account", "industry", "company_size")
+    search_fields = ("email", "name", "company", "challenge")
+    readonly_fields = ("score", "first_source", "created_at", "updated_at")
+    ordering = ("-score", "-updated_at")
+    inlines = [LeadEventInline]
 
 
 @admin.register(LearningPath)

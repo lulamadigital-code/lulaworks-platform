@@ -256,6 +256,9 @@ def trial(request):
                           {**_seo("Start Free Trial — LulaWorks", ""),
                            "form": request.POST})
         login(request, user)
+        # Close the content → signup loop: credit the matching Education lead.
+        from apps.education.leads import score_signup
+        score_signup(user.email, request=request)
         messages.success(request, "Welcome to LulaWorks! Your 30-day free trial has started.")
         return redirect("web:dashboard")
     return render(request, "marketing/trial.html", _seo(
@@ -393,6 +396,41 @@ def tool(request, slug):
     ctx.update({"tool": spec, "results": results, "fields": fields,
                 "other_tools": [t for t in TOOLS.values() if t.slug != slug][:3]})
     return render(request, "marketing/tool.html", ctx)
+
+
+# ── Lead capture (progressive, opt-in) ────────────────────────────────────────
+
+@require_http_methods(["POST"])
+def lead_capture(request):
+    """Opt-in lead capture from the Academy / tools / templates. The content is
+    always usable without this — it's a voluntary 'get more' / 'save' step."""
+    from apps.education.leads import capture_lead
+    email = request.POST.get("email", "")
+    lead = capture_lead(
+        email=email,
+        event=request.POST.get("event", "opt_in"),
+        request=request,
+        detail=request.POST.get("source", ""),
+        name=request.POST.get("name", ""),
+        company=request.POST.get("company", ""),
+        industry=request.POST.get("industry", ""),
+        company_size=request.POST.get("company_size", ""),
+        role=request.POST.get("role", ""),
+        phone=request.POST.get("phone", ""),
+        challenge=request.POST.get("challenge", ""),
+    )
+    if lead is None:
+        messages.error(request, "Please enter a valid email address.")
+        back = request.POST.get("next") or reverse("marketing:learn")
+        return redirect(back)
+    return redirect("marketing:lead_thanks")
+
+
+def lead_thanks(request):
+    """Progressive next step after opting in: nudge toward a free account, which
+    is where the real value (and the strongest conversion) lives."""
+    return render(request, "marketing/lead_thanks.html", _seo(
+        "You're on the list — LulaWorks", "Thanks for joining."))
 
 
 # ── Templates library ─────────────────────────────────────────────────────────

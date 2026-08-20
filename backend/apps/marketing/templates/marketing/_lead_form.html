@@ -1,0 +1,20 @@
+{% comment %}Progressive, opt-in lead capture. The page's content is fully usable
+without this. Params: source (slug), event (opt_in|tool_used|template_used),
+heading, blurb, button.{% endcomment %}
+<form method="post" action="{% url 'marketing:lead_capture' %}" class="card"
+      style="margin-top:26px;background:var(--bg);">{% csrf_token %}
+  <input type="hidden" name="event" value="{{ event|default:'opt_in' }}">
+  <input type="hidden" name="source" value="{{ source|default:'' }}">
+  <input type="hidden" name="next" value="{{ request.path }}">
+  <h3 style="margin-top:0;">{{ heading|default:"Get the contractor's growth kit" }}</h3>
+  <p style="color:var(--muted);margin:6px 0 12px;">{{ blurb|default:"New guides, tools and templates for running a more profitable business. No spam — unsubscribe any time." }}</p>
+  <div class="two">
+    <input type="email" name="email" placeholder="you@company.co.za" required>
+    <input type="text" name="name" placeholder="Your name (optional)">
+  </div>
+  <div class="two" style="margin-top:10px;">
+    <input type="text" name="company" placeholder="Company (optional)">
+    <input type="text" name="industry" placeholder="Industry (optional)">
+  </div>
+  <button class="btn" type="submit" style="margin-top:12px;">{{ button|default:"Join free" }}</button>
+</form>

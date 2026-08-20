@@ -171,6 +171,53 @@ class LearningPath(models.Model):
         return self.status == ContentStatus.PUBLISHED
 
 
+class EducationLead(models.Model):
+    """An inbound lead captured through the Education Engine — someone who read a
+    guide, used a tool or grabbed a template and opted in. Pre-account and
+    pre-tenant, so it lives here (not in the tenant-scoped CRM). Carries a running
+    engagement `score`; sales/CRM pick up the hot ones. Progressive: the content
+    is always fully usable WITHOUT giving an email — capture is opt-in only."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=150, blank=True)
+    company = models.CharField(max_length=200, blank=True)
+    industry = models.CharField(max_length=120, blank=True)
+    company_size = models.CharField(max_length=40, blank=True)
+    role = models.CharField(max_length=120, blank=True)
+    phone = models.CharField(max_length=40, blank=True)
+    challenge = models.TextField(blank=True)               # main business challenge
+    first_source = models.CharField(max_length=160, blank=True)  # slug they arrived on
+    score = models.PositiveIntegerField(default=0)
+    has_account = models.BooleanField(default=False)       # converted to a signup
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-score", "-updated_at"]
+
+    def __str__(self):
+        return self.email
+
+
+class LeadEvent(models.Model):
+    """One scored action by a lead — the audit trail behind the running score."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    lead = models.ForeignKey(EducationLead, on_delete=models.CASCADE,
+                             related_name="events")
+    event = models.CharField(max_length=40)
+    points = models.PositiveSmallIntegerField(default=0)
+    detail = models.CharField(max_length=160, blank=True)   # e.g. the slug
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.event} (+{self.points}) — {self.lead_id}"
+
+
 class LearningPathStep(models.Model):
     """One step in a learning path. Either points at a Resource, or stands alone
     with its own title/description (for steps that map to a product action)."""
