@@ -91,6 +91,7 @@ _SECTIONS = {
     "po_approve": "procurement", "po_receive": "procurement",
     "products": "procurement", "product_detail": "procurement",
     "requests": "procurement", "request_new": "procurement", "request_detail": "procurement",
+    "invoices": "invoices",
     "commercial": "commercial", "invoice_payment": "commercial",
     "lulama": "lulama",
 }

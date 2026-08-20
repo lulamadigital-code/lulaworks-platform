@@ -1,0 +1,85 @@
+{% extends "web/base.html" %}
+{% block title %}Invoices{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>Invoices</h1>
+    <p class="sub" style="margin:0;">Raise a tax invoice from an approved quotation.
+      Every invoice carries its quotation's number, so the commercial chain —
+      quotation → invoice → delivery note — stays on one reference.</p>
+  </div>
+  <a class="btn ghost" href="{% url 'web:quotations' %}">View quotations</a>
+</div>
+
+<div class="card">
+  <h3 style="margin:0 0 4px;">Create a tax invoice</h3>
+  <p class="muted" style="margin:0 0 12px;font-size:13px;">
+    These approved quotations are ready to invoice. Creating an invoice pulls its
+    figures straight from the quotation — nothing is re-typed.</p>
+
+  {% if eligible %}
+  <div style="overflow-x:auto;">
+  <table>
+    <thead>
+      <tr><th>Quotation</th><th>Customer</th><th class="num">Amount</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for q in eligible %}
+      <tr>
+        <td><a href="{% url 'web:quotation_detail' q.id %}"><strong>{{ q.number }}</strong></a></td>
+        <td>{{ q.customer|default:"—" }}</td>
+        <td class="num">R{{ q.invoice_total|floatformat:2 }}</td>
+        <td style="text-align:right;">
+          {% if can_create %}
+          <form method="post" action="{% url 'web:quotation_create_invoice' q.id %}" style="display:inline;">{% csrf_token %}
+            <button class="btn primary" type="submit" data-busy-text="Creating…">Create invoice →</button>
+          </form>
+          {% else %}
+          <span class="muted" style="font-size:12px;">No permission</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:26px 14px;">
+    <p class="muted" style="margin:0;">No quotations are ready to invoice yet.</p>
+    <p class="muted" style="margin:6px 0 0;font-size:12.5px;">A quotation becomes
+      invoiceable once it's approved and has an amount. Approve one from the
+      <a href="{% url 'web:quotations' %}">Quotations</a> pipeline first.</p>
+  </div>
+  {% endif %}
+</div>
+
+<div class="card" style="margin-top:14px;">
+  <h3 style="margin:0 0 12px;">Issued invoices</h3>
+  {% if issued %}
+  <div style="overflow-x:auto;">
+  <table>
+    <thead>
+      <tr><th>Invoice</th><th>Customer</th><th class="num">Amount</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for doc in issued %}
+      <tr>
+        <td><a href="{% url 'web:commercial_document_detail' doc.id %}"><strong>{{ doc.number }}</strong></a></td>
+        <td>{{ doc.quotation.customer|default:"—" }}</td>
+        <td class="num">R{{ doc.quotation.invoice_total|floatformat:2 }}</td>
+        <td><span class="chip {% if doc.is_finalized %}ok{% endif %}">{{ doc.get_status_display }}</span></td>
+        <td style="text-align:right;">
+          <a class="btn ghost" href="{% url 'web:commercial_document_pdf' doc.id %}">PDF</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="muted" style="margin:0;">No invoices issued yet — create your first one above.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -303,6 +303,7 @@ urlpatterns = [
     path("purchase-orders/<uuid:pk>/receive/", views.po_receive, name="po_receive"),
     # Commercial + AI
     path("commercial/", views.commercial, name="commercial"),
+    path("invoices/", views.invoices, name="invoices"),
     path("invoices/<uuid:pk>/payment/", views.invoice_payment, name="invoice_payment"),
     path("lulama/", views.lulama, name="lulama"),
 ]

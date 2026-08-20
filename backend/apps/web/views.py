@@ -2606,6 +2606,41 @@ def po_approve(request, pk):
     return redirect("web:po_detail", pk=pk)
 
 
+# ── Invoices (raise a tax invoice from an approved quotation) ──────────────────
+
+@login_required
+def invoices(request):
+    """Invoice hub — raise a tax invoice from an approved quotation and see the
+    invoices already issued. Invoices here are quote-first: a tax invoice always
+    carries its quotation's number (INV-<ref>), so the whole commercial chain —
+    quotation → PO → invoice → delivery note — stays on one reference. That's why
+    'create an invoice' means 'pick the approved quotation to invoice', not a
+    blank form."""
+    from apps.quotes.models import FINALIZED_STATUSES, CommercialDocument
+
+    invoiced_ids = set(
+        CommercialDocument.objects
+        .filter(kind=CommercialDocument.Kind.INVOICE)
+        .values_list("quotation_id", flat=True))
+    # Eligible = a finalized quotation with something to invoice, not yet invoiced.
+    eligible = [
+        q for q in (Quotation.objects.filter(status__in=FINALIZED_STATUSES)
+                    .select_related("customer").prefetch_related("lines")
+                    .order_by("-created_at"))
+        if q.id not in invoiced_ids and q.invoice_total > 0
+    ]
+    issued = (CommercialDocument.objects
+              .filter(kind=CommercialDocument.Kind.INVOICE)
+              .select_related("quotation", "quotation__customer")
+              .order_by("-created_at")[:50])
+    return render(request, "web/invoices.html", {
+        "eligible": eligible,
+        "issued": issued,
+        "can_create": request.user.has_perm_code("quotes.create"),
+        "nav_section": "invoices",
+    })
+
+
 # ── Commercial (finance only) ─────────────────────────────────────────────────
 
 @login_required

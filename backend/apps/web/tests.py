@@ -2025,3 +2025,20 @@ class AccountLifecycleWebTests(TestCase):
     def test_login_page_has_forgot_link(self):
         r = self.client.get("/login/")
         self.assertContains(r, "/reset/")
+
+
+class InvoicesPageTests(TestCase):
+    def test_invoices_page_renders_with_nav(self):
+        company = make_company()
+        user = user_with(company, ["quotes.create"])
+        self.client.force_login(user)
+        resp = self.client.get("/invoices/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Create a tax invoice")
+        # The new sidebar link points at the invoices page.
+        self.assertContains(resp, 'href="/invoices/"')
+
+    def test_invoices_page_requires_login(self):
+        resp = self.client.get("/invoices/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/login/", resp.url)
