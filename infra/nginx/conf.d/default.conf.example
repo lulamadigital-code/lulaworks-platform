@@ -1,9 +1,11 @@
-# LulaWorks — HTTP server block (works immediately on a fresh droplet).
+# LulaWorks — HTTP-only server block (bootstrap a fresh droplet before TLS).
 #
-# This serves the whole app over HTTP so `docker compose up` is functional
-# before any certificate exists. To go HTTPS: obtain a cert (certbot writes to
-# the acme-challenge path below), then enable infra/nginx/conf.d/ssl.conf.example
-# (rename to ssl.conf) and reload nginx. See docs/DEPLOYMENT.md.
+# TEMPLATE: nginx only loads *.conf, so this .example is NOT active. On a fresh
+# droplet with no certificate yet, copy it to default.conf to serve over HTTP:
+#   cp default.conf.example default.conf
+# Once HTTPS is set up (ssl.conf), DELETE default.conf — it declares a :80
+# default_server and would clash with ssl.conf's own :80 redirect. Both this file
+# and ssl.conf.example already include the /ws/ location for the real-time chat.
 
 server {
     listen       80 default_server;
