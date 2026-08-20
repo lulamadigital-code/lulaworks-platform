@@ -6,6 +6,11 @@
     {% if editing %}
     <p class="sub" style="margin:0 0 2px;"><a href="{% url 'web:quotation_detail' quote.id %}">← {{ quote.number }}</a></p>
     <h1 style="margin:0;">Edit {{ quote.number }}</h1>
+    {% elif invoice_mode %}
+    <p class="sub" style="margin:0 0 2px;"><a href="{% url 'web:invoices' %}">← Invoices</a></p>
+    <h1 style="margin:0;">New invoice</h1>
+    <p class="sub" style="margin:2px 0 0;">Fill it in like a quotation — on save it's
+      raised as a tax invoice you can approve, download and email.</p>
     {% else %}
     <p class="sub" style="margin:0 0 2px;"><a href="{% url 'web:quotations' %}">← Quotations</a></p>
     <h1 style="margin:0;">New quotation</h1>
@@ -15,6 +20,7 @@
 
 <form method="post" enctype="multipart/form-data" id="qform">{% csrf_token %}
   <input type="hidden" name="method" value="blank">
+  {% if invoice_mode %}<input type="hidden" name="as_invoice" value="1">{% endif %}
   <input type="hidden" name="pasted_items" id="pasted_items">
 
   {# ── Parties, job and commercial ──────────────────────────────────────── #}
@@ -101,7 +107,7 @@
   </div>
 
   <div class="createbar">
-    <button class="btn" type="submit">{% if editing %}Save changes{% else %}Create quotation{% endif %}</button>
+    <button class="btn" type="submit" data-busy-text="Creating…">{% if editing %}Save changes{% elif invoice_mode %}Create invoice{% else %}Create quotation{% endif %}</button>
     {% if editing %}<a class="btn ghost" href="{% url 'web:quotation_detail' quote.id %}">Cancel</a>{% endif %}
   </div>
 </form>

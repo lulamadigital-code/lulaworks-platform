@@ -2646,60 +2646,15 @@ def invoices(request):
 
 @login_required
 def invoice_new(request):
-    """Create a tax invoice from scratch — pick or type the customer, add line
-    items, done. No quotation needed: under the hood this raises an approved,
-    invoice-only quotation and its tax invoice, so the result looks and behaves
-    exactly like any other tax invoice (approve → download PDF → email)."""
-    from apps.customers.models import Customer
-    from apps.quotes.services import create_direct_invoice
-
+    """'New invoice' reuses the quotation editor (the same screen and the same
+    'Create tax invoice' action) rather than a separate form — an invoice is the
+    same document. It opens the editor in invoice mode, and on save the quotation
+    is raised as a tax invoice automatically (see quotation_new)."""
+    from django.urls import reverse
     if not _can_invoice(request.user):
         messages.error(request, "You do not have permission to create invoices.")
         return redirect("web:invoices")
-
-    if request.method == "POST":
-        customer = None
-        cid = request.POST.get("customer")
-        if cid:
-            customer = Customer.objects.filter(pk=cid).first()
-        client_name = (request.POST.get("client_name", "").strip()
-                       or (str(customer) if customer else ""))
-        # Parallel line arrays from the dynamic rows.
-        descs = request.POST.getlist("line_description")
-        qtys = request.POST.getlist("line_qty")
-        prices = request.POST.getlist("line_price")
-        lines = []
-        for i, desc in enumerate(descs):
-            desc = (desc or "").strip()
-            if not desc:
-                continue
-            lines.append({"description": desc,
-                          "qty": _to_decimal(qtys[i] if i < len(qtys) else 1, "1"),
-                          "unit_price": _to_decimal(prices[i] if i < len(prices) else 0)})
-        if not client_name:
-            messages.error(request, "Choose a customer or enter a customer name.")
-        elif not lines:
-            messages.error(request, "Add at least one line item.")
-        else:
-            vat_raw = request.POST.get("vat_rate", "").strip()
-            doc = create_direct_invoice(
-                request.user.active_company, request.user,
-                client_name=client_name, customer=customer, lines=lines,
-                vat_rate=_to_decimal(vat_raw) if vat_raw != "" else None,
-                notes=request.POST.get("notes", "").strip())
-            from apps.core.audit import audit
-            audit(request, "invoice.created", entity=doc)
-            messages.success(request, f"Invoice {doc.number} created. Approve it to "
-                             "download the PDF or email it to your customer.")
-            return redirect("web:commercial_document_detail", pk=doc.id)
-
-    company = request.user.active_company
-    return render(request, "web/invoice_new.html", {
-        "customers": Customer.objects.all().order_by("name"),
-        "default_vat": getattr(company, "default_tax_rate", 0) or 15,
-        "today": timezone.localdate().isoformat(),
-        "nav_section": "invoices",
-    })
+    return redirect(f"{reverse('web:quotation_new')}?invoice=1")
 
 
 # ── Commercial (finance only) ─────────────────────────────────────────────────
@@ -3309,6 +3264,27 @@ def quotation_new(request, pk=None):
                 "Profile → Commercial document settings and every quotation will "
                 "carry them automatically.")
 
+        # Invoice mode ('New invoice' → this editor): raise the tax invoice from
+        # the quotation right away, using the SAME create-invoice action the
+        # quotation page offers. Kept out of the sales pipeline (direct invoice).
+        if request.POST.get("as_invoice") == "1":
+            from apps.quotes.models import QuotationStatus
+            from apps.quotes.services import create_invoice_document
+            quote.is_direct_invoice = True
+            quote.status = QuotationStatus.APPROVED
+            quote.save(update_fields=["is_direct_invoice", "status", "updated_at"])
+            try:
+                doc = create_invoice_document(quote, request.user)
+            except QuotationError as exc:
+                messages.error(request, f"{exc} Add the item(s), then use "
+                               "“Create tax invoice”.")
+                return redirect("web:quotation_detail", pk=quote.id)
+            from apps.core.audit import audit
+            audit(request, "invoice.created", entity=doc)
+            messages.success(request, f"Invoice {doc.number} created. Approve it to "
+                             "download the PDF or email it to your customer.")
+            return redirect("web:commercial_document_detail", pk=doc.id)
+
         return redirect("web:quotation_detail", pk=quote.id)
 
     # Contacts depend on the chosen customer, so the page filters them client
@@ -3345,6 +3321,9 @@ def quotation_new(request, pk=None):
         "editing": editing,
         "quote": quote,
         "seed_lines": seed_lines,
+        # 'New invoice' opens this editor in invoice mode: on save it is raised
+        # as a tax invoice, so the labels change and a flag rides on the form.
+        "invoice_mode": bool(request.GET.get("invoice")),
     })
 
 

@@ -2044,36 +2044,20 @@ class InvoicesPageTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertIn("/login/", resp.url)
 
-    def test_create_direct_invoice_without_quotation(self):
-        from apps.core.context import tenant_scope
-        from apps.quotes.models import CommercialDocument
-
-        company = make_company()
-        user = user_with(company, ["quotes.create"])
-        self.client.force_login(user)
-        resp = self.client.post("/invoices/new/", {
-            "client_name": "Walk-in Client", "vat_rate": "15",
-            "line_description": ["Consulting", "Parts"],
-            "line_qty": ["2", "1"], "line_price": ["500", "250"],
-        })
-        self.assertEqual(resp.status_code, 302)                 # → invoice detail
-        with tenant_scope(company.id):
-            doc = CommercialDocument.objects.get(kind="invoice")
-            self.assertTrue(doc.quotation.is_direct_invoice)    # invoice-only quote
-            self.assertEqual(doc.quotation.client_name, "Walk-in Client")
-            self.assertEqual(doc.quotation.lines.count(), 2)
-        self.assertIn(str(doc.id), resp.url)                    # lands on that invoice
-
     def test_direct_invoice_hidden_from_sales_pipeline(self):
         from apps.core.context import tenant_scope
+        from apps.customers.services import create_customer
         from apps.quotes.models import Quotation
 
         company = make_company()
         user = user_with(company, ["quotes.create"])
+        with tenant_scope(company.id):
+            cust = create_customer(company, user, name="Acme")
         self.client.force_login(user)
-        self.client.post("/invoices/new/", {
-            "client_name": "Acme", "vat_rate": "15",
-            "line_description": ["Item"], "line_qty": ["1"], "line_price": ["100"]})
+        self.client.post("/quotations/new/", {
+            "method": "blank", "as_invoice": "1", "customer": str(cust.id),
+            "title": "Job", "vat_mode": "exclusive",
+            "pasted_items": "Item\t1\teach\t100"})
         with tenant_scope(company.id):
             q = Quotation.objects.get(is_direct_invoice=True)
         resp = self.client.get("/quotations/")
@@ -2081,12 +2065,37 @@ class InvoicesPageTests(TestCase):
         self.assertNotContains(resp, 'href="/quotations/%s/"' % q.id)
         self.assertNotIn(q, list(resp.context["quotations"]))
 
-    def test_new_invoice_needs_a_line(self):
+    def test_new_invoice_opens_quotation_editor_in_invoice_mode(self):
         company = make_company()
         user = user_with(company, ["quotes.create"])
         self.client.force_login(user)
-        resp = self.client.post("/invoices/new/", {"client_name": "X"}, follow=True)
-        self.assertContains(resp, "at least one line item")
+        resp = self.client.get("/invoices/new/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/quotations/new/?invoice=1", resp.url)  # reuses the editor
+        page = self.client.get("/quotations/new/?invoice=1")
+        self.assertContains(page, "New invoice")
+        self.assertContains(page, 'name="as_invoice"')
+
+    def test_editor_invoice_mode_raises_tax_invoice(self):
+        from apps.core.context import tenant_scope
+        from apps.customers.services import create_customer
+        from apps.quotes.models import CommercialDocument
+
+        company = make_company()
+        user = user_with(company, ["quotes.create"])
+        with tenant_scope(company.id):
+            cust = create_customer(company, user, name="Acme")
+        self.client.force_login(user)
+        resp = self.client.post("/quotations/new/", {
+            "method": "blank", "as_invoice": "1", "customer": str(cust.id),
+            "title": "Job", "vat_mode": "exclusive",
+            "pasted_items": "Item\t2\teach\t100",
+        })
+        self.assertEqual(resp.status_code, 302)                # → the tax invoice
+        with tenant_scope(company.id):
+            doc = CommercialDocument.objects.get(kind="invoice")
+            self.assertTrue(doc.quotation.is_direct_invoice)
+            self.assertEqual(doc.quotation.lines.count(), 1)
 
     def test_invoice_detail_has_related_document_actions(self):
         from apps.core.context import tenant_scope
