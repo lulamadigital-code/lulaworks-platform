@@ -430,6 +430,8 @@ def template_import_review(request, pk):
     ti = get_object_or_404(TemplateImport.objects.all(), pk=pk)
     return render(request, "web/doctemplates/import_review.html", {
         "ti": ti, "can_manage": _can(request.user),
+        # Template vars can't start with "_", so surface the set flag here.
+        "is_set": bool((ti.features or {}).get("_raw_by_type")),
     })
 
 
