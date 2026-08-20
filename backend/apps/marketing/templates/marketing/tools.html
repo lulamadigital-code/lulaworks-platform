@@ -1,0 +1,24 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap">
+    <span class="eyebrow">Free tools</span>
+    <h1>Free calculators for contractors</h1>
+    <p class="lead" style="max-width:640px;">Quick, genuinely useful tools — no
+      signup required. Work out your job profit, markup, VAT and break-even, then
+      let LulaWorks do it automatically for every job.</p>
+
+    <div class="grid g3" style="margin-top:22px;">
+      {% for t in tools %}
+      <a class="card" href="{% url 'marketing:tool' t.slug %}"
+         style="text-decoration:none;color:inherit;display:block;">
+        <div class="ic">{{ t.icon }}</div>
+        <h3 style="margin:10px 0 6px;">{{ t.title }}</h3>
+        <p style="color:var(--muted);font-size:14px;margin:0 0 10px;">{{ t.summary }}</p>
+        <span style="font-weight:700;color:var(--primary-d);">Open tool →</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

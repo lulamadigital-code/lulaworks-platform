@@ -352,6 +352,49 @@ def learn_path(request, slug):
     return render(request, "marketing/learn_path.html", ctx)
 
 
+# ── Free tools (calculators) — customer acquisition ───────────────────────────
+
+def tools(request):
+    """Index of the free calculators — each a genuinely useful tool that connects
+    to a LulaWorks feature."""
+    from apps.education.tools import TOOLS
+    ctx = _seo("Free tools for contractors — profit, markup, VAT & break-even calculators",
+               "Free calculators for contractors and suppliers: job profit, markup "
+               "vs margin, VAT and break-even. No signup required.")
+    ctx["tools"] = list(TOOLS.values())
+    return render(request, "marketing/tools.html", ctx)
+
+
+def tool(request, slug):
+    """A single calculator: problem → inputs → result → explanation → CTA. GET
+    shows the form; POST computes server-side and shows the result."""
+    from django.http import Http404
+
+    from apps.analytics.services import track
+    from apps.education.tools import TOOLS, compute
+    spec = TOOLS.get(slug)
+    if spec is None:
+        raise Http404("Unknown tool")
+
+    results, values = None, {}
+    if request.method == "POST":
+        values = {f.name: request.POST.get(f.name, "") for f in spec.inputs}
+        results = compute(slug, values)
+        track("tool_completed", request=request, module="education",
+              feature=spec.related_feature, source="tools",
+              metadata={"slug": slug})
+    else:
+        values = {f.name: f.default for f in spec.inputs}
+        track("tool_started", request=request, module="education",
+              feature=spec.related_feature, source="tools", metadata={"slug": slug})
+
+    fields = [{"f": f, "value": values.get(f.name, "")} for f in spec.inputs]
+    ctx = _seo(f"{spec.title} — free tool by LulaWorks", spec.summary)
+    ctx.update({"tool": spec, "results": results, "fields": fields,
+                "other_tools": [t for t in TOOLS.values() if t.slug != slug][:3]})
+    return render(request, "marketing/tool.html", ctx)
+
+
 # ── SEO endpoints ─────────────────────────────────────────────────────────────
 
 def robots_txt(request):

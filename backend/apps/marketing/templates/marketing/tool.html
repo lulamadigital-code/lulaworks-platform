@@ -1,0 +1,89 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap" style="max-width:820px;margin:0 auto;">
+    <p><a href="{% url 'marketing:tools' %}" style="color:var(--muted);">← Free tools</a></p>
+    <span class="eyebrow">Free tool</span>
+    <h1>{{ tool.title }}</h1>
+    <p class="lead">{{ tool.summary }}</p>
+
+    <div class="prose" style="max-width:none;">{{ tool.problem|safe }}</div>
+
+    <div class="two" style="align-items:start;margin-top:18px;">
+      {# ── Inputs ─────────────────────────────────────────────────────────── #}
+      <form method="post" class="card" style="margin:0;">{% csrf_token %}
+        {% for fld in fields %}
+        <div class="field">
+          <label>{{ fld.f.label }}</label>
+          {% if fld.f.kind == 'choice' %}
+          <select name="{{ fld.f.name }}">
+            {% for val, lbl in fld.f.choices %}
+            <option value="{{ val }}" {% if fld.value == val %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+          {% else %}
+          <div style="position:relative;">
+            {% if fld.f.kind == 'money' %}<span style="position:absolute;left:12px;top:12px;color:var(--muted);">R</span>{% endif %}
+            <input type="number" step="any" name="{{ fld.f.name }}"
+                   value="{{ fld.value }}"
+                   style="{% if fld.f.kind == 'money' %}padding-left:26px;{% endif %}">
+            {% if fld.f.kind == 'percent' %}<span style="position:absolute;right:12px;top:12px;color:var(--muted);">%</span>{% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        <button class="btn" type="submit" style="width:100%;margin-top:4px;">Calculate</button>
+      </form>
+
+      {# ── Result ─────────────────────────────────────────────────────────── #}
+      <div class="card" style="margin:0;{% if not results %}background:var(--bg);{% endif %}">
+        {% if results %}
+          <h3 style="margin-top:0;">Result</h3>
+          {% for row in results %}
+            {% if row.error %}
+            <p style="color:#b21f36;font-weight:600;">{{ row.error }}</p>
+            {% else %}
+            <div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);
+                        {% if row.emph %}font-size:18px;{% endif %}">
+              <span style="color:var(--muted);">{{ row.label }}</span>
+              <strong style="{% if row.emph %}color:var(--primary-d);{% endif %}">{{ row.value }}</strong>
+            </div>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <p style="color:var(--muted);margin:0;">Enter your numbers and press
+            <strong>Calculate</strong> to see the result.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ── Teach ────────────────────────────────────────────────────────────── #}
+    <div class="prose" style="max-width:none;margin-top:26px;">
+      <h2>How it works</h2>
+      {{ tool.explainer|safe }}
+    </div>
+
+    {# ── CTA ──────────────────────────────────────────────────────────────── #}
+    <div class="card" style="margin-top:26px;background:linear-gradient(135deg,var(--primary-t),#fff);">
+      <h3 style="margin-top:0;">{{ tool.cta_label }}</h3>
+      <p style="color:var(--muted);margin:6px 0 14px;">Start free — no card required.
+        LulaWorks tracks this for every quote and job automatically.</p>
+      <a class="btn" href="{{ tool.cta_url }}">Start Free with LulaWorks</a>
+    </div>
+
+    {% if other_tools %}
+    <h2 style="margin-top:40px;">More free tools</h2>
+    <div class="grid g3" style="margin-top:16px;">
+      {% for t in other_tools %}
+      <a class="card" href="{% url 'marketing:tool' t.slug %}"
+         style="text-decoration:none;color:inherit;display:block;">
+        <div class="ic">{{ t.icon }}</div>
+        <h3 style="margin:10px 0 6px;">{{ t.title }}</h3>
+        <p style="color:var(--muted);font-size:14px;margin:0;">{{ t.summary }}</p>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -50,3 +50,50 @@ class LearningCentreTests(TestCase):
         self.assertEqual(prompt_for("quotations"), self.r)
         self.assertIsNone(prompt_for("nonexistent"))
         self.assertIsNone(prompt_for(""))
+
+
+class FreeToolsTests(TestCase):
+    def _row(self, results, label):
+        return next(r["value"] for r in results if r.get("label") == label)
+
+    def test_job_profit_compute(self):
+        from apps.education.tools import compute
+        res = compute("job-profit-calculator", {
+            "contract": "10000", "materials": "3000", "labour": "2000",
+            "transport": "500", "subcontractors": "0", "other": "500"})
+        self.assertEqual(self._row(res, "Total cost"), "R6,000.00")
+        self.assertEqual(self._row(res, "Gross profit"), "R4,000.00")
+        self.assertEqual(self._row(res, "Profit margin"), "40.0%")
+
+    def test_markup_vs_margin_are_different(self):
+        from apps.education.tools import compute
+        res = compute("markup-margin-calculator", {"cost": "100", "sell": "130"})
+        self.assertEqual(self._row(res, "Profit"), "R30.00")
+        self.assertEqual(self._row(res, "Markup"), "30.0%")
+        self.assertEqual(self._row(res, "Margin"), "23.1%")   # not 30%!
+
+    def test_vat_inclusive_and_exclusive(self):
+        from apps.education.tools import compute
+        excl = compute("vat-calculator", {"amount": "100", "rate": "15", "mode": "exclusive"})
+        self.assertEqual(self._row(excl, "Total (incl. VAT)"), "R115.00")
+        incl = compute("vat-calculator", {"amount": "115", "rate": "15", "mode": "inclusive"})
+        self.assertEqual(self._row(incl, "Net (excl. VAT)"), "R100.00")
+
+    def test_break_even_guards_bad_price(self):
+        from apps.education.tools import compute
+        ok = compute("break-even-calculator", {"fixed": "1000", "price": "100", "variable": "60"})
+        self.assertEqual(self._row(ok, "Break-even units / jobs"), "25")
+        bad = compute("break-even-calculator", {"fixed": "1000", "price": "50", "variable": "60"})
+        self.assertIn("error", bad[0])
+
+    def test_tools_index_and_tool_pages(self):
+        idx = self.client.get("/tools/")
+        self.assertEqual(idx.status_code, 200)
+        self.assertContains(idx, "Job Profit Calculator")
+        page = self.client.get("/tools/vat-calculator/")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Start Free with LulaWorks")
+        posted = self.client.post("/tools/vat-calculator/",
+                                  {"amount": "100", "rate": "15", "mode": "exclusive"})
+        self.assertContains(posted, "R115.00")
+        self.assertEqual(self.client.get("/tools/does-not-exist/").status_code, 404)
