@@ -2087,3 +2087,23 @@ class InvoicesPageTests(TestCase):
         self.client.force_login(user)
         resp = self.client.post("/invoices/new/", {"client_name": "X"}, follow=True)
         self.assertContains(resp, "at least one line item")
+
+    def test_invoice_detail_has_related_document_actions(self):
+        from apps.core.context import tenant_scope
+        from apps.quotes.services import create_direct_invoice
+
+        company = make_company()
+        user = user_with(company, ["quotes.create", "quotes.approve", "quotes.download"])
+        self.client.force_login(user)
+        with tenant_scope(company.id):
+            doc = create_direct_invoice(
+                company, user, client_name="Acme",
+                lines=[{"description": "Item", "qty": 2, "unit_price": 100}],
+                vat_rate=Decimal("15"))
+        from django.urls import reverse
+        resp = self.client.get(reverse("web:commercial_document_detail", args=[doc.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "View quotation")        # quotation always exists
+        self.assertContains(resp, "Create delivery note")  # not raised yet
+        self.assertContains(resp, "Purchase order")        # PO panel
+        self.assertContains(resp, "Attach a purchase order")  # upload (none yet)

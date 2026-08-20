@@ -35,20 +35,30 @@
   <a class="btn ghost" href="{% url 'web:commercial_document_pdf' doc.id %}">Download PDF</a>
   <a class="btn ghost" href="{% url 'web:commercial_document_excel' doc.id %}">Export Excel</a>
   {% endif %}
+  {% comment %}Related documents for this job — view them if they exist, raise them
+  if they don't. A quotation always backs an invoice, so it's always "view".{% endcomment %}
+  <a class="btn ghost" href="{% url 'web:quotation_detail' quote.id %}">View quotation</a>
+
   {% if is_invoice %}
     {% if existing_delivery %}
-    <a class="btn" href="{% url 'web:commercial_document_detail' existing_delivery.id %}">View delivery note</a>
+    <a class="btn ghost" href="{% url 'web:commercial_document_detail' existing_delivery.id %}">View delivery note</a>
     {% elif can_generate_docs %}
     <form method="post" action="{% url 'web:quotation_create_delivery' quote.id %}">{% csrf_token %}
-      <button class="btn" type="submit">Create delivery note</button></form>
+      <button class="btn" type="submit" data-busy-text="Creating…">Create delivery note</button></form>
     {% endif %}
   {% else %}
     {% if existing_invoice %}
-    <a class="btn" href="{% url 'web:commercial_document_detail' existing_invoice.id %}">View tax invoice</a>
+    <a class="btn ghost" href="{% url 'web:commercial_document_detail' existing_invoice.id %}">View tax invoice</a>
     {% elif can_generate_docs %}
     <form method="post" action="{% url 'web:quotation_create_invoice' quote.id %}">{% csrf_token %}
-      <button class="btn" type="submit">Create tax invoice</button></form>
+      <button class="btn" type="submit" data-busy-text="Creating…">Create tax invoice</button></form>
     {% endif %}
+  {% endif %}
+
+  {% if purchase_orders %}
+  <a class="btn ghost" href="#po">View purchase order</a>
+  {% elif po_active and can_generate_docs %}
+  <a class="btn ghost" href="#po">Upload purchase order</a>
   {% endif %}
 </div>
 
@@ -101,6 +111,43 @@
     {% endfor %}
   </table>
 </div>
+{% endif %}
+
+{# ── Purchase order ───────────────────────────────────────────────────────── #}
+<h2 id="po">Purchase order</h2>
+{% if purchase_orders %}
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>PO number</th><th>Date</th><th class="num">Value</th><th></th></tr>
+    {% for po in purchase_orders %}
+    <tr>
+      <td><strong>{{ po.po_number|default:"—" }}</strong></td>
+      <td class="muted">{{ po.po_date|default:"—" }}</td>
+      <td class="num">{% if po.value %}R{{ po.value|floatformat:2 }}{% else %}—{% endif %}</td>
+      <td style="text-align:right;">{% if po.document %}<a class="btn ghost" href="{{ po.document.url }}">Open</a>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+<p class="muted" style="font-size:12.5px;margin-top:6px;">Manage purchase orders on the
+  <a href="{% url 'web:quotation_detail' quote.id %}#po-upload">quotation</a>.</p>
+{% elif po_active and can_generate_docs %}
+<div class="card">
+  <strong>Attach a purchase order</strong>
+  <p class="muted" style="margin:6px 0 12px;font-size:12.5px;">Attach the customer's PO
+    document — its number, date, value and payment terms are read straight off it, so
+    there is nothing to type.</p>
+  <form method="post" action="{% url 'web:quotation_po' quote.id %}"
+        enctype="multipart/form-data" style="margin:0;">{% csrf_token %}
+    <label class="btn" style="margin:0;cursor:pointer;">Choose PO document
+      <input type="file" name="document" onchange="this.form.submit()"
+             accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.eml,.zip"
+             style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">
+    </label>
+  </form>
+</div>
+{% else %}
+<p class="muted">No purchase order attached.</p>
 {% endif %}
 
 <style>

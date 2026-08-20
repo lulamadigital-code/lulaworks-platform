@@ -3803,6 +3803,9 @@ def commercial_document_detail(request, pk):
             kind="invoice").first(),
         "existing_delivery": doc.quotation.commercial_documents.filter(
             kind="delivery").first(),
+        # Purchase order: uploaded against the parent quotation.
+        "purchase_orders": list(doc.quotation.customer_pos.all()),
+        "po_active": doc.quotation.is_finalized,
         "next_statuses": commercial_document_next_statuses(doc),
         "timeline": timeline,
         # Email: suggested recipient + send history for this document.
