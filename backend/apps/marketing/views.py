@@ -288,6 +288,70 @@ def cookies(request):
     ))
 
 
+# ── Learning Centre (Education & Growth Engine) ───────────────────────────────
+
+def learn(request):
+    """The LulaWorks Academy home — featured content, categories and the guided
+    learning paths. Public and inbound-first."""
+    from apps.education.models import ResourceCategory
+    from apps.education.services import (
+        featured_resources,
+        published_paths,
+        published_resources,
+    )
+    cats = []
+    for cat in ResourceCategory.objects.all():
+        items = list(published_resources().filter(category=cat)[:6])
+        if items:
+            cats.append({"category": cat, "resources": items})
+    ctx = _seo("LulaWorks Academy — Learn to win more work, quote better and get paid",
+               "Free guides, tools and templates that help contractors and "
+               "suppliers win more work, quote professionally, control procurement "
+               "and get paid faster.")
+    ctx.update({
+        "featured": featured_resources(3),
+        "categories": cats,
+        "paths": list(published_paths()),
+        "latest": list(published_resources()[:6]),
+    })
+    return render(request, "marketing/learn.html", ctx)
+
+
+def learn_resource(request, slug):
+    """A single guide / template / calculator, with its content→product CTA."""
+    from django.shortcuts import get_object_or_404
+
+    from apps.analytics.services import track
+    from apps.education.services import published_resources
+    resource = get_object_or_404(published_resources(), slug=slug)
+    track("content_viewed", request=request, module="education",
+          feature=resource.kind, source="learn",
+          metadata={"slug": resource.slug, "category":
+                    resource.category.slug if resource.category_id else ""})
+    related = list(published_resources()
+                   .filter(category=resource.category)
+                   .exclude(pk=resource.pk)[:4]) if resource.category_id else []
+    ctx = _seo(resource.seo_title or f"{resource.title} — LulaWorks Academy",
+               resource.seo_description or resource.summary)
+    ctx.update({"resource": resource, "related": related})
+    return render(request, "marketing/learn_resource.html", ctx)
+
+
+def learn_path(request, slug):
+    """A guided learning path — an ordered set of lessons toward a business goal."""
+    from django.shortcuts import get_object_or_404
+
+    from apps.analytics.services import track
+    from apps.education.services import published_paths
+    path = get_object_or_404(
+        published_paths().prefetch_related("steps", "steps__resource"), slug=slug)
+    track("content_viewed", request=request, module="education", feature="path",
+          source="learn", metadata={"slug": path.slug})
+    ctx = _seo(f"{path.title} — LulaWorks Academy", path.summary)
+    ctx.update({"path": path, "steps": list(path.steps.all())})
+    return render(request, "marketing/learn_path.html", ctx)
+
+
 # ── SEO endpoints ─────────────────────────────────────────────────────────────
 
 def robots_txt(request):

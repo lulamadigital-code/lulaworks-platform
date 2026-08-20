@@ -1,0 +1,57 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap">
+    <span class="eyebrow">LulaWorks Academy</span>
+    <h1>Learn to win more work, quote better and get paid</h1>
+    <p class="lead" style="max-width:640px;">Free guides, tools and templates for
+      contractors and suppliers — how to run a more profitable business, and how
+      LulaWorks helps you do it. No fluff, no hard sell.</p>
+
+    {% if paths %}
+    <h2 style="margin-top:38px;">Guided learning paths</h2>
+    <div class="grid g3" style="margin-top:16px;">
+      {% for p in paths %}
+      <a class="card" href="{% url 'marketing:learn_path' p.slug %}"
+         style="text-decoration:none;color:inherit;display:block;">
+        <div class="ic">{{ p.icon|default:"🎯" }}</div>
+        <h3 style="margin:10px 0 6px;">{{ p.title }}</h3>
+        <p style="color:var(--muted);font-size:14px;margin:0 0 10px;">{{ p.summary }}</p>
+        <span style="font-weight:700;color:var(--primary-d);">Start path →</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if featured %}
+    <h2 style="margin-top:46px;">Featured</h2>
+    <div class="grid g3" style="margin-top:16px;">
+      {% for r in featured %}{% include "marketing/_resource_card.html" %}{% endfor %}
+    </div>
+    {% endif %}
+
+    {% for group in categories %}
+    <h2 style="margin-top:46px;">{{ group.category.icon }} {{ group.category.name }}</h2>
+    {% if group.category.description %}
+    <p style="color:var(--muted);margin:4px 0 0;">{{ group.category.description }}</p>{% endif %}
+    <div class="grid g3" style="margin-top:16px;">
+      {% for r in group.resources %}{% include "marketing/_resource_card.html" %}{% endfor %}
+    </div>
+    {% endfor %}
+
+    {% if latest %}
+    <h2 style="margin-top:46px;">Latest</h2>
+    <div class="grid g3" style="margin-top:16px;">
+      {% for r in latest %}{% include "marketing/_resource_card.html" %}{% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not featured and not categories and not paths and not latest %}
+    <div class="card" style="margin-top:26px;">
+      <p style="color:var(--muted);margin:0;">New guides, tools and templates are on
+        their way — check back soon.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

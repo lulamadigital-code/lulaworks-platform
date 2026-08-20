@@ -1,0 +1,18 @@
+{% if resource %}
+<a class="learn-prompt" href="{% url 'marketing:learn_resource' slug=resource.slug %}" target="_blank" rel="noopener">
+  <span class="learn-ic">🎓</span>
+  <span class="learn-txt"><strong>Learn:</strong> {{ resource.title }}</span>
+  <span class="learn-go">Read →</span>
+</a>
+<style>
+  .learn-prompt{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:11px 14px;
+    border-radius:12px;text-decoration:none;color:var(--ink,#292f4c);
+    background:linear-gradient(135deg,var(--primary-t,#e6f6f9),#fff);
+    border:1px solid var(--line,#e6e9ef);transition:box-shadow .15s ease, transform .15s ease;}
+  .learn-prompt:hover{box-shadow:0 6px 18px rgba(41,47,76,.08);transform:translateY(-1px);}
+  .learn-prompt .learn-ic{font-size:18px;flex:none;}
+  .learn-prompt .learn-txt{font-size:13.5px;line-height:1.35;}
+  .learn-prompt .learn-go{margin-left:auto;font-weight:700;color:var(--primary-d,#0e7c8c);
+    font-size:13px;white-space:nowrap;}
+</style>
+{% endif %}

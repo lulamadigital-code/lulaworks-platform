@@ -1,0 +1,28 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap prose" style="max-width:760px;margin:0 auto;">
+    <p><a href="{% url 'marketing:learn' %}" style="color:var(--muted);">← Academy</a></p>
+    <span class="eyebrow">{{ resource.get_kind_display }}{% if resource.category %} · {{ resource.category.name }}{% endif %}</span>
+    <h1>{{ resource.title }}</h1>
+    {% if resource.summary %}<p class="lead">{{ resource.summary }}</p>{% endif %}
+    {% if resource.featured_image_url %}
+    <img src="{{ resource.featured_image_url }}" alt="" style="width:100%;border-radius:14px;margin:12px 0 22px;">{% endif %}
+
+    <div class="prose-body">{{ resource.body|safe }}</div>
+
+    <div class="card" style="margin-top:32px;background:linear-gradient(135deg,var(--primary-t),#fff);">
+      <h3 style="margin-top:0;">{{ resource.cta_label|default:"Put this into practice with LulaWorks" }}</h3>
+      <p style="color:var(--muted);margin:6px 0 14px;">Start free — no card required.</p>
+      <a class="btn" href="{{ resource.cta_url|default:'/start-free-trial/' }}">Start Free with LulaWorks</a>
+    </div>
+
+    {% if related %}
+    <h2 style="margin-top:44px;">Keep reading</h2>
+    <div class="grid g2" style="margin-top:16px;">
+      {% for r in related %}{% include "marketing/_resource_card.html" %}{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

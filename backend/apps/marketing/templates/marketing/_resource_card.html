@@ -1,0 +1,7 @@
+<a class="card" href="{% url 'marketing:learn_resource' r.slug %}"
+   style="text-decoration:none;color:inherit;display:block;">
+  <span class="eyebrow">{{ r.get_kind_display }}{% if r.read_minutes %} · {{ r.read_minutes }} min{% endif %}</span>
+  <h3 style="margin:8px 0 6px;">{{ r.title }}</h3>
+  <p style="color:var(--muted);font-size:14px;margin:0 0 10px;">{{ r.summary }}</p>
+  <span style="font-weight:700;color:var(--primary-d);">Read →</span>
+</a>
