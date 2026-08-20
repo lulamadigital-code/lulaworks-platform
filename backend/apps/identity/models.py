@@ -116,6 +116,9 @@ class Company(PlatformBaseModel):
     max_users = models.PositiveIntegerField(default=4)
     max_projects = models.PositiveIntegerField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    #: Mark ONE company (the LulaWorks sales team's own tenant) to receive inbound
+    #: Education Engine leads into its CRM pipeline. Off for normal customers.
+    receives_education_leads = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = "companies"

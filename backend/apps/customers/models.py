@@ -407,8 +407,9 @@ class CustomerDocument(TenantBaseModel):
 #: Where a lead came from — the input to any "which channel actually converts?"
 #: question a sales manager will eventually ask.
 LEAD_SOURCES = [
-    "Website", "Referral", "Cold call", "Email", "Trade show", "Tender portal",
-    "Existing customer", "Social media", "Advertising", "Walk-in", "Other",
+    "Website", "LulaWorks Academy", "Referral", "Cold call", "Email",
+    "Trade show", "Tender portal", "Existing customer", "Social media",
+    "Advertising", "Walk-in", "Other",
 ]
 
 

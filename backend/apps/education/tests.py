@@ -171,3 +171,51 @@ class LeadCaptureTests(TestCase):
         lead = EducationLead.objects.get(email="signup@co.za")
         self.assertTrue(lead.has_account)
         self.assertEqual(lead.score, 8)                    # 3 (tool) + 5 (account)
+
+
+class CrmBridgeTests(TestCase):
+    def _sales_company(self):
+        from apps.identity.models import Company
+        c = Company.objects.create(name="LulaWorks Sales")
+        c.receives_education_leads = True
+        c.save()
+        return c
+
+    def test_no_sales_company_is_noop(self):
+        from apps.education.leads import capture_lead
+        # score >= threshold but no company marked → bridge does nothing, no error
+        lead = capture_lead(email="a@a.co", event="account_created")   # +5
+        self.assertIsNotNone(lead)
+
+    def test_hot_lead_syncs_into_crm(self):
+        from apps.core.context import tenant_scope
+        from apps.customers.models import Lead as CrmLead
+        from apps.education.leads import capture_lead
+        company = self._sales_company()
+        capture_lead(email="hot@build.co.za", event="account_created",  # +5 → hot
+                     name="Sipho", company="Build It", industry="Construction")
+        with tenant_scope(company.id):
+            crm = CrmLead.objects.get(email="hot@build.co.za")
+            self.assertEqual(crm.company_name, "Build It")
+            self.assertEqual(crm.contact_name, "Sipho")
+            self.assertEqual(crm.source, "LulaWorks Academy")
+
+    def test_cold_lead_not_synced(self):
+        from apps.core.context import tenant_scope
+        from apps.customers.models import Lead as CrmLead
+        from apps.education.leads import capture_lead
+        company = self._sales_company()
+        capture_lead(email="cold@x.co", event="content_read")           # +1, below 5
+        with tenant_scope(company.id):
+            self.assertFalse(CrmLead.objects.filter(email="cold@x.co").exists())
+
+    def test_sync_is_idempotent(self):
+        from apps.core.context import tenant_scope
+        from apps.customers.models import Lead as CrmLead
+        from apps.education.leads import capture_lead, sync_lead_to_crm
+        from apps.education.models import EducationLead
+        company = self._sales_company()
+        capture_lead(email="dup@x.co", event="account_created")
+        sync_lead_to_crm(EducationLead.objects.get(email="dup@x.co"))   # again
+        with tenant_scope(company.id):
+            self.assertEqual(CrmLead.objects.filter(email="dup@x.co").count(), 1)

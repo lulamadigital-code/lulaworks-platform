@@ -29,6 +29,54 @@ LEAD_SCORES = {
 _PROFILE_FIELDS = ("name", "company", "industry", "company_size", "role",
                    "phone", "challenge")
 
+#: A lead is pushed into the sales CRM once it shows real intent — either it
+#: crosses this engagement score, or it created an account. Below this, it stays
+#: in the Education lead list only (so the CRM pipeline isn't full of one-page
+#: visitors).
+CRM_SYNC_THRESHOLD = 5
+
+
+def crm_company():
+    """The one tenant marked to receive Education leads (the LulaWorks sales
+    team's own company), or None. When None, the CRM bridge is a safe no-op."""
+    from apps.identity.models import Company
+    return Company.objects.filter(
+        receives_education_leads=True, is_active=True).first()
+
+
+def sync_lead_to_crm(ed_lead):
+    """Mirror a hot Education lead into the sales company's CRM pipeline as a
+    Lead (source 'LulaWorks Academy'), matched by email so it never duplicates.
+    Fully fail-safe: any problem (no sales company, scoping, etc.) is swallowed."""
+    try:
+        company = crm_company()
+        if company is None:
+            return None
+        from apps.core.context import tenant_scope
+        from apps.customers.models import Lead as CrmLead
+        from apps.customers.services import create_lead
+        note = f"From LulaWorks Academy · engagement score {ed_lead.score}."
+        if ed_lead.first_source:
+            note += f" First touch: {ed_lead.first_source}."
+        if ed_lead.challenge:
+            note += f" Challenge: {ed_lead.challenge}"
+        with tenant_scope(company.id):
+            existing = (CrmLead.objects.filter(email__iexact=ed_lead.email).first()
+                        if ed_lead.email else None)
+            if existing:
+                if not existing.notes:          # don't clobber a rep's working notes
+                    existing.notes = note
+                    existing.save(update_fields=["notes", "updated_at"])
+                return existing
+            return create_lead(
+                company, None,
+                company_name=(ed_lead.company or ed_lead.name or ed_lead.email),
+                contact_name=ed_lead.name, email=ed_lead.email,
+                telephone=ed_lead.phone, industry=ed_lead.industry,
+                source="LulaWorks Academy", notes=note)
+    except Exception:                           # noqa: BLE001 - bridge is best-effort
+        return None
+
 
 def capture_lead(*, email, event="opt_in", request=None, detail="", **profile):
     """Create or update a lead by email, record a scored event, and return the
@@ -64,6 +112,10 @@ def capture_lead(*, email, event="opt_in", request=None, detail="", **profile):
                   metadata={"detail": detail, "score": lead.score})
         except Exception:               # noqa: BLE001 - analytics is best-effort
             pass
+
+        # Hand hot leads to the sales CRM (idempotent; no-op if unconfigured).
+        if lead.score >= CRM_SYNC_THRESHOLD or event == "account_created":
+            sync_lead_to_crm(lead)
         return lead
     except Exception:                   # noqa: BLE001 - capture must never 500 a page
         return None
