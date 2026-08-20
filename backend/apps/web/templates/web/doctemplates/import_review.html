@@ -101,8 +101,9 @@
     <button class="btn primary" type="submit">Save &amp; set as default →</button>
   </form>
   <p class="muted" style="font-size:12px;margin:8px 0 0;">
-    {% if is_set %}Saves a <strong>matching set</strong> — quotation, tax
-    invoice and delivery note in this style — and makes each the default for its type.
+    {% if is_set %}Saves this {{ ti.get_doc_type_display|lower }} and makes it your default.
+    The <strong>matching set</strong> — the other two document types in this same style —
+    is then built in the background and set as their defaults, so this review stays fast.
     {% else %}Saves this template and makes it the default for {{ ti.get_doc_type_display|lower }}s.{% endif %}
   </p>
   {% if ti.ai_used %}

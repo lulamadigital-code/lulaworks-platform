@@ -521,6 +521,71 @@ def vision_generate_all(company, user, image_bytes: bytes, primary_doc_type: str
     return by_type, css_by_type, True, credits
 
 
+def _sibling_prompt(primary_type: str, needed: list, primary_html: str) -> str:
+    want = ", ".join(f'"{t}_html"' for t in needed)
+    return (
+        f"Below is an approved HTML template for a {primary_type} (using "
+        "{{placeholders}}). Produce the matching versions for the other document "
+        "types so the company has a consistent SET. Keep the SAME visual style, CSS "
+        "class names and structure — change ONLY what each type requires:\n"
+        "- quotation & tax invoice: keep the price columns {{item.unit_price}} "
+        "{{item.amount}} and the totals block; sign-off reads 'Quotation compiled by' "
+        "or 'Invoice compiled by'.\n"
+        "- delivery note: REMOVE every price — the item row becomes {{item.no}} "
+        "{{item.description}} {{item.ordered}} {{item.delivered}} {{item.outstanding}} "
+        "{{item.unit}}; REMOVE the totals block and banking; change the sign-off to a "
+        "'Received in good order by' acknowledgement.\n"
+        "{{document.title}} already gives the correct heading. Same placeholder and "
+        "layout rules (no script/img/link, normal flow, single page).\n\n"
+        f"Return ONLY JSON mapping each needed type to its html body: {{{want}}}.\n\n"
+        f"INPUT TEMPLATE ({primary_type}):\n{primary_html}"
+    )
+
+
+def create_siblings_from_template(template, user):
+    """After the company APPROVES an imported template for one document type, create
+    the matching templates for the OTHER two types by adapting the approved HTML —
+    same CSS/style — and set each as its type's default. Returns how many were made.
+    Runs in the background (see tasks.generate_import_siblings_task)."""
+    import re
+
+    from .document_templates import create_html_template, set_default_template
+    from .models import DocumentTemplate, TemplateOrigin
+
+    ver = template.current_version
+    if not (ver and ver.html):
+        return 0
+    primary_type = template.doc_type
+    needed = [t for t in ("quotation", "invoice", "delivery")
+              if t != primary_type
+              and not DocumentTemplate.objects.filter(
+                  company=template.company, doc_type=t, is_default=True,
+                  origin=TemplateOrigin.IMPORTED, archived_at__isnull=True).exists()]
+    if not needed:
+        return 0
+    resp, _ = _run_ai(template.company, user,
+                      _sibling_prompt(primary_type, needed, ver.html),
+                      "template_html_siblings", max_tokens=9000)
+    data = _parse_design(resp.text) if resp else None
+    if not data:
+        return 0
+    base = re.sub(r"\s·\s(Quotation|Tax Invoice|Delivery Note)$", "",
+                  template.name).strip() or template.name
+    made = 0
+    for t in needed:
+        h = _usable_html(data.get(f"{t}_html") or data.get(t))
+        if not h:
+            continue
+        tpl = create_html_template(
+            template.company, user, doc_type=t,
+            name=f"{base} · {_TYPE_LABELS[t]}"[:80], design={}, html=h,
+            css=ver.css or "", description="Matching set from an imported document",
+            origin=TemplateOrigin.IMPORTED)
+        set_default_template(tpl)
+        made += 1
+    return made
+
+
 # ── Orchestration: analyse an upload, then save the approved design ─────────────
 
 def _local_path(template_import) -> str:
@@ -549,11 +614,15 @@ def run_import(template_import, user):
         design, warnings, features = analyse_document(path, ti.doc_type)
         image = _page_image_bytes(path, ti.original_name)
         if image is not None:
-            # First choice: FAITHFULLY recreate the page as a MATCHING SET —
-            # quotation, invoice, delivery note — generated in parallel for speed.
-            by_type, css_by_type, ai_used, credits = vision_generate_all(
-                ti.company, user, image, ti.doc_type)
-            if not by_type:
+            # Recreate ONLY the uploaded document type now (one AI call → fast
+            # review). The matching quotation/invoice/delivery note are created
+            # afterwards, once the user approves this one (see save_as_template).
+            _, html, css, credits = _gen_one_type(ti.company, user, image, ti.doc_type)
+            ai_used = bool(html)
+            if html:
+                by_type = {ti.doc_type: html}
+                css_by_type = {ti.doc_type: css}
+            else:
                 # Recreation unavailable → match the closest structured design.
                 design, ai_used, credits = vision_enrich(
                     ti.company, user, image, design, ti.doc_type)

@@ -380,6 +380,17 @@ def _enqueue_import(ti, user):
         run_import(ti, user)
 
 
+def _enqueue_import_siblings(template, user):
+    """Build the matching templates for the other two document types OFF the request
+    path, from the just-approved one. Falls back to inline if the broker is down."""
+    from apps.quotes.tasks import generate_import_siblings_task
+    from apps.quotes.template_import import create_siblings_from_template
+    try:
+        generate_import_siblings_task.delay(str(template.id), str(user.id) if user else None)
+    except Exception:                # noqa: BLE001 - broker down → do it inline
+        create_siblings_from_template(template, user)
+
+
 @login_required
 def template_import_start(request):
     """Method 3 — upload an existing document; LulaAI reconstructs its structure."""
@@ -459,9 +470,16 @@ def template_import_save(request, pk):
     # structured reconstruction can be fine-tuned there.
     by = (ti.features or {}).get("_raw_by_type") or {}
     if by:
-        messages.success(request, f"Saved a matching set — quotation, tax invoice and "
-                         f"delivery note ({len(by)} templates) in your document's style — "
-                         "and set them as your defaults.")
+        # The uploaded document type is recreated and saved now; the OTHER two are
+        # built in the background from this approved one (same style) and set as
+        # defaults when ready — so the review stays fast.
+        _enqueue_import_siblings(tpl, request.user)
+        others = [DocumentType(t).label for t in ("quotation", "invoice", "delivery")
+                  if t != ti.doc_type]
+        messages.success(
+            request, f"Saved your {ti.get_doc_type_display().lower()} and set it as "
+            f"default. Building the matching {others[0].lower()} and {others[1].lower()} "
+            "in the background — they'll appear as defaults shortly.")
         return redirect("web:doc_templates")
     messages.success(request, "Saved as a company template and set as default — "
                      "fine-tune it in the builder.")

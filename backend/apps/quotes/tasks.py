@@ -22,3 +22,22 @@ def run_import_task(ti_id, user_id):
     user = User.objects.filter(id=user_id).first()
     with tenant_scope(ti.company_id):
         run_import(ti, user)
+
+
+@shared_task(ignore_result=True)
+def generate_import_siblings_task(template_id, user_id):
+    """After an imported template is approved, create the matching templates for the
+    other two document types (adapting the approved HTML) — off the request path."""
+    from apps.core.context import tenant_scope
+    from apps.identity.models import User
+
+    from .models import DocumentTemplate
+    from .template_import import create_siblings_from_template
+
+    tpl = (DocumentTemplate.all_objects.select_related("company", "current_version")
+           .filter(id=template_id).first())
+    if tpl is None:
+        return
+    user = User.objects.filter(id=user_id).first()
+    with tenant_scope(tpl.company_id):
+        create_siblings_from_template(tpl, user)
