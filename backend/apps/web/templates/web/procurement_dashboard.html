@@ -1,40 +1,80 @@
 {% extends "web/base.html" %}
 {% block title %}Procurement{% endblock %}
 {% block content %}
-<h1>Procurement</h1>
-<p class="sub">Two sides of buying — <strong>who you sell to</strong> and <strong>who you buy from</strong>. Pick a side.</p>
 
-<div class="two-col" style="margin-bottom:20px;">
-  <a class="card" href="{% url 'web:procurement_clients' %}"
-     style="display:block;border-left:3px solid var(--primary);text-decoration:none;color:inherit;">
-    <strong style="font-size:16px;">🏢 Our clients →</strong>
-    <p class="muted" style="margin:6px 0 0;font-size:12.5px;">The companies you do work for —
-      the shared customer master. Open one for their record and job/procurement history.</p>
+<div class="pagehead">
+  <div>
+    <h1 style="margin:0;">Procurement</h1>
+    <p class="sub" style="margin:2px 0 0;">Two sides of buying —
+      <strong>who you sell to</strong> and <strong>who you buy from</strong>. Pick a side.</p>
+  </div>
+  <a class="btn primary" href="{% url 'web:request_new' %}">+ New request</a>
+</div>
+
+{# ── The two sides — pick one ──────────────────────────────────────────────── #}
+<div class="proc-hero">
+  <a class="proc-pick proc-clients" href="{% url 'web:procurement_clients' %}">
+    <div class="proc-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" width="26" height="26">
+        <path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/>
+        <path d="M15 21V11h4a2 2 0 0 1 2 2v8"/><path d="M9 7h2M9 11h2M9 15h2"/>
+      </svg>
+    </div>
+    <div>
+      <h3>Our clients</h3>
+      <p>The companies you do work for — the shared customer master. Open one for
+        their record and job &amp; procurement history.</p>
+    </div>
+    <div class="proc-foot">
+      <span class="proc-stat">{{ clients }} <small>client{{ clients|pluralize }}</small></span>
+      <span class="proc-go">→</span>
+    </div>
   </a>
-  <a class="card" href="{% url 'web:suppliers' %}"
-     style="display:block;border-left:3px solid var(--green,#0a8f57);text-decoration:none;color:inherit;">
-    <strong style="font-size:16px;">🚚 Suppliers →</strong>
-    <p class="muted" style="margin:6px 0 0;font-size:12.5px;">The companies you buy from —
-      prices, performance, purchase orders and RFQs.</p>
+
+  <a class="proc-pick proc-suppliers" href="{% url 'web:suppliers' %}">
+    <div class="proc-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" width="26" height="26">
+        <path d="M1 3h14v11H1z"/><path d="M15 8h4l3 3v3h-7z"/>
+        <circle cx="5.5" cy="18" r="1.8"/><circle cx="18.5" cy="18" r="1.8"/>
+      </svg>
+    </div>
+    <div>
+      <h3>Suppliers</h3>
+      <p>The companies you buy from — prices, performance, purchase orders and RFQs.</p>
+    </div>
+    <div class="proc-foot">
+      <span class="proc-stat">{{ active_suppliers }} <small>supplier{{ active_suppliers|pluralize }}</small></span>
+      <span class="proc-go">→</span>
+    </div>
   </a>
 </div>
 
-{# Procurement-wide activity only. Supplier-specific numbers live on Suppliers. #}
+{# ── Procurement-wide activity ─────────────────────────────────────────────── #}
 <div class="grid">
-  <div class="tile"><div class="n">{{ todays_purchases }}</div><div class="l">Purchases today</div></div>
-  <div class="tile"><div class="n">R{{ month_spend }}</div><div class="l">Spend this month</div></div>
-  <div class="tile" style="{% if awaiting_approval %}border-color:var(--warn);{% endif %}">
-    <div class="n" style="{% if awaiting_approval %}color:var(--warn);{% endif %}">{{ awaiting_approval }}</div>
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">🛒</div>
+    <div class="n">{{ todays_purchases }}</div><div class="l">Purchases today</div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">R</div>
+    <div class="n">R{{ month_spend }}</div><div class="l">Spend this month</div></div>
+  <div class="tile">
+    <div class="ic" style="background:var(--orange-t);color:#b9711a;">⏳</div>
+    <div class="n" style="{% if awaiting_approval %}color:var(--orange,#b9711a);{% endif %}">{{ awaiting_approval }}</div>
     <div class="l"><a href="{% url 'web:requests' %}?status=submitted">Awaiting approval</a></div></div>
-  <div class="tile"><div class="n">{{ open_requests }}</div><div class="l">Open requests</div></div>
+  <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">▤</div>
+    <div class="n">{{ open_requests }}</div><div class="l">Open requests</div></div>
 </div>
 
-<h2>Recent purchase requests</h2>
+{# ── Recent purchase requests ──────────────────────────────────────────────── #}
+<div class="pagehead" style="margin:22px 0 10px;">
+  <h2 style="margin:0;">Recent purchase requests</h2>
+  <a class="btn ghost" href="{% url 'web:requests' %}">All requests</a>
+</div>
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
     {% for r in recent_requests %}
     <tr>
-      <td><a href="{% url 'web:request_detail' r.id %}">{{ r.number }}</a>
+      <td><a href="{% url 'web:request_detail' r.id %}"><strong>{{ r.number }}</strong></a>
         <br><span class="muted" style="font-size:12px;">{{ r.title }}</span></td>
       <td class="right">
         {% if r.status == 'submitted' %}<span class="chip warn">Awaiting</span>
@@ -42,8 +82,34 @@
         {% elif r.status == 'fulfilled' %}<span class="chip ok">Fulfilled</span>
         {% else %}<span class="chip">{{ r.get_status_display }}</span>{% endif %}</td>
     </tr>
-    {% empty %}<tr><td class="muted" style="padding:16px;">No requests yet. <a href="{% url 'web:request_new' %}">Raise one →</a></td></tr>
+    {% empty %}
+    <tr><td class="muted" style="padding:18px;">No requests yet.
+      <a href="{% url 'web:request_new' %}">Raise one →</a></td></tr>
     {% endfor %}
   </table>
 </div>
+
+<style>
+  .proc-hero{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0 24px;}
+  @media(max-width:760px){.proc-hero{grid-template-columns:1fr;}}
+  .proc-pick{position:relative;display:flex;flex-direction:column;gap:14px;padding:22px 24px;
+    border-radius:18px;text-decoration:none;color:#fff;overflow:hidden;isolation:isolate;min-height:150px;
+    box-shadow:0 10px 30px rgba(41,47,76,.12);
+    transition:transform .18s ease, box-shadow .18s ease;}
+  .proc-pick:hover{transform:translateY(-4px);box-shadow:0 18px 46px rgba(41,47,76,.22);}
+  .proc-pick::after{content:"";position:absolute;inset:0;z-index:-1;
+    background:radial-gradient(240px 180px at 88% 12%,rgba(255,255,255,.22),transparent 60%);}
+  .proc-clients{background:linear-gradient(135deg,#0e7c8c 0%,#17a2b8 100%);}
+  .proc-suppliers{background:linear-gradient(135deg,#0a8f57 0%,#12b46c 100%);}
+  .proc-badge{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;
+    background:rgba(255,255,255,.18);color:#fff;}
+  .proc-pick h3{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em;}
+  .proc-pick p{margin:5px 0 0;font-size:13px;line-height:1.5;color:rgba(255,255,255,.9);max-width:44ch;}
+  .proc-foot{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:6px;}
+  .proc-stat{display:inline-flex;align-items:baseline;gap:6px;background:rgba(255,255,255,.18);
+    padding:6px 13px;border-radius:999px;font-weight:800;font-size:15px;}
+  .proc-stat small{font-weight:600;opacity:.9;font-size:11.5px;}
+  .proc-go{font-size:22px;font-weight:700;transition:transform .18s ease;}
+  .proc-pick:hover .proc-go{transform:translateX(5px);}
+</style>
 {% endblock %}

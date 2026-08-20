@@ -2544,9 +2544,11 @@ def request_settings(request):
 def procurement_dashboard(request):
     """The Procurement home page — suppliers, purchases, requests and spend at a
     glance, with the section's sub-navigation."""
+    from apps.customers.models import Customer
     from apps.procurement.services import procurement_dashboard_metrics
-    return render(request, "web/procurement_dashboard.html",
-                  procurement_dashboard_metrics(request.user.active_company))
+    ctx = procurement_dashboard_metrics(request.user.active_company)
+    ctx["clients"] = Customer.objects.count()
+    return render(request, "web/procurement_dashboard.html", ctx)
 
 
 @login_required
