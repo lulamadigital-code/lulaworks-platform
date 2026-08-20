@@ -438,6 +438,68 @@
     });
   })();
   </script>
+  <style>
+  /* Busy state for any button while its action is in flight. */
+  .is-busy{position:relative;pointer-events:none;opacity:.9;cursor:progress;}
+  .btn-spin{display:inline-block;width:.82em;height:.82em;margin-right:.45em;
+    vertical-align:-.08em;border:2px solid currentColor;border-right-color:transparent;
+    border-radius:50%;animation:btnspin .6s linear infinite;}
+  @keyframes btnspin{to{transform:rotate(360deg)}}
+  </style>
+  <script>
+  // Give every button that kicks off an action an immediate busy state — a
+  // spinner + label — so the user sees the click registered and can't fire it
+  // twice on slow saves/sends. Exposed as window.lwBusy so JS-driven buttons
+  // (e.g. the AJAX chat send) can share the exact same treatment.
+  (function () {
+    function label(btn, fallback) {
+      var t = (btn.getAttribute("data-busy-text") ||
+               (/\bsend\b/i.test(btn.textContent) ? "Sending…" : fallback || "Working…"));
+      return t;
+    }
+    // Put a button into (or out of) the busy state; returns a restore function.
+    window.lwBusy = function (btn, text) {
+      if (!btn || btn.classList.contains("is-busy")) return function () {};
+      var isInput = btn.tagName === "INPUT";
+      var prev = isInput ? btn.value : btn.innerHTML;
+      var lbl = text || label(btn);
+      btn.style.minWidth = btn.offsetWidth + "px";   // freeze width, no layout jump
+      btn.classList.add("is-busy");
+      btn.setAttribute("aria-busy", "true");
+      if (isInput) { btn.value = lbl; }
+      else { btn.innerHTML = '<span class="btn-spin"></span>' + lbl; }
+      return function restore() {
+        btn.classList.remove("is-busy");
+        btn.removeAttribute("aria-busy");
+        btn.disabled = false;
+        btn.style.minWidth = "";
+        if (isInput) { btn.value = prev; } else { btn.innerHTML = prev; }
+      };
+    };
+
+    // Real form navigations: show busy on the submitting button. Skip when a JS
+    // handler already took over (defaultPrevented — e.g. AJAX) or opted out.
+    document.addEventListener("submit", function (ev) {
+      if (ev.defaultPrevented) return;
+      var form = ev.target;
+      if (!form || form.hasAttribute("data-no-busy")) return;
+      var btn = ev.submitter ||
+        form.querySelector('button[type="submit"], button:not([type]), input[type="submit"]');
+      if (!btn || btn.hasAttribute("data-no-busy") || btn.classList.contains("is-busy")) return;
+      window.lwBusy(btn);
+      // Defer disabling so the button's name/value still posts, then block re-submits.
+      setTimeout(function () { btn.disabled = true; }, 0);
+    });
+
+    // Coming back via the browser's back/forward cache: clear any stuck busy state.
+    window.addEventListener("pageshow", function (e) {
+      if (!e.persisted) return;
+      document.querySelectorAll(".is-busy").forEach(function (b) {
+        b.classList.remove("is-busy"); b.removeAttribute("aria-busy"); b.disabled = false;
+      });
+    });
+  })();
+  </script>
   <script>
   // Lightweight, privacy-conscious analytics beacon. Sends a page_view on load
   // and captures clicks on elements marked data-analytics="event_name". Fully

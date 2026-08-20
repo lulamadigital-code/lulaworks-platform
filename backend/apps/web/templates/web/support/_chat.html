@@ -99,6 +99,8 @@ within a few seconds. Context: poll_url, send_url, is_support.
   }
   function send() {
     var body = (ta.value || '').trim(); if (!body) return;
+    if (btn.classList.contains('is-busy')) return;      // already sending
+    var restore = (window.lwBusy ? window.lwBusy(btn, 'Sending…') : function () {});
     btn.disabled = true;
     var fd = new FormData();
     fd.append('body', body); fd.append('csrfmiddlewaretoken', csrf);
@@ -106,11 +108,11 @@ within a few seconds. Context: poll_url, send_url, is_support.
     fetch(sendUrl, { method: 'POST', body: fd, headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'fetch' } })
       .then(function (r) { return r.json(); })
       .then(function (d) {
-        btn.disabled = false;
+        restore();
         if (d.error) { alert(d.error); return; }
         if (d.message) { render([d.message]); ta.value = ''; if (internalCb) internalCb.checked = false; feed.scrollTop = feed.scrollHeight; }
       })
-      .catch(function () { btn.disabled = false; });
+      .catch(function () { restore(); });
   }
   btn.addEventListener('click', send);
   ta.addEventListener('keydown', function (e) {
