@@ -2620,14 +2620,31 @@ def invoices(request):
     invoice. Secondary: raise a tax invoice from an existing approved quotation."""
     from apps.quotes.models import FINALIZED_STATUSES, CommercialDocument
 
-    invoices_qs = (CommercialDocument.objects
-                   .filter(kind=CommercialDocument.Kind.INVOICE)
-                   .select_related("quotation", "quotation__customer")
-                   .order_by("-created_at")[:100])
-    invoiced_ids = set(
+    all_invoices = list(
         CommercialDocument.objects
         .filter(kind=CommercialDocument.Kind.INVOICE)
-        .values_list("quotation_id", flat=True))
+        .select_related("quotation", "quotation__customer")
+        .prefetch_related("quotation__lines")
+        .order_by("-created_at"))
+
+    # Report tiles — the same shape the quotations page uses.
+    today = timezone.localdate()
+    total_value = sum((d.quotation.invoice_total for d in all_invoices), Decimal("0"))
+    approved = [d for d in all_invoices if d.is_finalized]
+    draft = [d for d in all_invoices if not d.is_finalized]
+    this_month = [d for d in all_invoices
+                  if d.created_at.year == today.year and d.created_at.month == today.month]
+    report = {
+        "count": len(all_invoices),
+        "approved": len(approved),
+        "draft": len(draft),
+        "total_value": total_value,
+        "approved_value": sum((d.quotation.invoice_total for d in approved), Decimal("0")),
+        "month_value": sum((d.quotation.invoice_total for d in this_month), Decimal("0")),
+        "month_count": len(this_month),
+    }
+
+    invoiced_ids = {d.quotation_id for d in all_invoices}
     # Existing (non-direct) quotations that are approved and not yet invoiced.
     eligible = [
         q for q in (Quotation.objects.filter(status__in=FINALIZED_STATUSES,
@@ -2637,9 +2654,11 @@ def invoices(request):
         if q.id not in invoiced_ids and q.invoice_total > 0
     ]
     return render(request, "web/invoices.html", {
-        "invoices": invoices_qs,
+        "invoices": all_invoices[:100],
+        "report": report,
         "eligible": eligible,
         "can_create": _can_invoice(request.user),
+        "can_view_money": _can_view_money(request.user),
         "nav_section": "invoices",
     })
 

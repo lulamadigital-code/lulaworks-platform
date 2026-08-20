@@ -11,6 +11,30 @@
   {% if can_create %}<a class="btn primary" href="{% url 'web:invoice_new' %}">+ New invoice</a>{% endif %}
 </div>
 
+<div class="grid">
+  <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▤</div>
+    <div class="n">{{ report.count }}</div><div class="l">Invoices</div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div>
+    <div class="n">{{ report.approved }}</div><div class="l">Approved</div></div>
+  <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">✎</div>
+    <div class="n">{{ report.draft }}</div><div class="l">Draft</div></div>
+  <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">↑</div>
+    <div class="n">{{ report.month_count }}</div><div class="l">This month</div></div>
+</div>
+
+{% if can_view_money %}
+<div class="two-col">
+  <div><div class="card"><strong>Total invoiced</strong>
+    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ report.total_value|floatformat:2 }}</p>
+    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">Across {{ report.count }} invoice(s) · R{{ report.approved_value|floatformat:2 }} approved</p>
+  </div></div>
+  <div><div class="card"><strong>This month</strong>
+    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ report.month_value|floatformat:2 }}</p>
+    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{{ report.month_count }} invoice(s) raised this month</p>
+  </div></div>
+</div>
+{% endif %}
+
 <div class="card">
   <h3 style="margin:0 0 12px;">Your invoices</h3>
   {% if invoices %}
