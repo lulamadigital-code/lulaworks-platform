@@ -246,6 +246,10 @@ class Quotation(TenantBaseModel):
     exclusions = models.TextField(blank=True)
     assumptions = models.TextField(blank=True)
     notes = models.TextField(blank=True)
+    #: A "direct invoice": created straight from the Invoices screen (no sales
+    #: cycle) purely to raise a tax invoice. It carries the same document engine
+    #: as any quotation, but is kept out of the sales pipeline/quotation list.
+    is_direct_invoice = models.BooleanField(default=False)
 
     #: Per-document override of the company's default look. Null → use the
     #: company default template for quotations, then the plain layout.

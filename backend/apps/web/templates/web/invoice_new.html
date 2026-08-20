@@ -26,12 +26,10 @@
 
   <div class="card">
     <h3 style="margin-top:0;">Details</h3>
-    <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div><label>Invoice date</label><input type="date" name="issue_date" value="{{ today }}"></div>
-      <div><label>Due date</label><input type="date" name="due_date"></div>
-    </div>
-    <label style="margin-top:10px;">Tax rate (%)</label>
+    <label>Tax rate (%)</label>
     <input type="number" name="vat_rate" id="vatRate" step="0.01" min="0" value="{{ default_vat }}" style="max-width:140px;">
+    <p class="muted" style="font-size:12px;margin:8px 0 0;">Prices are entered
+      excluding tax; the tax is added on the invoice. The invoice date is today.</p>
   </div>
 </div>
 

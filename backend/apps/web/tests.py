@@ -2044,31 +2044,46 @@ class InvoicesPageTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertIn("/login/", resp.url)
 
-    def test_create_standalone_invoice_without_quotation(self):
+    def test_create_direct_invoice_without_quotation(self):
         from apps.core.context import tenant_scope
-        from apps.finance.models import Invoice
+        from apps.quotes.models import CommercialDocument
 
         company = make_company()
-        user = user_with(company, ["finance.manage"])
+        user = user_with(company, ["quotes.create"])
         self.client.force_login(user)
         resp = self.client.post("/invoices/new/", {
-            "client_name": "Walk-in Client",
-            "issue_date": "2026-08-20", "vat_rate": "15",
+            "client_name": "Walk-in Client", "vat_rate": "15",
             "line_description": ["Consulting", "Parts"],
             "line_qty": ["2", "1"], "line_price": ["500", "250"],
         })
-        self.assertEqual(resp.status_code, 302)                 # → detail
+        self.assertEqual(resp.status_code, 302)                 # → invoice detail
         with tenant_scope(company.id):
-            inv = Invoice.objects.get()
-            self.assertIsNone(inv.project_id)                   # truly standalone
-            self.assertEqual(inv.client_name, "Walk-in Client")
-            self.assertEqual(inv.lines.count(), 2)
-            self.assertEqual(inv.subtotal, Decimal("1250.00"))  # 2*500 + 1*250
-        self.assertIn(str(inv.id), resp.url)
+            doc = CommercialDocument.objects.get(kind="invoice")
+            self.assertTrue(doc.quotation.is_direct_invoice)    # invoice-only quote
+            self.assertEqual(doc.quotation.client_name, "Walk-in Client")
+            self.assertEqual(doc.quotation.lines.count(), 2)
+        self.assertIn(str(doc.id), resp.url)                    # lands on that invoice
+
+    def test_direct_invoice_hidden_from_sales_pipeline(self):
+        from apps.core.context import tenant_scope
+        from apps.quotes.models import Quotation
+
+        company = make_company()
+        user = user_with(company, ["quotes.create"])
+        self.client.force_login(user)
+        self.client.post("/invoices/new/", {
+            "client_name": "Acme", "vat_rate": "15",
+            "line_description": ["Item"], "line_qty": ["1"], "line_price": ["100"]})
+        with tenant_scope(company.id):
+            q = Quotation.objects.get(is_direct_invoice=True)
+        resp = self.client.get("/quotations/")
+        # Absent from the pipeline list itself (its detail-row link isn't rendered).
+        self.assertNotContains(resp, 'href="/quotations/%s/"' % q.id)
+        self.assertNotIn(q, list(resp.context["quotations"]))
 
     def test_new_invoice_needs_a_line(self):
         company = make_company()
-        user = user_with(company, ["finance.manage"])
+        user = user_with(company, ["quotes.create"])
         self.client.force_login(user)
         resp = self.client.post("/invoices/new/", {"client_name": "X"}, follow=True)
         self.assertContains(resp, "at least one line item")

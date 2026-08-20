@@ -1611,7 +1611,7 @@ def quotations_list(request):
     # select_related the FKs the table renders per row (customer, quotation type,
     # preparer); prefetch the lines the total/margin roll up from — so a page of
     # rows is a couple of queries, not one per quotation.
-    quotes = (Quotation.objects.all()
+    quotes = (Quotation.objects.filter(is_direct_invoice=False)
               .select_related("customer", "quotation_type", "prepared_by")
               .prefetch_related("lines", "customer_pos"))
     status = request.GET.get("status")
@@ -2615,21 +2615,23 @@ def _can_invoice(user):
 
 @login_required
 def invoices(request):
-    """Invoice hub. Primary path: start a NEW invoice from scratch — no project,
-    no quotation (a plain customer invoice). Secondary: raise a tax invoice from
-    an approved quotation, which inherits the quotation's number."""
+    """Invoice hub. Primary path: start a NEW invoice from scratch (no quotation)
+    — it renders through the company's invoice template exactly like any tax
+    invoice. Secondary: raise a tax invoice from an existing approved quotation."""
     from apps.quotes.models import FINALIZED_STATUSES, CommercialDocument
 
-    invoices_qs = (Invoice.objects.all()
-                   .select_related("customer", "project")
-                   .prefetch_related("lines", "payments")
+    invoices_qs = (CommercialDocument.objects
+                   .filter(kind=CommercialDocument.Kind.INVOICE)
+                   .select_related("quotation", "quotation__customer")
                    .order_by("-created_at")[:100])
     invoiced_ids = set(
         CommercialDocument.objects
         .filter(kind=CommercialDocument.Kind.INVOICE)
         .values_list("quotation_id", flat=True))
+    # Existing (non-direct) quotations that are approved and not yet invoiced.
     eligible = [
-        q for q in (Quotation.objects.filter(status__in=FINALIZED_STATUSES)
+        q for q in (Quotation.objects.filter(status__in=FINALIZED_STATUSES,
+                                              is_direct_invoice=False)
                     .select_related("customer").prefetch_related("lines")
                     .order_by("-created_at"))
         if q.id not in invoiced_ids and q.invoice_total > 0
@@ -2644,10 +2646,12 @@ def invoices(request):
 
 @login_required
 def invoice_new(request):
-    """Create a standalone customer invoice from scratch — pick or type the
-    customer, add line items, done. No project or quotation required."""
+    """Create a tax invoice from scratch — pick or type the customer, add line
+    items, done. No quotation needed: under the hood this raises an approved,
+    invoice-only quotation and its tax invoice, so the result looks and behaves
+    exactly like any other tax invoice (approve → download PDF → email)."""
     from apps.customers.models import Customer
-    from apps.finance.services import create_standalone_invoice
+    from apps.quotes.services import create_direct_invoice
 
     if not _can_invoice(request.user):
         messages.error(request, "You do not have permission to create invoices.")
@@ -2678,36 +2682,22 @@ def invoice_new(request):
             messages.error(request, "Add at least one line item.")
         else:
             vat_raw = request.POST.get("vat_rate", "").strip()
-            invoice = create_standalone_invoice(
+            doc = create_direct_invoice(
                 request.user.active_company, request.user,
                 client_name=client_name, customer=customer, lines=lines,
                 vat_rate=_to_decimal(vat_raw) if vat_raw != "" else None,
-                issue_date=request.POST.get("issue_date") or None,
-                due_date=request.POST.get("due_date") or None,
                 notes=request.POST.get("notes", "").strip())
             from apps.core.audit import audit
-            audit(request, "invoice.created", entity=invoice)
-            messages.success(request, f"Invoice {invoice.number} created.")
-            return redirect("web:invoice_detail", pk=invoice.id)
+            audit(request, "invoice.created", entity=doc)
+            messages.success(request, f"Invoice {doc.number} created. Approve it to "
+                             "download the PDF or email it to your customer.")
+            return redirect("web:commercial_document_detail", pk=doc.id)
 
     company = request.user.active_company
     return render(request, "web/invoice_new.html", {
         "customers": Customer.objects.all().order_by("name"),
-        "default_vat": getattr(company, "default_tax_rate", 0) or 0,
+        "default_vat": getattr(company, "default_tax_rate", 0) or 15,
         "today": timezone.localdate().isoformat(),
-        "nav_section": "invoices",
-    })
-
-
-@login_required
-def invoice_detail(request, pk):
-    """A standalone/customer invoice: header, line items, totals and payments."""
-    invoice = get_object_or_404(
-        Invoice.objects.select_related("customer", "project").prefetch_related(
-            "lines", "payments"), pk=pk)
-    return render(request, "web/invoice_detail.html", {
-        "invoice": invoice,
-        "can_finance": request.user.has_perm_code("finance.manage"),
         "nav_section": "invoices",
     })
 
@@ -2862,11 +2852,11 @@ def invoice_payment(request, pk):
     amount = _to_decimal(request.POST.get("amount"))
     if amount <= 0:
         messages.error(request, "Enter a payment amount.")
-        return redirect("web:invoice_detail", pk=pk)
+        return redirect("web:commercial")
     record_payment(invoice, request.user, amount=amount,
                    reference=request.POST.get("reference", ""))
     messages.success(request, f"Payment of R{amount} recorded on {invoice.number}.")
-    return redirect("web:invoice_detail", pk=pk)
+    return redirect("web:commercial")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -17,18 +17,16 @@
   <div style="overflow-x:auto;">
   <table>
     <thead>
-      <tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="num">Total</th>
-        <th class="num">Outstanding</th><th>Status</th></tr>
+      <tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="num">Total</th><th>Status</th></tr>
     </thead>
     <tbody>
       {% for inv in invoices %}
       <tr>
-        <td><a href="{% url 'web:invoice_detail' inv.id %}"><strong>{{ inv.number }}</strong></a></td>
-        <td>{{ inv.customer|default:inv.client_name|default:"—" }}</td>
-        <td>{{ inv.issue_date|default:inv.created_at|date:"Y-m-d" }}</td>
-        <td class="num">R{{ inv.total|floatformat:2 }}</td>
-        <td class="num">R{{ inv.outstanding|floatformat:2 }}</td>
-        <td><span class="chip {% if inv.status == 'paid' %}ok{% elif inv.status == 'overdue' %}warn{% endif %}">{{ inv.get_status_display }}</span></td>
+        <td><a href="{% url 'web:commercial_document_detail' inv.id %}"><strong>{{ inv.number }}</strong></a></td>
+        <td>{{ inv.quotation.customer|default:inv.quotation.client_name|default:"—" }}</td>
+        <td>{{ inv.created_at|date:"Y-m-d" }}</td>
+        <td class="num">R{{ inv.quotation.invoice_total|floatformat:2 }}</td>
+        <td><span class="chip {% if inv.is_finalized %}ok{% endif %}">{{ inv.get_status_display }}</span></td>
       </tr>
       {% endfor %}
     </tbody>

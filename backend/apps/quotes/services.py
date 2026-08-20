@@ -155,6 +155,48 @@ def create_invoice_document(quote, user):
 
 
 @transaction.atomic
+def create_direct_invoice(company, user, *, client_name, lines, customer=None,
+                          vat_rate=None, notes="", title=""):
+    """Raise a tax invoice with NO prior sales cycle — the 'New invoice' screen.
+
+    A tax invoice always renders through a quotation (that's what carries the
+    company's invoice template, numbering and figures), so a direct invoice
+    builds an approved, invoice-only quotation — flagged is_direct_invoice so it
+    never shows in the sales pipeline — and then raises the CommercialDocument
+    invoice from it, exactly like any other tax invoice. Returns that document."""
+    from .models import QuotationStatus, VatMode
+
+    # A tax invoice must have a customer on file (see _guard_generatable). When
+    # the user only typed a name, link an existing customer of that name or create
+    # a lightweight one — so a from-scratch invoice never dead-ends.
+    if customer is None and client_name:
+        from apps.customers.models import Customer
+        customer = Customer.objects.filter(
+            company=company, name__iexact=client_name).first()
+        if customer is None:
+            from apps.customers.services import create_customer
+            customer = create_customer(company, user, name=client_name)
+
+    quote = create_quotation(
+        company, user, client_name=client_name,
+        title=title or (f"Invoice — {client_name}" if client_name else "Invoice"),
+        lines=lines, source=QuotationSource.BLANK)
+    quote.is_direct_invoice = True
+    quote.customer = customer
+    quote.vat_mode = VatMode.EXCLUSIVE
+    if vat_rate is not None:
+        quote.vat_rate = vat_rate
+    quote.status = QuotationStatus.APPROVED        # invoice-ready immediately
+    quote.updated_by = user
+    quote.save()
+    doc = create_invoice_document(quote, user)
+    if notes:
+        doc.notes = notes
+        doc.save()
+    return doc
+
+
+@transaction.atomic
 def create_delivery_document(quote, user, **fields):
     """Raise a delivery note from the quotation. Carries operational quantities,
     never prices. A PO is optional."""
@@ -909,7 +951,8 @@ def traceability(quote) -> dict:
 
 def pipeline(company=None) -> dict:
     """The quotation dashboard: what is open, what was won, and how often."""
-    quotes = list(Quotation.objects.all().prefetch_related("lines"))
+    quotes = list(Quotation.objects.filter(is_direct_invoice=False)
+                  .prefetch_related("lines"))
     won = [q for q in quotes if q.status == QuotationStatus.AWARDED]
     lost = [q for q in quotes if q.status in (QuotationStatus.REJECTED,
                                               QuotationStatus.LOST)]
