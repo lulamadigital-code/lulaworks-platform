@@ -66,6 +66,33 @@ class SupportChatTests(TestCase):
         self.assertEqual(r.status_code, 400)
         self.assertIn("error", r.json())
 
+    def test_needs_attention_count(self):
+        """Counts tickets waiting on support: a new/open ticket and one where the
+        customer sent the last message — but not a support-answered or closed one."""
+        from .models import TicketStatus
+        with tenant_scope(self.company.id):
+            # self.ticket (from setUp) is OPEN → counts.
+            answered = support.create_ticket(
+                company=self.company, user=self.customer, subject="A",
+                category=TicketCategory.choices[0][0],
+                priority=TicketPriority.choices[1][0], description="q")
+            support.add_message(ticket=answered, sender=self.tech, body="handled",
+                                from_support=True)                     # support last → excluded
+            bounced = support.create_ticket(
+                company=self.company, user=self.customer, subject="B",
+                category=TicketCategory.choices[0][0],
+                priority=TicketPriority.choices[1][0], description="q")
+            support.add_message(ticket=bounced, sender=self.tech, body="looking", from_support=True)
+            support.add_message(ticket=bounced, sender=self.customer, body="still broken",
+                                from_support=False)                    # customer last → counts
+            closed = support.create_ticket(
+                company=self.company, user=self.customer, subject="C",
+                category=TicketCategory.choices[0][0],
+                priority=TicketPriority.choices[1][0], description="q")
+            support.set_status(ticket=closed, actor=self.tech,
+                               status=TicketStatus.CLOSED, from_support=True)  # closed → excluded
+        self.assertEqual(support.needs_attention_count(), 2)   # self.ticket + bounced
+
     @override_settings(CHANNEL_LAYERS=_INMEM)
     def test_new_message_broadcasts_to_the_ticket_group(self):
         """Adding a message pushes it to the ticket's WebSocket group so connected

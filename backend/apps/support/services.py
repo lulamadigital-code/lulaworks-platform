@@ -127,6 +127,24 @@ def _broadcast_message(ticket, msg):
         pass
 
 
+def needs_attention_count():
+    """How many ACTIVE tickets are waiting on the support team — a new/unanswered
+    ticket, or one where the customer sent the last public message (the ball is in
+    support's court). Cross-tenant (for the platform desk). Excludes tickets that
+    are resolved/closed or waiting on the customer with support's reply last."""
+    from django.db.models import OuterRef, Q, Subquery
+
+    last_from = (SupportMessage.all_objects
+                 .filter(ticket=OuterRef("pk"), is_internal=False)
+                 .order_by("-created_at").values("from_support")[:1])
+    return (SupportTicket.all_objects
+            .filter(status__in=[TicketStatus.OPEN, TicketStatus.IN_PROGRESS,
+                                TicketStatus.WAITING_CUSTOMER])
+            .annotate(_last_from_support=Subquery(last_from))
+            .filter(Q(status=TicketStatus.OPEN) | Q(_last_from_support=False))
+            .count())
+
+
 def message_dict(m):
     """Serialise one message for the live-chat feed (both the customer and the
     technician poll this shape)."""

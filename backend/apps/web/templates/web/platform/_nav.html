@@ -1,4 +1,10 @@
 {# Shared Platform Console sidebar nav. Pass `active` = overview|companies|users|plans|subscriptions|emails|audit. #}
+<style>
+.nav a{position:relative;}
+.nav .nav-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
+  padding:0 5px;margin-left:auto;background:var(--red,#e2445c);color:#fff;font-size:11px;font-weight:800;
+  border-radius:10px;line-height:1;}
+</style>
 <nav class="nav">
   <a {% if active == 'overview' %}class="active"{% endif %} href="{% url 'web:platform_home' %}"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
   <a {% if active == 'analytics' %}class="active"{% endif %} href="{% url 'web:platform_analytics' %}"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 8l-5 6-3-3-4 5"/></svg>Analytics</a>
@@ -10,7 +16,7 @@
   <a {% if active == 'emails' %}class="active"{% endif %} href="{% url 'web:platform_emails' %}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>Email logs</a>
   <a {% if active == 'audit' %}class="active"{% endif %} href="{% url 'web:platform_audit' %}"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3zM9.5 12l1.8 1.8L15 10"/></svg>Audit logs</a>
   <span class="nav-gap"></span>
-  <a {% if active == 'support' %}class="active"{% endif %} href="{% url 'web:platform_support' %}"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Support desk</a>
+  <a {% if active == 'support' %}class="active"{% endif %} href="{% url 'web:platform_support' %}"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Support desk{% if support_open_count %}<span class="nav-badge" title="{{ support_open_count }} ticket{{ support_open_count|pluralize }} awaiting a reply">{{ support_open_count }}</span>{% endif %}</a>
   <a href="{% url 'web:platform_kb' %}"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Knowledge Base</a>
   <a href="{% url 'web:platform_support_sla' %}"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 5-6"/></svg>SLA &amp; analytics</a>
   <a {% if active == 'settings' %}class="active"{% endif %} href="{% url 'web:platform_settings' %}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3H10l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12a7 7 0 0 0 .1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6A7 7 0 0 0 19 12z"/></svg>Settings</a>

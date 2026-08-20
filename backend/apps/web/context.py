@@ -115,9 +115,22 @@ def nav_flags(request):
         except Exception:
             unread = 0
 
+    # Open/unattended support tickets → a notification badge on the platform
+    # console. Only computed on /platform pages for staff with support access, so
+    # the cross-tenant query never runs on a normal tenant page.
+    support_open = 0
+    if (signed_in and request.path.startswith("/platform")
+            and getattr(user, "can_platform", None) and user.can_platform("support")):
+        from apps.support.services import needs_attention_count
+        try:
+            support_open = needs_attention_count()
+        except Exception:
+            support_open = 0
+
     from django.conf import settings as _s
     return {"perms_money": can, "perms_procurement": can_proc,
             "has_logo": has_logo_file(),
             "logo_static": logo_static_name(), "nav_section": section,
             "unread_notifications": unread,
+            "support_open_count": support_open,
             "ga4_id": getattr(_s, "GA4_MEASUREMENT_ID", "")}
