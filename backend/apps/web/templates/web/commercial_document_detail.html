@@ -60,6 +60,10 @@
   {% elif po_active and can_generate_docs %}
   <a class="btn ghost" href="#po">Upload purchase order</a>
   {% endif %}
+
+  {% if is_invoice and can_view_money %}
+  <a class="btn ghost" href="#payments">{% if doc.outstanding > 0 %}Record payment{% else %}Payments{% endif %}</a>
+  {% endif %}
 </div>
 
 {# ── Timeline ─────────────────────────────────────────────────────────────── #}
@@ -110,6 +114,47 @@
         {% else %}<span class="chip">{{ e.get_status_display }}</span>{% endif %}</td></tr>
     {% endfor %}
   </table>
+</div>
+{% endif %}
+
+{# ── Payments (invoices only) ─────────────────────────────────────────────── #}
+{% if is_invoice %}
+<h2 id="payments">Payments</h2>
+<div class="two-col" style="display:grid;grid-template-columns:2fr 1fr;gap:14px;align-items:start;">
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <tr><th>Date</th><th>Reference</th><th class="num">Amount</th></tr>
+      {% for p in doc.payments.all %}
+      <tr><td>{{ p.date }}</td><td class="muted">{{ p.reference|default:"—" }}</td>
+        <td class="num">R{{ p.amount|floatformat:2 }}</td></tr>
+      {% empty %}
+      <tr><td colspan="3" class="muted">No payments recorded yet.</td></tr>
+      {% endfor %}
+      <tr style="border-top:2px solid var(--line);">
+        <td colspan="2" class="muted">Invoice total</td>
+        <td class="num">R{{ doc.invoice_amount|floatformat:2 }}</td></tr>
+      <tr><td colspan="2" class="muted">Paid</td>
+        <td class="num">R{{ doc.amount_paid|floatformat:2 }}</td></tr>
+      <tr><td colspan="2"><strong>Outstanding</strong></td>
+        <td class="num"><strong>R{{ doc.outstanding|floatformat:2 }}</strong></td></tr>
+    </table>
+  </div>
+  <div class="card">
+    {% if doc.payment_state == 'paid' %}<span class="chip ok">Paid in full</span>
+    {% elif doc.payment_state == 'part' %}<span class="chip warn">Part-paid</span>
+    {% else %}<span class="chip">Unpaid</span>{% endif %}
+    {% if can_view_money %}
+    <form method="post" action="{% url 'web:commercial_document_payment' doc.id %}" style="margin-top:12px;">{% csrf_token %}
+      <label>Record a payment</label>
+      <input type="number" name="amount" step="0.01" min="0" placeholder="Amount (R)" required>
+      <label style="margin-top:8px;">Date</label>
+      <input type="date" name="date" value="{{ today }}">
+      <label style="margin-top:8px;">Reference (POP)</label>
+      <input type="text" name="reference" placeholder="EFT ref / POP">
+      <button class="btn primary" type="submit" data-busy-text="Recording…" style="margin-top:10px;width:100%;">Record payment</button>
+    </form>
+    {% endif %}
+  </div>
 </div>
 {% endif %}
 

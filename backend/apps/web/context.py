@@ -92,7 +92,7 @@ _SECTIONS = {
     "invoices": "invoices", "invoice_new": "invoices",
     "commercial_document_detail": "invoices", "commercial_document_pdf": "invoices",
     "commercial_document_send": "invoices", "commercial_document_transition": "invoices",
-    "commercial_document_excel": "invoices",
+    "commercial_document_excel": "invoices", "commercial_document_payment": "invoices",
     "commercial": "commercial", "invoice_payment": "commercial",
     "lulama": "lulama",
 }

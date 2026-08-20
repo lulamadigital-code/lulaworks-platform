@@ -1859,6 +1859,35 @@ def commercial_document_send(request, pk):
 
 
 @login_required
+@require_POST
+def commercial_document_payment(request, pk):
+    """Record a customer payment (POP) against a tax invoice."""
+    from apps.quotes.models import CommercialDocument, CommercialDocumentPayment
+    doc = get_object_or_404(
+        CommercialDocument.objects.select_related("quotation"), pk=pk)
+    if not request.user.has_perm_code("finance.manage"):
+        messages.error(request, "You do not have permission to record payments.")
+        return redirect("web:commercial_document_detail", pk=pk)
+    if doc.kind != CommercialDocument.Kind.INVOICE:
+        messages.error(request, "Payments are recorded against invoices only.")
+        return redirect("web:commercial_document_detail", pk=pk)
+    amount = _to_decimal(request.POST.get("amount"))
+    if amount <= 0:
+        messages.error(request, "Enter a payment amount.")
+        return redirect("web:commercial_document_detail", pk=pk)
+    CommercialDocumentPayment.objects.create(
+        company=doc.company, document=doc, amount=amount,
+        date=request.POST.get("date") or timezone.localdate(),
+        reference=request.POST.get("reference", "").strip(),
+        created_by=request.user, updated_by=request.user)
+    from apps.core.audit import audit
+    audit(request, "invoice.payment_recorded", entity=doc)
+    messages.success(request, f"Payment of R{amount} recorded on {doc.number}. "
+                     f"Outstanding: R{doc.outstanding}.")
+    return redirect("web:commercial_document_detail", pk=pk)
+
+
+@login_required
 def quotation_excel(request, pk):
     """Export the quotation's items to a real .xlsx — the line table plus totals,
     for a customer or buyer who wants to work with the numbers in a spreadsheet.
@@ -2624,7 +2653,7 @@ def invoices(request):
         CommercialDocument.objects
         .filter(kind=CommercialDocument.Kind.INVOICE)
         .select_related("quotation", "quotation__customer")
-        .prefetch_related("quotation__lines")
+        .prefetch_related("quotation__lines", "payments")
         .order_by("-created_at"))
 
     # Report tiles — the same shape the quotations page uses.
@@ -2634,6 +2663,19 @@ def invoices(request):
     draft = [d for d in all_invoices if not d.is_finalized]
     this_month = [d for d in all_invoices
                   if d.created_at.year == today.year and d.created_at.month == today.month]
+    # Payments & aging of the OUTSTANDING balances.
+    paid_total = sum((d.amount_paid for d in all_invoices), Decimal("0"))
+    outstanding_total = Decimal("0")
+    aging = {"current": Decimal("0"), "30": Decimal("0"),
+             "60": Decimal("0"), "90": Decimal("0")}
+    for d in all_invoices:
+        out = d.outstanding
+        if out <= 0:
+            continue
+        outstanding_total += out
+        age = (today - d.created_at.date()).days
+        bucket = "current" if age < 30 else "30" if age < 60 else "60" if age < 90 else "90"
+        aging[bucket] += out
     report = {
         "count": len(all_invoices),
         "approved": len(approved),
@@ -2642,6 +2684,10 @@ def invoices(request):
         "approved_value": sum((d.quotation.invoice_total for d in approved), Decimal("0")),
         "month_value": sum((d.quotation.invoice_total for d in this_month), Decimal("0")),
         "month_count": len(this_month),
+        "paid_total": paid_total,
+        "outstanding_total": outstanding_total,
+        "aging_rows": [("Current", aging["current"]), ("30 days", aging["30"]),
+                       ("60 days", aging["60"]), ("90+ days", aging["90"])],
     }
 
     invoiced_ids = {d.quotation_id for d in all_invoices}
@@ -3804,6 +3850,7 @@ def commercial_document_detail(request, pk):
         # Purchase order: uploaded against the parent quotation.
         "purchase_orders": list(doc.quotation.customer_pos.all()),
         "po_active": doc.quotation.is_finalized,
+        "today": timezone.localdate().isoformat(),
         "next_statuses": commercial_document_next_statuses(doc),
         "timeline": timeline,
         # Email: suggested recipient + send history for this document.

@@ -26,12 +26,25 @@
 <div class="two-col">
   <div><div class="card"><strong>Total invoiced</strong>
     <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ report.total_value|floatformat:2 }}</p>
-    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">Across {{ report.count }} invoice(s) · R{{ report.approved_value|floatformat:2 }} approved</p>
+    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">Across {{ report.count }} invoice(s) · R{{ report.paid_total|floatformat:2 }} paid</p>
   </div></div>
-  <div><div class="card"><strong>This month</strong>
-    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ report.month_value|floatformat:2 }}</p>
-    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{{ report.month_count }} invoice(s) raised this month</p>
+  <div><div class="card"><strong>Outstanding</strong>
+    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ report.outstanding_total|floatformat:2 }}</p>
+    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">R{{ report.month_value|floatformat:2 }} invoiced this month</p>
   </div></div>
+</div>
+
+<div class="card" style="margin-top:0;">
+  <strong>Outstanding by age</strong>
+  <div style="overflow-x:auto;margin-top:8px;">
+  <table>
+    <thead><tr>{% for label, amt in report.aging_rows %}<th class="num">{{ label }}</th>{% endfor %}<th class="num">Total</th></tr></thead>
+    <tbody><tr>
+      {% for label, amt in report.aging_rows %}<td class="num">R{{ amt|floatformat:2 }}</td>{% endfor %}
+      <td class="num"><strong>R{{ report.outstanding_total|floatformat:2 }}</strong></td>
+    </tr></tbody>
+  </table>
+  </div>
 </div>
 {% endif %}
 
@@ -41,7 +54,8 @@
   <div style="overflow-x:auto;">
   <table>
     <thead>
-      <tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="num">Total</th><th>Status</th></tr>
+      <tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="num">Total</th>
+        <th class="num">Outstanding</th><th>Payment</th></tr>
     </thead>
     <tbody>
       {% for inv in invoices %}
@@ -49,8 +63,11 @@
         <td><a href="{% url 'web:commercial_document_detail' inv.id %}"><strong>{{ inv.number }}</strong></a></td>
         <td>{{ inv.quotation.customer|default:inv.quotation.client_name|default:"—" }}</td>
         <td>{{ inv.created_at|date:"Y-m-d" }}</td>
-        <td class="num">R{{ inv.quotation.invoice_total|floatformat:2 }}</td>
-        <td><span class="chip {% if inv.is_finalized %}ok{% endif %}">{{ inv.get_status_display }}</span></td>
+        <td class="num">R{{ inv.invoice_amount|floatformat:2 }}</td>
+        <td class="num">R{{ inv.outstanding|floatformat:2 }}</td>
+        <td>{% if inv.payment_state == 'paid' %}<span class="chip ok">Paid</span>
+          {% elif inv.payment_state == 'part' %}<span class="chip warn">Part-paid</span>
+          {% else %}<span class="chip">{{ inv.get_status_display }}</span>{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>

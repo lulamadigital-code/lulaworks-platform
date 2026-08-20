@@ -707,6 +707,57 @@ class CommercialDocument(TenantBaseModel):
         return self.status in (self.Status.APPROVED, self.Status.FINALIZED,
                                self.Status.SENT)
 
+    # ── Payment tracking (invoices only) ─────────────────────────────────────
+    @property
+    def invoice_amount(self) -> Decimal:
+        """What this document bills — the tax-invoice total. Zero for delivery
+        notes, which never carry prices."""
+        if self.kind != self.Kind.INVOICE:
+            return Decimal("0.00")
+        return self.quotation.invoice_total
+
+    @property
+    def amount_paid(self) -> Decimal:
+        return sum((p.amount for p in self.payments.all()),
+                   Decimal("0.00")).quantize(TWO)
+
+    @property
+    def outstanding(self) -> Decimal:
+        return (self.invoice_amount - self.amount_paid).quantize(TWO)
+
+    @property
+    def is_paid(self) -> bool:
+        return (self.kind == self.Kind.INVOICE and self.invoice_amount > 0
+                and self.outstanding <= 0)
+
+    @property
+    def payment_state(self) -> str:
+        """unpaid / part / paid — for a chip on the invoice."""
+        if self.kind != self.Kind.INVOICE or self.invoice_amount <= 0:
+            return ""
+        if self.outstanding <= 0:
+            return "paid"
+        return "part" if self.amount_paid > 0 else "unpaid"
+
+
+class CommercialDocumentPayment(TenantBaseModel):
+    """A customer payment recorded against a tax invoice (POP). Several may be
+    recorded for a staged/partial settlement; the invoice's outstanding balance
+    is the invoice total less the sum of these."""
+
+    document = models.ForeignKey(CommercialDocument, on_delete=models.CASCADE,
+                                 related_name="payments")
+    date = models.DateField()
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    method = models.CharField(max_length=32, default="eft")
+    reference = models.CharField(max_length=120, blank=True)   # POP reference
+
+    class Meta:
+        ordering = ["-date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.amount} on {self.document.number}"
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Document Designer — companies keep THEIR document branding, not ours.

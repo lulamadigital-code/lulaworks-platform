@@ -2097,6 +2097,32 @@ class InvoicesPageTests(TestCase):
             self.assertTrue(doc.quotation.is_direct_invoice)
             self.assertEqual(doc.quotation.lines.count(), 1)
 
+    def test_record_invoice_payment_updates_outstanding(self):
+        from django.urls import reverse
+
+        from apps.core.context import tenant_scope
+        from apps.customers.services import create_customer
+        from apps.quotes.services import create_direct_invoice
+
+        company = make_company()
+        user = user_with(company, ["quotes.create", "finance.manage"])
+        with tenant_scope(company.id):
+            cust = create_customer(company, user, name="Acme")
+            doc = create_direct_invoice(
+                company, user, client_name="Acme", customer=cust,
+                lines=[{"description": "Item", "qty": 1, "unit_price": 100}],
+                vat_rate=Decimal("0"))
+        self.client.force_login(user)
+        resp = self.client.post(
+            reverse("web:commercial_document_payment", args=[doc.id]),
+            {"amount": "40", "reference": "EFT1"})
+        self.assertEqual(resp.status_code, 302)
+        with tenant_scope(company.id):
+            doc.refresh_from_db()
+            self.assertEqual(doc.amount_paid, Decimal("40.00"))
+            self.assertEqual(doc.outstanding, Decimal("60.00"))   # 100 total, 0 VAT
+            self.assertEqual(doc.payment_state, "part")
+
     def test_invoice_detail_has_related_document_actions(self):
         from apps.core.context import tenant_scope
         from apps.quotes.services import create_direct_invoice

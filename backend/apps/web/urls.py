@@ -226,6 +226,8 @@ urlpatterns = [
          name="commercial_document_excel"),
     path("commercial-documents/<uuid:pk>/status/", views.commercial_document_transition,
          name="commercial_document_transition"),
+    path("commercial-documents/<uuid:pk>/payment/", views.commercial_document_payment,
+         name="commercial_document_payment"),
     path("quotations/<uuid:pk>/suggest/", views.quotation_suggest,
          name="quotation_suggest"),
     path("quotations/<uuid:pk>/template/", views.quotation_template,
