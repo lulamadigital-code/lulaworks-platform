@@ -898,11 +898,74 @@ def platform_support_detail(request, pk):
     with system_scope():
         agents = list(User.objects.filter(Q(platform_role__in=["owner", "admin", "support"])
                                           | Q(is_superuser=True)).order_by("email"))
-    thread = list(ticket.messages.select_related("sender").prefetch_related("attachments"))
+    with system_scope():
+        thread = list(ticket.messages.select_related("sender").prefetch_related("attachments"))
+    from django.urls import reverse
     return render(request, "web/platform/support_detail.html", {
         "active": "support", "ticket": ticket, "thread": thread, "agents": agents,
         "statuses": TicketStatus.choices, "priorities": TicketPriority.choices,
+        "poll_url": reverse("web:platform_support_messages", args=[ticket.id]),
+        "send_url": reverse("web:platform_support_send", args=[ticket.id]),
+        "is_support": True,
     })
+
+
+def _platform_ticket(pk):
+    from apps.support.models import SupportTicket
+    return (SupportTicket.all_objects.select_related("company", "created_by")
+            .filter(pk=pk).first())
+
+
+@login_required
+def platform_support_messages(request, pk):
+    """Live-chat poll for a technician — the full stream (public + internal notes)."""
+    from django.http import JsonResponse
+    from apps.core.context import tenant_scope
+    from apps.support import services as support
+    from apps.support.models import TicketStatus
+    if not request.user.can_platform("support"):
+        return JsonResponse({"error": "forbidden"}, status=403)
+    ticket = _platform_ticket(pk)
+    if ticket is None:
+        return JsonResponse({"error": "not found"}, status=404)
+    # A technician isn't scoped to the ticket's company — read within it explicitly.
+    with tenant_scope(ticket.company_id):
+        msgs = list(ticket.messages.select_related("sender")
+                    .prefetch_related("attachments").order_by("created_at"))
+        data = [support.message_dict(m) for m in msgs]
+    return JsonResponse({
+        "messages": data,
+        "status": ticket.get_status_display(),
+        "closed": ticket.status == TicketStatus.CLOSED,
+    })
+
+
+@login_required
+def platform_support_send(request, pk):
+    """Live-chat send for a technician — a public reply, or an internal note when
+    `internal=1`."""
+    from django.http import JsonResponse
+    from apps.core.context import tenant_scope
+    from apps.support import services as support
+    if not request.user.can_platform("support"):
+        return JsonResponse({"error": "forbidden"}, status=403)
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+    ticket = _platform_ticket(pk)
+    if ticket is None:
+        return JsonResponse({"error": "not found"}, status=404)
+    internal = request.POST.get("internal") in ("1", "true", "on")
+    with tenant_scope(ticket.company_id):
+        try:
+            msg = support.add_message(ticket=ticket, sender=request.user,
+                                      body=request.POST.get("body", ""), from_support=True,
+                                      is_internal=internal,
+                                      files=request.FILES.getlist("attachments"),
+                                      ip=request.META.get("REMOTE_ADDR"))
+        except support.SupportError as exc:
+            return JsonResponse({"error": str(exc)}, status=400)
+        data = support.message_dict(msg)
+    return JsonResponse({"message": data})
 
 
 @login_required

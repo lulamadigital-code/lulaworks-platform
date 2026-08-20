@@ -34,28 +34,8 @@
   </div>
 </div>
 
-<div class="card" style="margin-top:16px;">
-  <div class="thread">
-    {% for m in thread %}
-    <div class="bub {% if m.from_support %}supp{% else %}cust{% endif %}">
-      <div class="who">{% if m.from_support %}LulaWorks Support{% else %}{{ m.sender.get_full_name|default:m.sender.email|default:"You" }}{% endif %}</div>
-      <div>{{ m.body|linebreaksbr }}</div>
-      {% for a in m.attachments.all %}<a class="att" href="{{ a.file.url }}" target="_blank">📎 {{ a.name }}</a>{% endfor %}
-      <div class="when">{{ m.created_at|date:"d M, H:i" }}</div>
-    </div>
-    {% endfor %}
-  </div>
-
-  {% if ticket.status != 'closed' %}
-  <form class="reply" method="post" enctype="multipart/form-data">{% csrf_token %}
-    <input type="hidden" name="action" value="reply">
-    <textarea name="body" placeholder="Write a reply to LulaWorks Support…"></textarea>
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
-      <input type="file" name="attachments" multiple>
-      <button class="btn" type="submit">Send reply</button>
-    </div>
-  </form>
-  {% endif %}
+<div style="margin-top:16px;">
+  {% include "web/support/_chat.html" %}
 
   <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
     {% if can_reopen %}

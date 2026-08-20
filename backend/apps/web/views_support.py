@@ -4,6 +4,7 @@ tenant-scoped: a company only ever sees its own tickets."""
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+from django.urls import reverse
 
 from apps.support import services as support
 from apps.support.models import (
@@ -173,4 +174,52 @@ def support_detail(request, pk):
     return render(request, "web/support/detail.html", {
         "nav_section": "support", "ticket": ticket, "thread": thread,
         "can_reopen": ticket.status in {TicketStatus.RESOLVED, TicketStatus.CLOSED},
+        "poll_url": reverse("web:support_messages", args=[ticket.id]),
+        "send_url": reverse("web:support_send", args=[ticket.id]),
+        "is_support": False,
     })
+
+
+def _ticket_for(request, pk):
+    """The ticket this user may view, or None."""
+    ticket = SupportTicket.objects.filter(pk=pk).select_related("created_by").first()
+    if ticket is None:
+        return None
+    if ticket.created_by_id != request.user.id and not _can_see_company(request.user):
+        return None
+    return ticket
+
+
+@login_required
+def support_messages(request, pk):
+    """Live-chat poll — the ticket's public conversation as JSON."""
+    from django.http import JsonResponse
+    ticket = _ticket_for(request, pk)
+    if ticket is None:
+        return JsonResponse({"error": "not found"}, status=404)
+    msgs = (ticket.messages.filter(is_internal=False)
+            .select_related("sender").prefetch_related("attachments").order_by("created_at"))
+    return JsonResponse({
+        "messages": [support.message_dict(m) for m in msgs],
+        "status": ticket.get_status_display(),
+        "closed": ticket.status == TicketStatus.CLOSED,
+    })
+
+
+@login_required
+def support_send(request, pk):
+    """Live-chat send — the customer posts a message, returns it as JSON."""
+    from django.http import JsonResponse
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+    ticket = _ticket_for(request, pk)
+    if ticket is None:
+        return JsonResponse({"error": "not found"}, status=404)
+    try:
+        msg = support.add_message(ticket=ticket, sender=request.user,
+                                  body=request.POST.get("body", ""), from_support=False,
+                                  files=request.FILES.getlist("attachments"),
+                                  ip=_client_ip(request))
+    except support.SupportError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    return JsonResponse({"message": support.message_dict(msg)})

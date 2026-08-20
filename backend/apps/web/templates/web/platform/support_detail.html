@@ -38,33 +38,8 @@
 
 <div class="cols" style="margin-top:16px;">
   <div>
-    <div class="card">
-      <div class="thread">
-        {% for m in thread %}
-        <div class="bub {% if m.is_internal %}note{% elif m.from_support %}supp{% else %}cust{% endif %}">
-          <div class="who">{% if m.is_internal %}🔒 Internal note{% elif m.from_support %}LulaWorks Support{% else %}{{ m.sender.get_full_name|default:m.sender.email }}{% endif %}
-            {% if not m.is_internal %}<span class="muted">· {{ m.sender.get_full_name|default:m.sender.email }}</span>{% endif %}</div>
-          <div>{{ m.body|linebreaksbr }}</div>
-          {% for a in m.attachments.all %}<a class="att" href="{{ a.file.url }}" target="_blank">📎 {{ a.name }}</a>{% endfor %}
-          <div class="when">{{ m.created_at|date:"d M, H:i" }}</div>
-        </div>
-        {% endfor %}
-      </div>
-      <form method="post" enctype="multipart/form-data">{% csrf_token %}
-        <input type="hidden" name="action" value="reply">
-        <label>Reply to the customer</label>
-        <textarea name="body" placeholder="Type your reply…"></textarea>
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
-          <input type="file" name="attachments" multiple style="width:auto;border:0;padding:0;">
-          <button class="btn" type="submit">Send reply</button>
-        </div>
-      </form>
-      <form method="post" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">{% csrf_token %}
-        <input type="hidden" name="action" value="note">
-        <label>Internal note (customer never sees this)</label>
-        <textarea name="body" placeholder="Note for the support team…"></textarea>
-        <div style="margin-top:8px;"><button class="btn ghost" type="submit">Add internal note</button></div>
-      </form>
+    <div>
+      {% include "web/support/_chat.html" %}
     </div>
   </div>
 

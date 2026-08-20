@@ -107,6 +107,27 @@ def add_message(*, ticket, sender, body, is_internal=False, from_support=False,
     return msg
 
 
+def message_dict(m):
+    """Serialise one message for the live-chat feed (both the customer and the
+    technician poll this shape)."""
+    if m.from_support:
+        who = "LulaWorks Support"
+    elif m.sender:
+        who = m.sender.get_full_name() or m.sender.email
+    else:
+        who = "Customer"
+    return {
+        "id": str(m.id),
+        "body": m.body,
+        "from_support": bool(m.from_support),
+        "is_internal": bool(m.is_internal),
+        "who": who,
+        "when": m.created_at.strftime("%d %b %H:%M") if m.created_at else "",
+        "attachments": [{"name": a.name, "url": a.file.url}
+                        for a in m.attachments.all()],
+    }
+
+
 @transaction.atomic
 def set_status(*, ticket, actor, status, from_support=False, ip=None):
     if status not in TicketStatus.values:

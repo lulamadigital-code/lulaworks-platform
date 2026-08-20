@@ -1,0 +1,114 @@
+{% comment %}
+Live support chat widget. Polls `poll_url` for new messages and posts to `send_url`
+via AJAX — no page reloads, so the customer and technician see each other's replies
+within a few seconds. Context: poll_url, send_url, is_support.
+{% endcomment %}
+<div class="lwchat" data-poll="{{ poll_url }}" data-send="{{ send_url }}"
+     data-support="{% if is_support %}1{% else %}0{% endif %}">
+  {% csrf_token %}
+  <div class="lwchat-feed" id="lwchatFeed" aria-live="polite"></div>
+  <div class="lwchat-input">
+    <textarea id="lwchatBody" rows="2"
+      placeholder="{% if is_support %}Reply to the customer… (Enter to send){% else %}Message LulaWorks Support… (Enter to send){% endif %}"></textarea>
+    <div class="lwchat-controls">
+      {% if is_support %}
+      <label class="lwchat-int"><input type="checkbox" id="lwchatInternal"> Internal note (customer won't see)</label>
+      {% endif %}
+      <span class="lwchat-status muted" id="lwchatStatus"></span>
+      <button class="btn primary" id="lwchatSend" type="button">Send</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.lwchat{border:1px solid var(--line,#e6e9ef);border-radius:12px;overflow:hidden;background:var(--surface,#fff);display:flex;flex-direction:column;}
+.lwchat-feed{display:flex;flex-direction:column;gap:10px;padding:14px;height:440px;overflow-y:auto;background:var(--bg,#f6f7fb);}
+.lwchat .bub{max-width:78%;padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.42;box-shadow:0 1px 2px rgba(0,0,0,.05);}
+.lwchat .bub .who{font-size:11px;font-weight:700;opacity:.75;margin-bottom:2px;}
+.lwchat .bub .body{white-space:pre-wrap;word-wrap:break-word;}
+.lwchat .bub .when{font-size:10px;opacity:.6;margin-top:3px;text-align:right;}
+.lwchat .bub.cust{align-self:flex-start;background:#fff;border:1px solid var(--line,#e6e9ef);border-bottom-left-radius:3px;}
+.lwchat .bub.supp{align-self:flex-end;background:var(--primary-t,#e6f6f9);border:1px solid #bfe6ec;border-bottom-right-radius:3px;}
+.lwchat .bub.note{align-self:center;background:var(--orange-t,#fff3e2);border:1px solid #f6dfb8;max-width:88%;}
+.lwchat .bub .att{display:inline-block;margin-top:4px;font-size:12px;text-decoration:underline;}
+.lwchat-input{border-top:1px solid var(--line,#e6e9ef);padding:10px 12px;background:var(--surface,#fff);}
+.lwchat-input textarea{width:100%;border:1px solid var(--line,#e6e9ef);border-radius:9px;padding:9px 11px;font-size:14px;resize:vertical;font-family:inherit;}
+.lwchat-controls{display:flex;align-items:center;gap:12px;margin-top:8px;}
+.lwchat-int{font-size:12px;color:var(--muted,#667);display:flex;align-items:center;gap:6px;cursor:pointer;}
+.lwchat-status{margin-left:auto;font-size:12px;}
+.lwchat-controls .btn{padding:7px 18px;}
+.lwchat-empty{align-self:center;color:var(--muted,#889);font-size:13px;margin:auto;}
+</style>
+
+<script>
+(function () {
+  var root = document.querySelector('.lwchat');
+  if (!root) return;
+  var feed = document.getElementById('lwchatFeed');
+  var ta = document.getElementById('lwchatBody');
+  var btn = document.getElementById('lwchatSend');
+  var statusEl = document.getElementById('lwchatStatus');
+  var internalCb = document.getElementById('lwchatInternal');
+  var csrf = (root.querySelector('input[name=csrfmiddlewaretoken]') || {}).value || '';
+  var pollUrl = root.dataset.poll, sendUrl = root.dataset.send;
+  var seen = {};
+
+  function el(tag, cls, text) {
+    var d = document.createElement(tag);
+    if (cls) d.className = cls;
+    if (text != null) d.textContent = text;   // textContent → safe against markup
+    return d;
+  }
+  function bubble(m) {
+    var cls = m.is_internal ? 'note' : (m.from_support ? 'supp' : 'cust');
+    var d = el('div', 'bub ' + cls);
+    d.appendChild(el('div', 'who', m.is_internal ? '🔒 Internal note' : m.who));
+    d.appendChild(el('div', 'body', m.body));
+    (m.attachments || []).forEach(function (a) {
+      var link = el('a', 'att', '📎 ' + a.name);
+      link.href = a.url; link.target = '_blank'; d.appendChild(link);
+    });
+    d.appendChild(el('div', 'when', m.when));
+    return d;
+  }
+  function nearBottom() { return feed.scrollHeight - feed.scrollTop - feed.clientHeight < 70; }
+  function render(msgs) {
+    var stick = nearBottom(), added = false;
+    (msgs || []).forEach(function (m) {
+      if (seen[m.id]) return;
+      seen[m.id] = 1;
+      var empty = feed.querySelector('.lwchat-empty'); if (empty) empty.remove();
+      feed.appendChild(bubble(m)); added = true;
+    });
+    if (added && stick) feed.scrollTop = feed.scrollHeight;
+    if (!feed.children.length) feed.appendChild(el('div', 'lwchat-empty', 'No messages yet — say hello.'));
+  }
+  function poll() {
+    fetch(pollUrl, { headers: { 'X-Requested-With': 'fetch' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (!d) return; render(d.messages); if (statusEl) statusEl.textContent = d.status ? ('Status: ' + d.status) : ''; })
+      .catch(function () {});
+  }
+  function send() {
+    var body = (ta.value || '').trim(); if (!body) return;
+    btn.disabled = true;
+    var fd = new FormData();
+    fd.append('body', body); fd.append('csrfmiddlewaretoken', csrf);
+    if (internalCb && internalCb.checked) fd.append('internal', '1');
+    fetch(sendUrl, { method: 'POST', body: fd, headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'fetch' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        btn.disabled = false;
+        if (d.error) { alert(d.error); return; }
+        if (d.message) { render([d.message]); ta.value = ''; if (internalCb) internalCb.checked = false; feed.scrollTop = feed.scrollHeight; }
+      })
+      .catch(function () { btn.disabled = false; });
+  }
+  btn.addEventListener('click', send);
+  ta.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+  poll();
+  setInterval(poll, 3500);
+})();
+</script>
