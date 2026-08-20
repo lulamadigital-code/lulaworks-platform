@@ -87,6 +87,30 @@ services:
           memory: 1G
 
   # ── Celery worker (background jobs: AI extraction, PDFs, exports, email) ────
+  # ── ASGI/WebSocket server — serves ONLY the real-time support chat (/ws/).
+  # HTTP stays on `web` (gunicorn/WSGI); nginx proxies WebSocket upgrades here.
+  ws:
+    image: lulaworks/api:prod
+    <<: *app-env
+    restart: unless-stopped
+    command: daphne -b 0.0.0.0 -p 8001 config.asgi:application
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket; socket.create_connection(('127.0.0.1',8001),3)\" || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+
   worker:
     image: lulaworks/api:prod
     <<: *app-env

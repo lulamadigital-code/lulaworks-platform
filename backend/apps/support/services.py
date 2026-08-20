@@ -104,7 +104,27 @@ def add_message(*, ticket, sender, body, is_internal=False, from_support=False,
            else "support.reply.sent", ticket, ip)
     if not is_internal:
         _notify_reply(ticket, from_support=from_support)
+    _broadcast_message(ticket, msg)      # push to connected WebSocket clients (if any)
     return msg
+
+
+def _broadcast_message(ticket, msg):
+    """Push a new message to the ticket's live-chat WebSocket group. Fail-open: a
+    no-op when Channels isn't configured (e.g. the WS service isn't running), so
+    the HTTP polling fallback still delivers it."""
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+        layer = get_channel_layer()
+        if layer is None:
+            return
+        async_to_sync(layer.group_send)(f"support_{ticket.id}", {
+            "type": "chat.message",
+            "message": message_dict(msg),
+            "internal": bool(msg.is_internal),
+        })
+    except Exception:                # noqa: BLE001 - real-time is best-effort
+        pass
 
 
 def message_dict(m):

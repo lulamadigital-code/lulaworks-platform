@@ -4,8 +4,12 @@ via AJAX — no page reloads, so the customer and technician see each other's re
 within a few seconds. Context: poll_url, send_url, is_support.
 {% endcomment %}
 <div class="lwchat" data-poll="{{ poll_url }}" data-send="{{ send_url }}"
-     data-support="{% if is_support %}1{% else %}0{% endif %}">
+     data-ticket="{{ ticket.id }}" data-support="{% if is_support %}1{% else %}0{% endif %}">
   {% csrf_token %}
+  <div class="lwchat-bar">
+    <span class="lwchat-dot" id="lwchatDot" title="connection"></span>
+    <span class="lwchat-live muted" id="lwchatLive"></span>
+  </div>
   <div class="lwchat-feed" id="lwchatFeed" aria-live="polite"></div>
   <div class="lwchat-input">
     <textarea id="lwchatBody" rows="2"
@@ -22,6 +26,10 @@ within a few seconds. Context: poll_url, send_url, is_support.
 
 <style>
 .lwchat{border:1px solid var(--line,#e6e9ef);border-radius:12px;overflow:hidden;background:var(--surface,#fff);display:flex;flex-direction:column;}
+.lwchat-bar{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--line,#e6e9ef);background:var(--surface,#fff);}
+.lwchat-dot{width:8px;height:8px;border-radius:50%;background:#c4c7d0;flex:none;}
+.lwchat-dot.live{background:var(--green,#00c875);box-shadow:0 0 0 3px rgba(0,200,117,.18);}
+.lwchat-live{font-size:12px;min-height:16px;}
 .lwchat-feed{display:flex;flex-direction:column;gap:10px;padding:14px;height:440px;overflow-y:auto;background:var(--bg,#f6f7fb);}
 .lwchat .bub{max-width:78%;padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.42;box-shadow:0 1px 2px rgba(0,0,0,.05);}
 .lwchat .bub .who{font-size:11px;font-weight:700;opacity:.75;margin-bottom:2px;}
@@ -108,7 +116,45 @@ within a few seconds. Context: poll_url, send_url, is_support.
   ta.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   });
+
+  // ── WebSocket layer (instant): receive, typing, presence. Polling stays on as a
+  // fallback (slower while the socket is live), so chat works even without it. ──
+  var dot = document.getElementById('lwchatDot');
+  var live = document.getElementById('lwchatLive');
+  var ws = null, wsOK = false, pollMs = 3500, typingTimer = null, liveTimer = null;
+  var ticket = root.dataset.ticket, isSupport = root.dataset.support === '1';
+
+  function setLive(msg) {
+    if (live) live.textContent = msg || '';
+    if (liveTimer) clearTimeout(liveTimer);
+    if (msg) liveTimer = setTimeout(function () { if (live) live.textContent = ''; }, 3500);
+  }
+  function connect() {
+    if (!('WebSocket' in window) || !ticket) return;
+    var proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    try { ws = new WebSocket(proto + '://' + location.host + '/ws/support/' + ticket + '/'); }
+    catch (e) { return; }
+    ws.onopen = function () { wsOK = true; if (dot) dot.classList.add('live'); };
+    ws.onclose = function () { wsOK = false; if (dot) dot.classList.remove('live'); setTimeout(connect, 5000); };
+    ws.onerror = function () { try { ws.close(); } catch (e) {} };
+    ws.onmessage = function (ev) {
+      var d; try { d = JSON.parse(ev.data); } catch (e) { return; }
+      if (d.type === 'message' && d.message) { render([d.message]); }
+      else if (d.type === 'typing') { setLive((d.is_support ? 'Support' : 'Customer') + ' is typing…'); }
+      else if (d.type === 'presence') { setLive((d.is_support ? 'Support' : 'Customer') + (d.online ? ' joined the chat' : ' left the chat')); }
+    };
+  }
+  ta.addEventListener('input', function () {
+    if (!wsOK || !ws) return;
+    if (typingTimer) return;                    // throttle typing pings to ~2s
+    try { ws.send(JSON.stringify({ type: 'typing' })); } catch (e) {}
+    typingTimer = setTimeout(function () { typingTimer = null; }, 2000);
+  });
+
+  connect();
   poll();
-  setInterval(poll, 3500);
+  // A steady safety-net poll (cheap; dedupes by id). When the socket is live,
+  // messages already arrived instantly over it, so this just guarantees delivery.
+  setInterval(poll, pollMs);
 })();
 </script>

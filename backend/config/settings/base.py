@@ -16,12 +16,16 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
 
 DJANGO_APPS = [
+    # `daphne` first so it patches runserver to serve ASGI (dev); harmless under
+    # gunicorn. Prod serves WebSockets from a dedicated Daphne process.
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "channels",
 ]
 THIRD_PARTY_APPS = [
     "rest_framework",
@@ -249,6 +253,20 @@ TWILIO_WHATSAPP_FROM = config("TWILIO_WHATSAPP_FROM", default="")
 REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
+
+# --- Channels (real-time support chat over WebSockets) ---
+# HTTP still runs on the WSGI app via gunicorn; this ASGI app serves WebSockets,
+# and in prod a dedicated Daphne process handles only /ws/. The channel layer is
+# Redis (same instance as Celery). In tests it's swapped for the in-memory layer.
+ASGI_APPLICATION = "config.asgi.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [config("CHANNELS_REDIS_URL", default=REDIS_URL)]},
+    }
+}
+if config("CHANNELS_IN_MEMORY", default=False, cast=bool):
+    CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 CELERY_TASK_ALWAYS_EAGER = config("CELERY_EAGER", default=False, cast=bool)
 # Scheduled work (Celery beat): the daily notification sweep — trial reminders
 # and overdue-task nudges. Runs at 07:00 in the app timezone.

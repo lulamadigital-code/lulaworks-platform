@@ -78,6 +78,7 @@ server {
         include /etc/nginx/snippets/proxy.conf;
         proxy_pass http://django;
     }
+    location /ws/ { include /etc/nginx/snippets/ws.conf; }   # real-time support chat
     location / {
         limit_req zone=general burst=50 nodelay;
         include /etc/nginx/snippets/proxy.conf;
