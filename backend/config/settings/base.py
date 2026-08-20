@@ -208,6 +208,10 @@ GEMINI_MODEL = config("GEMINI_MODEL", default="gemini-flash-latest")
 # starve the answer on long extraction prompts.
 GEMINI_THINKING_BUDGET = config("GEMINI_THINKING_BUDGET", default="0", cast=str)
 AI_CREDITS_PER_EXTRACTION = config("AI_CREDITS_PER_EXTRACTION", default="1", cast=str)
+# Model used specifically for the document-IMPORT recreation (a latency-sensitive,
+# high-volume-token task). "" = use GEMINI_MODEL. Set to a faster/lighter model
+# (e.g. gemini-flash-lite-latest) to make imports noticeably quicker.
+AI_IMPORT_MODEL = config("AI_IMPORT_MODEL", default="")
 
 # --- Email & Notification platform ---
 # The provider is Django's EMAIL_BACKEND: SMTP in prod, console in dev (nothing

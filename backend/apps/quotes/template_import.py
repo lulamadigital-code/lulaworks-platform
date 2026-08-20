@@ -463,28 +463,9 @@ def _primary_prompt(doc_type: str) -> str:
     )
 
 
-def _sibling_prompt(primary_type: str, needed: list, primary_html: str) -> str:
-    want = ", ".join(f'"{t}_html"' for t in needed)
-    return (
-        f"Below is an HTML template for a {primary_type} (using {{placeholders}}). "
-        "Produce the matching versions for the other document types so the company has "
-        "a consistent SET. Keep the SAME visual style, CSS class names and structure — "
-        "change ONLY what each document type requires:\n"
-        "- quotation & tax invoice: keep the price columns {{item.unit_price}} "
-        "{{item.amount}} and the totals block; sign-off reads 'Quotation compiled by' "
-        "or 'Invoice compiled by'.\n"
-        "- delivery note: REMOVE every price — the item row becomes {{item.no}} "
-        "{{item.description}} {{item.ordered}} {{item.delivered}} {{item.outstanding}} "
-        "{{item.unit}}; REMOVE the totals block and banking; change the sign-off to a "
-        "'Received in good order by' acknowledgement.\n"
-        "{{document.title}} already gives the correct heading. Same placeholder and "
-        "layout rules as the input (no script/img/link, normal flow, single page).\n\n"
-        f"Return ONLY JSON mapping each needed type to its html body: {{{want}}}.\n\n"
-        f"INPUT TEMPLATE ({primary_type}):\n{primary_html}"
-    )
-
-
 def _run_ai(company, user, prompt, name, *, images=None, max_tokens=6000):
+    from django.conf import settings
+
     from apps.ai_platform.gateway import (
         AllProvidersFailedError,
         InsufficientCreditsError,
@@ -492,7 +473,8 @@ def _run_ai(company, user, prompt, name, *, images=None, max_tokens=6000):
     )
     try:
         resp = run_task(company, user, task="template_layout_import", prompt=prompt,
-                        prompt_name=name, images=images, json_mode=True, max_tokens=max_tokens)
+                        prompt_name=name, images=images, json_mode=True,
+                        max_tokens=max_tokens, model=settings.AI_IMPORT_MODEL or "")
     except (InsufficientCreditsError, AllProvidersFailedError):
         return None, Decimal("0")
     except Exception:                # noqa: BLE001 - AI is best-effort, never fatal
@@ -504,31 +486,39 @@ def _usable_html(v):
     return v[:60000] if (isinstance(v, str) and "{{" in v and len(v.strip()) >= 40) else None
 
 
+def _gen_one_type(company, user, image_bytes, doc_type):
+    """Recreate ONE document type from the uploaded image. Returns (doc_type, html,
+    css, credits)."""
+    resp, credits = _run_ai(company, user, _primary_prompt(doc_type),
+                            f"template_html_{doc_type}", images=[image_bytes], max_tokens=5000)
+    data = _parse_design(resp.text) if resp else None
+    html = _usable_html((data or {}).get("html"))
+    css = (data.get("css") or "")[:40000] if (data and isinstance(data.get("css"), str)) else ""
+    return doc_type, html, css, credits
+
+
 def vision_generate_all(company, user, image_bytes: bytes, primary_doc_type: str):
     """Recreate the uploaded page as a MATCHING SET — quotation, invoice, delivery
-    note — sharing one style. Two steps: (1) faithfully recreate the uploaded type
-    from the image, then (2) adapt it to the other two types. Returns (by_type, css,
-    ai_used, credits). Fails open to {} when the primary can't be produced; a partial
-    set (primary only) is fine if the adapt step fails."""
-    resp, credits = _run_ai(company, user, _primary_prompt(primary_doc_type),
-                            "template_html_recreate", images=[image_bytes], max_tokens=6000)
-    data = _parse_design(resp.text) if resp else None
-    primary = _usable_html((data or {}).get("html"))
-    if primary is None:
-        return {}, "", False, credits
-    css = (data.get("css") or "") if isinstance(data.get("css"), str) else ""
-    by_type = {primary_doc_type: primary}
+    note. Runs the three type-specific recreations IN PARALLEL (each anchored to the
+    same source image, so they share the look) to roughly halve the wall-clock time
+    vs generating them one after another. Returns (by_type, css_by_type, ai_used,
+    credits); fails open to ({}, {}, False, …) when the uploaded type can't be made."""
+    from concurrent.futures import ThreadPoolExecutor
 
-    needed = [t for t in ("quotation", "invoice", "delivery") if t != primary_doc_type]
-    resp2, c2 = _run_ai(company, user, _sibling_prompt(primary_doc_type, needed, primary),
-                        "template_html_siblings", max_tokens=9000)
-    credits = credits + c2
-    sdata = _parse_design(resp2.text) if resp2 else None
-    for t in needed:
-        h = _usable_html((sdata or {}).get(f"{t}_html") or (sdata or {}).get(t))
-        if h:
-            by_type[t] = h
-    return by_type, css[:40000], True, credits
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        results = list(pool.map(
+            lambda dt: _gen_one_type(company, user, image_bytes, dt),
+            ("quotation", "invoice", "delivery")))
+
+    by_type, css_by_type, credits = {}, {}, Decimal("0")
+    for dt, html, css, c in results:
+        credits += c
+        if html:
+            by_type[dt] = html
+            css_by_type[dt] = css
+    if primary_doc_type not in by_type:
+        return {}, {}, False, credits
+    return by_type, css_by_type, True, credits
 
 
 # ── Orchestration: analyse an upload, then save the approved design ─────────────
@@ -553,15 +543,15 @@ def run_import(template_import, user):
     """Analyse the uploaded document (deterministic + optional AI) and store the
     proposed design, warnings and features on the import, ready for review."""
     ti = template_import
-    by_type, raw_css = {}, ""
+    by_type, css_by_type = {}, {}
     try:
         path = _local_path(ti)
         design, warnings, features = analyse_document(path, ti.doc_type)
         image = _page_image_bytes(path, ti.original_name)
         if image is not None:
             # First choice: FAITHFULLY recreate the page as a MATCHING SET —
-            # quotation, invoice, delivery note — sharing one visual identity.
-            by_type, raw_css, ai_used, credits = vision_generate_all(
+            # quotation, invoice, delivery note — generated in parallel for speed.
+            by_type, css_by_type, ai_used, credits = vision_generate_all(
                 ti.company, user, image, ti.doc_type)
             if not by_type:
                 # Recreation unavailable → match the closest structured design.
@@ -576,10 +566,10 @@ def run_import(template_import, user):
         ti.save(update_fields=["status", "error", "updated_by", "updated_at"])
         return ti
 
-    # Carry the recreated set on `features` (no schema change needed); the structured
-    # `design` remains as an editable fallback.
+    # Carry the recreated set (html + its own css per type) on `features` (no schema
+    # change needed); the structured `design` remains as an editable fallback.
     features["_raw_by_type"] = by_type
-    features["_raw_css"] = raw_css
+    features["_raw_css_by_type"] = css_by_type
 
     # When the AI set the branding, the deterministic "couldn't detect colour/logo"
     # notes are stale — drop them. Also drop the deterministic tagline guess: the
@@ -618,7 +608,7 @@ def save_as_template(template_import, user, *, name="", design=None):
     ti = template_import
     feats = ti.features or {}
     by_type = feats.get("_raw_by_type") or {}
-    css = feats.get("_raw_css", "")
+    css_by_type = feats.get("_raw_css_by_type") or {}
     base = (name or "").strip() or "Imported"
     primary = None
 
@@ -629,7 +619,7 @@ def save_as_template(template_import, user, *, name="", design=None):
                 continue
             tpl = create_html_template(
                 ti.company, user, doc_type=dt, name=f"{base} · {_TYPE_LABELS[dt]}"[:80],
-                design={}, html=html, css=css,
+                design={}, html=html, css=css_by_type.get(dt, ""),
                 description="Recreated from an uploaded document",
                 origin=TemplateOrigin.IMPORTED)
             set_default_template(tpl)                 # make it the default for its type

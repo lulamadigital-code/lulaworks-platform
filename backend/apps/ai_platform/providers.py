@@ -108,7 +108,8 @@ class GeminiProvider(AIProvider):
     name = "gemini"
 
     def complete(self, prompt: str, *, system: str = "", max_tokens: int = 2000,
-                 json_mode: bool = False, images: list | None = None, **_) -> AIResponse:
+                 json_mode: bool = False, images: list | None = None,
+                 model: str = "", **_) -> AIResponse:
         if not settings.GEMINI_API_KEY:
             raise NotConfiguredError("GEMINI_API_KEY is not set.")
         try:
@@ -148,7 +149,7 @@ class GeminiProvider(AIProvider):
             contents = prompt
 
         resp = client.models.generate_content(
-            model=settings.GEMINI_MODEL, contents=contents, config=config,
+            model=model or settings.GEMINI_MODEL, contents=contents, config=config,
         )
 
         usage = getattr(resp, "usage_metadata", None)

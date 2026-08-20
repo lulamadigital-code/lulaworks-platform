@@ -512,7 +512,8 @@ def template_import_preview(request, pk):
     company = request.user.active_company
     raw = (feats.get("_raw_by_type") or {}).get(ti.doc_type)
     if raw:
-        pdf = render_raw_preview_pdf(company, ti.doc_type, raw, feats.get("_raw_css", ""))
+        css = (feats.get("_raw_css_by_type") or {}).get(ti.doc_type, "")
+        pdf = render_raw_preview_pdf(company, ti.doc_type, raw, css)
     else:
         pdf = render_design_preview_pdf(company, ti.doc_type, ti.design)
     resp = HttpResponse(pdf, content_type="application/pdf")
