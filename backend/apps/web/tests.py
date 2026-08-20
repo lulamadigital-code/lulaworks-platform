@@ -2034,11 +2034,41 @@ class InvoicesPageTests(TestCase):
         self.client.force_login(user)
         resp = self.client.get("/invoices/")
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "Create a tax invoice")
-        # The new sidebar link points at the invoices page.
+        self.assertContains(resp, "Your invoices")
+        # The sidebar link and the New-invoice action both point at the hub.
         self.assertContains(resp, 'href="/invoices/"')
+        self.assertContains(resp, "/invoices/new/")
 
     def test_invoices_page_requires_login(self):
         resp = self.client.get("/invoices/")
         self.assertEqual(resp.status_code, 302)
         self.assertIn("/login/", resp.url)
+
+    def test_create_standalone_invoice_without_quotation(self):
+        from apps.core.context import tenant_scope
+        from apps.finance.models import Invoice
+
+        company = make_company()
+        user = user_with(company, ["finance.manage"])
+        self.client.force_login(user)
+        resp = self.client.post("/invoices/new/", {
+            "client_name": "Walk-in Client",
+            "issue_date": "2026-08-20", "vat_rate": "15",
+            "line_description": ["Consulting", "Parts"],
+            "line_qty": ["2", "1"], "line_price": ["500", "250"],
+        })
+        self.assertEqual(resp.status_code, 302)                 # → detail
+        with tenant_scope(company.id):
+            inv = Invoice.objects.get()
+            self.assertIsNone(inv.project_id)                   # truly standalone
+            self.assertEqual(inv.client_name, "Walk-in Client")
+            self.assertEqual(inv.lines.count(), 2)
+            self.assertEqual(inv.subtotal, Decimal("1250.00"))  # 2*500 + 1*250
+        self.assertIn(str(inv.id), resp.url)
+
+    def test_new_invoice_needs_a_line(self):
+        company = make_company()
+        user = user_with(company, ["finance.manage"])
+        self.client.force_login(user)
+        resp = self.client.post("/invoices/new/", {"client_name": "X"}, follow=True)
+        self.assertContains(resp, "at least one line item")

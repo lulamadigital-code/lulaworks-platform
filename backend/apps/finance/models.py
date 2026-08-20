@@ -141,8 +141,15 @@ class Invoice(TenantBaseModel):
     """Customer invoice / progress claim. Sending is human-approved (nothing
     auto-sends). Retention is first-class (mining/construction)."""
 
+    # Optional: an invoice may be raised from a project/quotation, OR stand alone
+    # (a plain customer invoice typed from scratch — no project, no quotation).
     project = models.ForeignKey(
-        "projects.Project", on_delete=models.CASCADE, related_name="invoices"
+        "projects.Project", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="invoices"
+    )
+    customer = models.ForeignKey(
+        "customers.Customer", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+"
     )
     number = models.CharField(max_length=32)
     client_name = models.CharField(max_length=255)

@@ -1,0 +1,85 @@
+{% extends "web/base.html" %}
+{% block title %}{{ invoice.number }}{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>{{ invoice.number }}
+      <span class="chip {% if invoice.status == 'paid' %}ok{% elif invoice.status == 'overdue' %}warn{% endif %}"
+            style="vertical-align:middle;">{{ invoice.get_status_display }}</span></h1>
+    <p class="sub" style="margin:0;">Invoice for {{ invoice.client_name|default:invoice.customer|default:"—" }}.</p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a class="btn ghost" href="{% url 'web:invoices' %}">← All invoices</a>
+    <button class="btn ghost" onclick="window.print()" data-no-busy>Print</button>
+  </div>
+</div>
+
+<div class="two-col" style="display:grid;grid-template-columns:2fr 1fr;gap:14px;align-items:start;">
+  <div class="card">
+    <table>
+      <thead><tr><th>#</th><th>Description</th><th class="num">Qty</th>
+        <th class="num">Unit price</th><th class="num">Amount</th></tr></thead>
+      <tbody>
+        {% for ln in invoice.lines.all %}
+        <tr><td>{{ forloop.counter }}</td><td>{{ ln.description }}</td>
+          <td class="num">{{ ln.qty|floatformat:2 }}</td>
+          <td class="num">R{{ ln.unit_price|floatformat:2 }}</td>
+          <td class="num">R{{ ln.line_total|floatformat:2 }}</td></tr>
+        {% empty %}
+        <tr><td colspan="5" class="muted">No line items.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+      <table style="min-width:280px;">
+        <tr><td class="muted">Subtotal</td><td class="num">R{{ invoice.net_amount|floatformat:2 }}</td></tr>
+        <tr><td class="muted">{{ invoice.tax_name }} ({{ invoice.vat_rate|floatformat:"-2" }}%)</td>
+          <td class="num">R{{ invoice.vat_amount|floatformat:2 }}</td></tr>
+        {% if invoice.retention_amount %}
+        <tr><td class="muted">Retention ({{ invoice.retention_pct|floatformat:"-2" }}%)</td>
+          <td class="num">−R{{ invoice.retention_amount|floatformat:2 }}</td></tr>
+        {% endif %}
+        <tr><td><strong>Total</strong></td><td class="num"><strong>R{{ invoice.total|floatformat:2 }}</strong></td></tr>
+        <tr><td class="muted">Paid</td><td class="num">R{{ invoice.paid|floatformat:2 }}</td></tr>
+        <tr><td><strong>Outstanding</strong></td><td class="num"><strong>R{{ invoice.outstanding|floatformat:2 }}</strong></td></tr>
+      </table>
+    </div>
+    {% if invoice.notes %}<p class="muted" style="margin-top:10px;white-space:pre-line;">{{ invoice.notes }}</p>{% endif %}
+  </div>
+
+  <div>
+    <div class="card">
+      <h3 style="margin-top:0;">Details</h3>
+      <table>
+        <tr><td class="muted">Customer</td><td>{{ invoice.customer|default:invoice.client_name|default:"—" }}</td></tr>
+        <tr><td class="muted">Invoice date</td><td>{{ invoice.issue_date|default:"—" }}</td></tr>
+        <tr><td class="muted">Due date</td><td>{{ invoice.due_date|default:"—" }}</td></tr>
+        {% if invoice.project %}<tr><td class="muted">Project</td><td>{{ invoice.project }}</td></tr>{% endif %}
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3 style="margin-top:0;">Payments</h3>
+      {% for p in invoice.payments.all %}
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid var(--line);">
+        <span>{{ p.date }}{% if p.reference %} · {{ p.reference }}{% endif %}</span>
+        <strong>R{{ p.amount|floatformat:2 }}</strong>
+      </div>
+      {% empty %}
+      <p class="muted" style="margin:0 0 8px;">No payments recorded.</p>
+      {% endfor %}
+
+      {% if can_finance %}
+      <form method="post" action="{% url 'web:invoice_payment' invoice.id %}" style="margin-top:10px;">{% csrf_token %}
+        <label>Record a payment</label>
+        <input type="number" name="amount" step="0.01" min="0" placeholder="Amount (R)" required>
+        <input type="text" name="reference" placeholder="Reference / POP" style="margin-top:6px;">
+        <button class="btn primary" type="submit" data-busy-text="Recording…" style="margin-top:8px;width:100%;">Record payment</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

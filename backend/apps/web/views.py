@@ -2608,35 +2608,106 @@ def po_approve(request, pk):
 
 # ── Invoices (raise a tax invoice from an approved quotation) ──────────────────
 
+def _can_invoice(user):
+    return bool(user.has_perm_code("finance.manage")
+                or user.has_perm_code("quotes.create"))
+
+
 @login_required
 def invoices(request):
-    """Invoice hub — raise a tax invoice from an approved quotation and see the
-    invoices already issued. Invoices here are quote-first: a tax invoice always
-    carries its quotation's number (INV-<ref>), so the whole commercial chain —
-    quotation → PO → invoice → delivery note — stays on one reference. That's why
-    'create an invoice' means 'pick the approved quotation to invoice', not a
-    blank form."""
+    """Invoice hub. Primary path: start a NEW invoice from scratch — no project,
+    no quotation (a plain customer invoice). Secondary: raise a tax invoice from
+    an approved quotation, which inherits the quotation's number."""
     from apps.quotes.models import FINALIZED_STATUSES, CommercialDocument
 
+    invoices_qs = (Invoice.objects.all()
+                   .select_related("customer", "project")
+                   .prefetch_related("lines", "payments")
+                   .order_by("-created_at")[:100])
     invoiced_ids = set(
         CommercialDocument.objects
         .filter(kind=CommercialDocument.Kind.INVOICE)
         .values_list("quotation_id", flat=True))
-    # Eligible = a finalized quotation with something to invoice, not yet invoiced.
     eligible = [
         q for q in (Quotation.objects.filter(status__in=FINALIZED_STATUSES)
                     .select_related("customer").prefetch_related("lines")
                     .order_by("-created_at"))
         if q.id not in invoiced_ids and q.invoice_total > 0
     ]
-    issued = (CommercialDocument.objects
-              .filter(kind=CommercialDocument.Kind.INVOICE)
-              .select_related("quotation", "quotation__customer")
-              .order_by("-created_at")[:50])
     return render(request, "web/invoices.html", {
+        "invoices": invoices_qs,
         "eligible": eligible,
-        "issued": issued,
-        "can_create": request.user.has_perm_code("quotes.create"),
+        "can_create": _can_invoice(request.user),
+        "nav_section": "invoices",
+    })
+
+
+@login_required
+def invoice_new(request):
+    """Create a standalone customer invoice from scratch — pick or type the
+    customer, add line items, done. No project or quotation required."""
+    from apps.customers.models import Customer
+    from apps.finance.services import create_standalone_invoice
+
+    if not _can_invoice(request.user):
+        messages.error(request, "You do not have permission to create invoices.")
+        return redirect("web:invoices")
+
+    if request.method == "POST":
+        customer = None
+        cid = request.POST.get("customer")
+        if cid:
+            customer = Customer.objects.filter(pk=cid).first()
+        client_name = (request.POST.get("client_name", "").strip()
+                       or (str(customer) if customer else ""))
+        # Parallel line arrays from the dynamic rows.
+        descs = request.POST.getlist("line_description")
+        qtys = request.POST.getlist("line_qty")
+        prices = request.POST.getlist("line_price")
+        lines = []
+        for i, desc in enumerate(descs):
+            desc = (desc or "").strip()
+            if not desc:
+                continue
+            lines.append({"description": desc,
+                          "qty": _to_decimal(qtys[i] if i < len(qtys) else 1, "1"),
+                          "unit_price": _to_decimal(prices[i] if i < len(prices) else 0)})
+        if not client_name:
+            messages.error(request, "Choose a customer or enter a customer name.")
+        elif not lines:
+            messages.error(request, "Add at least one line item.")
+        else:
+            vat_raw = request.POST.get("vat_rate", "").strip()
+            invoice = create_standalone_invoice(
+                request.user.active_company, request.user,
+                client_name=client_name, customer=customer, lines=lines,
+                vat_rate=_to_decimal(vat_raw) if vat_raw != "" else None,
+                issue_date=request.POST.get("issue_date") or None,
+                due_date=request.POST.get("due_date") or None,
+                notes=request.POST.get("notes", "").strip())
+            from apps.core.audit import audit
+            audit(request, "invoice.created", entity=invoice)
+            messages.success(request, f"Invoice {invoice.number} created.")
+            return redirect("web:invoice_detail", pk=invoice.id)
+
+    company = request.user.active_company
+    return render(request, "web/invoice_new.html", {
+        "customers": Customer.objects.all().order_by("name"),
+        "default_vat": getattr(company, "default_tax_rate", 0) or 0,
+        "today": timezone.localdate().isoformat(),
+        "nav_section": "invoices",
+    })
+
+
+@login_required
+def invoice_detail(request, pk):
+    """A standalone/customer invoice: header, line items, totals and payments."""
+    invoice = get_object_or_404(
+        Invoice.objects.select_related("customer", "project").prefetch_related(
+            "lines", "payments"), pk=pk)
+    return render(request, "web/invoice_detail.html", {
+        "invoice": invoice,
+        "can_finance": request.user.has_perm_code("finance.manage"),
         "nav_section": "invoices",
     })
 
@@ -2791,11 +2862,11 @@ def invoice_payment(request, pk):
     amount = _to_decimal(request.POST.get("amount"))
     if amount <= 0:
         messages.error(request, "Enter a payment amount.")
-        return redirect("web:commercial")
+        return redirect("web:invoice_detail", pk=pk)
     record_payment(invoice, request.user, amount=amount,
                    reference=request.POST.get("reference", ""))
     messages.success(request, f"Payment of R{amount} recorded on {invoice.number}.")
-    return redirect("web:commercial")
+    return redirect("web:invoice_detail", pk=pk)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -304,6 +304,8 @@ urlpatterns = [
     # Commercial + AI
     path("commercial/", views.commercial, name="commercial"),
     path("invoices/", views.invoices, name="invoices"),
+    path("invoices/new/", views.invoice_new, name="invoice_new"),
+    path("invoices/<uuid:pk>/", views.invoice_detail, name="invoice_detail"),
     path("invoices/<uuid:pk>/payment/", views.invoice_payment, name="invoice_payment"),
     path("lulama/", views.lulama, name="lulama"),
 ]

@@ -249,6 +249,36 @@ def create_invoice(project, user, *, client_name=None, lines=None, retention_pct
     return invoice
 
 
+@transaction.atomic
+def create_standalone_invoice(company, user, *, client_name, lines, customer=None,
+                             vat_rate=None, issue_date=None, due_date=None,
+                             notes="") -> Invoice:
+    """Raise a customer invoice from scratch — no project, no quotation. Numbering
+    and tax work exactly as for a project invoice; the tax engine decides the rate
+    from the company (and customer, when one is linked) unless an explicit
+    vat_rate is given."""
+    tax_name, tax_inclusive, reverse_charge = "VAT", False, False
+    if vat_rate is None:
+        from apps.tax.services import compute_tax
+        decision = compute_tax(company, customer=customer)
+        vat_rate = decision.rate
+        tax_name, tax_inclusive, reverse_charge = (
+            decision.tax_name, decision.inclusive, decision.reverse_charge)
+    invoice = Invoice.objects.create(
+        company=company, project=None, customer=customer,
+        number=next_number(company, "invoice"),
+        client_name=client_name or (str(customer) if customer else ""),
+        vat_rate=vat_rate, tax_name=tax_name, tax_inclusive=tax_inclusive,
+        reverse_charge=reverse_charge, issue_date=issue_date, due_date=due_date,
+        notes=notes or "", created_by=user, updated_by=user,
+    )
+    for pos, ln in enumerate(lines or [], start=1):
+        invoice.lines.create(company=company, position=pos,
+                             description=ln["description"], qty=ln.get("qty", 1),
+                             unit_price=ln.get("unit_price", 0))
+    return invoice
+
+
 def create_progress_claim(project, user, *, percent_complete, retention_pct=10) -> Invoice:
     """A progress claim bills a % of the contract value (budget revenue), less the
     portion already claimed, with retention held back."""
