@@ -395,6 +395,37 @@ def tool(request, slug):
     return render(request, "marketing/tool.html", ctx)
 
 
+# ── Templates library ─────────────────────────────────────────────────────────
+
+def templates_lib(request):
+    """Index of the free business templates — delivered through LulaWorks."""
+    from apps.education.templates_lib import TEMPLATES
+    ctx = _seo("Free business templates for contractors — quotation, invoice, RFQ & more",
+               "Free, professional templates for contractors and suppliers: "
+               "quotation, tax invoice, delivery note, RFQ, purchase order, "
+               "checklists and payment follow-up emails.")
+    ctx["templates"] = list(TEMPLATES.values())
+    return render(request, "marketing/templates_lib.html", ctx)
+
+
+def template_detail(request, slug):
+    """A single template: what it's for, what it includes (or its usable content),
+    and a CTA to create it in LulaWorks."""
+    from django.http import Http404
+
+    from apps.analytics.services import track
+    from apps.education.templates_lib import TEMPLATES
+    spec = TEMPLATES.get(slug)
+    if spec is None:
+        raise Http404("Unknown template")
+    track("template_viewed", request=request, module="education",
+          feature=spec.related_feature, source="templates", metadata={"slug": slug})
+    ctx = _seo(f"{spec.title} — free template by LulaWorks", spec.summary)
+    ctx.update({"tpl": spec,
+                "others": [t for t in TEMPLATES.values() if t.slug != slug][:3]})
+    return render(request, "marketing/template_detail.html", ctx)
+
+
 # ── SEO endpoints ─────────────────────────────────────────────────────────────
 
 def robots_txt(request):

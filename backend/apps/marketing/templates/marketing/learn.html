@@ -23,17 +23,30 @@
     </div>
     {% endif %}
 
-    <a class="card" href="{% url 'marketing:tools' %}"
-       style="display:flex;align-items:center;gap:16px;margin-top:24px;text-decoration:none;color:inherit;
-              background:linear-gradient(135deg,var(--primary-t),#fff);">
-      <div class="ic">🧮</div>
-      <div style="flex:1;">
-        <h3 style="margin:0;">Free calculators</h3>
-        <p style="color:var(--muted);margin:2px 0 0;font-size:14px;">Job profit, markup
-          vs margin, VAT and break-even — no signup required.</p>
-      </div>
-      <span style="font-weight:700;color:var(--primary-d);white-space:nowrap;">Open tools →</span>
-    </a>
+    <div class="grid g2" style="margin-top:24px;">
+      <a class="card" href="{% url 'marketing:tools' %}"
+         style="display:flex;align-items:center;gap:16px;text-decoration:none;color:inherit;
+                background:linear-gradient(135deg,var(--primary-t),#fff);">
+        <div class="ic">🧮</div>
+        <div style="flex:1;">
+          <h3 style="margin:0;">Free calculators</h3>
+          <p style="color:var(--muted);margin:2px 0 0;font-size:14px;">Job profit, markup,
+            VAT and break-even — no signup.</p>
+        </div>
+        <span style="font-weight:700;color:var(--primary-d);white-space:nowrap;">Open →</span>
+      </a>
+      <a class="card" href="{% url 'marketing:templates' %}"
+         style="display:flex;align-items:center;gap:16px;text-decoration:none;color:inherit;
+                background:linear-gradient(135deg,var(--primary-t),#fff);">
+        <div class="ic">📄</div>
+        <div style="flex:1;">
+          <h3 style="margin:0;">Free templates</h3>
+          <p style="color:var(--muted);margin:2px 0 0;font-size:14px;">Quotation, invoice,
+            RFQ, checklists and follow-up emails.</p>
+        </div>
+        <span style="font-weight:700;color:var(--primary-d);white-space:nowrap;">Open →</span>
+      </a>
+    </div>
 
     {% if featured %}
     <h2 style="margin-top:46px;">Featured</h2>

@@ -1,0 +1,90 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap" style="max-width:820px;margin:0 auto;">
+    <p><a href="{% url 'marketing:templates' %}" style="color:var(--muted);">← Free templates</a></p>
+    <span class="eyebrow">{{ tpl.kind }} template</span>
+    <h1>{{ tpl.title }}</h1>
+    <p class="lead">{{ tpl.summary }}</p>
+
+    <div class="prose" style="max-width:none;">{{ tpl.problem|safe }}</div>
+
+    {% if tpl.kind == 'document' %}
+    <div class="card" style="margin-top:18px;">
+      <h3 style="margin-top:0;">What a good one includes</h3>
+      <ul class="tpl-list">
+        {% for line in tpl.includes %}<li><span class="tick">✓</span> {{ line }}</li>{% endfor %}
+      </ul>
+    </div>
+
+    {% elif tpl.kind == 'checklist' %}
+    <div class="card" style="margin-top:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+        <h3 style="margin:0;">The checklist</h3>
+        <button type="button" class="btn ghost" data-copy="#tpl-copy">Copy</button>
+      </div>
+      <ul class="tpl-list" id="tpl-copy">
+        {% for item in tpl.items %}<li><span class="box">☐</span> {{ item }}</li>{% endfor %}
+      </ul>
+    </div>
+
+    {% elif tpl.kind == 'email' %}
+    {% for s in tpl.samples %}
+    <div class="card" style="margin-top:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+        <h3 style="margin:0;font-size:17px;">{{ s.title }}</h3>
+        <button type="button" class="btn ghost" data-copy="#email-{{ forloop.counter }}">Copy</button>
+      </div>
+      <pre id="email-{{ forloop.counter }}" class="tpl-pre">{{ s.text }}</pre>
+    </div>
+    {% endfor %}
+    <p style="color:var(--muted);font-size:13px;margin-top:8px;">Replace the
+      {{ '{placeholders}' }} with your details before sending.</p>
+    {% endif %}
+
+    {# ── CTA ──────────────────────────────────────────────────────────────── #}
+    <div class="card" style="margin-top:26px;background:linear-gradient(135deg,var(--primary-t),#fff);">
+      <h3 style="margin-top:0;">{{ tpl.cta_label }}</h3>
+      <p style="color:var(--muted);margin:6px 0 14px;">Start free — no card required.
+        LulaWorks creates it for you, branded and numbered, in seconds.</p>
+      <a class="btn" href="{{ tpl.cta_url }}">Start Free with LulaWorks</a>
+    </div>
+
+    {% if others %}
+    <h2 style="margin-top:40px;">More templates</h2>
+    <div class="grid g3" style="margin-top:16px;">
+      {% for t in others %}
+      <a class="card" href="{% url 'marketing:template_detail' t.slug %}"
+         style="text-decoration:none;color:inherit;display:block;">
+        <div class="ic">{{ t.icon }}</div>
+        <h3 style="margin:10px 0 6px;">{{ t.title }}</h3>
+        <p style="color:var(--muted);font-size:14px;margin:0;">{{ t.summary }}</p>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+<style>
+  .tpl-list{list-style:none;padding:0;margin:12px 0 0;}
+  .tpl-list li{padding:8px 0;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start;}
+  .tpl-list li:last-child{border-bottom:0;}
+  .tpl-list .tick{color:var(--green);font-weight:800;flex:none;}
+  .tpl-list .box{color:var(--muted);flex:none;}
+  .tpl-pre{white-space:pre-wrap;font:14px/1.55 inherit;color:var(--ink);background:var(--bg);
+    border:1px solid var(--line);border-radius:10px;padding:14px;margin:12px 0 0;}
+</style>
+<script>
+(function () {
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-copy]'); if (!b) return;
+    var el = document.querySelector(b.getAttribute('data-copy')); if (!el) return;
+    var text = (el.innerText || el.textContent || '').trim();
+    navigator.clipboard.writeText(text).then(function () {
+      var old = b.textContent; b.textContent = 'Copied ✓';
+      setTimeout(function () { b.textContent = old; }, 1600);
+    }).catch(function () {});
+  });
+})();
+</script>
+{% endblock %}

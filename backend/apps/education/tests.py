@@ -97,3 +97,31 @@ class FreeToolsTests(TestCase):
                                   {"amount": "100", "rate": "15", "mode": "exclusive"})
         self.assertContains(posted, "R115.00")
         self.assertEqual(self.client.get("/tools/does-not-exist/").status_code, 404)
+
+
+class TemplatesLibraryTests(TestCase):
+    def test_index_lists_templates(self):
+        resp = self.client.get("/templates/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Professional Quotation Template")
+        self.assertContains(resp, "Payment Follow-up Email Templates")
+
+    def test_document_template_shows_includes_and_cta(self):
+        resp = self.client.get("/templates/professional-quotation-template/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "What a good one includes")
+        self.assertContains(resp, "Create your free professional quotation")
+        self.assertContains(resp, "Start Free with LulaWorks")
+
+    def test_checklist_template_renders_items(self):
+        resp = self.client.get("/templates/site-handover-checklist/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Customer sign-off obtained")
+
+    def test_email_template_renders_samples(self):
+        resp = self.client.get("/templates/payment-follow-up-templates/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Friendly reminder")
+
+    def test_unknown_template_404s(self):
+        self.assertEqual(self.client.get("/templates/nope/").status_code, 404)
