@@ -433,6 +433,19 @@ def lead_thanks(request):
         "You're on the list — LulaWorks", "Thanks for joining."))
 
 
+def unsubscribe(request, token):
+    """One-click unsubscribe from Academy emails (no login). Honours the link in
+    every marketing email so 'unsubscribe any time' is real."""
+    from apps.education.leads import lead_from_token
+    lead = lead_from_token(token)
+    if lead is not None and lead.subscribed:
+        lead.subscribed = False
+        lead.save(update_fields=["subscribed", "updated_at"])
+    return render(request, "marketing/unsubscribed.html",
+                  {**_seo("Unsubscribed — LulaWorks", ""),
+                   "ok": lead is not None, "email": lead.email if lead else ""})
+
+
 # ── Templates library ─────────────────────────────────────────────────────────
 
 def templates_lib(request):

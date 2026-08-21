@@ -22,6 +22,7 @@ urlpatterns = [
     path("templates/<slug:slug>/", views.template_detail, name="template_detail"),
     path("grow/", views.lead_capture, name="lead_capture"),
     path("grow/thanks/", views.lead_thanks, name="lead_thanks"),
+    path("grow/unsubscribe/<str:token>/", views.unsubscribe, name="unsubscribe"),
     path("start-free-trial/", views.trial, name="trial"),
     path("privacy/", views.privacy, name="privacy"),
     path("terms/", views.terms, name="terms"),

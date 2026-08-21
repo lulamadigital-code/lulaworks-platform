@@ -1,0 +1,22 @@
+{% extends "marketing/base.html" %}
+{% block content %}
+<section class="section tight">
+  <div class="wrap" style="max-width:600px;margin:0 auto;text-align:center;">
+    {% if ok %}
+    <div class="ic" style="margin:0 auto;">✓</div>
+    <h1 style="margin-top:14px;">You've been unsubscribed</h1>
+    <p class="lead" style="margin:0 auto;">{% if email %}{{ email }} has been removed from
+      LulaWorks Academy emails.{% else %}You won't receive Academy emails any more.{% endif %}
+      You can still browse everything freely.</p>
+    {% else %}
+    <h1>Link expired or invalid</h1>
+    <p class="lead" style="margin:0 auto;">We couldn't process that unsubscribe link.
+      If you keep getting emails you don't want, contact
+      <a href="mailto:support@lulaworks.co.za">support@lulaworks.co.za</a>.</p>
+    {% endif %}
+    <div style="margin-top:22px;">
+      <a class="btn ghost" href="{% url 'marketing:learn' %}">Back to the Academy</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

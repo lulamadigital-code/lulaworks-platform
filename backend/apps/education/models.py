@@ -190,6 +190,8 @@ class EducationLead(models.Model):
     first_source = models.CharField(max_length=160, blank=True)  # slug they arrived on
     score = models.PositiveIntegerField(default=0)
     has_account = models.BooleanField(default=False)       # converted to a signup
+    subscribed = models.BooleanField(default=True)         # false = unsubscribed
+    welcomed_at = models.DateTimeField(null=True, blank=True)  # welcome email sent
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -6,9 +6,27 @@ the growth kit), we create a lead and start scoring their engagement. The score
 tells sales/CRM who is warming up — the goal is timely help, not spam.
 """
 
+from django.core import signing
 from django.db.models import Sum
+from django.utils import timezone
 
 from .models import EducationLead, LeadEvent
+
+_UNSUB_SALT = "education.unsubscribe"
+
+
+def unsubscribe_token(lead) -> str:
+    """A tamper-proof token for a one-click unsubscribe link (no login needed)."""
+    return signing.dumps(str(lead.id), salt=_UNSUB_SALT)
+
+
+def lead_from_token(token):
+    """Resolve an unsubscribe token back to its lead, or None if invalid."""
+    try:
+        lead_id = signing.loads(token, salt=_UNSUB_SALT, max_age=None)
+    except signing.BadSignature:
+        return None
+    return EducationLead.objects.filter(id=lead_id).first()
 
 #: Points per action (from the brief). Higher = closer to a serious buyer.
 LEAD_SCORES = {
@@ -113,12 +131,56 @@ def capture_lead(*, email, event="opt_in", request=None, detail="", **profile):
         except Exception:               # noqa: BLE001 - analytics is best-effort
             pass
 
+        # First time we see this email → welcome them (they gave it via the form).
+        if created and lead.subscribed and lead.email and lead.welcomed_at is None:
+            send_welcome_email(lead, request=request)
+
         # Hand hot leads to the sales CRM (idempotent; no-op if unconfigured).
         if lead.score >= CRM_SYNC_THRESHOLD or event == "account_created":
             sync_lead_to_crm(lead)
         return lead
     except Exception:                   # noqa: BLE001 - capture must never 500 a page
         return None
+
+
+def _abs_url(request, path):
+    """Absolute URL for an email link — from the request when we have one, else
+    settings.SITE_URL (email clients need absolute URLs)."""
+    if request is not None:
+        return request.build_absolute_uri(path)
+    from django.conf import settings
+    site = (getattr(settings, "SITE_URL", "") or "").rstrip("/")
+    return f"{site}{path}" if site else path
+
+
+def send_welcome_email(lead, request=None):
+    """Branded welcome email with the growth-kit links and a real unsubscribe
+    link — sent once, over the configured SMTP backend. Fail-safe."""
+    try:
+        from django.urls import reverse
+
+        from apps.notifications.models import EmailCategory
+        from apps.notifications.service import send_email
+
+        token = unsubscribe_token(lead)
+        ctx = {
+            "heading": "Welcome to the LulaWorks Academy",
+            "name": (lead.name or "").split(" ")[0],
+            "learn_url": _abs_url(request, reverse("marketing:learn")),
+            "tools_url": _abs_url(request, reverse("marketing:tools")),
+            "templates_url": _abs_url(request, reverse("marketing:templates")),
+            "unsubscribe_url": _abs_url(request, reverse("marketing:unsubscribe",
+                                                         args=[token])),
+            "preheader": "Free guides, tools and templates for a more profitable business.",
+        }
+        send_email(to=lead.email, to_name=lead.name,
+                   subject="Welcome to the LulaWorks Academy",
+                   template="academy_welcome", category=EmailCategory.MARKETING,
+                   context=ctx, related=lead)
+        lead.welcomed_at = timezone.now()
+        lead.save(update_fields=["welcomed_at", "updated_at"])
+    except Exception:                   # noqa: BLE001 - email is best-effort
+        pass
 
 
 def score_signup(email, request=None):

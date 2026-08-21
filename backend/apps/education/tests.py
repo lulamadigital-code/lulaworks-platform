@@ -173,6 +173,48 @@ class LeadCaptureTests(TestCase):
         self.assertEqual(lead.score, 8)                    # 3 (tool) + 5 (account)
 
 
+class WelcomeAndUnsubscribeTests(TestCase):
+    def test_new_lead_gets_one_welcome_email(self):
+        from apps.education.leads import capture_lead
+        from apps.education.models import EducationLead
+        from apps.notifications.models import EmailLog
+        capture_lead(email="new@co.za", event="opt_in", name="Jane Doe")
+        logs = EmailLog.objects.filter(to_email="new@co.za",
+                                       template="academy_welcome")
+        self.assertEqual(logs.count(), 1)
+        lead = EducationLead.objects.get(email="new@co.za")
+        self.assertIsNotNone(lead.welcomed_at)
+        # A second action doesn't send another welcome.
+        capture_lead(email="new@co.za", event="tool_used", detail="vat")
+        self.assertEqual(EmailLog.objects.filter(
+            to_email="new@co.za", template="academy_welcome").count(), 1)
+
+    def test_unsubscribe_token_roundtrip(self):
+        from apps.education.leads import (
+            capture_lead,
+            lead_from_token,
+            unsubscribe_token,
+        )
+        lead = capture_lead(email="bye@co.za", event="opt_in")
+        token = unsubscribe_token(lead)
+        self.assertEqual(lead_from_token(token), lead)
+        self.assertIsNone(lead_from_token("garbage.token.value"))
+
+    def test_unsubscribe_view_marks_lead(self):
+        from apps.education.leads import capture_lead, unsubscribe_token
+        from apps.education.models import EducationLead
+        lead = capture_lead(email="stop@co.za", event="opt_in")
+        resp = self.client.get(f"/grow/unsubscribe/{unsubscribe_token(lead)}/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "unsubscribed")
+        self.assertFalse(EducationLead.objects.get(email="stop@co.za").subscribed)
+
+    def test_bad_unsubscribe_token_is_handled(self):
+        resp = self.client.get("/grow/unsubscribe/not-a-real-token/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "invalid")
+
+
 class CrmBridgeTests(TestCase):
     def _sales_company(self):
         from apps.identity.models import Company

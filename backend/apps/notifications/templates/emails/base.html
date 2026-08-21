@@ -47,7 +47,8 @@ Context (all optional, filled by the email service from the company profile):
           {% if support_email %}Support: <a href="mailto:{{ support_email }}" style="color:{{ brand_color|default:'#0E6E6E' }};">{{ support_email }}</a>{% endif %}
           {% if website %}&nbsp;·&nbsp;<a href="{{ website }}" style="color:{{ brand_color|default:'#0E6E6E' }};">{{ website }}</a>{% endif %}
         </p>
-        <p style="margin:12px 0 0;font-size:11px;color:#aeb8c0;">© {{ year }} {{ company_name|default:"LulaWorks" }}. Powered by LulaWorks.</p>
+        <p style="margin:12px 0 0;font-size:11px;color:#aeb8c0;">© {{ year }} {{ company_name|default:"LulaWorks" }}. Powered by LulaWorks.
+          {% if unsubscribe_url %}&nbsp;·&nbsp;<a href="{{ unsubscribe_url }}" style="color:#aeb8c0;">Unsubscribe</a>{% endif %}</p>
       </td></tr>
 
     </table>
