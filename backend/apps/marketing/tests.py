@@ -235,3 +235,15 @@ class MarketingFormValidationTests(TestCase):
         self.assertContains(resp, "Sipho Test")          # name preserved
         self.assertContains(resp, "General contracting")  # options still render
         self.assertFalse(DemoRequest.objects.exists())
+
+
+class SitemapTests(TestCase):
+    def test_sitemap_includes_academy_tools_and_templates(self):
+        from apps.education.models import ContentStatus, Resource, ResourceKind
+        r = Resource.objects.create(kind=ResourceKind.GUIDE, title="SEO Guide",
+                                    status=ContentStatus.PUBLISHED)
+        body = self.client.get("/sitemap.xml").content.decode()
+        for frag in ["/learn/", "/tools/", "/templates/",
+                     f"/learn/{r.slug}/", "/tools/vat-calculator/",
+                     "/templates/professional-quotation-template/"]:
+            self.assertIn(frag, body, f"sitemap missing {frag}")

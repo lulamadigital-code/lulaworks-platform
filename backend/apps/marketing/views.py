@@ -25,6 +25,9 @@ _SITEMAP = [
     ("marketing:contact", "monthly", "0.6"),
     ("marketing:demo", "monthly", "0.7"),
     ("marketing:faq", "monthly", "0.6"),
+    ("marketing:learn", "weekly", "0.8"),
+    ("marketing:tools", "monthly", "0.8"),
+    ("marketing:templates", "monthly", "0.8"),
     ("marketing:trial", "monthly", "0.8"),
     ("marketing:privacy", "yearly", "0.3"),
     ("marketing:terms", "yearly", "0.3"),
@@ -525,12 +528,37 @@ def robots_txt(request):
 def sitemap_xml(request):
     today = timezone.localdate().isoformat()
     urls = []
-    for name, freq, prio in _SITEMAP:
-        loc = request.build_absolute_uri(reverse(name))
+
+    def add(loc, lastmod=today, freq="monthly", prio="0.6"):
         urls.append(
-            f"<url><loc>{loc}</loc><lastmod>{today}</lastmod>"
-            f"<changefreq>{freq}</changefreq><priority>{prio}</priority></url>"
-        )
+            f"<url><loc>{loc}</loc><lastmod>{lastmod}</lastmod>"
+            f"<changefreq>{freq}</changefreq><priority>{prio}</priority></url>")
+
+    for name, freq, prio in _SITEMAP:
+        add(request.build_absolute_uri(reverse(name)), freq=freq, prio=prio)
+
+    # Academy content — every published guide, learning path, free tool and
+    # template, so Google can index them individually.
+    try:
+        from apps.education.services import published_paths, published_resources
+        from apps.education.templates_lib import TEMPLATES
+        from apps.education.tools import TOOLS
+        for r in published_resources().only("slug", "updated_at"):
+            add(request.build_absolute_uri(reverse("marketing:learn_resource", args=[r.slug])),
+                lastmod=(r.updated_at.date().isoformat() if r.updated_at else today),
+                freq="monthly", prio="0.7")
+        for p in published_paths().only("slug"):
+            add(request.build_absolute_uri(reverse("marketing:learn_path", args=[p.slug])),
+                freq="monthly", prio="0.6")
+        for slug in TOOLS:
+            add(request.build_absolute_uri(reverse("marketing:tool", args=[slug])),
+                freq="monthly", prio="0.7")
+        for slug in TEMPLATES:
+            add(request.build_absolute_uri(reverse("marketing:template_detail", args=[slug])),
+                freq="monthly", prio="0.7")
+    except Exception:                       # noqa: BLE001 - sitemap must never 500
+        pass
+
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
