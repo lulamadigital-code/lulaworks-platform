@@ -298,7 +298,7 @@ CORS_ALLOWED_ORIGINS = config(
 
 # Behind the nginx reverse proxy the browser talks HTTPS to a real domain, so
 # Django must trust that origin for CSRF (POSTs from the manager web / admin).
-# Comma-separated, scheme-qualified, e.g. "https://app.lulaworks.co.za".
+# Comma-separated, scheme-qualified, e.g. "https://app.lulaworks.com".
 CSRF_TRUSTED_ORIGINS = [
     o for o in config("CSRF_TRUSTED_ORIGINS", default="").split(",") if o
 ]
