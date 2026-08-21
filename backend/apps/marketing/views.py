@@ -182,7 +182,9 @@ def contact(request):
             )
         except InputError as exc:
             messages.error(request, str(exc))
-            return redirect("marketing:contact")
+            # Re-render with what they typed so nothing is lost.
+            return render(request, "marketing/contact.html", {
+                **_seo("Contact Lulaworks", ""), "form": request.POST})
         msg.save()
         messages.success(request, "Thanks — we've received your message and will reply shortly.")
         return redirect("marketing:contact")
@@ -192,8 +194,15 @@ def contact(request):
     ))
 
 
+_DEMO_INDUSTRIES = ["General contracting", "Mechanical / engineering",
+                    "Mining contractor", "Maintenance services",
+                    "Industrial services", "Construction", "Other"]
+_DEMO_EMPLOYEES = ["1–10", "11–50", "51–200", "200+"]
+
+
 @require_http_methods(["GET", "POST"])
 def demo(request):
+    demo_ctx = {"industry_opts": _DEMO_INDUSTRIES, "employee_opts": _DEMO_EMPLOYEES}
     if request.method == "POST":
         from apps.core.validation import InputError, clean_email, clean_str
         raw_date = request.POST.get("preferred_date") or None
@@ -211,13 +220,15 @@ def demo(request):
             )
         except InputError as exc:
             messages.error(request, str(exc))
-            return redirect("marketing:demo")
+            return render(request, "marketing/demo.html", {
+                **_seo("Book a Demo — Lulaworks", ""), **demo_ctx,
+                "form": request.POST})
         demo_req.save()
         return redirect("marketing:demo_thanks")
-    return render(request, "marketing/demo.html", _seo(
-        "Book a Demo — Lulaworks",
-        "See Lulaworks in action. Book a personalised 30-minute demo with our team.",
-    ))
+    return render(request, "marketing/demo.html", {
+        **_seo("Book a Demo — Lulaworks",
+               "See Lulaworks in action. Book a personalised 30-minute demo with our team."),
+        **demo_ctx})
 
 
 def demo_thanks(request):

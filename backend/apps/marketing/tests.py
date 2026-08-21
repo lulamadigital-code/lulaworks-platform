@@ -208,3 +208,29 @@ class CurrencyDetectionTests(TestCase):
         company = Company.objects.get(name="Yankee Build")
         self.assertEqual(company.currency, "USD")
         self.assertEqual(company.subscription.currency, "USD")
+
+
+class MarketingFormValidationTests(TestCase):
+    def test_contact_invalid_rerenders_and_keeps_input(self):
+        from apps.marketing.models import ContactMessage
+        resp = self.client.post("/contact/", {  # no name → invalid
+            "email": "sam@co.za", "message": "Please call me back"})
+        self.assertEqual(resp.status_code, 200)          # re-rendered, not redirected
+        self.assertContains(resp, "Please call me back")  # input preserved
+        self.assertFalse(ContactMessage.objects.exists())
+
+    def test_contact_valid_saves_and_redirects(self):
+        from apps.marketing.models import ContactMessage
+        resp = self.client.post("/contact/", {
+            "name": "Sam", "email": "sam@co.za", "message": "Hello there team"})
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(ContactMessage.objects.count(), 1)
+
+    def test_demo_invalid_rerenders_and_keeps_input(self):
+        from apps.marketing.models import DemoRequest
+        resp = self.client.post("/demo/", {  # no company → invalid
+            "name": "Sipho Test", "email": "s@co.za"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Sipho Test")          # name preserved
+        self.assertContains(resp, "General contracting")  # options still render
+        self.assertFalse(DemoRequest.objects.exists())

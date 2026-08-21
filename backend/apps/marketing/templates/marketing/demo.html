@@ -20,32 +20,31 @@
         <form method="post">
           {% csrf_token %}
           <div class="two">
-            <div class="field"><label>Company *</label><input name="company" required></div>
-            <div class="field"><label>Your name *</label><input name="name" required></div>
+            <div class="field"><label>Company *</label><input name="company" required maxlength="200" value="{{ form.company|default:'' }}"></div>
+            <div class="field"><label>Your name *</label><input name="name" required maxlength="200" value="{{ form.name|default:'' }}"></div>
           </div>
           <div class="two">
-            <div class="field"><label>Email *</label><input type="email" name="email" required></div>
-            <div class="field"><label>Phone</label><input name="phone"></div>
+            <div class="field"><label>Email *</label><input type="email" name="email" required value="{{ form.email|default:'' }}"></div>
+            <div class="field"><label>Phone</label><input name="phone" maxlength="40" value="{{ form.phone|default:'' }}"></div>
           </div>
           <div class="two">
             <div class="field"><label>Industry</label>
               <select name="industry">
                 <option value="">Select…</option>
-                <option>General contracting</option><option>Mechanical / engineering</option>
-                <option>Mining contractor</option><option>Maintenance services</option>
-                <option>Industrial services</option><option>Construction</option><option>Other</option>
+                {% for opt in industry_opts %}<option {% if form.industry == opt %}selected{% endif %}>{{ opt }}</option>{% endfor %}
               </select></div>
             <div class="field"><label>Employees</label>
               <select name="employees"><option value="">Select…</option>
-                <option>1–10</option><option>11–50</option><option>51–200</option><option>200+</option></select></div>
+                {% for opt in employee_opts %}<option {% if form.employees == opt %}selected{% endif %}>{{ opt }}</option>{% endfor %}</select></div>
           </div>
           <div class="two">
-            <div class="field"><label>Preferred date</label><input type="date" name="preferred_date"></div>
+            <div class="field"><label>Preferred date</label><input type="date" name="preferred_date" value="{{ form.preferred_date|default:'' }}"></div>
             <div class="field"><label>Preferred time</label>
               <select name="preferred_time"><option value="">Select…</option>
-                <option>Morning</option><option>Afternoon</option></select></div>
+                <option {% if form.preferred_time == 'Morning' %}selected{% endif %}>Morning</option>
+                <option {% if form.preferred_time == 'Afternoon' %}selected{% endif %}>Afternoon</option></select></div>
           </div>
-          <div class="field"><label>Additional notes</label><textarea name="notes" rows="3"></textarea></div>
+          <div class="field"><label>Additional notes</label><textarea name="notes" rows="3" maxlength="2000">{{ form.notes|default:'' }}</textarea></div>
           <button class="btn" style="width:100%;" type="submit">Book my demo</button>
         </form>
       </div>
