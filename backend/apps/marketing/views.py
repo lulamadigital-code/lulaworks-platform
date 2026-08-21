@@ -65,8 +65,8 @@ def home(request):
     if request.user.is_authenticated:
         return redirect("web:dashboard")
     ctx = _seo(
-        "LulaWorks — From Quotation to Payment. One Platform. Powered by AI.",
-        "LulaWorks helps contractors manage quotations, jobs, procurement, teams, "
+        "Lulaworks — From Quotation to Payment. One Platform. Powered by AI.",
+        "Lulaworks helps contractors manage quotations, jobs, procurement, teams, "
         "deliveries, invoices and payments from one intelligent, AI-powered platform.",
     )
     ctx["feature_cards"] = _FEATURE_CARDS
@@ -134,8 +134,8 @@ _MODULES = [
 
 def features(request):
     ctx = _seo(
-        "Features — LulaWorks",
-        "Every module in LulaWorks: quotations, jobs, procurement, suppliers, "
+        "Features — Lulaworks",
+        "Every module in Lulaworks: quotations, jobs, procurement, suppliers, "
         "invoices, delivery notes, the employee app, GPS tracking and AI automation.",
     )
     ctx["modules"] = _MODULES
@@ -150,7 +150,7 @@ def pricing(request):
 
     currency = detect_currency(request)   # auto: US → USD, UK → GBP, …
     ctx = _seo(
-        "Pricing — LulaWorks",
+        "Pricing — Lulaworks",
         "Simple, transparent pricing for contractors, in your local currency. "
         "Unlimited employees on every plan.",
     )
@@ -162,8 +162,8 @@ def pricing(request):
 
 def about(request):
     return render(request, "marketing/about.html", _seo(
-        "About LulaWorks",
-        "Why we built LulaWorks — one platform to replace the spreadsheets, WhatsApp "
+        "About Lulaworks",
+        "Why we built Lulaworks — one platform to replace the spreadsheets, WhatsApp "
         "threads and disconnected tools contractors juggle every day.",
     ))
 
@@ -187,8 +187,8 @@ def contact(request):
         messages.success(request, "Thanks — we've received your message and will reply shortly.")
         return redirect("marketing:contact")
     return render(request, "marketing/contact.html", _seo(
-        "Contact LulaWorks",
-        "Get in touch with the LulaWorks team — sales, support and general enquiries.",
+        "Contact Lulaworks",
+        "Get in touch with the Lulaworks team — sales, support and general enquiries.",
     ))
 
 
@@ -215,21 +215,21 @@ def demo(request):
         demo_req.save()
         return redirect("marketing:demo_thanks")
     return render(request, "marketing/demo.html", _seo(
-        "Book a Demo — LulaWorks",
-        "See LulaWorks in action. Book a personalised 30-minute demo with our team.",
+        "Book a Demo — Lulaworks",
+        "See Lulaworks in action. Book a personalised 30-minute demo with our team.",
     ))
 
 
 def demo_thanks(request):
     return render(request, "marketing/demo_thanks.html", _seo(
-        "Thank You — LulaWorks", "Your demo request has been received.",
+        "Thank You — Lulaworks", "Your demo request has been received.",
     ))
 
 
 def faq(request):
     return render(request, "marketing/faq.html", _seo(
-        "FAQ — LulaWorks",
-        "Answers about LulaWorks: pricing, security, AI, billing, the free trial, "
+        "FAQ — Lulaworks",
+        "Answers about Lulaworks: pricing, security, AI, billing, the free trial, "
         "data ownership, migration and cancellation.",
     ))
 
@@ -253,40 +253,40 @@ def trial(request):
         except RegistrationError as exc:
             messages.error(request, str(exc))
             return render(request, "marketing/trial.html",
-                          {**_seo("Start Free Trial — LulaWorks", ""),
+                          {**_seo("Start Free Trial — Lulaworks", ""),
                            "form": request.POST})
         login(request, user)
         # Close the content → signup loop: credit the matching Education lead.
         from apps.education.leads import score_signup
         score_signup(user.email, request=request)
-        messages.success(request, "Welcome to LulaWorks! Your 30-day free trial has started.")
+        messages.success(request, "Welcome to Lulaworks! Your 30-day free trial has started.")
         return redirect("web:dashboard")
     return render(request, "marketing/trial.html", _seo(
-        "Start Your Free Trial — LulaWorks",
-        "Start a 30-day free trial of LulaWorks. No credit card required. "
+        "Start Your Free Trial — Lulaworks",
+        "Start a 30-day free trial of Lulaworks. No credit card required. "
         "Professional features, 2 users, unlimited employees, 100 AI credits, 2 GB.",
     ))
 
 
 def privacy(request):
     return render(request, "marketing/privacy.html", _seo(
-        "Privacy Policy — LulaWorks",
-        "How LulaWorks collects, uses, processes and protects your data (POPIA & GDPR).",
+        "Privacy Policy — Lulaworks",
+        "How Lulaworks collects, uses, processes and protects your data (POPIA & GDPR).",
     ))
 
 
 def terms(request):
     return render(request, "marketing/terms.html", _seo(
-        "Terms & Conditions — LulaWorks",
-        "The terms governing your use of LulaWorks, including subscriptions, billing, "
+        "Terms & Conditions — Lulaworks",
+        "The terms governing your use of Lulaworks, including subscriptions, billing, "
         "data ownership and acceptable use.",
     ))
 
 
 def cookies(request):
     return render(request, "marketing/cookies.html", _seo(
-        "Cookie Policy — LulaWorks",
-        "The cookies LulaWorks uses — essential, authentication, preference and "
+        "Cookie Policy — Lulaworks",
+        "The cookies Lulaworks uses — essential, authentication, preference and "
         "analytics — and how to control them.",
     ))
 
@@ -294,7 +294,7 @@ def cookies(request):
 # ── Learning Centre (Education & Growth Engine) ───────────────────────────────
 
 def learn(request):
-    """The LulaWorks Academy home — featured content, categories and the guided
+    """The Lulaworks Academy home — featured content, categories and the guided
     learning paths. Public and inbound-first."""
     from apps.education.models import ResourceCategory
     from apps.education.services import (
@@ -307,7 +307,7 @@ def learn(request):
         items = list(published_resources().filter(category=cat)[:6])
         if items:
             cats.append({"category": cat, "resources": items})
-    ctx = _seo("LulaWorks Academy — Learn to win more work, quote better and get paid",
+    ctx = _seo("Lulaworks Academy — Learn to win more work, quote better and get paid",
                "Free guides, tools and templates that help contractors and "
                "suppliers win more work, quote professionally, control procurement "
                "and get paid faster.")
@@ -334,7 +334,7 @@ def learn_resource(request, slug):
     related = list(published_resources()
                    .filter(category=resource.category)
                    .exclude(pk=resource.pk)[:4]) if resource.category_id else []
-    ctx = _seo(resource.seo_title or f"{resource.title} — LulaWorks Academy",
+    ctx = _seo(resource.seo_title or f"{resource.title} — Lulaworks Academy",
                resource.seo_description or resource.summary)
     ctx.update({"resource": resource, "related": related})
     return render(request, "marketing/learn_resource.html", ctx)
@@ -350,7 +350,7 @@ def learn_path(request, slug):
         published_paths().prefetch_related("steps", "steps__resource"), slug=slug)
     track("content_viewed", request=request, module="education", feature="path",
           source="learn", metadata={"slug": path.slug})
-    ctx = _seo(f"{path.title} — LulaWorks Academy", path.summary)
+    ctx = _seo(f"{path.title} — Lulaworks Academy", path.summary)
     ctx.update({"path": path, "steps": list(path.steps.all())})
     return render(request, "marketing/learn_path.html", ctx)
 
@@ -359,7 +359,7 @@ def learn_path(request, slug):
 
 def tools(request):
     """Index of the free calculators — each a genuinely useful tool that connects
-    to a LulaWorks feature."""
+    to a Lulaworks feature."""
     from apps.education.tools import TOOLS
     ctx = _seo("Free tools for contractors — profit, markup, VAT & break-even calculators",
                "Free calculators for contractors and suppliers: job profit, markup "
@@ -392,7 +392,7 @@ def tool(request, slug):
               feature=spec.related_feature, source="tools", metadata={"slug": slug})
 
     fields = [{"f": f, "value": values.get(f.name, "")} for f in spec.inputs]
-    ctx = _seo(f"{spec.title} — free tool by LulaWorks", spec.summary)
+    ctx = _seo(f"{spec.title} — free tool by Lulaworks", spec.summary)
     ctx.update({"tool": spec, "results": results, "fields": fields,
                 "other_tools": [t for t in TOOLS.values() if t.slug != slug][:3]})
     return render(request, "marketing/tool.html", ctx)
@@ -430,7 +430,7 @@ def lead_thanks(request):
     """Progressive next step after opting in: nudge toward a free account, which
     is where the real value (and the strongest conversion) lives."""
     return render(request, "marketing/lead_thanks.html", _seo(
-        "You're on the list — LulaWorks", "Thanks for joining."))
+        "You're on the list — Lulaworks", "Thanks for joining."))
 
 
 def unsubscribe(request, token):
@@ -442,14 +442,14 @@ def unsubscribe(request, token):
         lead.subscribed = False
         lead.save(update_fields=["subscribed", "updated_at"])
     return render(request, "marketing/unsubscribed.html",
-                  {**_seo("Unsubscribed — LulaWorks", ""),
+                  {**_seo("Unsubscribed — Lulaworks", ""),
                    "ok": lead is not None, "email": lead.email if lead else ""})
 
 
 # ── Templates library ─────────────────────────────────────────────────────────
 
 def templates_lib(request):
-    """Index of the free business templates — delivered through LulaWorks."""
+    """Index of the free business templates — delivered through Lulaworks."""
     from apps.education.templates_lib import TEMPLATES
     ctx = _seo("Free business templates for contractors — quotation, invoice, RFQ & more",
                "Free, professional templates for contractors and suppliers: "
@@ -461,7 +461,7 @@ def templates_lib(request):
 
 def template_detail(request, slug):
     """A single template: what it's for, what it includes (or its usable content),
-    and a CTA to create it in LulaWorks."""
+    and a CTA to create it in Lulaworks."""
     from django.http import Http404
 
     from apps.analytics.services import track
@@ -471,7 +471,7 @@ def template_detail(request, slug):
         raise Http404("Unknown template")
     track("template_viewed", request=request, module="education",
           feature=spec.related_feature, source="templates", metadata={"slug": slug})
-    ctx = _seo(f"{spec.title} — free template by LulaWorks", spec.summary)
+    ctx = _seo(f"{spec.title} — free template by Lulaworks", spec.summary)
     ctx.update({"tpl": spec,
                 "others": [t for t in TEMPLATES.values() if t.slug != slug][:3]})
     return render(request, "marketing/template_detail.html", ctx)

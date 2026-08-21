@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{{ meta_title|default:"LulaWorks — The Contractor Operating System" }}{% endblock %}</title>
-  <meta name="description" content="{{ meta_description|default:'LulaWorks helps contractors manage quotations, jobs, procurement, teams, deliveries, invoices and payments from one intelligent, AI-powered platform.' }}">
+  <title>{% block title %}{{ meta_title|default:"Lulaworks — The Contractor Operating System" }}{% endblock %}</title>
+  <meta name="description" content="{{ meta_description|default:'Lulaworks helps contractors manage quotations, jobs, procurement, teams, deliveries, invoices and payments from one intelligent, AI-powered platform.' }}">
   <link rel="canonical" href="{{ request.build_absolute_uri }}">
   <meta name="robots" content="index, follow">
 
   <!-- Open Graph / social -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="LulaWorks">
-  <meta property="og:title" content="{{ meta_title|default:'LulaWorks — The Contractor Operating System' }}">
+  <meta property="og:site_name" content="Lulaworks">
+  <meta property="og:title" content="{{ meta_title|default:'Lulaworks — The Contractor Operating System' }}">
   <meta property="og:description" content="{{ meta_description|default:'From quotation to payment. One platform. Powered by AI.' }}">
   <meta property="og:url" content="{{ request.build_absolute_uri }}">
   <meta name="twitter:card" content="summary_large_image">
@@ -25,7 +25,7 @@
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "LulaWorks",
+    "name": "Lulaworks",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web, iOS, Android",
     "description": "AI-powered Contractor Operating System — quotations, jobs, procurement, invoicing and payments in one platform.",
@@ -226,8 +226,8 @@
 <body>
   <header class="site">
     <nav class="wrap nav">
-      <a class="brand" href="{% url 'marketing:home' %}" aria-label="LulaWorks home">
-        <img src="{% static 'web/logo.png' %}" alt="LulaWorks" class="brand-logo">
+      <a class="brand" href="{% url 'marketing:home' %}" aria-label="Lulaworks home">
+        <img src="{% static 'web/logo.png' %}" alt="Lulaworks" class="brand-logo">
       </a>
       <input type="checkbox" id="mc" class="menu-check">
       <div class="links">
@@ -263,8 +263,8 @@
     <div class="wrap">
       <div class="cols">
         <div>
-          <a class="brand" href="{% url 'marketing:home' %}" aria-label="LulaWorks home">
-            <img class="foot-logo" src="{% static 'web/logo.png' %}" alt="LulaWorks"></a>
+          <a class="brand" href="{% url 'marketing:home' %}" aria-label="Lulaworks home">
+            <img class="foot-logo" src="{% static 'web/logo.png' %}" alt="Lulaworks"></a>
           <p class="foot-about">The Contractor Operating System — from quotation to
             payment, one intelligent platform built for contractors worldwide.</p>
           <p style="margin-top:12px;">
@@ -298,7 +298,7 @@
         </div>
       </div>
       <div class="foot-bottom">
-        <span>© {% now "Y" %} LulaWorks. All rights reserved.</span>
+        <span>© {% now "Y" %} Lulaworks. All rights reserved.</span>
         <span>Built for contractors worldwide · GDPR-ready</span>
       </div>
     </div>
@@ -309,7 +309,7 @@
        max-width:720px;margin:0 auto;background:#fff;border:1px solid var(--line,#e6e9ef);border-radius:14px;
        box-shadow:0 12px 40px rgba(41,47,76,.16);padding:16px 18px;font-size:13.5px;color:var(--ink,#292f4c);
        display:none;gap:12px;align-items:center;flex-wrap:wrap;">
-    <span style="flex:1;min-width:220px;">We use cookies to understand site traffic and improve LulaWorks.
+    <span style="flex:1;min-width:220px;">We use cookies to understand site traffic and improve Lulaworks.
       See our <a href="/cookies/">cookie policy</a>.</span>
     <span style="display:flex;gap:8px;">
       <button id="lw-decline" style="padding:9px 15px;border-radius:9px;border:1px solid var(--line,#e6e9ef);background:#fff;font-weight:700;cursor:pointer;">Decline</button>

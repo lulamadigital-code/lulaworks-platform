@@ -40,7 +40,7 @@ class LearningCentreTests(TestCase):
         resp = self.client.get(f"/learn/{self.r.slug}/")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Body")
-        self.assertContains(resp, "Start Free with LulaWorks")
+        self.assertContains(resp, "Start Free with Lulaworks")
 
     def test_draft_resource_404s(self):
         resp = self.client.get(f"/learn/{self.draft.slug}/")
@@ -92,7 +92,7 @@ class FreeToolsTests(TestCase):
         self.assertContains(idx, "Job Profit Calculator")
         page = self.client.get("/tools/vat-calculator/")
         self.assertEqual(page.status_code, 200)
-        self.assertContains(page, "Start Free with LulaWorks")
+        self.assertContains(page, "Start Free with Lulaworks")
         posted = self.client.post("/tools/vat-calculator/",
                                   {"amount": "100", "rate": "15", "mode": "exclusive"})
         self.assertContains(posted, "R115.00")
@@ -111,7 +111,7 @@ class TemplatesLibraryTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "What a good one includes")
         self.assertContains(resp, "Create your free professional quotation")
-        self.assertContains(resp, "Start Free with LulaWorks")
+        self.assertContains(resp, "Start Free with Lulaworks")
 
     def test_checklist_template_renders_items(self):
         resp = self.client.get("/templates/site-handover-checklist/")
