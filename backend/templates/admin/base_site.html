@@ -1,12 +1,12 @@
 {% extends "admin/base.html" %}
 {% load static %}
 
-{% block title %}{{ title }} · LulaWorks Admin{% endblock %}
+{% block title %}{{ title }} · Lulaworks Admin{% endblock %}
 
 {% block branding %}
 <div id="site-name">
   <a href="{% url 'admin:index' %}">
-    <img src="{% static 'web/logo.png' %}" alt="LulaWorks" class="lw-logo-img">
+    <img src="{% static 'web/logo.png' %}" alt="Lulaworks" class="lw-logo-img">
     <span class="lw-sub">Platform Admin</span>
   </a>
 </div>
@@ -14,7 +14,7 @@
 
 {% block extrastyle %}{{ block.super }}
 <style>
-/* ══ LulaWorks admin — one consistent teal theme in light AND dark ═══════ */
+/* ══ Lulaworks admin — one consistent teal theme in light AND dark ═══════ */
 :root,
 :root[data-theme="light"],
 :root[data-theme="dark"]{
