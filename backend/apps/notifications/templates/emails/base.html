@@ -16,9 +16,9 @@ Context (all optional, filled by the email service from the company profile):
            style="width:600px;max-width:92%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);">
 
       {# ── Header ─────────────────────────────────────────────────────────── #}
-      <tr><td style="background:{{ brand_color|default:'#0E6E6E' }};padding:22px 28px;">
-        {% if logo_url %}<img src="{{ logo_url }}" alt="{{ company_name }}" height="34" style="height:34px;display:block;">
-        {% else %}<span style="color:#ffffff;font-size:20px;font-weight:700;">{{ company_name|default:"LulaWorks" }}</span>{% endif %}
+      <tr><td style="background:{{ header_bg|default:brand_color|default:'#0E6E6E' }};padding:22px 28px;border-bottom:1px solid #eef1f4;">
+        {% if logo_url %}<img src="{{ logo_url }}" alt="{{ company_name }}" height="36" style="height:36px;display:block;">
+        {% else %}<span style="color:{{ header_text|default:'#ffffff' }};font-size:20px;font-weight:700;">{{ company_name|default:"LulaWorks" }}</span>{% endif %}
       </td></tr>
 
       {# ── Body ───────────────────────────────────────────────────────────── #}
