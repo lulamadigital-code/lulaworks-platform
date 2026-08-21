@@ -47,8 +47,8 @@ def _dec(v, default="0"):
         return Decimal(default)
 
 
-def _money(v):
-    return "R" + f"{v.quantize(TWO):,.2f}"
+def _money(v, sym="R"):
+    return f"{sym}{v.quantize(TWO):,.2f}"
 
 
 def _pct(v):
@@ -145,9 +145,12 @@ TOOLS = {
 }
 
 
-def compute(slug, values):
+def compute(slug, values, symbol="R"):
     """Return a list of {label, value, emph} result rows for the given tool, or
-    an {error} note when the inputs can't produce a sensible answer."""
+    an {error} note when the inputs can't produce a sensible answer. `symbol` is
+    the visitor's currency symbol (R / $ / € / £ / A$)."""
+    def m(v):
+        return _money(v, symbol)
     if slug == "job-profit-calculator":
         contract = _dec(values.get("contract"))
         cost = sum(_dec(values.get(k)) for k in
@@ -156,8 +159,8 @@ def compute(slug, values):
         margin = (gross / contract * 100) if contract > 0 else Decimal("0")
         markup = (gross / cost * 100) if cost > 0 else Decimal("0")
         return [
-            {"label": "Total cost", "value": _money(cost)},
-            {"label": "Gross profit", "value": _money(gross), "emph": True},
+            {"label": "Total cost", "value": m(cost)},
+            {"label": "Gross profit", "value": m(gross), "emph": True},
             {"label": "Profit margin", "value": _pct(margin)},
             {"label": "Markup", "value": _pct(markup)},
         ]
@@ -169,7 +172,7 @@ def compute(slug, values):
         markup = (profit / cost * 100) if cost > 0 else Decimal("0")
         margin = (profit / sell * 100) if sell > 0 else Decimal("0")
         return [
-            {"label": "Profit", "value": _money(profit), "emph": True},
+            {"label": "Profit", "value": m(profit), "emph": True},
             {"label": "Markup", "value": _pct(markup)},
             {"label": "Margin", "value": _pct(margin)},
         ]
@@ -186,9 +189,9 @@ def compute(slug, values):
             vat = amount * rate / 100
             total = amount + vat
         return [
-            {"label": "Net (excl. VAT)", "value": _money(net)},
-            {"label": f"VAT ({_pct(rate)})", "value": _money(vat)},
-            {"label": "Total (incl. VAT)", "value": _money(total), "emph": True},
+            {"label": "Net (excl. VAT)", "value": m(net)},
+            {"label": f"VAT ({_pct(rate)})", "value": m(vat)},
+            {"label": "Total (incl. VAT)", "value": m(total), "emph": True},
         ]
 
     if slug == "break-even-calculator":
@@ -204,8 +207,8 @@ def compute(slug, values):
         revenue = Decimal(units) * price
         return [
             {"label": "Break-even units / jobs", "value": f"{units:,}", "emph": True},
-            {"label": "Break-even revenue", "value": _money(revenue)},
-            {"label": "Contribution per unit", "value": _money(contribution)},
+            {"label": "Break-even revenue", "value": m(revenue)},
+            {"label": "Contribution per unit", "value": m(contribution)},
         ]
 
     return []

@@ -86,6 +86,20 @@ class FreeToolsTests(TestCase):
         bad = compute("break-even-calculator", {"fixed": "1000", "price": "50", "variable": "60"})
         self.assertIn("error", bad[0])
 
+    def test_compute_uses_currency_symbol(self):
+        from apps.education.tools import compute
+        res = compute("markup-margin-calculator", {"cost": "100", "sell": "130"},
+                      symbol="$")
+        self.assertEqual(self._row(res, "Profit"), "$30.00")
+
+    def test_tool_page_respects_currency_param(self):
+        resp = self.client.get("/tools/job-profit-calculator/?currency=USD")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "$ USD")            # the currency switcher
+        posted = self.client.post("/tools/markup-margin-calculator/?currency=GBP",
+                                  {"cost": "100", "sell": "130"})
+        self.assertContains(posted, "£30.00")    # £30.00 result
+
     def test_tools_index_and_tool_pages(self):
         idx = self.client.get("/tools/")
         self.assertEqual(idx.status_code, 200)

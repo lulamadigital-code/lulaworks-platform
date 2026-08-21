@@ -379,13 +379,19 @@ def tool(request, slug):
     if spec is None:
         raise Http404("Unknown tool")
 
+    # Show amounts in the visitor's own currency, not always Rands.
+    from apps.billing.models import CURRENCY_SYMBOLS, currency_symbol
+    from apps.marketing.geo import detect_currency
+    ccy = detect_currency(request)
+    sym = currency_symbol(ccy)
+
     results, values = None, {}
     if request.method == "POST":
         values = {f.name: request.POST.get(f.name, "") for f in spec.inputs}
-        results = compute(slug, values)
+        results = compute(slug, values, symbol=sym)
         track("tool_completed", request=request, module="education",
               feature=spec.related_feature, source="tools",
-              metadata={"slug": slug})
+              metadata={"slug": slug, "currency": ccy})
     else:
         values = {f.name: f.default for f in spec.inputs}
         track("tool_started", request=request, module="education",
@@ -394,6 +400,8 @@ def tool(request, slug):
     fields = [{"f": f, "value": values.get(f.name, "")} for f in spec.inputs]
     ctx = _seo(f"{spec.title} — free tool by Lulaworks", spec.summary)
     ctx.update({"tool": spec, "results": results, "fields": fields,
+                "currency": ccy, "currency_symbol": sym,
+                "currencies": list(CURRENCY_SYMBOLS.items()),
                 "other_tools": [t for t in TOOLS.values() if t.slug != slug][:3]})
     return render(request, "marketing/tool.html", ctx)
 

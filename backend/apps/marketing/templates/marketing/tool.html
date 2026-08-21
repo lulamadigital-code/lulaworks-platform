@@ -7,6 +7,15 @@
     <h1>{{ tool.title }}</h1>
     <p class="lead">{{ tool.summary }}</p>
 
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;margin:2px 0 4px;">
+      <span style="color:var(--muted);">Currency:</span>
+      {% for code, sym in currencies %}
+      <a href="?currency={{ code }}"
+         style="padding:3px 10px;border-radius:999px;text-decoration:none;font-weight:700;
+                {% if code == currency %}background:var(--primary);color:#fff;{% else %}background:var(--bg);color:var(--muted);border:1px solid var(--line);{% endif %}">{{ sym }} {{ code }}</a>
+      {% endfor %}
+    </div>
+
     <div class="prose" style="max-width:none;">{{ tool.problem|safe }}</div>
 
     <div class="two" style="align-items:start;margin-top:18px;">
@@ -23,10 +32,10 @@
           </select>
           {% else %}
           <div style="position:relative;">
-            {% if fld.f.kind == 'money' %}<span style="position:absolute;left:12px;top:12px;color:var(--muted);">R</span>{% endif %}
+            {% if fld.f.kind == 'money' %}<span style="position:absolute;left:12px;top:12px;color:var(--muted);">{{ currency_symbol }}</span>{% endif %}
             <input type="number" step="any" name="{{ fld.f.name }}"
                    value="{{ fld.value }}"
-                   style="{% if fld.f.kind == 'money' %}padding-left:26px;{% endif %}">
+                   style="{% if fld.f.kind == 'money' %}padding-left:32px;{% endif %}">
             {% if fld.f.kind == 'percent' %}<span style="position:absolute;right:12px;top:12px;color:var(--muted);">%</span>{% endif %}
           </div>
           {% endif %}
