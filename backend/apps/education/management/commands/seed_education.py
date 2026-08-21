@@ -147,15 +147,26 @@ PATH_STEPS = [
 class Command(BaseCommand):
     help = "Seed the Learning Centre with starter published content (idempotent)."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--refresh", action="store_true",
+            help="Also update the text of resources that already exist (title, "
+                 "summary, body, CTA) to match this file — use after editing the "
+                 "seed copy, e.g. a rebrand.")
+
     def handle(self, *args, **options):
+        refresh = options["refresh"]
         cats = {}
         for name, slug, icon, desc, order in CATEGORIES:
-            c, _ = ResourceCategory.objects.get_or_create(
+            c, made_c = ResourceCategory.objects.get_or_create(
                 slug=slug, defaults={"name": name, "icon": icon,
                                      "description": desc, "order": order})
+            if refresh and not made_c:
+                c.name, c.icon, c.description = name, icon, desc
+                c.save(update_fields=["name", "icon", "description"])
             cats[slug] = c
 
-        made = 0
+        made = updated = 0
         for r in RESOURCES:
             obj, created = Resource.objects.get_or_create(
                 slug=r["slug"],
@@ -168,13 +179,30 @@ class Command(BaseCommand):
                     "cta_url": r["cta_url"], "published_at": timezone.now(),
                 })
             made += int(created)
+            if refresh and not created:
+                obj.title, obj.summary, obj.body = r["title"], r["summary"], r["body"]
+                obj.cta_label, obj.cta_url = r["cta_label"], r["cta_url"]
+                obj.save(update_fields=["title", "summary", "body", "cta_label",
+                                        "cta_url", "updated_at"])
+                updated += 1
 
-        path, _ = LearningPath.objects.get_or_create(
+        path_summary = ("From company setup to your first paid invoice — the whole "
+                        "Lulaworks flow in ten steps.")
+        path, path_new = LearningPath.objects.get_or_create(
             slug="start-your-contractor-business",
             defaults={"title": "Start Your Contractor Business", "icon": "🚀",
-                      "summary": "From company setup to your first paid invoice — the "
-                      "whole Lulaworks flow in ten steps.",
+                      "summary": path_summary,
                       "status": ContentStatus.PUBLISHED, "order": 10})
+        if refresh and not path_new:
+            path.title = "Start Your Contractor Business"
+            path.summary = path_summary
+            path.save(update_fields=["title", "summary"])
+        if refresh:
+            for step in path.steps.all():
+                new_desc = next((d for t, d, _ in PATH_STEPS if t == step.title), None)
+                if new_desc is not None and new_desc != step.description:
+                    step.description = new_desc
+                    step.save(update_fields=["description"])
         if not path.steps.exists():
             for i, (title, desc, res_slug) in enumerate(PATH_STEPS, start=1):
                 LearningPathStep.objects.create(
@@ -184,4 +212,4 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f"Seeded education: {len(cats)} categories, {made} new resource(s), "
-            f"1 learning path."))
+            f"{updated} refreshed, 1 learning path."))
