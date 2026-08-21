@@ -92,6 +92,25 @@ class FreeToolsTests(TestCase):
                       symbol="$")
         self.assertEqual(self._row(res, "Profit"), "$30.00")
 
+    def test_logged_in_user_keeps_company_currency(self):
+        from django.test import Client
+
+        from apps.identity.models import Company, Membership, Role, User
+        company = Company.objects.create(name="US Co", currency="USD")
+        user = User.objects.create_user("usr@x.co", "x", active_company=company)
+        Membership.objects.create(user=user, company=company,
+                                  role=Role.objects.create(name="R", is_system=True))
+        self.client.force_login(user)
+        # Registered in USD → sees $ on the tool, even though this request has no
+        # US geo (an anonymous request would default to R).
+        resp = self.client.get("/tools/job-profit-calculator/")
+        self.assertContains(resp, 'color:var(--muted);">$')
+        anon = Client().get("/tools/job-profit-calculator/")
+        self.assertContains(anon, 'color:var(--muted);">R')
+        # An explicit switch still wins, even for a logged-in user.
+        over = self.client.get("/tools/job-profit-calculator/?currency=GBP")
+        self.assertContains(over, 'color:var(--muted);">£')
+
     def test_vat_tool_localizes_tax_name(self):
         # Australian visitor → GST at 10% in A$; South African default → VAT in R.
         au = self.client.get("/tools/vat-calculator/?currency=AUD")

@@ -88,20 +88,40 @@ def _country_from_ip(request):
 
 
 def detect_currency(request) -> str:
-    """The currency to show/bill this visitor, from their location."""
+    """The currency to show this visitor.
+
+    Precedence — a registered account's currency is an attribute of the account,
+    NOT of where the person happens to be sitting:
+      1. An explicit choice this visit (?currency=…), remembered for the session.
+      2. A logged-in user's OWN company currency — set when they registered, and
+         unchanged if they log in while travelling in another country.
+      3. An anonymous visitor's location (geo/IP), cached to avoid repeat lookups.
+      4. The platform default.
+    """
+    # 1. Deliberate choice (e.g. the currency switcher). Wins for everyone.
     override = (request.GET.get("currency") or "").upper()
     if override in SUPPORTED_CURRENCIES:
-        request.session["ccy"] = override
+        request.session["ccy_pref"] = override
         return override
+    pref = request.session.get("ccy_pref")
+    if pref in SUPPORTED_CURRENCIES:
+        return pref
 
-    stored = request.session.get("ccy")
-    if stored in SUPPORTED_CURRENCIES:
-        return stored
+    # 2. Registered user → their company's currency, wherever they are logged in.
+    user = getattr(request, "user", None)
+    if user is not None and getattr(user, "is_authenticated", False):
+        company_ccy = getattr(getattr(user, "active_company", None), "currency", None)
+        if company_ccy in SUPPORTED_CURRENCIES:
+            return company_ccy
 
+    # 3. Anonymous visitor → their location (cached; never overrides a login).
+    geo = request.session.get("ccy_geo")
+    if geo in SUPPORTED_CURRENCIES:
+        return geo
     country = _country_from_headers(request) or _country_from_ip(request)
     currency = COUNTRY_CURRENCY.get(country) if country else None
     if currency in SUPPORTED_CURRENCIES:
-        request.session["ccy"] = currency   # confident → sticky
+        request.session["ccy_geo"] = currency   # confident → sticky (anon only)
         return currency
 
-    return _default()   # unsure → platform default (ZAR), not cached
+    return _default()   # unsure → platform default, not cached
