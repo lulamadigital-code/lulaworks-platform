@@ -2729,7 +2729,7 @@ def invoice_new(request):
 @login_required
 def commercial(request):
     if not _can_view_money(request.user):
-        messages.error(request, "Commercial data requires the finance permission.")
+        messages.error(request, "Finance data requires the finance permission.")
         return redirect("web:dashboard")
     dash = commercial_dashboard(request.user.active_company)
     aging = dash["aging"]
