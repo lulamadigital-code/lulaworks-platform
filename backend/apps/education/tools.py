@@ -9,10 +9,50 @@ A tool is defined declaratively (inputs + copy) and computed by `compute(slug,
 values)`. Add a tool by adding a ToolSpec and a branch in `compute`.
 """
 
+import dataclasses
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
 TWO = Decimal("0.01")
+
+#: What consumption tax is called (and its usual standard rate) per currency —
+#: so the VAT tool reads correctly for a UK, EU, Australian or US visitor, not
+#: just South Africa. Unknown → VAT/15 (the SA default).
+TAX_LOCALE = {
+    "ZAR": ("VAT", "15"),
+    "GBP": ("VAT", "20"),
+    "EUR": ("VAT", "21"),
+    "AUD": ("GST", "10"),
+    "USD": ("Sales Tax", "0"),
+}
+
+
+def tax_for(currency):
+    """(tax_name, default_rate) for a currency code."""
+    return TAX_LOCALE.get((currency or "").upper(), ("VAT", "15"))
+
+
+def localize_tax_spec(spec, tax_name, default_rate):
+    """A display copy of the VAT tool with 'VAT' swapped for the local tax name
+    (GST / Sales Tax / …) and the rate defaulted for that country. The stored
+    ToolSpec is never mutated (it's shared across requests)."""
+    def swap(s):
+        return s.replace("VAT", tax_name) if s else s
+    new_inputs = []
+    for f in spec.inputs:
+        if f.name == "rate":
+            new_inputs.append(dataclasses.replace(
+                f, label=f"{tax_name} rate", default=default_rate))
+        elif f.name == "mode":
+            new_inputs.append(dataclasses.replace(f, choices=(
+                ("exclusive", f"{tax_name}-exclusive (add {tax_name})"),
+                ("inclusive", f"{tax_name}-inclusive (extract {tax_name})"))))
+        else:
+            new_inputs.append(f)
+    return dataclasses.replace(
+        spec, title=swap(spec.title), summary=swap(spec.summary),
+        problem=swap(spec.problem), explainer=swap(spec.explainer),
+        cta_label=swap(spec.cta_label), inputs=new_inputs)
 
 
 @dataclass
@@ -103,7 +143,7 @@ TOOLS = {
     "vat-calculator": ToolSpec(
         slug="vat-calculator",
         title="VAT Calculator",
-        summary="Add or extract South African VAT (15%) from any amount.",
+        summary="Add or extract VAT from any amount — either way.",
         category="getting-paid", related_feature="invoices", icon="🧾",
         cta_label="Invoices calculate VAT for you",
         cta_url="/start-free-trial/",
@@ -114,7 +154,7 @@ TOOLS = {
         explainer=(
             "<p>On a <strong>VAT-exclusive</strong> amount, VAT = amount × rate. On a "
             "<strong>VAT-inclusive</strong> total, the net = total ÷ (1 + rate), and "
-            "VAT is the difference. South Africa's standard rate is 15%.</p>"),
+            "VAT is the difference. Enter your local rate above.</p>"),
         inputs=[
             Field("amount", "Amount", "money", "0"),
             Field("rate", "VAT rate", "percent", "15"),
@@ -145,10 +185,11 @@ TOOLS = {
 }
 
 
-def compute(slug, values, symbol="R"):
+def compute(slug, values, symbol="R", tax_name="VAT"):
     """Return a list of {label, value, emph} result rows for the given tool, or
     an {error} note when the inputs can't produce a sensible answer. `symbol` is
-    the visitor's currency symbol (R / $ / € / £ / A$)."""
+    the visitor's currency symbol (R / $ / € / £ / A$); `tax_name` localises the
+    VAT calculator (VAT / GST / Sales Tax)."""
     def m(v):
         return _money(v, symbol)
     if slug == "job-profit-calculator":
@@ -189,9 +230,9 @@ def compute(slug, values, symbol="R"):
             vat = amount * rate / 100
             total = amount + vat
         return [
-            {"label": "Net (excl. VAT)", "value": m(net)},
-            {"label": f"VAT ({_pct(rate)})", "value": m(vat)},
-            {"label": "Total (incl. VAT)", "value": m(total), "emph": True},
+            {"label": f"Net (excl. {tax_name})", "value": m(net)},
+            {"label": f"{tax_name} ({_pct(rate)})", "value": m(vat)},
+            {"label": f"Total (incl. {tax_name})", "value": m(total), "emph": True},
         ]
 
     if slug == "break-even-calculator":

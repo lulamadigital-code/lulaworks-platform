@@ -360,11 +360,16 @@ def learn_path(request, slug):
 def tools(request):
     """Index of the free calculators — each a genuinely useful tool that connects
     to a Lulaworks feature."""
-    from apps.education.tools import TOOLS
-    ctx = _seo("Free tools for contractors — profit, markup, VAT & break-even calculators",
+    from apps.billing.models import currency_symbol
+    from apps.education.tools import TOOLS, localize_tax_spec, tax_for
+    from apps.marketing.geo import detect_currency
+    tax_name, tax_rate = tax_for(detect_currency(request))
+    tools_list = [localize_tax_spec(t, tax_name, tax_rate)
+                  if t.slug == "vat-calculator" else t for t in TOOLS.values()]
+    ctx = _seo("Free tools for contractors — profit, markup, tax & break-even calculators",
                "Free calculators for contractors and suppliers: job profit, markup "
-               "vs margin, VAT and break-even. No signup required.")
-    ctx["tools"] = list(TOOLS.values())
+               "vs margin, tax and break-even. No signup required.")
+    ctx["tools"] = tools_list
     return render(request, "marketing/tools.html", ctx)
 
 
@@ -379,16 +384,21 @@ def tool(request, slug):
     if spec is None:
         raise Http404("Unknown tool")
 
-    # Show amounts in the visitor's own currency, not always Rands.
+    # Show amounts in the visitor's own currency (not always Rands) and localise
+    # the VAT tool's tax name (VAT / GST / Sales Tax) to their region.
     from apps.billing.models import CURRENCY_SYMBOLS, currency_symbol
+    from apps.education.tools import localize_tax_spec, tax_for
     from apps.marketing.geo import detect_currency
     ccy = detect_currency(request)
     sym = currency_symbol(ccy)
+    tax_name, tax_rate = tax_for(ccy)
+    if slug == "vat-calculator":
+        spec = localize_tax_spec(spec, tax_name, tax_rate)
 
     results, values = None, {}
     if request.method == "POST":
         values = {f.name: request.POST.get(f.name, "") for f in spec.inputs}
-        results = compute(slug, values, symbol=sym)
+        results = compute(slug, values, symbol=sym, tax_name=tax_name)
         track("tool_completed", request=request, module="education",
               feature=spec.related_feature, source="tools",
               metadata={"slug": slug, "currency": ccy})
@@ -399,10 +409,12 @@ def tool(request, slug):
 
     fields = [{"f": f, "value": values.get(f.name, "")} for f in spec.inputs]
     ctx = _seo(f"{spec.title} — free tool by Lulaworks", spec.summary)
+    others = [localize_tax_spec(t, tax_name, tax_rate) if t.slug == "vat-calculator" else t
+              for t in TOOLS.values() if t.slug != slug][:3]
     ctx.update({"tool": spec, "results": results, "fields": fields,
                 "currency": ccy, "currency_symbol": sym,
                 "currencies": list(CURRENCY_SYMBOLS.items()),
-                "other_tools": [t for t in TOOLS.values() if t.slug != slug][:3]})
+                "other_tools": others})
     return render(request, "marketing/tool.html", ctx)
 
 

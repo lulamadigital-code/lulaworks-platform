@@ -92,6 +92,18 @@ class FreeToolsTests(TestCase):
                       symbol="$")
         self.assertEqual(self._row(res, "Profit"), "$30.00")
 
+    def test_vat_tool_localizes_tax_name(self):
+        # Australian visitor → GST at 10% in A$; South African default → VAT in R.
+        au = self.client.get("/tools/vat-calculator/?currency=AUD")
+        self.assertContains(au, "GST")
+        self.assertContains(au, "GST rate")
+        posted = self.client.post("/tools/vat-calculator/?currency=AUD",
+                                  {"amount": "100", "rate": "10", "mode": "exclusive"})
+        self.assertContains(posted, "Total (incl. GST)")
+        self.assertContains(posted, "A$110.00")
+        us = self.client.get("/tools/vat-calculator/?currency=USD")
+        self.assertContains(us, "Sales Tax")
+
     def test_tool_page_respects_currency_param(self):
         resp = self.client.get("/tools/job-profit-calculator/?currency=USD")
         self.assertEqual(resp.status_code, 200)
