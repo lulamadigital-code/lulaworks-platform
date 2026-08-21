@@ -57,11 +57,12 @@ class LeadEventInline(admin.TabularInline):
 
 @admin.register(EducationLead)
 class EducationLeadAdmin(admin.ModelAdmin):
-    list_display = ("email", "score", "company", "industry", "company_size",
-                    "has_account", "updated_at")
-    list_filter = ("has_account", "industry", "company_size")
+    list_display = ("email", "score", "subscribed", "company", "industry",
+                    "company_size", "has_account", "welcomed_at", "updated_at")
+    list_filter = ("subscribed", "has_account", "industry", "company_size")
     search_fields = ("email", "name", "company", "challenge")
-    readonly_fields = ("score", "first_source", "created_at", "updated_at")
+    readonly_fields = ("score", "first_source", "welcomed_at", "created_at",
+                       "updated_at")
     ordering = ("-score", "-updated_at")
     inlines = [LeadEventInline]
 
