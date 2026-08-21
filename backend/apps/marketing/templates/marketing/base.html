@@ -182,11 +182,14 @@
 
     /* Footer */
     footer.site{background:var(--ink);color:#c7cbe0;padding:56px 0 30px;font-size:14.5px}
-    footer.site .cols{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:30px}
+    footer.site .cols{display:grid;grid-template-columns:1.5fr repeat(4,1fr);gap:30px}
     footer.site h4{color:#fff;font-size:14px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 14px}
     footer.site a{color:#c7cbe0;display:block;padding:5px 0}
     footer.site a:hover{color:#fff}
     footer.site .brand{color:#fff}
+    footer.site .foot-logo{height:34px;width:auto;display:block;margin-bottom:14px}
+    footer.site .foot-about{max-width:280px}
+    footer.site .foot-mail{display:inline;padding:0}
     footer.site .foot-bottom{border-top:1px solid rgba(255,255,255,.12);margin-top:36px;padding-top:20px;
                              display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;color:#9aa0c0}
 
@@ -260,9 +263,12 @@
     <div class="wrap">
       <div class="cols">
         <div>
-          <a class="brand" href="{% url 'marketing:home' %}"><span class="dot"></span>LulaWorks</a>
-          <p style="margin-top:12px;max-width:280px;">The Contractor Operating System — from quotation to
+          <a class="brand" href="{% url 'marketing:home' %}" aria-label="LulaWorks home">
+            <img class="foot-logo" src="{% static 'web/logo.png' %}" alt="LulaWorks"></a>
+          <p class="foot-about">The Contractor Operating System — from quotation to
             payment, one intelligent platform built for contractors worldwide.</p>
+          <p style="margin-top:12px;">
+            <a class="foot-mail" href="mailto:support@lulaworks.co.za">support@lulaworks.co.za</a></p>
         </div>
         <div>
           <h4>Product</h4>
@@ -272,22 +278,23 @@
           <a href="{% url 'marketing:trial' %}">Start Free Trial</a>
         </div>
         <div>
+          <h4>Resources</h4>
+          <a href="{% url 'marketing:learn' %}">Learn</a>
+          <a href="{% url 'marketing:tools' %}">Free tools</a>
+          <a href="{% url 'marketing:templates' %}">Templates</a>
+          <a href="{% url 'marketing:faq' %}">FAQ</a>
+        </div>
+        <div>
           <h4>Company</h4>
           <a href="{% url 'marketing:about' %}">About Us</a>
           <a href="{% url 'marketing:contact' %}">Contact</a>
-          <a href="{% url 'marketing:faq' %}">FAQ</a>
+          <a href="{% url 'web:login' %}">Log in</a>
         </div>
         <div>
           <h4>Legal</h4>
           <a href="{% url 'marketing:privacy' %}">Privacy Policy</a>
           <a href="{% url 'marketing:terms' %}">Terms &amp; Conditions</a>
           <a href="{% url 'marketing:cookies' %}">Cookie Policy</a>
-        </div>
-        <div>
-          <h4>Support</h4>
-          <a href="mailto:support@lulaworks.co.za">support@lulaworks.co.za</a>
-          <a href="mailto:sales@lulaworks.co.za">sales@lulaworks.co.za</a>
-          <a href="{% url 'web:login' %}">Log in</a>
         </div>
       </div>
       <div class="foot-bottom">
