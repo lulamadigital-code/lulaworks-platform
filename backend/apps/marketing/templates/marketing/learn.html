@@ -78,7 +78,9 @@
     </div>
     {% endif %}
 
+    {% if not request.user.is_authenticated %}
     {% include "marketing/_lead_form.html" with source="academy" event="opt_in" %}
+    {% endif %}
   </div>
 </section>
 {% endblock %}

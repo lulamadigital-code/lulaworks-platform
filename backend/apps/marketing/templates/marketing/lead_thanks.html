@@ -8,7 +8,11 @@
       this into practice is a free Lulaworks account — quote, invoice and track your
       jobs in one place, with the admin done for you.</p>
     <div style="margin-top:22px;">
+      {% if request.user.is_authenticated %}
+      <a class="btn lg" href="{% url 'web:dashboard' %}">Go to your Dashboard →</a>
+      {% else %}
       <a class="btn lg" href="{% url 'marketing:trial' %}">Start Free with Lulaworks</a>
+      {% endif %}
     </div>
     <p style="margin-top:16px;"><a href="{% url 'marketing:learn' %}">← Back to the Academy</a></p>
   </div>

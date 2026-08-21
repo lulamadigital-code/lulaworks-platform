@@ -21,7 +21,11 @@
       {% endfor %}
     </ol>
 
+    {% if request.user.is_authenticated %}
+    <a class="btn" href="{% url 'web:dashboard' %}" style="margin-top:22px;">Go to your Dashboard →</a>
+    {% else %}
     <a class="btn" href="{% url 'marketing:trial' %}" style="margin-top:22px;">Start Free with Lulaworks</a>
+    {% endif %}
   </div>
 </section>
 <style>

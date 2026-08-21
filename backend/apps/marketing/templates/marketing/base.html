@@ -242,8 +242,12 @@
       </div>
       <span class="sp"></span>
       <div class="actions">
+        {% if request.user.is_authenticated %}
+        <a class="btn" href="{% url 'web:dashboard' %}">Go to Dashboard</a>
+        {% else %}
         <a class="login" href="{% url 'web:login' %}">Log in</a>
         <a class="btn" href="{% url 'marketing:trial' %}">Start Free Trial</a>
+        {% endif %}
         <label class="menu-toggle" for="mc" aria-label="Menu">☰</label>
       </div>
     </nav>
