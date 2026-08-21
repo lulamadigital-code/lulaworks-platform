@@ -396,6 +396,27 @@ def commercial_dashboard(company) -> dict:
         elif out > 0:
             aging["current"] += out
 
+    # Tax invoices (raised from quotations) are receivables too — fold them into
+    # the same outstanding + aging so Finance is the ONE view of money owed. They
+    # carry no due date, so age from the issue date (like the Invoices hub).
+    from apps.quotes.models import CommercialDocument
+    for doc in (CommercialDocument.objects
+                .filter(kind=CommercialDocument.Kind.INVOICE)
+                .select_related("quotation")
+                .prefetch_related("quotation__lines", "payments")):
+        if not doc.is_finalized:
+            continue                      # a draft tax invoice isn't owed yet
+        out = doc.outstanding
+        if out <= 0:
+            continue
+        outstanding += out
+        age = (today - doc.created_at.date()).days
+        if age < 30:
+            aging["current"] += out
+        else:
+            overdue += out
+            aging["30" if age < 60 else ("60" if age < 90 else "90+")] += out
+
     gp = (total_revenue - total_cost).quantize(TWO)
     margin = (gp / total_revenue * 100).quantize(TWO) if total_revenue else Decimal("0.00")
     return {

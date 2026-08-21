@@ -2027,6 +2027,32 @@ class AccountLifecycleWebTests(TestCase):
         self.assertContains(r, "/reset/")
 
 
+class FinanceDashboardTests(TestCase):
+    def test_dashboard_counts_approved_tax_invoices_as_receivables(self):
+        from apps.core.context import tenant_scope
+        from apps.customers.services import create_customer
+        from apps.finance.services import commercial_dashboard
+        from apps.quotes.models import CommercialDocument
+        from apps.quotes.services import create_direct_invoice
+
+        company = make_company()
+        user = user_with(company, ["quotes.create"])
+        with tenant_scope(company.id):
+            cust = create_customer(company, user, name="Acme")
+            doc = create_direct_invoice(
+                company, user, client_name="Acme", customer=cust,
+                lines=[{"description": "x", "qty": 1, "unit_price": 100}],
+                vat_rate=Decimal("0"))
+            # A draft tax invoice is NOT yet owed → excluded.
+            self.assertEqual(commercial_dashboard(company)["outstanding_invoiced"],
+                             "0.00")
+            # Once approved, it's a receivable in the Finance dashboard.
+            doc.status = CommercialDocument.Status.APPROVED
+            doc.save()
+            self.assertEqual(commercial_dashboard(company)["outstanding_invoiced"],
+                             "100.00")
+
+
 class InvoicesPageTests(TestCase):
     def test_invoices_page_renders_with_nav(self):
         company = make_company()

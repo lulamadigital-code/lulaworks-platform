@@ -23,6 +23,9 @@
     <tr>{% for row in aging_rows %}<th>{{ row.0 }}</th>{% endfor %}</tr>
     <tr>{% for row in aging_rows %}<td>R{{ row.1 }}</td>{% endfor %}</tr>
   </table>
+  <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Includes both project /
+    progress-claim invoices and <a href="{% url 'web:invoices' %}">tax invoices</a> —
+    the total money owed to you across the business.</p>
 </div>
 
 {% if commercial.loss_making_projects %}
@@ -38,7 +41,10 @@
 </div>
 {% endif %}
 
-<h2>Invoices</h2>
+<div class="pagehead" style="margin:22px 0 10px;">
+  <h2 style="margin:0;">Project &amp; progress invoices</h2>
+  <a class="btn ghost" href="{% url 'web:invoices' %}">Tax invoices →</a>
+</div>
 <div class="card" style="padding:0;">
   <table>
     <tr><th>Number</th><th>Client</th><th>Type</th><th>Status</th>
