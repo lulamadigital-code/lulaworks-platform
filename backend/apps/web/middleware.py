@@ -7,8 +7,44 @@ in the manager web redirects to the change-password screen. The account can sign
 in and do exactly one thing.
 """
 
+import time
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.urls import reverse
+
+
+class IdleTimeoutMiddleware:
+    """Sign a manager-web user out after SESSION_IDLE_TIMEOUT seconds of no
+    activity (sliding — each request resets the clock). Guards the session web
+    only; the JWT API/mobile app uses its own token lifetime. Set the timeout to
+    0 to disable."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.timeout = int(getattr(settings, "SESSION_IDLE_TIMEOUT", 0) or 0)
+
+    def __call__(self, request):
+        user = getattr(request, "user", None)
+        if (self.timeout > 0 and user is not None and user.is_authenticated
+                and self._is_web(request)):
+            now = int(time.time())
+            last = request.session.get("last_activity")
+            if last is not None and now - last > self.timeout:
+                logout(request)             # flushes the session
+                messages.info(request,
+                              "You were signed out after a period of inactivity.")
+                return redirect("web:login")
+            request.session["last_activity"] = now
+        return self.get_response(request)
+
+    @staticmethod
+    def _is_web(request) -> bool:
+        # Only the session-authenticated manager web; leave the API/static alone.
+        return not request.path.startswith(
+            ("/api/", "/static/", "/media/", "/health", "/e/collect"))
 
 
 class ForcePasswordChangeMiddleware:

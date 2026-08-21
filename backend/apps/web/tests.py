@@ -2035,6 +2035,29 @@ class AccountLifecycleWebTests(TestCase):
         self.assertContains(r, "/reset/")
 
 
+class IdleTimeoutTests(TestCase):
+    def test_idle_user_is_signed_out(self):
+        import time
+        company = make_company()
+        user = user_with(company, ["quotes.create"])
+        self.client.force_login(user)
+        self.client.get("/dashboard/")            # stamps last_activity
+        s = self.client.session                    # age it well past the timeout
+        s["last_activity"] = int(time.time()) - 10 ** 7
+        s.save()
+        resp = self.client.get("/dashboard/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/login/", resp.url)
+        self.assertNotIn("_auth_user_id", self.client.session)   # logged out
+
+    def test_active_user_stays_signed_in(self):
+        company = make_company()
+        user = user_with(company, ["quotes.create"])
+        self.client.force_login(user)
+        self.assertEqual(self.client.get("/dashboard/").status_code, 200)
+        self.assertEqual(self.client.get("/dashboard/").status_code, 200)  # fresh
+
+
 class CompanySetupGateTests(TestCase):
     def _complete(self, company):
         from apps.identity.models import CompanyBankAccount

@@ -135,4 +135,5 @@ def nav_flags(request):
             "logo_static": logo_static_name(), "nav_section": section,
             "unread_notifications": unread,
             "support_open_count": support_open,
+            "idle_timeout": getattr(_s, "SESSION_IDLE_TIMEOUT", 0),
             "ga4_id": getattr(_s, "GA4_MEASUREMENT_ID", "")}

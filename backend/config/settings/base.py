@@ -83,6 +83,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
+    # Auto sign-out after a period of inactivity (manager web only).
+    "apps.web.middleware.IdleTimeoutMiddleware",
     # Admin-created accounts must replace their temporary password before they
     # can use anything (manager web only; the JWT API is untouched).
     "apps.web.middleware.ForcePasswordChangeMiddleware",
@@ -145,6 +147,11 @@ GA4_MEASUREMENT_ID = config("GA4_MEASUREMENT_ID", default="")
 LOGIN_URL = "web:login"
 LOGIN_REDIRECT_URL = "web:dashboard"
 LOGOUT_REDIRECT_URL = "web:login"
+
+# Auto sign-out of the manager web after this many seconds of inactivity (sliding:
+# every request resets it). The JWT/mobile API is unaffected — it has its own
+# access-token lifetime. Default 30 minutes; 0 disables the idle timeout.
+SESSION_IDLE_TIMEOUT = config("SESSION_IDLE_TIMEOUT", default=1800, cast=int)
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

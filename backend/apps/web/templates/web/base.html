@@ -534,5 +534,21 @@
     }, true);
   })();
   </script>
+  {% if request.user.is_authenticated and idle_timeout %}
+  <script>
+  // Auto sign-out after inactivity — mirrors the server-side idle timeout so an
+  // idle browser is returned to the login screen instead of sitting logged in.
+  (function () {
+    var IDLE = {{ idle_timeout }} * 1000;
+    if (IDLE <= 0) return;
+    var timer;
+    function signOut() { window.location.href = "{% url 'web:logout' %}"; }
+    function reset() { clearTimeout(timer); timer = setTimeout(signOut, IDLE); }
+    ["mousemove", "mousedown", "keydown", "scroll", "touchstart", "click"]
+      .forEach(function (e) { document.addEventListener(e, reset, {passive: true}); });
+    reset();
+  })();
+  </script>
+  {% endif %}
 </body>
 </html>
