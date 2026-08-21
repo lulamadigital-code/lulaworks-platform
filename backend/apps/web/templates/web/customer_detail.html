@@ -215,7 +215,8 @@
 {% endif %}
 
 {% if can_manage %}
-<h2 id="addperson" style="scroll-margin-top:20px;">Add a person</h2>
+<div id="addperson" style="display:none;scroll-margin-top:20px;">
+<h2 style="margin-top:0;">Add a person</h2>
 <div class="card">
   <form method="post" action="{% url 'web:customer_contact_save' customer.id %}">
     {% csrf_token %}
@@ -257,6 +258,18 @@
     <br><button class="btn" type="submit" style="margin-top:16px;">Add contact</button>
   </form>
 </div>
+</div>
+<script>
+(function () {
+  // The 'Add a person' form stays hidden until the header button is clicked.
+  var panel = document.getElementById("addperson");
+  if (!panel) return;
+  function open() { panel.style.display = "block"; }
+  var btn = document.querySelector('a[href="#addperson"]');
+  if (btn) btn.addEventListener("click", open);
+  if (location.hash === "#addperson") open();
+})();
+</script>
 {% endif %}
 
 {# ── Places ─────────────────────────────────────────────────────────────── #}

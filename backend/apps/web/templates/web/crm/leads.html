@@ -37,8 +37,10 @@
 </div>
 
 {% if can_manage %}
-<h2>Capture a lead</h2>
-<div class="card">
+<details class="add-collapse">
+  <summary class="btn">+ Capture a lead</summary>
+  <div class="card" style="margin-top:12px;">
+  <h2 style="margin-top:0;">Capture a lead</h2>
   <form method="post" action="{% url 'web:crm_lead_create' %}">{% csrf_token %}
     <div class="two">
       <div><label>Company / organisation *</label><input type="text" name="company_name" required placeholder="Prospect Mining"></div>
@@ -57,7 +59,8 @@
     </div>
     <div style="margin-top:12px;"><button class="btn primary" type="submit">Add lead</button></div>
   </form>
-</div>
+  </div>
+</details>
 {% endif %}
 
 {% endblock %}

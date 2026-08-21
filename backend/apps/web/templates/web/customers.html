@@ -49,8 +49,10 @@
 </div>
 
 {% if can_manage %}
-<h2>Add a customer</h2>
-<div class="card">
+<details class="add-collapse">
+  <summary class="btn">+ Add customer</summary>
+  <div class="card" style="margin-top:12px;">
+  <h2 style="margin-top:0;">Add a customer</h2>
   <form method="post" action="{% url 'web:customer_create' %}">{% csrf_token %}
     <div class="two">
       <div><label>Registered company name</label><input type="text" name="name" required
@@ -70,6 +72,7 @@
       structure (Engineering, Maintenance, Procurement, Finance…) is created so you
       can file contacts immediately. Remove any you don't need.</p>
   </form>
-</div>
+  </div>
+</details>
 {% endif %}
 {% endblock %}

@@ -143,6 +143,12 @@
     /* ---- Work engine: page head, view switcher, filters ---- */
     .pagehead{display:flex;align-items:flex-end;gap:16px;margin-bottom:20px;flex-wrap:wrap}
     .pagehead>div:first-child{flex:1;min-width:220px}
+    /* Collapsible "add" forms: hidden until the summary button is clicked. */
+    details.add-collapse{margin-bottom:14px}
+    details.add-collapse>summary{display:inline-flex;align-items:center;cursor:pointer;
+      list-style:none;width:auto}
+    details.add-collapse>summary::-webkit-details-marker{display:none}
+    details.add-collapse>summary::marker{content:""}
     .viewbar{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);
              border-radius:11px;padding:4px;margin-bottom:14px;width:fit-content;box-shadow:var(--shadow)}
     .viewtab{padding:7px 15px;border-radius:8px;font-weight:600;font-size:13.5px;color:var(--muted)}
