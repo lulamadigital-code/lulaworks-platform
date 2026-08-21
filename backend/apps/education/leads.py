@@ -7,8 +7,18 @@ tells sales/CRM who is warming up — the goal is timely help, not spam.
 """
 
 from django.core import signing
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db.models import Sum
 from django.utils import timezone
+
+
+def _is_valid_email(value: str) -> bool:
+    try:
+        validate_email(value)
+        return True
+    except ValidationError:
+        return False
 
 from .models import EducationLead, LeadEvent
 
@@ -102,7 +112,7 @@ def capture_lead(*, email, event="opt_in", request=None, detail="", **profile):
     and currently empty — we never overwrite better data with blanks. Safe to
     call from anywhere; failures never raise into the request."""
     email = (email or "").strip().lower()
-    if not email or "@" not in email:
+    if not _is_valid_email(email):
         return None
     try:
         lead, created = EducationLead.objects.get_or_create(

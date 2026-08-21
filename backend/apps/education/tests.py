@@ -144,10 +144,20 @@ class LeadCaptureTests(TestCase):
         self.assertEqual(lead.score, 5)                    # 3 + 2
         self.assertEqual(lead.events.count(), 2)
 
-    def test_capture_ignores_bad_email(self):
+    def test_capture_validates_email(self):
         from apps.education.leads import capture_lead
-        self.assertIsNone(capture_lead(email="not-an-email"))
-        self.assertIsNone(capture_lead(email=""))
+        for bad in ["not-an-email", "", "   ", "x@", "@y.com",
+                    "user name@x.com", "two@@at.com", "trailing@dot."]:
+            self.assertIsNone(capture_lead(email=bad), f"should reject {bad!r}")
+        # A proper address is accepted (and normalised).
+        self.assertIsNotNone(capture_lead(email="Valid.User@Example.CO.ZA"))
+
+    def test_capture_endpoint_rejects_bad_email(self):
+        from apps.education.models import EducationLead
+        resp = self.client.post("/grow/", {"email": "nope", "event": "opt_in"},
+                                follow=True)
+        self.assertContains(resp, "valid email")          # error surfaced
+        self.assertFalse(EducationLead.objects.filter(email="nope").exists())
 
     def test_does_not_overwrite_profile_with_blanks(self):
         from apps.education.leads import capture_lead
