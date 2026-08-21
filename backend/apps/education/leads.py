@@ -162,8 +162,18 @@ def send_welcome_email(lead, request=None):
         from apps.notifications.models import EmailCategory
         from apps.notifications.service import send_email
 
+        # White wordmark for the teal email header (absolute URL for email
+        # clients). A coloured logo would vanish on the coloured header. Isolated
+        # so a static-manifest hiccup can't block the whole email.
+        try:
+            from django.templatetags.static import static
+            logo_url = _abs_url(request, static("web/logo-white.png"))
+        except Exception:               # noqa: BLE001
+            logo_url = ""
+
         token = unsubscribe_token(lead)
         ctx = {
+            "logo_url": logo_url,
             "heading": "Welcome to the LulaWorks Academy",
             "name": (lead.name or "").split(" ")[0],
             "learn_url": _abs_url(request, reverse("marketing:learn")),
