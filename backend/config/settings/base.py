@@ -150,8 +150,8 @@ LOGOUT_REDIRECT_URL = "web:login"
 
 # Auto sign-out of the manager web after this many seconds of inactivity (sliding:
 # every request resets it). The JWT/mobile API is unaffected — it has its own
-# access-token lifetime. Default 30 minutes; 0 disables the idle timeout.
-SESSION_IDLE_TIMEOUT = config("SESSION_IDLE_TIMEOUT", default=1800, cast=int)
+# access-token lifetime. Default 15 minutes; 0 disables the idle timeout.
+SESSION_IDLE_TIMEOUT = config("SESSION_IDLE_TIMEOUT", default=900, cast=int)
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
