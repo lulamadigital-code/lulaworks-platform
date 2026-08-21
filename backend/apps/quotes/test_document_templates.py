@@ -197,7 +197,7 @@ class LetterheadLogoPositionTests(SimpleTestCase):
 
 
 class FamilyTests(TestCase):
-    """The twelve original LulaWorks families: every family is seeded across all
+    """The twelve original Lulaworks families: every family is seeded across all
     three document types as an HTML-engine template, they render valid documents,
     and the built-in name guard is an allowlist (no borrowed product names)."""
 

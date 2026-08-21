@@ -1397,7 +1397,7 @@ def people_add(request):
     else:
         messages.success(
             request,
-            f"{membership.user.email} already had a LulaWorks account and has "
+            f"{membership.user.email} already had a Lulaworks account and has "
             "been added to this company. We've emailed them to sign in.")
     return redirect("web:people")
 
@@ -2553,7 +2553,7 @@ def procurement_dashboard(request):
 
 @login_required
 def procurement_clients(request):
-    """Procurement's 'Our Clients' — the SAME customer master used across LulaWorks,
+    """Procurement's 'Our Clients' — the SAME customer master used across Lulaworks,
     not a separate database. Search the master and drill into a client to see their
     record and job/procurement history (via the customer detail page)."""
     from django.db.models import Count, Q

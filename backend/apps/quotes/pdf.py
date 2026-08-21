@@ -1,5 +1,5 @@
 """Quotation PDF — the customer-facing document, laid out to match the format
-LulaWorks contractors already issue (validated against a real Lulama Projects →
+Lulaworks contractors already issue (validated against a real Lulama Projects →
 Western Platinum quotation): company identity with tax/VAT/registration numbers
 and the customer's supplier number, a two-column client/quotation block, the
 priced item table, totals, sign-off lines, and banking details.
@@ -29,7 +29,7 @@ from reportlab.platypus import (
 )
 
 # The accent (title, totals, rules, box borders, table header) uses the
-# company's own brand colour, falling back to the LulaWorks teal. All text is
+# company's own brand colour, falling back to the Lulaworks teal. All text is
 # black — there is no grey secondary text; "muted" is kept as an alias so the
 # structure is unchanged but every character reads in a single black.
 DEFAULT_BRAND = colors.HexColor("#0E6E6E")
@@ -122,7 +122,7 @@ def _page_decorator(cfg, brand):
 
 
 def _brand_color(company):
-    """The company's own brand colour if it set a valid one, else the LulaWorks
+    """The company's own brand colour if it set a valid one, else the Lulaworks
     teal — so a bad or empty value never breaks the document."""
     raw = (getattr(company, "brand_primary", "") or "").strip()
     if _HEX.match(raw):
@@ -136,7 +136,7 @@ def _brand_color(company):
 def _logo_flowable(header, max_h=60 * mm, max_w=70 * mm):
     """The COMPANY'S OWN uploaded logo (Company Profile → branding), else None — the
     caller then prints the company name as text. A customer-facing document must
-    never fall back to the bundled LulaWorks mark. Sized to fill the letterhead but
+    never fall back to the bundled Lulaworks mark. Sized to fill the letterhead but
     capped in height and width so a wide or tall logo keeps its aspect ratio."""
     path = None
     logo = header.get("logo")

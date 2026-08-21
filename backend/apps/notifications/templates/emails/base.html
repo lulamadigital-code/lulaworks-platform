@@ -1,5 +1,5 @@
 {% comment %}
-LulaWorks branded email shell. Inline styles only (email clients strip <style>).
+Lulaworks branded email shell. Inline styles only (email clients strip <style>).
 Context (all optional, filled by the email service from the company profile):
   brand_color, logo_url, company_name, company_address_lines, support_email,
   website, year, preheader. Content templates fill the `content` block; CTA via
@@ -7,7 +7,7 @@ Context (all optional, filled by the email service from the company profile):
 {% endcomment %}<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ subject|default:"LulaWorks" }}</title></head>
+<title>{{ subject|default:"Lulaworks" }}</title></head>
 <body style="margin:0;padding:0;background:#f4f6f8;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#22303b;">
 {% if preheader %}<span style="display:none;max-height:0;overflow:hidden;">{{ preheader }}</span>{% endif %}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:24px 0;">
@@ -18,7 +18,7 @@ Context (all optional, filled by the email service from the company profile):
       {# ── Header ─────────────────────────────────────────────────────────── #}
       <tr><td style="background:{{ header_bg|default:brand_color|default:'#0E6E6E' }};padding:22px 28px;border-bottom:1px solid #eef1f4;">
         {% if logo_url %}<img src="{{ logo_url }}" alt="{{ company_name }}" height="36" style="height:36px;display:block;">
-        {% else %}<span style="color:{{ header_text|default:'#ffffff' }};font-size:20px;font-weight:700;">{{ company_name|default:"LulaWorks" }}</span>{% endif %}
+        {% else %}<span style="color:{{ header_text|default:'#ffffff' }};font-size:20px;font-weight:700;">{{ company_name|default:"Lulaworks" }}</span>{% endif %}
       </td></tr>
 
       {# ── Body ───────────────────────────────────────────────────────────── #}
@@ -41,13 +41,13 @@ Context (all optional, filled by the email service from the company profile):
 
       {# ── Footer ─────────────────────────────────────────────────────────── #}
       <tr><td style="padding:22px 28px 26px;border-top:1px solid #eef1f4;">
-        <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#22303b;">{{ company_name|default:"LulaWorks" }}</p>
+        <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#22303b;">{{ company_name|default:"Lulaworks" }}</p>
         {% for line in company_address_lines %}<p style="margin:0;font-size:12px;color:#8a97a1;">{{ line }}</p>{% endfor %}
         <p style="margin:10px 0 0;font-size:12px;color:#8a97a1;">
           {% if support_email %}Support: <a href="mailto:{{ support_email }}" style="color:{{ brand_color|default:'#0E6E6E' }};">{{ support_email }}</a>{% endif %}
           {% if website %}&nbsp;·&nbsp;<a href="{{ website }}" style="color:{{ brand_color|default:'#0E6E6E' }};">{{ website }}</a>{% endif %}
         </p>
-        <p style="margin:12px 0 0;font-size:11px;color:#aeb8c0;">© {{ year }} {{ company_name|default:"LulaWorks" }}. Powered by LulaWorks.
+        <p style="margin:12px 0 0;font-size:11px;color:#aeb8c0;">© {{ year }} {{ company_name|default:"Lulaworks" }}. Powered by Lulaworks.
           {% if unsubscribe_url %}&nbsp;·&nbsp;<a href="{{ unsubscribe_url }}" style="color:#aeb8c0;">Unsubscribe</a>{% endif %}</p>
       </td></tr>
 

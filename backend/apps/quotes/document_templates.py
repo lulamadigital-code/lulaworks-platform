@@ -44,14 +44,14 @@ from .models import (
 
 
 def assert_allowed_template_name(name: str, *, is_builtin: bool) -> None:
-    """Allowlist gate for BUILT-IN template names: a LulaWorks-shipped template must
+    """Allowlist gate for BUILT-IN template names: a Lulaworks-shipped template must
     carry one of the twelve original family names. This makes it impossible for any
     third-party product name to enter the shipped catalogue — without the code ever
     having to enumerate competitor names. Customers may still name their own custom
     templates freely (this is a no-op unless `is_builtin`)."""
     if is_builtin and (name or "").strip() not in ALLOWED_TEMPLATE_FAMILY_NAMES:
         raise TemplateError(
-            f"“{name}” isn’t a LulaWorks design family — built-in templates must "
+            f"“{name}” isn’t a Lulaworks design family — built-in templates must "
             f"use one of the original family names.")
 
 _HEX = re.compile(r"^#(?:[0-9a-fA-F]{6})$")
@@ -357,7 +357,7 @@ def pin_template_version(document, doc_type, actor=None):
 # ── Management ────────────────────────────────────────────────────────────────
 
 def _seed_families(company, actor, existing) -> int:
-    """Create the built-in LulaWorks template FAMILIES the company is missing —
+    """Create the built-in Lulaworks template FAMILIES the company is missing —
     each family expanded across the three document types, sharing one visual
     identity (HTML engine). `existing` is a set of (doc_type, name) already present
     and is updated in place. The default family (Horizon) is made the company
@@ -560,12 +560,12 @@ def _is_pinned(template) -> bool:
 @transaction.atomic
 def delete_template(template, actor):
     """Permanently remove a template the company CREATED — one built in the visual
-    builder or reconstructed from an upload. The shipped LulaWorks built-ins can't
+    builder or reconstructed from an upload. The shipped Lulaworks built-ins can't
     be deleted (archive to hide them). Also refused for the company default (set
     another first) and for any template an issued document is pinned to (archive
     instead) — so deleting can never break a finalised document."""
     if template.is_builtin:
-        raise TemplateError("This is a built-in LulaWorks template — it can't be "
+        raise TemplateError("This is a built-in Lulaworks template — it can't be "
                             "deleted, but you can archive it to hide it.")
     if template.is_default:
         raise TemplateError("This is the default — set another template as the "

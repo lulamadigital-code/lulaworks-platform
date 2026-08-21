@@ -1,7 +1,7 @@
 """Paystack adapter — a strong fit for Africa (NGN, GHS, ZAR, KES, USD).
 
 Uses Paystack's hosted checkout (Initialize Transaction → authorization_url), so
-raw card data never touches LulaWorks. Payment is confirmed server-side (verify
+raw card data never touches Lulaworks. Payment is confirmed server-side (verify
 endpoint) and webhooks are authenticated with the HMAC-SHA512 signature Paystack
 sends. Dependency-free (stdlib urllib). Activates when PAYSTACK_SECRET_KEY is set.
 

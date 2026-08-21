@@ -1,4 +1,4 @@
-"""LulaWorks Support Center — the customer's relationship with LulaWorks Support
+"""Lulaworks Support Center — the customer's relationship with Lulaworks Support
 (distinct from CRM, which is the customer's relationship with THEIR clients).
 
 Tickets are tenant-scoped (a company only ever sees its own); platform support
@@ -55,7 +55,7 @@ OPEN_STATUSES = {TicketStatus.OPEN, TicketStatus.IN_PROGRESS, TicketStatus.WAITI
 
 
 class KBArticle(PlatformBaseModel):
-    """A LulaWorks Knowledge Base article — authored by support, read by every
+    """A Lulaworks Knowledge Base article — authored by support, read by every
     tenant, and the ONLY source the AI assistant is allowed to answer from."""
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True)
@@ -89,7 +89,7 @@ class SupportTicket(TenantBaseModel):
     related_module = models.CharField(max_length=40, blank=True)
     related_ref = models.CharField(max_length=120, blank=True)
 
-    # Platform support agent handling the ticket (a LulaWorks staff user).
+    # Platform support agent handling the ticket (a Lulaworks staff user).
     assigned_agent = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="+")
@@ -121,9 +121,9 @@ class SupportMessage(TenantBaseModel):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
                                null=True, blank=True, related_name="+")
     body = models.TextField()
-    # Internal notes are visible only to LulaWorks support, never to the customer.
+    # Internal notes are visible only to Lulaworks support, never to the customer.
     is_internal = models.BooleanField(default=False)
-    # True when written by LulaWorks support (vs the customer).
+    # True when written by Lulaworks support (vs the customer).
     from_support = models.BooleanField(default=False)
 
     class Meta:

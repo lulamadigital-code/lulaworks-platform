@@ -14,7 +14,7 @@ approves.
               └─ Documents
 
 Contacts carry RESPONSIBILITIES, not just titles. A title is a label; a
-responsibility is functional — it tells LulaWorks who to send a quotation to and
+responsibility is functional — it tells Lulaworks who to send a quotation to and
 who to copy, which is the whole point of modelling the organisation at all.
 """
 
@@ -407,7 +407,7 @@ class CustomerDocument(TenantBaseModel):
 #: Where a lead came from — the input to any "which channel actually converts?"
 #: question a sales manager will eventually ask.
 LEAD_SOURCES = [
-    "Website", "LulaWorks Academy", "Referral", "Cold call", "Email",
+    "Website", "Lulaworks Academy", "Referral", "Cold call", "Email",
     "Trade show", "Tender portal", "Existing customer", "Social media",
     "Advertising", "Walk-in", "Other",
 ]

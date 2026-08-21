@@ -1,6 +1,6 @@
 """Stripe adapter.
 
-Uses Stripe Checkout (provider-hosted) so raw card data never touches LulaWorks.
+Uses Stripe Checkout (provider-hosted) so raw card data never touches Lulaworks.
 Activates only when STRIPE_SECRET_KEY is configured; otherwise it's inert and the
 registry falls back to the mock gateway. The `stripe` SDK is imported lazily so
 it's an optional dependency.
@@ -50,7 +50,7 @@ class StripeGateway(PaymentGateway):
             line_item = {
                 "price_data": {
                     "currency": currency,
-                    "product_data": {"name": f"LulaWorks {intent.plan_code.title()}"},
+                    "product_data": {"name": f"Lulaworks {intent.plan_code.title()}"},
                     "unit_amount": amount_minor,
                     "recurring": {"interval": _INTERVAL.get(intent.billing_cycle, "month")},
                 },
@@ -61,7 +61,7 @@ class StripeGateway(PaymentGateway):
             line_item = {
                 "price_data": {
                     "currency": currency,
-                    "product_data": {"name": intent.description or "LulaWorks AI credits"},
+                    "product_data": {"name": intent.description or "Lulaworks AI credits"},
                     "unit_amount": amount_minor,
                 },
                 "quantity": 1,

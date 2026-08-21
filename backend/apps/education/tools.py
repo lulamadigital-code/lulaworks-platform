@@ -1,7 +1,7 @@
 """Free calculators — customer-acquisition tools for the Education Engine.
 
 Each tool is a small, genuinely useful calculator that answers a real contractor
-question, then connects to the LulaWorks feature that does it automatically for
+question, then connects to the Lulaworks feature that does it automatically for
 every job. Compute is server-side (one source of truth, fully testable); the
 pages work without JavaScript and are SEO-friendly.
 
@@ -31,7 +31,7 @@ class ToolSpec:
     title: str
     summary: str
     category: str                  # ResourceCategory slug (for grouping)
-    related_feature: str           # LulaWorks feature this connects to
+    related_feature: str           # Lulaworks feature this connects to
     cta_label: str
     cta_url: str
     icon: str
@@ -87,7 +87,7 @@ TOOLS = {
         title="Markup & Margin Calculator",
         summary="A 30% markup is not a 30% margin. Enter cost and price to see both.",
         category="profitability", related_feature="quotations", icon="🧮",
-        cta_label="See margin on every quote line in LulaWorks",
+        cta_label="See margin on every quote line in Lulaworks",
         cta_url="/start-free-trial/",
         problem=(
             "<p>Pricing on markup but thinking in margin is one of the most common "
@@ -127,7 +127,7 @@ TOOLS = {
         title="Break-even Calculator",
         summary="How many units or jobs you must sell to cover your fixed costs.",
         category="profitability", related_feature="reporting", icon="⚖️",
-        cta_label="See profitability live with LulaWorks",
+        cta_label="See profitability live with Lulaworks",
         cta_url="/start-free-trial/",
         problem=(
             "<p>If you don't know your break-even point, you don't know whether you're "

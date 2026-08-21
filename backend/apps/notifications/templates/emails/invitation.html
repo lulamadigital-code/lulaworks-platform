@@ -1,7 +1,7 @@
 {% extends "emails/base.html" %}
 {% block content %}
 <p>{% if inviter %}<strong>{{ inviter }}</strong> has invited you{% else %}You've been invited{% endif %}
-   to join <strong>{{ company_name_display|default:company_name }}</strong> on LulaWorks{% if role %}
+   to join <strong>{{ company_name_display|default:company_name }}</strong> on Lulaworks{% if role %}
    as <strong>{{ role }}</strong>{% endif %}.</p>
 <p>Click the button below to set your own password and activate your account.
    For your security, we never send passwords by email.</p>

@@ -1,4 +1,4 @@
-"""Company profile — the identity of the business inside LulaWorks.
+"""Company profile — the identity of the business inside Lulaworks.
 
 The rule this module exists to enforce: **company information is entered once**.
 Quotations, invoices, purchase orders, RFQs, delivery notes, safety files and

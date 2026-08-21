@@ -1,6 +1,6 @@
-"""Work Management Engine (MODULE 8) — the operational heart of LulaWorks.
+"""Work Management Engine (MODULE 8) — the operational heart of Lulaworks.
 
-Everything in LulaWorks is Work. Work enters through many doors (RFQ, manual,
+Everything in Lulaworks is Work. Work enters through many doors (RFQ, manual,
 recurring maintenance, breakdown callout, internal job …) but every piece of it
 flows through ONE engine: one hierarchy, one lifecycle, one team model, one
 dependency model, one comment/file/notification/AI surface.

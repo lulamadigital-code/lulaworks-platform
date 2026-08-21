@@ -1,6 +1,6 @@
 """Billing & subscription (DATA_MODEL §7; SAAS_PLATFORM §2-7).
 
-Plans are configurable DATA products (not hardcoded tiers). This is LulaWorks'
+Plans are configurable DATA products (not hardcoded tiers). This is Lulaworks'
 OWN SaaS revenue — separate from a tenant's project finance.
 """
 
@@ -8,7 +8,7 @@ from django.db import models
 
 from apps.core.models import PlatformBaseModel
 
-# Currencies LulaWorks is built to price in. Amounts are stored as Decimal; only
+# Currencies Lulaworks is built to price in. Amounts are stored as Decimal; only
 # the display symbol differs. Order here is the display order in the UI selector.
 CURRENCY_SYMBOLS = {"ZAR": "R", "USD": "$", "EUR": "€", "GBP": "£", "AUD": "A$"}
 SUPPORTED_CURRENCIES = list(CURRENCY_SYMBOLS)
@@ -28,7 +28,7 @@ class Plan(PlatformBaseModel):
     code = models.CharField(max_length=32, unique=True)  # starter, professional, business
     name = models.CharField(max_length=64)
     # Pricing currency. V1 charges in ZAR, but the field is here so plans can be
-    # priced in USD/EUR/GBP/AUD/… as LulaWorks expands, with no schema change.
+    # priced in USD/EUR/GBP/AUD/… as Lulaworks expands, with no schema change.
     currency = models.CharField(max_length=3, default="ZAR")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)          # monthly
     annual_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)   # yearly (~2 months free)
@@ -90,7 +90,7 @@ class Plan(PlatformBaseModel):
 
 class PlanPrice(PlatformBaseModel):
     """A plan's price in one currency. One Plan (its limits/features/tier) can
-    carry many prices — so LulaWorks lists local prices per region without
+    carry many prices — so Lulaworks lists local prices per region without
     duplicating the plan. The plan's own price/annual_price is the base currency."""
 
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name="prices")
@@ -189,7 +189,7 @@ class CreditPack(PlatformBaseModel):
 
 class BillingTransaction(PlatformBaseModel):
     """Append-only SaaS billing history for a company: trial start, plan changes,
-    renewals, credit-pack purchases, cancellations. This is LulaWorks' revenue
+    renewals, credit-pack purchases, cancellations. This is Lulaworks' revenue
     record — distinct from a tenant's own customer invoices in apps.finance."""
 
     class Kind(models.TextChoices):

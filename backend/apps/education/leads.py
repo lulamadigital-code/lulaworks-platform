@@ -65,7 +65,7 @@ CRM_SYNC_THRESHOLD = 5
 
 
 def crm_company():
-    """The one tenant marked to receive Education leads (the LulaWorks sales
+    """The one tenant marked to receive Education leads (the Lulaworks sales
     team's own company), or None. When None, the CRM bridge is a safe no-op."""
     from apps.identity.models import Company
     return Company.objects.filter(
@@ -74,7 +74,7 @@ def crm_company():
 
 def sync_lead_to_crm(ed_lead):
     """Mirror a hot Education lead into the sales company's CRM pipeline as a
-    Lead (source 'LulaWorks Academy'), matched by email so it never duplicates.
+    Lead (source 'Lulaworks Academy'), matched by email so it never duplicates.
     Fully fail-safe: any problem (no sales company, scoping, etc.) is swallowed."""
     try:
         company = crm_company()
@@ -83,7 +83,7 @@ def sync_lead_to_crm(ed_lead):
         from apps.core.context import tenant_scope
         from apps.customers.models import Lead as CrmLead
         from apps.customers.services import create_lead
-        note = f"From LulaWorks Academy · engagement score {ed_lead.score}."
+        note = f"From Lulaworks Academy · engagement score {ed_lead.score}."
         if ed_lead.first_source:
             note += f" First touch: {ed_lead.first_source}."
         if ed_lead.challenge:
@@ -101,7 +101,7 @@ def sync_lead_to_crm(ed_lead):
                 company_name=(ed_lead.company or ed_lead.name or ed_lead.email),
                 contact_name=ed_lead.name, email=ed_lead.email,
                 telephone=ed_lead.phone, industry=ed_lead.industry,
-                source="LulaWorks Academy", notes=note)
+                source="Lulaworks Academy", notes=note)
     except Exception:                           # noqa: BLE001 - bridge is best-effort
         return None
 
@@ -186,7 +186,7 @@ def send_welcome_email(lead, request=None):
         ctx = {
             "logo_url": logo_url,
             "header_bg": "#ffffff" if logo_url else "",   # white band for the logo
-            "heading": "Welcome to the LulaWorks Academy",
+            "heading": "Welcome to the Lulaworks Academy",
             "name": (lead.name or "").split(" ")[0],
             "learn_url": _abs_url(request, reverse("marketing:learn")),
             "tools_url": _abs_url(request, reverse("marketing:tools")),
@@ -196,7 +196,7 @@ def send_welcome_email(lead, request=None):
             "preheader": "Free guides, tools and templates for a more profitable business.",
         }
         send_email(to=lead.email, to_name=lead.name,
-                   subject="Welcome to the LulaWorks Academy",
+                   subject="Welcome to the Lulaworks Academy",
                    template="academy_welcome", category=EmailCategory.MARKETING,
                    context=ctx, related=lead)
         lead.welcomed_at = timezone.now()
@@ -206,7 +206,7 @@ def send_welcome_email(lead, request=None):
 
 
 def score_signup(email, request=None):
-    """When someone creates a LulaWorks account, credit the matching lead — this
+    """When someone creates a Lulaworks account, credit the matching lead — this
     is what closes the content → signup loop and makes it measurable. Only scores
     an existing lead (does not create one from a signup)."""
     email = (email or "").strip().lower()

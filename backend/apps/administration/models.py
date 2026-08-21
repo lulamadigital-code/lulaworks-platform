@@ -198,7 +198,7 @@ class PlatformSettings(models.Model):
     tenants inherit. Always one row (pk=1); read/write via ``load()``."""
 
     # ── Branding & support ──────────────────────────────────────────────────
-    platform_name = models.CharField(max_length=120, default="LulaWorks")
+    platform_name = models.CharField(max_length=120, default="Lulaworks")
     support_email = models.EmailField(blank=True)
     sales_email = models.EmailField(blank=True)
     billing_email = models.EmailField(blank=True)

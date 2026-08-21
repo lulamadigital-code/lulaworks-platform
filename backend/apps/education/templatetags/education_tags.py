@@ -1,6 +1,6 @@
 """`{% learn_prompt "quotations" %}` — drops a small, dismissible 'Learn → Apply'
 banner into any in-app page, linking to the best published resource for that
-LulaWorks feature. Renders nothing when there is no matching content, so it is
+Lulaworks feature. Renders nothing when there is no matching content, so it is
 always safe to place."""
 
 from django import template

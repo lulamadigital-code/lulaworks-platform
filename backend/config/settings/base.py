@@ -1,4 +1,4 @@
-"""Base settings for the LulaWorks production platform.
+"""Base settings for the Lulaworks production platform.
 
 Source of truth: docs/ Modules 1-13 + IMPLEMENTATION_READINESS.md.
 Split settings: base (shared) + dev/prod. Select via DJANGO_SETTINGS_MODULE.
@@ -188,7 +188,7 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "LulaWorks API",
+    "TITLE": "Lulaworks API",
     "DESCRIPTION": "AI-powered Contractor Operating System — API v1",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
@@ -226,7 +226,7 @@ EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=15, cast=int)
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="LulaWorks <no-reply@lulaworks.com>")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="Lulaworks <no-reply@lulaworks.com>")
 SERVER_EMAIL = config("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 SUPPORT_EMAIL = config("SUPPORT_EMAIL", default="")
 
@@ -301,7 +301,7 @@ CSRF_TRUSTED_ORIGINS = [
     o for o in config("CSRF_TRUSTED_ORIGINS", default="").split(",") if o
 ]
 
-# Internationalisation. LulaWorks is a global platform: English-only in V1, but
+# Internationalisation. Lulaworks is a global platform: English-only in V1, but
 # i18n is switched on and the language list is here so more can be added without
 # re-architecting. Dates/numbers are stored ISO/UTC and displayed locale-aware.
 LANGUAGE_CODE = config("LANGUAGE_CODE", default="en")

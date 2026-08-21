@@ -228,7 +228,7 @@ class WelcomeAndUnsubscribeTests(TestCase):
 class CrmBridgeTests(TestCase):
     def _sales_company(self):
         from apps.identity.models import Company
-        c = Company.objects.create(name="LulaWorks Sales")
+        c = Company.objects.create(name="Lulaworks Sales")
         c.receives_education_leads = True
         c.save()
         return c
@@ -250,7 +250,7 @@ class CrmBridgeTests(TestCase):
             crm = CrmLead.objects.get(email="hot@build.co.za")
             self.assertEqual(crm.company_name, "Build It")
             self.assertEqual(crm.contact_name, "Sipho")
-            self.assertEqual(crm.source, "LulaWorks Academy")
+            self.assertEqual(crm.source, "Lulaworks Academy")
 
     def test_cold_lead_not_synced(self):
         from apps.core.context import tenant_scope

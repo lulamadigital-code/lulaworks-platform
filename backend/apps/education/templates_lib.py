@@ -1,13 +1,13 @@
 """Free business templates — the Education Engine's template library.
 
-Per the brief, templates are delivered *through* LulaWorks wherever possible
+Per the brief, templates are delivered *through* Lulaworks wherever possible
 ("Create your free professional quotation") rather than as static downloads, so
 the template doubles as a product on-ramp. Genuinely text-based templates
 (checklists, follow-up emails) show usable, copyable content on the page.
 
 Declarative, like the free tools: add a template by adding a TemplateSpec.
 Three kinds:
-  * document  — a LulaWorks-generated document (quote/invoice/DN/RFQ/PO). We show
+  * document  — a Lulaworks-generated document (quote/invoice/DN/RFQ/PO). We show
                 what a good one contains and send the user to create it in-app.
   * checklist — a ready-to-use checklist (rendered as a copyable list).
   * email     — ready-to-send message templates (rendered copyable).
@@ -37,10 +37,10 @@ TEMPLATES = {
     "professional-quotation-template": TemplateSpec(
         slug="professional-quotation-template",
         title="Professional Quotation Template",
-        summary="Everything a quote needs to look credible and win the work — built for you in LulaWorks.",
+        summary="Everything a quote needs to look credible and win the work — built for you in Lulaworks.",
         kind="document", category="quoting", related_feature="quotations", icon="📝",
         problem="<p>A quotation is a sales document. The ones that win are branded, "
-                "itemised, priced correctly and easy to accept. LulaWorks builds it for "
+                "itemised, priced correctly and easy to accept. Lulaworks builds it for "
                 "you from your items and turns an approved quote straight into a job.</p>",
         cta_label="Create your free professional quotation",
         includes=[
@@ -58,7 +58,7 @@ TEMPLATES = {
         summary="A compliant tax invoice that gets you paid — generated from the job, VAT calculated.",
         kind="document", category="getting-paid", related_feature="invoices", icon="🧾",
         problem="<p>An unclear or late invoice is the top reason contractors get paid "
-                "late. LulaWorks raises a compliant tax invoice that carries the job's "
+                "late. Lulaworks raises a compliant tax invoice that carries the job's "
                 "number, calculates VAT, and tracks the outstanding balance.</p>",
         cta_label="Create your free tax invoice",
         includes=[
@@ -75,7 +75,7 @@ TEMPLATES = {
         summary="Prove what was delivered and get it signed for — straight from the job.",
         kind="document", category="getting-paid", related_feature="jobs", icon="🚚",
         problem="<p>A signed delivery note is your proof of delivery when a customer "
-                "disputes an invoice. LulaWorks generates a branded delivery note from "
+                "disputes an invoice. Lulaworks generates a branded delivery note from "
                 "the job — quantities only, never prices.</p>",
         cta_label="Create your free delivery note",
         includes=[
@@ -92,8 +92,8 @@ TEMPLATES = {
         kind="document", category="procurement", related_feature="rfq", icon="📨",
         problem="<p>Vague requests get vague prices you can't compare. A proper RFQ "
                 "lists exactly what you need, so supplier quotes line up side by side. "
-                "LulaWorks manages RFQs and reads supplier quotes back in.</p>",
-        cta_label="Manage RFQs free in LulaWorks",
+                "Lulaworks manages RFQs and reads supplier quotes back in.</p>",
+        cta_label="Manage RFQs free in Lulaworks",
         includes=[
             "Your company and RFQ reference",
             "Itemised list of materials with quantities and units",
@@ -108,8 +108,8 @@ TEMPLATES = {
         kind="document", category="procurement", related_feature="procurement", icon="🧾",
         problem="<p>Ordering by WhatsApp leads to wrong deliveries and untracked spend. "
                 "A purchase order records exactly what you ordered, at what price, for "
-                "which job. LulaWorks issues POs and tracks them against job cost.</p>",
-        cta_label="Issue purchase orders free in LulaWorks",
+                "which job. Lulaworks issues POs and tracks them against job cost.</p>",
+        cta_label="Issue purchase orders free in Lulaworks",
         includes=[
             "Your details, the supplier and a PO number",
             "Itemised order with agreed prices",
@@ -123,9 +123,9 @@ TEMPLATES = {
         summary="A ready-to-use checklist so nothing is missed when you hand over a completed job.",
         kind="checklist", category="quoting", related_feature="jobs", icon="✅",
         problem="<p>A clean handover protects your final payment and your reputation. "
-                "Use this checklist on completion; in LulaWorks you can attach it to the "
+                "Use this checklist on completion; in Lulaworks you can attach it to the "
                 "job with photos and a customer sign-off.</p>",
-        cta_label="Track job checklists in LulaWorks",
+        cta_label="Track job checklists in Lulaworks",
         items=[
             "All scope items completed and matched to the quotation",
             "Site cleaned and waste removed",
@@ -144,9 +144,9 @@ TEMPLATES = {
         summary="Capture the right details up front so quoting, invoicing and getting paid are smooth.",
         kind="checklist", category="getting-paid", related_feature="crm", icon="🤝",
         problem="<p>Missing customer details cause invoice disputes and payment delays. "
-                "Capture these once, at the start. In LulaWorks this becomes the customer "
+                "Capture these once, at the start. In Lulaworks this becomes the customer "
                 "record every quote, job and invoice reuses.</p>",
-        cta_label="Manage customers free in LulaWorks",
+        cta_label="Manage customers free in Lulaworks",
         items=[
             "Registered company name and trading name",
             "VAT number and company registration number",
@@ -164,10 +164,10 @@ TEMPLATES = {
         summary="Three ready-to-send reminders — polite to firm — that get invoices paid without burning the relationship.",
         kind="email", category="getting-paid", related_feature="invoices", icon="✉️",
         problem="<p>Most late invoices just need a nudge. These three escalating "
-                "reminders do it professionally. LulaWorks shows you exactly which "
+                "reminders do it professionally. Lulaworks shows you exactly which "
                 "invoices are outstanding and by how long, so you know when to send "
                 "which.</p>",
-        cta_label="See outstanding invoices in LulaWorks",
+        cta_label="See outstanding invoices in Lulaworks",
         samples=[
             {"title": "1 · Friendly reminder (due date)",
              "text": ("Hi {name},\n\nJust a friendly reminder that invoice {number} "

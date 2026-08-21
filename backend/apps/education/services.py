@@ -18,7 +18,7 @@ def featured_resources(limit=3):
 
 
 def prompt_for(feature: str):
-    """The best published resource to surface next to a given LulaWorks feature
+    """The best published resource to surface next to a given Lulaworks feature
     (e.g. 'quotations'), or None. Drives the in-app Learn → Apply banners."""
     if not feature:
         return None

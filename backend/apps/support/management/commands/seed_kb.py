@@ -1,4 +1,4 @@
-"""Seed a starter LulaWorks Knowledge Base (idempotent by slug)."""
+"""Seed a starter Lulaworks Knowledge Base (idempotent by slug)."""
 from django.core.management.base import BaseCommand
 
 from apps.core.context import system_scope

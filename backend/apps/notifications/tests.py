@@ -27,7 +27,7 @@ class SendEmailTests(TestCase):
 
     def test_send_logs_and_delivers(self):
         log = service.send_email(
-            to="sam@client.co.za", subject="Welcome to LulaWorks",
+            to="sam@client.co.za", subject="Welcome to Lulaworks",
             template="generic", context={"heading": "Welcome", "body": "You're in."},
             company=self.company, category=EmailCategory.ACCOUNT)
         self.assertEqual(log.status, EmailStatus.SENT)

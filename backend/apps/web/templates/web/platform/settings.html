@@ -86,7 +86,7 @@
     <form class="edit" id="general-edit" method="post" style="display:none;">{% csrf_token %}
       <input type="hidden" name="action" value="save_branding">
       <label>Platform name</label>
-      <input type="text" name="platform_name" value="{{ cfg.platform_name }}" placeholder="LulaWorks">
+      <input type="text" name="platform_name" value="{{ cfg.platform_name }}" placeholder="Lulaworks">
       <div class="grid2" style="margin-top:10px;">
         <div><label>Support email</label><input type="email" name="support_email" value="{{ cfg.support_email }}" placeholder="support@lulaworks.com"></div>
         <div><label>Sales email</label><input type="email" name="sales_email" value="{{ cfg.sales_email }}" placeholder="sales@lulaworks.com"></div>

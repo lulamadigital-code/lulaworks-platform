@@ -1,6 +1,6 @@
 """Work Execution System — services that turn a Task into an operational record.
 
-A task in LulaWorks is not a checkbox. It carries the money set aside for it
+A task in Lulaworks is not a checkbox. It carries the money set aside for it
 (:class:`TaskResourceAllocation`), the evidence captured in the field
 (:class:`TaskReport` — fuel, material, time/attendance, progress, each
 GPS-stamped) and the purchase lines extracted from supplier invoices

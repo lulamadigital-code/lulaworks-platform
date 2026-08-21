@@ -78,7 +78,7 @@ def _country_from_ip(request):
     try:
         req = urllib.request.Request(
             f"https://ipapi.co/{ip}/country/",
-            headers={"User-Agent": "LulaWorks/1.0"},
+            headers={"User-Agent": "Lulaworks/1.0"},
         )
         with urllib.request.urlopen(req, timeout=2) as resp:
             code = resp.read().decode().strip().upper()

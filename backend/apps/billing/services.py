@@ -191,7 +191,7 @@ def start_trial(company, actor=None):
     _log(company, BillingTransaction_kind("TRIAL_STARTED"),
          "30-day Professional trial started", credits=TRIAL_CREDITS, plan=plan)
     _notify_billing(
-        company, subject="Your LulaWorks trial has started",
+        company, subject="Your Lulaworks trial has started",
         heading="Welcome to your 30-day trial",
         body=(f"Your 30-day Professional trial is active until "
               f"{sub.current_period_end:%d %B %Y}. Explore everything — no card "
@@ -257,7 +257,7 @@ def run_trial_reminders(today=None) -> dict:
         current_period_end=today + timedelta(days=TRIAL_REMINDER_DAYS))
     for sub in ending.select_related("company"):
         _notify_billing(
-            sub.company, subject="Your LulaWorks trial ends soon",
+            sub.company, subject="Your Lulaworks trial ends soon",
             heading=f"{TRIAL_REMINDER_DAYS} days left in your trial",
             body=(f"Your Professional trial ends on {sub.current_period_end:%d %B %Y}. "
                   "Choose a plan to keep your data, users and AI credits — nothing "
@@ -268,7 +268,7 @@ def run_trial_reminders(today=None) -> dict:
         status=SubscriptionStatus.TRIAL, current_period_end=today - timedelta(days=1))
     for sub in just_expired.select_related("company"):
         _notify_billing(
-            sub.company, subject="Your LulaWorks trial has ended",
+            sub.company, subject="Your Lulaworks trial has ended",
             heading="Your trial has ended",
             body=("Your 30-day trial has ended. Your data is safe — choose a plan "
                   "any time to continue where you left off."))
@@ -321,7 +321,7 @@ def change_plan(company, plan_code: str, billing_cycle: str = "monthly",
                  else "changed to" if plan.tier == prev_tier or prev_tier < 0
                  else "moved to")
     _notify_billing(
-        company, subject=f"Your LulaWorks plan: {plan.name}",
+        company, subject=f"Your Lulaworks plan: {plan.name}",
         heading=f"You're now on {plan.name}",
         body=(f"Your subscription has been {direction} the {plan.name} plan "
               f"({billing_cycle}), billed at {currency} {price:,.2f}. Your new "

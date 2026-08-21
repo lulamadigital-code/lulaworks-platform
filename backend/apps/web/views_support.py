@@ -1,5 +1,5 @@
 """Tenant-side Support Center — Help & Support in the app. A company user reports
-a problem to LulaWorks Support and follows the conversation. Everything is
+a problem to Lulaworks Support and follows the conversation. Everything is
 tenant-scoped: a company only ever sees its own tickets."""
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -108,7 +108,7 @@ def support_create(request):
 
 @login_required
 def support_kb(request):
-    """Knowledge Base — browse & search LulaWorks help articles."""
+    """Knowledge Base — browse & search Lulaworks help articles."""
     q = request.GET.get("q", "").strip()
     if q:
         articles = support.search_kb(q, limit=30)

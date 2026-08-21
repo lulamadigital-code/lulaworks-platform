@@ -802,7 +802,7 @@ class QuotationPdfLayoutTests(TestCase):
 
     def test_brand_colour_is_honoured_with_a_teal_fallback(self):
         # The accent uses the company's own brand colour; a bad or empty value
-        # falls back to the LulaWorks teal rather than breaking the PDF.
+        # falls back to the Lulaworks teal rather than breaking the PDF.
         from apps.quotes.pdf import _brand_color
         c = make_company()
         c.brand_primary = "this is not a colour"       # what the crash came from

@@ -116,7 +116,7 @@ class Company(PlatformBaseModel):
     max_users = models.PositiveIntegerField(default=4)
     max_projects = models.PositiveIntegerField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    #: Mark ONE company (the LulaWorks sales team's own tenant) to receive inbound
+    #: Mark ONE company (the Lulaworks sales team's own tenant) to receive inbound
     #: Education Engine leads into its CRM pipeline. Off for normal customers.
     receives_education_leads = models.BooleanField(default=False)
 
@@ -149,7 +149,7 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
-    # Platform team access (LulaWorks' own staff, not tenant members). Blank for
+    # Platform team access (Lulaworks' own staff, not tenant members). Blank for
     # ordinary tenant users. Owners get is_superuser too; every other department
     # reaches the Platform Console through this field with scoped capabilities and
     # no Django-superuser powers.
@@ -503,7 +503,7 @@ class AccountToken(PlatformBaseModel):
     """A secure, single-use, time-limited token for account actions that arrive
     by email — an invitation to join, a password reset, an email verification.
 
-    LulaWorks NEVER emails a password. A new user is invited with an activation
+    Lulaworks NEVER emails a password. A new user is invited with an activation
     link; they follow it and set their own password. That is the whole point of
     this model: the secret in the email is a random token that grants exactly one
     action, once, before it expires — not a credential.

@@ -751,7 +751,7 @@ def award_to_work(quote, user, *, create_project=True, work_name=""):
 #
 # The commercial lifecycle (quotation → PO) flows straight into the operational
 # one (project → phases → tasks) with nothing re-entered — the differentiator
-# that makes LulaWorks a Contractor Operating System, not just a quoting tool.
+# that makes Lulaworks a Contractor Operating System, not just a quoting tool.
 
 #: The operational phases every job is broken into.
 WORK_PHASES = ["Planning", "Procurement", "Execution", "Quality Check",

@@ -1,4 +1,4 @@
-"""Email history — the admin's window into everything LulaWorks has sent.
+"""Email history — the admin's window into everything Lulaworks has sent.
 
 Reads the platform EmailLog scoped to the current company, with a status filter
 and a manual resend for failures. Gated on company.manage.

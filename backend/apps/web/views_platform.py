@@ -454,7 +454,7 @@ def platform_list(request, section):
 @login_required
 def platform_settings(request):
     """Platform Settings — environment/integration status (relevant info) plus
-    the platform TEAM: add LulaWorks staff with an access level, change roles,
+    the platform TEAM: add Lulaworks staff with an access level, change roles,
     or revoke access. Any platform staff can view; only owners manage the team."""
     if not request.user.platform_level:
         messages.error(request, "The platform console is for platform administrators only.")
@@ -690,7 +690,7 @@ def _save_platform_branding(request):
         return v
 
     s = PlatformSettings.load()
-    s.platform_name = (request.POST.get("platform_name") or "").strip() or "LulaWorks"
+    s.platform_name = (request.POST.get("platform_name") or "").strip() or "Lulaworks"
     s.support_email = _email("support_email", "Support email")
     s.sales_email = _email("sales_email", "Sales email")
     s.billing_email = _email("billing_email", "Billing email")
@@ -778,10 +778,10 @@ def _send_test_email(request):
         return
     try:
         send_email(
-            to=to, subject="LulaWorks — test email", template="generic", company=None,
+            to=to, subject="Lulaworks — test email", template="generic", company=None,
             sent_by=request.user, category=EmailCategory.ACCOUNT,
             context={"heading": "It works ✓",
-                     "body": "This is a test email sent from the LulaWorks Platform "
+                     "body": "This is a test email sent from the Lulaworks Platform "
                              "Console. If you received it, outbound email is working."})
         messages.success(request, f"Test email sent to {to}. Check the inbox (and Email logs).")
     except Exception as exc:                                   # noqa: BLE001
@@ -798,7 +798,7 @@ def _safe_count(app_label, model_name):
 
 @login_required
 def platform_support(request):
-    """LulaWorks Support desk — every ticket across all tenants, with a triage
+    """Lulaworks Support desk — every ticket across all tenants, with a triage
     board. Any platform staff (all departments carry the 'support' capability)
     can view and work tickets."""
     if not request.user.can_platform("support"):
@@ -1168,7 +1168,7 @@ def platform_support_sla(request):
 
 @login_required
 def platform_kb(request):
-    """Manage the LulaWorks Knowledge Base — the articles tenants read and the AI
+    """Manage the Lulaworks Knowledge Base — the articles tenants read and the AI
     assistant is grounded in. View for any platform staff; edit needs settings."""
     if not request.user.can_platform("support"):
         messages.error(request, "The support desk is for platform staff only.")

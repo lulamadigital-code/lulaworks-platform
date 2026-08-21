@@ -215,7 +215,7 @@ def _placeholder_banking() -> dict:
 def _logo_data_uri(header) -> str:
     """The COMPANY'S OWN logo as a data: URI so WeasyPrint needs no filesystem
     access. Empty string when the company hasn't uploaded one — a customer-facing
-    document must never fall back to the LulaWorks mark; the company name prints as
+    document must never fall back to the Lulaworks mark; the company name prints as
     text instead."""
     path = None
     logo = header.get("logo")

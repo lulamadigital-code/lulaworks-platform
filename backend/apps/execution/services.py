@@ -704,7 +704,7 @@ def _sms_notification(user, company, *, title, task=None):
     from django.conf import settings
     from apps.notifications.models import EmailCategory
     site = getattr(settings, "SITE_URL", "").rstrip("/")
-    body = f"LulaWorks: {title}."
+    body = f"Lulaworks: {title}."
     if task is not None and site:
         body += f" {site}/work/{task.id}/"
     try:
@@ -728,7 +728,7 @@ def _email_notification(user, company, *, title, body, url):
     ctx = {"heading": title, "body": body}
     if url:
         ctx.update({"cta_url": (site + url) if url.startswith("/") else url,
-                    "cta_label": "Open in LulaWorks"})
+                    "cta_label": "Open in Lulaworks"})
     try:
         send_email(to=user.email, subject=title, template="generic", context=ctx,
                    company=company, to_name=(user.get_full_name() or "").strip(),

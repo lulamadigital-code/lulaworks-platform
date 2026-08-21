@@ -344,7 +344,7 @@ def _page_image_bytes(path: str, original_name: str) -> bytes | None:
 def _vision_prompt(doc_type: str) -> str:
     return (
         f"You are shown an image of a company's existing {doc_type} document. "
-        "Pick the LulaWorks template settings whose VISUAL STYLE best matches it — "
+        "Pick the Lulaworks template settings whose VISUAL STYLE best matches it — "
         "the brand colour, header treatment, logo placement, and table/totals look. "
         "Identify STYLE ONLY. Never copy or output any company, customer, address, "
         "reference, or money value from the image.\n\n"

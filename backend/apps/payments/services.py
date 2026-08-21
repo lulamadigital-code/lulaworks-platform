@@ -31,7 +31,7 @@ def begin_subscription_checkout(request, company, plan_code, billing_cycle="mont
         company=company, kind=CheckoutIntent.Kind.SUBSCRIPTION, gateway=gw.code,
         plan_code=plan_code, billing_cycle=billing_cycle, currency=currency,
         amount=plan.price_in(currency, billing_cycle),
-        description=f"LulaWorks {plan.name} ({billing_cycle})",
+        description=f"Lulaworks {plan.name} ({billing_cycle})",
     )
     session = gw.create_checkout(
         intent=intent,

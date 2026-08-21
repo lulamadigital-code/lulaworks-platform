@@ -1,7 +1,7 @@
 """Customer services — turning an org chart into operational behaviour.
 
 The routing functions are the reason this module exists. Once you know that
-Sarah Brown approves quotations and Jane Williams receives invoices, LulaWorks
+Sarah Brown approves quotations and Jane Williams receives invoices, Lulaworks
 stops asking "who should this go to?" and starts answering it.
 """
 
@@ -391,7 +391,7 @@ def _rev(name, pk):
 
 def customer_timeline(customer, limit: int = 60) -> list:
     """One chronological history of the customer, MERGED from the real workflow
-    objects across LulaWorks — quotations, commercial documents, jobs, invoices,
+    objects across Lulaworks — quotations, commercial documents, jobs, invoices,
     opportunities, and CRM activities/notes/interactions. Read-only: system events
     are facts drawn from their source tables, never editable here. Each source is
     isolated so a missing field can never break the whole timeline."""

@@ -1,4 +1,4 @@
-"""Email & Notification platform — the record of every message LulaWorks sends.
+"""Email & Notification platform — the record of every message Lulaworks sends.
 
 Design intent (the whole reason this is a platform service, not per-module code):
 every outbound email in the system — CRM, HR invites, auth resets, quotations,

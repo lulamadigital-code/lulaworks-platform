@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 @dataclass
 class CheckoutSession:
     """Where to send the customer to pay. `url` is a provider-hosted page (so raw
-    card data never touches LulaWorks). `external_id` is the provider's session id."""
+    card data never touches Lulaworks). `external_id` is the provider's session id."""
     url: str
     external_id: str = ""
 

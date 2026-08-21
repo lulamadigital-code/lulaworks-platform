@@ -68,7 +68,7 @@ def notify(company, user, *, title, body="", url="", category=EmailCategory.SYST
     if email and _email_allowed(user, category):
         ctx = {"heading": title, "body": body}
         if url:
-            ctx.update({"cta_url": url, "cta_label": "Open in LulaWorks"})
+            ctx.update({"cta_url": url, "cta_label": "Open in Lulaworks"})
         ctx.update(email_context or {})
         try:
             result["email"] = send_email(

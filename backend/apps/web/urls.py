@@ -122,7 +122,7 @@ urlpatterns = [
          name="ai_provider_priority"),
     path("company/ai/<str:provider>/test/", views_ai_settings.ai_provider_test,
          name="ai_provider_test"),
-    # Email history — the audit trail of everything LulaWorks sent
+    # Email history — the audit trail of everything Lulaworks sent
     path("company/emails/", views_email.email_history, name="email_history"),
     path("company/emails/<uuid:pk>/", views_email.email_detail, name="email_detail"),
     path("company/emails/<uuid:pk>/resend/", views_email.email_resend,

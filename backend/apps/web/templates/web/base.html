@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}LulaWorks{% endblock %} · LulaWorks</title>
+  <title>{% block title %}Lulaworks{% endblock %} · Lulaworks</title>
   <link rel="icon" type="image/png" href="{% static 'web/favicon.png' %}">
   <link rel="apple-touch-icon" href="{% static 'web/favicon.png' %}">
   <script src="{% static 'web/htmx.min.js' %}" defer></script>
@@ -353,7 +353,7 @@
   {% if user.is_authenticated %}
   <aside class="sidebar">
     <a class="logo" href="{% block logo_href %}{% url 'web:dashboard' %}{% endblock %}">
-      {% if has_logo %}<img src="{% static logo_static %}" class="brand-img" alt="LulaWorks">
+      {% if has_logo %}<img src="{% static logo_static %}" class="brand-img" alt="Lulaworks">
       {% else %}{% include "web/_mark.svg" %}<span>lulaworks</span>{% endif %}
     </a>
     {% comment %}Ordered by the way the money actually moves: win it, deliver it,

@@ -1,6 +1,6 @@
-"""LulaWorks Customer Education & Growth Engine — content models.
+"""Lulaworks Customer Education & Growth Engine — content models.
 
-This is a *platform-owned* library (not tenant-scoped): LulaWorks staff author
+This is a *platform-owned* library (not tenant-scoped): Lulaworks staff author
 guides, lessons, templates, calculators and learning paths that are the same for
 every visitor and tenant. It is inbound-growth content, so it is deliberately
 independent of the ERP/CRM data model and safe to grow on its own. See the
@@ -79,7 +79,7 @@ class ResourceCategory(models.Model):
 class Resource(models.Model):
     """One piece of educational content — an article, guide, template,
     calculator, checklist or video. Every resource answers a real business
-    problem and connects to the LulaWorks feature that automates it."""
+    problem and connects to the Lulaworks feature that automates it."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     kind = models.CharField(max_length=16, choices=ResourceKind.choices,
@@ -141,7 +141,7 @@ class Resource(models.Model):
 
 class LearningPath(models.Model):
     """A guided sequence of lessons — e.g. 'Start Your Contractor Business' or
-    'Win More Jobs'. Walks a user from a business goal through the LulaWorks
+    'Win More Jobs'. Walks a user from a business goal through the Lulaworks
     workflow that achieves it."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

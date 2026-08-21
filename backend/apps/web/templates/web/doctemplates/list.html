@@ -5,7 +5,7 @@
 <div class="pagehead">
   <div>
     <h1>Document Designer</h1>
-    <p class="sub" style="margin:0;">Choose a LulaWorks design family for your quotations, tax invoices
+    <p class="sub" style="margin:0;">Choose a Lulaworks design family for your quotations, tax invoices
       and delivery notes. The <strong>default</strong> is used for new documents; you can override it on any
       single one. Editing a template creates a new version — documents you've already issued never change.</p>
   </div>
@@ -16,14 +16,14 @@
 <div class="three" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:22px;">
   <div class="card" style="border-top:3px solid var(--accent,#0E6E6E);">
     <strong>1 · Pick a design family</strong>
-    <p class="muted" style="font-size:12.5px;margin:6px 0 0;">Twelve original LulaWorks looks below —
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0;">Twelve original Lulaworks looks below —
       Horizon, Elevate, Forge, Summit, Grid, Atlas, Flow, Ledger, Vector, Terra, Slate, Canvas.
       Preview one and make it your default.</p>
   </div>
   <div class="card">
     <strong>2 · Build your own</strong>
     <p class="muted" style="font-size:12.5px;margin:6px 0 0;">A no-code designer: branding, sections,
-      columns — LulaWorks fills it with real data. Or <em>Duplicate</em> a family and tweak it.
+      columns — Lulaworks fills it with real data. Or <em>Duplicate</em> a family and tweak it.
       <em>Canvas</em> is the recommended starting point.</p>
     {% if can_manage %}
     <form method="post" action="{% url 'web:doc_template_build_new' %}" class="filterbar" style="margin-top:8px;gap:6px;">{% csrf_token %}

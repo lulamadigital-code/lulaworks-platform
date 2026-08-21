@@ -1,4 +1,4 @@
-"""LulaWorks product & website analytics — a single, standardized event stream.
+"""Lulaworks product & website analytics — a single, standardized event stream.
 
 Privacy is built in: events carry METADATA, never business content. A company
 only ever appears in its own tenant analytics; the platform owner sees the whole

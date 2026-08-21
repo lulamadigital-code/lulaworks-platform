@@ -3,7 +3,7 @@
 Two rules shape this module:
 
 1. **Invite by secure link — never email a password.** A manager enters a name,
-   email and role; LulaWorks creates the account with NO usable password and
+   email and role; Lulaworks creates the account with NO usable password and
    emails a time-limited activation link. The recipient follows it and sets their
    own password. Nothing is ever transmitted that could be used as a credential.
    (`add_member` with a one-time password remains for API/back-compat, but the
@@ -206,7 +206,7 @@ def member_work(user, company):
 # ══════════════════════════════════════════════════════════════════════════════
 # Invitations & account tokens — the secure, link-based account lifecycle.
 #
-# LulaWorks never emails a password. A manager invites; the person activates via
+# Lulaworks never emails a password. A manager invites; the person activates via
 # a single-use, time-limited link and sets their own password. Password reset
 # and email verification use the same token mechanism.
 # ══════════════════════════════════════════════════════════════════════════════
@@ -297,11 +297,11 @@ def _send_invite_email(company, actor, user, token):
     from apps.notifications.service import send_email
     inviter = (actor.get_full_name() or actor.email) if actor else company.name
     send_email(
-        to=user.email, subject=f"You're invited to join {company.name} on LulaWorks",
+        to=user.email, subject=f"You're invited to join {company.name} on Lulaworks",
         template="invitation", company=company, sent_by=actor,
         to_name=(user.get_full_name() or "").strip(), category=EmailCategory.ACCOUNT,
         context={
-            "heading": f"Join {company.name} on LulaWorks",
+            "heading": f"Join {company.name} on Lulaworks",
             "inviter": inviter, "company_name_display": company.name,
             "role": token.role.name if token.role else "",
             "cta_url": _activation_url(token), "cta_label": "Set your password",
@@ -315,12 +315,12 @@ def _send_added_email(company, user):
     from apps.notifications.service import send_email
     from django.conf import settings
     send_email(
-        to=user.email, subject=f"You've been added to {company.name} on LulaWorks",
+        to=user.email, subject=f"You've been added to {company.name} on Lulaworks",
         template="generic", company=company, category=EmailCategory.ACCOUNT,
         to_name=(user.get_full_name() or "").strip(),
         context={
             "heading": f"You've been added to {company.name}",
-            "body": "You already have a LulaWorks account, so just sign in with "
+            "body": "You already have a Lulaworks account, so just sign in with "
                     "your existing password to access this company.",
             "cta_url": (getattr(settings, "SITE_URL", "").rstrip("/") + "/login/"),
             "cta_label": "Sign in",
@@ -345,7 +345,7 @@ _PLATFORM_ROLE_FLAGS = {
 
 @transaction.atomic
 def invite_platform_staff(actor, *, email, role, first_name="", last_name=""):
-    """Add a LulaWorks platform-team member by secure activation link.
+    """Add a Lulaworks platform-team member by secure activation link.
 
     Creates the account with NO usable password (they set it via the link),
     stamps the platform role + matching Django flags, mints an invite token and
@@ -381,15 +381,15 @@ def invite_platform_staff(actor, *, email, role, first_name="", last_name=""):
 def _send_platform_invite(actor, user, token):
     from apps.notifications.models import EmailCategory
     from apps.notifications.service import send_email
-    inviter = (actor.get_full_name() or actor.email) if actor else "LulaWorks"
+    inviter = (actor.get_full_name() or actor.email) if actor else "Lulaworks"
     role_label = dict(User.PlatformRole.choices).get(user.platform_role, "team member")
     send_email(
-        to=user.email, subject="You're invited to the LulaWorks platform team",
+        to=user.email, subject="You're invited to the Lulaworks platform team",
         template="invitation", company=None, sent_by=actor,
         to_name=(user.get_full_name() or "").strip(), category=EmailCategory.ACCOUNT,
         context={
-            "heading": "Join the LulaWorks platform team",
-            "inviter": inviter, "company_name_display": "LulaWorks",
+            "heading": "Join the Lulaworks platform team",
+            "inviter": inviter, "company_name_display": "Lulaworks",
             "role": role_label,
             "cta_url": _activation_url(token), "cta_label": "Set your password",
             "cta_note": f"This invitation expires in {INVITE_TTL_DAYS} days. "
@@ -454,14 +454,14 @@ def _send_welcome_email(company, user):
     from apps.notifications.service import send_email
     from django.conf import settings
     send_email(
-        to=user.email, subject="Welcome to LulaWorks", template="generic",
+        to=user.email, subject="Welcome to Lulaworks", template="generic",
         company=company, category=EmailCategory.ACCOUNT,
         to_name=(user.get_full_name() or "").strip(),
         context={
             "heading": f"Welcome{', ' + user.first_name if user.first_name else ''}!",
             "body": "Your account is active. You can sign in any time.",
             "cta_url": (getattr(settings, "SITE_URL", "").rstrip("/") + "/login/"),
-            "cta_label": "Open LulaWorks",
+            "cta_label": "Open Lulaworks",
         })
 
 
@@ -486,7 +486,7 @@ def _send_reset_email(user, token):
     from apps.notifications.service import send_email
     company = user.active_company
     send_email(
-        to=user.email, subject="Reset your LulaWorks password",
+        to=user.email, subject="Reset your Lulaworks password",
         template="password_reset", company=company, category=EmailCategory.SECURITY,
         to_name=(user.get_full_name() or "").strip(),
         context={
@@ -532,13 +532,13 @@ def notify_password_changed(user):
         from apps.notifications.models import EmailCategory
         from apps.notifications.service import send_email
         send_email(
-            to=user.email, subject="Your LulaWorks password was changed",
+            to=user.email, subject="Your Lulaworks password was changed",
             template="generic", company=user.active_company,
             category=EmailCategory.SECURITY,
             to_name=(user.get_full_name() or "").strip(),
             context={
                 "heading": "Your password was changed",
-                "body": "This is a confirmation that your LulaWorks password was "
+                "body": "This is a confirmation that your Lulaworks password was "
                         "just changed. If this wasn't you, reset your password "
                         "immediately and contact support.",
             })

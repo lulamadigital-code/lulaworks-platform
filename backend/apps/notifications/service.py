@@ -26,7 +26,7 @@ def _branding(company) -> dict:
     profile (reused from document generation) with safe platform fallbacks."""
     ctx = {
         "brand_color": "#0E6E6E",
-        "company_name": "LulaWorks",
+        "company_name": "Lulaworks",
         "company_address_lines": [],
         "support_email": getattr(settings, "SUPPORT_EMAIL", "") or "",
         "website": "",
@@ -38,7 +38,7 @@ def _branding(company) -> dict:
             from apps.identity.profile import document_header
             h = document_header(company, kind="email")
             ctx.update({
-                "company_name": h["display_name"] or "LulaWorks",
+                "company_name": h["display_name"] or "Lulaworks",
                 "company_address_lines": h.get("address_lines") or [],
                 "support_email": h.get("email") or ctx["support_email"],
                 "website": h.get("website") or "",

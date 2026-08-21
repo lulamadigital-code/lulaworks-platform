@@ -763,7 +763,7 @@ class CommercialDocumentPayment(TenantBaseModel):
 # Document Designer — companies keep THEIR document branding, not ours.
 #
 # A business that has issued the same quotation layout for fifteen years should
-# not have to abandon it to adopt LulaWorks. A DocumentTemplate lets a company
+# not have to abandon it to adopt Lulaworks. A DocumentTemplate lets a company
 # hold several looks per document type, pick a default, and override it on a
 # single document — without touching code.
 #
@@ -785,7 +785,7 @@ class DocumentType(models.TextChoices):
 
 
 class BaseLayout(models.TextChoices):
-    CLASSIC = "classic", "Classic"      # the letterhead LulaWorks shipped with
+    CLASSIC = "classic", "Classic"      # the letterhead Lulaworks shipped with
     MODERN = "modern", "Modern"         # accent bar, logo can move
     COMPACT = "compact", "Compact"      # tighter, fits more on a page
 
@@ -796,7 +796,7 @@ class BaseLayout(models.TextChoices):
 #: template's stored `config` over this. Kept flat and JSON-serialisable so the
 #: same shape can come from a form today or an AI importer tomorrow.
 DEFAULT_CONFIG = {
-    "accent_color": "",           # "" → company brand_primary → LulaWorks teal
+    "accent_color": "",           # "" → company brand_primary → Lulaworks teal
     "secondary_color": "",
     "font": "Helvetica",          # Helvetica | Times-Roman | Courier (print-safe)
     "logo_position": "right",     # left | center | right (logo side; identity fills the rest)
@@ -925,7 +925,7 @@ TEMPLATE_FIELD_LIBRARY = {
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# The LulaWorks template families — the entire customer-facing catalogue.
+# The Lulaworks template families — the entire customer-facing catalogue.
 #
 # Twelve ORIGINAL design families, each with its OWN visual structure (not a
 # recolour of one layout). A family carries a single visual identity across all
@@ -1078,7 +1078,7 @@ DEFAULT_FAMILY_KEY = "horizon"
 FAMILY_BY_KEY = {key: (name, desc, tags, design)
                  for key, name, desc, tags, design in TEMPLATE_FAMILIES}
 
-#: The ONLY names a built-in (LulaWorks-shipped) template may carry. Enforced by
+#: The ONLY names a built-in (Lulaworks-shipped) template may carry. Enforced by
 #: document_templates.assert_allowed_template_name as an allowlist, so the shipped
 #: catalogue can never contain a third-party product name. A neutral label used
 #: when retiring an old template is permitted too (see RETIRED_TEMPLATE_LABEL).
@@ -1092,15 +1092,15 @@ class TemplateEngine(models.TextChoices):
     looks from `config`; the HTML engine (WeasyPrint) renders a stored HTML/CSS
     body with {{field}} placeholders — used for custom-built and AI-imported
     designs. Both coexist; a document just points at a template of either kind."""
-    REPORTLAB = "reportlab", "LulaWorks (built-in)"
+    REPORTLAB = "reportlab", "Lulaworks (built-in)"
     HTML = "html", "HTML / CSS"
 
 
 class TemplateOrigin(models.TextChoices):
     """Where a template came from — drives the library UI and, later, a
-    marketplace. `builtin` = seeded LulaWorks look; `custom` = built in the
+    marketplace. `builtin` = seeded Lulaworks look; `custom` = built in the
     visual editor; `imported` = reconstructed by LulaAI from an uploaded doc."""
-    BUILTIN = "builtin", "LulaWorks template"
+    BUILTIN = "builtin", "Lulaworks template"
     CUSTOM = "custom", "Custom"
     IMPORTED = "imported", "Imported"
 

@@ -1,7 +1,7 @@
 {% extends "emails/base.html" %}
 {% block content %}
 <p style="margin:0 0 14px;">Hi{% if name %} {{ name }}{% endif %},</p>
-<p style="margin:0 0 14px;">Thanks for joining the <strong>LulaWorks Academy</strong> — welcome!
+<p style="margin:0 0 14px;">Thanks for joining the <strong>Lulaworks Academy</strong> — welcome!
   You'll get practical, no-fluff guides, free tools and templates to help you win
   more work, quote more professionally and get paid faster.</p>
 <p style="margin:0 0 8px;">Here's where to start:</p>
@@ -10,6 +10,6 @@
   <li style="margin:4px 0;"><a href="{{ tools_url }}" style="color:{{ brand_color|default:'#0E6E6E' }};">Free calculators</a> — job profit, markup, VAT, break-even</li>
   <li style="margin:4px 0;"><a href="{{ templates_url }}" style="color:{{ brand_color|default:'#0E6E6E' }};">Free templates</a> — quotation, invoice, RFQ, checklists</li>
 </ul>
-<p style="margin:0;">When you're ready to put it into practice, your free LulaWorks
+<p style="margin:0;">When you're ready to put it into practice, your free Lulaworks
   account quotes, invoices and tracks jobs in one place.</p>
 {% endblock %}

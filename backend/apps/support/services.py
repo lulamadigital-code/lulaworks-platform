@@ -149,7 +149,7 @@ def message_dict(m):
     """Serialise one message for the live-chat feed (both the customer and the
     technician poll this shape)."""
     if m.from_support:
-        who = "LulaWorks Support"
+        who = "Lulaworks Support"
     elif m.sender:
         who = m.sender.get_full_name() or m.sender.email
     else:
@@ -268,11 +268,11 @@ def _notify_reply(ticket, *, from_support):
         creator = getattr(ticket, "created_by", None)
         company = getattr(ticket, "company", None)
         _send(getattr(creator, "email", ""),
-              f"LulaWorks Support Ticket {ticket.number} updated",
+              f"Lulaworks Support Ticket {ticket.number} updated",
               f"Support replied to {ticket.number}",
-              "LulaWorks Support has replied to your ticket.",
+              "Lulaworks Support has replied to your ticket.",
               cta_url=_ticket_url(ticket), company=company)
-        _push_mobile(creator, f"LulaWorks Support replied to ticket {ticket.number}. "
+        _push_mobile(creator, f"Lulaworks Support replied to ticket {ticket.number}. "
                               f"View: {_ticket_url(ticket)}", company=company)
 
 
@@ -280,11 +280,11 @@ def _notify_status(ticket):
     creator = getattr(ticket, "created_by", None)
     company = getattr(ticket, "company", None)
     _send(getattr(creator, "email", ""),
-          f"LulaWorks Support Ticket {ticket.number} — {ticket.get_status_display()}",
+          f"Lulaworks Support Ticket {ticket.number} — {ticket.get_status_display()}",
           f"{ticket.number} is now {ticket.get_status_display()}",
           f"Your support ticket status changed to {ticket.get_status_display()}.",
           cta_url=_ticket_url(ticket), company=company)
-    _push_mobile(creator, f"LulaWorks ticket {ticket.number} is now "
+    _push_mobile(creator, f"Lulaworks ticket {ticket.number} is now "
                           f"{ticket.get_status_display()}.", company=company)
 
 
@@ -335,7 +335,7 @@ def assist(company, user, query):
         excerpts = "\n\n".join(
             f"[{i+1}] {a.title}\n{a.summary or a.body[:400]}" for i, a in enumerate(articles))
         prompt = (
-            "You are the LulaWorks Support Assistant. Answer the user's question "
+            "You are the Lulaworks Support Assistant. Answer the user's question "
             "using ONLY the knowledge base excerpts below. If they do not clearly "
             "answer it, say you're not certain and suggest opening a support ticket. "
             "Never say the problem is solved — the user will confirm. Reply in at "

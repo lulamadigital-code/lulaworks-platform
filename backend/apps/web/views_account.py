@@ -41,7 +41,7 @@ def activate(request, token):
                 messages.error(request, str(exc))
             else:
                 login(request, user)
-                messages.success(request, "Welcome to LulaWorks! Your account is active.")
+                messages.success(request, "Welcome to Lulaworks! Your account is active.")
                 return redirect("web:dashboard")
     return render(request, "web/set_password.html", {
         "valid": valid, "token": token, "mode": "activate",

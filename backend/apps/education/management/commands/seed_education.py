@@ -1,6 +1,6 @@
 """Seed the Learning Centre with a starter set of genuinely useful, published
 content so the Academy is not empty. Idempotent — safe to run repeatedly (keys
-on slug). LulaWorks staff extend this in the admin over time."""
+on slug). Lulaworks staff extend this in the admin over time."""
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -46,7 +46,7 @@ RESOURCES = [
             "<h2>Do it manually</h2><p>Build a branded template, keep a numbering "
             "system, and diarise a follow-up three days after sending. Most jobs are "
             "won on the follow-up, not the quote.</p>"
-            "<h2>Or let LulaWorks do it</h2><p>LulaWorks builds branded, numbered "
+            "<h2>Or let Lulaworks do it</h2><p>Lulaworks builds branded, numbered "
             "quotations from your items, adds VAT automatically, and turns an approved "
             "quote into a job, invoice and delivery note with one click.</p>"
         ),
@@ -66,7 +66,7 @@ RESOURCES = [
             "<p>The clean flow is: quotation → approval → job → delivery note → tax "
             "invoice → payment. Each document should carry the same reference so the "
             "whole job is traceable.</p>"
-            "<p>LulaWorks keeps that chain on one number automatically.</p>"
+            "<p>Lulaworks keeps that chain on one number automatically.</p>"
         ),
     },
     {
@@ -85,7 +85,7 @@ RESOURCES = [
             "in margin slowly bleed profit on every job.</p>"
             "<h2>Rule of thumb</h2><p>To hit a target margin, divide cost by (1 − "
             "margin). For a 30% margin on R100 cost: 100 ÷ 0.70 = R143.</p>"
-            "<p>LulaWorks shows cost, markup and margin on every line as you quote, and "
+            "<p>Lulaworks shows cost, markup and margin on every line as you quote, and "
             "the real profit on every job as it runs.</p>"
         ),
     },
@@ -95,7 +95,7 @@ RESOURCES = [
         "title": "Why customers pay invoices late (and how to get paid faster)",
         "summary": "Late payment is usually an admin problem, not a money problem. Fix the admin.",
         "features": ["invoices"],
-        "cta_label": "Track outstanding invoices in LulaWorks",
+        "cta_label": "Track outstanding invoices in Lulaworks",
         "cta_url": "/start-free-trial/",
         "body": (
             "<p>Most late payments come down to five fixable things: the invoice was "
@@ -106,7 +106,7 @@ RESOURCES = [
             "<li>State the due date, not just 'net 30'</li>"
             "<li>Follow up at day 7, not day 31</li>"
             "<li>Track outstanding balances weekly</li></ul>"
-            "<p>LulaWorks tracks each invoice's outstanding balance and ages your "
+            "<p>Lulaworks tracks each invoice's outstanding balance and ages your "
             "debtors (current / 30 / 60 / 90+) so nothing slips.</p>"
         ),
     },
@@ -116,7 +116,7 @@ RESOURCES = [
         "title": "How supplier price history helps you quote more accurately",
         "summary": "Every receipt is data. Use it to quote from real prices, not guesses.",
         "features": ["suppliers", "procurement"],
-        "cta_label": "Manage suppliers in LulaWorks",
+        "cta_label": "Manage suppliers in Lulaworks",
         "cta_url": "/start-free-trial/",
         "body": (
             "<p>If you quote from memory, you either pad the price and lose the job, or "
@@ -124,7 +124,7 @@ RESOURCES = [
             "<p>Record what you paid, to whom, for each material. Over time you can see "
             "who is cheapest, spot price creep, and quote the next job from real "
             "numbers.</p>"
-            "<p>LulaWorks learns supplier prices from your purchases automatically and "
+            "<p>Lulaworks learns supplier prices from your purchases automatically and "
             "flags when a price looks high.</p>"
         ),
     },
@@ -173,7 +173,7 @@ class Command(BaseCommand):
             slug="start-your-contractor-business",
             defaults={"title": "Start Your Contractor Business", "icon": "🚀",
                       "summary": "From company setup to your first paid invoice — the "
-                      "whole LulaWorks flow in ten steps.",
+                      "whole Lulaworks flow in ten steps.",
                       "status": ContentStatus.PUBLISHED, "order": 10})
         if not path.steps.exists():
             for i, (title, desc, res_slug) in enumerate(PATH_STEPS, start=1):

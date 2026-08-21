@@ -1,5 +1,5 @@
 """Migrate every company off the RETIRED document-template catalogue and onto the
-twelve original LulaWorks families.
+twelve original Lulaworks families.
 
 Background: the old catalogue mixed generic ReportLab presets (Classic / Modern /
 Corporate …) with "house styles" that borrowed third-party product names. Those
@@ -43,7 +43,7 @@ from apps.quotes.models import (
 
 
 class Command(BaseCommand):
-    help = "Replace the retired document-template catalogue with the LulaWorks families."
+    help = "Replace the retired document-template catalogue with the Lulaworks families."
 
     def add_arguments(self, parser):
         parser.add_argument("--company", help="Only this company UUID (default: all).")
