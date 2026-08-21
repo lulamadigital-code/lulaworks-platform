@@ -2,6 +2,22 @@
 {% block title %}Company{% endblock %}
 {% block content %}
 
+{% with missing=request.user.active_company.setup_missing %}
+{% if missing %}
+<div class="card" style="border-left:4px solid var(--orange,#fdab3d);border-radius:0 var(--r) var(--r) 0;margin-bottom:16px;background:var(--orange-t,#fff3e2);">
+  <strong>Finish setting up your company to start issuing documents</strong>
+  <p class="muted" style="margin:6px 0 8px;">Every quotation and invoice you send
+    pulls from here. A few essentials are still missing:</p>
+  <ul style="margin:0;padding-left:18px;font-size:13.5px;">
+    {% for item in missing %}<li>{{ item }}</li>{% endfor %}
+  </ul>
+  <p class="muted" style="margin:8px 0 0;font-size:12.5px;">Fill these in below (and
+    add your logo &amp; banking under the tabs). You'll have full access as soon as
+    they're saved.</p>
+</div>
+{% endif %}
+{% endwith %}
+
 <div class="pagehead">
   <div>
     <h1>Company profile</h1>

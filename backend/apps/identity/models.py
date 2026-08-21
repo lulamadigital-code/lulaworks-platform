@@ -127,6 +127,26 @@ class Company(PlatformBaseModel):
     def __str__(self):
         return self.name
 
+    @property
+    def setup_missing(self) -> list:
+        """Essential company info still missing — the details every quotation and
+        invoice needs to look professional and be payable. Drives the onboarding
+        gate and the 'finish setup' banner. (Logo is recommended but never blocks.)"""
+        missing = []
+        if not (self.street_address and self.city):
+            missing.append("Business address")
+        if not (self.phone or self.mobile or self.email):
+            missing.append("A phone number or email")
+        if not (self.registration_no or self.vat_no or self.tax_reference_no):
+            missing.append("Company registration or VAT number")
+        if not self.bank_accounts.exists():
+            missing.append("Banking details (so customers can pay you)")
+        return missing
+
+    @property
+    def is_setup_complete(self) -> bool:
+        return not self.setup_missing
+
 
 class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
     """Platform identity — email login. Tenant link is via Membership; the

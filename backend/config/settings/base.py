@@ -86,6 +86,8 @@ MIDDLEWARE = [
     # Admin-created accounts must replace their temporary password before they
     # can use anything (manager web only; the JWT API is untouched).
     "apps.web.middleware.ForcePasswordChangeMiddleware",
+    # A new company must complete its essential profile before issuing documents.
+    "apps.web.middleware.CompanySetupMiddleware",
     # Ambient tenant resolution — sets TenantContext from the JWT (DATA_MODEL §1).
     "apps.core.middleware.TenantMiddleware",
 ]

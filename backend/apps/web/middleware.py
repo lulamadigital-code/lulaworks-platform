@@ -39,6 +39,42 @@ class ForcePasswordChangeMiddleware:
         return path not in allowed
 
 
+class CompanySetupMiddleware:
+    """Until a new company's essential profile is filled in (address, contact,
+    registration/VAT number, banking), send the person who can complete it —
+    the company manager — to the Company Profile page. So quotations and invoices
+    are never issued from a half-set-up company. Regular staff are never gated
+    (they can't edit the company); the manager can always reach the whole
+    /company/ settings area and can sign out."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, "user", None)
+        if (user is not None and user.is_authenticated
+                and not getattr(user, "must_change_password", False)
+                and self._is_guarded(request)):
+            company = getattr(user, "active_company", None)
+            if (company is not None
+                    and user.has_perm_code("company.manage")
+                    and not company.is_setup_complete):
+                return redirect("web:company_profile")
+        return self.get_response(request)
+
+    @staticmethod
+    def _is_guarded(request) -> bool:
+        path = request.path
+        # Allow the whole company-settings area (where they finish setup), the
+        # API/mobile, static/media, admin, and the auth escape routes.
+        if path.startswith(("/api/", "/static/", "/media/", "/admin/", "/health",
+                            "/company/")):
+            return False
+        allowed = {reverse("web:logout"), reverse("web:login"),
+                   reverse("web:change_password")}
+        return path not in allowed
+
+
 class RequestIDMiddleware:
     """Stamp every request with a short correlation id (request.request_id) and
     echo it as the X-Request-ID response header. It ties a customer's error

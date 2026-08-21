@@ -22,7 +22,15 @@ from apps.quotes.models import Quotation
 
 
 def make_company(name="Lulama"):
-    c = Company.objects.create(name=name)
+    # A fully set-up company (address, contact, registration, banking) — the
+    # normal state once onboarding is done, so the setup gate never fires.
+    from apps.identity.models import CompanyBankAccount
+    c = Company.objects.create(
+        name=name, street_address="1 Main Rd", city="Johannesburg",
+        phone="011 555 0000", registration_no="2020/123456/07")
+    CompanyBankAccount.objects.create(
+        company=c, bank_name="FNB", account_name=name, account_number="620000000",
+        is_default=True)
     for dt, pfx in [("quotation", "QT"), ("project", "PRJ"), ("estimate", "EST"),
                     ("invoice", "INV")]:
         NumberingRule.objects.create(company=c, doc_type=dt, prefix=pfx,
@@ -2025,6 +2033,53 @@ class AccountLifecycleWebTests(TestCase):
     def test_login_page_has_forgot_link(self):
         r = self.client.get("/login/")
         self.assertContains(r, "/reset/")
+
+
+class CompanySetupGateTests(TestCase):
+    def _complete(self, company):
+        from apps.identity.models import CompanyBankAccount
+        company.street_address = "1 Main Rd"
+        company.city = "Johannesburg"
+        company.phone = "011 555 0000"
+        company.registration_no = "2020/123456/07"
+        company.save()
+        CompanyBankAccount.objects.create(
+            company=company, bank_name="FNB", account_name="Acme",
+            account_number="620...", is_default=True)
+
+    def _bare_company(self):
+        # A freshly-registered, NOT-yet-set-up company (no address/banking).
+        c = Company.objects.create(name="Fresh Co")
+        for dt, pfx in [("quotation", "QT"), ("invoice", "INV")]:
+            NumberingRule.objects.create(company=c, doc_type=dt, prefix=pfx,
+                                         fmt="{prefix}-{yyyy}-{seq:05d}")
+        return c
+
+    def test_manager_gated_until_company_setup_complete(self):
+        company = self._bare_company()
+        mgr = user_with(company, ["company.manage"])
+        self.client.force_login(mgr)
+        # Incomplete company → app pages bounce to the Company Profile.
+        resp = self.client.get("/dashboard/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/company/", resp.url)
+        # The company-settings area is always reachable (to finish setup).
+        self.assertEqual(self.client.get("/company/").status_code, 200)
+        # Once the essentials are filled in, the gate lifts.
+        with tenant_scope(company.id):
+            self._complete(company)
+        self.assertEqual(self.client.get("/dashboard/").status_code, 200)
+
+    def test_regular_staff_not_gated(self):
+        company = self._bare_company()
+        staff = user_with(company, ["work.edit"], email="staff@lulama.co.za")
+        self.client.force_login(staff)
+        resp = self.client.get("/dashboard/")
+        # Not redirected to company setup (they can't edit the company anyway).
+        self.assertNotEqual(
+            (resp.status_code, getattr(resp, "url", "")),
+            (302, "/company/"))
+        self.assertNotIn("/company/", getattr(resp, "url", "") or "")
 
 
 class FinanceDashboardTests(TestCase):
