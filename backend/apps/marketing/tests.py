@@ -134,7 +134,8 @@ class InputValidationTests(TestCase):
     def test_demo_rejects_invalid_email(self):
         resp = self.client.post(reverse("marketing:demo"), {
             "company": "Acme", "name": "Lerato", "email": "bad"})
-        self.assertRedirects(resp, reverse("marketing:demo"))
+        # Re-renders the form (keeping input) rather than redirecting; nothing saved.
+        self.assertEqual(resp.status_code, 200)
         self.assertEqual(DemoRequest.objects.count(), 0)
 
 
