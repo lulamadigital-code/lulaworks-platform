@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import 'customers_screen.dart';
 import 'dashboard_screen.dart';
-import 'finance_screen.dart';
 import 'lulama_screen.dart';
 import 'more_screen.dart';
-import 'profile_screen.dart';
 import 'projects_screen.dart';
+import 'purchasing_screen.dart';
 
-/// The signed-in app shell. Bottom nav is permission-driven and capped at five:
-///   Home · Projects · [Finance] · More · Profile
-/// Finance appears only with finance.view_money. Secondary modules (Customers,
-/// Lulama, and more to come) live under the More tab so the bar never overflows.
+/// The signed-in app shell. A fixed five-tab bottom bar gives a clear mental
+/// model — Home · CRM · Jobs · Purchasing · More — with permission checks handled
+/// inside each destination (and enforced by the backend).
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.api, required this.onSignOut});
   final ApiClient api;
@@ -24,48 +23,27 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
+  static const _tabs = [
+    ('Home', Icons.dashboard_outlined, Icons.dashboard),
+    ('CRM', Icons.contacts_outlined, Icons.contacts),
+    ('Jobs', Icons.work_outline, Icons.work),
+    ('Purchasing', Icons.shopping_cart_outlined, Icons.shopping_cart),
+    ('More', Icons.apps_outlined, Icons.apps),
+  ];
+
   @override
   void initState() {
     super.initState();
+    // Resolve role/permissions on launch so gated surfaces are correct.
     widget.api.refreshMe().then((_) {
       if (mounted) setState(() {});
-    }).catchError((_) {/* keep cached perms */});
-  }
-
-  List<_TabDef> _tabs() {
-    return [
-      const _TabDef('home', 'Home', Icons.dashboard_outlined, Icons.dashboard),
-      const _TabDef('projects', 'Projects', Icons.folder_outlined, Icons.folder),
-      if (widget.api.canViewMoney)
-        const _TabDef('finance', 'Finance', Icons.payments_outlined, Icons.payments),
-      const _TabDef('more', 'More', Icons.apps_outlined, Icons.apps),
-      const _TabDef('profile', 'Profile', Icons.person_outline, Icons.person),
-    ];
-  }
-
-  Widget _screenFor(String id) {
-    switch (id) {
-      case 'home':
-        return DashboardScreen(
-          api: widget.api,
-          onOpenProjects: () => _goto('projects'),
-          onOpenLulama: _openLulama,
-        );
-      case 'projects':
-        return ProjectsScreen(api: widget.api, onSignOut: widget.onSignOut);
-      case 'finance':
-        return FinanceScreen(api: widget.api);
-      case 'more':
-        return MoreScreen(api: widget.api);
-      case 'profile':
-        return ProfileScreen(api: widget.api, onSignOut: widget.onSignOut);
-    }
-    return const SizedBox.shrink();
+    }).catchError((_) {});
   }
 
   void _goto(String id) {
-    final i = _tabs().indexWhere((t) => t.id == id);
-    if (i >= 0) setState(() => _index = i);
+    const map = {'home': 0, 'crm': 1, 'jobs': 2, 'purchasing': 3, 'more': 4};
+    final i = map[id];
+    if (i != null) setState(() => _index = i);
   }
 
   void _openLulama() => Navigator.of(context).push(
@@ -73,32 +51,28 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final tabs = _tabs();
-    if (_index >= tabs.length) _index = 0;
-    return Scaffold(
-      body: IndexedStack(
-        index: _index,
-        children: [for (final t in tabs) _screenFor(t.id)],
+    final screens = [
+      DashboardScreen(
+        api: widget.api,
+        onOpenProjects: () => _goto('jobs'),
+        onOpenLulama: _openLulama,
       ),
+      CustomersScreen(api: widget.api),
+      ProjectsScreen(api: widget.api, onSignOut: widget.onSignOut),
+      PurchasingScreen(api: widget.api),
+      MoreScreen(api: widget.api, onSignOut: widget.onSignOut),
+    ];
+    return Scaffold(
+      body: IndexedStack(index: _index, children: screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: [
-          for (final t in tabs)
+          for (final t in _tabs)
             NavigationDestination(
-                icon: Icon(t.icon),
-                selectedIcon: Icon(t.selectedIcon),
-                label: t.label),
+                icon: Icon(t.$2), selectedIcon: Icon(t.$3), label: t.$1),
         ],
       ),
     );
   }
-}
-
-class _TabDef {
-  const _TabDef(this.id, this.label, this.icon, this.selectedIcon);
-  final String id;
-  final String label;
-  final IconData icon;
-  final IconData selectedIcon;
 }

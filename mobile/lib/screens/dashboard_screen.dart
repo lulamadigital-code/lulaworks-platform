@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
+import '../widgets/brand_logo.dart';
 import 'customer_form_screen.dart';
 import 'customers_screen.dart';
 import 'my_tasks_screen.dart';
@@ -198,39 +199,25 @@ class _DashboardScreenState extends State<DashboardScreen>
         : hour < 17
             ? 'Good afternoon'
             : 'Good evening';
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(first.isEmpty ? greet : '$greet, $first',
-                style: const TextStyle(
-                    fontSize: 24, fontWeight: FontWeight.w700, color: kInk,
-                    letterSpacing: -0.4),
-                maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 2),
-            const Text("Here's what needs your attention today.",
-                style: TextStyle(fontSize: 13.5, color: kMuted)),
-            if (company.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.business, size: 13, color: kMuted),
-                const SizedBox(width: 4),
-                Flexible(
-                    child: Text(company,
-                        style: const TextStyle(
-                            fontSize: 12.5, fontWeight: FontWeight.w600, color: kMuted),
-                        maxLines: 1, overflow: TextOverflow.ellipsis)),
-              ]),
-            ],
-          ]),
-        ),
-        const SizedBox(width: 12),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const BrandLogo(height: 24),
+        const Spacer(),
         _bell(context, h.unread),
-        const SizedBox(width: 8),
-        _avatar(first.isNotEmpty ? first : '${user['email'] ?? '?'}'),
-      ],
-    );
+      ]),
+      const SizedBox(height: 18),
+      Text(first.isEmpty ? greet : '$greet, $first',
+          style: const TextStyle(
+              fontSize: 24, fontWeight: FontWeight.w700, color: kInk,
+              letterSpacing: -0.4),
+          maxLines: 1, overflow: TextOverflow.ellipsis),
+      const SizedBox(height: 3),
+      Text(company.isEmpty
+          ? "Here's what needs your attention today."
+          : "Here's what's happening at $company.",
+          style: const TextStyle(fontSize: 13.5, color: kMuted),
+          maxLines: 1, overflow: TextOverflow.ellipsis),
+    ]);
   }
 
   Widget _bell(BuildContext context, int unread) {
@@ -251,20 +238,6 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: const Icon(Icons.notifications_none, size: 21, color: kInk),
         ),
       ),
-    );
-  }
-
-  Widget _avatar(String seed) {
-    final initials = seed.trim().isEmpty
-        ? '?'
-        : seed.trim().split(RegExp(r'[\s@.]')).where((s) => s.isNotEmpty).take(2)
-            .map((s) => s.characters.first.toUpperCase()).join();
-    return CircleAvatar(
-      radius: 21,
-      backgroundColor: kBrandTint,
-      child: Text(initials,
-          style: const TextStyle(
-              color: kBrandDark, fontWeight: FontWeight.w700, fontSize: 14)),
     );
   }
 
