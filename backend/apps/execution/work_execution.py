@@ -268,12 +268,19 @@ def task_operational_dashboard(task, user=None) -> dict:
     outstanding = [c.label for c in checklist if not c.is_done] \
         + [s.name for s in subtasks if not s.is_done]
 
+    # Golden Rule: the task budget (allocated/spent/remaining) is company money.
+    # Only surface it to someone who may view money; everyone else gets the
+    # operational hub with the financials withheld.
+    can_view_money = bool(user and getattr(user, "is_authenticated", False)
+                          and user.has_perm_code("finance.view_money"))
+
     return {
         "task": task,
         "progress_pct": task.progress_pct,
         "team": {role: task.team(role) for role, _ in Assignment.Role.choices},
         "outstanding": outstanding,
-        "financials": task_financials(task),
+        "can_view_money": can_view_money,
+        "financials": task_financials(task) if can_view_money else None,
         "reports": reports,
         "flagged_reports": [r for r in reports if r.location_flagged],
         "latest_report": reports[0] if reports else None,

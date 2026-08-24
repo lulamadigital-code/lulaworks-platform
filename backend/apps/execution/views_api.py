@@ -147,29 +147,33 @@ class TaskViewSet(TenantViewSet):
         """The task's operational hub, computed server-side: who's on it, what's
         outstanding, money allocated/spent/remaining, materials, documents,
         latest GPS, map points and the full timeline."""
-        data = task_operational_dashboard(self.get_object())
+        data = task_operational_dashboard(self.get_object(), request.user)
         return Response(_serialize_dashboard(data, request))
 
 
 def _serialize_dashboard(data, request) -> dict:
     task = data["task"]
     fin = data["financials"]
+    # Golden Rule: null money fields (the app renders them as "—") and expose no
+    # allocations when the viewer may not see money. `financials` is None here.
+    financials = None if fin is None else {
+        "allocated": str(fin["allocated"]),
+        "spent": str(fin["spent"]),
+        "remaining": str(fin["remaining"]),
+        "over_budget": fin["over_budget"],
+        "materials_total": str(fin["materials_total"]),
+        "materials_count": fin["materials_count"],
+        "allocations": TaskResourceAllocationSerializer(
+            fin["allocations"], many=True).data,
+    }
     return {
         "task": {"id": str(task.id), "name": task.name, "status": task.status},
         "progress_pct": data["progress_pct"],
         "team": {role: [u.get_full_name() or u.email for u in users]
                  for role, users in data["team"].items()},
         "outstanding": data["outstanding"],
-        "financials": {
-            "allocated": str(fin["allocated"]),
-            "spent": str(fin["spent"]),
-            "remaining": str(fin["remaining"]),
-            "over_budget": fin["over_budget"],
-            "materials_total": str(fin["materials_total"]),
-            "materials_count": fin["materials_count"],
-            "allocations": TaskResourceAllocationSerializer(
-                fin["allocations"], many=True).data,
-        },
+        "can_view_money": data.get("can_view_money", False),
+        "financials": financials,
         "documents": data["documents"],
         "reports": TaskReportSerializer(
             data["reports"], many=True, context={"request": request}).data,
@@ -244,7 +248,14 @@ class TimesheetViewSet(TenantViewSet):
 
     model = Timesheet
     serializer_class = TimesheetSerializer
-    required_perms = {"approve": "timesheet.approve"}
+    # Logging hours is field work; approving them is a gated, separate step.
+    # Without this, create/update/destroy fell through to "authenticated is
+    # enough" — any member could delete a timesheet.
+    required_perms = {"create": ("work.edit", "execution.manage"),
+                      "update": ("work.edit", "execution.manage"),
+                      "partial_update": ("work.edit", "execution.manage"),
+                      "destroy": "execution.manage",
+                      "approve": "timesheet.approve"}
 
     def get_queryset(self):
         qs = Timesheet.objects.all().select_related("resource", "task")

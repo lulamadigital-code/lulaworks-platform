@@ -105,7 +105,9 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
               ]);
             }
             final d = snap.data!;
-            final fin = (d['financials'] as Map).cast<String, dynamic>();
+            // Golden Rule: the backend sends financials=null to viewers who may
+            // not see money — the budget row is simply omitted for them.
+            final fin = (d['financials'] as Map?)?.cast<String, dynamic>();
             final reports = (d['reports'] as List).cast<Map<String, dynamic>>();
             final timeline = (d['timeline'] as List).cast<Map<String, dynamic>>();
             final outstanding = (d['outstanding'] as List).cast<dynamic>();
@@ -114,8 +116,8 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 _statusActions(context, status),
-                _money(context, fin),
-                const SizedBox(height: 8),
+                if (fin != null) _money(context, fin),
+                if (fin != null) const SizedBox(height: 8),
                 Row(children: [
                   _chip(context, Icons.description, '${d['documents']} docs'),
                   const SizedBox(width: 8),

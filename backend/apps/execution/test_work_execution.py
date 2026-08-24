@@ -236,7 +236,12 @@ class OperationalDashboardTests(APITestCase):
                                title="Left supplier",
                                latitude=Decimal(str(FAR[0])),
                                longitude=Decimal(str(FAR[1])))
-            dash = task_operational_dashboard(task)
+            # A viewer permitted to see money (financials are Golden-Rule gated).
+            class _MoneyUser:
+                is_authenticated = True
+                def has_perm_code(self, code):  # noqa: D401
+                    return True
+            dash = task_operational_dashboard(task, _MoneyUser())
 
         self.assertEqual(dash["financials"]["allocated"], Decimal("2000.00"))
         self.assertEqual(dash["financials"]["spent"], Decimal("1500.00"))
@@ -309,8 +314,10 @@ class WesApiTests(APITestCase):
         self.company = make_company()
         manage = Permission.objects.create(codename="execution.manage",
                                             module="execution", label="M")
+        money = Permission.objects.create(codename="finance.view_money",
+                                          module="finance", label="Money")
         self.role = Role.objects.create(name="Ops", is_system=True)
-        self.role.permissions.add(manage)
+        self.role.permissions.add(manage, money)
         self.ops = User.objects.create_user("ops@lulama.co.za", "x",
                                              active_company=self.company)
         Membership.objects.create(user=self.ops, company=self.company, role=self.role)
@@ -403,3 +410,30 @@ class WesApiTests(APITestCase):
         made = self.client.post("/api/v1/tasks/", {"name": "New task"},
                                 format="json")
         self.assertEqual(made.status_code, 403)
+
+    def test_operational_dashboard_withholds_money_from_non_money_users(self):
+        """Golden Rule: the operational hub's task budget (allocated/spent/
+        remaining) is company money — a worker without finance.view_money gets
+        the hub with financials withheld (null), not the numbers."""
+        edit = Permission.objects.create(codename="work.edit", module="work",
+                                         label="Edit work")
+        role = Role.objects.create(name="FieldOnly", is_system=True)
+        role.permissions.add(edit)
+        worker = User.objects.create_user("nomoney@lulama.co.za", "x",
+                                          active_company=self.company)
+        Membership.objects.create(user=worker, company=self.company, role=role)
+
+        # A manager (with money) sees the numbers …
+        resp = self.client.get(f"/api/v1/tasks/{self.task.id}/operational/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNotNone(resp.data["financials"])
+        self.assertTrue(resp.data["can_view_money"])
+
+        # … the field worker gets the same hub with money withheld.
+        self.client.force_authenticate(worker)
+        resp = self.client.get(f"/api/v1/tasks/{self.task.id}/operational/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(resp.data["financials"])
+        self.assertFalse(resp.data["can_view_money"])
+        # The rest of the hub still works (team, timeline, outstanding).
+        self.assertIn("timeline", resp.data)
