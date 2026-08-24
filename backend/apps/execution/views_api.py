@@ -317,8 +317,13 @@ class TaskViewSet(TenantViewSet):
 
     @action(detail=True, methods=["post"])
     def complete(self, request, pk=None):
-        task = complete_task(self.get_object(), request.user,
-                             actual_hours=request.data.get("actual_hours"))
+        try:
+            task = complete_task(self.get_object(), request.user,
+                                 actual_hours=request.data.get("actual_hours"))
+        except ValueError as exc:
+            # The completion gate refused — required evidence is missing (§45).
+            return Response({"error": {"code": "incomplete", "message": str(exc)}},
+                            status=status.HTTP_409_CONFLICT)
         post_system_message(task,
                             f"{request.user.get_full_name() or 'A worker'} completed the task.")
         return Response(TaskSerializer(task, context={"request": request}).data)
@@ -362,6 +367,7 @@ def _serialize_dashboard(data, request) -> dict:
         "outstanding": data["outstanding"],
         "checklist": ChecklistItemSerializer(data.get("checklist", []), many=True).data,
         "subtasks": SubtaskSerializer(data.get("subtasks", []), many=True).data,
+        "completion": data.get("completion"),
         "can_view_money": data.get("can_view_money", False),
         "financials": financials,
         "documents": data["documents"],

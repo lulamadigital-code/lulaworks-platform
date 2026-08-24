@@ -111,7 +111,8 @@ class TaskSerializer(serializers.ModelSerializer):
                   "is_billable", "predecessors", "blocks_on_compliance", "material_po",
                   "assignee", "planned_start", "planned_end", "due_date",
                   "started_at", "completed_at", "estimated_hours", "actual_hours",
-                  "progress_pct", "blocked_reason", "readiness"]
+                  "progress_pct", "blocked_reason", "completion_requirements",
+                  "readiness"]
         # `predecessors` routes through TaskDependency (typed links) — it is set via
         # the dependency endpoints/services, never by writing the list directly.
         read_only_fields = ["id", "status", "blocked_reason", "actual_hours",

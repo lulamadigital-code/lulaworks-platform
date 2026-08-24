@@ -370,6 +370,37 @@ class WesApiTests(APITestCase):
         self.assertEqual(len(resp.data["reports"]), 1)
         self.assertTrue(resp.data["timeline"])
 
+    def test_completion_gate_blocks_until_requirements_met(self):
+        """A task can't be completed while required evidence is missing (§45);
+        once the checklist is ticked and a report filed, it completes."""
+        from apps.execution.models import ChecklistItem
+        with tenant_scope(self.company.id):
+            task = Task.objects.create(company=self.company, name="Gated",
+                                       status="in_progress",
+                                       completion_requirements=["checklist", "report"])
+            ci = ChecklistItem.objects.create(task=task, label="Step", position=1)
+
+        blocked = self.client.post(f"/api/v1/tasks/{task.id}/complete/")
+        self.assertEqual(blocked.status_code, 409)
+        self.assertIn("missing", blocked.data["error"]["message"].lower())
+
+        # Satisfy both requirements.
+        self.client.patch(f"/api/v1/checklist-items/{ci.id}/",
+                          {"is_done": True}, format="json")
+        self.client.post("/api/v1/task-reports/",
+                         {"task": str(task.id), "kind": "progress", "title": "x"},
+                         format="json")
+        ok = self.client.post(f"/api/v1/tasks/{task.id}/complete/")
+        self.assertEqual(ok.status_code, 200, ok.data)
+        self.assertEqual(ok.data["status"], "completed")
+
+    def test_no_requirements_completes_freely(self):
+        with tenant_scope(self.company.id):
+            task = Task.objects.create(company=self.company, name="Open",
+                                       status="in_progress")
+        r = self.client.post(f"/api/v1/tasks/{task.id}/complete/")
+        self.assertEqual(r.status_code, 200, r.data)
+
     def test_report_requires_permission(self):
         viewer = User.objects.create_user("v@lulama.co.za", "x",
                                            active_company=self.company)

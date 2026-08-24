@@ -139,6 +139,13 @@ def start_task(task, user) -> Task:
 
 
 def complete_task(task, user, *, actual_hours=None) -> Task:
+    # Completion gate: refuse while required evidence is missing (§45). Deferred
+    # import avoids a services↔work_execution cycle. Raises ValueError → 409.
+    from .work_execution import task_completion_status
+    gate = task_completion_status(task)
+    if not gate["ok"]:
+        raise ValueError("Can't complete yet — missing: "
+                         + ", ".join(gate["missing"]) + ".")
     task.status = TaskStatus.COMPLETED
     task.progress_pct = 100
     task.blocked_reason = ""

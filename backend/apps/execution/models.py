@@ -227,6 +227,10 @@ class Task(TenantBaseModel):
     risk_level = models.CharField(max_length=8, choices=RiskLevel.choices,
                                   default=RiskLevel.LOW)
     labels = models.JSONField(default=list, blank=True)
+    #: What must be in place before this task may be completed — a list of keys
+    #: from COMPLETION_REQUIREMENTS ("checklist", "report", "photo", "receipt").
+    #: Empty = no gate. Configurable per task (a job-type template can seed it).
+    completion_requirements = models.JSONField(default=list, blank=True)
     predecessors = models.ManyToManyField(
         "self", symmetrical=False, blank=True, through="TaskDependency",
         through_fields=("to_task", "from_task"), related_name="successors",

@@ -281,6 +281,7 @@ def task_operational_dashboard(task, user=None) -> dict:
         "outstanding": outstanding,
         "checklist": checklist,
         "subtasks": subtasks,
+        "completion": task_completion_status(task),
         "can_view_money": can_view_money,
         "financials": task_financials(task) if can_view_money else None,
         "reports": reports,
@@ -430,3 +431,39 @@ def post_system_message(task, body: str):
                                           kind=TaskMessage.Kind.SYSTEM, body=body)
     except Exception:                                          # noqa: BLE001
         return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Completion rules — a task can't be completed while required evidence is missing
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: key → (human label, predicate(task) -> bool "is this requirement met?")
+COMPLETION_REQUIREMENTS = {
+    "checklist": ("All checklist items ticked",
+                  lambda t: not t.checklist_items.filter(is_done=False).exists()
+                  and not t.subtasks.filter(is_done=False).exists()),
+    "report":    ("At least one field report",
+                  lambda t: t.reports.exists()),
+    "photo":     ("A photo attached",
+                  lambda t: any(r.attachments.filter(kind="photo").exists()
+                                for r in t.reports.all())),
+    "receipt":   ("A purchase receipt captured",
+                  lambda t: t.reports.filter(
+                      kind__in=["material", "fuel", "expense"]).exists()),
+}
+
+
+def task_completion_status(task) -> dict:
+    """Evaluate this task's completion requirements. Returns whether it can be
+    completed and, if not, what's still missing — the same shape the Task Detail
+    shows and the complete-gate enforces, so the app and server never disagree."""
+    keys = task.completion_requirements or []
+    reqs = []
+    for key in keys:
+        entry = COMPLETION_REQUIREMENTS.get(key)
+        if not entry:
+            continue
+        label, met = entry
+        reqs.append({"key": key, "label": label, "met": bool(met(task))})
+    missing = [r["label"] for r in reqs if not r["met"]]
+    return {"ok": not missing, "requirements": reqs, "missing": missing}

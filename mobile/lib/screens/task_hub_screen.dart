@@ -150,12 +150,14 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
     final desc = '${task['description'] ?? ''}'.trim();
     final site = '${task['site'] ?? ''}'.trim();
 
+    final completion = (d['completion'] as Map?)?.cast<String, dynamic>();
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
       children: [
         _metaHeader(context, task),
         const SizedBox(height: 16),
-        _primaryAction(context, status),
+        _primaryAction(context, status, completion),
 
         if (desc.isNotEmpty) ...[
           const SizedBox(height: 22),
@@ -236,7 +238,8 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
   }
 
   // ── Primary action ────────────────────────────────────────────────────────
-  Widget _primaryAction(BuildContext context, String status) {
+  Widget _primaryAction(BuildContext context, String status,
+      Map<String, dynamic>? completion) {
     final canWork = widget.api.canExecuteWork;
     final canStart = {'ready', 'assigned', 'accepted', 'waiting'}.contains(status);
     final inProgress = status == 'in_progress';
@@ -264,6 +267,9 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
       );
     }
     if (inProgress) {
+      final reqs = (completion?['requirements'] as List? ?? const [])
+          .cast<Map<String, dynamic>>();
+      final canComplete = completion == null || completion['ok'] == true;
       return Column(children: [
         SizedBox(
           height: 54,
@@ -274,21 +280,64 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
             label: const Text('Report progress', style: TextStyle(fontSize: 16)),
           ),
         ),
+        if (reqs.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _requirementsCard(reqs, canComplete),
+        ],
         const SizedBox(height: 10),
         SizedBox(
           height: 50,
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: _busy ? null : () => _taskAction('complete', 'Task completed'),
+            onPressed: (_busy || !canComplete)
+                ? null
+                : () => _taskAction('complete', 'Task completed'),
             icon: const Icon(Icons.check),
-            label: const Text('Complete task'),
+            label: Text(canComplete ? 'Complete task' : 'Finish the steps to complete'),
             style: OutlinedButton.styleFrom(
-                foregroundColor: kBrandDark, side: const BorderSide(color: kBrand)),
+                foregroundColor: canComplete ? kBrandDark : kMuted,
+                side: BorderSide(color: canComplete ? kBrand : kLine)),
           ),
         ),
       ]);
     }
     return const SizedBox.shrink();
+  }
+
+  Widget _requirementsCard(List<Map<String, dynamic>> reqs, bool ok) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+          color: ok ? kGreen.withOpacity(0.06) : kOrange.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+              color: ok ? kGreen.withOpacity(0.3) : kOrange.withOpacity(0.35))),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(ok ? 'Ready to complete' : 'Before you can complete',
+            style: TextStyle(
+                fontSize: 12.5, fontWeight: FontWeight.w700,
+                color: ok ? kGreen : kOrange)),
+        const SizedBox(height: 8),
+        for (final r in reqs)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(children: [
+              Icon(r['met'] == true ? Icons.check_circle : Icons.radio_button_unchecked,
+                  size: 18, color: r['met'] == true ? kGreen : kMuted),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('${r['label']}',
+                    style: TextStyle(
+                        fontSize: 13.5,
+                        color: r['met'] == true ? kMuted : kInk,
+                        decoration:
+                            r['met'] == true ? TextDecoration.lineThrough : null)),
+              ),
+            ]),
+          ),
+      ]),
+    );
   }
 
   Widget _banner(Color c, IconData icon, String text) => Container(
