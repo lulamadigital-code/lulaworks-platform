@@ -105,6 +105,7 @@ class TaskStatus(models.TextChoices):
     ASSIGNED = "assigned", "Assigned"
     ACCEPTED = "accepted", "Accepted"
     IN_PROGRESS = "in_progress", "In progress"
+    PAUSED = "paused", "Paused"
     WAITING = "waiting", "Waiting"
     BLOCKED = "blocked", "Blocked"
     QUALITY_CHECK = "quality_check", "Quality check"
@@ -118,7 +119,8 @@ class TaskStatus(models.TextChoices):
 TERMINAL_STATUSES = {TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELLED}
 #: States a human put the task in deliberately — the engine won't override them.
 MANUAL_STATUSES = {TaskStatus.WAITING, TaskStatus.QUALITY_CHECK,
-                   TaskStatus.CLIENT_SIGNOFF, TaskStatus.ACCEPTED}
+                   TaskStatus.CLIENT_SIGNOFF, TaskStatus.ACCEPTED,
+                   TaskStatus.PAUSED}
 #: Forward path the UI uses to offer "the next sensible step".
 LIFECYCLE_ORDER = [
     TaskStatus.DRAFT, TaskStatus.READY, TaskStatus.ASSIGNED, TaskStatus.ACCEPTED,

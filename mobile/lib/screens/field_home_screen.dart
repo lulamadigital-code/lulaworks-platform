@@ -353,6 +353,7 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
 
   (Color, String) _statusStyle(String s) => switch (s) {
         'in_progress' => (kInfo, 'In progress'),
+        'paused' => (kOrange, 'Paused'),
         'blocked' => (kRed, 'Blocked'),
         'ready' || 'assigned' || 'accepted' => (kOrange, 'Ready to start'),
         _ => (kOrange, 'To do'),

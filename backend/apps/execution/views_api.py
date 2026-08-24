@@ -56,7 +56,9 @@ from .services import (
     mark_notifications_read,
     notify,
     notify_team,
+    pause_task,
     refresh_task_status,
+    resume_task,
     start_task,
     unread_count,
 )
@@ -344,7 +346,9 @@ class TaskViewSet(TenantViewSet):
     required_perms = {"create": "execution.manage", "update": "execution.manage",
                       "partial_update": "execution.manage", "destroy": "execution.manage",
                       "start": ("work.edit", "execution.manage"),
-                      "complete": ("work.edit", "execution.manage")}
+                      "complete": ("work.edit", "execution.manage"),
+                      "pause": ("work.edit", "execution.manage"),
+                      "resume": ("work.edit", "execution.manage")}
 
     def get_queryset(self):
         qs = _project_filtered(
@@ -386,6 +390,29 @@ class TaskViewSet(TenantViewSet):
                             status=status.HTTP_409_CONFLICT)
         post_system_message(task,
                             f"{request.user.get_full_name() or 'A worker'} completed the task.")
+        return Response(TaskSerializer(task, context={"request": request}).data)
+
+    @action(detail=True, methods=["post"])
+    def pause(self, request, pk=None):
+        try:
+            task = pause_task(self.get_object(), request.user,
+                              reason=request.data.get("reason", ""))
+        except ValueError as exc:
+            return Response({"error": {"code": "conflict", "message": str(exc)}},
+                            status=status.HTTP_409_CONFLICT)
+        post_system_message(task,
+                            f"{request.user.get_full_name() or 'A worker'} paused the task.")
+        return Response(TaskSerializer(task, context={"request": request}).data)
+
+    @action(detail=True, methods=["post"])
+    def resume(self, request, pk=None):
+        try:
+            task = resume_task(self.get_object(), request.user)
+        except ValueError as exc:
+            return Response({"error": {"code": "conflict", "message": str(exc)}},
+                            status=status.HTTP_409_CONFLICT)
+        post_system_message(task,
+                            f"{request.user.get_full_name() or 'A worker'} resumed the task.")
         return Response(TaskSerializer(task, context={"request": request}).data)
 
     @action(detail=True, methods=["get"])

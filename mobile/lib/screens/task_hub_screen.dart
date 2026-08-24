@@ -393,6 +393,21 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
         ),
       );
     }
+    if (status == 'paused') {
+      return Column(children: [
+        _banner(kOrange, Icons.pause_circle_outline, 'Task paused'),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 54,
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: _busy ? null : () => _taskAction('resume', 'Task resumed'),
+            icon: const Icon(Icons.play_arrow),
+            label: const Text('Resume task', style: TextStyle(fontSize: 16)),
+          ),
+        ),
+      ]);
+    }
     if (inProgress) {
       final reqs = (completion?['requirements'] as List? ?? const [])
           .cast<Map<String, dynamic>>();
@@ -412,20 +427,37 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
           _requirementsCard(reqs, canComplete),
         ],
         const SizedBox(height: 10),
-        SizedBox(
-          height: 50,
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: (_busy || !canComplete)
-                ? null
-                : () => _taskAction('complete', 'Task completed'),
-            icon: const Icon(Icons.check),
-            label: Text(canComplete ? 'Complete task' : 'Finish the steps to complete'),
-            style: OutlinedButton.styleFrom(
-                foregroundColor: canComplete ? kBrandDark : kMuted,
-                side: BorderSide(color: canComplete ? kBrand : kLine)),
+        Row(children: [
+          Expanded(
+            child: SizedBox(
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: _busy ? null : () => _taskAction('pause', 'Task paused'),
+                icon: const Icon(Icons.pause, size: 18),
+                label: const Text('Pause'),
+                style: OutlinedButton.styleFrom(
+                    foregroundColor: kOrange, side: const BorderSide(color: kLine)),
+              ),
+            ),
           ),
-        ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 2,
+            child: SizedBox(
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: (_busy || !canComplete)
+                    ? null
+                    : () => _taskAction('complete', 'Task completed'),
+                icon: const Icon(Icons.check),
+                label: Text(canComplete ? 'Complete' : 'Finish the steps first'),
+                style: OutlinedButton.styleFrom(
+                    foregroundColor: canComplete ? kBrandDark : kMuted,
+                    side: BorderSide(color: canComplete ? kBrand : kLine)),
+              ),
+            ),
+          ),
+        ]),
       ]);
     }
     return const SizedBox.shrink();
@@ -668,6 +700,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
 
   (Color, String) _statusStyle(String s) => switch (s) {
         'in_progress' => (kInfo, 'In progress'),
+        'paused' => (kOrange, 'Paused'),
         'blocked' => (kRed, 'Blocked'),
         'completed' || 'closed' => (kGreen, 'Completed'),
         'cancelled' => (kMuted, 'Cancelled'),

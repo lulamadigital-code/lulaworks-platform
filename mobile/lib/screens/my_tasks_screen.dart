@@ -27,7 +27,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
   static const _done = {'completed', 'closed', 'cancelled'};
 
   String _bucket(String s) {
-    if (s == 'in_progress') return 'in_progress';
+    if (s == 'in_progress' || s == 'paused') return 'in_progress';
     if (s == 'blocked') return 'blocked';
     if (_done.contains(s)) return 'done';
     return 'todo';
@@ -121,6 +121,7 @@ class _TaskCard extends StatelessWidget {
 
   (Color, String) _status(String s) => switch (s) {
         'in_progress' => (kInfo, 'In progress'),
+        'paused' => (kOrange, 'Paused'),
         'blocked' => (kRed, 'Blocked'),
         'completed' || 'closed' => (kGreen, 'Done'),
         _ => (kOrange, 'To do'),

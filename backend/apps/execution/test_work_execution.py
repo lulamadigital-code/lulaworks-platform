@@ -383,6 +383,22 @@ class WesApiTests(APITestCase):
         r2 = self.client.post(f"/api/v1/tasks/{task.id}/start/")
         self.assertEqual(r2.status_code, 200)
 
+    def test_pause_and_resume(self):
+        with tenant_scope(self.company.id):
+            task = Task.objects.create(company=self.company, name="P", status="assigned")
+        self.assertEqual(
+            self.client.post(f"/api/v1/tasks/{task.id}/start/").data["status"], "in_progress")
+        self.assertEqual(
+            self.client.post(f"/api/v1/tasks/{task.id}/pause/").data["status"], "paused")
+        # can't pause a paused task
+        self.assertEqual(
+            self.client.post(f"/api/v1/tasks/{task.id}/pause/").status_code, 409)
+        self.assertEqual(
+            self.client.post(f"/api/v1/tasks/{task.id}/resume/").data["status"], "in_progress")
+        # can't resume an in-progress task
+        self.assertEqual(
+            self.client.post(f"/api/v1/tasks/{task.id}/resume/").status_code, 409)
+
     def test_blocked_task_still_refuses_to_start(self):
         """A genuinely blocked task (unmet dependency) still can't start —
         validation is preserved, only the false 'assigned≠ready' block was fixed."""

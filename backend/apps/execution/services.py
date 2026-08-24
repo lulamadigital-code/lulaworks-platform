@@ -148,6 +148,35 @@ def start_task(task, user) -> Task:
     return task
 
 
+def pause_task(task, user, *, reason="") -> Task:
+    """Pause an in-progress task (a break, waiting on something). Only IN_PROGRESS
+    can be paused; PAUSED is a manual state the readiness engine won't override."""
+    if task.status != TaskStatus.IN_PROGRESS:
+        raise ValueError("Only a task that's in progress can be paused.")
+    task.status = TaskStatus.PAUSED
+    task.blocked_reason = reason or ""
+    task.updated_by = user
+    task.save(update_fields=["status", "blocked_reason", "updated_by", "updated_at"])
+    publish("TaskPaused", company=task.company, subject=task, actor=user,
+            payload={"task": task.name})
+    notify_team(task, verb="task_paused", title=f"Paused: {task.name}", actor=user)
+    return task
+
+
+def resume_task(task, user) -> Task:
+    """Resume a paused task back to in-progress."""
+    if task.status != TaskStatus.PAUSED:
+        raise ValueError("Only a paused task can be resumed.")
+    task.status = TaskStatus.IN_PROGRESS
+    task.blocked_reason = ""
+    task.updated_by = user
+    task.save(update_fields=["status", "blocked_reason", "updated_by", "updated_at"])
+    publish("TaskResumed", company=task.company, subject=task, actor=user,
+            payload={"task": task.name})
+    notify_team(task, verb="task_resumed", title=f"Resumed: {task.name}", actor=user)
+    return task
+
+
 def complete_task(task, user, *, actual_hours=None) -> Task:
     # Completion gate: refuse while required evidence is missing (§45). Deferred
     # import avoids a services↔work_execution cycle. Raises ValueError → 409.
