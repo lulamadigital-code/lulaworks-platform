@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
-import 'customers_screen.dart';
-import 'dashboard_screen.dart';
+import '../nav/app_nav.dart';
 import 'lulama_screen.dart';
-import 'more_screen.dart';
-import 'projects_screen.dart';
-import 'purchasing_screen.dart';
 
-/// The signed-in app shell. A fixed five-tab bottom bar gives a clear mental
-/// model — Home · CRM · Jobs · Purchasing · More — with permission checks handled
-/// inside each destination (and enforced by the backend).
+/// The signed-in app shell. The bottom bar is built entirely from the central,
+/// permission-driven navigation config ([bottomTabsFor]) — different users get
+/// a bar shaped for their job, with no role checks living here.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.api, required this.onSignOut});
   final ApiClient api;
@@ -23,27 +19,28 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
-  static const _tabs = [
-    ('Home', Icons.dashboard_outlined, Icons.dashboard),
-    ('CRM', Icons.contacts_outlined, Icons.contacts),
-    ('Jobs', Icons.work_outline, Icons.work),
-    ('Purchasing', Icons.shopping_cart_outlined, Icons.shopping_cart),
-    ('More', Icons.apps_outlined, Icons.apps),
-  ];
+  late final NavActions _actions = NavActions(
+    onSignOut: widget.onSignOut,
+    openProjects: () => _goto('jobs'),
+    openLulama: _openLulama,
+  );
 
   @override
   void initState() {
     super.initState();
-    // Resolve role/permissions on launch so gated surfaces are correct.
+    // Resolve role/permissions on launch so the bar (and every gated surface)
+    // is correct. If they changed (e.g. an admin adjusted this user's role),
+    // the next refresh rebuilds the bar — no reinstall needed.
     widget.api.refreshMe().then((_) {
       if (mounted) setState(() {});
     }).catchError((_) {});
   }
 
+  /// Switch to a tab by id (used by in-app shortcuts, e.g. the dashboard).
+  /// No-op if that tab isn't part of this user's bar.
   void _goto(String id) {
-    const map = {'home': 0, 'crm': 1, 'jobs': 2, 'purchasing': 3, 'more': 4};
-    final i = map[id];
-    if (i != null) setState(() => _index = i);
+    final i = bottomTabsFor(widget.api).indexWhere((t) => t.id == id);
+    if (i >= 0) setState(() => _index = i);
   }
 
   void _openLulama() => Navigator.of(context).push(
@@ -51,26 +48,23 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
-      DashboardScreen(
-        api: widget.api,
-        onOpenProjects: () => _goto('jobs'),
-        onOpenLulama: _openLulama,
-      ),
-      CustomersScreen(api: widget.api),
-      ProjectsScreen(api: widget.api, onSignOut: widget.onSignOut),
-      PurchasingScreen(api: widget.api),
-      MoreScreen(api: widget.api, onSignOut: widget.onSignOut),
-    ];
+    final tabs = bottomTabsFor(widget.api);
+    // Guard against a shrinking bar (permissions resolved after first paint).
+    final index = _index.clamp(0, tabs.length - 1);
     return Scaffold(
-      body: IndexedStack(index: _index, children: screens),
+      body: IndexedStack(
+        index: index,
+        children: [for (final t in tabs) t.build(widget.api, _actions)],
+      ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
+        selectedIndex: index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: [
-          for (final t in _tabs)
+          for (final t in tabs)
             NavigationDestination(
-                icon: Icon(t.$2), selectedIcon: Icon(t.$3), label: t.$1),
+                icon: Icon(t.icon),
+                selectedIcon: Icon(t.activeIcon),
+                label: t.label),
         ],
       ),
     );

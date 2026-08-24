@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
+import '../nav/app_nav.dart';
 import '../theme.dart';
 import '../widgets/brand_logo.dart';
 import 'customer_form_screen.dart';
@@ -212,12 +213,29 @@ class _DashboardScreenState extends State<DashboardScreen>
               letterSpacing: -0.4),
           maxLines: 1, overflow: TextOverflow.ellipsis),
       const SizedBox(height: 3),
-      Text(company.isEmpty
-          ? "Here's what needs your attention today."
-          : "Here's what's happening at $company.",
+      Text(_subtitle(company),
           style: const TextStyle(fontSize: 13.5, color: kMuted),
           maxLines: 1, overflow: TextOverflow.ellipsis),
     ]);
+  }
+
+  /// The Home command centre reads differently per persona:
+  ///   owner   → business ("what's happening at Acme")
+  ///   manager → operations ("what your team is working on")
+  ///   employee→ personal ("your work for today") — never company money.
+  String _subtitle(String company) {
+    switch (personaFor(api)) {
+      case AppPersona.employee:
+        return "Here's your work for today.";
+      case AppPersona.manager:
+        return company.isEmpty
+            ? "Here's what your team is working on."
+            : "Here's what your team is working on at $company.";
+      case AppPersona.owner:
+        return company.isEmpty
+            ? "Here's what needs your attention today."
+            : "Here's what's happening at $company.";
+    }
   }
 
   Widget _bell(BuildContext context, int unread) {
@@ -449,6 +467,34 @@ class _DashboardScreenState extends State<DashboardScreen>
         h.tasks.where((t) => '${t['status']}' == 'in_progress').length;
     final done =
         h.tasks.where((t) => _doneStatuses.contains('${t['status']}')).length;
+
+    // Employees get a purely personal scorecard — their tasks, never company
+    // money or company-wide job counts (the Golden Rule).
+    if (personaFor(api) == AppPersona.employee) {
+      final today = _todayPrefix();
+      final dueToday = h.tasks.where((t) {
+        final s = '${t['status']}';
+        if (_doneStatuses.contains(s)) return false;
+        return '${t['due_date'] ?? ''}' == today;
+      }).length;
+      final personal = <_Kpi>[
+        _Kpi('My tasks', '$myOpen', Icons.task_alt,
+            onTap: () => _push(MyTasksScreen(api: api))),
+        _Kpi('Due today', '$dueToday', Icons.today_outlined,
+            onTap: () => _push(MyTasksScreen(api: api))),
+        _Kpi('In progress', '$inProg', Icons.play_circle_outline),
+        _Kpi('Completed', '$done', Icons.check_circle_outline),
+      ];
+      return GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.75,
+        children: [for (final k in personal) _kpiTile(context, k)],
+      );
+    }
 
     final tiles = <_Kpi>[
       _Kpi('Active jobs', '$active', Icons.work_outline, onTap: widget.onOpenProjects),
