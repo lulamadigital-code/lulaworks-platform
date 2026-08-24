@@ -5,13 +5,17 @@ these views scope explicitly to the requesting user's active company. A user
 only ever sees their own company and its members.
 """
 
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from rest_framework import mixins, status, viewsets
 from rest_framework.generics import RetrieveUpdateAPIView
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.permissions import HasPermission
+from apps.core.uploads import validate_upload
 
 from .models import Membership, Permission, Role, User
 from .serializers import (
@@ -23,26 +27,100 @@ from .serializers import (
 )
 
 
+def _me_payload(request):
+    """The shared /me/ shape — user (incl. avatar + phone), job title, active
+    company, resolved role and permission codenames."""
+    user = request.user
+    membership = user.active_membership()
+    perms = []
+    if membership and membership.role_id:
+        perms = list(membership.role.permissions.values_list("codename", flat=True))
+    avatar = None
+    if getattr(user, "avatar", None):
+        try:
+            avatar = request.build_absolute_uri(user.avatar.url)
+        except Exception:  # noqa: BLE001
+            avatar = None
+    return {
+        "user": {
+            "id": str(user.id), "email": user.email,
+            "first_name": user.first_name, "last_name": user.last_name,
+            "full_name": user.get_full_name(),
+            "mobile": user.mobile,
+            "avatar": avatar,
+        },
+        "job_title": membership.job_title if membership else "",
+        "active_company": CompanySerializer(user.active_company).data
+        if user.active_company_id else None,
+        "role": membership.role.name if membership and membership.role_id else None,
+        "permissions": perms,
+    }
+
+
 class MeView(APIView):
-    """Current user, active company, resolved role + permissions."""
+    """Current user + company + role/permissions (GET), and edit the user's own
+    personal details (PATCH). Personal profile only — company data is edited via
+    /company/ by users with company.manage."""
 
     def get(self, request):
+        return Response(_me_payload(request))
+
+    def patch(self, request):
         user = request.user
+        for field in ("first_name", "last_name", "mobile"):
+            if field in request.data:
+                setattr(user, field, request.data[field] or "")
+        user.save(update_fields=["first_name", "last_name", "mobile"])
         membership = user.active_membership()
-        perms = []
-        if membership and membership.role_id:
-            perms = list(membership.role.permissions.values_list("codename", flat=True))
-        return Response({
-            "user": {
-                "id": str(user.id), "email": user.email,
-                "first_name": user.first_name, "last_name": user.last_name,
-                "full_name": user.get_full_name(), "mobile": user.mobile,
-            },
-            "active_company": CompanySerializer(user.active_company).data
-            if user.active_company_id else None,
-            "role": membership.role.name if membership and membership.role_id else None,
-            "permissions": perms,
-        })
+        if membership and "job_title" in request.data:
+            membership.job_title = request.data["job_title"] or ""
+            membership.save(update_fields=["job_title"])
+        return Response(_me_payload(request))
+
+
+class MeAvatarView(APIView):
+    """Upload or remove the signed-in user's profile photo."""
+
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        upload = request.FILES.get("file")
+        if not upload:
+            return Response({"error": {"code": "no_file", "message": "No image uploaded."}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        try:
+            validate_upload(upload, allowed={"png", "jpg", "jpeg", "webp"}, max_mb=5)
+        except ValidationError as exc:
+            return Response({"error": {"code": "invalid_file", "message": " ".join(exc.messages)}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        request.user.avatar = upload
+        request.user.save(update_fields=["avatar"])
+        return Response(_me_payload(request))
+
+    def delete(self, request):
+        request.user.avatar = None
+        request.user.save(update_fields=["avatar"])
+        return Response(_me_payload(request))
+
+
+class MeChangePasswordView(APIView):
+    """Change the signed-in user's own password (current password required)."""
+
+    def post(self, request):
+        user = request.user
+        old = request.data.get("old_password") or ""
+        new = request.data.get("new_password") or ""
+        if not user.check_password(old):
+            return Response({"error": {"code": "invalid", "message": "Current password is incorrect."}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        try:
+            validate_password(new, user=user)
+        except ValidationError as exc:
+            return Response({"error": {"code": "invalid", "message": " ".join(exc.messages)}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        user.set_password(new)
+        user.save(update_fields=["password"])
+        return Response({"ok": True})
 
 
 class CompanyView(RetrieveUpdateAPIView):
