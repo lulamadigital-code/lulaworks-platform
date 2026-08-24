@@ -48,7 +48,7 @@ class MoreScreen extends StatelessWidget {
         _Entry('Estimates', 'Pre-quote costing', Icons.calculate_outlined,
             () => EstimatesScreen(api: api)),
       if (api.canGenerateAi)
-        _Entry('Lulama AI', 'Ask the assistant', Icons.auto_awesome_outlined,
+        _Entry('Lulaworks AI', 'Ask the assistant', Icons.auto_awesome_outlined,
             () => LulamaScreen(api: api)),
     ];
     return Scaffold(

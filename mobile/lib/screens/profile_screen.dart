@@ -216,7 +216,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'estimating.manage': 'Manage estimates',
     'timesheet.approve': 'Approve timesheets',
     'crm.manage': 'Manage CRM',
-    'ai.generate': 'Use Lulama AI',
+    'ai.generate': 'Use Lulaworks AI',
   };
 
   List<String> _capabilities(List<String> perms) => [

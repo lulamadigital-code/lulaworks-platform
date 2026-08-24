@@ -47,7 +47,7 @@ class _LulamaScreenState extends State<LulamaScreen> {
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'Could not reach Lulama.');
+      setState(() => _error = 'Could not reach Lulaworks.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -57,14 +57,14 @@ class _LulamaScreenState extends State<LulamaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Row(children: [
-        Icon(Icons.auto_awesome), SizedBox(width: 8), Text('Lulama'),
+        Icon(Icons.auto_awesome), SizedBox(width: 8), Text('Lulaworks'),
       ])),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text('Your AI Operations Director',
               style: Theme.of(context).textTheme.titleMedium),
-          Text('Lulama coordinates the specialised agents and returns one draft '
+          Text('Lulaworks coordinates the specialised agents and returns one draft '
               'for you to review. It proposes — you approve.',
               style: TextStyle(color: Theme.of(context).colorScheme.outline)),
           const SizedBox(height: 16),
@@ -86,7 +86,7 @@ class _LulamaScreenState extends State<LulamaScreen> {
             minLines: 1,
             maxLines: 3,
             decoration: const InputDecoration(
-                labelText: 'Ask Lulama', border: OutlineInputBorder()),
+                labelText: 'Ask Lulaworks', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           FilledButton.icon(
@@ -161,7 +161,7 @@ class _DraftView extends StatelessWidget {
                       visualDensity: VisualDensity.compact)
                   : null,
             )),
-        Text('Lulama never executes these — a human approves them.',
+        Text('Lulaworks never executes these — a human approves them.',
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.outline)),
       ],

@@ -132,7 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   FilledButton.tonalIcon(
                     onPressed: widget.onOpenLulama,
                     icon: const Icon(Icons.auto_awesome),
-                    label: const Text('Ask Lulama'),
+                    label: const Text('Ask Lulaworks'),
                   ),
                 const SizedBox(height: 24),
               ],
