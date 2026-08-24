@@ -101,9 +101,13 @@ class TaskViewSet(TenantViewSet):
     model = Task
     serializer_class = TaskSerializer
     search_fields = ["name", "status"]
+    # Creating / editing / deleting a task is management (execution.manage).
+    # Progressing a task you're working on — start / complete — is field work,
+    # so a groundfloor worker (work.edit) can do it too.
     required_perms = {"create": "execution.manage", "update": "execution.manage",
                       "partial_update": "execution.manage", "destroy": "execution.manage",
-                      "start": "execution.manage", "complete": "execution.manage"}
+                      "start": ("work.edit", "execution.manage"),
+                      "complete": ("work.edit", "execution.manage")}
 
     def get_queryset(self):
         qs = _project_filtered(
@@ -260,9 +264,17 @@ class TaskReportViewSet(TenantViewSet):
     model = TaskReport
     serializer_class = TaskReportSerializer
     parser_classes = [JSONParser, MultiPartParser, FormParser]
-    required_perms = {"create": "execution.manage", "update": "execution.manage",
-                      "partial_update": "execution.manage", "destroy": "execution.manage",
-                      "photo": "execution.manage", "extract_invoice": "execution.manage"}
+    # Filing a field report IS the field worker's job — accept the granular field
+    # permission (work.edit) as well as the management umbrella. Deleting a
+    # report (destroying captured evidence) stays a management action.
+    required_perms = {
+        "create": ("work.edit", "execution.manage"),
+        "update": ("work.edit", "execution.manage"),
+        "partial_update": ("work.edit", "execution.manage"),
+        "photo": ("work.edit", "execution.manage"),
+        "extract_invoice": ("work.edit", "execution.manage"),
+        "destroy": "execution.manage",
+    }
 
     def get_queryset(self):
         qs = TaskReport.objects.all().select_related("employee", "allocation") \

@@ -372,3 +372,34 @@ class WesApiTests(APITestCase):
         resp = self.client.post("/api/v1/task-reports/", {
             "task": str(self.task.id), "title": "x"}, format="json")
         self.assertEqual(resp.status_code, 403)
+
+    def test_field_worker_can_file_report_but_not_delete_or_create_task(self):
+        """A groundfloor Worker holds work.edit (not execution.manage). Filing a
+        field report is their job, so it must succeed — while deleting a report
+        and creating a task stay management-only."""
+        edit = Permission.objects.create(codename="work.edit", module="work",
+                                         label="Edit work")
+        worker_role = Role.objects.create(name="Worker", is_system=True)
+        worker_role.permissions.add(edit)
+        worker = User.objects.create_user("worker@lulama.co.za", "x",
+                                          active_company=self.company)
+        Membership.objects.create(user=worker, company=self.company,
+                                  role=worker_role)
+        self.client.force_authenticate(worker)
+
+        # CAN file a report.
+        created = self.client.post("/api/v1/task-reports/", {
+            "task": str(self.task.id), "kind": "time_event",
+            "title": "On site", "event": "On site",
+        }, format="json")
+        self.assertEqual(created.status_code, 201, created.data)
+
+        # CANNOT delete a report (destroying evidence is management).
+        deleted = self.client.delete(
+            f"/api/v1/task-reports/{created.data['id']}/")
+        self.assertEqual(deleted.status_code, 403)
+
+        # CANNOT create a task (management action).
+        made = self.client.post("/api/v1/tasks/", {"name": "New task"},
+                                format="json")
+        self.assertEqual(made.status_code, 403)
