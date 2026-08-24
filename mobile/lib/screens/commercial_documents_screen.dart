@@ -6,9 +6,9 @@ import '../theme.dart';
 import '../widgets/status_pill.dart';
 import 'pdf_viewer_screen.dart';
 
-/// Tax invoices & delivery notes. Two tabs over one endpoint (?kind=). Invoices
-/// show money (Golden-Rule gated); delivery notes show quantities only — the
-/// backend never sends prices for them (§15), so there's nothing to leak here.
+/// Tax invoices & delivery notes over one endpoint (?kind=). Invoices show money
+/// (Golden-Rule gated); delivery notes show quantities only — the backend never
+/// sends prices for them (§15), so there's nothing to leak here.
 class CommercialDocumentsScreen extends StatelessWidget {
   const CommercialDocumentsScreen({super.key, required this.api});
   final ApiClient api;
@@ -20,6 +20,7 @@ class CommercialDocumentsScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Invoices & delivery'),
+          scrolledUnderElevation: 1,
           bottom: const TabBar(tabs: [
             Tab(text: 'Tax invoices'),
             Tab(text: 'Delivery notes'),
@@ -43,8 +44,7 @@ class _DocList extends StatefulWidget {
   State<_DocList> createState() => _DocListState();
 }
 
-class _DocListState extends State<_DocList>
-    with AutomaticKeepAliveClientMixin {
+class _DocListState extends State<_DocList> with AutomaticKeepAliveClientMixin {
   late Future<List<Map<String, dynamic>>> _future = _load();
 
   @override
@@ -56,72 +56,128 @@ class _DocListState extends State<_DocList>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final isInvoice = widget.kind == 'invoice';
     return RefreshIndicator(
+      color: kBrand,
       onRefresh: () async => setState(() { _future = _load(); }),
       child: FutureBuilder<List<Map<String, dynamic>>>(
         future: _future,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const _CardsSkeleton();
           }
           if (snap.hasError) {
             return ListView(children: [
-              const SizedBox(height: 100),
+              const SizedBox(height: 120),
+              const Icon(Icons.cloud_off, size: 44, color: kMuted),
+              const SizedBox(height: 12),
               Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
             ]);
           }
           final rows = snap.data ?? const [];
           if (rows.isEmpty) {
             return ListView(children: [
-              const SizedBox(height: 120),
-              Center(child: Text('No ${widget.kind == 'invoice' ? 'invoices' : 'delivery notes'} yet.')),
+              const SizedBox(height: 130),
+              Icon(isInvoice ? Icons.receipt_long_outlined : Icons.local_shipping_outlined,
+                  size: 46, color: kMuted),
+              const SizedBox(height: 12),
+              Center(
+                  child: Text('No ${isInvoice ? 'invoices' : 'delivery notes'} yet.')),
             ]);
           }
-          return ListView.separated(
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
             itemCount: rows.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, i) {
-              final d = rows[i];
-              final isInvoice = d['kind'] == 'invoice';
-              return ListTile(
-                title: Text('${d['number']}  ·  ${d['client_name'] ?? ''}',
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: isInvoice
-                    ? _invoiceSubtitle(context, d)
-                    : Text('${d['quotation_number'] ?? ''}'),
-                trailing: StatusPill(status: '${d['status']}'),
-                onTap: () async {
-                  final changed = await Navigator.of(context).push<bool>(
-                      MaterialPageRoute(
-                          builder: (_) => _DocDetail(
-                              api: widget.api, docId: '${d['id']}')));
-                  if (changed == true) setState(() { _future = _load(); });
-                },
-              );
-            },
+            itemBuilder: (context, i) => _DocCard(
+              api: widget.api,
+              row: rows[i],
+              onReturn: () => setState(() { _future = _load(); }),
+            ),
           );
         },
       ),
     );
   }
+}
 
-  Widget _invoiceSubtitle(BuildContext context, Map<String, dynamic> d) {
-    final state = '${d['payment_state'] ?? ''}';
-    final total = widget.api.money(d['total']);
-    if (state.isEmpty) return Text(total);
-    final color = state == 'paid'
-        ? kGreen
-        : state == 'part'
-            ? kOrange
-            : kRed;
-    return Row(children: [
-      Text('$total · '),
-      Text(state == 'paid' ? 'Paid' : state == 'part' ? 'Part-paid' : 'Unpaid',
-          style: TextStyle(color: color, fontWeight: FontWeight.w600)),
-    ]);
+class _DocCard extends StatelessWidget {
+  const _DocCard({required this.api, required this.row, required this.onReturn});
+  final ApiClient api;
+  final Map<String, dynamic> row;
+  final VoidCallback onReturn;
+
+  @override
+  Widget build(BuildContext context) {
+    final isInvoice = row['kind'] == 'invoice';
+    final state = '${row['payment_state'] ?? ''}';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () async {
+            final changed = await Navigator.of(context).push<bool>(MaterialPageRoute(
+                builder: (_) => _DocDetail(api: api, docId: '${row['id']}')));
+            if (changed == true) onReturn();
+          },
+          child: Container(
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: kLine)),
+            padding: const EdgeInsets.all(15),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(
+                  child: Text('${row['number']}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700, color: kInk)),
+                ),
+                const SizedBox(width: 8),
+                StatusPill(status: '${row['status']}'),
+              ]),
+              const SizedBox(height: 3),
+              Text('${row['client_name'] ?? row['quotation_number'] ?? ''}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12.5, color: kMuted)),
+              if (isInvoice) ...[
+                const SizedBox(height: 8),
+                Row(children: [
+                  Text(api.money(row['total']),
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700, color: kBrandDark)),
+                  const Spacer(),
+                  if (state.isNotEmpty) _payBadge(state),
+                ]),
+              ],
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _payBadge(String state) {
+    final (Color c, String label) = switch (state) {
+      'paid' => (kGreen, 'Paid'),
+      'part' => (kOrange, 'Part-paid'),
+      _ => (kRed, 'Unpaid'),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+          color: c.withOpacity(0.13), borderRadius: BorderRadius.circular(8)),
+      child: Text(label,
+          style: TextStyle(color: c, fontSize: 11.5, fontWeight: FontWeight.w600)),
+    );
   }
 }
 
+// ── Detail ───────────────────────────────────────────────────────────────────
 class _DocDetail extends StatefulWidget {
   const _DocDetail({required this.api, required this.docId});
   final ApiClient api;
@@ -211,6 +267,7 @@ class _DocDetailState extends State<_DocDetail> {
         return Scaffold(
           appBar: AppBar(
             title: Text('${doc?['number'] ?? 'Document'}'),
+            scrolledUnderElevation: 1,
             leading: BackButton(onPressed: () => Navigator.pop(context, _changed)),
             actions: [
               if (doc != null && widget.api.canDownloadPdf)
@@ -227,7 +284,7 @@ class _DocDetailState extends State<_DocDetail> {
             ],
           ),
           body: doc == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator(color: kBrand))
               : (doc['kind'] == 'invoice'
                   ? _invoiceBody(context, snap.data!)
                   : _deliveryBody(context, snap.data!)),
@@ -241,52 +298,50 @@ class _DocDetailState extends State<_DocDetail> {
     final lines = (doc['lines'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
     final outstanding = double.tryParse('${doc['outstanding']}') ?? 0;
     final payments = (doc['payments'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
-    return ListView(padding: const EdgeInsets.all(16), children: [
+    return ListView(padding: const EdgeInsets.fromLTRB(20, 16, 20, 32), children: [
       _headerRow(context, doc),
-      const SizedBox(height: 16),
-      Text('Line items', style: Theme.of(context).textTheme.titleSmall),
-      const SizedBox(height: 6),
-      for (final l in lines)
-        Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            dense: true,
-            title: Text('${l['description'] ?? '—'}'),
-            subtitle: Text('${l['qty']} ${l['unit'] ?? ''}'
-                ' × ${widget.api.money(l['unit_price'])}'),
-            trailing: Text(widget.api.money(l['line_total']),
-                style: const TextStyle(fontWeight: FontWeight.w600)),
-          ),
-        ),
-      const Divider(height: 24),
-      _amount(context, 'Invoice total', widget.api.money(doc['total']), bold: true),
-      _amount(context, 'Paid', widget.api.money(doc['amount_paid'])),
-      _amount(context, 'Outstanding', widget.api.money(doc['outstanding']),
-          color: outstanding > 0 ? kRed : kGreen),
-      if (payments.isNotEmpty) ...[
-        const SizedBox(height: 16),
-        Text('Payments', style: Theme.of(context).textTheme.titleSmall),
-        for (final p in payments)
-          ListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.payments_outlined, size: 20),
-            title: Text(widget.api.money(p['amount'])),
-            subtitle: Text('${p['date'] ?? ''}'
-                '${'${p['reference'] ?? ''}'.isNotEmpty ? ' · ${p['reference']}' : ''}'),
-          ),
-      ],
       const SizedBox(height: 20),
-      Row(children: [
-        if (outstanding > 0 && widget.api.canRecordPayment)
-          Expanded(
-            child: FilledButton.tonalIcon(
-              onPressed: _recordPayment,
-              icon: const Icon(Icons.add_card),
-              label: const Text('Record payment'),
+      _label('LINE ITEMS'),
+      const SizedBox(height: 10),
+      _card(Column(children: [
+        for (int i = 0; i < lines.length; i++) ...[
+          if (i > 0) const Divider(height: 1),
+          _priceLine(context, lines[i]),
+        ],
+        const Divider(height: 1),
+        _amount(context, 'Invoice total', widget.api.money(doc['total']), bold: true),
+        _amount(context, 'Paid', widget.api.money(doc['amount_paid'])),
+        _amount(context, 'Outstanding', widget.api.money(doc['outstanding']),
+            color: outstanding > 0 ? kRed : kGreen),
+        const SizedBox(height: 6),
+      ])),
+      if (payments.isNotEmpty) ...[
+        const SizedBox(height: 18),
+        _label('PAYMENTS'),
+        const SizedBox(height: 10),
+        _card(Column(children: [
+          for (int i = 0; i < payments.length; i++) ...[
+            if (i > 0) const Divider(height: 1),
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.payments_outlined, size: 20, color: kMuted),
+              title: Text(widget.api.money(payments[i]['amount']),
+                  style: const TextStyle(fontWeight: FontWeight.w600, color: kInk)),
+              subtitle: Text('${payments[i]['date'] ?? ''}'
+                  '${'${payments[i]['reference'] ?? ''}'.isNotEmpty ? ' · ${payments[i]['reference']}' : ''}',
+                  style: const TextStyle(color: kMuted)),
             ),
-          ),
-      ]),
+          ],
+        ])),
+      ],
+      if (outstanding > 0 && widget.api.canRecordPayment) ...[
+        const SizedBox(height: 18),
+        FilledButton.tonalIcon(
+          onPressed: _recordPayment,
+          icon: const Icon(Icons.add_card),
+          label: const Text('Record payment'),
+        ),
+      ],
       _workflow(context, d),
     ]);
   }
@@ -294,34 +349,35 @@ class _DocDetailState extends State<_DocDetail> {
   Widget _deliveryBody(BuildContext context, _Doc d) {
     final doc = d.doc;
     final lines = (doc['lines'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
-    return ListView(padding: const EdgeInsets.all(16), children: [
+    return ListView(padding: const EdgeInsets.fromLTRB(20, 16, 20, 32), children: [
       _headerRow(context, doc),
-      const SizedBox(height: 8),
+      const SizedBox(height: 6),
       if ('${doc['delivery_address'] ?? ''}'.isNotEmpty)
         Text('Deliver to: ${doc['delivery_address']}',
-            style: Theme.of(context).textTheme.bodyMedium),
+            style: const TextStyle(fontSize: 13, color: kMuted)),
       if ('${doc['delivery_date'] ?? ''}'.isNotEmpty)
         Text('Date: ${doc['delivery_date']}',
-            style: Theme.of(context).textTheme.bodyMedium),
-      const SizedBox(height: 16),
-      Text('Items delivered (${lines.length})',
-          style: Theme.of(context).textTheme.titleSmall),
-      const SizedBox(height: 6),
+            style: const TextStyle(fontSize: 13, color: kMuted)),
+      const SizedBox(height: 18),
+      _label('ITEMS DELIVERED  ·  ${lines.length}'),
+      const SizedBox(height: 10),
       // Quantities only — a delivery note never shows prices (§15).
-      for (final l in lines)
-        Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
+      _card(Column(children: [
+        for (int i = 0; i < lines.length; i++) ...[
+          if (i > 0) const Divider(height: 1),
+          ListTile(
             dense: true,
-            title: Text('${l['description'] ?? '—'}'),
-            trailing: Text('${l['qty']} ${l['unit'] ?? ''}',
-                style: const TextStyle(fontWeight: FontWeight.w600)),
+            title: Text('${lines[i]['description'] ?? '—'}',
+                style: const TextStyle(color: kInk)),
+            trailing: Text('${lines[i]['qty']} ${lines[i]['unit'] ?? ''}',
+                style: const TextStyle(fontWeight: FontWeight.w600, color: kInk)),
           ),
-        ),
+        ],
+      ])),
       if ('${doc['delivery_notes'] ?? ''}'.isNotEmpty) ...[
         const SizedBox(height: 12),
-        Text('Notes', style: Theme.of(context).textTheme.labelLarge),
-        Text('${doc['delivery_notes']}'),
+        Text('${doc['delivery_notes']}',
+            style: const TextStyle(fontSize: 13, color: kInk)),
       ],
       _workflow(context, d),
     ]);
@@ -332,12 +388,14 @@ class _DocDetailState extends State<_DocDetail> {
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('${doc['client_name'] ?? ''}',
-              style: Theme.of(context).textTheme.titleMedium),
+              style: const TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.w700, color: kInk)),
           if ('${doc['quotation_number'] ?? ''}'.isNotEmpty)
             Text('From ${doc['quotation_number']}',
-                style: Theme.of(context).textTheme.bodySmall),
+                style: const TextStyle(fontSize: 12.5, color: kMuted)),
         ]),
       ),
+      const SizedBox(width: 8),
       StatusPill(status: '${doc['status']}'),
     ]);
   }
@@ -349,8 +407,8 @@ class _DocDetailState extends State<_DocDetail> {
     }
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const SizedBox(height: 20),
-      Text('Move to', style: Theme.of(context).textTheme.titleSmall),
-      const SizedBox(height: 8),
+      _label('MOVE TO'),
+      const SizedBox(height: 10),
       Wrap(spacing: 8, runSpacing: 8, children: [
         for (final n in next)
           FilledButton.tonal(
@@ -358,21 +416,59 @@ class _DocDetailState extends State<_DocDetail> {
             child: Text('${n['label']}'),
           ),
       ]),
-      const SizedBox(height: 24),
     ]);
+  }
+
+  Widget _label(String s) => Text(s,
+      style: const TextStyle(
+          fontSize: 11.5, fontWeight: FontWeight.w700,
+          letterSpacing: 0.6, color: kMuted));
+
+  Widget _card(Widget child) => Container(
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: kLine)),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: child,
+      );
+
+  Widget _priceLine(BuildContext context, Map<String, dynamic> l) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('${l['description'] ?? '—'}',
+                style: const TextStyle(fontSize: 13.5, color: kInk)),
+            const SizedBox(height: 2),
+            Text('${l['qty'] ?? ''} ${l['unit'] ?? ''} × ${widget.api.money(l['unit_price'])}',
+                style: const TextStyle(fontSize: 12, color: kMuted)),
+          ]),
+        ),
+        const SizedBox(width: 10),
+        Text(widget.api.money(l['line_total']),
+            style: const TextStyle(
+                fontSize: 13.5, fontWeight: FontWeight.w600, color: kInk)),
+      ]),
+    );
   }
 
   Widget _amount(BuildContext context, String label, String value,
       {bool bold = false, Color? color}) {
-    final style = (bold
-            ? Theme.of(context).textTheme.titleMedium
-            : Theme.of(context).textTheme.bodyMedium)
-        ?.copyWith(color: color, fontWeight: bold ? FontWeight.bold : null);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(label, style: style),
-        Text(value, style: style),
+        Text(label,
+            style: TextStyle(
+                fontSize: bold ? 15 : 13,
+                fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+                color: bold ? kInk : kMuted)),
+        Text(value,
+            style: TextStyle(
+                fontSize: bold ? 16 : 13.5,
+                fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+                color: color ?? (bold ? kBrandDark : kInk))),
       ]),
     );
   }
@@ -382,4 +478,23 @@ class _Doc {
   _Doc({required this.doc, required this.workflow});
   final Map<String, dynamic> doc;
   final Map<String, dynamic> workflow;
+}
+
+class _CardsSkeleton extends StatelessWidget {
+  const _CardsSkeleton();
+  @override
+  Widget build(BuildContext context) {
+    Widget card() => Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          height: 92,
+          decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: kLine)),
+        );
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      children: List.generate(5, (_) => card()),
+    );
+  }
 }
