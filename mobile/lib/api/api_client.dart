@@ -32,6 +32,11 @@ class ApiClient {
   String? _refresh;
   late String _origin;
 
+  /// Called when a request gets 401 and the refresh token can't renew it — the
+  /// session is dead. The app wires this to force a sign-out → login screen, so
+  /// an expired token never traps the user on an error page.
+  void Function()? onAuthFailure;
+
   // Cached identity from /me/ — the resolved role and permission codenames that
   // drive which surfaces the app shows. Persisted so a returning user sees the
   // right app before the network round-trip completes.
@@ -275,8 +280,9 @@ class ApiClient {
         resp = await http.get(uri, headers: headers);
     }
 
-    if (resp.statusCode == 401 && retry && await _tryRefresh()) {
-      return _send(method, path, body, false);
+    if (resp.statusCode == 401 && retry) {
+      if (await _tryRefresh()) return _send(method, path, body, false);
+      onAuthFailure?.call(); // refresh failed → the session is dead
     }
     if (resp.statusCode >= 200 && resp.statusCode < 300) {
       return resp.bodyBytes.isEmpty ? null : _decode(resp);

@@ -22,6 +22,18 @@ class LulaworksApp extends StatefulWidget {
 class _LulaworksAppState extends State<LulaworksApp> {
   late bool _signedIn = widget.api.isAuthenticated;
 
+  @override
+  void initState() {
+    super.initState();
+    // A dead session (401 + refresh fails) drops the user back to login instead
+    // of trapping them on an error screen.
+    widget.api.onAuthFailure = () {
+      if (!_signedIn) return;
+      widget.api.logout();
+      if (mounted) setState(() => _signedIn = false);
+    };
+  }
+
   void _onSignedIn() => setState(() => _signedIn = true);
   Future<void> _onSignOut() async {
     await widget.api.logout();

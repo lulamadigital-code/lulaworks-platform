@@ -101,7 +101,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 return _LoadingView(pulse: _pulse);
               }
               if (snap.hasError) {
-                return _ErrorView(onRetry: _refresh);
+                return _ErrorView(onRetry: _refresh, error: snap.error);
               }
               return _content(context, snap.data!);
             },
@@ -895,11 +895,26 @@ class _Shimmer extends StatelessWidget {
 
 // ── Error ────────────────────────────────────────────────────────────────────
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.onRetry});
+  const _ErrorView({required this.onRetry, this.error});
   final Future<void> Function() onRetry;
+  final Object? error;
+
+  String get _message {
+    final e = error;
+    if (e is ApiException) {
+      if (e.isAuth) return 'Your session expired. Please sign in again.';
+      return e.message;
+    }
+    final s = '$e';
+    if (s.contains('SocketException') || s.contains('Connection')) {
+      return "Can't reach the server. Check your connection.";
+    }
+    return "We couldn't load your dashboard.";
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView(children: [
+    return ListView(padding: const EdgeInsets.symmetric(horizontal: 32), children: [
       const SizedBox(height: 140),
       const Icon(Icons.cloud_off, size: 48, color: kMuted),
       const SizedBox(height: 14),
@@ -907,10 +922,11 @@ class _ErrorView extends StatelessWidget {
         child: Text('Something went wrong',
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: kInk)),
       ),
-      const SizedBox(height: 4),
-      const Center(
-        child: Text("We couldn't load your dashboard.",
-            style: TextStyle(fontSize: 13.5, color: kMuted)),
+      const SizedBox(height: 6),
+      Center(
+        child: Text(_message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13.5, color: kMuted)),
       ),
       const SizedBox(height: 20),
       Center(
