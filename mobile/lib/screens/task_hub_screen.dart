@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../api/api_client.dart';
+import '../api/report_store.dart';
 import '../theme.dart';
 import 'report_capture_screen.dart';
 import 'task_chat_screen.dart';
@@ -22,23 +23,35 @@ class TaskHubScreen extends StatefulWidget {
 }
 
 class _TaskHubScreenState extends State<TaskHubScreen> {
+  final _reportStore = ReportStore();
   late Future<Map<String, dynamic>> _future = _load();
   bool _busy = false;
+  int _pendingReports = 0;
   Map<String, dynamic>? _completion; // cached from the last render, for the editor
 
-  Future<Map<String, dynamic>> _load() async =>
-      await widget.api.get('/tasks/${widget.taskId}/operational/')
-          as Map<String, dynamic>;
+  Future<Map<String, dynamic>> _load() async {
+    // Best-effort sync of any reports captured offline, then load the hub.
+    try {
+      await _reportStore.flush(widget.api);
+    } catch (_) {/* stay offline-friendly */}
+    _pendingReports = await _reportStore.pendingCount();
+    return await widget.api.get('/tasks/${widget.taskId}/operational/')
+        as Map<String, dynamic>;
+  }
 
   void _reload() => setState(() { _future = _load(); });
 
   Future<void> _addReport() async {
-    final saved = await Navigator.push<bool>(
+    final saved = await Navigator.push<Object?>(
       context,
       MaterialPageRoute(
           builder: (_) => ReportCaptureScreen(api: widget.api, taskId: widget.taskId)),
     );
-    if (saved == true) _reload();
+    if (saved == 'offline' && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Report saved offline — it will sync automatically.')));
+    }
+    if (saved != null) _reload();
   }
 
   Future<void> _taskAction(String path, String done) async {
@@ -244,6 +257,10 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
       children: [
+        if (_pendingReports > 0) ...[
+          _pendingBanner(),
+          const SizedBox(height: 12),
+        ],
         _metaHeader(context, task),
         const SizedBox(height: 16),
         _primaryAction(context, status, completion),
@@ -428,6 +445,24 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
       ]),
     );
   }
+
+  Widget _pendingBanner() => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+            color: kOrange.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: kOrange.withOpacity(0.3))),
+        child: Row(children: [
+          const Icon(Icons.sync, color: kOrange, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+                '$_pendingReports report${_pendingReports == 1 ? '' : 's'} saved '
+                'offline — pending sync.',
+                style: const TextStyle(fontSize: 13, color: kInk)),
+          ),
+        ]),
+      );
 
   Widget _banner(Color c, IconData icon, String text) => Container(
         padding: const EdgeInsets.all(16),

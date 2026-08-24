@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../api/report_store.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../widgets/brand_logo.dart';
@@ -26,6 +27,10 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
   late Future<_FieldHome> _future = _load();
 
   Future<_FieldHome> _load() async {
+    // Sync anything captured offline (reports/photos) when we regain signal.
+    try {
+      await ReportStore().flush(widget.api);
+    } catch (_) {/* offline-friendly */}
     final tasks = pageResults(await widget.api.get('/tasks/?mine=1'));
     int unread = 0;
     try {

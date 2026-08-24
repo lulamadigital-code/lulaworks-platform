@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../api/api_client.dart';
+import '../api/report_store.dart';
 
 /// Capture a field report against a task — the heart of the Work Execution
 /// System on mobile. Every report records who/when/where (GPS) and, for a
@@ -143,14 +144,26 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
         body['invoice_number'] = _invoiceNo.text.trim();
         if (_amount.text.trim().isNotEmpty) body['amount'] = _amount.text.trim();
       }
-      final report = await widget.api.post('/task-reports/', body)
-          as Map<String, dynamic>;
-      if (_photo != null) {
-        await widget.api.postMultipart(
-            '/task-reports/${report['id']}/photo/', filePath: _photo!.path);
+      try {
+        final report = await widget.api.post('/task-reports/', body)
+            as Map<String, dynamic>;
+        if (_photo != null) {
+          await widget.api.postMultipart(
+              '/task-reports/${report['id']}/photo/', filePath: _photo!.path);
+        }
+      } catch (e) {
+        // A real server rejection (permission/validation) should surface; a
+        // connectivity failure means "no signal" → queue it to sync later.
+        if (e is ApiException) rethrow;
+        await ReportStore().enqueue(body, photoPath: _photo?.path);
+        if (!mounted) return;
+        Navigator.pop(context, 'offline');
+        return;
       }
       if (!mounted) return;
       Navigator.pop(context, true);
+    } on ApiException catch (e) {
+      _snack(e.message);
     } catch (e) {
       _snack('$e');
     } finally {
