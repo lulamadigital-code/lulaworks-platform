@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../theme.dart';
+import '../widgets/lula_ui.dart';
 
 /// Create or edit a customer. On create the backend generates the code and seeds
-/// default departments (via the create_customer service); on edit we PATCH only
-/// the fields shown here.
+/// default departments (via create_customer); on edit we PATCH the shown fields.
 class CustomerFormScreen extends StatefulWidget {
   const CustomerFormScreen({super.key, required this.api, this.existing});
   final ApiClient api;
@@ -25,17 +26,18 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     ('prospect', 'Prospect'), ('active', 'Active'), ('on_hold', 'On hold'),
     ('dormant', 'Dormant'), ('blacklisted', 'Blacklisted'),
   ];
-  static const _textFields = <(String, String, TextInputType)>[
-    ('name', 'Registered name *', TextInputType.text),
-    ('trading_name', 'Trading name', TextInputType.text),
-    ('registration_no', 'Registration number', TextInputType.text),
-    ('vat_no', 'VAT number', TextInputType.text),
-    ('email', 'Email', TextInputType.emailAddress),
-    ('telephone', 'Telephone', TextInputType.phone),
-    ('mobile', 'Mobile', TextInputType.phone),
-    ('city', 'City', TextInputType.text),
-    ('province', 'Province', TextInputType.text),
-    ('notes', 'Notes', TextInputType.multiline),
+  // (key, label, keyboard, required, multiline)
+  static const _textFields = <(String, String, TextInputType, bool, bool)>[
+    ('name', 'Registered name', TextInputType.text, true, false),
+    ('trading_name', 'Trading name', TextInputType.text, false, false),
+    ('registration_no', 'Registration number', TextInputType.text, false, false),
+    ('vat_no', 'VAT number', TextInputType.text, false, false),
+    ('email', 'Email', TextInputType.emailAddress, false, false),
+    ('telephone', 'Telephone', TextInputType.phone, false, false),
+    ('mobile', 'Mobile', TextInputType.phone, false, false),
+    ('city', 'City', TextInputType.text, false, false),
+    ('province', 'Province', TextInputType.text, false, false),
+    ('notes', 'Notes', TextInputType.multiline, false, true),
   ];
 
   final _c = <String, TextEditingController>{};
@@ -66,6 +68,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
   }
 
   Future<void> _save() async {
+    FocusScope.of(context).unfocus();
     if (_c['name']!.text.trim().isEmpty) {
       setState(() => _error = 'A registered name is required.');
       return;
@@ -102,35 +105,35 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? 'Edit customer' : 'New customer')),
+      appBar: AppBar(
+          title: Text(_isEdit ? 'Edit customer' : 'New customer'),
+          scrolledUnderElevation: 1),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         children: [
           for (final f in _textFields) ...[
-            TextField(
-              controller: _c[f.$1],
+            LulaTextField(
+              controller: _c[f.$1]!,
+              label: f.$2,
               keyboardType: f.$3,
-              maxLines: f.$1 == 'notes' ? 3 : 1,
-              decoration: InputDecoration(
-                  labelText: f.$2, border: const OutlineInputBorder()),
+              required: f.$4,
+              maxLines: f.$5 ? 3 : 1,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
           ],
-          DropdownButtonFormField<String>(
+          LulaDropdown<String>(
+            label: 'Type',
             value: _type,
-            decoration: const InputDecoration(
-                labelText: 'Type', border: OutlineInputBorder()),
             items: [
               for (final t in _types)
                 DropdownMenuItem(value: t.$1, child: Text(t.$2)),
             ],
             onChanged: (v) => setState(() => _type = v ?? ''),
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
+          const SizedBox(height: 16),
+          LulaDropdown<String>(
+            label: 'Status',
             value: _status,
-            decoration: const InputDecoration(
-                labelText: 'Status', border: OutlineInputBorder()),
             items: [
               for (final s in _statuses)
                 DropdownMenuItem(value: s.$1, child: Text(s.$2)),
@@ -138,20 +141,15 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
             onChanged: (v) => setState(() => _status = v ?? 'active'),
           ),
           if (_error != null) ...[
-            const SizedBox(height: 14),
-            Text(_error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            const SizedBox(height: 16),
+            Text(_error!, style: const TextStyle(color: kRed, fontSize: 13)),
           ],
-          const SizedBox(height: 20),
-          FilledButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.save),
-            label: Text(_saving ? 'Saving…' : 'Save'),
+          const SizedBox(height: 22),
+          LulaButton(
+            label: _isEdit ? 'Save changes' : 'Create customer',
+            loadingLabel: 'Saving…',
+            loading: _saving,
+            onPressed: _save,
           ),
           const SizedBox(height: 24),
         ],

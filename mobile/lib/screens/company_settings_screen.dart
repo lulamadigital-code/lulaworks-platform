@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../theme.dart';
+import '../widgets/lula_ui.dart';
 
 /// Company profile editor — the admin/owner surface for company.manage. Reads
 /// /company/ and PATCHes the editable fields. The backend rejects the write with
@@ -14,18 +16,17 @@ class CompanySettingsScreen extends StatefulWidget {
 }
 
 class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
-  // The editable text fields we expose, in display order.
-  static const _fields = <(String, String, TextInputType)>[
-    ('name', 'Registered name', TextInputType.text),
-    ('trading_name', 'Trading name', TextInputType.text),
-    ('registration_no', 'Registration number', TextInputType.text),
-    ('vat_no', 'VAT number', TextInputType.text),
-    ('city', 'City', TextInputType.text),
-    ('province', 'Province', TextInputType.text),
-    ('country', 'Country', TextInputType.text),
+  static const _fields = <(String, String, bool)>[
+    ('name', 'Registered name', true),
+    ('trading_name', 'Trading name', false),
+    ('registration_no', 'Registration number', false),
+    ('vat_no', 'VAT number', false),
+    ('city', 'City', false),
+    ('province', 'Province', false),
+    ('country', 'Country', false),
   ];
 
-  final _controllers = <String, TextEditingController>{};
+  final _c = <String, TextEditingController>{};
   bool _loading = true;
   bool _saving = false;
   String? _error;
@@ -40,8 +41,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     try {
       final c = (await widget.api.get('/company/') as Map).cast<String, dynamic>();
       for (final f in _fields) {
-        _controllers[f.$1] =
-            TextEditingController(text: '${c[f.$1] ?? ''}');
+        _c[f.$1] = TextEditingController(text: '${c[f.$1] ?? ''}');
       }
     } catch (e) {
       _error = '$e';
@@ -51,7 +51,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
 
   @override
   void dispose() {
-    for (final c in _controllers.values) {
+    for (final c in _c.values) {
       c.dispose();
     }
     super.dispose();
@@ -63,12 +63,12 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
       _error = null;
     });
     final body = <String, dynamic>{
-      for (final f in _fields) f.$1: _controllers[f.$1]!.text.trim(),
+      for (final f in _fields) f.$1: _c[f.$1]!.text.trim(),
     };
     final messenger = ScaffoldMessenger.of(context);
     try {
       await widget.api.patch('/company/', body);
-      await widget.api.refreshMe(); // keep the cached company name in sync
+      await widget.api.refreshMe();
       if (!mounted) return;
       messenger.showSnackBar(const SnackBar(content: Text('Company saved')));
       Navigator.of(context).pop(true);
@@ -86,35 +86,30 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Company settings')),
+      appBar: AppBar(title: const Text('Company profile'), scrolledUnderElevation: 1),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: kBrand))
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               children: [
                 for (final f in _fields) ...[
-                  TextField(
-                    controller: _controllers[f.$1],
-                    keyboardType: f.$3,
-                    decoration: InputDecoration(
-                        labelText: f.$2, border: const OutlineInputBorder()),
+                  LulaTextField(
+                    controller: _c[f.$1]!,
+                    label: f.$2,
+                    required: f.$3,
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
                 ],
                 if (_error != null) ...[
-                  Text(_error!,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  Text(_error!, style: const TextStyle(color: kRed, fontSize: 13)),
                   const SizedBox(height: 12),
                 ],
-                FilledButton.icon(
-                  onPressed: _saving ? null : _save,
-                  icon: _saving
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.save),
-                  label: Text(_saving ? 'Saving…' : 'Save changes'),
+                const SizedBox(height: 4),
+                LulaButton(
+                  label: 'Save changes',
+                  loadingLabel: 'Saving…',
+                  loading: _saving,
+                  onPressed: _save,
                 ),
                 const SizedBox(height: 24),
               ],

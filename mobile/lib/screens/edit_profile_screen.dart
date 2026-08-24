@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../api/api_client.dart';
 import '../theme.dart';
+import '../widgets/lula_ui.dart';
 import '../widgets/user_avatar.dart';
 
 /// Edit the signed-in user's PERSONAL details only (name, mobile, job title,
@@ -181,46 +182,43 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ]),
           ),
           const SizedBox(height: 24),
-          _field(_first, 'First name', TextInputType.name),
-          _field(_last, 'Last name', TextInputType.name),
-          _field(_mobile, 'Mobile', TextInputType.phone),
-          _field(_jobTitle, 'Job title', TextInputType.text),
+          LulaTextField(
+              controller: _first,
+              label: 'First name',
+              required: true,
+              keyboardType: TextInputType.name,
+              onChanged: (_) => setState(() {})),
+          const SizedBox(height: 16),
+          LulaTextField(
+              controller: _last,
+              label: 'Last name',
+              keyboardType: TextInputType.name,
+              onChanged: (_) => setState(() {})),
+          const SizedBox(height: 16),
+          LulaTextField(
+              controller: _mobile, label: 'Mobile', keyboardType: TextInputType.phone),
+          const SizedBox(height: 16),
+          LulaTextField(controller: _jobTitle, label: 'Job title'),
+          const SizedBox(height: 16),
           // Email is the login identifier — shown read-only.
-          TextField(
-            controller: TextEditingController(text: '${_user['email'] ?? ''}'),
-            enabled: false,
-            decoration: const InputDecoration(
-                labelText: 'Email (sign-in)', border: OutlineInputBorder()),
-          ),
+          LulaTextField(
+              controller: TextEditingController(text: '${_user['email'] ?? ''}'),
+              label: 'Email (sign-in)',
+              enabled: false),
           if (_error != null) ...[
             const SizedBox(height: 14),
-            Text(_error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(_error!, style: const TextStyle(color: kRed, fontSize: 13)),
           ],
           const SizedBox(height: 22),
-          FilledButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox(
-                    width: 18, height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.save),
-            label: Text(_saving ? 'Saving…' : 'Save changes'),
+          LulaButton(
+            label: 'Save changes',
+            loadingLabel: 'Saving…',
+            loading: _saving,
+            onPressed: _save,
           ),
           const SizedBox(height: 24),
         ],
       ),
     );
   }
-
-  Widget _field(TextEditingController c, String label, TextInputType kb) => Padding(
-        padding: const EdgeInsets.only(bottom: 14),
-        child: TextField(
-          controller: c,
-          keyboardType: kb,
-          onChanged: (_) => setState(() {}),
-          decoration:
-              InputDecoration(labelText: label, border: const OutlineInputBorder()),
-        ),
-      );
 }

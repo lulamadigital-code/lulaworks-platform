@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../theme.dart';
+import '../widgets/lula_ui.dart';
 
 /// Change the signed-in user's own password. Requires the current password;
 /// the backend validates strength and rejects a wrong current password.
@@ -29,6 +31,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
     if (_next.text != _confirm.text) {
       setState(() => _error = "The new passwords don't match.");
       return;
@@ -61,49 +64,49 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Widget eye() => IconButton(
+          icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+              size: 20, color: kMuted),
+          onPressed: () => setState(() => _obscure = !_obscure),
+        );
     return Scaffold(
-      appBar: AppBar(title: const Text('Change password')),
+      appBar: AppBar(title: const Text('Change password'), scrolledUnderElevation: 1),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _pwField(_current, 'Current password'),
-          _pwField(_next, 'New password'),
-          _pwField(_confirm, 'Confirm new password'),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () => setState(() => _obscure = !_obscure),
-              icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off, size: 18),
-              label: Text(_obscure ? 'Show' : 'Hide'),
-            ),
-          ),
+          LulaTextField(
+              controller: _current,
+              label: 'Current password',
+              obscureText: _obscure,
+              required: true,
+              suffix: eye()),
+          const SizedBox(height: 16),
+          LulaTextField(
+              controller: _next,
+              label: 'New password',
+              obscureText: _obscure,
+              required: true,
+              suffix: eye()),
+          const SizedBox(height: 16),
+          LulaTextField(
+              controller: _confirm,
+              label: 'Confirm new password',
+              obscureText: _obscure,
+              required: true,
+              onSubmitted: (_) => _submit()),
           if (_error != null) ...[
-            const SizedBox(height: 8),
-            Text(_error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            const SizedBox(height: 14),
+            Text(_error!, style: const TextStyle(color: kRed, fontSize: 13)),
           ],
-          const SizedBox(height: 18),
-          FilledButton.icon(
-            onPressed: _busy ? null : _submit,
-            icon: _busy
-                ? const SizedBox(
-                    width: 18, height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.lock_reset),
-            label: Text(_busy ? 'Saving…' : 'Update password'),
+          const SizedBox(height: 22),
+          LulaButton(
+            label: 'Update password',
+            loadingLabel: 'Saving…',
+            loading: _busy,
+            onPressed: _submit,
           ),
         ],
       ),
     );
   }
-
-  Widget _pwField(TextEditingController c, String label) => Padding(
-        padding: const EdgeInsets.only(bottom: 14),
-        child: TextField(
-          controller: c,
-          obscureText: _obscure,
-          decoration:
-              InputDecoration(labelText: label, border: const OutlineInputBorder()),
-        ),
-      );
 }

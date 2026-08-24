@@ -89,6 +89,62 @@ class LulaTextField extends StatelessWidget {
   }
 }
 
+/// Dropdown matching the LulaTextField look (labelled, white, brand focus).
+class LulaDropdown<T> extends StatelessWidget {
+  const LulaDropdown({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.required = false,
+  });
+
+  final String label;
+  final T? value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+  final bool required;
+
+  @override
+  Widget build(BuildContext context) {
+    OutlineInputBorder border(Color c) => OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: c, width: 1));
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      RichText(
+        text: TextSpan(
+          text: label,
+          style: const TextStyle(
+              fontSize: 13, fontWeight: FontWeight.w600, color: kInk),
+          children: required
+              ? const [TextSpan(text: ' *', style: TextStyle(color: kRed))]
+              : null,
+        ),
+      ),
+      const SizedBox(height: 6),
+      DropdownButtonFormField<T>(
+        value: value,
+        items: items,
+        onChanged: onChanged,
+        isExpanded: true,
+        style: const TextStyle(fontSize: 15, color: kInk),
+        icon: const Icon(Icons.keyboard_arrow_down, color: kMuted),
+        decoration: InputDecoration(
+          isDense: true,
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          border: border(kLine),
+          enabledBorder: border(kLine),
+          focusedBorder: border(kBrand),
+        ),
+      ),
+    ]);
+  }
+}
+
 /// Full-width primary button, ~50px, with an in-button loading state that
 /// prevents double submission.
 class LulaButton extends StatelessWidget {
