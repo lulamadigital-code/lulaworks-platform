@@ -1,14 +1,20 @@
-"""Seed realistic demo data for the Lulama Projects company:
+"""Seed realistic demo data for the primary tenant company:
 customers + contacts, projects + tasks (some assigned to the actor so they show
-under "My tasks"), and quotations with line items. Idempotent by name — safe to
-re-run; it skips anything already present.
+under "My tasks"), and quotations with line items.
+
+The company is resolved automatically (the one the most members belong to), and
+restored if it was soft-deleted, so the seeded data is actually visible. The
+script is idempotent by name — safe to re-run; it skips anything already present.
 """
+from collections import Counter
+
 from django.contrib.auth import get_user_model
 
 from apps.core.context import tenant_scope
 from apps.customers.models import Customer, CustomerContact
 from apps.customers.services import create_customer
 from apps.execution.models import Assignment, Task
+from apps.identity.models import Company
 from apps.projects.models import Project
 from apps.projects.services import create_project
 from apps.quotes.models import Quotation
@@ -16,13 +22,25 @@ from apps.quotes.services import create_quotation
 
 U = get_user_model()
 
-company = Company = None
-from apps.identity.models import Company as _C
-company = _C.objects.filter(name__icontains="Lulama Projects").first()
+# ── Resolve the tenant company (most members) and an actor, tolerating a
+# soft-deleted company (FK access + all_objects both bypass the delete filter).
+counts = Counter(
+    u.active_company_id for u in U.objects.filter(active_company__isnull=False))
+if counts:
+    company = Company.all_objects.get(id=counts.most_common(1)[0][0])
+else:
+    company = Company.all_objects.first()
 actor = (U.objects.filter(active_company=company).order_by("-is_superuser").first()
          or U.objects.filter(is_superuser=True).first())
-print("Company:", company, "| Actor:", actor)
-assert company and actor, "Could not resolve Lulama Projects company or an actor user"
+assert company and actor, "Could not resolve a tenant company or an actor user"
+print("Company:", company.name, "| Actor:", actor)
+
+# Restore the company if it was soft-deleted, so the data is visible in the app.
+if getattr(company, "is_deleted", False):
+    company.is_deleted = False
+    company.deleted_at = None
+    company.save(update_fields=["is_deleted", "deleted_at"])
+    print("Company was soft-deleted — restored.")
 
 CUSTOMERS = [
     dict(name="Harmony Gold Mining", customer_type="mine", city="Welkom",
@@ -98,9 +116,8 @@ with tenant_scope(company.id):
                 created["contacts"] += 1
 
     for pd in PROJECTS:
-        if Project.objects.filter(title=pd["title"]).exists():
-            proj = Project.objects.filter(title=pd["title"]).first()
-        else:
+        proj = Project.objects.filter(title=pd["title"]).first()
+        if not proj:
             proj = create_project(
                 company, actor, title=pd["title"],
                 client_name=pd["customer"], customer=by_name.get(pd["customer"]),
@@ -112,8 +129,7 @@ with tenant_scope(company.id):
             t = Task.objects.create(company=company, project=proj, name=tname,
                                     blocks_on_compliance=False)
             created["tasks"] += 1
-            # Assign the first two tasks of each project to the actor → "My tasks".
-            if i < 2:
+            if i < 2:  # first two tasks per project → the actor's "My tasks"
                 Assignment.objects.get_or_create(company=company, task=t, user=actor)
 
     for qd in QUOTES:
