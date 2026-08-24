@@ -370,6 +370,34 @@ class WesApiTests(APITestCase):
         self.assertEqual(len(resp.data["reports"]), 1)
         self.assertTrue(resp.data["timeline"])
 
+    def test_assigned_task_can_be_started(self):
+        """Regression: an ASSIGNED task with no blockers must start (it used to
+        409 'not ready' because readiness returned ASSIGNED, not READY)."""
+        with tenant_scope(self.company.id):
+            task = Task.objects.create(company=self.company, name="Assigned",
+                                       status="assigned")
+        r = self.client.post(f"/api/v1/tasks/{task.id}/start/")
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(r.data["status"], "in_progress")
+        # idempotent
+        r2 = self.client.post(f"/api/v1/tasks/{task.id}/start/")
+        self.assertEqual(r2.status_code, 200)
+
+    def test_blocked_task_still_refuses_to_start(self):
+        """A genuinely blocked task (unmet dependency) still can't start —
+        validation is preserved, only the false 'assigned≠ready' block was fixed."""
+        from apps.execution.models import TaskDependency
+        with tenant_scope(self.company.id):
+            pre = Task.objects.create(company=self.company, name="Pre",
+                                      status="in_progress")
+            task = Task.objects.create(company=self.company, name="Blocked",
+                                       status="assigned")
+            TaskDependency.objects.create(from_task=pre, to_task=task,
+                                          kind="finish_start")
+        r = self.client.post(f"/api/v1/tasks/{task.id}/start/")
+        self.assertEqual(r.status_code, 409)
+        self.assertIn("Pre", r.data["error"]["message"])
+
     def test_completion_gate_blocks_until_requirements_met(self):
         """A task can't be completed while required evidence is missing (§45);
         once the checklist is ticked and a report filed, it completes."""

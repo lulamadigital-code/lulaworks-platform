@@ -222,3 +222,48 @@ class TaskProgressEdge extends StatelessWidget {
     );
   }
 }
+
+
+/// Human, state-aware due label + colour from an ISO date. Normal stays muted;
+/// only "today" (warning) and overdue (error) get colour (§37).
+(String, Color, bool) dueInfo(String? iso) {
+  if (iso == null || iso.isEmpty) return ('', kMuted, false);
+  final d = DateTime.tryParse(iso);
+  if (d == null) return ('', kMuted, false);
+  final now = DateTime.now();
+  final due = DateTime(d.year, d.month, d.day);
+  final t0 = DateTime(now.year, now.month, now.day);
+  final diff = due.difference(t0).inDays;
+  const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const mon = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
+    'Sep', 'Oct', 'Nov', 'Dec'];
+  if (diff < 0) return ('Overdue · ${-diff}d', kRed, true);
+  if (diff == 0) return ('Due today', kOrange, true);
+  if (diff == 1) return ('Due tomorrow', kInk, false);
+  if (diff <= 6) return ('Due ${wd[due.weekday - 1]}', kMuted, false);
+  return ('Due ${due.day} ${mon[due.month - 1]}', kMuted, false);
+}
+
+/// A small due-date pill coloured by urgency. Empty when there's no date.
+class DueChip extends StatelessWidget {
+  const DueChip(this.iso, {super.key});
+  final String? iso;
+  @override
+  Widget build(BuildContext context) {
+    final (label, color, warn) = dueInfo(iso);
+    if (label.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+          color: warn ? color.withOpacity(0.12) : kBg,
+          borderRadius: BorderRadius.circular(8)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(warn ? Icons.schedule : Icons.event_outlined, size: 13, color: color),
+        const SizedBox(width: 4),
+        Text(label,
+            style: TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+      ]),
+    );
+  }
+}

@@ -192,7 +192,6 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
     final meta = [
       if ('${t['client_name'] ?? ''}'.isNotEmpty) '${t['client_name']}',
       if ('${t['site'] ?? ''}'.isNotEmpty) '${t['site']}',
-      if ('${t['due_date'] ?? ''}'.isNotEmpty) 'Due ${t['due_date']}',
     ].join('  ·  ');
     return Material(
       color: Colors.white,
@@ -218,6 +217,8 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
                 child: Text(label,
                     style: TextStyle(color: c, fontSize: 12, fontWeight: FontWeight.w700)),
               ),
+              const SizedBox(width: 8),
+              DueChip('${t['due_date'] ?? ''}'),
             ]),
             const SizedBox(height: 12),
             Text('${t['name']}',
@@ -259,10 +260,11 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
 
   Widget _taskRow(BuildContext context, Map<String, dynamic> t) {
     final (c, label) = _statusStyle('${t['status']}');
+    final dueTxt = dueInfo('${t['due_date'] ?? ''}').$1;
     final sub = [
       if ('${t['client_name'] ?? ''}'.isNotEmpty) '${t['client_name']}',
       if ('${t['site'] ?? ''}'.isNotEmpty) '${t['site']}',
-      if ('${t['due_date'] ?? ''}'.isNotEmpty) 'Due ${t['due_date']}',
+      if (dueTxt.isNotEmpty) dueTxt,
     ].join('  ·  ');
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),

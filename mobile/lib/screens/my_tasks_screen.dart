@@ -129,11 +129,11 @@ class _TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (c, label) = _status('${task['status']}');
-    final due = '${task['due_date'] ?? ''}';
+    final dueTxt = dueInfo('${task['due_date'] ?? ''}').$1;
     final progress = task['progress_pct'];
     final sub = [
       if ('${task['site'] ?? ''}'.isNotEmpty) '${task['site']}',
-      if (due.isNotEmpty) 'Due $due',
+      if (dueTxt.isNotEmpty) dueTxt,
       if (progress != null && '$progress' != '0') '$progress%',
     ].join('  ·  ');
     return Padding(

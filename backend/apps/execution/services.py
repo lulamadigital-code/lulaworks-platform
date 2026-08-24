@@ -114,11 +114,21 @@ def refresh_task_status(task, *, save=True) -> Task:
 
 
 def start_task(task, user) -> Task:
-    """Begin a task — only if it computes READY. Moves the project into execution
-    on first start. The compliance gate is enforced here (hard execution gate)."""
+    """Begin a task. Refuses only when the task is genuinely BLOCKED (unmet
+    dependencies, a closed compliance gate, or undelivered materials) or already
+    closed — an ASSIGNED / ACCEPTED / WAITING / READY task with no blockers is
+    startable. Moves the project into execution on first start.
+
+    (Root-cause fix: compute_task_readiness returns ASSIGNED for an assigned task
+    with no blockers, and this gate previously demanded exactly READY — so an
+    assigned task could never be started and 409'd with an empty "not ready".)"""
+    if task.status in TERMINAL_STATUSES:
+        raise ValueError("This task is already closed.")
+    if task.status == TaskStatus.IN_PROGRESS:
+        return task  # already started — idempotent, not an error
     status, reason = compute_task_readiness(task)
-    if status != TaskStatus.READY:
-        raise ValueError(f"Task is not ready: {reason}")
+    if status == TaskStatus.BLOCKED:
+        raise ValueError(reason or "This task is blocked by an unmet requirement.")
     task.status = TaskStatus.IN_PROGRESS
     task.blocked_reason = ""
     task.started_at = task.started_at or timezone.now()

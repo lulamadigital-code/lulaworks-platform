@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../api/api_client.dart';
 import '../api/report_store.dart';
 import '../theme.dart';
+import '../widgets/lula_ui.dart';
 import 'report_capture_screen.dart';
 import 'task_chat_screen.dart';
 
@@ -247,6 +248,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
     final checklist = (d['checklist'] as List? ?? const []).cast<Map<String, dynamic>>();
     final subtasks = (d['subtasks'] as List? ?? const []).cast<Map<String, dynamic>>();
     final reports = (d['reports'] as List? ?? const []).cast<Map<String, dynamic>>();
+    final timeline = (d['timeline'] as List? ?? const []).cast<Map<String, dynamic>>();
     final team = (d['team'] as Map?)?.cast<String, dynamic>() ?? const {};
     final desc = '${task['description'] ?? ''}'.trim();
     final site = '${task['site'] ?? ''}'.trim();
@@ -311,10 +313,31 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
           _card(Column(children: [
             for (int i = 0; i < reports.length; i++) ...[
               if (i > 0) const Divider(height: 1),
-              _ReportTile(report: reports[i]),
+              _ReportTile(
+                  report: reports[i],
+                  onTap: () => _openReport(reports[i])),
             ],
           ])),
+
+        if (timeline.isNotEmpty) ...[
+          const SizedBox(height: 22),
+          _sectionTitle('Activity'),
+          _card(Column(children: [
+            for (int i = 0; i < timeline.length; i++)
+              _TimelineTile(
+                  event: timeline[i], isLast: i == timeline.length - 1),
+          ])),
+        ],
       ],
+    );
+  }
+
+  void _openReport(Map<String, dynamic> report) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => _ReportDetailSheet(report: report, taskName: widget.name),
     );
   }
 
@@ -325,16 +348,15 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
     final meta = [
       if ('${task['client_name'] ?? ''}'.isNotEmpty) '${task['client_name']}',
       if ('${task['site'] ?? ''}'.isNotEmpty) '${task['site']}',
-      if ('${task['due_date'] ?? ''}'.isNotEmpty) 'Due ${task['due_date']}',
     ].join('  ·  ');
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
+      Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
         _pill(label, c),
-        if (priority.isNotEmpty && priority != 'medium') ...[
-          const SizedBox(width: 8),
+        if (priority.isNotEmpty && priority != 'medium')
           _pill('${priority[0].toUpperCase()}${priority.substring(1)} priority',
               priority == 'high' || priority == 'urgent' ? kRed : kMuted),
-        ],
+        DueChip('${task['due_date'] ?? ''}'),
       ]),
       if (meta.isNotEmpty) ...[
         const SizedBox(height: 10),
@@ -655,9 +677,25 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
       };
 }
 
+IconData _reportIcon(String kind) => switch (kind) {
+      'fuel' => Icons.local_gas_station,
+      'material' => Icons.inventory_2,
+      'expense' => Icons.receipt_long,
+      'time_event' => Icons.schedule,
+      'progress' => Icons.trending_up,
+      _ => Icons.notes,
+    };
+
+String _shortTime(dynamic iso) {
+  final t = DateTime.tryParse('$iso')?.toLocal();
+  if (t == null) return '';
+  return '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+}
+
 class _ReportTile extends StatelessWidget {
-  const _ReportTile({required this.report});
+  const _ReportTile({required this.report, this.onTap});
   final Map<String, dynamic> report;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -667,26 +705,156 @@ class _ReportTile extends StatelessWidget {
     return ListTile(
       dense: true,
       contentPadding: EdgeInsets.zero,
-      leading: Icon(_iconFor('${report['kind']}'), color: flagged ? kRed : kBrand),
+      onTap: onTap,
+      leading: Icon(_reportIcon('${report['kind']}'), color: flagged ? kRed : kBrand),
       title: Text('${report['title']}'),
       subtitle: Text([
         '${report['kind_display'] ?? report['kind']}',
         if (report['employee_name'] != null &&
             '${report['employee_name']}'.isNotEmpty) '${report['employee_name']}',
-        if (report['distance_m'] != null) '${report['distance_m']} m from site',
+        if (_shortTime(report['reported_at']).isNotEmpty)
+          _shortTime(report['reported_at']),
       ].join(' · ')),
-      trailing: hasAmount
-          ? Text('R $amount', style: const TextStyle(fontWeight: FontWeight.bold))
-          : (flagged ? const Icon(Icons.warning_amber, color: kRed) : null),
+      trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+        if (hasAmount)
+          Text('R $amount', style: const TextStyle(fontWeight: FontWeight.bold))
+        else if (flagged)
+          const Icon(Icons.warning_amber, color: kRed),
+        if (onTap != null) const Icon(Icons.chevron_right, color: kMuted, size: 18),
+      ]),
     );
   }
+}
 
-  IconData _iconFor(String kind) => switch (kind) {
-        'fuel' => Icons.local_gas_station,
-        'material' => Icons.inventory_2,
-        'expense' => Icons.receipt_long,
-        'time_event' => Icons.schedule,
-        'progress' => Icons.trending_up,
-        _ => Icons.notes,
-      };
+class _TimelineTile extends StatelessWidget {
+  const _TimelineTile({required this.event, this.isLast = false});
+  final Map<String, dynamic> event;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    final when = DateTime.tryParse('${event['when']}')?.toLocal();
+    return IntrinsicHeight(
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Column(children: [
+          Container(width: 9, height: 9, margin: const EdgeInsets.only(top: 4),
+              decoration: const BoxDecoration(color: kBrand, shape: BoxShape.circle)),
+          if (!isLast)
+            Expanded(child: Container(width: 1.5, color: kLine)),
+        ]),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${event['label']}',
+                  style: const TextStyle(
+                      fontSize: 13.5, fontWeight: FontWeight.w600, color: kInk)),
+              if ('${event['detail'] ?? ''}'.isNotEmpty)
+                Text('${event['detail']}',
+                    style: const TextStyle(fontSize: 12.5, color: kMuted)),
+              if (when != null)
+                Text(
+                    '${when.day}/${when.month} '
+                    '${when.hour.toString().padLeft(2, '0')}:'
+                    '${when.minute.toString().padLeft(2, '0')}',
+                    style: const TextStyle(fontSize: 11.5, color: kBorderDot)),
+            ]),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+/// Read-only report detail (§15) — opens from a tapped report tile.
+class _ReportDetailSheet extends StatelessWidget {
+  const _ReportDetailSheet({required this.report, required this.taskName});
+  final Map<String, dynamic> report;
+  final String taskName;
+
+  @override
+  Widget build(BuildContext context) {
+    final r = report;
+    final when = DateTime.tryParse('${r['reported_at']}')?.toLocal();
+    final flagged = r['location_flagged'] == true;
+    final amount = r['amount'];
+    final hasAmount = amount != null && '$amount' != '0.00' && '$amount' != '0';
+    final items = (r['items'] as List? ?? const []).cast<Map<String, dynamic>>();
+    Widget row(String k, String v) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(width: 96,
+                child: Text(k, style: const TextStyle(fontSize: 12.5, color: kMuted))),
+            Expanded(child: Text(v, style: const TextStyle(fontSize: 14, color: kInk))),
+          ]),
+        );
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      maxChildSize: 0.9,
+      builder: (ctx, scroll) => ListView(
+        controller: scroll,
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+        children: [
+          Row(children: [
+            Container(width: 42, height: 42,
+                decoration: BoxDecoration(
+                    color: kBrandTint, borderRadius: BorderRadius.circular(11)),
+                child: Icon(_reportIcon('${r['kind']}'), color: kBrandDark)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('${r['title']}',
+                    style: const TextStyle(
+                        fontSize: 17, fontWeight: FontWeight.w700, color: kInk)),
+                Text('${r['kind_display'] ?? r['kind']}',
+                    style: const TextStyle(fontSize: 12.5, color: kMuted)),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: 16),
+          row('Task', taskName),
+          if ('${r['employee_name'] ?? ''}'.isNotEmpty)
+            row('Submitted by', '${r['employee_name']}'),
+          if (when != null)
+            row('Time',
+                '${when.day}/${when.month}/${when.year} · '
+                '${when.hour.toString().padLeft(2, '0')}:'
+                '${when.minute.toString().padLeft(2, '0')}'),
+          row('Location',
+              flagged ? 'Outside expected area'
+                  : (r['distance_m'] != null ? 'Verified · ${r['distance_m']} m from site'
+                      : 'Not captured')),
+          if ('${r['supplier'] ?? ''}'.isNotEmpty) row('Supplier', '${r['supplier']}'),
+          if ('${r['invoice_number'] ?? ''}'.isNotEmpty)
+            row('Invoice', '${r['invoice_number']}'),
+          if (hasAmount) row('Amount', 'R $amount'),
+          if ('${r['notes'] ?? ''}'.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            const Text('NOTES', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
+                letterSpacing: 0.6, color: kMuted)),
+            const SizedBox(height: 4),
+            Text('${r['notes']}', style: const TextStyle(fontSize: 14, color: kInk)),
+          ],
+          if (items.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Text('ITEMS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
+                letterSpacing: 0.6, color: kMuted)),
+            const SizedBox(height: 6),
+            for (final it in items)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(children: [
+                  Expanded(child: Text('${it['description'] ?? ''}',
+                      style: const TextStyle(fontSize: 13.5, color: kInk))),
+                  Text('${it['quantity'] ?? ''} ${it['unit'] ?? ''}',
+                      style: const TextStyle(fontSize: 13, color: kMuted)),
+                ]),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
 }
