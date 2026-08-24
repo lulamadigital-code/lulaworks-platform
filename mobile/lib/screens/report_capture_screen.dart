@@ -77,12 +77,25 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
       if (perm == LocationPermission.denied) {
         perm = await Geolocator.requestPermission();
       }
-      if (perm == LocationPermission.denied ||
-          perm == LocationPermission.deniedForever) {
-        throw 'Location permission denied.';
+      if (perm == LocationPermission.denied) {
+        throw 'Location permission denied — allow it to capture where the work '
+            'happened.';
       }
-      final pos = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+      if (perm == LocationPermission.deniedForever) {
+        throw 'Location is blocked for this app. Enable it in Settings › Apps › '
+            'Lulaworks › Permissions.';
+      }
+      Position? pos;
+      try {
+        // Time-limit the fix so a weak signal doesn't hang the screen.
+        pos = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+            timeLimit: const Duration(seconds: 15));
+      } catch (_) {
+        // Fall back to the last known fix rather than capturing nothing.
+        pos = await Geolocator.getLastKnownPosition();
+        if (pos == null) rethrow;
+      }
       if (mounted) setState(() => _pos = pos);
     } catch (e) {
       if (mounted) setState(() => _gpsError = '$e');

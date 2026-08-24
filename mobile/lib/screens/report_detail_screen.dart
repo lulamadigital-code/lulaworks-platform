@@ -111,12 +111,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           if ('${r['employee_name'] ?? ''}'.isNotEmpty)
             _row('Submitted by', '${r['employee_name']}'),
           if (when != null) _row('Time', _fmt(when)),
-          _row('Location',
-              r['location_flagged'] == true
-                  ? 'Outside expected area'
-                  : (r['distance_m'] != null
-                      ? 'Verified · ${r['distance_m']} m from site'
-                      : 'Not captured')),
+          _row('Location', _locationText(r)),
           if ('${r['supplier'] ?? ''}'.isNotEmpty) _row('Supplier', '${r['supplier']}'),
           if (hasAmount) _row('Amount', 'R $amount'),
           if ('${r['reviewed_by_name'] ?? ''}'.isNotEmpty)
@@ -260,6 +255,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Expanded(child: Text(v, style: const TextStyle(fontSize: 14, color: kInk))),
         ]),
       );
+
+  /// Location is "captured" when the report itself has GPS — distance_m only
+  /// exists when the TASK has an expected site to compare against, so a captured
+  /// fix on a site-less task must not read as "Not captured".
+  String _locationText(Map<String, dynamic> r) {
+    final hasGps = r['latitude'] != null && r['longitude'] != null;
+    if (!hasGps) return 'Not captured';
+    if (r['location_flagged'] == true) return 'Captured · outside expected area';
+    if (r['distance_m'] != null) return 'Verified · ${r['distance_m']} m from site';
+    return 'Captured · ${r['latitude']}, ${r['longitude']}';
+  }
 
   Widget _label(String s) => Text(s,
       style: const TextStyle(
