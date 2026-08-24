@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../models.dart';
 import '../widgets/status_pill.dart';
+import 'pdf_viewer_screen.dart';
 
 /// Quotations — searchable list → detail with line items, VAT and totals
 /// (Golden-Rule gated), plus the status workflow. Creating a quote with line
@@ -183,6 +184,19 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
           appBar: AppBar(
             title: Text('${q?['number'] ?? 'Quotation'}'),
             leading: BackButton(onPressed: () => Navigator.pop(context, _changed)),
+            actions: [
+              if (q != null && widget.api.canDownloadPdf)
+                IconButton(
+                  tooltip: 'View PDF',
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => PdfViewerScreen(
+                        api: widget.api,
+                        path: '/quotations/${widget.quoteId}/pdf/',
+                        title: '${q['number']}'),
+                  )),
+                ),
+            ],
           ),
           body: q == null
               ? const Center(child: CircularProgressIndicator())

@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../widgets/status_pill.dart';
+import 'pdf_viewer_screen.dart';
 
 /// Tax invoices & delivery notes. Two tabs over one endpoint (?kind=). Invoices
 /// show money (Golden-Rule gated); delivery notes show quantities only — the
@@ -211,6 +212,19 @@ class _DocDetailState extends State<_DocDetail> {
           appBar: AppBar(
             title: Text('${doc?['number'] ?? 'Document'}'),
             leading: BackButton(onPressed: () => Navigator.pop(context, _changed)),
+            actions: [
+              if (doc != null && widget.api.canDownloadPdf)
+                IconButton(
+                  tooltip: 'View PDF',
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => PdfViewerScreen(
+                        api: widget.api,
+                        path: '/commercial-documents/${widget.docId}/pdf/',
+                        title: '${doc['number']}'),
+                  )),
+                ),
+            ],
           ),
           body: doc == null
               ? const Center(child: CircularProgressIndicator())

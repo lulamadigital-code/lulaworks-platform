@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -180,6 +181,7 @@ class ApiClient {
   // Quotations (Phase 6).
   bool get canCreateQuote => can('quotes.create');
   bool get canApproveQuote => can('quotes.approve');
+  bool get canDownloadPdf => can('quotes.download');
   bool get canSeeQuotes =>
       can('quotes.create') ||
       can('quotes.approve') ||
@@ -215,6 +217,16 @@ class ApiClient {
   Future<dynamic> patch(String path, [Map<String, dynamic>? body]) =>
       _send('PATCH', path, body);
   Future<dynamic> delete(String path) => _send('DELETE', path);
+
+  /// Fetch raw bytes (e.g. a generated PDF) with auth + one-shot token refresh.
+  Future<Uint8List> getBytes(String path, {bool retry = true}) async {
+    final resp = await http.get(_uri(path), headers: _headers());
+    if (resp.statusCode == 401 && retry && await _tryRefresh()) {
+      return getBytes(path, retry: false);
+    }
+    if (resp.statusCode >= 200 && resp.statusCode < 300) return resp.bodyBytes;
+    throw _error(resp);
+  }
 
   /// Multipart POST — for uploading a receipt/invoice/photo from the field.
   /// Sends optional string [fields] plus one file at [filePath].
