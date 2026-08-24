@@ -196,3 +196,29 @@ class LulaButton extends StatelessWidget {
     );
   }
 }
+
+
+/// A hairline progress bar that hugs the bottom edge of a task card. [pct] is
+/// 0–100; the brand fill grows left-to-right over a faint track.
+class TaskProgressEdge extends StatelessWidget {
+  const TaskProgressEdge(this.pct, {super.key, this.height = 3});
+  final num pct;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final v = (pct.clamp(0, 100)) / 100.0;
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: Stack(children: [
+        Container(color: kLine),
+        FractionallySizedBox(
+          widthFactor: v.toDouble(),
+          alignment: Alignment.centerLeft,
+          child: Container(color: kBrand),
+        ),
+      ]),
+    );
+  }
+}

@@ -5,6 +5,7 @@ import '../api/report_store.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../widgets/brand_logo.dart';
+import '../widgets/lula_ui.dart';
 import 'attendance_screen.dart';
 import 'my_tasks_screen.dart';
 import 'notifications_screen.dart';
@@ -191,6 +192,7 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
     final meta = [
       if ('${t['client_name'] ?? ''}'.isNotEmpty) '${t['client_name']}',
       if ('${t['site'] ?? ''}'.isNotEmpty) '${t['site']}',
+      if ('${t['due_date'] ?? ''}'.isNotEmpty) 'Due ${t['due_date']}',
     ].join('  ·  ');
     return Material(
       color: Colors.white,
@@ -198,12 +200,16 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () => _openTask(t),
-        child: Container(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: kBrand.withOpacity(0.35))),
-          padding: const EdgeInsets.all(18),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+           Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -241,7 +247,11 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
                     style: const TextStyle(fontSize: 15)),
               ),
             ),
+            ]),
+           ),
+           TaskProgressEdge((t['progress_pct'] as num?) ?? 0, height: 4),
           ]),
+          ),
         ),
       ),
     );
@@ -252,6 +262,7 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
     final sub = [
       if ('${t['client_name'] ?? ''}'.isNotEmpty) '${t['client_name']}',
       if ('${t['site'] ?? ''}'.isNotEmpty) '${t['site']}',
+      if ('${t['due_date'] ?? ''}'.isNotEmpty) 'Due ${t['due_date']}',
     ].join('  ·  ');
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
@@ -261,38 +272,50 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(13),
           onTap: () => _openTask(t),
-          child: Container(
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: kLine)),
-            padding: const EdgeInsets.fromLTRB(14, 13, 12, 13),
-            child: Row(children: [
-              Container(width: 4, height: 38,
-                  decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(3))),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${t['name']}',
-                      maxLines: 2, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 14.5, fontWeight: FontWeight.w500, color: kInk)),
-                  if (sub.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(sub,
-                        maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12, color: kMuted)),
-                  ],
-                ]),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                decoration: BoxDecoration(
-                    color: c.withOpacity(0.13), borderRadius: BorderRadius.circular(8)),
-                child: Text(label,
-                    style: TextStyle(color: c, fontSize: 11.5, fontWeight: FontWeight.w600)),
-              ),
-            ]),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(13),
+            child: Container(
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: kLine)),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 13, 12, 13),
+                  child: Row(children: [
+                    Container(width: 4, height: 38,
+                        decoration: BoxDecoration(
+                            color: c, borderRadius: BorderRadius.circular(3))),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('${t['name']}',
+                            maxLines: 2, overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 14.5, fontWeight: FontWeight.w500, color: kInk)),
+                        if (sub.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(sub,
+                              maxLines: 1, overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12, color: kMuted)),
+                        ],
+                      ]),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                      decoration: BoxDecoration(
+                          color: c.withOpacity(0.13),
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Text(label,
+                          style: TextStyle(
+                              color: c, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                    ),
+                  ]),
+                ),
+                TaskProgressEdge((t['progress_pct'] as num?) ?? 0),
+              ]),
+            ),
           ),
         ),
       ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
+import '../widgets/lula_ui.dart';
 import 'task_hub_screen.dart';
 
 /// "My tasks" — the field worker's home base. Only the tasks assigned to the
@@ -148,42 +149,52 @@ class _TaskCard extends StatelessWidget {
                     api: api, taskId: '${task['id']}', name: '${task['name']}')));
             onReturn();
           },
-          child: Container(
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: kLine)),
-            padding: const EdgeInsets.fromLTRB(14, 13, 12, 13),
-            child: Row(children: [
-              Container(width: 4, height: 38,
-                  decoration: BoxDecoration(
-                      color: c, borderRadius: BorderRadius.circular(3))),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${task['name']}',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 14.5, fontWeight: FontWeight.w500, color: kInk)),
-                  if (sub.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(sub,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12, color: kMuted)),
-                  ],
-                ]),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                decoration: BoxDecoration(
-                    color: c.withOpacity(0.13), borderRadius: BorderRadius.circular(8)),
-                child: Text(label,
-                    style: TextStyle(
-                        color: c, fontSize: 11.5, fontWeight: FontWeight.w600)),
-              ),
-            ]),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(13),
+            child: Container(
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: kLine)),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 13, 12, 13),
+                  child: Row(children: [
+                    Container(width: 4, height: 38,
+                        decoration: BoxDecoration(
+                            color: c, borderRadius: BorderRadius.circular(3))),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('${task['name']}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 14.5, fontWeight: FontWeight.w500, color: kInk)),
+                        if (sub.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(sub,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12, color: kMuted)),
+                        ],
+                      ]),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                      decoration: BoxDecoration(
+                          color: c.withOpacity(0.13),
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Text(label,
+                          style: TextStyle(
+                              color: c, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                    ),
+                  ]),
+                ),
+                TaskProgressEdge((progress as num?) ?? 0),
+              ]),
+            ),
           ),
         ),
       ),
