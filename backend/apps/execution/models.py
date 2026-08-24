@@ -575,6 +575,14 @@ class Timesheet(TenantBaseModel):
     def __str__(self):
         return f"{self.resource} · {self.date} · {self.hours}h"
 
+    @property
+    def total_hours(self) -> Decimal:
+        return self.hours + self.overtime_hours
+
+    @property
+    def labour_cost(self) -> Decimal:
+        return (self.total_hours * self.resource.hourly_rate).quantize(Decimal("0.01"))
+
 
 class AttendanceEvent(TenantBaseModel):
     """A single time & attendance event for a worker — clock in/out, a break, or
@@ -625,13 +633,37 @@ class AttendanceEvent(TenantBaseModel):
     def __str__(self):
         return f"{self.user} · {self.get_kind_display()} · {self.occurred_at:%Y-%m-%d %H:%M}"
 
-    @property
-    def total_hours(self) -> Decimal:
-        return self.hours + self.overtime_hours
 
-    @property
-    def labour_cost(self) -> Decimal:
-        return (self.total_hours * self.resource.hourly_rate).quantize(Decimal("0.01"))
+class TaskMessage(TenantBaseModel):
+    """A message on a task's chat — the business-context conversation between the
+    people on a job. Scoped to the task's participants (its assignments) plus
+    authorised managers; the backend enforces access, never the client.
+
+    A SYSTEM message (author is null) records an operational event in the same
+    thread — "Sipho started the task", "expense added" — so the conversation
+    doubles as an auditable history."""
+
+    class Kind(models.TextChoices):
+        TEXT = "text", "Message"
+        SYSTEM = "system", "System event"
+        IMAGE = "image", "Photo"
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="messages")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                               null=True, blank=True, related_name="+")
+    kind = models.CharField(max_length=8, choices=Kind.choices, default=Kind.TEXT)
+    body = models.TextField(blank=True)
+    image = models.FileField(upload_to="chat/%Y/%m/", null=True, blank=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["company", "task", "created_at"]),
+        ]
+
+    def __str__(self):
+        who = self.author or "system"
+        return f"{who} · {self.task_id} · {self.body[:40]}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

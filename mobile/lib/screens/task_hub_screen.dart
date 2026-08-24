@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../api/api_client.dart';
 import '../theme.dart';
 import 'report_capture_screen.dart';
+import 'task_chat_screen.dart';
 
 /// The field worker's Task Detail — practical and task-centric: what to do, where
 /// to go, the checklist to tick, the team, the budget (money-gated), the actions.
@@ -96,7 +97,19 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.name), scrolledUnderElevation: 1),
+      appBar: AppBar(
+        title: Text(widget.name),
+        scrolledUnderElevation: 1,
+        actions: [
+          IconButton(
+            tooltip: 'Task chat',
+            icon: const Icon(Icons.forum_outlined),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => TaskChatScreen(
+                    api: widget.api, taskId: widget.taskId, taskName: widget.name))),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addReport,
         icon: const Icon(Icons.add_location_alt),

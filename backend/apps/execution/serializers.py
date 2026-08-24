@@ -10,12 +10,32 @@ from .models import (
     ResourceAllocation,
     Subtask,
     Task,
+    TaskMessage,
     TaskReport,
     TaskReportItem,
     TaskResourceAllocation,
     Timesheet,
     WorkPackage,
 )
+
+
+class TaskMessageSerializer(serializers.ModelSerializer):
+    """A task-chat message. Client sends `body` (and/or an `image` multipart);
+    author, kind and task-scope are server-controlled."""
+
+    author_name = serializers.CharField(source="author.get_full_name", read_only=True)
+    author_id = serializers.CharField(source="author.id", read_only=True)
+    is_system = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TaskMessage
+        fields = ["id", "task", "author", "author_id", "author_name", "kind",
+                  "body", "image", "is_system", "created_at"]
+        read_only_fields = ["id", "author", "author_id", "author_name", "kind",
+                            "image", "is_system", "created_at"]
+
+    def get_is_system(self, obj):
+        return obj.kind == TaskMessage.Kind.SYSTEM
 from .services import compute_task_readiness
 
 

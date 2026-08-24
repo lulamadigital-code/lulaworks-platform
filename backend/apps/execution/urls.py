@@ -4,6 +4,7 @@ from .views_api import (
     AttendanceEventViewSet,
     ChecklistItemViewSet,
     NotificationViewSet,
+    TaskMessageViewSet,
     ResourceAllocationViewSet,
     ResourceViewSet,
     SubtaskViewSet,
@@ -26,5 +27,6 @@ router.register("timesheets", TimesheetViewSet, basename="timesheet")
 router.register("checklist-items", ChecklistItemViewSet, basename="checklist-item")
 router.register("subtasks", SubtaskViewSet, basename="subtask")
 router.register("attendance-events", AttendanceEventViewSet, basename="attendance-event")
+router.register("task-messages", TaskMessageViewSet, basename="task-message")
 
 urlpatterns = router.urls

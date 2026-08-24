@@ -19,6 +19,7 @@ from .models import (
     ResourceAllocation,
     Subtask,
     Task,
+    TaskMessage,
     TaskReport,
     TaskResourceAllocation,
     Timesheet,
@@ -29,6 +30,7 @@ from .serializers import (
     AllocateSerializer,
     AttendanceEventSerializer,
     ChecklistItemSerializer,
+    TaskMessageSerializer,
     CreateTaskReportSerializer,
     NotificationSerializer,
     ResourceAllocationSerializer,
@@ -46,6 +48,7 @@ from .services import (
     approve_timesheet,
     complete_task,
     mark_notifications_read,
+    notify_team,
     refresh_task_status,
     start_task,
     unread_count,
@@ -54,8 +57,10 @@ from .work_execution import (
     add_report_item,
     allocate_task_resource,
     attendance_summary,
+    can_access_task_chat,
     create_task_report,
     learn_supplier_from_receipt,
+    post_system_message,
     reconcile_allocation,
     task_operational_dashboard,
 )
@@ -206,6 +211,57 @@ class AttendanceEventViewSet(TenantViewSet):
         })
 
 
+class TaskMessageViewSet(TenantViewSet):
+    """A task's chat. Read + post only. Access is per-object: a participant
+    (assigned to the task) or a manager (execution.manage). The backend is the
+    security boundary — a client can never read another task's (or company's)
+    conversation. Filter by ?task=<id> (required for list).
+    """
+
+    http_method_names = ["get", "post", "head", "options"]
+    model = TaskMessage
+    serializer_class = TaskMessageSerializer
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        qs = TaskMessage.objects.all().select_related("author", "task")
+        task_id = self.request.query_params.get("task")
+        if not task_id:
+            return qs.none()
+        task = get_object_or_404(Task.objects.all(), id=task_id)
+        if not can_access_task_chat(self.request.user, task):
+            return qs.none()
+        return qs.filter(task_id=task_id)
+
+    def create(self, request, *args, **kwargs):
+        task = get_object_or_404(Task.objects.all(), id=request.data.get("task"))
+        if not can_access_task_chat(request.user, task):
+            return Response(
+                {"error": {"code": "forbidden",
+                           "message": "You're not a participant on this task."}},
+                status=status.HTTP_403_FORBIDDEN)
+        body = (request.data.get("body") or "").strip()
+        image = request.FILES.get("image")
+        if not body and not image:
+            return Response(
+                {"error": {"code": "empty", "message": "Say something first."}},
+                status=status.HTTP_400_BAD_REQUEST)
+        if image:
+            validate_upload(image)
+        msg = TaskMessage.objects.create(
+            task=task, company=task.company, author=request.user,
+            kind=TaskMessage.Kind.IMAGE if image else TaskMessage.Kind.TEXT,
+            body=body, image=image,
+            created_by=request.user, updated_by=request.user)
+        # Tell the other people on the task (never the sender).
+        notify_team(task, verb="task_message",
+                    title=f"New message on {task.name}",
+                    body=(body or "Photo")[:120], actor=request.user)
+        return Response(
+            TaskMessageSerializer(msg, context={"request": request}).data,
+            status=status.HTTP_201_CREATED)
+
+
 class WorkPackageViewSet(TenantViewSet):
     model = WorkPackage
     serializer_class = WorkPackageSerializer
@@ -255,12 +311,16 @@ class TaskViewSet(TenantViewSet):
         except ValueError as exc:
             return Response({"error": {"code": "not_ready", "message": str(exc)}},
                             status=status.HTTP_409_CONFLICT)
+        post_system_message(task,
+                            f"{request.user.get_full_name() or 'A worker'} started the task.")
         return Response(TaskSerializer(task, context={"request": request}).data)
 
     @action(detail=True, methods=["post"])
     def complete(self, request, pk=None):
         task = complete_task(self.get_object(), request.user,
                              actual_hours=request.data.get("actual_hours"))
+        post_system_message(task,
+                            f"{request.user.get_full_name() or 'A worker'} completed the task.")
         return Response(TaskSerializer(task, context={"request": request}).data)
 
     @action(detail=True, methods=["get"])

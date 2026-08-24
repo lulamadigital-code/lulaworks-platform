@@ -400,3 +400,33 @@ def attendance_summary(events) -> dict:
         "clock_in_at": clock_in_at.isoformat() if clock_in_at else None,
         "worked_seconds": int(max(0, worked)),
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Task chat — task-scoped conversation, access enforced server-side
+# ─────────────────────────────────────────────────────────────────────────────
+
+def task_participant_ids(task) -> set:
+    """User ids assigned to the task (any role) — its chat participants."""
+    return set(task.assignments.values_list("user_id", flat=True))
+
+
+def can_access_task_chat(user, task) -> bool:
+    """Who may read/post a task's chat: a participant (assigned to it) or a
+    manager (execution.manage). Superusers always can."""
+    if getattr(user, "is_superuser", False):
+        return True
+    if user.has_perm_code("execution.manage"):
+        return True
+    return user.id in task_participant_ids(task)
+
+
+def post_system_message(task, body: str):
+    """Record a SYSTEM event in the task thread (author=null). Best-effort — a
+    chat note must never break the operation that triggered it."""
+    from .models import TaskMessage
+    try:
+        return TaskMessage.objects.create(task=task, company=task.company,
+                                          kind=TaskMessage.Kind.SYSTEM, body=body)
+    except Exception:                                          # noqa: BLE001
+        return None
