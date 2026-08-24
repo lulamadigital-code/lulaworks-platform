@@ -6,6 +6,7 @@ import '../api/report_store.dart';
 import '../theme.dart';
 import '../widgets/lula_ui.dart';
 import 'report_capture_screen.dart';
+import 'report_detail_screen.dart';
 import 'task_chat_screen.dart';
 
 /// The field worker's Task Detail — practical and task-centric: what to do, where
@@ -332,13 +333,11 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
     );
   }
 
-  void _openReport(Map<String, dynamic> report) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (ctx) => _ReportDetailSheet(report: report, taskName: widget.name),
-    );
+  void _openReport(Map<String, dynamic> report) async {
+    final changed = await Navigator.of(context).push<bool>(MaterialPageRoute(
+        builder: (_) => ReportDetailScreen(
+            api: widget.api, report: report, taskName: widget.name)));
+    if (changed == true) _reload();
   }
 
   // ── Header (status + priority + meta) ─────────────────────────────────────
@@ -692,6 +691,21 @@ String _shortTime(dynamic iso) {
   return '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 }
 
+Widget _reportStatusDot(String status) {
+  final (Color c, String label) = switch (status) {
+    'approved' => (kGreen, 'Approved'),
+    'returned' => (kOrange, 'Returned'),
+    _ => (kInfo, status),
+  };
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+    decoration: BoxDecoration(
+        color: c.withOpacity(0.13), borderRadius: BorderRadius.circular(6)),
+    child: Text(label,
+        style: TextStyle(fontSize: 10.5, color: c, fontWeight: FontWeight.w700)),
+  );
+}
+
 class _ReportTile extends StatelessWidget {
   const _ReportTile({required this.report, this.onTap});
   final Map<String, dynamic> report;
@@ -708,13 +722,21 @@ class _ReportTile extends StatelessWidget {
       onTap: onTap,
       leading: Icon(_reportIcon('${report['kind']}'), color: flagged ? kRed : kBrand),
       title: Text('${report['title']}'),
-      subtitle: Text([
-        '${report['kind_display'] ?? report['kind']}',
-        if (report['employee_name'] != null &&
-            '${report['employee_name']}'.isNotEmpty) '${report['employee_name']}',
-        if (_shortTime(report['reported_at']).isNotEmpty)
-          _shortTime(report['reported_at']),
-      ].join(' · ')),
+      subtitle: Row(children: [
+        Flexible(
+          child: Text([
+            '${report['kind_display'] ?? report['kind']}',
+            if (report['employee_name'] != null &&
+                '${report['employee_name']}'.isNotEmpty) '${report['employee_name']}',
+            if (_shortTime(report['reported_at']).isNotEmpty)
+              _shortTime(report['reported_at']),
+          ].join(' · '), overflow: TextOverflow.ellipsis),
+        ),
+        if ('${report['status']}' != 'submitted' && '${report['status']}'.isNotEmpty) ...[
+          const SizedBox(width: 6),
+          _reportStatusDot('${report['status']}'),
+        ],
+      ]),
       trailing: Row(mainAxisSize: MainAxisSize.min, children: [
         if (hasAmount)
           Text('R $amount', style: const TextStyle(fontWeight: FontWeight.bold))
@@ -763,98 +785,6 @@ class _TimelineTile extends StatelessWidget {
           ),
         ),
       ]),
-    );
-  }
-}
-
-/// Read-only report detail (§15) — opens from a tapped report tile.
-class _ReportDetailSheet extends StatelessWidget {
-  const _ReportDetailSheet({required this.report, required this.taskName});
-  final Map<String, dynamic> report;
-  final String taskName;
-
-  @override
-  Widget build(BuildContext context) {
-    final r = report;
-    final when = DateTime.tryParse('${r['reported_at']}')?.toLocal();
-    final flagged = r['location_flagged'] == true;
-    final amount = r['amount'];
-    final hasAmount = amount != null && '$amount' != '0.00' && '$amount' != '0';
-    final items = (r['items'] as List? ?? const []).cast<Map<String, dynamic>>();
-    Widget row(String k, String v) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 5),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SizedBox(width: 96,
-                child: Text(k, style: const TextStyle(fontSize: 12.5, color: kMuted))),
-            Expanded(child: Text(v, style: const TextStyle(fontSize: 14, color: kInk))),
-          ]),
-        );
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.6,
-      maxChildSize: 0.9,
-      builder: (ctx, scroll) => ListView(
-        controller: scroll,
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-        children: [
-          Row(children: [
-            Container(width: 42, height: 42,
-                decoration: BoxDecoration(
-                    color: kBrandTint, borderRadius: BorderRadius.circular(11)),
-                child: Icon(_reportIcon('${r['kind']}'), color: kBrandDark)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${r['title']}',
-                    style: const TextStyle(
-                        fontSize: 17, fontWeight: FontWeight.w700, color: kInk)),
-                Text('${r['kind_display'] ?? r['kind']}',
-                    style: const TextStyle(fontSize: 12.5, color: kMuted)),
-              ]),
-            ),
-          ]),
-          const SizedBox(height: 16),
-          row('Task', taskName),
-          if ('${r['employee_name'] ?? ''}'.isNotEmpty)
-            row('Submitted by', '${r['employee_name']}'),
-          if (when != null)
-            row('Time',
-                '${when.day}/${when.month}/${when.year} · '
-                '${when.hour.toString().padLeft(2, '0')}:'
-                '${when.minute.toString().padLeft(2, '0')}'),
-          row('Location',
-              flagged ? 'Outside expected area'
-                  : (r['distance_m'] != null ? 'Verified · ${r['distance_m']} m from site'
-                      : 'Not captured')),
-          if ('${r['supplier'] ?? ''}'.isNotEmpty) row('Supplier', '${r['supplier']}'),
-          if ('${r['invoice_number'] ?? ''}'.isNotEmpty)
-            row('Invoice', '${r['invoice_number']}'),
-          if (hasAmount) row('Amount', 'R $amount'),
-          if ('${r['notes'] ?? ''}'.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            const Text('NOTES', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
-                letterSpacing: 0.6, color: kMuted)),
-            const SizedBox(height: 4),
-            Text('${r['notes']}', style: const TextStyle(fontSize: 14, color: kInk)),
-          ],
-          if (items.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            const Text('ITEMS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
-                letterSpacing: 0.6, color: kMuted)),
-            const SizedBox(height: 6),
-            for (final it in items)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Row(children: [
-                  Expanded(child: Text('${it['description'] ?? ''}',
-                      style: const TextStyle(fontSize: 13.5, color: kInk))),
-                  Text('${it['quantity'] ?? ''} ${it['unit'] ?? ''}',
-                      style: const TextStyle(fontSize: 13, color: kMuted)),
-                ]),
-              ),
-          ],
-        ],
-      ),
     );
   }
 }

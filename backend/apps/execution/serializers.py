@@ -12,6 +12,7 @@ from .models import (
     Task,
     TaskMessage,
     TaskReport,
+    TaskReportComment,
     TaskReportItem,
     TaskResourceAllocation,
     Timesheet,
@@ -193,6 +194,16 @@ class TaskReportItemSerializer(GoldenRuleSerializerMixin,
         read_only_fields = ["id"]
 
 
+class TaskReportCommentSerializer(serializers.ModelSerializer):
+    author_name = serializers.CharField(source="author.get_full_name", read_only=True)
+    author_id = serializers.CharField(source="author.id", read_only=True)
+
+    class Meta:
+        model = TaskReportComment
+        fields = ["id", "report", "author", "author_id", "author_name", "body", "created_at"]
+        read_only_fields = ["id", "author", "author_id", "author_name", "created_at"]
+
+
 class TaskReportSerializer(GoldenRuleSerializerMixin, serializers.ModelSerializer):
     """Read view of a field report, including its extracted line items.
 
@@ -204,21 +215,29 @@ class TaskReportSerializer(GoldenRuleSerializerMixin, serializers.ModelSerialize
     # Nested item money is stripped by TaskReportItemSerializer's own mixin.
     money_fields = ("amount", "vat_amount")
     items = TaskReportItemSerializer(many=True, read_only=True)
+    comments = TaskReportCommentSerializer(many=True, read_only=True)
     kind_display = serializers.CharField(source="get_kind_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
     employee_name = serializers.CharField(source="employee.get_full_name", read_only=True)
+    employee_id = serializers.CharField(source="employee.id", read_only=True)
+    reviewed_by_name = serializers.CharField(source="reviewed_by.get_full_name", read_only=True)
     supplier_ref_name = serializers.CharField(source="supplier_ref.name", read_only=True)
 
     class Meta:
         model = TaskReport
         fields = ["id", "task", "kind", "kind_display", "title", "event",
-                  "reported_at", "employee", "employee_name", "notes",
+                  "reported_at", "employee", "employee_name", "employee_id", "notes",
                   "latitude", "longitude", "gps_accuracy_m", "distance_m",
                   "location_flagged", "supplier", "supplier_ref", "supplier_ref_name",
                   "invoice_number", "document_date", "amount", "vat_amount", "currency",
-                  "allocation", "extraction_status", "items", "created_at"]
-        read_only_fields = ["id", "kind_display", "employee_name", "supplier_ref",
-                            "supplier_ref_name", "distance_m", "location_flagged",
-                            "extraction_status", "items", "created_at"]
+                  "allocation", "extraction_status", "items",
+                  "status", "status_display", "reviewed_by", "reviewed_by_name",
+                  "reviewed_at", "comments", "created_at"]
+        read_only_fields = ["id", "kind_display", "status_display", "employee_name",
+                            "employee_id", "reviewed_by", "reviewed_by_name",
+                            "reviewed_at", "supplier_ref", "supplier_ref_name",
+                            "distance_m", "location_flagged", "status",
+                            "extraction_status", "items", "comments", "created_at"]
 
 
 class CreateTaskReportSerializer(serializers.Serializer):

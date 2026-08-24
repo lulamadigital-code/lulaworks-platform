@@ -209,6 +209,9 @@ class ApiClient {
   // Reviewing attendance corrections is a manager action.
   bool get canReviewAttendance =>
       can('timesheet.approve') || can('execution.manage');
+  // Reviewing field reports (approve / return for correction).
+  bool get canReviewReports =>
+      can('work.approve') || can('execution.manage');
   String get userId => ((_me['user'] as Map?)?['id'] ?? '').toString();
   bool get canManageCustomers => can('customers.manage');
   // Who should even see the customer database — anyone doing commercial work,

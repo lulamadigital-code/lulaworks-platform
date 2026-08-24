@@ -828,6 +828,18 @@ class TaskReport(TenantBaseModel):
     extraction_status = models.CharField(max_length=10, choices=ExtractionStatus.choices,
                                          default=ExtractionStatus.NONE)
 
+    # ── Review workflow (§16) ───────────────────────────────────────────────
+    class ReviewStatus(models.TextChoices):
+        SUBMITTED = "submitted", "Submitted"
+        APPROVED = "approved", "Approved"
+        RETURNED = "returned", "Returned for correction"
+
+    status = models.CharField(max_length=10, choices=ReviewStatus.choices,
+                              default=ReviewStatus.SUBMITTED)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                    null=True, blank=True, related_name="+")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         ordering = ["-reported_at", "-created_at"]
         indexes = [
@@ -845,6 +857,24 @@ class TaskReport(TenantBaseModel):
     @property
     def has_location(self) -> bool:
         return self.latitude is not None and self.longitude is not None
+
+
+class TaskReportComment(TenantBaseModel):
+    """A message on a report's review thread — the manager asks for a fix, the
+    worker replies, and so on. Distinct from task chat: this conversation belongs
+    to one report's review (§35/§36)."""
+
+    report = models.ForeignKey(TaskReport, on_delete=models.CASCADE,
+                               related_name="comments")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                               null=True, blank=True, related_name="+")
+    body = models.TextField()
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"{self.author} on report {self.report_id}: {self.body[:40]}"
 
 
 class TaskReportItem(TenantBaseModel):
