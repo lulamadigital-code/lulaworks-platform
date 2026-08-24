@@ -14,6 +14,8 @@ const kBg = Color(0xFFF6F7FB); // --bg
 const kGreen = Color(0xFF00C875);
 const kOrange = Color(0xFFFDAB3D);
 const kRed = Color(0xFFE2445C);
+const kInfo = Color(0xFF3B6FD4);
+const kBorderDot = Color(0xFFC4C7D0); // neutral dot for read/settled states
 
 ThemeData buildTheme(Brightness brightness) {
   final light = brightness == Brightness.light;
