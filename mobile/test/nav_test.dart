@@ -40,8 +40,8 @@ void main() {
     'quotes.approve', 'po.approve', 'ai.generate'];
   const manager = ['quotes.approve', 'po.approve', 'customers.manage',
     'procurement.manage', 'execution.manage'];
-  const fieldEmployee = ['execution.manage']; // starts/completes tasks
-  const procurementEmployee = ['execution.manage', 'procurement.manage'];
+  const fieldEmployee = ['work.edit']; // groundfloor: starts/completes tasks
+  const procurementEmployee = ['work.edit', 'procurement.manage'];
   const salesEmployee = ['crm.manage']; // canSeeCustomers, no approvals
 
   test('owner → business command centre, full bar', () async {
@@ -58,6 +58,8 @@ void main() {
     expect(tabIds(api), ['home', 'crm', 'jobs', 'purchasing', 'more']);
     // Managers don't administer the company.
     expect(moreIds(api), isNot(contains('company')));
+    // …but they DO review attendance corrections.
+    expect(moreIds(api), contains('attendance_review'));
     // No My Work tab for managers (their work lives in Home/Jobs).
     expect(tabIds(api), isNot(contains('mywork')));
   });
@@ -73,6 +75,7 @@ void main() {
     expect(more, isNot(contains('company')));
     expect(more, isNot(contains('team')));
     expect(more, isNot(contains('customers')));
+    expect(more, isNot(contains('attendance_review')));
   });
 
   test('procurement employee → Purchasing tab', () async {

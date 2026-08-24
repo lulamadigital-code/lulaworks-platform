@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../screens/commercial_documents_screen.dart';
 import '../screens/company_settings_screen.dart';
 import '../screens/customers_screen.dart';
+import '../screens/attendance_review_screen.dart';
 import '../screens/attendance_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/estimates_screen.dart';
@@ -301,6 +302,14 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
       ),
     ]),
     MoreGroup('ADMINISTRATION', [
+      MoreItem(
+        id: 'attendance_review',
+        title: 'Attendance review',
+        subtitle: 'Approve missed clock-in/out',
+        icon: Icons.fact_check_outlined,
+        visible: (a) => a.canReviewAttendance,
+        build: (a, _) => AttendanceReviewScreen(api: a),
+      ),
       MoreItem(
         id: 'team',
         title: 'Users & employees',

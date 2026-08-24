@@ -196,6 +196,9 @@ class ApiClient {
   // Doing the field work itself (start/complete/report/tick checklist). A
   // groundfloor worker holds work.edit, not the execution.manage umbrella.
   bool get canExecuteWork => can('work.edit') || can('execution.manage');
+  // Reviewing attendance corrections is a manager action.
+  bool get canReviewAttendance =>
+      can('timesheet.approve') || can('execution.manage');
   String get userId => ((_me['user'] as Map?)?['id'] ?? '').toString();
   bool get canManageCustomers => can('customers.manage');
   // Who should even see the customer database — anyone doing commercial work,
