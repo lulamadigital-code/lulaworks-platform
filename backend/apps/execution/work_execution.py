@@ -453,10 +453,17 @@ COMPLETION_REQUIREMENTS = {
 }
 
 
+def available_completion_requirements() -> list:
+    """The catalogue of requirements a task can be gated on (key + label) — what
+    the manager's editor offers to toggle."""
+    return [{"key": k, "label": label} for k, (label, _) in COMPLETION_REQUIREMENTS.items()]
+
+
 def task_completion_status(task) -> dict:
     """Evaluate this task's completion requirements. Returns whether it can be
     completed and, if not, what's still missing — the same shape the Task Detail
-    shows and the complete-gate enforces, so the app and server never disagree."""
+    shows and the complete-gate enforces, so the app and server never disagree.
+    Also carries the enabled keys + the full catalogue so a manager can edit them."""
     keys = task.completion_requirements or []
     reqs = []
     for key in keys:
@@ -466,4 +473,6 @@ def task_completion_status(task) -> dict:
         label, met = entry
         reqs.append({"key": key, "label": label, "met": bool(met(task))})
     missing = [r["label"] for r in reqs if not r["met"]]
-    return {"ok": not missing, "requirements": reqs, "missing": missing}
+    return {"ok": not missing, "requirements": reqs, "missing": missing,
+            "enabled": list(keys),
+            "available": available_completion_requirements()}

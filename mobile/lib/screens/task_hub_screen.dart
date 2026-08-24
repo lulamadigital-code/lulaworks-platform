@@ -24,6 +24,7 @@ class TaskHubScreen extends StatefulWidget {
 class _TaskHubScreenState extends State<TaskHubScreen> {
   late Future<Map<String, dynamic>> _future = _load();
   bool _busy = false;
+  Map<String, dynamic>? _completion; // cached from the last render, for the editor
 
   Future<Map<String, dynamic>> _load() async =>
       await widget.api.get('/tasks/${widget.taskId}/operational/')
@@ -78,6 +79,87 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
     }
   }
 
+  /// Manager-only: choose which requirements gate this task's completion.
+  Future<void> _editRequirements() async {
+    var comp = _completion;
+    if (comp == null) {
+      try {
+        final d = await _load();
+        comp = (d['completion'] as Map?)?.cast<String, dynamic>();
+      } catch (_) {/* fall through to empty */}
+    }
+    final available =
+        (comp?['available'] as List? ?? const []).cast<Map<String, dynamic>>();
+    final selected = <String>{
+      for (final e in (comp?['enabled'] as List? ?? const [])) '$e'
+    };
+    if (!mounted) return;
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSt) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Completion requirements',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kInk)),
+              ),
+              const SizedBox(height: 2),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('This task can’t be completed until these are done.',
+                    style: TextStyle(fontSize: 13, color: kMuted)),
+              ),
+              const SizedBox(height: 10),
+              for (final r in available)
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: kBrand,
+                  title: Text('${r['label']}', style: const TextStyle(fontSize: 15)),
+                  value: selected.contains('${r['key']}'),
+                  onChanged: (v) => setSt(() {
+                    if (v == true) {
+                      selected.add('${r['key']}');
+                    } else {
+                      selected.remove('${r['key']}');
+                    }
+                  }),
+                ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: FilledButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Save')),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+    if (saved != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await widget.api.patch('/tasks/${widget.taskId}/',
+          {'completion_requirements': selected.toList()});
+      _reload();
+      messenger.showSnackBar(const SnackBar(content: Text('Requirements updated')));
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(
+          content: Text(e.isForbidden
+              ? "You don't have permission to configure this."
+              : e.message)));
+    } catch (_) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Could not reach the server.')));
+    }
+  }
+
   Future<void> _navigate(Map<String, dynamic> task) async {
     final lat = task['site_latitude'];
     final lng = task['site_longitude'];
@@ -101,6 +183,12 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
         title: Text(widget.name),
         scrolledUnderElevation: 1,
         actions: [
+          if (widget.api.canManageExecution)
+            IconButton(
+              tooltip: 'Completion requirements',
+              icon: const Icon(Icons.rule),
+              onPressed: _editRequirements,
+            ),
           IconButton(
             tooltip: 'Task chat',
             icon: const Icon(Icons.forum_outlined),
@@ -151,6 +239,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
     final site = '${task['site'] ?? ''}'.trim();
 
     final completion = (d['completion'] as Map?)?.cast<String, dynamic>();
+    _completion = completion; // cache for the requirements editor
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
