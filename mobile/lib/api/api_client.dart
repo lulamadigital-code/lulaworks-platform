@@ -191,11 +191,13 @@ class ApiClient {
   bool get canCreateQuote => can('quotes.create');
   bool get canApproveQuote => can('quotes.approve');
   bool get canDownloadPdf => can('quotes.download');
+  // Quote visibility requires an actual quote permission — NOT mere
+  // projects.view. A field worker who can see their jobs must not thereby see
+  // the quotation pipeline (Golden Rule: quote totals are money).
   bool get canSeeQuotes =>
       can('quotes.create') ||
       can('quotes.approve') ||
-      can('quotes.download') ||
-      can('projects.view');
+      can('quotes.download');
   // Commercial documents — tax invoices & delivery notes (Phase 7).
   bool get canSeeCommercial =>
       can('finance.view_money') ||
