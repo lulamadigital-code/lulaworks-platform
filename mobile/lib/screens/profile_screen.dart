@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../api/api_client.dart';
+import '../api/auth_errors.dart';
 import '../theme.dart';
 import '../widgets/user_avatar.dart';
 import 'change_password_screen.dart';
@@ -48,7 +49,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 140),
                 const Icon(Icons.cloud_off, size: 44, color: kMuted),
                 const SizedBox(height: 12),
-                const Center(child: Text('Something went wrong')),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Center(
+                      child: Text(authErrorMessage(snap.error!),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: kMuted))),
+                ),
                 const SizedBox(height: 14),
                 Center(
                     child: FilledButton(

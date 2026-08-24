@@ -76,11 +76,11 @@ class ApiClient {
 
   // ── Auth ────────────────────────────────────────────────────────────────
   Future<void> login(String email, String password) async {
-    final resp = await http.post(
-      _uri('/auth/token/'),
-      headers: _headers(auth: false),
-      body: jsonEncode({'email': email, 'password': password}),
-    );
+    final resp = await http
+        .post(_uri('/auth/token/'),
+            headers: _headers(auth: false),
+            body: jsonEncode({'email': email, 'password': password}))
+        .timeout(_timeout);
     if (resp.statusCode != 200) {
       throw ApiException(resp.statusCode, 'Login failed — check your credentials.');
     }
@@ -94,15 +94,38 @@ class ApiClient {
     } catch (_) {/* non-fatal: screens re-fetch /me/ anyway */}
   }
 
+  /// Sign out. This ALWAYS clears local authentication state — it can never
+  /// fail or leave the user trapped in the app. The server-side token revoke is
+  /// strictly best-effort: if it's slow, offline, or errors, we ignore it and
+  /// still sign out locally (JWT is stateless — a dropped revoke only means the
+  /// old refresh token lives out its short TTL server-side).
   Future<void> logout() async {
+    final refresh = _refresh;
+
+    // 1) Best-effort server revoke (blacklist the refresh token). Never awaited
+    //    in a way that can block sign-out or throw.
+    if (refresh != null) {
+      try {
+        await http
+            .post(_uri('/auth/logout/'),
+                headers: _headers(auth: false),
+                body: jsonEncode({'refresh': refresh}))
+            .timeout(const Duration(seconds: 3));
+      } catch (_) {/* offline / server down / timeout — sign out locally anyway */}
+    }
+
+    // 2) Clear ALL in-memory auth + identity state.
     _access = null;
     _refresh = null;
     _me = const {};
     _perms = {};
     _role = null;
+
+    // 3) Clear persisted sensitive state.
     await _prefs.remove('access');
     await _prefs.remove('refresh');
     await _prefs.remove('me');
+
     // Return to the default (production) server on sign-out, so a stale dev
     // origin doesn't linger; the login screen still lets you change it.
     _origin = ApiConfig.defaultOrigin;
@@ -208,17 +231,28 @@ class ApiClient {
       can('invoices.approve') || can('quotes.approve');
   bool get canRecordPayment => can('finance.manage') || can('invoices.approve');
 
+  /// Network-request timeout — a hung socket becomes a clean TimeoutException
+  /// (mapped to a friendly message) instead of spinning forever.
+  static const _timeout = Duration(seconds: 20);
+
+  /// One-shot access-token refresh. Returns false (never throws) so a transient
+  /// network error during refresh routes to a clean sign-out, not a crash — and
+  /// callers pass retry=false on the retried request, so there is no loop.
   Future<bool> _tryRefresh() async {
     if (_refresh == null) return false;
-    final resp = await http.post(
-      _uri('/auth/token/refresh/'),
-      headers: _headers(auth: false),
-      body: jsonEncode({'refresh': _refresh}),
-    );
-    if (resp.statusCode != 200) return false;
-    _access = (_decode(resp) as Map<String, dynamic>)['access'] as String;
-    await _prefs.setString('access', _access!);
-    return true;
+    try {
+      final resp = await http
+          .post(_uri('/auth/token/refresh/'),
+              headers: _headers(auth: false),
+              body: jsonEncode({'refresh': _refresh}))
+          .timeout(_timeout);
+      if (resp.statusCode != 200) return false;
+      _access = (_decode(resp) as Map<String, dynamic>)['access'] as String;
+      await _prefs.setString('access', _access!);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   // ── Requests ──────────────────────────────────────────────────────────────
@@ -271,15 +305,15 @@ class ApiClient {
     http.Response resp;
     switch (method) {
       case 'POST':
-        resp = await http.post(uri, headers: headers, body: encoded);
+        resp = await http.post(uri, headers: headers, body: encoded).timeout(_timeout);
       case 'PATCH':
-        resp = await http.patch(uri, headers: headers, body: encoded);
+        resp = await http.patch(uri, headers: headers, body: encoded).timeout(_timeout);
       case 'PUT':
-        resp = await http.put(uri, headers: headers, body: encoded);
+        resp = await http.put(uri, headers: headers, body: encoded).timeout(_timeout);
       case 'DELETE':
-        resp = await http.delete(uri, headers: headers);
+        resp = await http.delete(uri, headers: headers).timeout(_timeout);
       default:
-        resp = await http.get(uri, headers: headers);
+        resp = await http.get(uri, headers: headers).timeout(_timeout);
     }
 
     if (resp.statusCode == 401 && retry) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../api/api_client.dart';
+import '../api/auth_errors.dart';
 import '../theme.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/lula_ui.dart';
@@ -52,22 +53,13 @@ class _LoginScreenState extends State<LoginScreen> {
       await widget.api.setOrigin(_origin.text);
       await widget.api.login(_email.text.trim(), _password.text);
       widget.onSignedIn();
-    } on ApiException catch (e) {
-      setState(() => _formError = _mapError(e.statusCode));
-    } catch (_) {
-      setState(() => _formError =
-          "We couldn't connect to Lulaworks. Check your connection and try again.");
+    } catch (e) {
+      // One central mapper — clean, specific messages, never raw JSON.
+      setState(() =>
+          _formError = authErrorMessage(e, context: AuthErrorContext.login));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
-  }
-
-  String _mapError(int code) {
-    if (code == 401 || code == 400) return 'Email or password is incorrect.';
-    if (code == 403) return 'This account cannot sign in. Contact your administrator.';
-    if (code == 429) return 'Too many attempts. Please wait a moment and try again.';
-    if (code >= 500) return 'Lulaworks is temporarily unavailable. Please try again.';
-    return 'Sign in failed. Please try again.';
   }
 
   Future<void> _open(String url) async {
@@ -77,23 +69,28 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Password reset is handled entirely by the backend's secure web flow (it
+  /// generates the reset token and emails the link — the app never mints its
+  /// own). We open that page on the current server, honouring anti-enumeration
+  /// (it never reveals whether an email exists).
   void _forgot() {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Reset your password'),
         content: const Text(
-            'Password resets are handled by your company administrator. '
-            'You can also email support@lulaworks.com and we will help you get '
-            'back in.'),
+            "Enter your email on the reset page and we'll send you a secure link "
+            "to set a new password. If an account exists for that email, the "
+            "instructions arrive shortly."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              _open('mailto:support@lulaworks.com?subject=Password%20reset');
+              _open('${widget.api.origin}/reset/');
             },
-            child: const Text('Email support'),
+            child: const Text('Open reset page'),
           ),
         ],
       ),
