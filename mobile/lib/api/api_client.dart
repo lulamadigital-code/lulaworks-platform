@@ -98,6 +98,10 @@ class ApiClient {
     await _prefs.remove('access');
     await _prefs.remove('refresh');
     await _prefs.remove('me');
+    // Return to the default (production) server on sign-out, so a stale dev
+    // origin doesn't linger; the login screen still lets you change it.
+    _origin = ApiConfig.defaultOrigin;
+    await _prefs.setString('origin', _origin);
   }
 
   // ── Identity & permissions ──────────────────────────────────────────────────

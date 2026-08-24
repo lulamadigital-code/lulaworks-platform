@@ -11,7 +11,9 @@
 class ApiConfig {
   static const String pathPrefix = '/api/v1';
 
-  /// Sensible default backend origin. `localhost` works out of the box with an
-  /// `adb reverse` tunnel; override it on the login screen otherwise.
-  static String get defaultOrigin => 'http://localhost:8000';
+  /// Production is the default — the app talks to the live backend over the
+  /// internet, no tunnel needed. For local development, override the Server
+  /// field on the login screen with `http://localhost:8000` (reached via
+  /// `adb reverse tcp:8000 tcp:8000`).
+  static String get defaultOrigin => 'https://www.lulaworks.com';
 }
