@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../theme.dart';
 import 'crm_log_screen.dart';
 import 'customer_form_screen.dart';
 
@@ -256,19 +257,20 @@ class _StatusChip extends StatelessWidget {
   final String status;
   @override
   Widget build(BuildContext context) {
-    final (Color bg, Color fg, String label) = switch (status) {
-      'active' => (Colors.green.shade100, Colors.green.shade900, 'Active'),
-      'prospect' => (Colors.blue.shade100, Colors.blue.shade900, 'Prospect'),
-      'on_hold' => (Colors.orange.shade100, Colors.orange.shade900, 'On hold'),
-      'dormant' => (Colors.grey.shade300, Colors.grey.shade800, 'Dormant'),
-      'blacklisted' => (Colors.red.shade100, Colors.red.shade900, 'Blacklisted'),
-      _ => (Colors.grey.shade200, Colors.grey.shade700, status),
+    final (Color c, String label) = switch (status) {
+      'active' => (kGreen, 'Active'),
+      'prospect' => (kInfo, 'Prospect'),
+      'on_hold' => (kOrange, 'On hold'),
+      'dormant' => (kMuted, 'Dormant'),
+      'blacklisted' => (kRed, 'Blacklisted'),
+      _ => (kMuted, status),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+          color: c.withOpacity(0.13), borderRadius: BorderRadius.circular(8)),
       child: Text(label,
-          style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w600)),
+          style: TextStyle(color: c, fontSize: 11.5, fontWeight: FontWeight.w600)),
     );
   }
 }

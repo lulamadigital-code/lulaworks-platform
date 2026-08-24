@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
-import '../widgets/status_pill.dart';
+import '../theme.dart';
 import 'task_hub_screen.dart';
 
 /// "My tasks" — the field worker's home base. Only the tasks assigned to the
 /// signed-in user (?mine=1), grouped so what's active and what's blocked read at
-/// a glance. Tap through to the task hub to capture reports, check in, and act.
+/// a glance. Tap through to the task hub to capture reports and act.
 class MyTasksScreen extends StatefulWidget {
   const MyTasksScreen({super.key, required this.api});
   final ApiClient api;
@@ -22,19 +22,17 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
   Future<List<Map<String, dynamic>>> _load() async =>
       pageResults(await widget.api.get('/tasks/?mine=1'));
 
-  // Buckets, in the order a worker cares about.
   static const _order = ['in_progress', 'blocked', 'todo', 'done'];
-  static const _todo = {'draft', 'ready', 'assigned', 'accepted', 'waiting'};
   static const _done = {'completed', 'closed', 'cancelled'};
 
-  String _bucket(String status) {
-    if (status == 'in_progress') return 'in_progress';
-    if (status == 'blocked') return 'blocked';
-    if (_done.contains(status)) return 'done';
-    return _todo.contains(status) ? 'todo' : 'todo';
+  String _bucket(String s) {
+    if (s == 'in_progress') return 'in_progress';
+    if (s == 'blocked') return 'blocked';
+    if (_done.contains(s)) return 'done';
+    return 'todo';
   }
 
-  static const _bucketLabel = {
+  static const _label = {
     'in_progress': 'In progress',
     'blocked': 'Blocked',
     'todo': 'To do',
@@ -44,26 +42,44 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('My tasks')),
+      appBar: AppBar(title: const Text('My tasks'), scrolledUnderElevation: 1),
       body: RefreshIndicator(
+        color: kBrand,
         onRefresh: () async => setState(() { _future = _load(); }),
         child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const _TasksSkeleton();
             }
             if (snap.hasError) {
               return ListView(children: [
-                const SizedBox(height: 100),
+                const SizedBox(height: 120),
+                const Icon(Icons.cloud_off, size: 44, color: kMuted),
+                const SizedBox(height: 12),
                 Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
               ]);
             }
             final tasks = snap.data ?? const [];
             if (tasks.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 120),
-                Center(child: Text('No tasks assigned to you.')),
+              return ListView(children: [
+                const SizedBox(height: 130),
+                Container(
+                  width: 60, height: 60,
+                  margin: const EdgeInsets.symmetric(horizontal: 160),
+                  decoration: const BoxDecoration(
+                      color: kBrandTint, shape: BoxShape.circle),
+                  child: const Icon(Icons.check, color: kBrandDark, size: 30),
+                ),
+                const SizedBox(height: 14),
+                const Center(
+                    child: Text('No tasks assigned to you',
+                        style: TextStyle(
+                            fontSize: 15.5, fontWeight: FontWeight.w600, color: kInk))),
+                const SizedBox(height: 2),
+                const Center(
+                    child: Text("You're all caught up.",
+                        style: TextStyle(fontSize: 13, color: kMuted))),
               ]);
             }
             final groups = <String, List<Map<String, dynamic>>>{};
@@ -71,17 +87,19 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
               groups.putIfAbsent(_bucket('${t['status']}'), () => []).add(t);
             }
             return ListView(
-              padding: const EdgeInsets.only(bottom: 24),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
               children: [
                 for (final key in _order)
                   if (groups[key] != null) ...[
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
-                      child: Text('${_bucketLabel[key]} (${groups[key]!.length})',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.outline)),
+                      padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+                      child: Text('${_label[key]!.toUpperCase()}  ·  ${groups[key]!.length}',
+                          style: const TextStyle(
+                              fontSize: 11.5, fontWeight: FontWeight.w700,
+                              letterSpacing: 0.6, color: kMuted)),
                     ),
-                    ...groups[key]!.map((t) => _TaskTile(api: widget.api, task: t,
+                    ...groups[key]!.map((t) => _TaskCard(
+                        api: widget.api, task: t,
                         onReturn: () => setState(() { _future = _load(); }))),
                   ],
               ],
@@ -93,34 +111,106 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
   }
 }
 
-class _TaskTile extends StatelessWidget {
-  const _TaskTile({required this.api, required this.task, required this.onReturn});
+class _TaskCard extends StatelessWidget {
+  const _TaskCard(
+      {required this.api, required this.task, required this.onReturn});
   final ApiClient api;
   final Map<String, dynamic> task;
   final VoidCallback onReturn;
 
+  (Color, String) _status(String s) => switch (s) {
+        'in_progress' => (kInfo, 'In progress'),
+        'blocked' => (kRed, 'Blocked'),
+        'completed' || 'closed' => (kGreen, 'Done'),
+        _ => (kOrange, 'To do'),
+      };
+
   @override
   Widget build(BuildContext context) {
+    final (c, label) = _status('${task['status']}');
     final due = '${task['due_date'] ?? ''}';
     final progress = task['progress_pct'];
-    return Card(
-      margin: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-      child: ListTile(
-        title: Text('${task['name']}', maxLines: 2, overflow: TextOverflow.ellipsis),
-        subtitle: Text([
-          if ('${task['site'] ?? ''}'.isNotEmpty) '${task['site']}',
-          if (due.isNotEmpty) 'Due $due',
-          if (progress != null && '$progress' != '0') '$progress%',
-        ].join(' · ')),
-        trailing: StatusPill(status: '${task['status']}'),
-        onTap: () async {
-          await Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => TaskHubScreen(
-                api: api, taskId: '${task['id']}', name: '${task['name']}'),
-          ));
-          onReturn();
-        },
+    final sub = [
+      if ('${task['site'] ?? ''}'.isNotEmpty) '${task['site']}',
+      if (due.isNotEmpty) 'Due $due',
+      if (progress != null && '$progress' != '0') '$progress%',
+    ].join('  ·  ');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 9),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(13),
+          onTap: () async {
+            await Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => TaskHubScreen(
+                    api: api, taskId: '${task['id']}', name: '${task['name']}')));
+            onReturn();
+          },
+          child: Container(
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: kLine)),
+            padding: const EdgeInsets.fromLTRB(14, 13, 12, 13),
+            child: Row(children: [
+              Container(width: 4, height: 38,
+                  decoration: BoxDecoration(
+                      color: c, borderRadius: BorderRadius.circular(3))),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('${task['name']}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 14.5, fontWeight: FontWeight.w500, color: kInk)),
+                  if (sub.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(sub,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, color: kMuted)),
+                  ],
+                ]),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                decoration: BoxDecoration(
+                    color: c.withOpacity(0.13), borderRadius: BorderRadius.circular(8)),
+                child: Text(label,
+                    style: TextStyle(
+                        color: c, fontSize: 11.5, fontWeight: FontWeight.w600)),
+              ),
+            ]),
+          ),
+        ),
       ),
+    );
+  }
+}
+
+class _TasksSkeleton extends StatelessWidget {
+  const _TasksSkeleton();
+  @override
+  Widget build(BuildContext context) {
+    Widget card() => Container(
+          margin: const EdgeInsets.only(bottom: 9),
+          height: 66,
+          decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: kLine)),
+        );
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
+      children: [
+        Container(width: 90, height: 12,
+            decoration: BoxDecoration(color: kLine, borderRadius: BorderRadius.circular(6))),
+        const SizedBox(height: 12),
+        ...List.generate(5, (_) => card()),
+      ],
     );
   }
 }
