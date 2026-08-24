@@ -575,6 +575,56 @@ class Timesheet(TenantBaseModel):
     def __str__(self):
         return f"{self.resource} · {self.date} · {self.hours}h"
 
+
+class AttendanceEvent(TenantBaseModel):
+    """A single time & attendance event for a worker — clock in/out, a break, or
+    a site arrival/departure. Event-based (NOT continuous tracking): the app
+    records a point in time (and optionally where), never a live trail.
+
+    `occurred_at` is the moment the event happened on the device — supplied by
+    the client so an event captured OFFLINE keeps its real time and syncs later;
+    `created_at` (from the base model) is when the server received it. A
+    correction request is an event with status=PENDING for a manager to review;
+    a worker can never silently rewrite the record."""
+
+    class Kind(models.TextChoices):
+        CLOCK_IN = "clock_in", "Clock in"
+        CLOCK_OUT = "clock_out", "Clock out"
+        BREAK_START = "break_start", "Break start"
+        BREAK_END = "break_end", "Break end"
+        SITE_ARRIVAL = "site_arrival", "Site arrival"
+        SITE_DEPARTURE = "site_departure", "Site departure"
+
+    class Status(models.TextChoices):
+        RECORDED = "recorded", "Recorded"
+        PENDING = "pending", "Pending review"        # a correction request
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name="attendance_events")
+    kind = models.CharField(max_length=16, choices=Kind.choices)
+    occurred_at = models.DateTimeField(default=timezone.now)
+    task = models.ForeignKey(Task, on_delete=models.SET_NULL, null=True, blank=True,
+                             related_name="attendance_events")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    note = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices,
+                              default=Status.RECORDED)
+    source = models.CharField(max_length=16, default="mobile")
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                    null=True, blank=True, related_name="+")
+
+    class Meta:
+        ordering = ["-occurred_at"]
+        indexes = [
+            models.Index(fields=["company", "user", "occurred_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user} · {self.get_kind_display()} · {self.occurred_at:%Y-%m-%d %H:%M}"
+
     @property
     def total_hours(self) -> Decimal:
         return self.hours + self.overtime_hours

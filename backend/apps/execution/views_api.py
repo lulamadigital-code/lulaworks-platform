@@ -12,6 +12,7 @@ from apps.core.uploads import validate_upload
 
 from .models import (
     Attachment,
+    AttendanceEvent,
     ChecklistItem,
     Notification,
     Resource,
@@ -26,6 +27,7 @@ from .models import (
 from .serializers import (
     AllocateResourceSerializer,
     AllocateSerializer,
+    AttendanceEventSerializer,
     ChecklistItemSerializer,
     CreateTaskReportSerializer,
     NotificationSerializer,
@@ -51,6 +53,7 @@ from .services import (
 from .work_execution import (
     add_report_item,
     allocate_task_resource,
+    attendance_summary,
     create_task_report,
     learn_supplier_from_receipt,
     reconcile_allocation,
@@ -128,6 +131,79 @@ class SubtaskViewSet(TenantViewSet):
         qs = Subtask.objects.all()
         task = self.request.query_params.get("task")
         return qs.filter(task_id=task) if task else qs
+
+
+class AttendanceEventViewSet(TenantViewSet):
+    """Time & attendance — clock in/out, breaks, site arrival/departure.
+
+    Every worker records their OWN events (perform_create forces user=self), so
+    no special permission is needed to clock in. A correction request lands as
+    status=pending; only a manager (timesheet.approve or execution.manage) can
+    approve/reject it — a worker can never silently rewrite their record.
+    Filter by ?date=YYYY-MM-DD, ?user=<id> (managers), ?pending=1 (review queue).
+    """
+
+    http_method_names = ["get", "post", "patch", "head", "options"]
+    model = AttendanceEvent
+    serializer_class = AttendanceEventSerializer
+    # create is open (self only); reviewing a correction is a manager action.
+    required_perms = {"partial_update": ("timesheet.approve", "execution.manage")}
+
+    def _is_manager(self):
+        u = self.request.user
+        return u.has_perm_code("timesheet.approve") or u.has_perm_code("execution.manage")
+
+    def get_queryset(self):
+        qs = AttendanceEvent.objects.all().select_related("user")
+        params = self.request.query_params
+        # Managers reviewing a specific event (approve/reject) may reach anyone's.
+        if self.action in ("retrieve", "update", "partial_update") and self._is_manager():
+            return qs
+        if params.get("pending") in ("1", "true", "yes"):
+            # The manager review queue — everyone's pending corrections.
+            if not self._is_manager():
+                return qs.none()
+            qs = qs.filter(status=AttendanceEvent.Status.PENDING)
+        elif params.get("user") and self._is_manager():
+            qs = qs.filter(user_id=params["user"])
+        else:
+            qs = qs.filter(user=self.request.user)   # default: my own record
+        date = params.get("date")
+        if date:
+            qs = qs.filter(occurred_at__date=date)
+        return qs
+
+    def perform_create(self, serializer):
+        is_correction = serializer.validated_data.pop("is_correction", False)
+        serializer.save(
+            user=self.request.user,
+            created_by=self.request.user,
+            updated_by=self.request.user,
+            status=(AttendanceEvent.Status.PENDING if is_correction
+                    else AttendanceEvent.Status.RECORDED),
+        )
+
+    def perform_update(self, serializer):
+        # Managers approve/reject corrections; stamp the reviewer.
+        serializer.save(reviewed_by=self.request.user,
+                        updated_by=self.request.user)
+
+    @action(detail=False, methods=["get"])
+    def today(self, request):
+        """This user's events for today (or ?date=) + a computed summary:
+        current state, since when, and seconds actually worked (breaks removed)."""
+        from django.utils import timezone
+        day = request.query_params.get("date") or timezone.localdate().isoformat()
+        events = list(AttendanceEvent.objects.filter(
+            user=request.user, occurred_at__date=day,
+            status__in=[AttendanceEvent.Status.RECORDED,
+                        AttendanceEvent.Status.APPROVED],
+        ).order_by("occurred_at"))
+        return Response({
+            "date": day,
+            "summary": attendance_summary(events),
+            "events": AttendanceEventSerializer(events, many=True).data,
+        })
 
 
 class WorkPackageViewSet(TenantViewSet):

@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../widgets/brand_logo.dart';
+import 'attendance_screen.dart';
 import 'my_tasks_screen.dart';
 import 'notifications_screen.dart';
 import 'task_hub_screen.dart';
@@ -120,6 +121,10 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
             : "You have ${active.length} task${active.length == 1 ? '' : 's'} on the go"
                 "${doneToday > 0 ? ' · $doneToday done' : ''}.",
             style: const TextStyle(fontSize: 13.5, color: kMuted)),
+        const SizedBox(height: 18),
+
+        // Time & attendance — clock in/out at a glance.
+        AttendanceClockStrip(api: widget.api),
         const SizedBox(height: 22),
 
         // Current task

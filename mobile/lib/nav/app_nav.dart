@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../screens/commercial_documents_screen.dart';
 import '../screens/company_settings_screen.dart';
 import '../screens/customers_screen.dart';
+import '../screens/attendance_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/estimates_screen.dart';
 import '../screens/field_home_screen.dart';
@@ -253,6 +254,14 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
         visible: (a) => true,
         hiddenIfTab: 'mywork',
         build: (a, _) => MyTasksScreen(api: a),
+      ),
+      MoreItem(
+        id: 'attendance',
+        title: 'Time & attendance',
+        subtitle: 'Clock in/out, breaks, corrections',
+        icon: Icons.schedule_outlined,
+        visible: (a) => true,
+        build: (a, _) => AttendanceScreen(api: a),
       ),
       MoreItem(
         id: 'suppliers',

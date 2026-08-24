@@ -354,3 +354,49 @@ def work_timeline(project) -> list[dict]:
 
     events.sort(key=lambda e: e["when"])
     return events
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Time & Attendance — event-based, never a continuous trail
+# ─────────────────────────────────────────────────────────────────────────────
+
+def attendance_summary(events) -> dict:
+    """Fold a day's ordered attendance events into the numbers the app shows:
+    current state, when it started, and seconds actually worked (breaks removed).
+
+    `events` must be this user's events for one day, ascending by occurred_at.
+    Live (state == "working") worked-seconds include the time since the last
+    resume up to now, so the app can show a ticking elapsed."""
+    from .models import AttendanceEvent as AE
+
+    state = "clocked_out"          # clocked_out | working | on_break
+    worked = 0                     # accumulated seconds actually worked
+    last_active = None             # start of the current working stretch
+    clock_in_at = None
+    since = None                   # when the current state began
+
+    for e in events:
+        t = e.occurred_at
+        if e.kind == AE.Kind.CLOCK_IN:
+            state, last_active, clock_in_at, since = "working", t, t, t
+        elif e.kind == AE.Kind.BREAK_START:
+            if state == "working" and last_active:
+                worked += (t - last_active).total_seconds()
+            state, since, last_active = "on_break", t, None
+        elif e.kind == AE.Kind.BREAK_END:
+            state, last_active, since = "working", t, t
+        elif e.kind == AE.Kind.CLOCK_OUT:
+            if state == "working" and last_active:
+                worked += (t - last_active).total_seconds()
+            state, since, last_active, clock_in_at = "clocked_out", t, None, None
+        # site_arrival / site_departure don't change clock state.
+
+    if state == "working" and last_active:
+        worked += (timezone.now() - last_active).total_seconds()
+
+    return {
+        "state": state,
+        "since": since.isoformat() if since else None,
+        "clock_in_at": clock_in_at.isoformat() if clock_in_at else None,
+        "worked_seconds": int(max(0, worked)),
+    }

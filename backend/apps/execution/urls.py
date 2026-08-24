@@ -1,6 +1,7 @@
 from rest_framework.routers import DefaultRouter
 
 from .views_api import (
+    AttendanceEventViewSet,
     ChecklistItemViewSet,
     NotificationViewSet,
     ResourceAllocationViewSet,
@@ -24,5 +25,6 @@ router.register("task-allocations", TaskResourceAllocationViewSet, basename="tas
 router.register("timesheets", TimesheetViewSet, basename="timesheet")
 router.register("checklist-items", ChecklistItemViewSet, basename="checklist-item")
 router.register("subtasks", SubtaskViewSet, basename="subtask")
+router.register("attendance-events", AttendanceEventViewSet, basename="attendance-event")
 
 urlpatterns = router.urls

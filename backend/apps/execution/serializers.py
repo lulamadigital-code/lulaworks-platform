@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.core.api import GoldenRuleSerializerMixin
 
 from .models import (
+    AttendanceEvent,
     ChecklistItem,
     Notification,
     Resource,
@@ -16,6 +17,29 @@ from .models import (
     WorkPackage,
 )
 from .services import compute_task_readiness
+
+
+class AttendanceEventSerializer(serializers.ModelSerializer):
+    """A worker clock/break/site event. The client supplies kind + occurred_at
+    (device time, so offline events keep their real time) and optional GPS/note.
+    user, status and review fields are server-controlled — a worker can record
+    but never approve their own correction."""
+
+    kind_display = serializers.CharField(source="get_kind_display", read_only=True)
+    user_name = serializers.CharField(source="user.get_full_name", read_only=True)
+    # Write-only: a correction request lands as status=pending for a manager.
+    is_correction = serializers.BooleanField(write_only=True, required=False, default=False)
+
+    class Meta:
+        model = AttendanceEvent
+        fields = ["id", "user", "user_name", "kind", "kind_display", "occurred_at",
+                  "task", "latitude", "longitude", "note", "status", "source",
+                  "created_at", "is_correction"]
+        # status is writable so a manager can approve/reject on PATCH; on CREATE
+        # the viewset's perform_create overrides it (workers can't set it, and
+        # PATCH is manager-gated), so a worker can never self-approve.
+        read_only_fields = ["id", "user", "user_name", "kind_display",
+                            "source", "created_at"]
 
 
 class ChecklistItemSerializer(serializers.ModelSerializer):
