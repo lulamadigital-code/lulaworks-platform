@@ -59,6 +59,7 @@ from .work_execution import (
     add_report_item,
     allocate_task_resource,
     attendance_summary,
+    broadcast_task_message,
     can_access_task_chat,
     create_task_report,
     learn_supplier_from_receipt,
@@ -259,9 +260,10 @@ class TaskMessageViewSet(TenantViewSet):
         notify_team(task, verb="task_message",
                     title=f"New message on {task.name}",
                     body=(body or "Photo")[:120], actor=request.user)
-        return Response(
-            TaskMessageSerializer(msg, context={"request": request}).data,
-            status=status.HTTP_201_CREATED)
+        data = TaskMessageSerializer(msg, context={"request": request}).data
+        # Push to anyone watching the thread in realtime (best-effort).
+        broadcast_task_message(task.id, data)
+        return Response(data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["get"])
     def inbox(self, request):

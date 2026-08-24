@@ -422,13 +422,35 @@ def can_access_task_chat(user, task) -> bool:
     return user.id in task_participant_ids(task)
 
 
+def broadcast_task_message(task_id, message: dict):
+    """Push a serialized message to the task's WebSocket group so connected
+    participants see it instantly. Best-effort — realtime must never break the
+    HTTP save (the 10s poll is the fallback)."""
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+        layer = get_channel_layer()
+        if layer is None:
+            return
+        async_to_sync(layer.group_send)(
+            f"task_chat_{task_id}",
+            {"type": "chat.message", "message": message})
+    except Exception as exc:                                    # noqa: BLE001
+        import logging
+        logging.getLogger("lulaworks.chat").warning(
+            "task chat broadcast failed: %r", exc)
+
+
 def post_system_message(task, body: str):
     """Record a SYSTEM event in the task thread (author=null). Best-effort — a
     chat note must never break the operation that triggered it."""
     from .models import TaskMessage
+    from .serializers import TaskMessageSerializer
     try:
-        return TaskMessage.objects.create(task=task, company=task.company,
-                                          kind=TaskMessage.Kind.SYSTEM, body=body)
+        msg = TaskMessage.objects.create(task=task, company=task.company,
+                                         kind=TaskMessage.Kind.SYSTEM, body=body)
+        broadcast_task_message(task.id, TaskMessageSerializer(msg).data)
+        return msg
     except Exception:                                          # noqa: BLE001
         return None
 

@@ -60,7 +60,17 @@ class ApiClient {
   }
 
   String get origin => _origin;
+  String? get accessToken => _access;
   bool get isAuthenticated => _access != null;
+
+  /// WebSocket URL for a `/ws/...` path on the current origin, carrying the JWT
+  /// as a query token (Channels authenticates from it). https→wss, http→ws.
+  Uri wsUri(String path) {
+    final scheme = _origin.startsWith('https') ? 'wss' : 'ws';
+    final host = _origin.replaceFirst(RegExp(r'^https?://'), '');
+    final q = _access == null ? '' : '?token=$_access';
+    return Uri.parse('$scheme://$host$path$q');
+  }
 
   Future<void> setOrigin(String origin) async {
     _origin = origin.trim().replaceAll(RegExp(r'/+$'), '');

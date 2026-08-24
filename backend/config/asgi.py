@@ -20,11 +20,17 @@ from channels.auth import AuthMiddlewareStack           # noqa: E402
 from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
 from channels.security.websocket import AllowedHostsOriginValidator  # noqa: E402
 
-from apps.support.routing import websocket_urlpatterns  # noqa: E402
+from apps.core.ws_auth import JWTAuthMiddleware          # noqa: E402
+from apps.execution.routing import websocket_urlpatterns as execution_ws  # noqa: E402
+from apps.support.routing import websocket_urlpatterns as support_ws  # noqa: E402
 
+# Session auth (support chat, web) runs first; JWTAuthMiddleware overrides the
+# user when a `?token=` access token is present (task chat, mobile).
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
     "websocket": AllowedHostsOriginValidator(
-        AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
+        AuthMiddlewareStack(
+            JWTAuthMiddleware(URLRouter(support_ws + execution_ws))
+        )
     ),
 })

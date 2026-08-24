@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -32,20 +34,86 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
   bool _sending = false;
   Timer? _poll;
   String? _error;
+  WebSocket? _ws;
+  bool _wsLive = false;
+  bool _disposed = false;
 
   @override
   void initState() {
     super.initState();
     _load(initial: true);
-    _poll = Timer.periodic(const Duration(seconds: 10), (_) => _load());
+    _connectWs();
+    // Poll as a fallback (slower when the socket is live).
+    _poll = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (!_wsLive) _load();
+    });
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _poll?.cancel();
+    _ws?.close();
     _input.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  // ── Realtime socket ───────────────────────────────────────────────────────
+  Future<void> _connectWs() async {
+    if (_disposed) return;
+    try {
+      final uri = widget.api.wsUri('/ws/task-chat/${widget.taskId}/');
+      // Channels' AllowedHostsOriginValidator needs an Origin matching a known
+      // host — dart:io sends none by default, so set it to our own origin.
+      final ws = await WebSocket.connect(uri.toString(),
+              headers: {'Origin': widget.api.origin})
+          .timeout(const Duration(seconds: 8));
+      if (_disposed) {
+        ws.close();
+        return;
+      }
+      _ws = ws;
+      _wsLive = true;
+      ws.listen(
+        _onWsData,
+        onDone: _onWsClosed,
+        onError: (_) => _onWsClosed(),
+        cancelOnError: true,
+      );
+    } catch (_) {
+      _wsLive = false;
+      _scheduleReconnect(); // fall back to polling meanwhile
+    }
+  }
+
+  void _onWsClosed() {
+    _wsLive = false;
+    _ws = null;
+    _scheduleReconnect();
+  }
+
+  void _scheduleReconnect() {
+    if (_disposed) return;
+    Future.delayed(const Duration(seconds: 5), () {
+      if (!_disposed && !_wsLive) _connectWs();
+    });
+  }
+
+  void _onWsData(dynamic data) {
+    if (_disposed) return;
+    try {
+      final frame = jsonDecode('$data');
+      if (frame is Map && frame['type'] == 'message' && frame['message'] is Map) {
+        final msg = (frame['message'] as Map).cast<String, dynamic>();
+        final id = '${msg['id']}';
+        if (_messages.any((m) => '${m['id']}' == id)) return; // dedupe
+        setState(() => _messages = [..._messages, msg]);
+        _toBottom();
+        widget.api.post('/task-messages/mark_read/', {'task': widget.taskId})
+            .catchError((_) => null);
+      }
+    } catch (_) {/* ignore malformed frame */}
   }
 
   Future<void> _load({bool initial = false}) async {
