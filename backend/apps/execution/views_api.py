@@ -17,10 +17,12 @@ from .models import (
     Notification,
     Resource,
     ResourceAllocation,
+    Assignment,
     Subtask,
     Task,
     TaskMessage,
     TaskReport,
+    TaskThreadRead,
     TaskResourceAllocation,
     Timesheet,
     WorkPackage,
@@ -260,6 +262,57 @@ class TaskMessageViewSet(TenantViewSet):
         return Response(
             TaskMessageSerializer(msg, context={"request": request}).data,
             status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["get"])
+    def inbox(self, request):
+        """The signed-in user's task chats in one place — the tasks they're a
+        participant on OR have posted in — each with its latest message and an
+        unread count (messages newer than they last opened, excluding own)."""
+        me = request.user
+        part = Assignment.objects.filter(user=me).values_list("task_id", flat=True)
+        authored = TaskMessage.objects.filter(author=me).values_list("task_id", flat=True)
+        task_ids = set(part) | set(authored)
+        if not task_ids:
+            return Response({"threads": []})
+        reads = {r.task_id: r.last_read_at
+                 for r in TaskThreadRead.objects.filter(user=me, task_id__in=task_ids)}
+        threads = []
+        for task in Task.objects.filter(id__in=task_ids):
+            last = task.messages.select_related("author").order_by("-created_at").first()
+            if last is None:
+                continue
+            lr = reads.get(task.id)
+            unread_qs = task.messages.exclude(author=me)
+            if lr is not None:
+                unread_qs = unread_qs.filter(created_at__gt=lr)
+            threads.append({
+                "task_id": str(task.id),
+                "task_name": task.name,
+                "unread": unread_qs.count(),
+                "last_message": {
+                    "body": last.body,
+                    "kind": last.kind,
+                    "is_system": last.kind == TaskMessage.Kind.SYSTEM,
+                    "author_name": (last.author.get_full_name() if last.author else ""),
+                    "created_at": last.created_at.isoformat(),
+                },
+            })
+        threads.sort(key=lambda t: t["last_message"]["created_at"], reverse=True)
+        return Response({"threads": threads})
+
+    @action(detail=False, methods=["post"])
+    def mark_read(self, request):
+        """Mark a task's chat read up to now for this user (clears its unread)."""
+        from django.utils import timezone
+        task = get_object_or_404(Task.objects.all(), id=request.data.get("task"))
+        if not can_access_task_chat(request.user, task):
+            return Response(
+                {"error": {"code": "forbidden", "message": "Not a participant."}},
+                status=status.HTTP_403_FORBIDDEN)
+        TaskThreadRead.objects.update_or_create(
+            user=request.user, task=task,
+            defaults={"last_read_at": timezone.now(), "company": task.company})
+        return Response({"ok": True})
 
 
 class WorkPackageViewSet(TenantViewSet):

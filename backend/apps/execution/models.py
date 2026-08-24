@@ -670,6 +670,25 @@ class TaskMessage(TenantBaseModel):
         return f"{who} · {self.task_id} · {self.body[:40]}"
 
 
+class TaskThreadRead(TenantBaseModel):
+    """Per-user read marker for a task's chat — when this user last opened the
+    thread. The inbox counts messages newer than this (and not their own) as
+    unread. One row per (user, task)."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name="thread_reads")
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="thread_reads")
+    last_read_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "task"], name="uniq_thread_read"),
+        ]
+
+    def __str__(self):
+        return f"{self.user} read {self.task_id} @ {self.last_read_at:%Y-%m-%d %H:%M}"
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # WORK EXECUTION SYSTEM — a Task is an operational record, not a checkbox.
 #

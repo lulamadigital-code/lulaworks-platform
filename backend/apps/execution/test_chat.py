@@ -79,6 +79,36 @@ class TaskChatTests(APITestCase):
         r = self.client.get("/api/v1/task-messages/")
         self.assertEqual(len(r.data.get("results", r.data)), 0)
 
+    def test_inbox_lists_my_threads_with_unread_and_mark_read_clears_it(self):
+        # manager posts two messages to the worker's task
+        self.client.force_authenticate(self.mgr)
+        self.client.post("/api/v1/task-messages/",
+                         {"task": str(self.task.id), "body": "Confirm arrival"}, format="json")
+        self.client.post("/api/v1/task-messages/",
+                         {"task": str(self.task.id), "body": "And quantity"}, format="json")
+
+        # the worker (a participant) sees the thread with unread = 2
+        self.client.force_authenticate(self.worker)
+        threads = self.client.get("/api/v1/task-messages/inbox/").data["threads"]
+        mine = next(t for t in threads if t["task_id"] == str(self.task.id))
+        self.assertEqual(mine["unread"], 2)
+        self.assertEqual(mine["last_message"]["body"], "And quantity")
+
+        # marking read clears unread
+        self.client.post("/api/v1/task-messages/mark_read/",
+                         {"task": str(self.task.id)}, format="json")
+        threads2 = self.client.get("/api/v1/task-messages/inbox/").data["threads"]
+        mine2 = next(t for t in threads2 if t["task_id"] == str(self.task.id))
+        self.assertEqual(mine2["unread"], 0)
+
+    def test_inbox_excludes_non_participants(self):
+        self.client.force_authenticate(self.worker)
+        self.client.post("/api/v1/task-messages/",
+                         {"task": str(self.task.id), "body": "hi"}, format="json")
+        self.client.force_authenticate(self.stranger)
+        threads = self.client.get("/api/v1/task-messages/inbox/").data["threads"]
+        self.assertFalse(any(t["task_id"] == str(self.task.id) for t in threads))
+
     def test_start_task_posts_a_system_message(self):
         self.client.force_authenticate(self.worker)
         self.client.post(f"/api/v1/tasks/{self.task.id}/start/")

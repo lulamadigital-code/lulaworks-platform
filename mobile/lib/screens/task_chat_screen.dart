@@ -63,6 +63,11 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
         _error = null;
       });
       if (grew) _toBottom();
+      // Clear this thread's unread for the inbox (best-effort).
+      if (msgs.isNotEmpty) {
+        widget.api.post('/task-messages/mark_read/', {'task': widget.taskId})
+            .catchError((_) => null);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {

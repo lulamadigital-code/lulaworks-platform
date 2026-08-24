@@ -6,6 +6,7 @@ import '../screens/company_settings_screen.dart';
 import '../screens/customers_screen.dart';
 import '../screens/attendance_review_screen.dart';
 import '../screens/attendance_screen.dart';
+import '../screens/chat_inbox_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/estimates_screen.dart';
 import '../screens/field_home_screen.dart';
@@ -255,6 +256,14 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
         visible: (a) => true,
         hiddenIfTab: 'mywork',
         build: (a, _) => MyTasksScreen(api: a),
+      ),
+      MoreItem(
+        id: 'messages',
+        title: 'Messages',
+        subtitle: 'Your task conversations',
+        icon: Icons.forum_outlined,
+        visible: (a) => true,
+        build: (a, _) => ChatInboxScreen(api: a),
       ),
       MoreItem(
         id: 'attendance',
