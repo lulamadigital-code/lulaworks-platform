@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../theme.dart';
 import 'report_capture_screen.dart';
 
 /// The task's operational hub — the mobile answer to "who, where, how much, what
@@ -83,7 +84,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.name)),
+      appBar: AppBar(title: Text(widget.name), scrolledUnderElevation: 1),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addReport,
         icon: const Icon(Icons.add_location_alt),
@@ -120,7 +121,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
                   const SizedBox(width: 8),
                   if ((d['flagged_count'] as int? ?? 0) > 0)
                     _chip(context, Icons.warning_amber,
-                        '${d['flagged_count']} flagged', color: Colors.red),
+                        '${d['flagged_count']} flagged', color: kRed),
                   const SizedBox(width: 8),
                   _chip(context, Icons.checklist,
                       '${outstanding.length} outstanding'),
@@ -146,48 +147,63 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
 
   Widget _money(BuildContext context, Map<String, dynamic> fin) {
     final over = fin['over_budget'] == true;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            _stat(context, 'Allocated', widget.api.money(fin['allocated'])),
-            _stat(context, 'Spent', widget.api.money(fin['spent'])),
-            _stat(context, 'Remaining', widget.api.money(fin['remaining']),
-                color: over ? Colors.red : Colors.green),
-          ]),
-          if ((fin['materials_count'] as int? ?? 0) > 0) ...[
-            const Divider(height: 24),
-            Text('Materials: ${widget.api.money(fin['materials_total'])} '
-                '(${fin['materials_count']} item(s))',
-                style: Theme.of(context).textTheme.bodyMedium),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: kLine)),
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(child: _stat('Allocated', widget.api.money(fin['allocated']))),
+          Expanded(child: _stat('Spent', widget.api.money(fin['spent']))),
+          Expanded(
+              child: _stat('Remaining', widget.api.money(fin['remaining']),
+                  color: over ? kRed : kGreen)),
         ]),
-      ),
+        if ((fin['materials_count'] as int? ?? 0) > 0) ...[
+          const Divider(height: 24),
+          Text('Materials: ${widget.api.money(fin['materials_total'])} '
+              '(${fin['materials_count']} item(s))',
+              style: const TextStyle(fontSize: 13, color: kMuted)),
+        ],
+      ]),
     );
   }
 
-  Widget _stat(BuildContext context, String label, String value, {Color? color}) {
+  Widget _stat(String label, String value, {Color? color}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: Theme.of(context).textTheme.labelSmall),
-      const SizedBox(height: 2),
+      Text(label, style: const TextStyle(fontSize: 11.5, color: kMuted)),
+      const SizedBox(height: 3),
       Text(value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: color, fontWeight: FontWeight.bold)),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+              fontSize: 15, fontWeight: FontWeight.w700, color: color ?? kInk)),
     ]);
   }
 
   Widget _chip(BuildContext context, IconData icon, String label, {Color? color}) {
-    return Chip(
-      visualDensity: VisualDensity.compact,
-      avatar: Icon(icon, size: 16, color: color),
-      label: Text(label, style: TextStyle(color: color)),
+    final c = color ?? kMuted;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+          color: c.withOpacity(0.10), borderRadius: BorderRadius.circular(9)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 15, color: c),
+        const SizedBox(width: 5),
+        Text(label,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: c)),
+      ]),
     );
   }
 
   Widget _sectionTitle(BuildContext context, String t) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
-        child: Text(t, style: Theme.of(context).textTheme.titleMedium),
+        child: Text(t.toUpperCase(),
+            style: const TextStyle(
+                fontSize: 11.5, fontWeight: FontWeight.w700,
+                letterSpacing: 0.6, color: kMuted)),
       );
 }
 
@@ -204,7 +220,7 @@ class _ReportTile extends StatelessWidget {
       dense: true,
       contentPadding: EdgeInsets.zero,
       leading: Icon(_iconFor('${report['kind']}'),
-          color: flagged ? Colors.red : Theme.of(context).colorScheme.primary),
+          color: flagged ? kRed : kBrand),
       title: Text('${report['title']}'),
       subtitle: Text([
         '${report['kind_display'] ?? report['kind']}',
@@ -215,7 +231,7 @@ class _ReportTile extends StatelessWidget {
       trailing: hasAmount
           ? Text('R $amount',
               style: const TextStyle(fontWeight: FontWeight.bold))
-          : (flagged ? const Icon(Icons.warning_amber, color: Colors.red) : null),
+          : (flagged ? const Icon(Icons.warning_amber, color: kRed) : null),
     );
   }
 
