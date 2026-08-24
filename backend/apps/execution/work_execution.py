@@ -279,6 +279,8 @@ def task_operational_dashboard(task, user=None) -> dict:
         "progress_pct": task.progress_pct,
         "team": {role: task.team(role) for role, _ in Assignment.Role.choices},
         "outstanding": outstanding,
+        "checklist": checklist,
+        "subtasks": subtasks,
         "can_view_money": can_view_money,
         "financials": task_financials(task) if can_view_money else None,
         "reports": reports,

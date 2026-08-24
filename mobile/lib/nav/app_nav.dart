@@ -6,6 +6,7 @@ import '../screens/company_settings_screen.dart';
 import '../screens/customers_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/estimates_screen.dart';
+import '../screens/field_home_screen.dart';
 import '../screens/finance_screen.dart';
 import '../screens/lulama_screen.dart';
 import '../screens/more_screen.dart';
@@ -113,11 +114,15 @@ List<NavTab> bottomTabsFor(ApiClient api) {
     label: 'Home',
     icon: Icons.dashboard_outlined,
     activeIcon: Icons.dashboard,
-    build: (api, a) => DashboardScreen(
-      api: api,
-      onOpenProjects: a.openProjects,
-      onOpenLulama: a.openLulama,
-    ),
+    // Employees get the task-centric Field Home; owners/managers get the
+    // command-centre dashboard.
+    build: (api, a) => isEmployee
+        ? FieldHomeScreen(api: api)
+        : DashboardScreen(
+            api: api,
+            onOpenProjects: a.openProjects,
+            onOpenLulama: a.openLulama,
+          ),
   );
   final myWork = NavTab(
     id: 'mywork',

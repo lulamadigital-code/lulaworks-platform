@@ -3,9 +3,11 @@ from rest_framework import serializers
 from apps.core.api import GoldenRuleSerializerMixin
 
 from .models import (
+    ChecklistItem,
     Notification,
     Resource,
     ResourceAllocation,
+    Subtask,
     Task,
     TaskReport,
     TaskReportItem,
@@ -14,6 +16,27 @@ from .models import (
     WorkPackage,
 )
 from .services import compute_task_readiness
+
+
+class ChecklistItemSerializer(serializers.ModelSerializer):
+    """A tickable step the person on site checks off. is_done is the only field
+    the field app writes; done_by/done_at are stamped server-side."""
+
+    done_by_name = serializers.CharField(source="done_by.get_full_name", read_only=True)
+
+    class Meta:
+        model = ChecklistItem
+        fields = ["id", "task", "subtask", "label", "is_done", "position",
+                  "done_by", "done_by_name", "done_at"]
+        read_only_fields = ["id", "task", "subtask", "label", "position",
+                            "done_by", "done_by_name", "done_at"]
+
+
+class SubtaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subtask
+        fields = ["id", "task", "name", "is_done", "position", "due_date"]
+        read_only_fields = ["id", "task", "name", "position", "due_date"]
 
 
 class NotificationSerializer(serializers.ModelSerializer):

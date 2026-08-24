@@ -12,9 +12,11 @@ from apps.core.uploads import validate_upload
 
 from .models import (
     Attachment,
+    ChecklistItem,
     Notification,
     Resource,
     ResourceAllocation,
+    Subtask,
     Task,
     TaskReport,
     TaskResourceAllocation,
@@ -24,10 +26,12 @@ from .models import (
 from .serializers import (
     AllocateResourceSerializer,
     AllocateSerializer,
+    ChecklistItemSerializer,
     CreateTaskReportSerializer,
     NotificationSerializer,
     ResourceAllocationSerializer,
     ResourceSerializer,
+    SubtaskSerializer,
     TaskReportSerializer,
     TaskResourceAllocationSerializer,
     TaskSerializer,
@@ -83,6 +87,47 @@ class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def mark_read(self, request):
         mark_notifications_read(request.user, ids=request.data.get("ids"))
         return Response({"count": unread_count(request.user)})
+
+
+class ChecklistItemViewSet(TenantViewSet):
+    """The steps a field worker ticks off on a task. Read + toggle only (no
+    create/delete via the app — labels come from the task template); the app only
+    flips is_done. Ticking is field work, so work.edit is enough. ?task=<id>."""
+
+    http_method_names = ["get", "patch", "head", "options"]
+    model = ChecklistItem
+    serializer_class = ChecklistItemSerializer
+    required_perms = {"partial_update": ("work.edit", "execution.manage")}
+
+    def get_queryset(self):
+        qs = ChecklistItem.objects.all()
+        task = self.request.query_params.get("task")
+        return qs.filter(task_id=task) if task else qs
+
+    def perform_update(self, serializer):
+        from django.utils import timezone
+        done = serializer.validated_data.get("is_done")
+        if done is True:
+            serializer.save(done_by=self.request.user, done_at=timezone.now())
+        elif done is False:
+            serializer.save(done_by=None, done_at=None)
+        else:
+            serializer.save()
+
+
+class SubtaskViewSet(TenantViewSet):
+    """Coarser tickable steps on a task (a checklist may hang off one). Same
+    field-work gate as checklist items. Read + toggle only. ?task=<id>."""
+
+    http_method_names = ["get", "patch", "head", "options"]
+    model = Subtask
+    serializer_class = SubtaskSerializer
+    required_perms = {"partial_update": ("work.edit", "execution.manage")}
+
+    def get_queryset(self):
+        qs = Subtask.objects.all()
+        task = self.request.query_params.get("task")
+        return qs.filter(task_id=task) if task else qs
 
 
 class WorkPackageViewSet(TenantViewSet):
@@ -167,11 +212,20 @@ def _serialize_dashboard(data, request) -> dict:
             fin["allocations"], many=True, context={"request": request}).data,
     }
     return {
-        "task": {"id": str(task.id), "name": task.name, "status": task.status},
+        "task": {
+            "id": str(task.id), "name": task.name, "status": task.status,
+            "description": task.description, "priority": task.priority,
+            "client_name": task.client_name, "site": task.site,
+            "due_date": task.due_date.isoformat() if task.due_date else None,
+            "site_latitude": str(task.site_latitude) if task.site_latitude is not None else None,
+            "site_longitude": str(task.site_longitude) if task.site_longitude is not None else None,
+        },
         "progress_pct": data["progress_pct"],
         "team": {role: [u.get_full_name() or u.email for u in users]
                  for role, users in data["team"].items()},
         "outstanding": data["outstanding"],
+        "checklist": ChecklistItemSerializer(data.get("checklist", []), many=True).data,
+        "subtasks": SubtaskSerializer(data.get("subtasks", []), many=True).data,
         "can_view_money": data.get("can_view_money", False),
         "financials": financials,
         "documents": data["documents"],

@@ -193,6 +193,9 @@ class ApiClient {
   bool get canOverrideCompliance => can('compliance.override');
   // Field execution — starting/completing a task and filing task reports.
   bool get canManageExecution => can('execution.manage');
+  // Doing the field work itself (start/complete/report/tick checklist). A
+  // groundfloor worker holds work.edit, not the execution.manage umbrella.
+  bool get canExecuteWork => can('work.edit') || can('execution.manage');
   String get userId => ((_me['user'] as Map?)?['id'] ?? '').toString();
   bool get canManageCustomers => can('customers.manage');
   // Who should even see the customer database — anyone doing commercial work,

@@ -6,13 +6,14 @@ import 'package:lulaworks_mobile/api/api_client.dart';
 import 'package:lulaworks_mobile/main.dart';
 
 void main() {
-  testWidgets('boots to the sign-in screen', (tester) async {
+  testWidgets('boots to the sign-in screen when unauthenticated', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final api = await ApiClient.create();
-    await tester.pumpWidget(LulaWorksApp(api: api));
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(LulaworksApp(api: api));
+    await tester.pump();
 
-    expect(find.text('LulaWorks'), findsWidgets);
-    expect(find.text('Sign in'), findsOneWidget);
+    // The redesigned login screen shows "Welcome back" + a Sign in button.
+    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.text('Sign in'), findsWidgets);
   });
 }
