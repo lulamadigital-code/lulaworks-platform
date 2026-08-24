@@ -411,6 +411,50 @@ class WesApiTests(APITestCase):
                                 format="json")
         self.assertEqual(made.status_code, 403)
 
+    def test_list_endpoints_withhold_money_from_non_money_users(self):
+        """The /task-reports/ and /task-allocations/ list endpoints are readable
+        by any member — so their money fields must be Golden-Rule stripped for a
+        worker without finance.view_money (else the budget leaks via the raw
+        endpoint even after the operational hub is gated)."""
+        edit = Permission.objects.create(codename="work.edit", module="work",
+                                         label="Edit work")
+        role = Role.objects.create(name="FieldOnly2", is_system=True)
+        role.permissions.add(edit)
+        worker = User.objects.create_user("nomoney2@lulama.co.za", "x",
+                                          active_company=self.company)
+        Membership.objects.create(user=worker, company=self.company, role=role)
+
+        # Seed a budget + a priced material report (as the money-capable ops user).
+        alloc = self.client.post("/api/v1/task-allocations/", {
+            "task": str(self.task.id), "kind": "purchase_budget",
+            "amount_allocated": "5000"}, format="json")
+        self.assertEqual(alloc.status_code, 201, alloc.data)
+        rep = self.client.post("/api/v1/task-reports/", {
+            "task": str(self.task.id), "kind": "material", "title": "Invoice",
+            "amount": "1800", "items": [
+                {"description": "Hose", "quantity": "6", "unit_price": "300"}]},
+            format="json")
+        self.assertEqual(rep.status_code, 201, rep.data)
+
+        self.client.force_authenticate(worker)
+
+        # task-reports list: report + line items visible, money withheld.
+        reports = self.client.get(f"/api/v1/task-reports/?task={self.task.id}")
+        row = reports.data["results"][0] if "results" in reports.data else reports.data[0]
+        self.assertNotIn("amount", row)
+        self.assertNotIn("vat_amount", row)
+        self.assertTrue(row["items"])                 # still lists the items…
+        self.assertNotIn("unit_price", row["items"][0])   # …without the prices
+        self.assertNotIn("line_total", row["items"][0])
+
+        # task-allocations list: the allocation shows, amounts withheld.
+        allocs = self.client.get(f"/api/v1/task-allocations/?task={self.task.id}")
+        arow = allocs.data["results"][0] if "results" in allocs.data else allocs.data[0]
+        self.assertNotIn("amount_allocated", arow)
+        self.assertNotIn("amount_spent", arow)
+        self.assertNotIn("remaining", arow)
+        self.assertIn("kind", arow)                   # non-money fields remain
+
     def test_operational_dashboard_withholds_money_from_non_money_users(self):
         """Golden Rule: the operational hub's task budget (allocated/spent/
         remaining) is company money — a worker without finance.view_money gets

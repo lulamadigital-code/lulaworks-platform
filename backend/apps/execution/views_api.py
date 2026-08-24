@@ -164,7 +164,7 @@ def _serialize_dashboard(data, request) -> dict:
         "materials_total": str(fin["materials_total"]),
         "materials_count": fin["materials_count"],
         "allocations": TaskResourceAllocationSerializer(
-            fin["allocations"], many=True).data,
+            fin["allocations"], many=True, context={"request": request}).data,
     }
     return {
         "task": {"id": str(task.id), "name": task.name, "status": task.status},
@@ -402,10 +402,12 @@ class TaskResourceAllocationViewSet(TenantViewSet):
             task, request.user, kind=data["kind"],
             amount_allocated=data.get("amount_allocated", 0),
             label=data.get("label", ""), notes=data.get("notes", ""))
-        return Response(TaskResourceAllocationSerializer(alloc).data,
-                        status=status.HTTP_201_CREATED)
+        return Response(
+            TaskResourceAllocationSerializer(alloc, context={"request": request}).data,
+            status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
     def reconcile(self, request, pk=None):
         alloc = reconcile_allocation(self.get_object())
-        return Response(TaskResourceAllocationSerializer(alloc).data)
+        return Response(
+            TaskResourceAllocationSerializer(alloc, context={"request": request}).data)

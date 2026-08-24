@@ -55,7 +55,10 @@ class TaskSerializer(serializers.ModelSerializer):
         return {"status": status, "blocked_reason": reason}
 
 
-class ResourceSerializer(serializers.ModelSerializer):
+class ResourceSerializer(GoldenRuleSerializerMixin, serializers.ModelSerializer):
+    # hourly_rate is a labour cost — withheld from users without finance.view_money.
+    money_fields = ("hourly_rate",)
+
     class Meta:
         model = Resource
         fields = ["id", "kind", "name", "code", "hourly_rate", "medical_expiry",
@@ -94,7 +97,11 @@ class TimesheetSerializer(GoldenRuleSerializerMixin, serializers.ModelSerializer
 
 # ── Work Execution System — the field record ─────────────────────────────────
 
-class TaskResourceAllocationSerializer(serializers.ModelSerializer):
+class TaskResourceAllocationSerializer(GoldenRuleSerializerMixin,
+                                       serializers.ModelSerializer):
+    # A task budget is company money. The item still lists (kind/label/status)
+    # for non-money users, but the rand amounts are withheld (Golden Rule).
+    money_fields = ("amount_allocated", "amount_spent", "remaining")
     remaining = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     is_over_budget = serializers.BooleanField(read_only=True)
     kind_display = serializers.CharField(source="get_kind_display", read_only=True)
@@ -108,16 +115,26 @@ class TaskResourceAllocationSerializer(serializers.ModelSerializer):
                             "kind_display", "created_at"]
 
 
-class TaskReportItemSerializer(serializers.ModelSerializer):
+class TaskReportItemSerializer(GoldenRuleSerializerMixin,
+                               serializers.ModelSerializer):
+    money_fields = ("unit_price", "line_total")
+
     class Meta:
         model = TaskReportItem
         fields = ["id", "description", "quantity", "unit", "unit_price", "line_total"]
         read_only_fields = ["id"]
 
 
-class TaskReportSerializer(serializers.ModelSerializer):
-    """Read view of a field report, including its extracted line items."""
+class TaskReportSerializer(GoldenRuleSerializerMixin, serializers.ModelSerializer):
+    """Read view of a field report, including its extracted line items.
 
+    A report's captured spend (amount/VAT + its line items) is company money, so
+    those figures are withheld from users without finance.view_money. The report
+    itself — who/when/where, kind, evidence — is always visible so field crews
+    and supervisors can see the work; only the rand values are gated."""
+
+    # Nested item money is stripped by TaskReportItemSerializer's own mixin.
+    money_fields = ("amount", "vat_amount")
     items = TaskReportItemSerializer(many=True, read_only=True)
     kind_display = serializers.CharField(source="get_kind_display", read_only=True)
     employee_name = serializers.CharField(source="employee.get_full_name", read_only=True)
