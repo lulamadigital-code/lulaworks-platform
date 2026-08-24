@@ -29,6 +29,8 @@ urlpatterns = [
     # is the generic, un-branded page, so send "/admin/" straight to the Console.
     # Deeper Django model pages ("/admin/identity/company/", …) still resolve via
     # the admin include below and stay reachable from the Console's links.
+    # NOTE: AdminAccessMiddleware 404s the whole /admin/ tree for anyone who is
+    # not a signed-in superuser, so the un-branded login is never discoverable.
     path("admin/", RedirectView.as_view(url="/platform/", permanent=False)),
     path("admin/", admin.site.urls),
     path("health/", health, name="health"),

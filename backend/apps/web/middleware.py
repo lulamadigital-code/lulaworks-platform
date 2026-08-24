@@ -135,3 +135,44 @@ class RequestIDMiddleware:
         # 500 handler can record safe technical context.
         request._lw_exc_type = type(exception).__name__
         return None
+
+
+class AdminAccessMiddleware:
+    """Hide Django's built-in admin from everyone who isn't a signed-in
+    superuser.
+
+    The un-branded ``/admin/`` login is a classic brute-force / drive-by target.
+    Rather than serve it to the public, we return a plain 404 for the entire
+    ``/admin/`` tree unless the request already carries an authenticated,
+    active, superuser session. Superusers reach the admin *after* signing in
+    through the normal web login (``/login/``), which sets the same Django
+    session the admin honours; the Platform Console's deep admin links keep
+    working for them. The admin's own login page is deliberately NOT exposed —
+    to an attacker the entire admin simply does not exist, so there is nothing
+    to hammer. (If a superuser's session has lapsed, they sign in again at the
+    ordinary ``/login/`` page, not at ``/admin/``.)
+
+    Must sit AFTER ``AuthenticationMiddleware`` so ``request.user`` is resolved.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        path = request.path
+        if path == "/admin" or path.startswith("/admin/"):
+            user = getattr(request, "user", None)
+            allowed = bool(
+                user is not None
+                and user.is_authenticated
+                and user.is_active
+                and user.is_superuser
+            )
+            if not allowed:
+                from django.http import HttpResponseNotFound
+
+                return HttpResponseNotFound(
+                    "<h1>Not Found</h1>"
+                    "<p>The requested resource was not found on this server.</p>"
+                )
+        return self.get_response(request)
