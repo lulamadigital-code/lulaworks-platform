@@ -1,16 +1,18 @@
 from decimal import Decimal
 
-from rest_framework import status
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.core.api import TenantViewSet
+from apps.core.middleware import set_tenant_from_request
 from apps.core.uploads import validate_upload
 
 from .models import (
     Attachment,
+    Notification,
     Resource,
     ResourceAllocation,
     Task,
@@ -23,6 +25,7 @@ from .serializers import (
     AllocateResourceSerializer,
     AllocateSerializer,
     CreateTaskReportSerializer,
+    NotificationSerializer,
     ResourceAllocationSerializer,
     ResourceSerializer,
     TaskReportSerializer,
@@ -36,8 +39,10 @@ from .services import (
     allocate_resource,
     approve_timesheet,
     complete_task,
+    mark_notifications_read,
     refresh_task_status,
     start_task,
+    unread_count,
 )
 from .work_execution import (
     add_report_item,
@@ -52,6 +57,32 @@ from .work_execution import (
 def _project_filtered(qs, request):
     project = request.query_params.get("project")
     return qs.filter(project_id=project) if project else qs
+
+
+class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """The signed-in user's in-app notifications. `unread` gives the badge count;
+    `mark-read` clears them (all, or a given list of ids)."""
+
+    serializer_class = NotificationSerializer
+
+    def initial(self, request, *args, **kwargs):
+        # Notification is tenant-scoped; a plain GenericViewSet must set the
+        # tenant itself (TenantViewSet does this for its subclasses).
+        super().initial(request, *args, **kwargs)
+        set_tenant_from_request(request)
+
+    def get_queryset(self):
+        return (Notification.objects.filter(user=self.request.user)
+                .order_by("-created_at"))
+
+    @action(detail=False, methods=["get"])
+    def unread(self, request):
+        return Response({"count": unread_count(request.user)})
+
+    @action(detail=False, methods=["post"], url_path="mark-read")
+    def mark_read(self, request):
+        mark_notifications_read(request.user, ids=request.data.get("ids"))
+        return Response({"count": unread_count(request.user)})
 
 
 class WorkPackageViewSet(TenantViewSet):
@@ -75,9 +106,15 @@ class TaskViewSet(TenantViewSet):
                       "start": "execution.manage", "complete": "execution.manage"}
 
     def get_queryset(self):
-        return _project_filtered(
+        qs = _project_filtered(
             Task.objects.all().select_related("project", "material_po"), self.request
         )
+        # ?mine=1 → only tasks the requesting user is assigned to (the field
+        # worker's "My tasks"). Assignment is the user↔task link (Task.assignee is
+        # a Resource, not a user).
+        if self.request.query_params.get("mine") in ("1", "true", "yes"):
+            qs = qs.filter(assignments__user=self.request.user).distinct()
+        return qs
 
     @action(detail=True, methods=["post"])
     def refresh(self, request, pk=None):

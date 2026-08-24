@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
-import 'lulama_screen.dart';
 import 'project_detail_screen.dart';
 
 class ProjectsScreen extends StatefulWidget {
@@ -23,7 +22,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   }
 
   Future<void> _refresh() async {
-    setState(() => _future = _load());
+    setState(() { _future = _load(); });
     await _future;
   }
 
@@ -39,13 +38,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             onPressed: widget.onSignOut,
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.auto_awesome),
-        label: const Text('Ask Lulama'),
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => LulamaScreen(api: widget.api),
-        )),
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,

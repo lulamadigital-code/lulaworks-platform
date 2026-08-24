@@ -1,26 +1,25 @@
 import 'package:flutter/material.dart';
 
 import 'api/api_client.dart';
+import 'screens/home_shell.dart';
 import 'screens/login_screen.dart';
-import 'screens/projects_screen.dart';
+import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final api = await ApiClient.create();
-  runApp(LulaWorksApp(api: api));
+  runApp(LulaworksApp(api: api));
 }
 
-const _brand = Color(0xFF0E6E6E); // Lulama teal
-
-class LulaWorksApp extends StatefulWidget {
-  const LulaWorksApp({super.key, required this.api});
+class LulaworksApp extends StatefulWidget {
+  const LulaworksApp({super.key, required this.api});
   final ApiClient api;
 
   @override
-  State<LulaWorksApp> createState() => _LulaWorksAppState();
+  State<LulaworksApp> createState() => _LulaworksAppState();
 }
 
-class _LulaWorksAppState extends State<LulaWorksApp> {
+class _LulaworksAppState extends State<LulaworksApp> {
   late bool _signedIn = widget.api.isAuthenticated;
 
   void _onSignedIn() => setState(() => _signedIn = true);
@@ -32,20 +31,12 @@ class _LulaWorksAppState extends State<LulaWorksApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'LulaWorks',
+      title: 'Lulaworks',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: _brand,
-        brightness: Brightness.light,
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: _brand,
-        brightness: Brightness.dark,
-      ),
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
       home: _signedIn
-          ? ProjectsScreen(api: widget.api, onSignOut: _onSignOut)
+          ? HomeShell(api: widget.api, onSignOut: _onSignOut)
           : LoginScreen(api: widget.api, onSignedIn: _onSignedIn),
     );
   }

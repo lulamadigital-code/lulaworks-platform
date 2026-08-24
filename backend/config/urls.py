@@ -56,6 +56,8 @@ urlpatterns = [
     path("api/v1/", include("apps.finance.urls")),
     # AI Platform — Lulama orchestrator + agents
     path("api/v1/", include("apps.ai_platform.urls")),
+    # Customers & Contacts
+    path("api/v1/", include("apps.customers.urls")),
     # OpenAPI
     # API schema + docs expose the whole API surface — restrict to staff
     # (superusers) rather than the public.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../widgets/brand_logo.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.api, required this.onSignedIn});
@@ -49,10 +50,8 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Icon(Icons.hub_outlined, size: 56, color: theme.colorScheme.primary),
-                const SizedBox(height: 12),
-                Text('LulaWorks', textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineMedium),
+                const BrandLogo(height: 62),
+                const SizedBox(height: 10),
                 Text('Contractor Operating System', textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: theme.colorScheme.outline)),

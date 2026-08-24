@@ -16,6 +16,8 @@ class ProjectDetailScreen extends StatefulWidget {
 class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   late Future<_Detail> _future = _load();
 
+  void _reload() => setState(() { _future = _load(); });
+
   Future<_Detail> _load() async {
     final readiness = Readiness.fromJson(
         await widget.api.get('/projects/${widget.project.id}/readiness/')
@@ -32,7 +34,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(widget.project.number)),
       body: RefreshIndicator(
-        onRefresh: () async => setState(() => _future = _load()),
+        onRefresh: () async => setState(() { _future = _load(); }),
         child: FutureBuilder<_Detail>(
           future: _future,
           builder: (context, snap) {
@@ -75,7 +77,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 Text('Compliance checklist',
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                ...d.checklist.map((c) => _ChecklistTile(item: c)),
+                ...d.checklist.map((c) => _ChecklistTile(
+                      api: widget.api,
+                      item: c,
+                      onChanged: _reload,
+                    )),
               ],
             );
           },
@@ -194,25 +200,144 @@ class _GateCard extends StatelessWidget {
   String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }
 
+/// An interactive compliance item. Compliance isn't a simple on/off toggle —
+/// it's a gated lifecycle (missing → submitted → approved). Tapping opens the
+/// valid next actions for the item's current status; the backend enforces the
+/// permissions (submit = compliance.manage, approve/reject = compliance.override),
+/// and we surface a friendly message if the user isn't allowed.
 class _ChecklistTile extends StatelessWidget {
-  const _ChecklistTile({required this.item});
+  const _ChecklistTile({
+    required this.api,
+    required this.item,
+    required this.onChanged,
+  });
+
+  final ApiClient api;
   final Map<String, dynamic> item;
+  final VoidCallback onChanged;
+
+  String get _status => '${item['status']}';
+  String get _id => '${item['id']}';
 
   @override
   Widget build(BuildContext context) {
-    final satisfied = item['is_satisfied'] == true;
     final mandatory = item['is_mandatory'] == true;
+    final (IconData icon, Color color) = _visual(context);
     return ListTile(
       dense: true,
       contentPadding: EdgeInsets.zero,
-      leading: Icon(
-        satisfied ? Icons.check_circle : Icons.radio_button_unchecked,
-        color: satisfied ? Colors.green : Theme.of(context).colorScheme.outline,
-        size: 20,
-      ),
+      leading: Icon(icon, color: color, size: 22),
       title: Text('${item['name']}'),
       subtitle: Text('${item['category']} · ${item['status']}'
           '${mandatory ? ' · mandatory' : ''}'),
+      trailing: const Icon(Icons.more_horiz),
+      onTap: () => _openActions(context),
     );
   }
+
+  (IconData, Color) _visual(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    switch (_status) {
+      case 'approved':
+        return (
+          item['is_satisfied'] == true ? Icons.check_circle : Icons.error,
+          item['is_satisfied'] == true ? Colors.green : Colors.amber.shade700,
+        );
+      case 'submitted':
+        return (Icons.hourglass_top, Colors.amber.shade700);
+      case 'rejected':
+        return (Icons.cancel, Colors.red.shade600);
+      case 'expired':
+        return (Icons.event_busy, Colors.red.shade600);
+      default: // missing, pending
+        return (Icons.radio_button_unchecked, scheme.outline);
+    }
+  }
+
+  void _openActions(BuildContext context) {
+    // Offer only the transitions that make sense from the current status AND
+    // that this user is permitted to make (submit = compliance.manage,
+    // approve/reject = compliance.override). The backend enforces the same.
+    final canSubmit = api.canManageCompliance;
+    final canDecide = api.canOverrideCompliance;
+    final actions = <_Act>[
+      if (canSubmit && _status != 'submitted' && _status != 'approved')
+        const _Act('Mark as submitted', Icons.upload_file, 'submit'),
+      if (canDecide && _status == 'submitted')
+        const _Act('Approve', Icons.verified, 'approve'),
+      if (canDecide && (_status == 'submitted' || _status == 'approved'))
+        const _Act('Reject', Icons.block, 'reject', destructive: true),
+    ];
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+              child: Text('${item['name']}',
+                  style: Theme.of(sheetCtx).textTheme.titleMedium),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text('Currently: ${item['status']}',
+                  style: Theme.of(sheetCtx).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(sheetCtx).colorScheme.outline)),
+            ),
+            const Divider(height: 1),
+            for (final a in actions)
+              ListTile(
+                leading: Icon(a.icon,
+                    color: a.destructive
+                        ? Theme.of(sheetCtx).colorScheme.error
+                        : null),
+                title: Text(a.label,
+                    style: a.destructive
+                        ? TextStyle(color: Theme.of(sheetCtx).colorScheme.error)
+                        : null),
+                onTap: () {
+                  Navigator.pop(sheetCtx);
+                  _run(context, a);
+                },
+              ),
+            if (actions.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(20),
+                child: Text('No actions available to you for this item.'),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _run(BuildContext context, _Act a) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await api.post('/compliance-items/$_id/${a.endpoint}/');
+      onChanged();
+      messenger.showSnackBar(SnackBar(content: Text('${a.label} — done')));
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(e.isForbidden
+            ? "You don't have permission to ${a.label.toLowerCase()}."
+            : e.message),
+      ));
+    } catch (_) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Could not reach the server.')));
+    }
+  }
+}
+
+class _Act {
+  const _Act(this.label, this.icon, this.endpoint, {this.destructive = false});
+  final String label;
+  final IconData icon;
+  final String endpoint;
+  final bool destructive;
 }

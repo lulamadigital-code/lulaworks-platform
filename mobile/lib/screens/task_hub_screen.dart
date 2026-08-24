@@ -30,7 +30,54 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
         builder: (_) => ReportCaptureScreen(api: widget.api, taskId: widget.taskId),
       ),
     );
-    if (saved == true) setState(() => _future = _load());
+    if (saved == true) setState(() { _future = _load(); });
+  }
+
+  Future<void> _taskAction(String path, String done) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await widget.api.post('/tasks/${widget.taskId}/$path/');
+      setState(() { _future = _load(); });
+      messenger.showSnackBar(SnackBar(content: Text(done)));
+    } on ApiException catch (e) {
+      // 409 = the readiness gate refused (e.g. compliance not met) — show why.
+      messenger.showSnackBar(SnackBar(
+          content: Text(e.isForbidden
+              ? "You don't have permission for that."
+              : e.message)));
+    } catch (_) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Could not reach the server.')));
+    }
+  }
+
+  Widget _statusActions(BuildContext context, String status) {
+    if (!widget.api.canManageExecution) return const SizedBox.shrink();
+    final canStart =
+        {'ready', 'assigned', 'accepted', 'waiting'}.contains(status);
+    final canComplete = status == 'in_progress';
+    if (!canStart && !canComplete) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(children: [
+        if (canStart)
+          Expanded(
+            child: FilledButton.icon(
+              onPressed: () => _taskAction('start', 'Task started'),
+              icon: const Icon(Icons.play_arrow),
+              label: const Text('Start task'),
+            ),
+          ),
+        if (canComplete)
+          Expanded(
+            child: FilledButton.icon(
+              onPressed: () => _taskAction('complete', 'Task completed'),
+              icon: const Icon(Icons.check),
+              label: const Text('Complete task'),
+            ),
+          ),
+      ]),
+    );
   }
 
   @override
@@ -43,7 +90,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
         label: const Text('Report'),
       ),
       body: RefreshIndicator(
-        onRefresh: () async => setState(() => _future = _load()),
+        onRefresh: () async => setState(() { _future = _load(); }),
         child: FutureBuilder<Map<String, dynamic>>(
           future: _future,
           builder: (context, snap) {
@@ -61,9 +108,11 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
             final reports = (d['reports'] as List).cast<Map<String, dynamic>>();
             final timeline = (d['timeline'] as List).cast<Map<String, dynamic>>();
             final outstanding = (d['outstanding'] as List).cast<dynamic>();
+            final status = '${(d['task'] as Map?)?['status'] ?? ''}';
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                _statusActions(context, status),
                 _money(context, fin),
                 const SizedBox(height: 8),
                 Row(children: [
@@ -102,14 +151,14 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            _stat(context, 'Allocated', 'R ${fin['allocated']}'),
-            _stat(context, 'Spent', 'R ${fin['spent']}'),
-            _stat(context, 'Remaining', 'R ${fin['remaining']}',
+            _stat(context, 'Allocated', widget.api.money(fin['allocated'])),
+            _stat(context, 'Spent', widget.api.money(fin['spent'])),
+            _stat(context, 'Remaining', widget.api.money(fin['remaining']),
                 color: over ? Colors.red : Colors.green),
           ]),
           if ((fin['materials_count'] as int? ?? 0) > 0) ...[
             const Divider(height: 24),
-            Text('Materials: R ${fin['materials_total']} '
+            Text('Materials: ${widget.api.money(fin['materials_total'])} '
                 '(${fin['materials_count']} item(s))',
                 style: Theme.of(context).textTheme.bodyMedium),
           ],

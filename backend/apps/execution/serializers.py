@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.core.api import GoldenRuleSerializerMixin
 
 from .models import (
+    Notification,
     Resource,
     ResourceAllocation,
     Task,
@@ -13,6 +14,13 @@ from .models import (
     WorkPackage,
 )
 from .services import compute_task_readiness
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ["id", "title", "body", "url", "is_read", "created_at"]
+        read_only_fields = fields
 
 
 class WorkPackageSerializer(serializers.ModelSerializer):

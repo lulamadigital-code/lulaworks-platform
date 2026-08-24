@@ -1,6 +1,7 @@
 from rest_framework.routers import DefaultRouter
 
 from .views_api import (
+    NotificationViewSet,
     ResourceAllocationViewSet,
     ResourceViewSet,
     TaskReportViewSet,
@@ -13,6 +14,7 @@ from .views_api import (
 router = DefaultRouter()
 router.register("work-packages", WorkPackageViewSet, basename="work-package")
 router.register("tasks", TaskViewSet, basename="task")
+router.register("notifications", NotificationViewSet, basename="notification")
 router.register("resources", ResourceViewSet, basename="resource")
 router.register("resource-allocations", ResourceAllocationViewSet, basename="resource-allocation")
 router.register("task-reports", TaskReportViewSet, basename="task-report")
