@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _busy = false;
+  bool _showServer = false; // hidden by default; long-press the logo to reveal
   String? _error;
 
   Future<void> _submit() async {
@@ -50,19 +51,27 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const BrandLogo(height: 62),
+                GestureDetector(
+                  // Discreet developer affordance: long-press the logo to reveal
+                  // the Server field (for pointing at a local backend). End users
+                  // never see it — the app defaults to production.
+                  onLongPress: () => setState(() => _showServer = !_showServer),
+                  child: const BrandLogo(height: 62),
+                ),
                 const SizedBox(height: 10),
                 Text('Contractor Operating System', textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium
                         ?.copyWith(color: theme.colorScheme.outline)),
                 const SizedBox(height: 32),
-                TextField(
-                  controller: _origin,
-                  decoration: const InputDecoration(
-                      labelText: 'Server', prefixIcon: Icon(Icons.dns_outlined)),
-                  keyboardType: TextInputType.url,
-                ),
-                const SizedBox(height: 12),
+                if (_showServer) ...[
+                  TextField(
+                    controller: _origin,
+                    decoration: const InputDecoration(
+                        labelText: 'Server', prefixIcon: Icon(Icons.dns_outlined)),
+                    keyboardType: TextInputType.url,
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 TextField(
                   controller: _email,
                   decoration: const InputDecoration(
