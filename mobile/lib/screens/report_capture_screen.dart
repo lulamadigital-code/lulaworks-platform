@@ -26,9 +26,27 @@ const _kinds = <String, String>{
   'fuel': 'Fuel purchase',
   'material': 'Material purchase',
   'meal': 'Meal / food',
+  'toll': 'Toll / transport',
+  'accommodation': 'Accommodation',
   'expense': 'Other expense',
+  'incident': 'Incident / safety',
+  'delay': 'Delay / standing time',
   'general': 'General / evidence',
 };
+
+// Per-type wording so each report reads naturally. `titleObvious` kinds skip the
+// title field entirely (a "Fuel purchase" needs no title); `supplier`/`scan`
+// tune the field label and the AI receipt-scan button per kind.
+const _kindConfig = <String, Map<String, String>>{
+  'fuel': {'supplier': 'Filling station', 'scan': 'Scan pump receipt'},
+  'material': {'supplier': 'Supplier', 'scan': 'Scan supplier invoice'},
+  'meal': {'supplier': 'Where', 'scan': 'Scan receipt'},
+  'toll': {'supplier': 'Route / plaza', 'scan': 'Scan toll slip'},
+  'accommodation': {'supplier': 'Place', 'scan': 'Scan invoice'},
+  'expense': {'supplier': 'Paid to', 'scan': 'Scan receipt'},
+};
+
+const _titleObviousKinds = {'fuel', 'meal', 'toll', 'accommodation'};
 
 const _timeEvents = <String>[
   'Departed office', 'Arrived at supplier', 'Loading materials',
@@ -61,8 +79,24 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
   bool _submitting = false;
   bool _scanning = false;
 
-  bool get _isFinancial =>
-      _kind == 'fuel' || _kind == 'material' || _kind == 'meal' || _kind == 'expense';
+  bool get _isFinancial => const {
+        'fuel', 'material', 'meal', 'toll', 'accommodation', 'expense'
+      }.contains(_kind);
+
+  // Title is redundant for obvious purchases (fuel, meal, toll, accommodation) —
+  // auto-derived on save. Everything else shows a tailored title/description.
+  bool get _titleObvious => _titleObviousKinds.contains(_kind);
+  String get _supplierLabel => _kindConfig[_kind]?['supplier'] ?? 'Supplier';
+  String get _scanLabel => _kindConfig[_kind]?['scan'] ?? 'Scan receipt';
+
+  String get _titleLabel => switch (_kind) {
+        'time_event' => 'Event',
+        'incident' => 'What happened?',
+        'delay' => 'Reason for the delay',
+        'material' => 'What was bought',
+        'expense' => 'What was it for',
+        _ => 'Title',
+      };
 
   @override
   void initState() {
@@ -176,7 +210,10 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
         _supplier.text = (data['supplier'] ?? '').toString();
         _invoiceNo.text = (data['invoice_number'] ?? '').toString();
         _amount.text = (data['amount'] ?? '').toString();
-        if (_title.text.isEmpty) _title.text = 'Supplier invoice';
+        final d = (data['document_date'] ?? '').toString();
+        if (d.isNotEmpty) _docDate = DateTime.tryParse(d) ?? _docDate;
+        // Only kinds that show a title get one auto-suggested from the scan.
+        if (!_titleObvious && _title.text.isEmpty) _title.text = 'Supplier invoice';
       });
       _snack('Extracted — please review before saving.');
     } catch (e) {
@@ -187,8 +224,14 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
   }
 
   Future<void> _submit() async {
-    if (_title.text.trim().isEmpty) {
-      _snack('Give the report a title.');
+    var title = _title.text.trim();
+    if (title.isEmpty && _titleObvious) {
+      // "Fuel purchase" needs no typing — name it from the kind (+ supplier).
+      final sup = _supplier.text.trim();
+      title = sup.isEmpty ? (_kinds[_kind] ?? 'Report') : '${_kinds[_kind]} — $sup';
+    }
+    if (title.isEmpty) {
+      _snack(_kind == 'time_event' ? 'Pick an event.' : 'Add a short title.');
       return;
     }
     setState(() => _submitting = true);
@@ -196,10 +239,10 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
       final body = <String, dynamic>{
         'task': widget.taskId,
         'kind': _kind,
-        'title': _title.text.trim(),
+        'title': title,
         'notes': _notes.text.trim(),
       };
-      if (_kind == 'time_event') body['event'] = _title.text.trim();
+      if (_kind == 'time_event') body['event'] = title;
       if (_pos != null) {
         body['latitude'] = _pos!.latitude.toStringAsFixed(6);
         body['longitude'] = _pos!.longitude.toStringAsFixed(6);
@@ -275,26 +318,28 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
               ActionChip(label: Text(e), onPressed: () => _title.text = e),
           ]),
         if (_kind == 'time_event') const SizedBox(height: 12),
-        TextField(
-          controller: _title,
-          decoration: InputDecoration(
-              labelText: _kind == 'time_event' ? 'Event' : 'Title'),
-        ),
-        if (_kind == 'material') ...[
+        // Obvious purchases (fuel/meal/toll/accommodation) don't need a title —
+        // it's derived on save. Everything else asks for a tailored one.
+        if (!_titleObvious)
+          TextField(
+            controller: _title,
+            decoration: InputDecoration(labelText: _titleLabel),
+          ),
+        if (_isFinancial) ...[
           const SizedBox(height: 12),
+          // AI receipt scan — read supplier / ref / amount off a photo of the
+          // receipt so the worker just confirms. Works for any money report.
           OutlinedButton.icon(
             onPressed: _scanning ? null : _scanInvoice,
             icon: _scanning
                 ? const SizedBox(
                     width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.document_scanner),
-            label: const Text('Scan supplier invoice'),
+            label: Text(_scanLabel),
           ),
-        ],
-        if (_isFinancial) ...[
           const SizedBox(height: 12),
           TextField(controller: _supplier,
-              decoration: const InputDecoration(labelText: 'Supplier')),
+              decoration: InputDecoration(labelText: _supplierLabel)),
           const SizedBox(height: 12),
           TextField(controller: _invoiceNo,
               decoration: const InputDecoration(labelText: 'Invoice / ref')),

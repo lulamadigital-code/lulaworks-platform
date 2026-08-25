@@ -774,13 +774,18 @@ class ReportKind(models.TextChoices):
     FUEL = "fuel", "Fuel purchase"
     MATERIAL = "material", "Material purchase"
     MEAL = "meal", "Meal / food"
+    TOLL = "toll", "Toll / transport"
+    ACCOMMODATION = "accommodation", "Accommodation"
     EXPENSE = "expense", "Other expense"
+    INCIDENT = "incident", "Incident / safety"
+    DELAY = "delay", "Delay / standing time"
     GENERAL = "general", "General / evidence"
 
 
 #: Report kinds that book actual money against the task.
 FINANCIAL_REPORT_KINDS = frozenset({
-    ReportKind.FUEL, ReportKind.MATERIAL, ReportKind.MEAL, ReportKind.EXPENSE,
+    ReportKind.FUEL, ReportKind.MATERIAL, ReportKind.MEAL,
+    ReportKind.TOLL, ReportKind.ACCOMMODATION, ReportKind.EXPENSE,
 })
 
 
@@ -797,7 +802,7 @@ class TaskReport(TenantBaseModel):
     an auditable field record."""
 
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="reports")
-    kind = models.CharField(max_length=12, choices=ReportKind.choices,
+    kind = models.CharField(max_length=16, choices=ReportKind.choices,
                             default=ReportKind.PROGRESS)
     title = models.CharField(max_length=200)
     event = models.CharField(max_length=80, blank=True)  # time_event label e.g. "Arrived at site"
