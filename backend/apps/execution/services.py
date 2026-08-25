@@ -148,6 +148,53 @@ def start_task(task, user) -> Task:
     return task
 
 
+def can_review_reports(user) -> bool:
+    """Who may approve/return field reports — a manager sign-off role."""
+    return (user.has_perm_code("work.approve")
+            or user.has_perm_code("execution.manage"))
+
+
+def approve_report(report, user):
+    """Manager sign-off on a field report. Notifies the author."""
+    from .models import TaskReport
+    report.status = TaskReport.ReviewStatus.APPROVED
+    report.reviewed_by = user
+    report.reviewed_at = timezone.now()
+    report.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
+    if report.employee_id and report.employee_id != user.id:
+        notify(report.employee, task=report.task, verb="report_approved",
+               title=f"Report approved: {report.title}")
+    return report
+
+
+def return_report(report, user, comment: str):
+    """Return a report for correction with a required comment. Notifies author."""
+    from .models import TaskReport, TaskReportComment
+    report.status = TaskReport.ReviewStatus.RETURNED
+    report.reviewed_by = user
+    report.reviewed_at = timezone.now()
+    report.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
+    TaskReportComment.objects.create(report=report, company=report.company,
+                                     author=user, body=comment)
+    if report.employee_id and report.employee_id != user.id:
+        notify(report.employee, task=report.task, verb="report_returned",
+               title=f"Report returned: {report.title}", body=comment[:120])
+    return report
+
+
+def add_report_comment(report, user, body: str):
+    """Add a message to a report's review thread and notify the other party."""
+    from .models import TaskReportComment
+    comment = TaskReportComment.objects.create(
+        report=report, company=report.company, author=user, body=body)
+    is_author = report.employee_id == user.id
+    other = report.reviewed_by if is_author else report.employee
+    if other and other.id != user.id:
+        notify(other, task=report.task, verb="report_comment",
+               title=f"Comment on {report.title}", body=body[:120])
+    return comment
+
+
 def pause_task(task, user, *, reason="") -> Task:
     """Pause an in-progress task (a break, waiting on something). Only IN_PROGRESS
     can be paused; PAUSED is a manual state the readiness engine won't override."""

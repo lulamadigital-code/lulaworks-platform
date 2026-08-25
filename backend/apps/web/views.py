@@ -837,6 +837,47 @@ def notifications(request):
 
 
 @login_required
+def reports_list(request):
+    """All field reports across the company's jobs — the manager's review queue,
+    with status and how many review comments each has."""
+    from apps.execution.models import TaskReport
+    status_filter = request.GET.get("status", "")
+    qs = TaskReport.objects.select_related("task", "employee").all()
+    if status_filter in ("submitted", "returned", "approved"):
+        qs = qs.filter(status=status_filter)
+    reports = qs.order_by("-reported_at")[:200]
+    return render(request, "web/reports.html",
+                  {"reports": reports, "status": status_filter})
+
+
+@login_required
+def report_detail(request, pk):
+    """One field report + its review conversation. Reviewers can approve/return;
+    anyone in the loop can reply (chat back)."""
+    from apps.execution.models import TaskReport
+    from apps.execution.services import (
+        add_report_comment, approve_report, can_review_reports, return_report)
+    report = get_object_or_404(
+        TaskReport.objects.select_related("task", "employee", "reviewed_by"), pk=pk)
+    can_review = can_review_reports(request.user)
+    if request.method == "POST":
+        action = request.POST.get("action")
+        body = (request.POST.get("body") or "").strip()
+        if action == "approve" and can_review:
+            approve_report(report, request.user)
+            messages.success(request, "Report approved.")
+        elif action == "return" and can_review and body:
+            return_report(report, request.user, body)
+            messages.info(request, "Report returned for correction.")
+        elif action == "comment" and body:
+            add_report_comment(report, request.user, body)
+        return redirect("web:report_detail", report.id)
+    comments = report.comments.select_related("author").all()
+    return render(request, "web/report_detail.html",
+                  {"report": report, "comments": comments, "can_review": can_review})
+
+
+@login_required
 def notification_open(request, pk):
     """Open one notification: mark just THAT notification read (so the badge
     drops by one, not to zero), then go to what it's about."""

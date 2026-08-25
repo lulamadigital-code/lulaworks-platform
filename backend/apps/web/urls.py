@@ -259,6 +259,8 @@ urlpatterns = [
          name="work_decompose_apply"),
     path("notifications/", views.notifications, name="notifications"),
     path("notifications/<uuid:pk>/open/", views.notification_open, name="notification_open"),
+    path("reports/", views.reports_list, name="reports"),
+    path("reports/<uuid:pk>/", views.report_detail, name="report_detail"),
     path("projects/<uuid:pk>/phases/", views.project_phase_add, name="project_phase_add"),
     # RFQ (front door)
     path("rfq/", views.rfq_list, name="rfq"),

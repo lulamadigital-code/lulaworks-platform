@@ -1,0 +1,86 @@
+{% extends "web/base.html" %}
+{% block title %}{{ report.title }}{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>{{ report.title }}
+      <span class="chip {% if report.status == 'approved' %}ok{% elif report.status == 'returned' %}warn{% else %}info{% endif %}">{{ report.get_status_display }}</span>
+    </h1>
+    <p class="sub" style="margin:0;">{{ report.get_kind_display }} ·
+      <a href="{% url 'web:work_detail' report.task.id %}">{{ report.task.name }}</a></p>
+  </div>
+  <a class="btn ghost" href="{% url 'web:reports' %}">← All reports</a>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Details</h2>
+    <table class="kv">
+      <tr><td class="muted">Submitted by</td><td>{% if report.employee %}{{ report.employee.get_full_name|default:report.employee.email }}{% else %}—{% endif %}</td></tr>
+      <tr><td class="muted">Time</td><td>{{ report.reported_at|date:"d M Y · H:i" }}</td></tr>
+      <tr><td class="muted">Location</td><td>
+        {% if report.location_flagged %}<span class="chip bad">Outside expected area</span>
+        {% elif report.distance_m is not None %}<span class="chip ok">Verified · {{ report.distance_m }} m from site</span>
+        {% elif report.latitude is not None %}Captured · {{ report.latitude }}, {{ report.longitude }}
+        {% else %}<span class="muted">Not captured</span>{% endif %}</td></tr>
+      {% if report.supplier %}<tr><td class="muted">Supplier</td><td>{{ report.supplier }}</td></tr>{% endif %}
+      {% if report.amount and can_view_money %}<tr><td class="muted">Amount</td><td>R{{ report.amount }}</td></tr>{% endif %}
+      {% if report.reviewed_by %}<tr><td class="muted">Reviewed by</td><td>{{ report.reviewed_by.get_full_name|default:report.reviewed_by.email }}</td></tr>{% endif %}
+    </table>
+    {% if report.notes %}
+      <p class="muted" style="margin:12px 0 4px;">NOTES</p>
+      <p>{{ report.notes|linebreaksbr }}</p>
+    {% endif %}
+    {% if report.items.all %}
+      <p class="muted" style="margin:12px 0 4px;">ITEMS</p>
+      <table><tr><th>Item</th><th class="right">Qty</th></tr>
+      {% for it in report.items.all %}
+        <tr><td>{{ it.description }}</td><td class="right">{{ it.quantity }} {{ it.unit }}</td></tr>
+      {% endfor %}</table>
+    {% endif %}
+
+    {% if can_review and report.status == 'submitted' %}
+    <div style="margin-top:16px; display:flex; gap:8px;">
+      <form method="post" style="display:inline;">{% csrf_token %}
+        <input type="hidden" name="action" value="approve">
+        <button class="btn" type="submit">Approve</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Conversation</h2>
+    <div class="chatlog">
+      {% for c in comments %}
+      <div class="msg">
+        <div class="msg-h"><strong>{{ c.author.get_full_name|default:c.author.email|default:'System' }}</strong>
+          <span class="muted">{{ c.created_at|date:"d M · H:i" }}</span></div>
+        <div>{{ c.body|linebreaksbr }}</div>
+      </div>
+      {% empty %}
+      <p class="muted">No messages yet. Reply below to start the conversation.</p>
+      {% endfor %}
+    </div>
+
+    <form method="post" style="margin-top:12px;">{% csrf_token %}
+      <textarea name="body" rows="2" placeholder="Write a reply…" required
+                style="width:100%;"></textarea>
+      <div style="margin-top:8px; display:flex; gap:8px;">
+        <button class="btn" type="submit" name="action" value="comment">Send</button>
+        {% if can_review and report.status != 'approved' %}
+        <button class="btn ghost" type="submit" name="action" value="return"
+                title="Return to the worker for correction (with your message above)">Return for correction</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .kv td { padding:4px 8px 4px 0; vertical-align:top; }
+  .chatlog { display:flex; flex-direction:column; gap:10px; max-height:340px; overflow:auto; }
+  .msg { border:1px solid var(--line,#e6e9ef); border-radius:10px; padding:8px 10px; }
+  .msg-h { display:flex; justify-content:space-between; font-size:12px; margin-bottom:2px; }
+</style>
+{% endblock %}

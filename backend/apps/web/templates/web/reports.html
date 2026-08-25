@@ -1,0 +1,36 @@
+{% extends "web/base.html" %}
+{% block title %}Field reports{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Field reports</h1>
+    <p class="sub" style="margin:0;">Everything the field captured — review and reply.</p>
+  </div>
+</div>
+
+<div style="margin-bottom:14px; display:flex; gap:6px; flex-wrap:wrap;">
+  <a class="chip {% if not status %}info{% endif %}" href="{% url 'web:reports' %}">All</a>
+  <a class="chip {% if status == 'submitted' %}info{% endif %}" href="?status=submitted">Submitted</a>
+  <a class="chip {% if status == 'returned' %}warn{% endif %}" href="?status=returned">Returned</a>
+  <a class="chip {% if status == 'approved' %}ok{% endif %}" href="?status=approved">Approved</a>
+</div>
+
+<div class="card" style="padding:0;">
+  {% for r in reports %}
+  <a class="workrow" href="{% url 'web:report_detail' r.id %}">
+    <span class="wr-main">
+      <strong>{{ r.title }}</strong>
+      <span class="muted">{{ r.get_kind_display }} · {{ r.task.name }} ·
+        {% if r.employee %}{{ r.employee.get_full_name|default:r.employee.email }}{% else %}—{% endif %}
+        · {{ r.reported_at|date:"d M H:i" }}</span>
+    </span>
+    {% with c=r.comments.count %}{% if c %}<span class="chip">{{ c }} 💬</span>{% endif %}{% endwith %}
+    {% if r.location_flagged %}<span class="chip bad">off-site</span>{% endif %}
+    <span class="chip {% if r.status == 'approved' %}ok{% elif r.status == 'returned' %}warn{% else %}info{% endif %}">{{ r.get_status_display }}</span>
+  </a>
+  {% empty %}
+  <p class="muted" style="padding:22px;">No field reports yet — they appear here as
+    the field captures progress, purchases and time events.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -50,8 +50,11 @@ from .serializers import (
 )
 from .services import (
     AllocationError,
+    add_report_comment,
     allocate_resource,
+    approve_report,
     approve_timesheet,
+    can_review_reports,
     complete_task,
     mark_notifications_read,
     notify,
@@ -59,6 +62,7 @@ from .services import (
     pause_task,
     refresh_task_status,
     resume_task,
+    return_report,
     start_task,
     unread_count,
 )
@@ -661,9 +665,9 @@ class TaskReportViewSet(TenantViewSet):
             "items": fields.get("lines", []),
         })
 
-    # ── Review workflow (§16 / §36) ─────────────────────────────────────────
+    # ── Review workflow (§16 / §36) — logic lives in services (shared w/ web) ──
     def _can_review(self, user):
-        return user.has_perm_code("work.approve") or user.has_perm_code("execution.manage")
+        return can_review_reports(user)
 
     def _out(self, report, request):
         return Response(
@@ -676,15 +680,7 @@ class TaskReportViewSet(TenantViewSet):
             return Response({"error": {"code": "forbidden",
                              "message": "You can't review reports."}},
                             status=status.HTTP_403_FORBIDDEN)
-        report = self.get_object()
-        report.status = TaskReport.ReviewStatus.APPROVED
-        report.reviewed_by = request.user
-        report.reviewed_at = timezone.now()
-        report.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
-        if report.employee_id and report.employee_id != request.user.id:
-            notify(report.employee, task=report.task, verb="report_approved",
-                   title=f"Report approved: {report.title}")
-        return self._out(report, request)
+        return self._out(approve_report(self.get_object(), request.user), request)
 
     @action(detail=True, methods=["post"], url_path="return")
     def return_report(self, request, pk=None):
@@ -698,17 +694,7 @@ class TaskReportViewSet(TenantViewSet):
             return Response({"error": {"code": "empty",
                              "message": "Say what needs fixing."}},
                             status=status.HTTP_400_BAD_REQUEST)
-        report = self.get_object()
-        report.status = TaskReport.ReviewStatus.RETURNED
-        report.reviewed_by = request.user
-        report.reviewed_at = timezone.now()
-        report.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
-        TaskReportComment.objects.create(report=report, company=report.company,
-                                         author=request.user, body=body)
-        if report.employee_id and report.employee_id != request.user.id:
-            notify(report.employee, task=report.task, verb="report_returned",
-                   title=f"Report returned: {report.title}", body=body[:120])
-        return self._out(report, request)
+        return self._out(return_report(self.get_object(), request.user, body), request)
 
     @action(detail=True, methods=["post"])
     def resubmit(self, request, pk=None):
@@ -743,13 +729,7 @@ class TaskReportViewSet(TenantViewSet):
         if not body:
             return Response({"error": {"code": "empty", "message": "Say something."}},
                             status=status.HTTP_400_BAD_REQUEST)
-        TaskReportComment.objects.create(report=report, company=report.company,
-                                         author=request.user, body=body)
-        # Notify the other party.
-        other = report.reviewed_by if is_author else report.employee
-        if other and other.id != request.user.id:
-            notify(other, task=report.task, verb="report_comment",
-                   title=f"Comment on {report.title}", body=body[:120])
+        add_report_comment(report, request.user, body)
         return self._out(report, request)
 
 
