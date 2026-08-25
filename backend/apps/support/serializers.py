@@ -5,11 +5,16 @@ from .models import SupportMessage, SupportTicket
 
 class SupportMessageSerializer(serializers.ModelSerializer):
     sender_name = serializers.CharField(source="sender.get_full_name", read_only=True)
+    attachments = serializers.SerializerMethodField()
 
     class Meta:
         model = SupportMessage
-        fields = ["id", "body", "from_support", "sender_name", "created_at"]
+        fields = ["id", "body", "from_support", "sender_name", "attachments",
+                  "created_at"]
         read_only_fields = fields
+
+    def get_attachments(self, obj):
+        return [{"name": a.name, "url": a.file.url} for a in obj.attachments.all()]
 
 
 class SupportTicketSerializer(serializers.ModelSerializer):

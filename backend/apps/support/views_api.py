@@ -6,9 +6,11 @@ notes support staff add.
 """
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.core.api import TenantViewSet
+from apps.core.uploads import validate_upload
 
 from . import services as support
 from .models import SupportTicket
@@ -20,6 +22,7 @@ class SupportTicketViewSet(TenantViewSet):
     shows the conversation; `reply` adds a message. Read+create only."""
 
     http_method_names = ["get", "post", "head", "options"]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
     model = SupportTicket
     serializer_class = SupportTicketSerializer
 
@@ -50,9 +53,17 @@ class SupportTicketViewSet(TenantViewSet):
     @action(detail=True, methods=["post"])
     def reply(self, request, pk=None):
         ticket = self.get_object()
+        files = request.FILES.getlist("image") or request.FILES.getlist("file")
+        for f in files:
+            try:
+                validate_upload(f)
+            except Exception as exc:                           # noqa: BLE001
+                return Response({"error": {"code": "invalid", "message": str(exc)}},
+                                status=status.HTTP_400_BAD_REQUEST)
         try:
             support.add_message(ticket=ticket, sender=request.user,
-                                body=request.data.get("body", ""), from_support=False)
+                                body=request.data.get("body", ""),
+                                from_support=False, files=files or None)
         except support.SupportError as exc:
             return Response({"error": {"code": "invalid", "message": str(exc)}},
                             status=status.HTTP_400_BAD_REQUEST)

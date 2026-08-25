@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../api/api_client.dart';
 import '../theme.dart';
@@ -342,6 +343,26 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
     }
   }
 
+  Future<void> _sendPhoto() async {
+    final x = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 70);
+    if (x == null || !mounted) return;
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final r = await widget.api.postMultipart('/support-tickets/${_t['id']}/reply/',
+          fields: {'body': _reply.text.trim()}, filePath: x.path, fileField: 'image');
+      _reply.clear();
+      if (r is Map) setState(() => _t = r.cast<String, dynamic>());
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('Could not send photo — try again.')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  String _fullUrl(String url) =>
+      url.startsWith('http') ? url : '${widget.api.origin}$url';
+
   @override
   Widget build(BuildContext context) {
     final msgs = (_t['messages'] as List? ?? const []).cast<Map<String, dynamic>>();
@@ -390,6 +411,10 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
             decoration: const BoxDecoration(
                 color: Colors.white, border: Border(top: BorderSide(color: kLine))),
             child: Row(children: [
+              IconButton(
+                onPressed: _busy ? null : _sendPhoto,
+                icon: const Icon(Icons.add_a_photo_outlined, color: kBrandDark),
+              ),
               Expanded(
                 child: TextField(
                   controller: _reply,
@@ -430,6 +455,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
   Widget _bubble(Map<String, dynamic> m) {
     final fromSupport = m['from_support'] == true;
     final when = DateTime.tryParse('${m['created_at']}')?.toLocal();
+    final atts = (m['attachments'] as List? ?? const []).cast<Map<String, dynamic>>();
     return Align(
       alignment: fromSupport ? Alignment.centerLeft : Alignment.centerRight,
       child: Container(
@@ -449,9 +475,21 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
                   style: const TextStyle(
                       fontSize: 11.5, fontWeight: FontWeight.w700, color: kBrandDark)),
             ),
-          Text('${m['body']}',
-              style: TextStyle(
-                  fontSize: 14.5, color: fromSupport ? kInk : Colors.white, height: 1.3)),
+          for (final a in atts)
+            if ('${a['url']}'.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(_fullUrl('${a['url']}'),
+                      width: 180, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                ),
+              ),
+          if ('${m['body']}'.trim().isNotEmpty)
+            Text('${m['body']}',
+                style: TextStyle(
+                    fontSize: 14.5, color: fromSupport ? kInk : Colors.white, height: 1.3)),
           const SizedBox(height: 3),
           Text(
               when == null ? '' : '${when.day}/${when.month} '
