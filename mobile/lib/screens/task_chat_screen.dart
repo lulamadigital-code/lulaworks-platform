@@ -43,10 +43,10 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
     super.initState();
     _load(initial: true);
     _connectWs();
-    // Poll as a fallback (slower when the socket is live).
-    _poll = Timer.periodic(const Duration(seconds: 10), (_) {
-      if (!_wsLive) _load();
-    });
+    // Always poll as a safety net — the socket gives instant delivery, but if a
+    // broadcast is ever dropped (e.g. a misconfigured channel layer in prod) the
+    // poll still surfaces new messages within the interval instead of never.
+    _poll = Timer.periodic(const Duration(seconds: 8), (_) => _load());
   }
 
   @override

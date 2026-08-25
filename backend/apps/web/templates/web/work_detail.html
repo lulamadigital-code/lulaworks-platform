@@ -82,9 +82,9 @@
       <div id="fclog" style="flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;">
         {% for m in chat_messages %}
           {% if m.kind == 'system' %}
-            <div class="fc-sys">{{ m.body }}</div>
+            <div class="fc-sys" data-mid="{{ m.id }}">{{ m.body }}</div>
           {% else %}
-            <div class="fc-msg {% if m.author_id == request.user.id %}mine{% endif %}">
+            <div class="fc-msg {% if m.author_id == request.user.id %}mine{% endif %}" data-mid="{{ m.id }}">
               {% if m.author_id != request.user.id %}<div class="fc-who">{{ m.author.get_full_name|default:m.author.email }}</div>{% endif %}
               {% if m.image %}<a href="{{ m.image.url }}" target="_blank"><img src="{{ m.image.url }}" class="fc-img"></a>{% endif %}
               {% if m.body %}<div>{{ m.body|linebreaksbr }}</div>{% endif %}
@@ -119,7 +119,11 @@
       if(!log||!form) return;
       var me="{{ request.user.id }}",
           sendUrl="{% url 'web:work_chat_send' task.id %}",
+          msgsUrl="{% url 'web:work_chat_messages' task.id %}",
           csrf=form.querySelector('[name=csrfmiddlewaretoken]').value, seen={};
+      // Server already rendered the history — remember those ids so the poll and
+      // the socket don't add them again.
+      log.querySelectorAll('[data-mid]').forEach(function(el){ seen[el.getAttribute('data-mid')]=1; });
       function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
       function toBottom(){log.scrollTop=log.scrollHeight;}
       function add(m){
@@ -137,9 +141,17 @@
           var txt=m.body?'<div>'+esc(m.body)+'</div>':'';
           el.innerHTML=who+img+txt+'<div class="fc-time">'+time+'</div>';
         }
+        if(m.id) el.setAttribute('data-mid', m.id);
         log.appendChild(el);toBottom();
       }
       toBottom();
+      // Poll fallback — surfaces new messages even if a socket broadcast drops.
+      setInterval(function(){
+        fetch(msgsUrl,{headers:{'X-Requested-With':'XMLHttpRequest'}})
+          .then(function(r){return r.json();})
+          .then(function(d){(d.messages||[]).forEach(add);})
+          .catch(function(){});
+      }, 8000);
       var proto=location.protocol==='https:'?'wss':'ws',ws;
       function connect(){
         ws=new WebSocket(proto+'://'+location.host+'/ws/task-chat/{{ task.id }}/');

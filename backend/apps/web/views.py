@@ -876,6 +876,19 @@ def work_chat_send(request, pk):
 
 
 @login_required
+def work_chat_messages(request, pk):
+    """JSON list of a task's chat messages — the web panel polls this as a
+    fallback so new messages appear even if the realtime socket drops one."""
+    from apps.execution.serializers import TaskMessageSerializer
+    from apps.execution.work_execution import can_access_task_chat
+    task = get_object_or_404(Task.objects.all(), pk=pk)
+    if not can_access_task_chat(request.user, task):
+        return JsonResponse({"error": "forbidden"}, status=403)
+    msgs = task.messages.select_related("author").all()
+    return JsonResponse({"messages": TaskMessageSerializer(msgs, many=True).data})
+
+
+@login_required
 def reports_list(request):
     """All field reports across the company's jobs — the manager's review queue,
     with status and how many review comments each has."""

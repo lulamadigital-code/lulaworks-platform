@@ -253,6 +253,7 @@ urlpatterns = [
     path("jobs/<uuid:pk>/comments/", views.work_comment_add, name="work_comment_add"),
     path("jobs/<uuid:pk>/chat/", views.work_chat, name="work_chat"),
     path("jobs/<uuid:pk>/chat/send/", views.work_chat_send, name="work_chat_send"),
+    path("jobs/<uuid:pk>/chat/messages/", views.work_chat_messages, name="work_chat_messages"),
     path("jobs/<uuid:pk>/files/", views.work_file_add, name="work_file_add"),
     path("jobs/<uuid:pk>/team/", views.work_member, name="work_member"),
     path("jobs/<uuid:pk>/link/", views.work_link, name="work_link"),
