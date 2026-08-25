@@ -9,11 +9,14 @@ resource allocation, the actuals capture that closes the Pricing-Intelligence
 loop, the composite health score, and the customer/internal report split.
 """
 
+import logging
 from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 from apps.compliance.services import can_start, recompute_readiness
 from apps.core.events import publish
@@ -155,16 +158,36 @@ def can_review_reports(user) -> bool:
 
 
 def approve_report(report, user):
-    """Manager sign-off on a field report. Notifies the author."""
+    """Manager sign-off on a field report. Notifies the author.
+
+    Approving a financial receipt (fuel/material/expense) is what admits it to
+    the books: converge the job's field spend into the finance cost ledger so a
+    manager's actuals/profitability reflect the just-approved money."""
     from .models import TaskReport
     report.status = TaskReport.ReviewStatus.APPROVED
     report.reviewed_by = user
     report.reviewed_at = timezone.now()
     report.save(update_fields=["status", "reviewed_by", "reviewed_at", "updated_at"])
+    if report.is_financial:
+        _converge_field_spend(report.task, user)
     if report.employee_id and report.employee_id != user.id:
         notify(report.employee, task=report.task, verb="report_approved",
                title=f"Report approved: {report.title}")
     return report
+
+
+def _converge_field_spend(task, user):
+    """Roll a task's project field spend into the finance cost ledger. Best-effort
+    and lazily imported (finance depends on execution, not the reverse)."""
+    project = getattr(task, "project", None)
+    if project is None:
+        return
+    try:
+        from apps.finance.services import rebuild_actuals_from_sources
+        rebuild_actuals_from_sources(project, user=user)
+    except Exception:                                          # noqa: BLE001
+        # Never let a ledger sync failure block a manager's approval.
+        logger.exception("Field-spend convergence failed for task %s", task.id)
 
 
 def return_report(report, user, comment: str):

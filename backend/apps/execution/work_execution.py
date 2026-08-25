@@ -140,7 +140,8 @@ def create_task_report(task, user, *, kind=ReportKind.PROGRESS, title, event="",
                        latitude=None, longitude=None, gps_accuracy_m=None,
                        supplier="", invoice_number="", document_date=None,
                        amount=0, vat_amount=0, currency="ZAR",
-                       allocation=None, extraction_status=None):
+                       allocation=None, litres=None, odometer_km=None, vehicle="",
+                       extraction_status=None):
     """Record an operational event on a task and verify where it happened.
 
     Financial reports (fuel/material/expense) booked against an allocation
@@ -153,6 +154,7 @@ def create_task_report(task, user, *, kind=ReportKind.PROGRESS, title, event="",
         supplier=supplier, invoice_number=invoice_number, document_date=document_date,
         amount=_dec(amount), vat_amount=_dec(vat_amount), currency=currency or "ZAR",
         allocation=allocation,
+        litres=litres, odometer_km=odometer_km, vehicle=vehicle or "",
         extraction_status=extraction_status or ExtractionStatus.NONE,
         created_by=user, updated_by=user,
     )
@@ -244,8 +246,12 @@ def project_field_spend(project) -> dict[str, Decimal]:
     into the cost ledger so a manager's profitability reflects what was actually
     spent, not only what came through supplier invoices."""
     totals: dict[str, Decimal] = {}
+    # Only APPROVED receipts converge into the cost ledger — a pending or
+    # returned receipt is not yet company-recognised spend, so it must not move
+    # a project's actuals or profitability.
     rows = (
-        TaskReport.objects.filter(task__project=project, kind__in=FINANCIAL_REPORT_KINDS)
+        TaskReport.objects.filter(task__project=project, kind__in=FINANCIAL_REPORT_KINDS,
+                                  status=TaskReport.ReviewStatus.APPROVED)
         .values("kind")
         .annotate(total=Sum("amount"))
     )

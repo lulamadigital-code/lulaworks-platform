@@ -827,6 +827,14 @@ class TaskReport(TenantBaseModel):
     currency = models.CharField(max_length=8, default="ZAR")
     allocation = models.ForeignKey(TaskResourceAllocation, on_delete=models.SET_NULL,
                                    null=True, blank=True, related_name="reports")
+
+    # ── Fuel-specific (kind=fuel) — turns a rand amount into fuel intelligence:
+    # litres + odometer let a manager see cost-per-litre and consumption per km,
+    # per vehicle, not just "R500 of petrol". All optional; ignored for non-fuel.
+    litres = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    odometer_km = models.DecimalField(max_digits=10, decimal_places=1, null=True, blank=True)
+    vehicle = models.CharField(max_length=60, blank=True)  # registration / description
+
     extraction_status = models.CharField(max_length=10, choices=ExtractionStatus.choices,
                                          default=ExtractionStatus.NONE)
 

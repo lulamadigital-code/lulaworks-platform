@@ -304,6 +304,52 @@
   </div>
 
   <div>
+    {% if can_view_money and financials %}
+    {# ── Budget & spend (field money captured on this task) ───────────────── #}
+    <h2>Budget &amp; spend</h2>
+    <div class="card">
+      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">Allocated</span>
+        <span style="flex:1;">R {{ financials.allocated|floatformat:2 }}</span></div>
+      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">Spent</span>
+        <span style="flex:1;">R {{ financials.spent|floatformat:2 }}</span></div>
+      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">Remaining</span>
+        <span style="flex:1;"><span class="chip {% if financials.over_budget %}bad{% else %}ok{% endif %}">R {{ financials.remaining|floatformat:2 }}{% if financials.over_budget %} · over budget{% endif %}</span></span></div>
+      {% if financials.allocations %}
+      <div style="height:1px;background:rgba(128,128,128,.18);margin:8px 0;"></div>
+      {% for a in financials.allocations %}
+      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">{{ a.get_kind_display }}</span>
+        <span style="flex:1;">R {{ a.amount_spent|floatformat:2 }} / R {{ a.amount_allocated|floatformat:2 }}
+          {% if a.is_over_budget %}<span class="chip bad">over</span>{% endif %}</span></div>
+      {% endfor %}
+      {% endif %}
+    </div>
+
+    {# ── Receipts (fuel / material / expense with evidence) ───────────────── #}
+    <h2>Receipts</h2>
+    <div class="card" style="padding:0;">
+      {% for r in receipts %}
+      <div class="workrow" style="align-items:flex-start;">
+        <span class="wr-main">
+          <strong>R {{ r.amount|floatformat:2 }} · {{ r.get_kind_display }}</strong>
+          <span class="muted">
+            {% if r.supplier %}{{ r.supplier }} · {% endif %}
+            {% if r.invoice_number %}#{{ r.invoice_number }} · {% endif %}
+            {{ r.reported_at|date:"d M Y" }}
+            {% if r.kind == 'fuel' and r.litres %} · {{ r.litres }} L{% endif %}
+            {% if r.vehicle %} · {{ r.vehicle }}{% endif %}
+          </span>
+          {% for a in r.attachments.all %}
+          <a href="{{ a.file.url }}" target="_blank" rel="noopener" class="chip info" style="margin-top:4px;display:inline-block;">📎 {{ a.original_name|default:"receipt" }}</a>
+          {% endfor %}
+        </span>
+        <span class="chip {% if r.status == 'approved' %}ok{% elif r.status == 'returned' %}warn{% else %}info{% endif %}">{{ r.get_status_display }}</span>
+      </div>
+      {% empty %}
+      <p class="muted" style="padding:16px;">No receipts captured yet — fuel, material and expense receipts appear here.</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     {# ── Field reports (live) ────────────────────────────────────────────── #}
     <h2>Field reports <span class="chip" id="frlive" style="font-size:11px;">live</span></h2>
     <div class="card" style="padding:0;">

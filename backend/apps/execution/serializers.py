@@ -230,7 +230,8 @@ class TaskReportSerializer(GoldenRuleSerializerMixin, serializers.ModelSerialize
                   "latitude", "longitude", "gps_accuracy_m", "distance_m",
                   "location_flagged", "supplier", "supplier_ref", "supplier_ref_name",
                   "invoice_number", "document_date", "amount", "vat_amount", "currency",
-                  "allocation", "extraction_status", "items",
+                  "allocation", "litres", "odometer_km", "vehicle",
+                  "extraction_status", "items",
                   "status", "status_display", "reviewed_by", "reviewed_by_name",
                   "reviewed_at", "comments", "created_at"]
         read_only_fields = ["id", "kind_display", "status_display", "employee_name",
@@ -264,6 +265,12 @@ class CreateTaskReportSerializer(serializers.Serializer):
     vat_amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
     currency = serializers.CharField(max_length=8, required=False, allow_blank=True)
     allocation = serializers.UUIDField(required=False, allow_null=True)
+    # Fuel-specific (kind=fuel); all optional.
+    litres = serializers.DecimalField(max_digits=8, decimal_places=2, required=False,
+                                      allow_null=True)
+    odometer_km = serializers.DecimalField(max_digits=10, decimal_places=1, required=False,
+                                           allow_null=True)
+    vehicle = serializers.CharField(max_length=60, required=False, allow_blank=True)
     items = TaskReportItemSerializer(many=True, required=False)
 
 

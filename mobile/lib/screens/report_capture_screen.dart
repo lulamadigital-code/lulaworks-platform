@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../api/api_client.dart';
 import '../api/report_store.dart';
+import '../models.dart';
 import '../widgets/mini_map.dart';
 
 /// Capture a field report against a task — the heart of the Work Execution
@@ -41,6 +42,15 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
   final _supplier = TextEditingController();
   final _invoiceNo = TextEditingController();
   final _amount = TextEditingController();
+  final _vat = TextEditingController();
+  final _litres = TextEditingController();
+  final _odometer = TextEditingController();
+  final _vehicle = TextEditingController();
+  DateTime? _docDate;
+
+  // Budget lines the spend can draw from (the task's monetary allocations).
+  List<Map<String, dynamic>> _allocations = const [];
+  String? _allocationId;
 
   Position? _pos;
   String? _gpsError;
@@ -56,6 +66,7 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
   void initState() {
     super.initState();
     _captureLocation(); // grab a fix immediately — the whole point is "where"
+    _loadAllocations(); // budget lines this spend can be booked against
   }
 
   @override
@@ -65,7 +76,46 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
     _supplier.dispose();
     _invoiceNo.dispose();
     _amount.dispose();
+    _vat.dispose();
+    _litres.dispose();
+    _odometer.dispose();
+    _vehicle.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAllocations() async {
+    try {
+      final body = await widget.api.get('/task-allocations/?task=${widget.taskId}');
+      final rows = pageResults(body)
+          .where((a) => a['is_monetary'] != false)
+          .toList();
+      if (mounted) setState(() => _allocations = rows);
+    } catch (_) {
+      // Non-fatal: capture still works without picking a budget line.
+    }
+  }
+
+  String _allocationLabel(Map<String, dynamic> a) {
+    final parts = <String>[
+      '${a['kind_display'] ?? a['kind'] ?? 'Budget'}',
+    ];
+    final label = '${a['label'] ?? ''}'.trim();
+    if (label.isNotEmpty) parts.add(label);
+    // `remaining` is withheld for users without finance.view_money — only show
+    // it when the server actually sent it.
+    if (a['remaining'] != null) parts.add('R${a['remaining']} left');
+    return parts.join(' · ');
+  }
+
+  Future<void> _pickDocDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _docDate ?? now,
+      firstDate: DateTime(now.year - 2),
+      lastDate: now,
+    );
+    if (picked != null && mounted) setState(() => _docDate = picked);
   }
 
   Future<void> _captureLocation() async {
@@ -157,6 +207,21 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
         body['supplier'] = _supplier.text.trim();
         body['invoice_number'] = _invoiceNo.text.trim();
         if (_amount.text.trim().isNotEmpty) body['amount'] = _amount.text.trim();
+        if (_vat.text.trim().isNotEmpty) body['vat_amount'] = _vat.text.trim();
+        if (_docDate != null) {
+          body['document_date'] =
+              '${_docDate!.year.toString().padLeft(4, '0')}-'
+              '${_docDate!.month.toString().padLeft(2, '0')}-'
+              '${_docDate!.day.toString().padLeft(2, '0')}';
+        }
+        if (_allocationId != null) body['allocation'] = _allocationId;
+      }
+      if (_kind == 'fuel') {
+        if (_litres.text.trim().isNotEmpty) body['litres'] = _litres.text.trim();
+        if (_odometer.text.trim().isNotEmpty) {
+          body['odometer_km'] = _odometer.text.trim();
+        }
+        if (_vehicle.text.trim().isNotEmpty) body['vehicle'] = _vehicle.text.trim();
       }
       try {
         final report = await widget.api.post('/task-reports/', body)
@@ -241,6 +306,67 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
                   decoration: const InputDecoration(labelText: 'Amount (ZAR)')),
             ),
           ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(
+              child: TextField(controller: _vat,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'VAT (ZAR)')),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: InkWell(
+                onTap: _pickDocDate,
+                child: InputDecorator(
+                  decoration: const InputDecoration(labelText: 'Receipt date'),
+                  child: Text(_docDate == null
+                      ? 'Tap to set'
+                      : '${_docDate!.year}-${_docDate!.month.toString().padLeft(2, '0')}-${_docDate!.day.toString().padLeft(2, '0')}'),
+                ),
+              ),
+            ),
+          ]),
+          if (_allocations.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String?>(
+              value: _allocationId,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Draw from budget'),
+              items: [
+                const DropdownMenuItem<String?>(
+                    value: null, child: Text('— none —')),
+                for (final a in _allocations)
+                  DropdownMenuItem<String?>(
+                    value: '${a['id']}',
+                    child: Text(
+                      _allocationLabel(a),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onChanged: (v) => setState(() => _allocationId = v),
+            ),
+          ],
+        ],
+        if (_kind == 'fuel') ...[
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(
+              child: TextField(controller: _litres,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Litres')),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(controller: _odometer,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Odometer (km)')),
+            ),
+          ]),
+          const SizedBox(height: 12),
+          TextField(controller: _vehicle,
+              decoration: const InputDecoration(
+                  labelText: 'Vehicle (registration)')),
         ],
         const SizedBox(height: 12),
         TextField(controller: _notes, minLines: 2, maxLines: 4,

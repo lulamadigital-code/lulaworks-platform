@@ -541,11 +541,28 @@ def work_new(request):
 def work_detail(request, pk):
     """The work item's own dashboard — progress, blockers, team, hierarchy,
     conversation and files in one place."""
-    from apps.execution.work_execution import can_access_task_chat
+    from apps.execution.work_execution import (
+        FINANCIAL_REPORT_KINDS,
+        can_access_task_chat,
+        task_financials,
+    )
     task = get_object_or_404(
         Task.objects.all().select_related("project", "phase", "assignee"), pk=pk)
     ctx = work_dashboard(task, request.user)
+    # Golden Rule: task budget vs spend + the receipts are company money — only
+    # surface them to someone who may view money.
+    can_view_money = request.user.has_perm_code("finance.view_money")
+    financials = receipts = None
+    if can_view_money:
+        financials = task_financials(task)
+        receipts = list(
+            task.reports.filter(kind__in=FINANCIAL_REPORT_KINDS)
+            .select_related("employee", "supplier_ref")
+            .prefetch_related("attachments").order_by("-reported_at"))
     ctx.update({
+        "can_view_money": can_view_money,
+        "financials": financials,
+        "receipts": receipts,
         "can_chat": can_access_task_chat(request.user, task),
         "chat_messages": task.messages.select_related("author").all(),
         "field_reports": task.reports.select_related("employee").all()[:50],

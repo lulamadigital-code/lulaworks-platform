@@ -101,7 +101,7 @@ class FieldSpendConvergenceTests(APITestCase):
 
     def test_field_reports_land_in_actuals_and_profitability(self):
         from apps.execution.work_execution import create_task_report
-        from apps.execution.models import ReportKind
+        from apps.execution.models import ReportKind, TaskReport
         from .services import actual_cost
 
         c = make_company()
@@ -117,6 +117,10 @@ class FieldSpendConvergenceTests(APITestCase):
                                title="Diesel", supplier="Engen", amount=Decimal("800"))
             create_task_report(task, None, kind=ReportKind.EXPENSE,
                                title="Toll gate", amount=Decimal("150"))
+            # Only approved receipts are company-recognised spend, so a manager
+            # must sign them off before they converge into the cost ledger.
+            TaskReport.objects.filter(task=task).update(
+                status=TaskReport.ReviewStatus.APPROVED)
             result = rebuild_actuals_from_sources(project)
             bva = {r["category"]: r for r in budget_vs_actual(project)["lines"]}
             total = actual_cost(project)
@@ -132,7 +136,7 @@ class FieldSpendConvergenceTests(APITestCase):
     def test_resync_is_idempotent(self):
         """Running convergence twice must not double-count field spend."""
         from apps.execution.work_execution import create_task_report
-        from apps.execution.models import ReportKind
+        from apps.execution.models import ReportKind, TaskReport
         from .services import actual_cost
 
         c = make_company()
@@ -142,6 +146,8 @@ class FieldSpendConvergenceTests(APITestCase):
                                        blocks_on_compliance=False)
             create_task_report(task, None, kind=ReportKind.MATERIAL,
                                title="Bolts", supplier="Fastenal", amount=Decimal("500"))
+            TaskReport.objects.filter(task=task).update(
+                status=TaskReport.ReviewStatus.APPROVED)
             rebuild_actuals_from_sources(project)
             rebuild_actuals_from_sources(project)   # re-sync
             total = actual_cost(project)
@@ -151,7 +157,7 @@ class FieldSpendConvergenceTests(APITestCase):
         """Deleting a field receipt and re-syncing clears its ledger row — the
         actual must fall back, not leave a stale cost behind."""
         from apps.execution.work_execution import create_task_report
-        from apps.execution.models import ReportKind
+        from apps.execution.models import ReportKind, TaskReport
         from .services import actual_cost
 
         c = make_company()
@@ -161,12 +167,36 @@ class FieldSpendConvergenceTests(APITestCase):
                                        blocks_on_compliance=False)
             r = create_task_report(task, None, kind=ReportKind.MATERIAL,
                                    title="Gaskets", supplier="Acme", amount=Decimal("900"))
+            TaskReport.objects.filter(task=task).update(
+                status=TaskReport.ReviewStatus.APPROVED)
             rebuild_actuals_from_sources(project)
             self.assertEqual(actual_cost(project), Decimal("900.00"))
             r.delete()                              # receipt reversed
             rebuild_actuals_from_sources(project)   # re-sync
             total = actual_cost(project)
         self.assertEqual(total, Decimal("0.00"))
+
+    def test_only_approved_receipts_hit_the_ledger(self):
+        """A pending receipt must NOT move actuals; approving it converges the
+        spend into the ledger (via approve_report), and profitability follows."""
+        from apps.execution.work_execution import create_task_report
+        from apps.execution.services import approve_report
+        from apps.execution.models import ReportKind
+        from .services import actual_cost
+
+        c = make_company()
+        manager = User.objects.create_user("mgr@lulama.co.za", "x", active_company=c)
+        with tenant_scope(c.id):
+            project, _ = awarded_project_with_budget(c)
+            task = Task.objects.create(company=c, project=project, name="T",
+                                       blocks_on_compliance=False)
+            r = create_task_report(task, None, kind=ReportKind.MATERIAL,
+                                   title="Valves", supplier="Acme", amount=Decimal("700"))
+            rebuild_actuals_from_sources(project)
+            self.assertEqual(actual_cost(project), Decimal("0.00"))  # pending → not booked
+            approve_report(r, manager)              # sign-off converges it
+            total = actual_cost(project)
+        self.assertEqual(total, Decimal("700.00"))
 
 
 class ProfitabilityTests(APITestCase):

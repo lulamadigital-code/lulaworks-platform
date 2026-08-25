@@ -602,6 +602,8 @@ class TaskReportViewSet(TenantViewSet):
             document_date=data.get("document_date"),
             amount=data.get("amount", 0), vat_amount=data.get("vat_amount", 0),
             currency=data.get("currency") or "ZAR", allocation=allocation,
+            litres=data.get("litres"), odometer_km=data.get("odometer_km"),
+            vehicle=data.get("vehicle", ""),
         )
         for item in data.get("items", []):
             add_report_item(report, description=item["description"],
