@@ -827,16 +827,28 @@ def work_decompose_apply(request, pk):
 @login_required
 def notifications(request):
     from apps.execution.models import Notification
+    rows = Notification.objects.filter(user=request.user).select_related("task")[:100]
     if request.method == "POST":
+        # Bulk "Mark all read" button.
         mark_notifications_read(request.user)
         return redirect("web:notifications")
-    # Read the rows first (so this render can still show which were unread), then
-    # mark them read — opening the notification centre clears the badge, so it no
-    # longer shows the same number after you've viewed them.
-    rows = list(Notification.objects.filter(user=request.user).select_related("task")[:100])
-    mark_notifications_read(request.user)
     return render(request, "web/notifications.html",
-                  {"rows": rows, "unread": 0})
+                  {"rows": rows, "unread": unread_count(request.user)})
+
+
+@login_required
+def notification_open(request, pk):
+    """Open one notification: mark just THAT notification read (so the badge
+    drops by one, not to zero), then go to what it's about."""
+    from apps.execution.models import Notification
+    n = get_object_or_404(Notification.objects.filter(user=request.user), pk=pk)
+    if not n.is_read:
+        mark_notifications_read(request.user, ids=[n.id])
+    if n.task_id:
+        return redirect("web:work_detail", n.task_id)
+    if n.url:
+        return redirect(n.url)
+    return redirect("web:notifications")
 
 
 @login_required

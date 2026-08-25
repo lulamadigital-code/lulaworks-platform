@@ -15,7 +15,7 @@
 <div class="card" style="padding:0;">
   {% for n in rows %}
   <a class="workrow {% if not n.is_read %}unread{% endif %}"
-     href="{% if n.task %}{% url 'web:work_detail' n.task.id %}{% else %}{% url 'web:work' %}{% endif %}">
+     href="{% url 'web:notification_open' n.id %}">
     <span class="wr-main">
       <strong>{{ n.title }}</strong>
       {% if n.body %}<span class="muted">{{ n.body }}</span>{% endif %}
