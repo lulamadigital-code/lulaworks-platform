@@ -503,7 +503,8 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
               child: OutlinedButton.icon(
                 onPressed: _busy ? null : () => _taskAction('pause', 'Task paused'),
                 icon: const Icon(Icons.pause, size: 18),
-                label: const Text('Pause'),
+                label: const Text('Pause',
+                    maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis),
                 style: OutlinedButton.styleFrom(
                     foregroundColor: kOrange, side: const BorderSide(color: kLine)),
               ),
@@ -511,15 +512,15 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            flex: 2,
             child: SizedBox(
               height: 50,
               child: OutlinedButton.icon(
                 onPressed: (_busy || !canComplete)
                     ? null
                     : () => _taskAction('complete', 'Task completed'),
-                icon: const Icon(Icons.check),
-                label: Text(canComplete ? 'Complete' : 'Finish the steps first'),
+                icon: const Icon(Icons.check, size: 18),
+                label: Text(canComplete ? 'Complete' : 'Finish steps',
+                    maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis),
                 style: OutlinedButton.styleFrom(
                     foregroundColor: canComplete ? kBrandDark : kMuted,
                     side: BorderSide(color: canComplete ? kBrand : kLine)),
