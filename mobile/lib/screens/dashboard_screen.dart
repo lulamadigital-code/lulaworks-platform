@@ -63,12 +63,14 @@ class _DashboardScreenState extends State<DashboardScreen>
           ? api.get('/finance/commercial-dashboard/').catchError((_) => null)
           : Future<dynamic>.value(null),
     ]);
+    final unreadCount = r[3] is Map ? (r[3]['count'] as int? ?? 0) : 0;
+    api.unread.value = unreadCount; // seed the live badge
     return _Home(
       me: me.cast<String, dynamic>(),
       projects: pageResults(r[0]).map(Project.fromJson).toList(),
       tasks: pageResults(r[1]),
       notifications: pageResults(r[2]),
-      unread: r[3] is Map ? (r[3]['count'] as int? ?? 0) : 0,
+      unread: unreadCount,
       quotations: pageResults(r[4]),
       finance: r[5] is Map ? (r[5] as Map).cast<String, dynamic>() : null,
     );
@@ -253,11 +255,14 @@ class _DashboardScreenState extends State<DashboardScreen>
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: kLine)),
-        child: Badge(
-          isLabelVisible: unread > 0,
-          label: Text('$unread'),
-          offset: const Offset(-6, 6),
-          child: const Icon(Icons.notifications_none, size: 21, color: kInk),
+        child: ValueListenableBuilder<int>(
+          valueListenable: api.unread,
+          builder: (_, live, __) => Badge(
+            isLabelVisible: live > 0,
+            label: Text('$live'),
+            offset: const Offset(-6, 6),
+            child: const Icon(Icons.notifications_none, size: 21, color: kInk),
+          ),
         ),
       ),
     );

@@ -14,6 +14,42 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 
+class NotificationConsumer(AsyncWebsocketConsumer):
+    """Per-user live notification count. On connect it sends the current unread
+    count; the notify() / mark-read paths push updated counts to this user's
+    group so the app's bell badge changes without a refresh or navigation."""
+
+    async def connect(self):
+        self.user = self.scope.get("user")
+        if not self.user or not self.user.is_authenticated:
+            await self.close()
+            return
+        self.group = f"notif_user_{self.user.id}"
+        await self.channel_layer.group_add(self.group, self.channel_name)
+        await self.accept()
+        await self.send(text_data=json.dumps(
+            {"type": "count", "count": await self._count()}))
+
+    async def disconnect(self, code):
+        if getattr(self, "group", None):
+            await self.channel_layer.group_discard(self.group, self.channel_name)
+
+    async def notif_count(self, event):
+        await self.send(text_data=json.dumps(
+            {"type": "count", "count": event["count"]}))
+
+    @database_sync_to_async
+    def _count(self):
+        from apps.core.context import tenant_scope
+
+        from .services import unread_count
+        cid = getattr(self.user, "active_company_id", None)
+        if not cid:
+            return 0
+        with tenant_scope(cid):
+            return unread_count(self.user)
+
+
 class TaskChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.task_id = self.scope["url_route"]["kwargs"]["task_id"]

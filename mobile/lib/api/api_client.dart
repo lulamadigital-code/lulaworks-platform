@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -62,6 +62,11 @@ class ApiClient {
   String get origin => _origin;
   String? get accessToken => _access;
   bool get isAuthenticated => _access != null;
+
+  /// Live unread-notification count — updated by the notification socket (and
+  /// seeded from /notifications/unread/). Bells watch this so the badge changes
+  /// without a refresh or navigation.
+  final ValueNotifier<int> unread = ValueNotifier<int>(0);
 
   /// WebSocket URL for a `/ws/...` path on the current origin, carrying the JWT
   /// as a query token (Channels authenticates from it). https→wss, http→ws.

@@ -38,6 +38,7 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
       final u = await widget.api.get('/notifications/unread/');
       if (u is Map) unread = u['count'] as int? ?? 0;
     } catch (_) {/* non-fatal */}
+    widget.api.unread.value = unread; // seed the live badge
     return _FieldHome(tasks: tasks, unread: unread);
   }
 
@@ -179,11 +180,14 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: kLine)),
-          child: Badge(
-            isLabelVisible: unread > 0,
-            label: Text('$unread'),
-            offset: const Offset(-6, 6),
-            child: const Icon(Icons.notifications_none, size: 21, color: kInk),
+          child: ValueListenableBuilder<int>(
+            valueListenable: widget.api.unread,
+            builder: (_, live, __) => Badge(
+              isLabelVisible: live > 0,
+              label: Text('$live'),
+              offset: const Offset(-6, 6),
+              child: const Icon(Icons.notifications_none, size: 21, color: kInk),
+            ),
           ),
         ),
       );

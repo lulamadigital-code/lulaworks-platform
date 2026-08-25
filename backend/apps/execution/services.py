@@ -785,7 +785,26 @@ def notify(user, *, task=None, verb="", title="", body="", url="", email=False,
         _email_notification(user, company, title=title, body=body, url=full_url)
     if sms:
         _sms_notification(user, company, title=title, task=task)
+    broadcast_unread_count(user)   # live badge on the app
     return note
+
+
+def broadcast_unread_count(user):
+    """Push this user's current unread count to their notification socket, so the
+    app's bell badge updates live. Best-effort."""
+    if user is None:
+        return
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+        layer = get_channel_layer()
+        if layer is None:
+            return
+        async_to_sync(layer.group_send)(
+            f"notif_user_{user.id}",
+            {"type": "notif.count", "count": unread_count(user)})
+    except Exception:                                          # noqa: BLE001
+        pass
 
 
 def _sms_notification(user, company, *, title, task=None):
@@ -888,7 +907,9 @@ def mark_notifications_read(user, ids=None) -> int:
     qs = Notification.objects.filter(user=user, is_read=False)
     if ids:
         qs = qs.filter(id__in=ids)
-    return qs.update(is_read=True)
+    n = qs.update(is_read=True)
+    broadcast_unread_count(user)   # live badge on the app
+    return n
 
 
 # ── Automations (they move information; they never approve, send or pay) ──────

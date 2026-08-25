@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
@@ -18,6 +22,8 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+  WebSocket? _notifWs;
+  bool _disposed = false;
 
   late final NavActions _actions = NavActions(
     onSignOut: widget.onSignOut,
@@ -34,6 +40,50 @@ class _HomeShellState extends State<HomeShell> {
     widget.api.refreshMe().then((_) {
       if (mounted) setState(() {});
     }).catchError((_) {});
+    _connectNotifs();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _notifWs?.close();
+    super.dispose();
+  }
+
+  /// Live notification badge: the server pushes the unread count over this
+  /// socket whenever a notification is created or read, so the bell updates
+  /// without any refresh or navigation.
+  Future<void> _connectNotifs() async {
+    if (_disposed) return;
+    try {
+      final uri = widget.api.wsUri('/ws/notifications/');
+      final ws = await WebSocket.connect(uri.toString(),
+              headers: {'Origin': widget.api.origin})
+          .timeout(const Duration(seconds: 8));
+      if (_disposed) {
+        ws.close();
+        return;
+      }
+      _notifWs = ws;
+      ws.listen((data) {
+        try {
+          final f = jsonDecode('$data');
+          if (f is Map && f['type'] == 'count' && f['count'] is int) {
+            widget.api.unread.value = f['count'] as int;
+          }
+        } catch (_) {/* ignore */}
+      },
+          onDone: _notifClosed,
+          onError: (_) => _notifClosed(),
+          cancelOnError: true);
+    } catch (_) {
+      if (!_disposed) Future.delayed(const Duration(seconds: 6), _connectNotifs);
+    }
+  }
+
+  void _notifClosed() {
+    _notifWs = null;
+    if (!_disposed) Future.delayed(const Duration(seconds: 6), _connectNotifs);
   }
 
   /// Switch to a tab by id (used by in-app shortcuts, e.g. the dashboard).
