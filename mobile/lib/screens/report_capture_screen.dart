@@ -341,11 +341,9 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
           TextField(controller: _supplier,
               decoration: InputDecoration(labelText: _supplierLabel)),
           const SizedBox(height: 12),
-          TextField(controller: _invoiceNo,
-              decoration: const InputDecoration(labelText: 'Invoice / ref')),
-          const SizedBox(height: 12),
           // Core capture: amount + litres side by side (fuel). For material/expense
-          // the amount takes the full width (no litres).
+          // the amount takes the full width (no litres). Invoice / ref is read off
+          // the receipt by the scan, so it lives under "More detail".
           Row(children: [
             Expanded(
               child: TextField(controller: _amount,
@@ -371,6 +369,11 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
               title: const Text('More detail (optional)',
                   style: TextStyle(fontSize: 14)),
               children: [
+                // Invoice / ref is auto-filled by the scan; here to review/edit.
+                TextField(controller: _invoiceNo,
+                    decoration: const InputDecoration(
+                        labelText: 'Invoice / ref (from scan)')),
+                const SizedBox(height: 12),
                 Row(children: [
                   Expanded(
                     child: TextField(controller: _vat,
