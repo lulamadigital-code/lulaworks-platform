@@ -837,6 +837,35 @@ def notifications(request):
 
 
 @login_required
+def work_chat(request, pk):
+    """The task chat on the web — the same conversation the field sees, in
+    realtime (the page subscribes to the /ws/task-chat/ socket over the session
+    cookie). Access is enforced by can_access_task_chat, same as the API."""
+    from apps.execution.work_execution import can_access_task_chat
+    task = get_object_or_404(Task.objects.select_related("project"), pk=pk)
+    if not can_access_task_chat(request.user, task):
+        return HttpResponseForbidden("You're not a participant on this task.")
+    msgs = task.messages.select_related("author").all()
+    return render(request, "web/work_chat.html", {"task": task, "messages": msgs})
+
+
+@login_required
+def work_chat_send(request, pk):
+    """Post a message to a task chat (session-auth). Broadcasts over the socket,
+    so the sender's own message arrives via the same realtime path."""
+    from apps.execution.work_execution import can_access_task_chat, create_task_message
+    task = get_object_or_404(Task.objects.all(), pk=pk)
+    if not can_access_task_chat(request.user, task):
+        return JsonResponse({"error": "forbidden"}, status=403)
+    body = (request.POST.get("body") or "").strip()
+    if body:
+        create_task_message(task, request.user, body)
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"ok": bool(body)})
+    return redirect("web:work_chat", pk)
+
+
+@login_required
 def reports_list(request):
     """All field reports across the company's jobs — the manager's review queue,
     with status and how many review comments each has."""

@@ -1,0 +1,99 @@
+{% extends "web/base.html" %}
+{% block title %}Chat · {{ task.name }}{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Task chat</h1>
+    <p class="sub" style="margin:0;"><a href="{% url 'web:work_detail' task.id %}">{{ task.name }}</a></p>
+  </div>
+  <span class="chip" id="wsdot" title="Realtime status">connecting…</span>
+</div>
+
+<div class="card" style="padding:0; display:flex; flex-direction:column; height:70vh;">
+  <div id="chatlog" style="flex:1; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:8px;">
+    {% for m in messages %}
+      {% if m.kind == 'system' %}
+        <div class="c-sys">{{ m.body }}</div>
+      {% else %}
+        <div class="c-msg {% if m.author_id == request.user.id %}mine{% endif %}">
+          {% if m.author_id != request.user.id %}<div class="c-who">{{ m.author.get_full_name|default:m.author.email }}</div>{% endif %}
+          <div>{{ m.body|linebreaksbr }}</div>
+          <div class="c-time">{{ m.created_at|date:"d M · H:i" }}</div>
+        </div>
+      {% endif %}
+    {% empty %}
+      <p class="muted" id="empty">No messages yet. Start the conversation with the field.</p>
+    {% endfor %}
+  </div>
+  <form id="chatform" style="display:flex; gap:8px; padding:10px; border-top:1px solid var(--line,#e6e9ef);">
+    {% csrf_token %}
+    <input id="chatinput" type="text" autocomplete="off" placeholder="Message the field…"
+           style="flex:1;" />
+    <button class="btn" type="submit">Send</button>
+  </form>
+</div>
+
+<style>
+  .c-msg{max-width:78%;padding:8px 12px;border-radius:12px;border:1px solid var(--line,#e6e9ef);background:#fff;align-self:flex-start}
+  .c-msg.mine{align-self:flex-end;background:var(--primary,#17a2b8);color:#fff;border:none}
+  .c-who{font-size:11px;font-weight:700;color:var(--primary-d,#0e7c8c);margin-bottom:2px}
+  .c-time{font-size:10.5px;opacity:.7;margin-top:3px}
+  .c-sys{align-self:center;font-size:12px;color:var(--muted,#5b6c6f);background:var(--line,#eef);border-radius:20px;padding:4px 12px}
+</style>
+
+<script>
+(function(){
+  var log = document.getElementById('chatlog');
+  var form = document.getElementById('chatform');
+  var input = document.getElementById('chatinput');
+  var dot = document.getElementById('wsdot');
+  var me = "{{ request.user.id }}";
+  var sendUrl = "{% url 'web:work_chat_send' task.id %}";
+  var csrf = form.querySelector('[name=csrfmiddlewaretoken]').value;
+  var seen = {};
+
+  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function toBottom(){ log.scrollTop = log.scrollHeight; }
+  function addMessage(m){
+    if(m.id && seen[m.id]) return; if(m.id) seen[m.id]=1;
+    var empty=document.getElementById('empty'); if(empty) empty.remove();
+    var el=document.createElement('div');
+    if(m.is_system){ el.className='c-sys'; el.textContent=m.body; }
+    else{
+      var mine = String(m.author_id)===String(me);
+      el.className='c-msg'+(mine?' mine':'');
+      var who = (!mine && m.author_name) ? '<div class="c-who">'+esc(m.author_name)+'</div>' : '';
+      var t = m.created_at ? new Date(m.created_at) : new Date();
+      var time = ('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);
+      el.innerHTML = who + '<div>'+esc(m.body||'')+'</div><div class="c-time">'+time+'</div>';
+    }
+    log.appendChild(el); toBottom();
+  }
+  toBottom();
+
+  // Realtime — session cookie authenticates the socket (JWT not needed on web).
+  var proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  var ws;
+  function connect(){
+    ws = new WebSocket(proto+'://'+location.host+'/ws/task-chat/{{ task.id }}/');
+    ws.onopen = function(){ dot.textContent='live'; dot.className='chip ok'; };
+    ws.onclose = function(){ dot.textContent='reconnecting…'; dot.className='chip warn';
+      setTimeout(connect, 4000); };
+    ws.onerror = function(){ try{ws.close();}catch(e){} };
+    ws.onmessage = function(e){ try{ var d=JSON.parse(e.data);
+      if(d.type==='message' && d.message) addMessage(d.message); }catch(_){} };
+  }
+  connect();
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    var body = input.value.trim(); if(!body) return;
+    input.value='';
+    fetch(sendUrl, {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest','X-CSRFToken':csrf},
+      body: new URLSearchParams({body: body})})
+      .catch(function(){ input.value = body; });
+    // the message renders when the socket broadcasts it back
+  });
+})();
+</script>
+{% endblock %}

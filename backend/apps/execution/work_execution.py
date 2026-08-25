@@ -441,6 +441,21 @@ def broadcast_task_message(task_id, message: dict):
             "task chat broadcast failed: %r", exc)
 
 
+def create_task_message(task, author, body: str):
+    """Post a text message to a task chat: save it, notify the other
+    participants, and broadcast it to anyone watching in realtime. Shared by the
+    mobile API and the web console so both behave identically."""
+    from .models import TaskMessage
+    from .serializers import TaskMessageSerializer
+    from .services import notify_team
+    msg = TaskMessage.objects.create(task=task, company=task.company, author=author,
+                                     kind=TaskMessage.Kind.TEXT, body=body)
+    notify_team(task, verb="task_message", title=f"New message on {task.name}",
+                body=body[:120], actor=author)
+    broadcast_task_message(task.id, TaskMessageSerializer(msg).data)
+    return msg
+
+
 def post_system_message(task, body: str):
     """Record a SYSTEM event in the task thread (author=null). Best-effort — a
     chat note must never break the operation that triggered it."""
