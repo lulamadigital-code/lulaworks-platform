@@ -144,6 +144,14 @@
         if(m.id) el.setAttribute('data-mid', m.id);
         log.appendChild(el);toBottom();
       }
+      function addReport(r){
+        var key='r_'+r.id; if(seen[key])return; seen[key]=1;
+        var e0=document.getElementById('fcempty'); if(e0)e0.remove();
+        var who=r.employee_name?(' · '+esc(r.employee_name)):'';
+        var el=document.createElement('div'); el.className='fc-sys';
+        el.innerHTML='📋 New report: <a href="/reports/'+esc(r.id)+'/">'+esc(r.title||'')+'</a> · '+esc(r.kind_display||r.kind||'')+who;
+        log.appendChild(el); toBottom();
+      }
       toBottom();
       // Poll fallback — surfaces new messages even if a socket broadcast drops.
       setInterval(function(){
@@ -158,7 +166,10 @@
         ws.onopen=function(){dot.textContent='live';dot.className='chip ok';};
         ws.onclose=function(){dot.textContent='reconnecting…';dot.className='chip warn';setTimeout(connect,4000);};
         ws.onerror=function(){try{ws.close();}catch(e){}};
-        ws.onmessage=function(e){try{var d=JSON.parse(e.data);if(d.type==='message'&&d.message)add(d.message);}catch(_){}};
+        ws.onmessage=function(e){try{var d=JSON.parse(e.data);
+          if(d.type==='message'&&d.message)add(d.message);
+          else if(d.type==='report'&&d.report)addReport(d.report);
+        }catch(_){}};
       }
       connect();
       var fileEl=document.getElementById('fcfile'),nameEl=document.getElementById('fcfilename'),

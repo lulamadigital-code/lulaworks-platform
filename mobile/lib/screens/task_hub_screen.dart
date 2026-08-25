@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -31,6 +35,63 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
   bool _busy = false;
   int _pendingReports = 0;
   Map<String, dynamic>? _completion; // cached from the last render, for the editor
+  WebSocket? _ws;
+  bool _wsLive = false;
+  bool _disposed = false;
+  Timer? _poll;
+
+  @override
+  void initState() {
+    super.initState();
+    _connectWs();
+    // Safety net: refresh occasionally even if a socket event is dropped.
+    _poll = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (!_wsLive) _reload();
+    });
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _poll?.cancel();
+    _ws?.close();
+    super.dispose();
+  }
+
+  // Listen on the task socket: a new field report (or a task event) refreshes
+  // the hub live, so reports appear without leaving/reopening the screen.
+  Future<void> _connectWs() async {
+    if (_disposed) return;
+    try {
+      final uri = widget.api.wsUri('/ws/task-chat/${widget.taskId}/');
+      final ws = await WebSocket.connect(uri.toString(),
+              headers: {'Origin': widget.api.origin})
+          .timeout(const Duration(seconds: 8));
+      if (_disposed) {
+        ws.close();
+        return;
+      }
+      _ws = ws;
+      _wsLive = true;
+      ws.listen((data) {
+        try {
+          final f = jsonDecode('$data');
+          if (f is Map && (f['type'] == 'report' || f['type'] == 'message')) {
+            if (mounted) _reload();
+          }
+        } catch (_) {/* ignore */}
+      }, onDone: _wsClosed, onError: (_) => _wsClosed(), cancelOnError: true);
+    } catch (_) {
+      _wsLive = false;
+      if (!_disposed) Future.delayed(const Duration(seconds: 6), _connectWs);
+    }
+  }
+
+  void _wsClosed() {
+    _wsLive = false;
+    _ws = null;
+    if (!_disposed) Future.delayed(const Duration(seconds: 6), _connectWs);
+  }
 
   Future<Map<String, dynamic>> _load() async {
     // Best-effort sync of any reports captured offline, then load the hub.

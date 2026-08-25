@@ -37,6 +37,11 @@ class TaskChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(
             {"type": "message", "message": event["message"]}))
 
+    # A newly-filed field report on this task.
+    async def chat_report(self, event):
+        await self.send(text_data=json.dumps(
+            {"type": "report", "report": event["report"]}))
+
     @database_sync_to_async
     def _can_access(self):
         from apps.core.context import tenant_scope

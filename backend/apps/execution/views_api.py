@@ -71,6 +71,7 @@ from .work_execution import (
     allocate_task_resource,
     attendance_summary,
     broadcast_task_message,
+    broadcast_task_report,
     can_access_task_chat,
     create_task_report,
     learn_supplier_from_receipt,
@@ -611,8 +612,11 @@ class TaskReportViewSet(TenantViewSet):
         # the seller and record its prices, so next time we know where we buy this.
         learn_supplier_from_receipt(report, request.user)
         report.refresh_from_db()
-        return Response(TaskReportSerializer(report, context={"request": request}).data,
-                        status=status.HTTP_201_CREATED)
+        out = TaskReportSerializer(report, context={"request": request}).data
+        # Surface it live on the task's socket (web panel + app task hub).
+        broadcast_task_report(task.id,
+                              TaskReportSerializer(report).data)
+        return Response(out, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
     def photo(self, request, pk=None):

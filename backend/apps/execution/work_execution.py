@@ -441,6 +441,24 @@ def broadcast_task_message(task_id, message: dict):
             "task chat broadcast failed: %r", exc)
 
 
+def broadcast_task_report(task_id, report: dict):
+    """Push a newly-filed field report to the task's socket group so the web
+    panel and the app's task hub can surface it live. Best-effort."""
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+        layer = get_channel_layer()
+        if layer is None:
+            return
+        async_to_sync(layer.group_send)(
+            f"task_chat_{task_id}",
+            {"type": "chat.report", "report": report})
+    except Exception as exc:                                    # noqa: BLE001
+        import logging
+        logging.getLogger("lulaworks.chat").warning(
+            "task report broadcast failed: %r", exc)
+
+
 def create_task_message(task, author, body: str = "", image=None):
     """Post a message (text and/or a photo) to a task chat: save it, notify the
     other participants, and broadcast it to anyone watching in realtime. Shared
