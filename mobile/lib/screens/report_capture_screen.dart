@@ -437,40 +437,47 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
           onRetry: _captureLocation,
         ),
         const SizedBox(height: 12),
+        // Photo evidence. For a money report the "Scan …" button above IS the
+        // camera (it captures the receipt AND auto-fills), so we don't repeat a
+        // Camera button here — only Gallery, to attach a photo taken earlier.
+        // Other report kinds have no scan, so they get Camera + Gallery.
         if (_isFinancial)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(children: [
-              Icon(_photo != null ? Icons.check_circle : Icons.receipt_long,
-                  size: 18,
-                  color: _photo != null
-                      ? Colors.green
-                      : Theme.of(context).colorScheme.outline),
-              const SizedBox(width: 6),
-              Text(_photo != null ? 'Receipt photo attached' : 'Photograph the receipt',
-                  style: Theme.of(context).textTheme.bodyMedium),
-            ]),
-          ),
-        Row(children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _pickPhoto(ImageSource.camera),
-              icon: const Icon(Icons.camera_alt), label: const Text('Camera'),
+          OutlinedButton.icon(
+            onPressed: () => _pickPhoto(ImageSource.gallery),
+            icon: const Icon(Icons.photo_library),
+            label: Text(_photo == null
+                ? 'Attach receipt from gallery'
+                : 'Replace receipt from gallery'),
+          )
+        else
+          Row(children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _pickPhoto(ImageSource.camera),
+                icon: const Icon(Icons.camera_alt), label: const Text('Camera'),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _pickPhoto(ImageSource.gallery),
-              icon: const Icon(Icons.photo_library), label: const Text('Gallery'),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _pickPhoto(ImageSource.gallery),
+                icon: const Icon(Icons.photo_library), label: const Text('Gallery'),
+              ),
             ),
-          ),
-        ]),
+          ]),
         if (_photo != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text('Attached: ${_photo!.name}',
-                style: Theme.of(context).textTheme.bodySmall),
+            child: Row(children: [
+              const Icon(Icons.check_circle, size: 16, color: Colors.green),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                    '${_isFinancial ? 'Receipt' : 'Photo'} attached: ${_photo!.name}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ]),
           ),
         const SizedBox(height: 24),
         FilledButton(
