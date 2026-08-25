@@ -241,7 +241,11 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _bell(BuildContext context, int unread) {
     return InkResponse(
       radius: 24,
-      onTap: () => _push(NotificationsScreen(api: api)),
+      onTap: () async {
+        await Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => NotificationsScreen(api: api)));
+        _refresh(); // refresh the unread badge after reading
+      },
       child: Container(
         width: 42,
         height: 42,

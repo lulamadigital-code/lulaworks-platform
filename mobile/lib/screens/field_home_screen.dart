@@ -168,8 +168,11 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
 
   Widget _bell(BuildContext context, int unread) => InkResponse(
         radius: 24,
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => NotificationsScreen(api: widget.api))),
+        onTap: () async {
+          await Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => NotificationsScreen(api: widget.api)));
+          _reload(); // refresh the unread badge after reading
+        },
         child: Container(
           width: 42, height: 42,
           decoration: BoxDecoration(
