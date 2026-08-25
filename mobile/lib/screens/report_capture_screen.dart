@@ -294,79 +294,92 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
           TextField(controller: _supplier,
               decoration: const InputDecoration(labelText: 'Supplier')),
           const SizedBox(height: 12),
+          TextField(controller: _invoiceNo,
+              decoration: const InputDecoration(labelText: 'Invoice / ref')),
+          const SizedBox(height: 12),
+          // Core capture: amount + litres side by side (fuel). For material/expense
+          // the amount takes the full width (no litres).
           Row(children: [
-            Expanded(
-              child: TextField(controller: _invoiceNo,
-                  decoration: const InputDecoration(labelText: 'Invoice / ref')),
-            ),
-            const SizedBox(width: 12),
             Expanded(
               child: TextField(controller: _amount,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(labelText: 'Amount (ZAR)')),
             ),
-          ]),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(
-              child: TextField(controller: _vat,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'VAT (ZAR)')),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: InkWell(
-                onTap: _pickDocDate,
-                child: InputDecorator(
-                  decoration: const InputDecoration(labelText: 'Receipt date'),
-                  child: Text(_docDate == null
-                      ? 'Tap to set'
-                      : '${_docDate!.year}-${_docDate!.month.toString().padLeft(2, '0')}-${_docDate!.day.toString().padLeft(2, '0')}'),
-                ),
+            if (_kind == 'fuel') ...[
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(controller: _litres,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(labelText: 'Litres')),
               ),
-            ),
+            ],
           ]),
-          if (_allocations.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String?>(
-              value: _allocationId,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Draw from budget'),
-              items: [
-                const DropdownMenuItem<String?>(
-                    value: null, child: Text('— none —')),
-                for (final a in _allocations)
-                  DropdownMenuItem<String?>(
-                    value: '${a['id']}',
-                    child: Text(
-                      _allocationLabel(a),
-                      overflow: TextOverflow.ellipsis,
+          // Everything else is optional — tucked away so the quick field capture
+          // stays photo + supplier + amount (+ litres for fuel).
+          Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.only(bottom: 8),
+              title: const Text('More detail (optional)',
+                  style: TextStyle(fontSize: 14)),
+              children: [
+                Row(children: [
+                  Expanded(
+                    child: TextField(controller: _vat,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: const InputDecoration(labelText: 'VAT (ZAR)')),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: InkWell(
+                      onTap: _pickDocDate,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(labelText: 'Receipt date'),
+                        child: Text(_docDate == null
+                            ? 'Tap to set'
+                            : '${_docDate!.year}-${_docDate!.month.toString().padLeft(2, '0')}-${_docDate!.day.toString().padLeft(2, '0')}'),
+                      ),
                     ),
                   ),
+                ]),
+                if (_kind == 'fuel') ...[
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Expanded(
+                      child: TextField(controller: _odometer,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(labelText: 'Odometer (km)')),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(controller: _vehicle,
+                          decoration: const InputDecoration(labelText: 'Vehicle')),
+                    ),
+                  ]),
+                ],
+                if (_allocations.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String?>(
+                    value: _allocationId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Draw from budget'),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                          value: null, child: Text('— none —')),
+                      for (final a in _allocations)
+                        DropdownMenuItem<String?>(
+                          value: '${a['id']}',
+                          child: Text(_allocationLabel(a),
+                              overflow: TextOverflow.ellipsis),
+                        ),
+                    ],
+                    onChanged: (v) => setState(() => _allocationId = v),
+                  ),
+                ],
               ],
-              onChanged: (v) => setState(() => _allocationId = v),
             ),
-          ],
-        ],
-        if (_kind == 'fuel') ...[
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(
-              child: TextField(controller: _litres,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Litres')),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextField(controller: _odometer,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(labelText: 'Odometer (km)')),
-            ),
-          ]),
-          const SizedBox(height: 12),
-          TextField(controller: _vehicle,
-              decoration: const InputDecoration(
-                  labelText: 'Vehicle (registration)')),
+          ),
         ],
         const SizedBox(height: 12),
         TextField(controller: _notes, minLines: 2, maxLines: 4,
@@ -377,6 +390,20 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
           onRetry: _captureLocation,
         ),
         const SizedBox(height: 12),
+        if (_isFinancial)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(children: [
+              Icon(_photo != null ? Icons.check_circle : Icons.receipt_long,
+                  size: 18,
+                  color: _photo != null
+                      ? Colors.green
+                      : Theme.of(context).colorScheme.outline),
+              const SizedBox(width: 6),
+              Text(_photo != null ? 'Receipt photo attached' : 'Photograph the receipt',
+                  style: Theme.of(context).textTheme.bodyMedium),
+            ]),
+          ),
         Row(children: [
           Expanded(
             child: OutlinedButton.icon(
