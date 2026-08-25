@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
@@ -256,15 +260,26 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
   late Map<String, dynamic> _t = widget.ticket;
   final _reply = TextEditingController();
   bool _busy = false;
+  WebSocket? _ws;
+  bool _wsLive = false;
+  bool _disposed = false;
+  Timer? _poll;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _connectWs();
+    _poll = Timer.periodic(const Duration(seconds: 12), (_) {
+      if (!_wsLive) _load();
+    });
   }
 
   @override
   void dispose() {
+    _disposed = true;
+    _poll?.cancel();
+    _ws?.close();
     _reply.dispose();
     super.dispose();
   }
@@ -272,8 +287,41 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
   Future<void> _load() async {
     try {
       final r = await widget.api.get('/support-tickets/${_t['id']}/');
-      if (r is Map) setState(() => _t = r.cast<String, dynamic>());
+      if (r is Map && mounted) setState(() => _t = r.cast<String, dynamic>());
     } catch (_) {/* keep current */}
+  }
+
+  // Live: support (or you, on another device) replies → refetch the thread.
+  Future<void> _connectWs() async {
+    if (_disposed) return;
+    try {
+      final uri = widget.api.wsUri('/ws/support/${_t['id']}/');
+      final ws = await WebSocket.connect(uri.toString(),
+              headers: {'Origin': widget.api.origin})
+          .timeout(const Duration(seconds: 8));
+      if (_disposed) {
+        ws.close();
+        return;
+      }
+      _ws = ws;
+      _wsLive = true;
+      ws.listen((data) {
+        try {
+          final f = jsonDecode('$data');
+          if (f is Map && f['type'] == 'message') _load();
+        } catch (_) {/* ignore */}
+      },
+          onDone: _wsClosed, onError: (_) => _wsClosed(), cancelOnError: true);
+    } catch (_) {
+      _wsLive = false;
+      if (!_disposed) Future.delayed(const Duration(seconds: 6), _connectWs);
+    }
+  }
+
+  void _wsClosed() {
+    _wsLive = false;
+    _ws = null;
+    if (!_disposed) Future.delayed(const Duration(seconds: 6), _connectWs);
   }
 
   Future<void> _send() async {
