@@ -27,6 +27,16 @@
       {% if report.amount and can_view_money %}<tr><td class="muted">Amount</td><td>R{{ report.amount }}</td></tr>{% endif %}
       {% if report.reviewed_by %}<tr><td class="muted">Reviewed by</td><td>{{ report.reviewed_by.get_full_name|default:report.reviewed_by.email }}</td></tr>{% endif %}
     </table>
+    {% if map %}
+    <div style="margin-top:12px;">
+      <iframe title="Report location" width="100%" height="220" loading="lazy"
+        style="border:1px solid var(--line,#e6e9ef);border-radius:10px;"
+        src="https://www.openstreetmap.org/export/embed.html?bbox={{ map.bbox }}&layer=mapnik&marker={{ map.lat }},{{ map.lng }}"></iframe>
+      <div style="font-size:11px;margin-top:3px;">
+        <a href="https://www.openstreetmap.org/?mlat={{ map.lat }}&mlon={{ map.lng }}#map=16/{{ map.lat }}/{{ map.lng }}" target="_blank" rel="noopener">Open larger map ↗</a>
+      </div>
+    </div>
+    {% endif %}
     {% if report.notes %}
       <p class="muted" style="margin:12px 0 4px;">NOTES</p>
       <p>{{ report.notes|linebreaksbr }}</p>

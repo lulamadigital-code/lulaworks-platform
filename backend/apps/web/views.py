@@ -926,8 +926,17 @@ def report_detail(request, pk):
             add_report_comment(report, request.user, body)
         return redirect("web:report_detail", report.id)
     comments = report.comments.select_related("author").all()
+    map_ctx = None
+    if report.latitude is not None and report.longitude is not None:
+        lat, lng = float(report.latitude), float(report.longitude)
+        d = 0.004  # ~450 m box around the point
+        map_ctx = {
+            "lat": lat, "lng": lng,
+            "bbox": f"{lng - d},{lat - d * 0.8},{lng + d},{lat + d * 0.8}",
+        }
     return render(request, "web/report_detail.html",
-                  {"report": report, "comments": comments, "can_review": can_review})
+                  {"report": report, "comments": comments,
+                   "can_review": can_review, "map": map_ctx})
 
 
 @login_required
