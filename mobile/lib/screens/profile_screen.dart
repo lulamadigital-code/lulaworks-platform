@@ -8,6 +8,7 @@ import '../widgets/user_avatar.dart';
 import 'change_password_screen.dart';
 import 'company_settings_screen.dart';
 import 'edit_profile_screen.dart';
+import 'help_support_screen.dart';
 import 'notifications_screen.dart';
 import 'team_screen.dart';
 
@@ -170,8 +171,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 20),
         _sectionLabel('Support'),
         _group([
-          _tile(Icons.help_outline, 'Help & support', 'Contact the Lulaworks team',
-              () => _open('mailto:support@lulaworks.com?subject=Lulaworks%20app%20support')),
+          _tile(Icons.help_outline, 'Help & support', 'Log a request & track it',
+              () => _push(HelpSupportScreen(api: api))),
           _tile(Icons.description_outlined, 'Terms of service', null,
               () => _open('https://www.lulaworks.com/terms/')),
           _tile(Icons.privacy_tip_outlined, 'Privacy policy', null,
