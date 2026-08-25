@@ -827,12 +827,16 @@ def work_decompose_apply(request, pk):
 @login_required
 def notifications(request):
     from apps.execution.models import Notification
-    rows = Notification.objects.filter(user=request.user).select_related("task")[:100]
     if request.method == "POST":
         mark_notifications_read(request.user)
         return redirect("web:notifications")
+    # Read the rows first (so this render can still show which were unread), then
+    # mark them read — opening the notification centre clears the badge, so it no
+    # longer shows the same number after you've viewed them.
+    rows = list(Notification.objects.filter(user=request.user).select_related("task")[:100])
+    mark_notifications_read(request.user)
     return render(request, "web/notifications.html",
-                  {"rows": rows, "unread": unread_count(request.user)})
+                  {"rows": rows, "unread": 0})
 
 
 @login_required
