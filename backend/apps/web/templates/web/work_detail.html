@@ -15,7 +15,6 @@
     </p>
   </div>
   <div class="row" style="gap:8px;">
-    <a class="btn ghost" href="{% url 'web:work_chat' task.id %}">💬 Chat</a>
     <a class="btn" href="{% url 'web:work_operations' task.id %}">Operations</a>
     {% include "web/_statuschip.html" with s=task %}
     <span class="chip {% if task.priority == 'critical' %}bad{% elif task.priority == 'high' %}warn{% endif %}">{{ task.get_priority_display }}</span>
@@ -72,6 +71,86 @@
 
 <div class="two-col">
   <div>
+    {# ── Field chat (realtime with the people on the job) ─────────────────── #}
+    {% if can_chat %}
+    <h2>Field chat</h2>
+    <div class="card" style="padding:0; display:flex; flex-direction:column; height:360px;">
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line,#e6e9ef);">
+        <span class="chip" id="fcdot">connecting…</span>
+        <span class="muted" style="font-size:12px;">Messages sync live with the field.</span>
+      </div>
+      <div id="fclog" style="flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;">
+        {% for m in chat_messages %}
+          {% if m.kind == 'system' %}
+            <div class="fc-sys">{{ m.body }}</div>
+          {% else %}
+            <div class="fc-msg {% if m.author_id == request.user.id %}mine{% endif %}">
+              {% if m.author_id != request.user.id %}<div class="fc-who">{{ m.author.get_full_name|default:m.author.email }}</div>{% endif %}
+              <div>{{ m.body|linebreaksbr }}</div>
+              <div class="fc-time">{{ m.created_at|date:"d M · H:i" }}</div>
+            </div>
+          {% endif %}
+        {% empty %}
+          <p class="muted" id="fcempty" style="margin:0;">No messages yet — say hello to the field.</p>
+        {% endfor %}
+      </div>
+      <form id="fcform" style="display:flex;gap:8px;padding:10px;border-top:1px solid var(--line,#e6e9ef);">
+        {% csrf_token %}
+        <input id="fcinput" type="text" autocomplete="off" placeholder="Message the field…" style="flex:1;" />
+        <button class="btn" type="submit">Send</button>
+      </form>
+    </div>
+    <style>
+      .fc-msg{max-width:80%;padding:7px 11px;border-radius:12px;border:1px solid var(--line,#e6e9ef);background:#fff;align-self:flex-start}
+      .fc-msg.mine{align-self:flex-end;background:var(--primary,#17a2b8);color:#fff;border:none}
+      .fc-who{font-size:11px;font-weight:700;color:var(--primary-d,#0e7c8c);margin-bottom:2px}
+      .fc-time{font-size:10px;opacity:.7;margin-top:3px}
+      .fc-sys{align-self:center;font-size:12px;color:var(--muted,#5b6c6f);background:var(--line,#eef);border-radius:20px;padding:3px 11px}
+    </style>
+    <script>
+    (function(){
+      var log=document.getElementById('fclog'),form=document.getElementById('fcform'),
+          input=document.getElementById('fcinput'),dot=document.getElementById('fcdot');
+      if(!log||!form) return;
+      var me="{{ request.user.id }}",
+          sendUrl="{% url 'web:work_chat_send' task.id %}",
+          csrf=form.querySelector('[name=csrfmiddlewaretoken]').value, seen={};
+      function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+      function toBottom(){log.scrollTop=log.scrollHeight;}
+      function add(m){
+        if(m.id&&seen[m.id])return; if(m.id)seen[m.id]=1;
+        var e0=document.getElementById('fcempty'); if(e0)e0.remove();
+        var el=document.createElement('div');
+        if(m.is_system){el.className='fc-sys';el.textContent=m.body;}
+        else{
+          var mine=String(m.author_id)===String(me);
+          el.className='fc-msg'+(mine?' mine':'');
+          var who=(!mine&&m.author_name)?'<div class="fc-who">'+esc(m.author_name)+'</div>':'';
+          var t=m.created_at?new Date(m.created_at):new Date();
+          var time=('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);
+          el.innerHTML=who+'<div>'+esc(m.body||'')+'</div><div class="fc-time">'+time+'</div>';
+        }
+        log.appendChild(el);toBottom();
+      }
+      toBottom();
+      var proto=location.protocol==='https:'?'wss':'ws',ws;
+      function connect(){
+        ws=new WebSocket(proto+'://'+location.host+'/ws/task-chat/{{ task.id }}/');
+        ws.onopen=function(){dot.textContent='live';dot.className='chip ok';};
+        ws.onclose=function(){dot.textContent='reconnecting…';dot.className='chip warn';setTimeout(connect,4000);};
+        ws.onerror=function(){try{ws.close();}catch(e){}};
+        ws.onmessage=function(e){try{var d=JSON.parse(e.data);if(d.type==='message'&&d.message)add(d.message);}catch(_){}};
+      }
+      connect();
+      form.addEventListener('submit',function(e){
+        e.preventDefault();var body=input.value.trim();if(!body)return;input.value='';
+        fetch(sendUrl,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest','X-CSRFToken':csrf},
+          body:new URLSearchParams({body:body})}).catch(function(){input.value=body;});
+      });
+    })();
+    </script>
+    {% endif %}
+
     {# ── Hierarchy: subtasks → checklist ─────────────────────────────────── #}
     {% if not checklist_total %}
     <div class="card ai-panel">

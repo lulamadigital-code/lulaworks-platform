@@ -541,10 +541,13 @@ def work_new(request):
 def work_detail(request, pk):
     """The work item's own dashboard — progress, blockers, team, hierarchy,
     conversation and files in one place."""
+    from apps.execution.work_execution import can_access_task_chat
     task = get_object_or_404(
         Task.objects.all().select_related("project", "phase", "assignee"), pk=pk)
     ctx = work_dashboard(task, request.user)
     ctx.update({
+        "can_chat": can_access_task_chat(request.user, task),
+        "chat_messages": task.messages.select_related("author").all(),
         "can_manage": has_work_perm(request.user, "work.edit"),
         "people": _company_users(request.user),
         "roles": Assignment.Role.choices,
