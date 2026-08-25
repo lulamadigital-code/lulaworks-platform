@@ -146,11 +146,27 @@
       }
       function addReport(r){
         var key='r_'+r.id; if(seen[key])return; seen[key]=1;
+        // Inline note in the chat log.
         var e0=document.getElementById('fcempty'); if(e0)e0.remove();
         var who=r.employee_name?(' · '+esc(r.employee_name)):'';
         var el=document.createElement('div'); el.className='fc-sys';
         el.innerHTML='📋 New report: <a href="/reports/'+esc(r.id)+'/">'+esc(r.title||'')+'</a> · '+esc(r.kind_display||r.kind||'')+who;
         log.appendChild(el); toBottom();
+        // Prepend a row to the Field reports panel.
+        var feed=document.getElementById('reportsfeed');
+        if(feed && !feed.querySelector('[data-rid="'+r.id+'"]')){
+          var fre=document.getElementById('frempty'); if(fre)fre.remove();
+          var badge=r.status==='approved'?'ok':(r.status==='returned'?'warn':'info');
+          var off=r.location_flagged?'<span class="chip bad">off-site</span>':'';
+          var a=document.createElement('a'); a.className='workrow';
+          a.setAttribute('data-rid', r.id); a.href='/reports/'+r.id+'/';
+          a.innerHTML='<span class="wr-main"><strong>'+esc(r.title||'')+'</strong>'
+            +'<span class="muted">'+esc(r.kind_display||r.kind||'')+who+'</span></span>'
+            +off+'<span class="chip '+badge+'">'+esc(r.status_display||r.status||'Submitted')+'</span>';
+          feed.insertBefore(a, feed.firstChild);
+          var live=document.getElementById('frlive');
+          if(live){live.className='chip ok';live.textContent='live';}
+        }
       }
       toBottom();
       // Poll fallback — surfaces new messages even if a socket broadcast drops.
@@ -288,6 +304,27 @@
   </div>
 
   <div>
+    {# ── Field reports (live) ────────────────────────────────────────────── #}
+    <h2>Field reports <span class="chip" id="frlive" style="font-size:11px;">live</span></h2>
+    <div class="card" style="padding:0;">
+      <div id="reportsfeed">
+        {% for r in field_reports %}
+        <a class="workrow" data-rid="{{ r.id }}" href="{% url 'web:report_detail' r.id %}">
+          <span class="wr-main">
+            <strong>{{ r.title }}</strong>
+            <span class="muted">{{ r.get_kind_display }} ·
+              {% if r.employee %}{{ r.employee.get_full_name|default:r.employee.email }}{% else %}—{% endif %}
+              · {{ r.reported_at|date:"d M H:i" }}</span>
+          </span>
+          {% if r.location_flagged %}<span class="chip bad">off-site</span>{% endif %}
+          <span class="chip {% if r.status == 'approved' %}ok{% elif r.status == 'returned' %}warn{% else %}info{% endif %}">{{ r.get_status_display }}</span>
+        </a>
+        {% empty %}
+        <p class="muted" id="frempty" style="padding:16px;">No field reports yet — they appear here the moment the field files one.</p>
+        {% endfor %}
+      </div>
+    </div>
+
     {# ── Team ────────────────────────────────────────────────────────────── #}
     <h2>Team</h2>
     <div class="card">

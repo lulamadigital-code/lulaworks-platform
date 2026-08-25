@@ -548,6 +548,7 @@ def work_detail(request, pk):
     ctx.update({
         "can_chat": can_access_task_chat(request.user, task),
         "chat_messages": task.messages.select_related("author").all(),
+        "field_reports": task.reports.select_related("employee").all()[:50],
         "can_manage": has_work_perm(request.user, "work.edit"),
         "people": _company_users(request.user),
         "roles": Assignment.Role.choices,
