@@ -5,6 +5,7 @@ import '../api/api_client.dart';
 import '../api/report_store.dart';
 import '../theme.dart';
 import '../widgets/lula_ui.dart';
+import '../widgets/mini_map.dart';
 import 'report_capture_screen.dart';
 import 'report_detail_screen.dart';
 import 'task_chat_screen.dart';
@@ -278,6 +279,13 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
           const SizedBox(height: 22),
           _sectionTitle('Location'),
           _locationCard(context, task, site),
+          if (MiniMap.tryFrom(task['site_latitude'], task['site_longitude'],
+                  height: 150) !=
+              null) ...[
+            const SizedBox(height: 8),
+            MiniMap.tryFrom(task['site_latitude'], task['site_longitude'],
+                height: 150)!,
+          ],
         ],
 
         if (checklist.isNotEmpty || subtasks.isNotEmpty) ...[

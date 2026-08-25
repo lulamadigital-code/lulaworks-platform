@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../api/api_client.dart';
 import '../api/report_store.dart';
+import '../widgets/mini_map.dart';
 
 /// Capture a field report against a task — the heart of the Work Execution
 /// System on mobile. Every report records who/when/where (GPS) and, for a
@@ -296,20 +297,27 @@ class _LocationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Card(
-      child: ListTile(
-        leading: Icon(pos != null ? Icons.location_on : Icons.location_off,
-            color: pos != null ? Colors.green : scheme.outline),
-        title: locating
-            ? const Text('Getting your location…')
-            : pos != null
-                ? Text('${pos!.latitude.toStringAsFixed(5)}, '
-                    '${pos!.longitude.toStringAsFixed(5)}')
-                : Text(error ?? 'No location'),
-        subtitle: pos != null
-            ? Text('Accuracy ±${pos!.accuracy.toStringAsFixed(0)} m')
-            : null,
-        trailing: IconButton(icon: const Icon(Icons.refresh), onPressed: onRetry),
-      ),
+      child: Column(children: [
+        ListTile(
+          leading: Icon(pos != null ? Icons.location_on : Icons.location_off,
+              color: pos != null ? Colors.green : scheme.outline),
+          title: locating
+              ? const Text('Getting your location…')
+              : pos != null
+                  ? Text('${pos!.latitude.toStringAsFixed(5)}, '
+                      '${pos!.longitude.toStringAsFixed(5)}')
+                  : Text(error ?? 'No location'),
+          subtitle: pos != null
+              ? Text('Accuracy ±${pos!.accuracy.toStringAsFixed(0)} m')
+              : null,
+          trailing: IconButton(icon: const Icon(Icons.refresh), onPressed: onRetry),
+        ),
+        if (pos != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            child: MiniMap(lat: pos!.latitude, lng: pos!.longitude, height: 140),
+          ),
+      ]),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../theme.dart';
 import '../widgets/lula_ui.dart';
+import '../widgets/mini_map.dart';
 
 /// Field report detail + review loop (§15/§16/§36). Shows the captured record,
 /// its review status and the review thread; a reviewer can Approve or Return
@@ -112,6 +113,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             _row('Submitted by', '${r['employee_name']}'),
           if (when != null) _row('Time', _fmt(when)),
           _row('Location', _locationText(r)),
+          if (MiniMap.tryFrom(r['latitude'], r['longitude'],
+                  pointColor: r['location_flagged'] == true ? kRed : kBrand) !=
+              null) ...[
+            const SizedBox(height: 10),
+            MiniMap.tryFrom(r['latitude'], r['longitude'],
+                pointColor: r['location_flagged'] == true ? kRed : kBrand)!,
+          ],
           if ('${r['supplier'] ?? ''}'.isNotEmpty) _row('Supplier', '${r['supplier']}'),
           if (hasAmount) _row('Amount', 'R $amount'),
           if ('${r['reviewed_by_name'] ?? ''}'.isNotEmpty)
