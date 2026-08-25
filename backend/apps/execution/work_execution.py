@@ -48,6 +48,7 @@ DEFAULT_GPS_TOLERANCE_M = 500
 REPORT_KIND_TO_COST_CATEGORY = {
     ReportKind.MATERIAL: "material",
     ReportKind.FUEL: "equipment",
+    ReportKind.MEAL: "other",       # meal/food allowance → other costs
     ReportKind.EXPENSE: "other",
 }
 

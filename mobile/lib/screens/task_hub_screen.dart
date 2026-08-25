@@ -781,6 +781,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
 IconData _reportIcon(String kind) => switch (kind) {
       'fuel' => Icons.local_gas_station,
       'material' => Icons.inventory_2,
+      'meal' => Icons.restaurant,
       'expense' => Icons.receipt_long,
       'time_event' => Icons.schedule,
       'progress' => Icons.trending_up,

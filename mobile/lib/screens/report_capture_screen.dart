@@ -25,6 +25,7 @@ const _kinds = <String, String>{
   'progress': 'Progress update',
   'fuel': 'Fuel purchase',
   'material': 'Material purchase',
+  'meal': 'Meal / food',
   'expense': 'Other expense',
   'general': 'General / evidence',
 };
@@ -60,7 +61,8 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
   bool _submitting = false;
   bool _scanning = false;
 
-  bool get _isFinancial => _kind == 'fuel' || _kind == 'material' || _kind == 'expense';
+  bool get _isFinancial =>
+      _kind == 'fuel' || _kind == 'material' || _kind == 'meal' || _kind == 'expense';
 
   @override
   void initState() {

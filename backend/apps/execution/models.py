@@ -773,13 +773,14 @@ class ReportKind(models.TextChoices):
     TIME_EVENT = "time_event", "Time & attendance"
     FUEL = "fuel", "Fuel purchase"
     MATERIAL = "material", "Material purchase"
+    MEAL = "meal", "Meal / food"
     EXPENSE = "expense", "Other expense"
     GENERAL = "general", "General / evidence"
 
 
 #: Report kinds that book actual money against the task.
 FINANCIAL_REPORT_KINDS = frozenset({
-    ReportKind.FUEL, ReportKind.MATERIAL, ReportKind.EXPENSE,
+    ReportKind.FUEL, ReportKind.MATERIAL, ReportKind.MEAL, ReportKind.EXPENSE,
 })
 
 
