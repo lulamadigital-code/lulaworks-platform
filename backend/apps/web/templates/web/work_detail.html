@@ -86,7 +86,8 @@
           {% else %}
             <div class="fc-msg {% if m.author_id == request.user.id %}mine{% endif %}">
               {% if m.author_id != request.user.id %}<div class="fc-who">{{ m.author.get_full_name|default:m.author.email }}</div>{% endif %}
-              <div>{{ m.body|linebreaksbr }}</div>
+              {% if m.image %}<a href="{{ m.image.url }}" target="_blank"><img src="{{ m.image.url }}" class="fc-img"></a>{% endif %}
+              {% if m.body %}<div>{{ m.body|linebreaksbr }}</div>{% endif %}
               <div class="fc-time">{{ m.created_at|date:"d M · H:i" }}</div>
             </div>
           {% endif %}
@@ -94,8 +95,11 @@
           <p class="muted" id="fcempty" style="margin:0;">No messages yet — say hello to the field.</p>
         {% endfor %}
       </div>
-      <form id="fcform" style="display:flex;gap:8px;padding:10px;border-top:1px solid var(--line,#e6e9ef);">
+      <form id="fcform" style="display:flex;gap:8px;align-items:center;padding:10px;border-top:1px solid var(--line,#e6e9ef);">
         {% csrf_token %}
+        <input id="fcfile" type="file" accept="image/*" style="display:none;" />
+        <button type="button" id="fcattach" class="btn ghost" title="Attach a photo" style="padding:6px 10px;">📎</button>
+        <span id="fcfilename" class="muted" style="font-size:12px;"></span>
         <input id="fcinput" type="text" autocomplete="off" placeholder="Message the field…" style="flex:1;" />
         <button class="btn" type="submit">Send</button>
       </form>
@@ -106,6 +110,7 @@
       .fc-who{font-size:11px;font-weight:700;color:var(--primary-d,#0e7c8c);margin-bottom:2px}
       .fc-time{font-size:10px;opacity:.7;margin-top:3px}
       .fc-sys{align-self:center;font-size:12px;color:var(--muted,#5b6c6f);background:var(--line,#eef);border-radius:20px;padding:3px 11px}
+      .fc-img{max-width:200px;max-height:200px;border-radius:8px;display:block;margin-bottom:4px}
     </style>
     <script>
     (function(){
@@ -128,7 +133,9 @@
           var who=(!mine&&m.author_name)?'<div class="fc-who">'+esc(m.author_name)+'</div>':'';
           var t=m.created_at?new Date(m.created_at):new Date();
           var time=('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);
-          el.innerHTML=who+'<div>'+esc(m.body||'')+'</div><div class="fc-time">'+time+'</div>';
+          var img=m.image?'<a href="'+esc(m.image)+'" target="_blank"><img src="'+esc(m.image)+'" class="fc-img"></a>':'';
+          var txt=m.body?'<div>'+esc(m.body)+'</div>':'';
+          el.innerHTML=who+img+txt+'<div class="fc-time">'+time+'</div>';
         }
         log.appendChild(el);toBottom();
       }
@@ -142,10 +149,18 @@
         ws.onmessage=function(e){try{var d=JSON.parse(e.data);if(d.type==='message'&&d.message)add(d.message);}catch(_){}};
       }
       connect();
+      var fileEl=document.getElementById('fcfile'),nameEl=document.getElementById('fcfilename'),
+          attach=document.getElementById('fcattach');
+      attach.addEventListener('click',function(){fileEl.click();});
+      fileEl.addEventListener('change',function(){nameEl.textContent=fileEl.files.length?('📷 '+fileEl.files[0].name):'';});
       form.addEventListener('submit',function(e){
-        e.preventDefault();var body=input.value.trim();if(!body)return;input.value='';
-        fetch(sendUrl,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest','X-CSRFToken':csrf},
-          body:new URLSearchParams({body:body})}).catch(function(){input.value=body;});
+        e.preventDefault();
+        var body=input.value.trim(),file=fileEl.files[0];
+        if(!body&&!file)return;
+        var fd=new FormData();fd.append('body',body);if(file)fd.append('image',file);
+        input.value='';fileEl.value='';nameEl.textContent='';
+        fetch(sendUrl,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest','X-CSRFToken':csrf},body:fd})
+          .catch(function(){input.value=body;});
       });
     })();
     </script>

@@ -441,17 +441,19 @@ def broadcast_task_message(task_id, message: dict):
             "task chat broadcast failed: %r", exc)
 
 
-def create_task_message(task, author, body: str):
-    """Post a text message to a task chat: save it, notify the other
-    participants, and broadcast it to anyone watching in realtime. Shared by the
-    mobile API and the web console so both behave identically."""
+def create_task_message(task, author, body: str = "", image=None):
+    """Post a message (text and/or a photo) to a task chat: save it, notify the
+    other participants, and broadcast it to anyone watching in realtime. Shared
+    by the mobile API and the web console so both behave identically."""
     from .models import TaskMessage
     from .serializers import TaskMessageSerializer
     from .services import notify_team
-    msg = TaskMessage.objects.create(task=task, company=task.company, author=author,
-                                     kind=TaskMessage.Kind.TEXT, body=body)
+    msg = TaskMessage.objects.create(
+        task=task, company=task.company, author=author,
+        kind=TaskMessage.Kind.IMAGE if image else TaskMessage.Kind.TEXT,
+        body=body, image=image)
     notify_team(task, verb="task_message", title=f"New message on {task.name}",
-                body=body[:120], actor=author)
+                body=(body or "Photo")[:120], actor=author)
     broadcast_task_message(task.id, TaskMessageSerializer(msg).data)
     return msg
 

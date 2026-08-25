@@ -856,15 +856,22 @@ def work_chat(request, pk):
 def work_chat_send(request, pk):
     """Post a message to a task chat (session-auth). Broadcasts over the socket,
     so the sender's own message arrives via the same realtime path."""
+    from apps.core.uploads import validate_upload
     from apps.execution.work_execution import can_access_task_chat, create_task_message
     task = get_object_or_404(Task.objects.all(), pk=pk)
     if not can_access_task_chat(request.user, task):
         return JsonResponse({"error": "forbidden"}, status=403)
     body = (request.POST.get("body") or "").strip()
-    if body:
-        create_task_message(task, request.user, body)
+    image = request.FILES.get("image")
+    if image:
+        try:
+            validate_upload(image)
+        except Exception as exc:                               # noqa: BLE001
+            return JsonResponse({"error": str(exc)}, status=400)
+    if body or image:
+        create_task_message(task, request.user, body, image=image)
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        return JsonResponse({"ok": bool(body)})
+        return JsonResponse({"ok": bool(body or image)})
     return redirect("web:work_chat", pk)
 
 
