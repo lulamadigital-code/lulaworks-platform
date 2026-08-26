@@ -647,6 +647,7 @@ class TaskReportViewSet(TenantViewSet):
         """Read a supplier invoice into fields the user reviews before saving a
         material report — nothing is persisted here (human confirms first)."""
         from apps.knowledge.document_intelligence import (
+            extract_fuel_fields,
             extract_po_fields,
             extract_text_from_upload,
         )
@@ -660,6 +661,17 @@ class TaskReportViewSet(TenantViewSet):
             return Response({"error": {"code": "invalid_file", "message": str(exc)}},
                             status=status.HTTP_400_BAD_REQUEST)
         text = extract_text_from_upload(upload)
+        # A fuel receipt reads differently — pull litres + odometer too so a pump
+        # slip auto-fills the fuel-specific fields, not just the money.
+        if request.data.get("kind") == "fuel":
+            f = extract_fuel_fields(text, company=request.user.active_company,
+                                    user=request.user, use_ai=True)
+            return Response({
+                "supplier": f["supplier"], "invoice_number": f["invoice_number"],
+                "document_date": f["document_date"], "amount": f["amount"],
+                "litres": f["litres"], "odometer_km": f["odometer_km"],
+                "currency": "ZAR", "items": [],
+            })
         fields = extract_po_fields(text, company=request.user.active_company,
                                    user=request.user, use_ai=True)
         return Response({

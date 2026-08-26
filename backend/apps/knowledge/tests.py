@@ -172,3 +172,25 @@ class DocumentIntelligenceTests(TestCase):
 
         junk = SimpleUploadedFile("broken.pdf", b"\x00\x01not a pdf")
         self.assertEqual(extract_text_from_upload(junk), "")
+
+
+class FuelReceiptExtractionTests(TestCase):
+    """A fuel/pump receipt yields litres + odometer (not just money), so a fuel
+    report auto-fills the fuel-specific fields. Deterministic path (no AI)."""
+
+    def test_litres_amount_and_odometer_parsed(self):
+        from apps.knowledge.document_intelligence import extract_fuel_fields
+
+        text = ("ENGEN MIDRAND\nDiesel 50ppm\nVolume: 42.35 L\n"
+                "Price/L: 24.15\nTOTAL: R 1022.75\nOdometer: 128450 km")
+        out = extract_fuel_fields(text)   # use_ai=False → deterministic only
+        self.assertEqual(out["litres"], "42.35")
+        self.assertEqual(out["amount"], "1022.75")
+        self.assertEqual(out["odometer_km"], "128450")
+
+    def test_blank_text_is_safe(self):
+        from apps.knowledge.document_intelligence import extract_fuel_fields
+
+        out = extract_fuel_fields("")
+        self.assertEqual(out["litres"], "")
+        self.assertEqual(out["odometer_km"], "")

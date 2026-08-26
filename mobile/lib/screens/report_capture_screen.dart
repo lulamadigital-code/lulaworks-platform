@@ -203,8 +203,8 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
     setState(() { _scanning = true; _photo = x; });
     try {
       final data = await widget.api.postMultipart(
-          '/task-reports/extract_invoice/', filePath: x.path)
-          as Map<String, dynamic>;
+          '/task-reports/extract_invoice/',
+          fields: {'kind': _kind}, filePath: x.path) as Map<String, dynamic>;
       if (!mounted) return;
       setState(() {
         _supplier.text = (data['supplier'] ?? '').toString();
@@ -212,6 +212,11 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
         _amount.text = (data['amount'] ?? '').toString();
         final d = (data['document_date'] ?? '').toString();
         if (d.isNotEmpty) _docDate = DateTime.tryParse(d) ?? _docDate;
+        // Fuel receipts also yield litres + odometer.
+        final litres = (data['litres'] ?? '').toString();
+        if (litres.isNotEmpty) _litres.text = litres;
+        final odo = (data['odometer_km'] ?? '').toString();
+        if (odo.isNotEmpty) _odometer.text = odo;
         // Only kinds that show a title get one auto-suggested from the scan.
         if (!_titleObvious && _title.text.isEmpty) _title.text = 'Supplier invoice';
       });

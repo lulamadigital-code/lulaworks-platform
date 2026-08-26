@@ -232,6 +232,14 @@ _PO_PROMPT = (
     "null for anything not present. Text:\n\n{text}"
 )
 
+_FUEL_PROMPT = (
+    "Extract this fuel / petrol pump receipt as strict JSON with keys: station "
+    "(the filling station or garage name), total (number, the amount paid), "
+    "date (YYYY-MM-DD), litres (number of litres/volume dispensed), odometer "
+    "(the vehicle km/odometer reading if printed, else null), reference (receipt "
+    "or invoice/tax number). Use null for anything not present. Text:\n\n{text}"
+)
+
 
 def _ai_json(company, user, prompt_template: str, text: str, *, agent: str) -> dict:
     """Run one metered AI call and parse its JSON, tolerating ```json fences.
@@ -309,6 +317,57 @@ def extract_po_fields(text: str, *, company=None, user=None,
                                 if x.get("unit_price") else "")}
                 for x in ai["lines"] if x.get("description")
             ]
+    return out
+
+
+# ── Fuel / pump receipts ──────────────────────────────────────────────────────
+#
+# A fuel report wants more than "R800 of diesel": the litres and (if the driver
+# wrote it on the slip) the odometer turn a rand amount into cost-per-litre and
+# consumption per km. Deterministic patterns catch the common layouts, then AI
+# fills the rest — the driver always confirms before saving.
+_LITRES_RE = re.compile(
+    r"(\d[\d\s]*[.,]\d{1,3})\s*(?:l\b|lt\b|ltr\b|litre|liter)", re.IGNORECASE)
+_ODO_RE = re.compile(
+    r"(?:odo(?:meter)?|km\s*reading|mileage|kms?)\s*:?\s*(\d[\d\s]{2,7}\d)",
+    re.IGNORECASE)
+
+
+def extract_fuel_fields(text: str, *, company=None, user=None,
+                        use_ai: bool = False) -> dict:
+    """Read a fuel / pump receipt into the fields a fuel report needs — station,
+    amount, litres, odometer, date, reference. Deterministic-first, then AI fills
+    what the patterns miss. Every value is a suggestion the driver may correct."""
+    out = {"supplier": "", "amount": "", "document_date": "", "invoice_number": "",
+           "litres": "", "odometer_km": ""}
+    if not text or not text.strip():
+        return out
+
+    # Reuse the generic parser (deterministic only) for station/amount/date/ref.
+    po = extract_po_fields(text)
+    out["supplier"] = po.get("contact", "")
+    out["amount"] = po.get("value", "")
+    out["document_date"] = po.get("po_date", "")
+    out["invoice_number"] = po.get("po_number", "")
+    if m := _LITRES_RE.search(text):
+        out["litres"] = f"{to_decimal(m.group(1)):g}"
+    if m := _ODO_RE.search(text):
+        out["odometer_km"] = re.sub(r"\s", "", m.group(1))
+
+    if use_ai:
+        ai = _ai_json(company, user, _FUEL_PROMPT, text, agent="fuel_extraction")
+        if not out["supplier"] and ai.get("station"):
+            out["supplier"] = str(ai["station"])
+        if not out["amount"] and ai.get("total") is not None:
+            out["amount"] = f"{to_decimal(ai['total']):.2f}"
+        if not out["document_date"] and ai.get("date"):
+            out["document_date"] = str(ai["date"])
+        if not out["invoice_number"] and ai.get("reference"):
+            out["invoice_number"] = str(ai["reference"])
+        if not out["litres"] and ai.get("litres") is not None:
+            out["litres"] = f"{to_decimal(ai['litres']):g}"
+        if not out["odometer_km"] and ai.get("odometer") is not None:
+            out["odometer_km"] = f"{to_decimal(ai['odometer']):g}"
     return out
 
 
