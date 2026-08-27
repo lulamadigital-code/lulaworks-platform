@@ -22,5 +22,18 @@
     <p style="margin-top:14px;text-align:center;font-size:13px;">
       <a href="{% url 'web:password_reset_request' %}">Forgot your password?</a></p>
   </div>
+
+  {# New visitors — there's no self-serve signup, so route them to a demo. #}
+  <div class="muted" style="text-align:center;margin-top:18px;font-size:13.5px;">
+    New to Lulaworks?
+    <a href="{% url 'marketing:demo' %}" style="font-weight:600;">Book a demo →</a>
+  </div>
+
+  {# Legal footer #}
+  <div class="muted" style="text-align:center;margin-top:30px;font-size:12.5px;">
+    <a href="{% url 'marketing:terms' %}" class="muted">Terms</a>
+    &nbsp;·&nbsp;
+    <a href="{% url 'marketing:privacy' %}" class="muted">Privacy</a>
+  </div>
 </div>
 {% endblock %}
