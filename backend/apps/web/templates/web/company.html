@@ -237,13 +237,11 @@
         <div><label>Bank name</label><input type="text" name="bank_name" required></div>
         <div><label>Account name</label><input type="text" name="account_name" placeholder="{{ company.name }}"></div>
         <div><label>Account number</label><input type="text" name="account_number" required></div>
-        <div><label>{{ banking.branch_label }}</label><input type="text" name="branch_code">
-          <span class="muted" style="font-size:11.5px;">{{ banking.branch_hint }}</span></div>
+        <div><label>{{ banking.branch_label }}</label><input type="text" name="branch_code"></div>
         <div><label>Branch name</label><input type="text" name="branch_name"></div>
         <div><label>Account type</label><select name="account_type"><option value="cheque">Cheque / Current</option><option value="savings">Savings</option><option value="transmission">Transmission</option><option value="foreign">Foreign currency</option></select></div>
         <div><label>Currency</label><input type="text" name="currency" value="{{ company.currency }}"></div>
-        <div><label>SWIFT / BIC code <span class="muted" style="font-weight:400;">(optional)</span></label><input type="text" name="swift_code">
-          <span class="muted" style="font-size:11.5px;">{{ banking.swift_hint }}</span></div>
+        <div><label>SWIFT / BIC code <span class="muted" style="font-weight:400;">(optional)</span></label><input type="text" name="swift_code"></div>
         <div><label>Label</label><input type="text" name="label" placeholder="Operational"></div>
       </div>
       <div class="secbtns"><button class="btn" type="submit">Add bank account</button>
