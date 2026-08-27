@@ -294,6 +294,7 @@
 <div class="card">
   <div class="sec-head"><strong>Statutory registrations</strong>
     {% if can_edit %}<button type="button" class="btn ghost" data-edit="compliance">✎ Edit</button>{% endif %}</div>
+  {% if statutory.is_sa %}
   <div id="view-compliance">
     <table class="kv">
       <tr><td class="muted">VAT registered</td><td>{% if compliance.vat_registered %}Yes{% else %}No{% endif %}</td></tr>
@@ -329,6 +330,34 @@
         <button class="btn ghost" type="button" data-cancel="compliance">Cancel</button></div>
     </form>
   </div>
+  {% else %}
+  {# Non-SA: the statutory registrations relevant to the company's country. #}
+  <div id="view-compliance">
+    <table class="kv">
+      <tr><td class="muted">VAT / GST registered</td><td>{% if compliance.vat_registered %}Yes{% else %}No{% endif %}</td></tr>
+      {% for r in statutory.rows %}
+      <tr><td class="muted">{{ r.label }}</td><td>{{ r.value|default:"—" }}</td></tr>
+      {% endfor %}
+      <tr><td class="muted">ISO</td><td>{{ compliance.iso_certifications|join:", "|default:"—" }}</td></tr>
+    </table>
+  </div>
+  <div id="form-compliance" style="display:none;">
+    <form method="post">{% csrf_token %}<input type="hidden" name="section" value="compliance">
+      <label class="inline"><input type="checkbox" name="vat_registered" value="1" {% if compliance.vat_registered %}checked{% endif %}> VAT / GST registered</label>
+      <div class="two" style="margin-top:12px;">
+        {% for r in statutory.rows %}
+        <div><label>{{ r.label }}</label><input type="text" name="reg__{{ r.key }}" value="{{ r.value }}" placeholder="{{ r.placeholder }}"></div>
+        {% endfor %}
+      </div>
+      <label>ISO certifications (comma separated)</label>
+      <input type="text" name="iso_certifications" value="{{ compliance.iso_certifications|join:', ' }}" placeholder="ISO 9001, ISO 45001">
+      <label>Industry certifications (comma separated)</label>
+      <input type="text" name="industry_certifications" value="{{ compliance.industry_certifications|join:', ' }}">
+      <div class="secbtns"><button class="btn" type="submit">Save statutory details</button>
+        <button class="btn ghost" type="button" data-cancel="compliance">Cancel</button></div>
+    </form>
+  </div>
+  {% endif %}
 </div>
 
 {# Supporting documents (table + toggle upload) #}

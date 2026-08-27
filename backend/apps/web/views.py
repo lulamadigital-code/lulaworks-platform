@@ -1060,6 +1060,41 @@ def _banking_hints(country: str) -> dict:
     }
 
 
+def _statutory_schema(country: str) -> dict:
+    """Country-aware statutory registrations. Statutory IDs differ by country —
+    South Africa (and unset) uses the typed SA columns already on the model
+    (CSD/CIDB/B-BBEE/COIDA/…); other jurisdictions render a relevant field set
+    stored in CompanyCompliance.other_registrations. VAT/GST + ISO certs are
+    universal and shown for every country."""
+    c = (country or "").strip().lower()
+    if c in ("", "south africa", "za", "rsa"):
+        return {"is_sa": True, "fields": []}
+    US = [("ein", "EIN (Employer ID Number)", "12-3456789"),
+          ("state_inc", "State of incorporation", "Delaware"),
+          ("state_reg", "State registration no.", ""),
+          ("sales_tax", "Sales-tax permit no.", ""),
+          ("workers_comp", "Workers' comp policy no.", ""),
+          ("duns", "DUNS number", "")]
+    UK = [("company_no", "Company number (Companies House)", "12345678"),
+          ("vat_no", "VAT number", "GB123456789"),
+          ("utr", "UTR (tax reference)", ""),
+          ("paye_ref", "PAYE reference", "123/AB456"),
+          ("cis", "CIS registration", ""),
+          ("el_insurance", "Employer's liability policy", "")]
+    AU = [("abn", "ABN (Australian Business Number)", "12 345 678 901"),
+          ("acn", "ACN (Company Number)", ""),
+          ("tfn", "Tax File Number", ""),
+          ("workers_comp", "Workers' comp policy no.", "")]
+    GENERIC = [("reg_no", "Business / company registration no.", ""),
+               ("tax_id", "Tax ID / TIN", ""),
+               ("vat_no", "VAT / GST number", ""),
+               ("employer_no", "Employer registration no.", "")]
+    by = {"united states": US, "usa": US, "us": US,
+          "united kingdom": UK, "uk": UK, "england": UK, "britain": UK,
+          "great britain": UK, "australia": AU}
+    return {"is_sa": False, "fields": by.get(c, GENERIC)}
+
+
 @login_required
 def company_profile(request):
     """One page, many sections. Everything here is read by quotations, invoices,
@@ -1095,10 +1130,18 @@ def company_profile(request):
             messages.error(request, "Unknown section.")
         return redirect("web:company_profile")
 
+    statutory = _statutory_schema(company.country)
+    if not statutory["is_sa"]:
+        stored = company.compliance.other_registrations or {}
+        statutory["rows"] = [
+            {"key": k, "label": lbl, "placeholder": ph, "value": stored.get(k, "")}
+            for (k, lbl, ph) in statutory["fields"]]
+
     from apps.administration.models import CompanySettings
     return render(request, "web/company.html", {
         "company": company,
         "compliance": company.compliance,
+        "statutory": statutory,
         "branding": company.branding,
         "settings": CompanySettings.objects.get(company=company),
         "bank_accounts": company.bank_accounts.all(),
@@ -1210,14 +1253,23 @@ def _save_profile_section(request, company, section):
 def _save_compliance(request, company):
     c = company.compliance
     c.vat_registered = bool(request.POST.get("vat_registered"))
-    for field in ("income_tax_no", "paye_no", "uif_no", "coida_no",
-                  "bbbee_level", "csd_supplier_no", "cidb_grading"):
-        setattr(c, field, request.POST.get(field, "").strip())
-    for field in ("coida_expiry", "bbbee_expiry"):
-        setattr(c, field, _parse_iso_date(request.POST.get(field)))
+    # Universal for every country.
     for field in ("iso_certifications", "industry_certifications"):
         raw = request.POST.get(field, "")
         setattr(c, field, [v.strip() for v in raw.split(",") if v.strip()])
+    schema = _statutory_schema(company.country)
+    if schema["is_sa"]:
+        for field in ("income_tax_no", "paye_no", "uif_no", "coida_no",
+                      "bbbee_level", "csd_supplier_no", "cidb_grading"):
+            setattr(c, field, request.POST.get(field, "").strip())
+        for field in ("coida_expiry", "bbbee_expiry"):
+            setattr(c, field, _parse_iso_date(request.POST.get(field)))
+    else:
+        # Other countries: save their jurisdiction's registrations into the JSON
+        # store, keyed by the schema field keys.
+        c.other_registrations = {
+            k: request.POST.get(f"reg__{k}", "").strip()
+            for (k, _lbl, _ph) in schema["fields"]}
     c.save()
 
 

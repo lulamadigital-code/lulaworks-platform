@@ -443,6 +443,10 @@ class CompanyCompliance(PlatformBaseModel):
     cidb_grading = models.CharField(max_length=16, blank=True)
     industry_certifications = models.JSONField(default=list, blank=True)
     iso_certifications = models.JSONField(default=list, blank=True)
+    # Non-SA statutory registrations, keyed per country (EIN/UTR/ABN/…). South
+    # Africa uses the typed columns above; other countries store their relevant
+    # fields here so the profile shows the right registrations per jurisdiction.
+    other_registrations = models.JSONField(default=dict, blank=True)
 
     class Meta:
         verbose_name_plural = "company compliance"
