@@ -1023,6 +1023,43 @@ def settings_home(request):
     })
 
 
+def _banking_hints(country: str) -> dict:
+    """Country-aware banking guidance. The stored field is always ``branch_code``;
+    only the label and hint shown adapt to how that country routes a local
+    transfer (branch code, sort code, routing number, BSB, IFSC…). Anywhere not
+    listed gets a neutral hint. SWIFT/BIC stays international-only everywhere."""
+    c = (country or "").strip().lower()
+    table = {
+        "south africa": ("Branch code",
+                         "SA banks use a universal branch code (e.g. FNB 250655, Standard Bank 051001)."),
+        "united states": ("Routing number (ABA)", "9-digit ABA routing number."),
+        "usa": ("Routing number (ABA)", "9-digit ABA routing number."),
+        "united kingdom": ("Sort code", "6-digit sort code (00-00-00)."),
+        "uk": ("Sort code", "6-digit sort code (00-00-00)."),
+        "ireland": ("Sort code", "6-digit sort code; IBAN for transfers."),
+        "australia": ("BSB", "6-digit BSB number."),
+        "new zealand": ("Bank/branch", "Bank and branch numbers (part of the account number)."),
+        "india": ("IFSC code", "11-character IFSC of the branch."),
+        "nigeria": ("Bank / sort code", "Bank sort code (NUBAN account number above)."),
+        "kenya": ("Bank & branch code", "Bank code plus branch code."),
+        "ghana": ("Branch / sort code", "Branch sort code."),
+        "namibia": ("Branch code", "Bank branch code."),
+        "botswana": ("Branch / sort code", "Branch or sort code."),
+        "zimbabwe": ("Branch code", "Bank branch code."),
+        "zambia": ("Branch / sort code", "Branch sort code."),
+        "canada": ("Transit + institution no.", "5-digit transit and 3-digit institution number."),
+    }
+    label, hint = table.get(
+        c, ("Branch / routing code",
+            "Your bank's branch, sort, routing, BSB or IFSC code — whatever local transfers use."))
+    return {
+        "branch_label": label,
+        "branch_hint": hint,
+        "swift_hint": "Only for international / foreign-currency payments — "
+                      "not needed for local transfers.",
+    }
+
+
 @login_required
 def company_profile(request):
     """One page, many sections. Everything here is read by quotations, invoices,
@@ -1065,6 +1102,7 @@ def company_profile(request):
         "branding": company.branding,
         "settings": CompanySettings.objects.get(company=company),
         "bank_accounts": company.bank_accounts.all(),
+        "banking": _banking_hints(company.country),
         "contacts": company.contacts.all(),
         "documents": company.documents.all(),
         "score": completeness(company),
