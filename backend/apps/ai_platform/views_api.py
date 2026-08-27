@@ -16,7 +16,7 @@ from .tools import available_tools
 
 
 class AIInteractionViewSet(TenantViewSet):
-    """Lulama, the AI Operations Director. Ask produces ONE consolidated draft;
+    """LulaAI, the AI Operations Director. Ask produces ONE consolidated draft;
     decision records human acceptance/rejection (never executes side-effects)."""
 
     model = AIInteraction

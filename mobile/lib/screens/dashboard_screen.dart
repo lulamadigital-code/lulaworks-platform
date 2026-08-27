@@ -282,7 +282,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         _QA('Customers', Icons.business_outlined,
             () => _push(CustomersScreen(api: api))),
       if (api.canGenerateAi)
-        _QA('Ask Lulaworks', Icons.auto_awesome_outlined, widget.onOpenLulama),
+        _QA('Ask LulaAI', Icons.auto_awesome_outlined, widget.onOpenLulama),
     ];
     return SizedBox(
       height: 84,

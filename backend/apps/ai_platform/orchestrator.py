@@ -98,7 +98,7 @@ def _maybe_enrich(company, user, consolidated) -> tuple[str, str] | None:
     the deterministic result. Returns (provider_name, briefing_text)."""
     tpl = _prompt()
     system = tpl.content.split("\n\n{request}")[0] if tpl else (
-        "You are Lulama, an AI Operations Director. Summarise ONLY the facts given."
+        "You are LulaAI, an AI Operations Director. Summarise ONLY the facts given."
     )
     grounded = {
         "request": consolidated.get("headline", ""),

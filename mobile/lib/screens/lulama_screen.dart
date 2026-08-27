@@ -57,14 +57,14 @@ class _LulamaScreenState extends State<LulamaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Row(children: [
-        Icon(Icons.auto_awesome), SizedBox(width: 8), Text('Lulaworks'),
+        Icon(Icons.auto_awesome), SizedBox(width: 8), Text('LulaAI'),
       ])),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text('Your AI Operations Director',
               style: Theme.of(context).textTheme.titleMedium),
-          Text('Lulaworks coordinates the specialised agents and returns one draft '
+          Text('LulaAI coordinates the specialised agents and returns one draft '
               'for you to review. It proposes — you approve.',
               style: TextStyle(color: Theme.of(context).colorScheme.outline)),
           const SizedBox(height: 16),
@@ -86,7 +86,7 @@ class _LulamaScreenState extends State<LulamaScreen> {
             minLines: 1,
             maxLines: 3,
             decoration: const InputDecoration(
-                labelText: 'Ask Lulaworks', border: OutlineInputBorder()),
+                labelText: 'Ask LulaAI', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           FilledButton.icon(
