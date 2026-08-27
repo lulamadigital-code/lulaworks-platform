@@ -253,8 +253,8 @@
 
 {# ── 6 · Company contacts (table + toggle add form) ─────────────────────── #}
 <div class="card">
-  <div class="sec-head"><strong>Company contacts</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="contactp">+ Add contact</button>{% endif %}</div>
+  <div class="sec-head"><strong>Company Members</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="contactp">+ Add member</button>{% endif %}</div>
   <div style="overflow-x:auto;">
     <table>
       <tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Prefers</th><th></th></tr>
@@ -283,7 +283,7 @@
         <div><label>Extension</label><input type="text" name="extension"></div>
         <div><label>Preferred contact method</label><select name="preferred_method"><option value="email">Email</option><option value="phone">Phone</option><option value="mobile">Mobile</option><option value="whatsapp">WhatsApp</option></select></div>
       </div>
-      <div class="secbtns"><button class="btn" type="submit">Add contact</button>
+      <div class="secbtns"><button class="btn" type="submit">Add member</button>
         <button class="btn ghost" type="button" data-cancel="contactp">Cancel</button></div>
     </form>
   </div>
