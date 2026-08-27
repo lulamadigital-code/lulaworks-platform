@@ -212,9 +212,20 @@
         <td><strong>{{ a.bank_name }}</strong>{% if a.label %}<br><span class="muted" style="font-size:12px;">{{ a.label }}</span>{% endif %}</td>
         <td class="muted">{{ a.account_name }}</td><td class="muted">{{ a.masked_number }}</td>
         <td class="muted">{{ a.branch_code|default:"—" }}</td><td class="muted">{{ a.currency }}</td>
-        <td>{% if a.is_default %}<span class="chip ok">Default</span>{% endif %}</td>
+        <td>{% if can_edit %}
+          {# Radio: pick the one account documents use. Selecting it posts the
+             'default' action; the model clears the previous default, so the page
+             comes back with exactly one selected. #}
+          <form method="post" action="{% url 'web:company_bank' %}" style="display:inline;">{% csrf_token %}
+            <input type="hidden" name="action" value="default">
+            <input type="hidden" name="account" value="{{ a.id }}">
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;" title="Use this account on invoices &amp; quotes">
+              <input type="radio" name="default_bank" {% if a.is_default %}checked{% endif %} onchange="this.form.submit()">
+              {% if a.is_default %}<span class="chip ok">Default</span>{% endif %}
+            </label>
+          </form>
+          {% else %}{% if a.is_default %}<span class="chip ok">Default</span>{% endif %}{% endif %}</td>
         <td class="right nowrap">{% if can_edit %}
-          {% if not a.is_default %}<form method="post" action="{% url 'web:company_bank' %}" style="display:inline;">{% csrf_token %}<input type="hidden" name="action" value="default"><input type="hidden" name="account" value="{{ a.id }}"><button class="btn ghost" type="submit">Make default</button></form>{% endif %}
           <form method="post" action="{% url 'web:company_bank' %}" style="display:inline;" data-confirm="Remove {{ a.bank_name|escapejs }} {{ a.masked_number|escapejs }}?">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="account" value="{{ a.id }}"><button class="btn ghost" type="submit">Remove</button></form>
         {% endif %}</td>
       </tr>
@@ -228,11 +239,13 @@
         <div><label>Bank name</label><input type="text" name="bank_name" required></div>
         <div><label>Account name</label><input type="text" name="account_name" placeholder="{{ company.name }}"></div>
         <div><label>Account number</label><input type="text" name="account_number" required></div>
-        <div><label>Branch code</label><input type="text" name="branch_code"></div>
+        <div><label>Branch code</label><input type="text" name="branch_code" placeholder="Universal branch code">
+          <span class="muted" style="font-size:11.5px;">SA banks have a universal branch code (e.g. FNB 250655, Standard Bank 051001).</span></div>
         <div><label>Branch name</label><input type="text" name="branch_name"></div>
         <div><label>Account type</label><select name="account_type"><option value="cheque">Cheque / Current</option><option value="savings">Savings</option><option value="transmission">Transmission</option><option value="foreign">Foreign currency</option></select></div>
         <div><label>Currency</label><input type="text" name="currency" value="{{ company.currency }}"></div>
-        <div><label>SWIFT code</label><input type="text" name="swift_code"></div>
+        <div><label>SWIFT / BIC code <span class="muted" style="font-weight:400;">(optional)</span></label><input type="text" name="swift_code" placeholder="e.g. FIRNZAJJ">
+          <span class="muted" style="font-size:11.5px;">Only for international / foreign-currency payments. Not needed for local SA EFT.</span></div>
         <div><label>Label</label><input type="text" name="label" placeholder="Operational"></div>
       </div>
       <div class="secbtns"><button class="btn" type="submit">Add bank account</button>
