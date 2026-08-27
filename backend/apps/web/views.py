@@ -1479,7 +1479,12 @@ def people(request):
     """Who works here. Managing members needs `users.invite`; everyone else may
     see the team (they work with these people)."""
     company = request.user.active_company
-    members = company_members(company)
+    # Owner first, then everyone else (kept in their email order — the sort is
+    # stable). The company owner is the membership on the "Company Owner" role.
+    def _owner_first(m):
+        name = ((m.role.name if m.role else "") or "").strip().lower()
+        return 0 if name in ("company owner", "owner") else 1
+    members = sorted(company_members(company), key=_owner_first)
     return render(request, "web/people.html", {
         "members": members,
         "active_count": sum(1 for m in members if m.status == "active"),
