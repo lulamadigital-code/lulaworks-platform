@@ -372,7 +372,7 @@
       {% include "web/_navlink.html" with url='web:work' key='jobs' label='Job Card' icon='check' %}
       {# Field reports live inside each Job (Job Card → open a job), not as a top-level nav item. #}
       {% include "web/_navlink.html" with url='web:quotations' key='quotations' label='Quotations' icon='doc' %}
-      {% include "web/_navlink.html" with url='web:invoices' key='invoices' label='Invoice' icon='invoice' %}
+      {% include "web/_navlink.html" with url='web:invoices' key='invoices' label='Tax Invoice' icon='invoice' %}
       {% if perms_money %}{% include "web/_navlink.html" with url='web:commercial' key='commercial' label='Finance' icon='cash' %}{% endif %}
       {% include "web/_navlink.html" with url='web:people' key='people' label='People' icon='users' %}
 
