@@ -9,7 +9,7 @@
     <p class="sub" style="margin:0;">{{ report.get_kind_display }} ·
       <a href="{% url 'web:work_detail' report.task.id %}">{{ report.task.name }}</a></p>
   </div>
-  <a class="btn ghost" href="{% url 'web:reports' %}">← All reports</a>
+  <a class="btn ghost" href="{% url 'web:work_detail' report.task.id %}">← Back to job</a>
 </div>
 
 <div class="grid2">
