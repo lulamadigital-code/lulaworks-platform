@@ -213,9 +213,7 @@
         <td class="muted">{{ a.account_name }}</td><td class="muted">{{ a.masked_number }}</td>
         <td class="muted">{{ a.branch_code|default:"—" }}</td><td class="muted">{{ a.currency }}</td>
         <td>{% if can_edit %}
-          {# Radio: pick the one account documents use. Selecting it posts the
-             'default' action; the model clears the previous default, so the page
-             comes back with exactly one selected. #}
+          {# Radio: pick the one account documents use — selecting it posts 'default' and the model clears the previous default, so exactly one stays selected. #}
           <form method="post" action="{% url 'web:company_bank' %}" style="display:inline;">{% csrf_token %}
             <input type="hidden" name="action" value="default">
             <input type="hidden" name="account" value="{{ a.id }}">
