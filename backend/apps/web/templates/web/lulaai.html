@@ -6,7 +6,7 @@
   and returns one draft to review — it proposes, you approve.</p>
 
 <div class="card">
-  <form method="post" action="{% url 'web:lulama' %}">
+  <form method="post" action="{% url 'web:lulaai' %}">
     {% csrf_token %}
     <label>Project (optional)</label>
     <select name="project" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;">

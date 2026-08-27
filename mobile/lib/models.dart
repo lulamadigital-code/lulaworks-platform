@@ -47,7 +47,7 @@ class Readiness {
   bool get open => gateStatus == 'ready' || gateStatus == 'overridden';
 }
 
-/// A Lulama consolidated draft (the AI interaction result).
+/// A LulaAi consolidated draft (the AI interaction result).
 class AiDraft {
   AiDraft(this.id, this.confidence, this.result);
 

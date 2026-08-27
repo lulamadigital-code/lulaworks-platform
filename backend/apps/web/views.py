@@ -2924,10 +2924,10 @@ def commercial(request):
     })
 
 
-# ── Lulama (AI orchestrator) ──────────────────────────────────────────────────
+# ── LulaAI (AI orchestrator) ──────────────────────────────────────────────────
 
 @login_required
-def lulama(request):
+def lulaai(request):
     if not request.user.has_perm_code("ai.generate"):
         messages.error(request, "AI features require the ai.generate permission.")
         return redirect("web:dashboard")
@@ -2942,7 +2942,7 @@ def lulama(request):
         context["selected_project"] = pid
         context["interaction"] = orchestrate(
             request.user.active_company, request.user, text, project=project)
-    return render(request, "web/lulama.html", context)
+    return render(request, "web/lulaai.html", context)
 
 
 # ── Operating actions (managers actually do the work here) ────────────────────

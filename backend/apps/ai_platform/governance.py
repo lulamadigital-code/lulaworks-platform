@@ -6,7 +6,7 @@ to AI. ONE consistent safety spine across the platform.
                   approve compliance · send documents · make any irreversible
                   business decision — without explicit human approval.
 
-Lulama and every agent prepare drafts; a human always presses the button. This
+LulaAI and every agent prepare drafts; a human always presses the button. This
 module classifies actions so the orchestrator can *propose* a forbidden action
 (flagged for human approval) but never execute it.
 """

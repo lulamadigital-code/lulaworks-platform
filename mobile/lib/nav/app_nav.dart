@@ -11,7 +11,7 @@ import '../screens/dashboard_screen.dart';
 import '../screens/estimates_screen.dart';
 import '../screens/field_home_screen.dart';
 import '../screens/finance_screen.dart';
-import '../screens/lulama_screen.dart';
+import '../screens/lulaai_screen.dart';
 import '../screens/more_screen.dart';
 import '../screens/my_tasks_screen.dart';
 import '../screens/notifications_screen.dart';
@@ -75,11 +75,11 @@ class NavActions {
   const NavActions({
     required this.onSignOut,
     required this.openProjects,
-    required this.openLulama,
+    required this.openLulaAi,
   });
   final Future<void> Function() onSignOut;
   final VoidCallback openProjects;
-  final VoidCallback openLulama;
+  final VoidCallback openLulaAi;
 }
 
 /// One bottom-bar destination.
@@ -124,7 +124,7 @@ List<NavTab> bottomTabsFor(ApiClient api) {
         : DashboardScreen(
             api: api,
             onOpenProjects: a.openProjects,
-            onOpenLulama: a.openLulama,
+            onOpenLulaAi: a.openLulaAi,
           ),
   );
   final myWork = NavTab(
@@ -341,7 +341,7 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
         subtitle: 'Ask the assistant',
         icon: Icons.auto_awesome_outlined,
         visible: (a) => a.canGenerateAi,
-        build: (a, _) => LulamaScreen(api: a),
+        build: (a, _) => LulaAiScreen(api: a),
       ),
     ]),
     MoreGroup('ACCOUNT', [

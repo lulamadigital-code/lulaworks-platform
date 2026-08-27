@@ -201,8 +201,8 @@ class CommercialAndLulamaTests(TestCase):
             project = awarded_project(c)
         user = user_with(c, ["projects.view", "ai.generate"])
         self.client.force_login(user)
-        self.assertEqual(self.client.get("/lulama/").status_code, 200)
-        resp = self.client.post("/lulama/", {"request": "Prepare this project",
+        self.assertEqual(self.client.get("/lulaai/").status_code, 200)
+        resp = self.client.post("/lulaai/", {"request": "Prepare this project",
                                              "project": str(project.id)})
         self.assertContains(resp, "Consolidated draft")
         self.assertContains(resp, "confidence")
@@ -211,7 +211,7 @@ class CommercialAndLulamaTests(TestCase):
         c = make_company()
         user = user_with(c, ["projects.view"])
         self.client.force_login(user)
-        self.assertEqual(self.client.get("/lulama/").status_code, 302)  # bounced
+        self.assertEqual(self.client.get("/lulaai/").status_code, 302)  # bounced
 
 
 class ActionsTests(TestCase):
@@ -524,7 +524,7 @@ class EveryPageLoadsTests(TestCase):
         from django.urls import reverse
         simple = ["dashboard", "work", "work_new", "rfq", "quotations",
                   "quotation_new", "projects", "estimates", "suppliers",
-                  "purchase_orders", "commercial", "lulama", "people",
+                  "purchase_orders", "commercial", "lulaai", "people",
                   "company_profile", "company_hours_page", "customers",
                   "notifications", "profile", "change_password"]
         urls = [(name, reverse(f"web:{name}")) for name in simple]

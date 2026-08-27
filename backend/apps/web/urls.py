@@ -314,5 +314,5 @@ urlpatterns = [
     path("invoices/", views.invoices, name="invoices"),
     path("invoices/new/", views.invoice_new, name="invoice_new"),
     path("invoices/<uuid:pk>/payment/", views.invoice_payment, name="invoice_payment"),
-    path("lulama/", views.lulama, name="lulama"),
+    path("lulaai/", views.lulaai, name="lulaai"),
 ]

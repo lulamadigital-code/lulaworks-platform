@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../nav/app_nav.dart';
-import 'lulama_screen.dart';
+import 'lulaai_screen.dart';
 
 /// The signed-in app shell. The bottom bar is built entirely from the central,
 /// permission-driven navigation config ([bottomTabsFor]) — different users get
@@ -28,7 +28,7 @@ class _HomeShellState extends State<HomeShell> {
   late final NavActions _actions = NavActions(
     onSignOut: widget.onSignOut,
     openProjects: () => _goto('jobs'),
-    openLulama: _openLulama,
+    openLulaAi: _openLulaAi,
   );
 
   @override
@@ -93,8 +93,8 @@ class _HomeShellState extends State<HomeShell> {
     if (i >= 0) setState(() => _index = i);
   }
 
-  void _openLulama() => Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => LulamaScreen(api: widget.api)));
+  void _openLulaAi() => Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => LulaAiScreen(api: widget.api)));
 
   @override
   Widget build(BuildContext context) {

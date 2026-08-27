@@ -22,12 +22,12 @@ class DashboardScreen extends StatefulWidget {
     super.key,
     required this.api,
     required this.onOpenProjects,
-    required this.onOpenLulama,
+    required this.onOpenLulaAi,
   });
 
   final ApiClient api;
   final VoidCallback onOpenProjects;
-  final VoidCallback onOpenLulama;
+  final VoidCallback onOpenLulaAi;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -282,7 +282,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         _QA('Customers', Icons.business_outlined,
             () => _push(CustomersScreen(api: api))),
       if (api.canGenerateAi)
-        _QA('Ask LulaAI', Icons.auto_awesome_outlined, widget.onOpenLulama),
+        _QA('Ask LulaAI', Icons.auto_awesome_outlined, widget.onOpenLulaAi),
     ];
     return SizedBox(
       height: 84,

@@ -1,6 +1,6 @@
-"""Lulama — the AI Operations Director (AI_PLATFORM §3).
+"""LulaAI — the AI Operations Director (AI_PLATFORM §3).
 
-Users don't juggle seven agents; they talk to Lulama. Lulama doesn't do the work
+Users don't juggle seven agents; they talk to LulaAI. LulaAI doesn't do the work
 — it DECOMPOSES a request into agent tasks, DISPATCHES the agents the invoking
 user is permitted to run, AGGREGATES their grounded results, and returns ONE
 consolidated DRAFT for human review. It never commits the side-effects itself
@@ -29,7 +29,7 @@ from .tools import ToolPermissionError
 
 logger = logging.getLogger(__name__)
 
-PROMPT_AGENT = "lulama_orchestrator"
+PROMPT_AGENT = "lulaai_orchestrator"
 
 
 # ── Request decomposition (deterministic keyword routing) ─────────────────────
@@ -47,7 +47,7 @@ _ROUTES = [
     (("risk", "focus", "portfolio", "which project", "executive", "overview"), ["executive"]),
 ]
 
-# Side-effect intents Lulama may detect in the request → proposed (never executed).
+# Side-effect intents LulaAI may detect in the request → proposed (never executed).
 _INTENTS = [
     (("send the invoice", "send invoice", "invoice the customer"),
      ("send_invoice", "Send the customer invoice")),
@@ -116,13 +116,13 @@ def _maybe_enrich(company, user, consolidated) -> tuple[str, str] | None:
     # any total failure just drops the (optional) narrative enrichment.
     try:
         resp = run_task(company, user, TaskType.REASONING, prompt,
-                        agent="lulama", prompt_name="lulama_briefing", system=system)
+                        agent="lulaai", prompt_name="lulaai_briefing", system=system)
         return resp.provider, resp.text
     except InsufficientCreditsError:
-        logger.info("Lulama enrichment skipped: no AI credits.")
+        logger.info("LulaAI enrichment skipped: no AI credits.")
         return None
     except AllProvidersFailedError as exc:
-        logger.warning("Lulama enrichment unavailable (%s); using deterministic result.", exc)
+        logger.warning("LulaAI enrichment unavailable (%s); using deterministic result.", exc)
         return None
 
 
@@ -183,7 +183,7 @@ def orchestrate(company, user, request_text, *, project=None, quotation=None,
             provider, consolidated["executive_briefing"] = enriched
 
     interaction = AIInteraction.objects.create(
-        company=company, request_text=request_text, agent="lulama",
+        company=company, request_text=request_text, agent="lulaai",
         prompt_version=_prompt_version(), provider=provider,
         result=_decimalless(consolidated), confidence=Decimal(str(overall)),
         approval_status=ApprovalStatus.DRAFT,

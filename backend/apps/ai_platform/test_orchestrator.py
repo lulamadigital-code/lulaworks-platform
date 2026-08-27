@@ -1,4 +1,4 @@
-"""AI Platform (Phase 8) tests: the Lulama orchestrator produces one grounded
+"""AI Platform (Phase 8) tests: the LulaAI orchestrator produces one grounded
 consolidated draft; the AGENT SECURITY MODEL (agents/tools run within the
 invoking user's RBAC + tenant); GOVERNANCE (the AI proposes but never executes
 side-effects); confidence + sources; prompt versioning; the deterministic path
@@ -84,7 +84,7 @@ class OrchestratorTests(APITestCase):
             user = user_with(c, PERMS)
             interaction = orchestrate(c, user, "Prepare this shutdown project", project=project)
             result = interaction.result
-        self.assertEqual(interaction.agent, "lulama")
+        self.assertEqual(interaction.agent, "lulaai")
         self.assertEqual(interaction.approval_status, ApprovalStatus.DRAFT)
         agents = {a["agent"] for a in result["agents"]}
         # the full "prepare" chain ran, grounded in real modules
@@ -209,7 +209,7 @@ class AIAPITests(APITestCase):
             format="json")
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         iid = resp.data["id"]
-        self.assertEqual(resp.data["agent"], "lulama")
+        self.assertEqual(resp.data["agent"], "lulaai")
         resp = self.client.post(f"/api/v1/ai/interactions/{iid}/decision/",
                                 {"approved": True}, format="json")
         self.assertEqual(resp.data["approval_status"], "approved")

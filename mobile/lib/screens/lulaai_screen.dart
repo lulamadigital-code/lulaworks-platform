@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../models.dart';
 
-class LulamaScreen extends StatefulWidget {
-  const LulamaScreen({super.key, required this.api});
+class LulaAiScreen extends StatefulWidget {
+  const LulaAiScreen({super.key, required this.api});
   final ApiClient api;
 
   @override
-  State<LulamaScreen> createState() => _LulamaScreenState();
+  State<LulaAiScreen> createState() => _LulaAiScreenState();
 }
 
-class _LulamaScreenState extends State<LulamaScreen> {
+class _LulaAiScreenState extends State<LulaAiScreen> {
   final _request = TextEditingController(text: 'Prepare this project');
   List<Project> _projects = const [];
   String? _projectId;

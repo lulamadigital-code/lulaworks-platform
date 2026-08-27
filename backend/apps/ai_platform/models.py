@@ -120,14 +120,14 @@ class ApprovalStatus(models.TextChoices):
 
 
 class AIInteraction(TenantBaseModel):
-    """The AI audit record + governance state (AI_PLATFORM §8-9). Every Lulama/agent
+    """The AI audit record + governance state (AI_PLATFORM §8-9). Every LulaAI/agent
     run is a DRAFT until a human decides. Rejected suggestions are kept — they feed
     the prompt learning loop. The AI never commits a business side-effect: approving
     an interaction records the human's acceptance of the DRAFT, it does not execute.
     """
 
     request_text = models.TextField()
-    agent = models.CharField(max_length=48, default="lulama")  # lulama = orchestrator
+    agent = models.CharField(max_length=48, default="lulaai")  # lulaai = orchestrator
     prompt_version = models.CharField(max_length=16, default="v1")
     provider = models.CharField(max_length=24, default="deterministic")
     result = models.JSONField(default=dict, blank=True)      # the consolidated draft

@@ -252,9 +252,9 @@ class Command(BaseCommand):
             },
         )
         PromptTemplate.objects.get_or_create(
-            agent="lulama_orchestrator", version="v1",
+            agent="lulaai_orchestrator", version="v1",
             defaults={
-                "key": "lulama_orchestrator",
+                "key": "lulaai_orchestrator",
                 "content": (
                     "You are LulaAI, the AI Operations Director for a contracting "
                     "business. Decompose the user's request, coordinate the "

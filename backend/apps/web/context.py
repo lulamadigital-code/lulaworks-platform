@@ -94,7 +94,7 @@ _SECTIONS = {
     "commercial_document_send": "invoices", "commercial_document_transition": "invoices",
     "commercial_document_excel": "invoices", "commercial_document_payment": "invoices",
     "commercial": "commercial", "invoice_payment": "commercial",
-    "lulama": "lulama",
+    "lulaai": "lulaai",
 }
 
 

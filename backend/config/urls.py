@@ -56,7 +56,7 @@ urlpatterns = [
     path("api/v1/", include("apps.execution.urls")),
     # Finance, Commercial & Payments
     path("api/v1/", include("apps.finance.urls")),
-    # AI Platform — Lulama orchestrator + agents
+    # AI Platform — LulaAI orchestrator + agents
     path("api/v1/", include("apps.ai_platform.urls")),
     # Customers & Contacts
     path("api/v1/", include("apps.customers.urls")),
