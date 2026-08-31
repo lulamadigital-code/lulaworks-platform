@@ -10,14 +10,21 @@ message TEMPLATE — set ``Campaign.wa_template_name``. A blank template sends
 ``content`` as free text, which Meta only accepts inside a 24h customer-care
 window (fine for tests / replies).
 """
+import hashlib
+import hmac
+import logging
 import re
 
 from django.conf import settings
+from django.utils import timezone
+
+from apps.core.context import tenant_scope
 
 from .email import render_content
 from .models import CampaignSend, CampaignStatus, WhatsAppConnection
 
 GRAPH = "https://graph.facebook.com"
+logger = logging.getLogger(__name__)
 
 
 def get_connection(company):
@@ -185,3 +192,114 @@ def send_whatsapp_campaign(campaign, user):
     campaign.updated_by = user
     campaign.save(update_fields=["sent", "failed", "status", "updated_by", "updated_at"])
     return {"sent": sent, "failed": failed, "recipients": len(recipients)}
+
+
+# ── Delivery webhook (Meta → us) ──────────────────────────────────────────────
+#
+# Meta pushes status updates (sent → delivered → read, or failed) and inbound
+# replies to a public URL. We verify it's really Meta (a shared token on GET, an
+# HMAC-SHA256 signature on POST), then update the matching CampaignSend so the
+# analytics show real engagement — the WhatsApp analogue of email open tracking.
+
+def verify_webhook_token(mode, token) -> bool:
+    """The GET handshake Meta does when you register the webhook."""
+    expected = getattr(settings, "WHATSAPP_WEBHOOK_VERIFY_TOKEN", "")
+    return bool(mode == "subscribe" and token and expected and token == expected)
+
+
+def verify_signature(raw_body: bytes, signature_header: str) -> bool:
+    """True if the POST body was signed with our Meta app secret (X-Hub-Signature-256)."""
+    secret = getattr(settings, "META_APP_SECRET", "")
+    if not (secret and signature_header):
+        return False
+    expected = "sha256=" + hmac.new(secret.encode(), raw_body or b"",
+                                    hashlib.sha256).hexdigest()
+    try:
+        return hmac.compare_digest(expected, signature_header)
+    except Exception:                                          # noqa: BLE001
+        return False
+
+
+def process_webhook(payload: dict):
+    """Walk a WhatsApp webhook payload: apply message statuses + inbound replies."""
+    for entry in payload.get("entry", []) or []:
+        for change in entry.get("changes", []) or []:
+            value = change.get("value", {}) or {}
+            for st in value.get("statuses", []) or []:
+                try:
+                    _apply_status(st)
+                except Exception:                              # noqa: BLE001
+                    logger.exception("wa status apply failed")
+            for msg in value.get("messages", []) or []:
+                try:
+                    _apply_inbound(value, msg)
+                except Exception:                              # noqa: BLE001
+                    logger.exception("wa inbound apply failed")
+
+
+def _apply_status(st: dict):
+    mid = st.get("id")
+    status = st.get("status")
+    if not mid:
+        return
+    cs = CampaignSend.all_objects.filter(wa_message_id=mid, channel="whatsapp").first()
+    if not cs:
+        return
+    with tenant_scope(cs.company_id):
+        fields = []
+        if status == "delivered" and not cs.delivered:
+            cs.delivered = True
+            fields.append("delivered")
+        elif status == "read":
+            if not cs.delivered:
+                cs.delivered = True
+                fields.append("delivered")
+            if not cs.opened:                                  # opened == "read"
+                cs.opened = True
+                cs.opened_at = timezone.now()
+                fields += ["opened", "opened_at"]
+        elif status == "failed" and cs.status != CampaignSend.Status.FAILED:
+            cs.status = CampaignSend.Status.FAILED
+            fields.append("status")
+        if fields:
+            fields.append("updated_at")
+            cs.save(update_fields=fields)
+            _recount(cs.campaign_id, cs.company_id)
+
+
+def _apply_inbound(value: dict, msg: dict):
+    """A contact replied. Mark the most recent campaign send to that number as
+    replied (scoped to the company that owns the receiving phone number)."""
+    frm = _wa_number(msg.get("from", ""))
+    if not frm:
+        return
+    phone_number_id = (value.get("metadata", {}) or {}).get("phone_number_id", "")
+    conn = (WhatsAppConnection.all_objects.filter(phone_number_id=phone_number_id).first()
+            if phone_number_id else None)
+    qs = CampaignSend.all_objects.filter(channel="whatsapp")
+    if conn:
+        qs = qs.filter(company_id=conn.company_id)
+    # Match the recipient by normalized number (phone stored as entered).
+    for cs in qs.order_by("-created_at")[:500]:
+        if _wa_number(cs.phone) == frm:
+            if not cs.replied:
+                with tenant_scope(cs.company_id):
+                    cs.replied = True
+                    cs.save(update_fields=["replied", "updated_at"])
+                    _recount(cs.campaign_id, cs.company_id)
+            return
+
+
+def _recount(campaign_id, company_id):
+    """Recompute a WhatsApp campaign's delivered/read/replied/failed from its sends."""
+    from .models import Campaign
+    with tenant_scope(company_id):
+        camp = Campaign.objects.filter(pk=campaign_id).first()
+        if not camp:
+            return
+        sends = camp.sends.all()
+        camp.delivered = sends.filter(delivered=True).count()
+        camp.opened = sends.filter(opened=True).count()
+        camp.replied = sends.filter(replied=True).count()
+        camp.failed = sends.filter(status=CampaignSend.Status.FAILED).count()
+        camp.save(update_fields=["delivered", "opened", "replied", "failed", "updated_at"])

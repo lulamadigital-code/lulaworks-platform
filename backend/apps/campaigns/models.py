@@ -127,12 +127,15 @@ class CampaignSend(TenantBaseModel):
                                  null=True, blank=True, related_name="+")
     email_log = models.ForeignKey("notifications.EmailLog", on_delete=models.SET_NULL,
                                   null=True, blank=True, related_name="+")
-    wa_message_id = models.CharField(max_length=128, blank=True)  # Meta message id
+    wa_message_id = models.CharField(max_length=128, blank=True, db_index=True)  # Meta message id
     status = models.CharField(max_length=10, choices=Status.choices,
                               default=Status.PENDING)
     # For email = "opened"; for WhatsApp = "read" (reused so analytics stay unified).
     opened = models.BooleanField(default=False)
     opened_at = models.DateTimeField(null=True, blank=True)
+    # WhatsApp engagement, fed by the delivery webhook.
+    delivered = models.BooleanField(default=False)
+    replied = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-created_at"]

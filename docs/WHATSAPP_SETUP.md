@@ -41,6 +41,7 @@ Add to `.env.prod` (and restart `web`):
 META_APP_ID=<your app id>
 META_APP_SECRET=<your app secret>
 WHATSAPP_CONFIG_ID=<your embedded-signup configuration id>
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=<any secret string you choose>
 # optional; defaults to v21.0
 WHATSAPP_API_VERSION=v21.0
 ```
@@ -49,7 +50,16 @@ WHATSAPP_API_VERSION=v21.0
 > (a company pastes their phone-number-id + token). Setting them turns on the
 > one-click **"Connect with Facebook"** button.
 
-### 6. Take the app Live
+### 6. Register the delivery webhook
+- In **WhatsApp → Configuration → Webhook**, set:
+  - **Callback URL:** `https://www.lulaworks.com/m/wa/webhook/`
+  - **Verify token:** the same string you put in `WHATSAPP_WEBHOOK_VERIFY_TOKEN`.
+- **Subscribe** to the **`messages`** field.
+- This lights up **delivered / read / replied** on the analytics (without it, WhatsApp
+  only shows “sent”). It's authenticated by the verify token (on the handshake) and
+  your app-secret signature (on every event).
+
+### 7. Take the app Live
 - Complete **Business Verification** for the Meta app.
 - Switch the app from **Development** to **Live** (top toggle).
 - Submit for **App Review** if Meta asks for the two WhatsApp permissions above.

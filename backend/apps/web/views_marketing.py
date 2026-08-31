@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 
 from apps.campaigns.models import (
     AUDIENCE_CHOICES,
@@ -344,6 +345,41 @@ def marketing_pixel(request, pk):
     resp = HttpResponse(_PIXEL_GIF, content_type="image/gif")
     resp["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     return resp
+
+
+@csrf_exempt
+def whatsapp_webhook(request):
+    """Meta → us. GET is the one-time verification handshake; POST delivers
+    message statuses (delivered/read/failed) + inbound replies, which update the
+    matching CampaignSend. Public (Meta calls it) but authenticated by the verify
+    token on GET and the app-secret signature on POST."""
+    from django.http import HttpResponse
+
+    from apps.campaigns.whatsapp import (
+        process_webhook,
+        verify_signature,
+        verify_webhook_token,
+    )
+    if request.method == "GET":
+        if verify_webhook_token(request.GET.get("hub.mode"),
+                                request.GET.get("hub.verify_token")):
+            return HttpResponse(request.GET.get("hub.challenge", ""),
+                                content_type="text/plain")
+        return HttpResponse("forbidden", status=403)
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    if not verify_signature(request.body, request.headers.get("X-Hub-Signature-256", "")):
+        return HttpResponse(status=403)
+    import json
+    try:
+        payload = json.loads(request.body or "{}")
+    except ValueError:
+        return HttpResponse(status=400)
+    try:
+        process_webhook(payload)
+    except Exception:                                          # noqa: BLE001
+        pass   # always 200 to Meta — never trigger a retry storm on our error
+    return HttpResponse("ok")
 
 
 # ── Segments ───────────────────────────────────────────────────────────────────

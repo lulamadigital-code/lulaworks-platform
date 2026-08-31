@@ -309,3 +309,73 @@ class WhatsAppAccessTests(APITestCase):
         self.client.force_login(u)
         resp = self.client.get("/marketing/whatsapp/")
         self.assertEqual(resp.status_code, 302)   # bounced to /marketing/
+
+
+from django.test import override_settings  # noqa: E402
+
+
+class WhatsAppWebhookTests(APITestCase):
+    """Meta's delivery webhook updates the matching CampaignSend: statuses
+    (delivered/read/failed) and inbound replies. Verification + signature gate it."""
+
+    def _make_send(self, mid="wamid.ABC", phone="+27610000001"):
+        from apps.campaigns.models import Campaign, CampaignSend, WhatsAppConnection
+        c = _company()
+        with tenant_scope(c.id):
+            camp = Campaign.objects.create(company=c, name="WA", channel="whatsapp",
+                                           content="hi")
+            WhatsAppConnection.objects.create(company=c, phone_number_id="PNID",
+                                              access_token="t", is_active=True)
+            cs = CampaignSend.objects.create(company=c, campaign=camp, channel="whatsapp",
+                                             phone=phone, wa_message_id=mid,
+                                             status=CampaignSend.Status.SENT)
+        return c, camp, cs
+
+    @override_settings(WHATSAPP_WEBHOOK_VERIFY_TOKEN="verifytok")
+    def test_get_verification_handshake(self):
+        ok = self.client.get("/m/wa/webhook/", {"hub.mode": "subscribe",
+             "hub.verify_token": "verifytok", "hub.challenge": "CHALLENGE123"})
+        self.assertEqual(ok.status_code, 200)
+        self.assertEqual(ok.content.decode(), "CHALLENGE123")
+        bad = self.client.get("/m/wa/webhook/", {"hub.mode": "subscribe",
+              "hub.verify_token": "wrong", "hub.challenge": "x"})
+        self.assertEqual(bad.status_code, 403)
+
+    def test_status_delivered_then_read(self):
+        from apps.campaigns.whatsapp import process_webhook
+        c, camp, cs = self._make_send()
+        process_webhook({"entry": [{"changes": [{"value": {
+            "metadata": {"phone_number_id": "PNID"},
+            "statuses": [{"id": "wamid.ABC", "status": "delivered"},
+                         {"id": "wamid.ABC", "status": "read"}]}}]}]})
+        with tenant_scope(c.id):
+            cs.refresh_from_db(); camp.refresh_from_db()
+        self.assertTrue(cs.delivered)
+        self.assertTrue(cs.opened)          # read == opened
+        self.assertEqual(camp.delivered, 1)
+        self.assertEqual(camp.opened, 1)
+
+    def test_inbound_reply_marks_replied(self):
+        from apps.campaigns.whatsapp import process_webhook
+        c, camp, cs = self._make_send(phone="+27610000009")
+        process_webhook({"entry": [{"changes": [{"value": {
+            "metadata": {"phone_number_id": "PNID"},
+            "messages": [{"from": "27610000009", "id": "wamid.IN", "type": "text",
+                          "text": {"body": "yes interested"}}]}}]}]})
+        with tenant_scope(c.id):
+            cs.refresh_from_db(); camp.refresh_from_db()
+        self.assertTrue(cs.replied)
+        self.assertEqual(camp.replied, 1)
+
+    @override_settings(META_APP_SECRET="s3cr3t")
+    def test_post_requires_valid_signature(self):
+        import hashlib
+        import hmac
+        import json
+        body = json.dumps({"entry": []}).encode()
+        bad = self.client.post("/m/wa/webhook/", data=body, content_type="application/json")
+        self.assertEqual(bad.status_code, 403)
+        sig = "sha256=" + hmac.new(b"s3cr3t", body, hashlib.sha256).hexdigest()
+        ok = self.client.post("/m/wa/webhook/", data=body, content_type="application/json",
+                              HTTP_X_HUB_SIGNATURE_256=sig)
+        self.assertEqual(ok.status_code, 200)

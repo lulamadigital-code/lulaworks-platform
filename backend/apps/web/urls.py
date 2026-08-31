@@ -76,6 +76,7 @@ urlpatterns = [
     # Public tracking endpoints (no login) — used inside marketing emails.
     path("m/u/<uuid:pk>/", views_marketing.marketing_unsubscribe, name="marketing_unsubscribe"),
     path("m/o/<uuid:pk>/", views_marketing.marketing_pixel, name="marketing_pixel"),
+    path("m/wa/webhook/", views_marketing.whatsapp_webhook, name="marketing_whatsapp_webhook"),
     path("crm/", views_crm.crm_hub, name="crm_hub"),
     path("crm/search/", views_crm.crm_search, name="crm_search"),
     path("crm/reports/", views_crm.crm_reports, name="crm_reports"),

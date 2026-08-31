@@ -155,6 +155,9 @@ WHATSAPP_API_VERSION = config("WHATSAPP_API_VERSION", default="v21.0")
 META_APP_ID = config("META_APP_ID", default="")
 META_APP_SECRET = config("META_APP_SECRET", default="")
 WHATSAPP_CONFIG_ID = config("WHATSAPP_CONFIG_ID", default="")  # Embedded Signup config
+# A secret you also enter in Meta → WhatsApp → Configuration → Webhook, so the
+# webhook's verification handshake only succeeds for Meta.
+WHATSAPP_WEBHOOK_VERIFY_TOKEN = config("WHATSAPP_WEBHOOK_VERIFY_TOKEN", default="")
 
 # Session-authenticated manager web (server-rendered HTML + HTMX). Separate from
 # the JWT API used by the Flutter field app.
