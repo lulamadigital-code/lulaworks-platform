@@ -138,13 +138,91 @@ def campaign_detail(request, pk):
             campaign.delete()
             messages.success(request, "Campaign deleted.")
             return redirect("web:marketing_campaigns")
+        elif action == "send_test":
+            from apps.campaigns import email as cmail
+            to = (request.POST.get("test_email") or request.user.email or "").strip()
+            if not to:
+                messages.error(request, "Enter an email address to send the test to.")
+            else:
+                try:
+                    cmail.send_test(campaign, request.user, to)
+                    messages.success(request, f"Test email sent to {to}.")
+                except Exception as exc:                       # noqa: BLE001
+                    messages.error(request, f"Could not send the test: {exc}")
+        elif action == "send":
+            from apps.campaigns import email as cmail
+            base = request.build_absolute_uri("/").rstrip("/")
+            try:
+                r = cmail.send_campaign(campaign, request.user, base_url=base)
+                messages.success(
+                    request, f"Campaign sent — {r['sent']} queued"
+                    + (f", {r['skipped']} skipped (unsubscribed)" if r["skipped"] else "")
+                    + f" of {r['recipients']} recipients.")
+            except ValueError as exc:
+                messages.error(request, str(exc))
+            except Exception as exc:                           # noqa: BLE001
+                messages.error(request, f"Send failed: {exc}")
         return redirect("web:marketing_campaign_detail", pk=campaign.id)
 
     audience_count = segment_count(campaign.segment) if campaign.segment else None
+    recipient_count = None
+    if campaign.channel == "email" and campaign.segment:
+        from apps.campaigns.email import resolve_recipients
+        recipient_count = len(resolve_recipients(campaign.segment))
     return render(request, "web/marketing/campaign_detail.html", {
         "campaign": campaign,
         "audience_count": audience_count,
+        "recipient_count": recipient_count,
     })
+
+
+# ── Public tracking endpoints (no login) ──────────────────────────────────────
+
+def marketing_unsubscribe(request, pk):
+    """Public one-click unsubscribe from a campaign's link — suppresses the
+    recipient's email for that company's marketing (transactional is untouched).
+
+    Public + no tenant context, so look the send up cross-tenant by its
+    unguessable id (all_objects) and then act inside its own tenant scope."""
+    from django.http import HttpResponse
+
+    from apps.campaigns.email import suppress
+    from apps.campaigns.models import CampaignSend
+    from apps.core.context import tenant_scope
+    cs = CampaignSend.all_objects.filter(pk=pk).first()
+    if cs:
+        with tenant_scope(cs.company_id):
+            suppress(cs.company, cs.email, reason="unsubscribe link")
+    return HttpResponse(
+        "<html><body style='font-family:system-ui;text-align:center;padding:60px;'>"
+        "<h2>You've been unsubscribed</h2>"
+        "<p>You won't receive further marketing emails from this sender. "
+        "Account and billing emails are not affected.</p></body></html>")
+
+
+# A 1×1 transparent GIF (43 bytes).
+_PIXEL_GIF = (b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!"
+              b"\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00"
+              b"\x00\x02\x01D\x00;")
+
+
+def marketing_pixel(request, pk):
+    """Open-tracking pixel — marks the CampaignSend opened, returns a 1×1 GIF."""
+    from django.http import HttpResponse
+
+    from apps.campaigns.email import mark_opened
+    from apps.campaigns.models import CampaignSend
+    from apps.core.context import tenant_scope
+    cs = CampaignSend.all_objects.filter(pk=pk).first()
+    if cs:
+        try:
+            with tenant_scope(cs.company_id):
+                mark_opened(cs)
+        except Exception:                                      # noqa: BLE001
+            pass
+    resp = HttpResponse(_PIXEL_GIF, content_type="image/gif")
+    resp["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    return resp
 
 
 # ── Segments ───────────────────────────────────────────────────────────────────

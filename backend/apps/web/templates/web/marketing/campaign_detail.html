@@ -43,6 +43,31 @@
   </div>
 
   <div>
+    {% if campaign.channel == 'email' %}
+    <h2>Send</h2>
+    <div class="card">
+      {% if campaign.segment %}
+        <p class="muted" style="font-size:12.5px;margin:0 0 10px;">
+          {{ recipient_count }} recipient{{ recipient_count|pluralize }} with an email in <strong>{{ campaign.segment.name }}</strong>.</p>
+        <form method="post" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">{% csrf_token %}
+          <input type="email" name="test_email" placeholder="you@company.co.za" style="flex:1;">
+          <button class="btn ghost" name="action" value="send_test">Send test</button>
+        </form>
+        {% if campaign.can_send %}
+        <form method="post" data-confirm="Send this campaign to {{ recipient_count }} recipient{{ recipient_count|pluralize }}?">{% csrf_token %}
+          <button class="btn" name="action" value="send" style="width:100%;">Send campaign now</button>
+        </form>
+        <p class="muted" style="font-size:11.5px;margin:8px 0 0;">Unsubscribed contacts are skipped automatically. Delivery runs in the background.</p>
+        {% else %}
+        <p class="muted" style="font-size:12.5px;margin:0;">This campaign has already been sent.</p>
+        {% endif %}
+      {% else %}
+        <p class="muted" style="font-size:12.5px;margin:0;">Add an audience segment to send this campaign.
+          <a href="{% url 'web:marketing_segments' %}">Segments</a></p>
+      {% endif %}
+    </div>
+    {% endif %}
+
     <h2>Status</h2>
     <div class="card">
       <p class="muted" style="font-size:12.5px;margin:0 0 12px;">Sending isn't wired yet — these move the campaign through its lifecycle for now.</p>

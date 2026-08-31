@@ -86,3 +86,81 @@ class MarketingWebTests(APITestCase):
         u = _user_with(c, ["projects.view"], email="np@lula.co.za")
         self.client.force_login(u)
         self.assertEqual(self.client.get("/marketing/").status_code, 302)  # bounced
+
+
+class EmailCampaignTests(APITestCase):
+    """Send over the notifications pipe: per-recipient records + EmailLogs,
+    unsubscribe suppression skips recipients, and the public unsubscribe/open
+    endpoints work with no tenant in context."""
+
+    def _setup(self):
+        from apps.campaigns.models import Campaign, Segment
+        c = _company()
+        with tenant_scope(c.id):
+            for i in range(3):
+                Lead.objects.create(company=c, company_name=f"L{i}",
+                                    contact_name=f"Sam {i}",
+                                    email=f"lead{i}@example.com", source="Website",
+                                    status=Lead.Status.NEW, industry="Mining")
+            seg = Segment.objects.create(company=c, name="Mining", audience="leads",
+                                         criteria={"industry": "Mining"})
+            camp = Campaign.objects.create(company=c, name="Q4", channel="email",
+                                           segment=seg, subject="Hi",
+                                           content="Hello {{first_name}}")
+        return c, seg, camp
+
+    def test_send_creates_sends_and_logs(self):
+        from apps.campaigns.email import send_campaign
+        from apps.campaigns.models import CampaignSend, CampaignStatus
+        c, seg, camp = self._setup()
+        with tenant_scope(c.id):
+            user = _user_with(c, ["customers.manage"], email="mgr@lula.co.za")
+            res = send_campaign(camp, user, base_url="https://x.test")
+            self.assertEqual(res["sent"], 3)
+            self.assertEqual(CampaignSend.objects.filter(campaign=camp).count(), 3)
+            self.assertEqual(CampaignSend.objects.filter(
+                campaign=camp, email_log__isnull=False).count(), 3)
+            camp.refresh_from_db()
+            self.assertEqual(camp.sent, 3)
+            self.assertEqual(camp.status, CampaignStatus.COMPLETED)
+
+    def test_suppressed_recipient_is_skipped(self):
+        from apps.campaigns.email import send_campaign, suppress
+        from apps.campaigns.models import CampaignSend
+        c, seg, camp = self._setup()
+        with tenant_scope(c.id):
+            user = _user_with(c, ["customers.manage"], email="m2@lula.co.za")
+            suppress(c, "lead1@example.com")
+            res = send_campaign(camp, user, base_url="https://x.test")
+            self.assertEqual(res["sent"], 2)
+            self.assertEqual(res["skipped"], 1)
+            skipped = CampaignSend.objects.get(campaign=camp, email="lead1@example.com")
+            self.assertEqual(skipped.status, CampaignSend.Status.SKIPPED)
+
+    def test_public_unsubscribe_suppresses(self):
+        from apps.campaigns.email import send_campaign
+        from apps.campaigns.models import CampaignSend, EmailSuppression
+        c, seg, camp = self._setup()
+        with tenant_scope(c.id):
+            user = _user_with(c, ["customers.manage"], email="m3@lula.co.za")
+            send_campaign(camp, user, base_url="https://x.test")
+            cs_id = CampaignSend.objects.filter(campaign=camp).first().id
+            cs_email = CampaignSend.objects.get(id=cs_id).email
+        resp = self.client.get(f"/m/u/{cs_id}/")           # public, no login
+        self.assertEqual(resp.status_code, 200)
+        with tenant_scope(c.id):
+            self.assertTrue(EmailSuppression.objects.filter(company=c, email=cs_email).exists())
+
+    def test_open_pixel_marks_opened(self):
+        from apps.campaigns.email import send_campaign
+        from apps.campaigns.models import CampaignSend
+        c, seg, camp = self._setup()
+        with tenant_scope(c.id):
+            user = _user_with(c, ["customers.manage"], email="m4@lula.co.za")
+            send_campaign(camp, user, base_url="https://x.test")
+            cs_id = CampaignSend.objects.filter(campaign=camp).first().id
+        resp = self.client.get(f"/m/o/{cs_id}/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "image/gif")
+        with tenant_scope(c.id):
+            self.assertTrue(CampaignSend.objects.get(id=cs_id).opened)

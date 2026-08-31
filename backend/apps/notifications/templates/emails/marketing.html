@@ -1,0 +1,13 @@
+{% extends "emails/base.html" %}
+{% comment %}Marketing email — the campaign body, a required unsubscribe footer,
+and an open-tracking pixel. MARKETING category only.{% endcomment %}
+{% block content %}{{ body|linebreaksbr }}
+{% if unsubscribe_url %}
+<hr style="border:none;border-top:1px solid #eee;margin:26px 0 12px">
+<p style="font-size:12px;color:#8a8f9c;margin:0;">
+  You received this because you're a contact of {{ company_name }}.
+  <a href="{{ unsubscribe_url }}" style="color:#8a8f9c;">Unsubscribe</a>.
+</p>
+{% endif %}
+{% if tracking_pixel %}<img src="{{ tracking_pixel }}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;">{% endif %}
+{% endblock %}
