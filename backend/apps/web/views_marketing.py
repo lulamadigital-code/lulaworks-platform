@@ -72,6 +72,9 @@ def marketing_home(request):
         return r
     ctx = marketing_overview()
     ctx["recent_campaigns"] = Campaign.objects.all()[:6]
+    # The WhatsApp connection holds credentials — only a company admin manages it,
+    # so its entry point is hidden from regular marketing users.
+    ctx["can_admin"] = request.user.has_perm_code("company.manage")
     return render(request, "web/marketing/overview.html", ctx)
 
 
@@ -216,6 +219,7 @@ def campaign_detail(request, pk):
         "audience_count": audience_count,
         "recipient_count": recipient_count,
         "wa_connected": wa_connected,
+        "can_admin": request.user.has_perm_code("company.manage"),
     })
 
 

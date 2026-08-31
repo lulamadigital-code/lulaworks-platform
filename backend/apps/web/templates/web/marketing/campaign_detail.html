@@ -70,8 +70,12 @@
     <h2>Send</h2>
     <div class="card">
       {% if not wa_connected %}
+        {% if can_admin %}
         <p class="muted" style="font-size:12.5px;margin:0;">WhatsApp isn't connected for your company.
           <a href="{% url 'web:marketing_whatsapp' %}">Connect your number</a> to send.</p>
+        {% else %}
+        <p class="muted" style="font-size:12.5px;margin:0;">WhatsApp isn't connected yet — ask your company admin to connect your number.</p>
+        {% endif %}
       {% elif campaign.segment %}
         <p class="muted" style="font-size:12.5px;margin:0 0 10px;">
           {{ recipient_count }} recipient{{ recipient_count|pluralize }} with a phone number in <strong>{{ campaign.segment.name }}</strong>.</p>

@@ -297,3 +297,15 @@ class WhatsAppEmbeddedSignupTests(APITestCase):
                                 data=json.dumps({"code": "x", "phone_number_id": "y"}),
                                 content_type="application/json")
         self.assertEqual(resp.status_code, 403)
+
+
+class WhatsAppAccessTests(APITestCase):
+    """The WhatsApp connection page is company-admin only; a marketing user
+    (customers.manage but not company.manage) can't reach it."""
+
+    def test_connect_page_is_admin_only(self):
+        c = _company()
+        u = _user_with(c, ["customers.manage"], email="mktonly@lula.co.za")
+        self.client.force_login(u)
+        resp = self.client.get("/marketing/whatsapp/")
+        self.assertEqual(resp.status_code, 302)   # bounced to /marketing/
