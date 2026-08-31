@@ -72,6 +72,7 @@ urlpatterns = [
     path("marketing/lead-sources/", views_marketing.lead_sources, name="marketing_lead_sources"),
     path("marketing/analytics/", views_marketing.marketing_analytics, name="marketing_analytics"),
     path("marketing/whatsapp/", views_marketing.whatsapp_connect, name="marketing_whatsapp"),
+    path("marketing/whatsapp/connect/", views_marketing.whatsapp_embedded_finish, name="marketing_whatsapp_finish"),
     # Public tracking endpoints (no login) — used inside marketing emails.
     path("m/u/<uuid:pk>/", views_marketing.marketing_unsubscribe, name="marketing_unsubscribe"),
     path("m/o/<uuid:pk>/", views_marketing.marketing_pixel, name="marketing_pixel"),

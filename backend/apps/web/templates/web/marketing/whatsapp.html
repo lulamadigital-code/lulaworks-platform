@@ -14,6 +14,18 @@
     {% else %}<span class="chip warn">Not connected</span>{% endif %}
   </div>
 
+  {% if embedded_configured %}
+  <div style="margin-bottom:16px;">
+    <button type="button" class="btn" onclick="launchWhatsAppSignup()" style="background:#1877f2;box-shadow:none;">
+      {% if conn.is_connected %}Reconnect with Facebook{% else %}Connect with Facebook{% endif %}
+    </button>
+    <p class="muted" style="font-size:12px;margin:8px 0 0;">The quickest way — log in to your Meta account and pick your WhatsApp number (about two minutes). We never see your Meta password.</p>
+    <div id="wa-signup-msg" class="muted" style="font-size:12.5px;margin-top:8px;"></div>
+  </div>
+  {% endif %}
+
+  <details {% if conn.is_connected or not embedded_configured %}open{% endif %}>
+    <summary class="muted" style="cursor:pointer;font-size:13px;margin:6px 0 12px;">Enter connection details manually</summary>
   <form method="post" action="{% url 'web:marketing_whatsapp' %}">
     {% csrf_token %}
     <label>Display number</label>
@@ -36,7 +48,45 @@
       {% endif %}
     </div>
   </form>
+  </details>
 </div>
+
+{% if embedded_configured %}
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+<script>
+  window.fbAsyncInit = function () {
+    FB.init({ appId: '{{ meta_app_id }}', autoLogAppEvents: true, xfbml: true, version: '{{ api_version }}' });
+  };
+  // Embedded Signup posts the chosen WABA + phone number id back via message.
+  var WA_ES = {};
+  window.addEventListener('message', function (e) {
+    if (typeof e.data !== 'string') return;
+    if (e.origin.indexOf('facebook.com') === -1) return;
+    try {
+      var d = JSON.parse(e.data);
+      if (d.type === 'WA_EMBEDDED_SIGNUP' && d.event === 'FINISH') { WA_ES = d.data || {}; }
+    } catch (_) {}
+  });
+  function _cookie(n){var m=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)');return m?m.pop():'';}
+  function launchWhatsAppSignup() {
+    var msg = document.getElementById('wa-signup-msg');
+    if (typeof FB === 'undefined') { if(msg) msg.textContent='Still loading Facebook… try again in a second.'; return; }
+    FB.login(function (resp) {
+      var code = resp && resp.authResponse && resp.authResponse.code;
+      if (!code) { if(msg) msg.textContent = 'Connection cancelled.'; return; }
+      if(msg) msg.textContent = 'Finishing connection…';
+      fetch('{% url "web:marketing_whatsapp_finish" %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _cookie('csrftoken') },
+        body: JSON.stringify({ code: code, phone_number_id: WA_ES.phone_number_id, waba_id: WA_ES.waba_id })
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d.ok) { location.reload(); }
+        else if (msg) { msg.textContent = d.error || 'Could not connect — please try manual entry.'; }
+      }).catch(function () { if(msg) msg.textContent = 'Network error — please try again.'; });
+    }, { config_id: '{{ wa_config_id }}', response_type: 'code', override_default_response_type: true, extras: { setup: {} } });
+  }
+</script>
+{% endif %}
 
 <h2>How to connect</h2>
 <div class="card" style="max-width:680px;">

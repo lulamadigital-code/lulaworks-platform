@@ -253,3 +253,47 @@ class WhatsAppCampaignTests(APITestCase):
             self.assertTrue(all(s.wa_message_id == "wamid.X" for s in sends))
             camp.refresh_from_db()
             self.assertEqual(camp.sent, 2)
+
+
+class WhatsAppEmbeddedSignupTests(APITestCase):
+    """Embedded Signup: the browser posts the auth code + ids, the server
+    exchanges the code (mocked) for the company's token and stores the connection."""
+
+    def test_embedded_finish_connects_the_company(self):
+        import json
+        from unittest.mock import patch
+
+        from apps.campaigns.models import WhatsAppConnection
+        from apps.identity.models import CompanyBankAccount
+        # A setup-complete company so CompanySetupMiddleware doesn't redirect the
+        # company.manage user to onboarding before our view runs.
+        c = Company.objects.create(name="Lula Owner", street_address="1 Main Rd",
+                                   city="Johannesburg", phone="011 555 0000",
+                                   registration_no="2020/123456/07")
+        CompanyBankAccount.objects.create(company=c, bank_name="FNB",
+                                          account_name="Lula Owner",
+                                          account_number="620", is_default=True)
+        u = _user_with(c, ["company.manage"], email="owner@lula.co.za")
+        self.client.force_login(u)
+        with patch("apps.campaigns.whatsapp.exchange_code_for_token", return_value="TOKEN123"):
+            resp = self.client.post(
+                "/marketing/whatsapp/connect/",
+                data=json.dumps({"code": "AUTH", "phone_number_id": "PNID",
+                                 "waba_id": "WABA", "display_number": "+2711"}),
+                content_type="application/json")
+        self.assertEqual(resp.status_code, 200)
+        with tenant_scope(c.id):
+            conn = WhatsAppConnection.objects.get(company=c)
+        self.assertTrue(conn.is_connected)
+        self.assertEqual(conn.phone_number_id, "PNID")
+        self.assertEqual(conn.access_token, "TOKEN123")
+
+    def test_embedded_finish_requires_admin(self):
+        import json
+        c = _company()
+        u = _user_with(c, ["customers.manage"], email="mkt2@lula.co.za")  # not company.manage
+        self.client.force_login(u)
+        resp = self.client.post("/marketing/whatsapp/connect/",
+                                data=json.dumps({"code": "x", "phone_number_id": "y"}),
+                                content_type="application/json")
+        self.assertEqual(resp.status_code, 403)

@@ -25,6 +25,46 @@ def get_connection(company):
             or WhatsAppConnection.objects.filter(company=company).first())
 
 
+def embedded_signup_configured() -> bool:
+    """True when the Lulaworks Meta app is set up for one-click Embedded Signup."""
+    return bool(getattr(settings, "META_APP_ID", "")
+                and getattr(settings, "WHATSAPP_CONFIG_ID", ""))
+
+
+def exchange_code_for_token(code) -> str:
+    """Swap the Embedded Signup authorization code for a business access token via
+    the Lulaworks Meta app. Isolated so tests can monkeypatch it."""
+    import requests
+    version = getattr(settings, "WHATSAPP_API_VERSION", "v21.0")
+    resp = requests.get(
+        f"{GRAPH}/{version}/oauth/access_token", timeout=20,
+        params={"client_id": getattr(settings, "META_APP_ID", ""),
+                "client_secret": getattr(settings, "META_APP_SECRET", ""),
+                "code": code})
+    if resp.status_code >= 300:
+        raise RuntimeError(f"Token exchange failed {resp.status_code}: {resp.text[:200]}")
+    return resp.json().get("access_token", "")
+
+
+def connect_via_embedded(company, user, *, code, phone_number_id, waba_id="",
+                         display_number=""):
+    """Finish Embedded Signup: exchange the code for a token and store the
+    company's own WhatsApp connection."""
+    token = exchange_code_for_token(code)
+    if not token:
+        raise ValueError("Could not obtain an access token from Meta.")
+    conn, _ = WhatsAppConnection.objects.get_or_create(
+        company=company, defaults={"created_by": user, "updated_by": user})
+    conn.phone_number_id = phone_number_id
+    conn.waba_id = waba_id or ""
+    conn.display_number = display_number or ""
+    conn.access_token = token
+    conn.is_active = bool(phone_number_id and token)
+    conn.updated_by = user
+    conn.save()
+    return conn
+
+
 def _first_name(name):
     name = (name or "").strip()
     return name.split(" ")[0] if name else "there"

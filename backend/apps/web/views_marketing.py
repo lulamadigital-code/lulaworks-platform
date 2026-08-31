@@ -250,11 +250,47 @@ def whatsapp_connect(request):
         messages.success(request, "WhatsApp connection saved."
                          if conn.is_active else "Saved — add a phone number id and token to activate.")
         return redirect("web:marketing_whatsapp")
+    from apps.campaigns.whatsapp import embedded_signup_configured
     return render(request, "web/marketing/whatsapp.html", {
         "conn": conn,
         "has_token": bool(conn.access_token),
         "api_version": getattr(settings, "WHATSAPP_API_VERSION", "v21.0"),
+        "embedded_configured": embedded_signup_configured(),
+        "meta_app_id": getattr(settings, "META_APP_ID", ""),
+        "wa_config_id": getattr(settings, "WHATSAPP_CONFIG_ID", ""),
     })
+
+
+@login_required
+def whatsapp_embedded_finish(request):
+    """Receive the Embedded Signup result (auth code + phone_number_id/waba_id)
+    from the browser, exchange it for the company's token, and store the
+    connection. JSON in/out. Owner/admin only."""
+    from django.http import JsonResponse
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+    if not request.user.has_perm_code("company.manage"):
+        return JsonResponse({"error": "forbidden"}, status=403)
+    import json
+
+    from apps.campaigns.whatsapp import connect_via_embedded
+    try:
+        data = json.loads(request.body or "{}")
+    except ValueError:
+        return JsonResponse({"error": "bad json"}, status=400)
+    code = (data.get("code") or "").strip()
+    phone_number_id = (data.get("phone_number_id") or "").strip()
+    if not (code and phone_number_id):
+        return JsonResponse({"error": "Missing code or phone number — please retry."},
+                            status=400)
+    try:
+        connect_via_embedded(
+            request.user.active_company, request.user, code=code,
+            phone_number_id=phone_number_id, waba_id=(data.get("waba_id") or "").strip(),
+            display_number=(data.get("display_number") or "").strip())
+    except Exception as exc:                                   # noqa: BLE001
+        return JsonResponse({"error": str(exc)}, status=400)
+    return JsonResponse({"ok": True})
 
 
 # ── Public tracking endpoints (no login) ──────────────────────────────────────
