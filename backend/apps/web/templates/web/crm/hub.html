@@ -36,11 +36,14 @@
     </div>
   </div>
   <div class="card area">
-    <div class="area-h">📣 Marketing <span class="chip info" style="font-size:10px;">soon</span></div>
+    <div class="area-h">📣 Marketing</div>
     <p class="muted">Reach the right customers.</p>
     <div class="area-links">
-      <span class="soon">Campaigns</span><span class="soon">Segments</span>
-      <span class="soon">Email</span><span class="soon">WhatsApp</span><span class="soon">Lead sources</span>
+      <a href="{% url 'web:marketing_campaigns' %}">Campaigns</a>
+      <a href="{% url 'web:marketing_segments' %}">Segments</a>
+      <a href="{% url 'web:marketing_lead_sources' %}">Lead sources</a>
+      <a href="{% url 'web:marketing_analytics' %}">Analytics</a>
+      <span class="soon">WhatsApp</span>
     </div>
   </div>
   <div class="card area">
