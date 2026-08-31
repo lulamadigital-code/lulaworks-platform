@@ -44,7 +44,7 @@ server {
     # ── Health probe: no rate limit, no access log (keeps LB checks quiet) ────
     location = /health/ {
         include /etc/nginx/snippets/proxy.conf;
-        proxy_pass http://django;
+        proxy_pass http://$app;
         access_log off;
     }
 
@@ -52,19 +52,19 @@ server {
     location = /login/ {
         limit_req zone=auth burst=10 nodelay;
         include /etc/nginx/snippets/proxy.conf;
-        proxy_pass http://django;
+        proxy_pass http://$app;
     }
     location /api/v1/auth/ {
         limit_req zone=auth burst=10 nodelay;
         include /etc/nginx/snippets/proxy.conf;
-        proxy_pass http://django;
+        proxy_pass http://$app;
     }
 
     # ── JSON API (Flutter field app) ────────────────────────────────────────
     location /api/ {
         limit_req zone=api burst=30 nodelay;
         include /etc/nginx/snippets/proxy.conf;
-        proxy_pass http://django;
+        proxy_pass http://$app;
     }
 
     # ── Real-time support chat (WebSockets) → Daphne/ASGI ───────────────────
@@ -74,6 +74,6 @@ server {
     location / {
         limit_req zone=general burst=50 nodelay;
         include /etc/nginx/snippets/proxy.conf;
-        proxy_pass http://django;
+        proxy_pass http://$app;
     }
 }
