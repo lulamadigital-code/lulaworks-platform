@@ -60,6 +60,10 @@ class Campaign(TenantBaseModel):
                                 blank=True, related_name="campaigns")
     subject = models.CharField(max_length=200, blank=True)   # email subject / title
     content = models.TextField(blank=True)                   # message body / template
+    # WhatsApp only: the name of the Meta-approved message template to send. When
+    # set, the campaign sends as that template; blank sends `content` as text
+    # (only valid inside a 24h customer-care window — see whatsapp.py).
+    wa_template_name = models.CharField(max_length=120, blank=True)
     scheduled_at = models.DateTimeField(null=True, blank=True)
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
                                null=True, blank=True, related_name="+")
@@ -92,7 +96,8 @@ class Campaign(TenantBaseModel):
 
     @property
     def can_send(self) -> bool:
-        return (self.channel == CampaignChannel.EMAIL and self.segment_id is not None
+        return (self.channel in (CampaignChannel.EMAIL, CampaignChannel.WHATSAPP)
+                and self.segment_id is not None
                 and self.status in (CampaignStatus.DRAFT, CampaignStatus.SCHEDULED,
                                     CampaignStatus.RUNNING))
 
@@ -112,7 +117,9 @@ class CampaignSend(TenantBaseModel):
 
     campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE,
                                  related_name="sends")
-    email = models.EmailField()
+    channel = models.CharField(max_length=12, default="email")   # email | whatsapp
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=32, blank=True)          # WhatsApp destination
     name = models.CharField(max_length=160, blank=True)
     lead = models.ForeignKey("customers.Lead", on_delete=models.SET_NULL,
                              null=True, blank=True, related_name="+")
@@ -120,21 +127,49 @@ class CampaignSend(TenantBaseModel):
                                  null=True, blank=True, related_name="+")
     email_log = models.ForeignKey("notifications.EmailLog", on_delete=models.SET_NULL,
                                   null=True, blank=True, related_name="+")
+    wa_message_id = models.CharField(max_length=128, blank=True)  # Meta message id
     status = models.CharField(max_length=10, choices=Status.choices,
                               default=Status.PENDING)
+    # For email = "opened"; for WhatsApp = "read" (reused so analytics stay unified).
     opened = models.BooleanField(default=False)
     opened_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
         constraints = [
-            models.UniqueConstraint(fields=["campaign", "email"],
+            models.UniqueConstraint(fields=["campaign", "email", "phone"],
                                     name="unique_campaign_recipient"),
         ]
         indexes = [models.Index(fields=["company", "campaign"])]
 
     def __str__(self):
-        return f"{self.campaign_id} → {self.email}"
+        return f"{self.campaign_id} → {self.email or self.phone}"
+
+
+class WhatsAppConnection(TenantBaseModel):
+    """A company's own WhatsApp Business (Meta Cloud API) connection. Marketing
+    WhatsApp always sends from the tenant's own number — never a shared Lulaworks
+    one — so each company connects its own here (owner/admin only)."""
+
+    company = models.OneToOneField("identity.Company", on_delete=models.CASCADE,
+                                   related_name="whatsapp_connection")
+    phone_number_id = models.CharField(max_length=64, blank=True)   # Meta phone number id
+    waba_id = models.CharField(max_length=64, blank=True)           # WhatsApp Business Acct id
+    display_number = models.CharField(max_length=32, blank=True)    # human-readable, e.g. +27…
+    # SECURITY: a long-lived access token. Stored per-tenant (can't be ENV like the
+    # AI keys). Never rendered back to the browser; masked in the UI.
+    access_token = models.TextField(blank=True)
+    is_active = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "WhatsApp connection"
+
+    def __str__(self):
+        return f"WhatsApp {self.display_number or self.phone_number_id}"
+
+    @property
+    def is_connected(self) -> bool:
+        return bool(self.is_active and self.phone_number_id and self.access_token)
 
 
 class EmailSuppression(TenantBaseModel):

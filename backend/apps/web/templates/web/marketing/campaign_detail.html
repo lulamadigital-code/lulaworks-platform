@@ -66,6 +66,33 @@
           <a href="{% url 'web:marketing_segments' %}">Segments</a></p>
       {% endif %}
     </div>
+    {% elif campaign.channel == 'whatsapp' %}
+    <h2>Send</h2>
+    <div class="card">
+      {% if not wa_connected %}
+        <p class="muted" style="font-size:12.5px;margin:0;">WhatsApp isn't connected for your company.
+          <a href="{% url 'web:marketing_whatsapp' %}">Connect your number</a> to send.</p>
+      {% elif campaign.segment %}
+        <p class="muted" style="font-size:12.5px;margin:0 0 10px;">
+          {{ recipient_count }} recipient{{ recipient_count|pluralize }} with a phone number in <strong>{{ campaign.segment.name }}</strong>.</p>
+        <form method="post" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">{% csrf_token %}
+          <input type="text" name="test_phone" placeholder="+27 61 234 5678" style="flex:1;">
+          <button class="btn ghost" name="action" value="send_test">Send test</button>
+        </form>
+        {% if campaign.can_send %}
+        <form method="post" data-confirm="Send this WhatsApp campaign to {{ recipient_count }} recipient{{ recipient_count|pluralize }}?">{% csrf_token %}
+          <button class="btn" name="action" value="send" style="width:100%;">Send WhatsApp now</button>
+        </form>
+        <p class="muted" style="font-size:11.5px;margin:8px 0 0;">
+          {% if campaign.wa_template_name %}Sends approved template “{{ campaign.wa_template_name }}”.{% else %}No template set — free text only reaches contacts inside a 24-hour reply window.{% endif %}</p>
+        {% else %}
+        <p class="muted" style="font-size:12.5px;margin:0;">This campaign has already been sent.</p>
+        {% endif %}
+      {% else %}
+        <p class="muted" style="font-size:12.5px;margin:0;">Add an audience segment to send.
+          <a href="{% url 'web:marketing_segments' %}">Segments</a></p>
+      {% endif %}
+    </div>
     {% endif %}
 
     <h2>Status</h2>

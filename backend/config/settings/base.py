@@ -146,6 +146,11 @@ APP_VERSION = config("APP_VERSION", default="1.0.0")
 # Consent Mode defaults to denied until the visitor accepts the cookie banner.
 GA4_MEASUREMENT_ID = config("GA4_MEASUREMENT_ID", default="")
 
+# WhatsApp Business (Meta Cloud API) graph version. Per-tenant number + token are
+# stored per company (apps.campaigns.models.WhatsAppConnection); this is the only
+# platform-wide knob.
+WHATSAPP_API_VERSION = config("WHATSAPP_API_VERSION", default="v21.0")
+
 # Session-authenticated manager web (server-rendered HTML + HTMX). Separate from
 # the JWT API used by the Flutter field app.
 LOGIN_URL = "web:login"

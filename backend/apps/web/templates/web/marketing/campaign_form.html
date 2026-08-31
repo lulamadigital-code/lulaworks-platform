@@ -26,6 +26,9 @@
     <label>Message</label>
     <textarea name="content" rows="6" placeholder="Hello {% verbatim %}{{first_name}}{% endverbatim %}, LulaWorks is currently accepting maintenance projects for Q4…"></textarea>
     <p class="muted" style="font-size:12px;margin:6px 0 0;">Tip: use placeholders like <code>{% verbatim %}{{first_name}}{% endverbatim %}</code> — they'll be filled per recipient when sending is enabled.</p>
+    <label style="margin-top:14px;">WhatsApp template name <span class="muted" style="font-weight:400;">(WhatsApp only)</span></label>
+    <input type="text" name="wa_template_name" placeholder="Name of your Meta-approved template">
+    <span class="muted" style="font-size:11.5px;">Required to reach new WhatsApp contacts. Leave blank for email campaigns.</span>
     <div class="two" style="margin-top:4px;">
       <div><label>Schedule (optional)</label>
         <input type="datetime-local" name="scheduled_at"></div>

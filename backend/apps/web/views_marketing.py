@@ -6,6 +6,7 @@ Marketing operates on). Channel sending (email/WhatsApp) arrives in later phases
 """
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -112,6 +113,7 @@ def campaign_new(request):
             segment=segment,
             subject=(request.POST.get("subject") or "").strip(),
             content=(request.POST.get("content") or "").strip(),
+            wa_template_name=(request.POST.get("wa_template_name") or "").strip(),
             cost=_cost_or_zero(request.POST.get("cost")),
             scheduled_at=_parse_iso_dt(request.POST.get("scheduled_at")),
             sender=request.user,
@@ -152,25 +154,45 @@ def campaign_detail(request, pk):
             messages.success(request, "Campaign deleted.")
             return redirect("web:marketing_campaigns")
         elif action == "send_test":
-            from apps.campaigns import email as cmail
-            to = (request.POST.get("test_email") or request.user.email or "").strip()
-            if not to:
-                messages.error(request, "Enter an email address to send the test to.")
+            if campaign.channel == "whatsapp":
+                from apps.campaigns import whatsapp as wa
+                to = (request.POST.get("test_phone") or "").strip()
+                if not to:
+                    messages.error(request, "Enter a WhatsApp number to send the test to.")
+                else:
+                    try:
+                        wa.send_test_wa(campaign, request.user, to)
+                        messages.success(request, f"Test WhatsApp sent to {to}.")
+                    except Exception as exc:                   # noqa: BLE001
+                        messages.error(request, f"Could not send the test: {exc}")
             else:
-                try:
-                    cmail.send_test(campaign, request.user, to)
-                    messages.success(request, f"Test email sent to {to}.")
-                except Exception as exc:                       # noqa: BLE001
-                    messages.error(request, f"Could not send the test: {exc}")
+                from apps.campaigns import email as cmail
+                to = (request.POST.get("test_email") or request.user.email or "").strip()
+                if not to:
+                    messages.error(request, "Enter an email address to send the test to.")
+                else:
+                    try:
+                        cmail.send_test(campaign, request.user, to)
+                        messages.success(request, f"Test email sent to {to}.")
+                    except Exception as exc:                   # noqa: BLE001
+                        messages.error(request, f"Could not send the test: {exc}")
         elif action == "send":
-            from apps.campaigns import email as cmail
-            base = request.build_absolute_uri("/").rstrip("/")
             try:
-                r = cmail.send_campaign(campaign, request.user, base_url=base)
-                messages.success(
-                    request, f"Campaign sent — {r['sent']} queued"
-                    + (f", {r['skipped']} skipped (unsubscribed)" if r["skipped"] else "")
-                    + f" of {r['recipients']} recipients.")
+                if campaign.channel == "whatsapp":
+                    from apps.campaigns import whatsapp as wa
+                    r = wa.send_whatsapp_campaign(campaign, request.user)
+                    messages.success(
+                        request, f"WhatsApp campaign sent — {r['sent']} sent"
+                        + (f", {r['failed']} failed" if r["failed"] else "")
+                        + f" of {r['recipients']} recipients.")
+                else:
+                    from apps.campaigns import email as cmail
+                    base = request.build_absolute_uri("/").rstrip("/")
+                    r = cmail.send_campaign(campaign, request.user, base_url=base)
+                    messages.success(
+                        request, f"Campaign sent — {r['sent']} queued"
+                        + (f", {r['skipped']} skipped (unsubscribed)" if r["skipped"] else "")
+                        + f" of {r['recipients']} recipients.")
             except ValueError as exc:
                 messages.error(request, str(exc))
             except Exception as exc:                           # noqa: BLE001
@@ -179,13 +201,59 @@ def campaign_detail(request, pk):
 
     audience_count = segment_count(campaign.segment) if campaign.segment else None
     recipient_count = None
-    if campaign.channel == "email" and campaign.segment:
-        from apps.campaigns.email import resolve_recipients
-        recipient_count = len(resolve_recipients(campaign.segment))
+    wa_connected = False
+    if campaign.segment:
+        if campaign.channel == "email":
+            from apps.campaigns.email import resolve_recipients
+            recipient_count = len(resolve_recipients(campaign.segment))
+        elif campaign.channel == "whatsapp":
+            from apps.campaigns.whatsapp import get_connection, resolve_wa_recipients
+            recipient_count = len(resolve_wa_recipients(campaign.segment))
+            conn = get_connection(request.user.active_company)
+            wa_connected = bool(conn and conn.is_connected)
     return render(request, "web/marketing/campaign_detail.html", {
         "campaign": campaign,
         "audience_count": audience_count,
         "recipient_count": recipient_count,
+        "wa_connected": wa_connected,
+    })
+
+
+@login_required
+def whatsapp_connect(request):
+    """Connect (or update) the company's own WhatsApp Business number. Owner/admin
+    only — this is the tenant's number, never a shared Lulaworks one."""
+    from apps.campaigns.models import WhatsAppConnection
+    company = request.user.active_company
+    if not request.user.has_perm_code("company.manage"):
+        messages.error(request, "Only a company admin can manage the WhatsApp connection.")
+        return redirect("web:marketing")
+    conn, _ = WhatsAppConnection.objects.get_or_create(
+        company=company, defaults={"created_by": request.user, "updated_by": request.user})
+    if request.method == "POST":
+        action = request.POST.get("action", "save")
+        if action == "disconnect":
+            conn.is_active = False
+            conn.access_token = ""
+            conn.save(update_fields=["is_active", "access_token", "updated_at"])
+            messages.success(request, "WhatsApp disconnected.")
+            return redirect("web:marketing_whatsapp")
+        conn.phone_number_id = (request.POST.get("phone_number_id") or "").strip()
+        conn.waba_id = (request.POST.get("waba_id") or "").strip()
+        conn.display_number = (request.POST.get("display_number") or "").strip()
+        token = (request.POST.get("access_token") or "").strip()
+        if token and token != "********":          # keep existing if left masked
+            conn.access_token = token
+        conn.is_active = bool(conn.phone_number_id and conn.access_token)
+        conn.updated_by = request.user
+        conn.save()
+        messages.success(request, "WhatsApp connection saved."
+                         if conn.is_active else "Saved — add a phone number id and token to activate.")
+        return redirect("web:marketing_whatsapp")
+    return render(request, "web/marketing/whatsapp.html", {
+        "conn": conn,
+        "has_token": bool(conn.access_token),
+        "api_version": getattr(settings, "WHATSAPP_API_VERSION", "v21.0"),
     })
 
 

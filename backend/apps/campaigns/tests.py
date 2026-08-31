@@ -205,3 +205,51 @@ class MarketingAnalyticsTests(APITestCase):
         u = _user_with(c, ["customers.manage"], email="an@lula.co.za")
         self.client.force_login(u)
         self.assertEqual(self.client.get("/marketing/analytics/").status_code, 200)
+
+
+class WhatsAppCampaignTests(APITestCase):
+    """WhatsApp sends from the tenant's own connected number; gated on a
+    connection; the Meta HTTP call is mocked (no live call in tests)."""
+
+    def _setup(self, connected=True):
+        from apps.campaigns.models import Campaign, Segment, WhatsAppConnection
+        c = _company()
+        with tenant_scope(c.id):
+            for i in range(2):
+                Lead.objects.create(company=c, company_name=f"W{i}",
+                                    contact_name=f"Sam {i}", mobile=f"+2761000000{i}",
+                                    source="Website", status=Lead.Status.NEW,
+                                    industry="Mining")
+            seg = Segment.objects.create(company=c, name="Mining", audience="leads",
+                                         criteria={"industry": "Mining"})
+            camp = Campaign.objects.create(company=c, name="WA Q4", channel="whatsapp",
+                                           segment=seg, content="Hi {{first_name}}")
+            if connected:
+                WhatsAppConnection.objects.create(company=c, phone_number_id="123",
+                                                  access_token="tok", is_active=True)
+        return c, camp
+
+    def test_send_requires_a_connection(self):
+        from apps.campaigns.whatsapp import send_whatsapp_campaign
+        c, camp = self._setup(connected=False)
+        with tenant_scope(c.id):
+            user = _user_with(c, ["customers.manage"], email="w0@lula.co.za")
+            with self.assertRaises(ValueError):
+                send_whatsapp_campaign(camp, user)
+
+    def test_send_creates_whatsapp_sends(self):
+        from unittest.mock import patch
+
+        from apps.campaigns.models import CampaignSend
+        from apps.campaigns.whatsapp import send_whatsapp_campaign
+        c, camp = self._setup(connected=True)
+        with tenant_scope(c.id):
+            user = _user_with(c, ["customers.manage"], email="w1@lula.co.za")
+            with patch("apps.campaigns.whatsapp._post_message", return_value="wamid.X"):
+                res = send_whatsapp_campaign(camp, user)
+            self.assertEqual(res["sent"], 2)
+            sends = CampaignSend.objects.filter(campaign=camp, channel="whatsapp")
+            self.assertEqual(sends.count(), 2)
+            self.assertTrue(all(s.wa_message_id == "wamid.X" for s in sends))
+            camp.refresh_from_db()
+            self.assertEqual(camp.sent, 2)

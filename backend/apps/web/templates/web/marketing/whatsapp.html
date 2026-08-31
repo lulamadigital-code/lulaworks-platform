@@ -1,0 +1,51 @@
+{% extends "web/base.html" %}
+{% block title %}WhatsApp connection{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div><h1>WhatsApp Business</h1>
+    <p class="sub" style="margin:0;">Connect your own WhatsApp Business number — campaigns send from you, not Lulaworks.</p></div>
+  <a class="btn ghost" href="{% url 'web:marketing' %}">← Marketing</a>
+</div>
+
+<div class="card" style="max-width:680px;">
+  <div class="sec-head" style="margin-bottom:12px;">
+    <strong>Status</strong>
+    {% if conn.is_connected %}<span class="chip ok">Connected</span>
+    {% else %}<span class="chip warn">Not connected</span>{% endif %}
+  </div>
+
+  <form method="post" action="{% url 'web:marketing_whatsapp' %}">
+    {% csrf_token %}
+    <label>Display number</label>
+    <input type="text" name="display_number" value="{{ conn.display_number }}" placeholder="+27 61 234 5678">
+    <div class="two" style="margin-top:4px;">
+      <div><label>Phone number ID</label>
+        <input type="text" name="phone_number_id" value="{{ conn.phone_number_id }}" placeholder="From Meta → WhatsApp → API Setup"></div>
+      <div><label>WhatsApp Business Account ID</label>
+        <input type="text" name="waba_id" value="{{ conn.waba_id }}" placeholder="WABA id (optional)"></div>
+    </div>
+    <label>Access token</label>
+    <input type="password" name="access_token" value="{% if has_token %}********{% endif %}" placeholder="Permanent access token" autocomplete="off">
+    <span class="muted" style="font-size:11.5px;">Stored securely and never shown again. Leave as •••• to keep the current one.</span>
+
+    <div class="secbtns" style="margin-top:20px;">
+      <button class="btn" type="submit">Save connection</button>
+      {% if conn.is_connected %}
+      <button class="btn ghost" name="action" value="disconnect" type="submit" style="color:var(--red);"
+              data-confirm="Disconnect WhatsApp? Campaigns won't be able to send until you reconnect.">Disconnect</button>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<h2>How to connect</h2>
+<div class="card" style="max-width:680px;">
+  <ol class="muted" style="margin:0;padding-left:18px;font-size:13.5px;line-height:1.9;">
+    <li>In <strong>Meta Business</strong>, create/verify your business and add <strong>WhatsApp</strong>.</li>
+    <li>Add a <strong>dedicated phone number</strong> for WhatsApp Business (not one already on the WhatsApp app).</li>
+    <li>Copy the <strong>Phone number ID</strong> and a <strong>permanent access token</strong> (Meta → API Setup) into the form above.</li>
+    <li>Create and get <strong>message templates approved</strong> by Meta — a campaign references an approved template by name.</li>
+  </ol>
+  <p class="muted" style="font-size:12px;margin:12px 0 0;">Uses the Meta Cloud API ({{ api_version }}). Marketing messages to a new contact must use an approved template; free text only works inside a 24-hour reply window.</p>
+</div>
+{% endblock %}
