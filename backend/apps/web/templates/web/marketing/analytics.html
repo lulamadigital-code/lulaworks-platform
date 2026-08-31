@@ -1,0 +1,78 @@
+{% extends "web/base.html" %}
+{% block title %}Marketing analytics{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div><h1>Analytics &amp; ROI</h1>
+    <p class="sub" style="margin:0;">The funnel, email performance and the revenue your marketing actually produced.</p></div>
+  <a class="btn ghost" href="{% url 'web:marketing' %}">← Marketing</a>
+</div>
+
+<h2 style="margin-top:6px;">Funnel</h2>
+<div class="grid">
+  <div class="tile"><div class="n">{{ funnel.leads }}</div><div class="l">Leads</div></div>
+  <div class="tile"><div class="n">{{ funnel.qualified }}</div><div class="l">Qualified</div></div>
+  <div class="tile"><div class="n">{{ funnel.opportunities }}</div><div class="l">Opportunities</div></div>
+  <div class="tile"><div class="n">{{ funnel.won }}</div><div class="l">Won</div></div>
+  <div class="tile"><div class="n">R {{ funnel.revenue|floatformat:0 }}</div><div class="l">Revenue (won)</div></div>
+</div>
+<div class="card">
+  <div class="row"><span class="lbl">Lead → Opportunity</span>
+    <div class="bar-track sp"><div class="bar-fill" style="width:{{ funnel.lead_to_opp }}%;"></div></div>
+    <span class="val">{{ funnel.lead_to_opp }}%</span></div>
+  <div class="row" style="margin-top:10px;"><span class="lbl">Opportunity → Won</span>
+    <div class="bar-track sp"><div class="bar-fill" style="width:{{ funnel.opp_to_won }}%;"></div></div>
+    <span class="val">{{ funnel.opp_to_won }}%</span></div>
+</div>
+
+<h2>Email performance</h2>
+<div class="grid">
+  <div class="tile"><div class="n">{{ email.sent }}</div><div class="l">Sent</div></div>
+  <div class="tile"><div class="n">{{ email.delivered }}</div><div class="l">Delivered</div></div>
+  <div class="tile"><div class="n">{{ email.opened }}</div><div class="l">Opened</div></div>
+  <div class="tile"><div class="n">{{ email.open_rate }}%</div><div class="l">Open rate</div></div>
+  <div class="tile"><div class="n">{{ email.unsubscribed }}</div><div class="l">Unsubscribed</div></div>
+</div>
+
+<h2>Revenue by lead source</h2>
+<div class="card" style="padding:0;">
+  <div style="overflow-x:auto;">
+    <table>
+      <tr><th>Source</th><th class="right">Leads</th><th class="right">Opportunities</th><th class="right">Won</th><th class="right">Revenue</th></tr>
+      {% for r in sources %}
+      <tr>
+        <td><strong>{{ r.source }}</strong></td>
+        <td class="right">{{ r.leads }}</td>
+        <td class="right">{{ r.opportunities }}</td>
+        <td class="right">{{ r.won }}</td>
+        <td class="right"><strong>R {{ r.revenue|floatformat:0 }}</strong></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="muted" style="padding:22px;">No revenue data yet — win some opportunities and this shows which sources pay.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+<h2>Revenue by campaign</h2>
+<div class="card" style="padding:0;">
+  <div style="overflow-x:auto;">
+    <table>
+      <tr><th>Campaign</th><th class="right">Sent</th><th class="right">Open rate</th><th class="right">Influenced opps</th><th class="right">Won</th><th class="right">Revenue</th><th class="right">ROI</th></tr>
+      {% for r in campaigns %}
+      <tr onclick="location.href='{% url 'web:marketing_campaign_detail' r.campaign.id %}'" style="cursor:pointer;">
+        <td><strong>{{ r.campaign.name }}</strong><br><span class="muted" style="font-size:12px;">{{ r.campaign.get_channel_display }}</span></td>
+        <td class="right">{{ r.sent }}</td>
+        <td class="right">{{ r.open_rate }}%</td>
+        <td class="right">{{ r.influenced }}</td>
+        <td class="right">{{ r.won }}</td>
+        <td class="right"><strong>R {{ r.revenue|floatformat:0 }}</strong></td>
+        <td class="right">{% if r.roi is not None %}<span class="chip {% if r.roi >= 0 %}ok{% else %}bad{% endif %}">{{ r.roi }}%</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="muted" style="padding:22px;">No campaigns yet. Revenue is attributed to a campaign via its recipients' opportunities; set a campaign cost to see ROI.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+<p class="muted" style="font-size:12px;">Revenue is attributed to a campaign through the opportunities its recipients opened after it was sent. ROI needs a campaign cost.</p>
+{% endblock %}

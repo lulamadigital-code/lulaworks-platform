@@ -59,7 +59,7 @@ _SECTIONS = {
     "marketing": "marketing", "marketing_campaigns": "marketing",
     "marketing_campaign_new": "marketing", "marketing_campaign_detail": "marketing",
     "marketing_segments": "marketing", "marketing_segment_new": "marketing",
-    "marketing_lead_sources": "marketing",
+    "marketing_lead_sources": "marketing", "marketing_analytics": "marketing",
     "crm_opportunity_move": "crm",
     "crm_activities": "crm", "crm_activity_schedule": "crm",
     "crm_activity_complete": "crm", "crm_interaction_log": "crm",

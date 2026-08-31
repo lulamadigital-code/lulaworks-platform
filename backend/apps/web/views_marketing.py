@@ -51,6 +51,18 @@ def _parse_iso_dt(raw):
     return dt
 
 
+def _cost_or_zero(raw):
+    from decimal import Decimal, InvalidOperation
+    raw = (raw or "").strip().replace(",", "").replace("R", "").replace(" ", "")
+    if not raw:
+        return Decimal("0")
+    try:
+        v = Decimal(raw)
+        return v if v > 0 else Decimal("0")
+    except (InvalidOperation, ValueError):
+        return Decimal("0")
+
+
 # ── Overview ──────────────────────────────────────────────────────────────────
 
 @login_required
@@ -100,6 +112,7 @@ def campaign_new(request):
             segment=segment,
             subject=(request.POST.get("subject") or "").strip(),
             content=(request.POST.get("content") or "").strip(),
+            cost=_cost_or_zero(request.POST.get("cost")),
             scheduled_at=_parse_iso_dt(request.POST.get("scheduled_at")),
             sender=request.user,
             status=CampaignStatus.DRAFT,
@@ -330,3 +343,15 @@ def lead_sources(request):
         "total_opps": sum(r["opportunities"] for r in rows),
         "total_won": sum(r["won"] for r in rows),
     })
+
+
+# ── Analytics & ROI ────────────────────────────────────────────────────────────
+
+@login_required
+def marketing_analytics(request):
+    if (r := _guard(request)):
+        return r
+    from apps.campaigns.analytics import marketing_analytics as analytics
+    ctx = analytics()
+    ctx["source_revenue"] = sum((row["revenue"] for row in ctx["sources"]), 0)
+    return render(request, "web/marketing/analytics.html", ctx)

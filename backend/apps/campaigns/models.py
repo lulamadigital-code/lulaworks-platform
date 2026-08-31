@@ -65,6 +65,8 @@ class Campaign(TenantBaseModel):
                                null=True, blank=True, related_name="+")
     status = models.CharField(max_length=12, choices=CampaignStatus.choices,
                               default=CampaignStatus.DRAFT, db_index=True)
+    # What the campaign cost to run (ad spend, list, agency…) — drives ROI.
+    cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     # Result metrics — populated by the channel phases; kept here so the schema
     # and analytics are ready before sending is wired.

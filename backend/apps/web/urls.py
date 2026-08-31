@@ -70,6 +70,7 @@ urlpatterns = [
     path("marketing/segments/preview/", views_marketing.segment_preview, name="marketing_segment_preview"),
     path("marketing/segments/<uuid:pk>/delete/", views_marketing.segment_delete, name="marketing_segment_delete"),
     path("marketing/lead-sources/", views_marketing.lead_sources, name="marketing_lead_sources"),
+    path("marketing/analytics/", views_marketing.marketing_analytics, name="marketing_analytics"),
     # Public tracking endpoints (no login) — used inside marketing emails.
     path("m/u/<uuid:pk>/", views_marketing.marketing_unsubscribe, name="marketing_unsubscribe"),
     path("m/o/<uuid:pk>/", views_marketing.marketing_pixel, name="marketing_pixel"),

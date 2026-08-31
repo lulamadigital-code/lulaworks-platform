@@ -164,3 +164,44 @@ class EmailCampaignTests(APITestCase):
         self.assertEqual(resp["Content-Type"], "image/gif")
         with tenant_scope(c.id):
             self.assertTrue(CampaignSend.objects.get(id=cs_id).opened)
+
+
+class MarketingAnalyticsTests(APITestCase):
+    """Revenue attribution: a campaign's recipients' won opportunities (created
+    after it was sent) count as its revenue; ROI uses the campaign cost."""
+
+    def test_revenue_and_roi_attributed_to_campaign(self):
+        from decimal import Decimal
+
+        from apps.campaigns.analytics import campaign_attributed_revenue, source_roi
+        from apps.campaigns.models import Campaign, CampaignSend, Segment
+
+        c = _company()
+        with tenant_scope(c.id):
+            lead = Lead.objects.create(company=c, company_name="Mine Co",
+                                       email="buyer@mine.co", source="Website",
+                                       status=Lead.Status.NEW, industry="Mining")
+            seg = Segment.objects.create(company=c, name="Mining", audience="leads",
+                                         criteria={"industry": "Mining"})
+            camp = Campaign.objects.create(company=c, name="Q4", channel="email",
+                                           segment=seg, subject="Hi",
+                                           cost=Decimal("1000"), status="completed")
+            CampaignSend.objects.create(company=c, campaign=camp, email="buyer@mine.co",
+                                        lead=lead, status=CampaignSend.Status.SENT)
+            camp.refresh_from_db()
+            cust = Customer.objects.create(company=c, name="Mine Co")
+            Opportunity.objects.create(company=c, customer=cust, lead=lead, title="Deal",
+                                       source="Website", stage=OpportunityStage.WON,
+                                       estimated_value=Decimal("50000"))
+            attr = campaign_attributed_revenue(camp)
+            src = {r["source"]: r for r in source_roi()}
+        self.assertEqual(attr["won"], 1)
+        self.assertEqual(attr["revenue"], Decimal("50000"))
+        self.assertEqual(attr["roi"], 4900)              # (50000-1000)/1000 → 4900%
+        self.assertEqual(src["Website"]["revenue"], Decimal("50000"))
+
+    def test_analytics_page_renders(self):
+        c = _company()
+        u = _user_with(c, ["customers.manage"], email="an@lula.co.za")
+        self.client.force_login(u)
+        self.assertEqual(self.client.get("/marketing/analytics/").status_code, 200)
