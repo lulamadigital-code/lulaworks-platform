@@ -58,6 +58,7 @@ LOCAL_APPS = [
     "apps.support",
     "apps.analytics",
     "apps.education",
+    "apps.campaigns",
     "apps.web",
     "apps.marketing",
     "apps.payments",

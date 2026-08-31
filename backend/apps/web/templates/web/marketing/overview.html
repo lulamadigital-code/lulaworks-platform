@@ -1,0 +1,59 @@
+{% extends "web/base.html" %}
+{% block title %}Marketing{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Marketing</h1>
+    <p class="sub" style="margin:0;">Reach the right customers and turn relationships into opportunities.</p>
+  </div>
+  <a class="btn" href="{% url 'web:marketing_campaign_new' %}">+ New campaign</a>
+</div>
+
+<div class="grid">
+  <div class="tile"><div class="n">{{ active_campaigns }}</div><div class="l">Active campaigns</div></div>
+  <div class="tile"><div class="n">{{ leads_this_month }}</div><div class="l">Leads this month</div></div>
+  <div class="tile"><div class="n">{{ qualified_leads }}</div><div class="l">Qualified leads</div></div>
+  <div class="tile"><div class="n">{{ open_opportunities }}</div><div class="l">Open opportunities</div></div>
+  <div class="tile"><div class="n">{{ conversion_rate }}%</div><div class="l">Win rate</div></div>
+  <div class="tile"><div class="n" style="font-size:20px;">{{ best_source }}</div><div class="l">Best lead source</div></div>
+</div>
+
+<div class="setgrid">
+  <a class="setcard" href="{% url 'web:marketing_campaigns' %}"><div class="t">📣 Campaigns</div><div class="d">Create and run email &amp; WhatsApp campaigns.</div></a>
+  <a class="setcard" href="{% url 'web:marketing_segments' %}"><div class="t">🎯 Segments</div><div class="d">Saved slices of your CRM to target.</div></a>
+  <a class="setcard" href="{% url 'web:marketing_lead_sources' %}"><div class="t">📈 Lead sources</div><div class="d">Where your customers actually come from.</div></a>
+</div>
+
+<h2>Top lead sources</h2>
+<div class="card" style="padding:0;">
+  <div style="overflow-x:auto;">
+    <table>
+      <tr><th>Source</th><th class="right">Leads</th><th class="right">Opportunities</th><th class="right">Won</th><th class="right">Win rate</th></tr>
+      {% for r in source_performance %}
+      <tr>
+        <td><strong>{{ r.source }}</strong></td>
+        <td class="right">{{ r.leads }}</td>
+        <td class="right">{{ r.opportunities }}</td>
+        <td class="right">{{ r.won }}</td>
+        <td class="right"><span class="chip {% if r.win_rate >= 30 %}ok{% elif r.win_rate > 0 %}info{% endif %}">{{ r.win_rate }}%</span></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="muted" style="padding:18px;">No lead data yet — capture leads in the CRM and their sources appear here.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+{% if recent_campaigns %}
+<h2>Recent campaigns</h2>
+<div class="card" style="padding:0;">
+  {% for c in recent_campaigns %}
+  <a class="workrow" href="{% url 'web:marketing_campaign_detail' c.id %}">
+    <span class="wr-main"><strong>{{ c.name }}</strong>
+      <span class="muted">{{ c.get_channel_display }}{% if c.segment %} · {{ c.segment.name }}{% endif %}</span></span>
+    <span class="chip {% if c.status == 'completed' %}ok{% elif c.status == 'running' %}info{% elif c.status == 'cancelled' %}bad{% endif %}">{{ c.get_status_display }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

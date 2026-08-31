@@ -56,6 +56,10 @@ _SECTIONS = {
     "crm_lead_convert": "crm", "crm_lead_lost": "crm",
     "crm_pipeline": "crm", "crm_opportunity_create": "crm",
     "crm_opportunity_detail": "crm", "crm_opportunity_stage": "crm",
+    "marketing": "marketing", "marketing_campaigns": "marketing",
+    "marketing_campaign_new": "marketing", "marketing_campaign_detail": "marketing",
+    "marketing_segments": "marketing", "marketing_segment_new": "marketing",
+    "marketing_lead_sources": "marketing",
     "crm_opportunity_move": "crm",
     "crm_activities": "crm", "crm_activity_schedule": "crm",
     "crm_activity_complete": "crm", "crm_interaction_log": "crm",
@@ -103,6 +107,7 @@ def nav_flags(request):
     signed_in = bool(user and user.is_authenticated)
     can = bool(signed_in and user.has_perm_code("finance.view_money"))
     can_proc = bool(signed_in and user.has_perm_code("procurement.manage"))
+    can_market = bool(signed_in and user.has_perm_code("customers.manage"))
     rm = getattr(request, "resolver_match", None)
     section = _SECTIONS.get(rm.url_name, "") if rm else ""
 
@@ -131,6 +136,7 @@ def nav_flags(request):
 
     from django.conf import settings as _s
     return {"perms_money": can, "perms_procurement": can_proc,
+            "perms_marketing": can_market,
             "has_logo": has_logo_file(),
             "logo_static": logo_static_name(), "nav_section": section,
             "unread_notifications": unread,

@@ -367,6 +367,7 @@
     <nav class="nav">
       {% include "web/_navlink.html" with url='web:dashboard' key='dashboard' label='Dashboard' icon='grid' %}
       {% include "web/_navlink.html" with url='web:crm_hub' key='crm' label='CRM' icon='org' %}
+      {% if perms_marketing %}{% include "web/_navlink.html" with url='web:marketing' key='marketing' label='Marketing' icon='megaphone' %}{% endif %}
       {% if perms_procurement %}{% include "web/_navlink.html" with url='web:procurement' key='procurement' label='Procurement' icon='cart' %}{% endif %}
       {% include "web/_navlink.html" with url='web:projects' key='projects' label='Projects' icon='folder' %}
       {% include "web/_navlink.html" with url='web:work' key='jobs' label='Job Card' icon='check' %}

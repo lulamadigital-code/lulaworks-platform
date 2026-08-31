@@ -1,0 +1,30 @@
+{% extends "web/base.html" %}
+{% block title %}Segments{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div><h1>Segments</h1>
+    <p class="sub" style="margin:0;">Saved slices of your CRM — evaluated live, so they always reflect reality.</p></div>
+  <a class="btn" href="{% url 'web:marketing_segment_new' %}">+ New segment</a>
+</div>
+
+<div class="card" style="padding:0;">
+  <div style="overflow-x:auto;">
+    <table>
+      <tr><th>Segment</th><th>Audience</th><th class="right">Members now</th><th></th></tr>
+      {% for row in rows %}
+      <tr>
+        <td><strong>{{ row.segment.name }}</strong>{% if row.segment.description %}<br><span class="muted" style="font-size:12px;">{{ row.segment.description }}</span>{% endif %}</td>
+        <td class="muted">{{ row.segment.get_audience_display }}</td>
+        <td class="right"><span class="chip info">{{ row.count }}</span></td>
+        <td class="right">
+          <form method="post" action="{% url 'web:marketing_segment_delete' row.segment.id %}" style="display:inline;" data-confirm="Delete “{{ row.segment.name|escapejs }}”?">{% csrf_token %}
+            <button class="btn ghost" type="submit">Delete</button></form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="muted" style="padding:22px;">No segments yet — build one to target a campaign, e.g. “Mining leads, no contact in 30 days”.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}

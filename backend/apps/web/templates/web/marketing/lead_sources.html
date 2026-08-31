@@ -1,0 +1,34 @@
+{% extends "web/base.html" %}
+{% block title %}Lead sources{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div><h1>Lead sources</h1>
+    <p class="sub" style="margin:0;">Where your business actually comes from — leads, opportunities and wins by source.</p></div>
+  <a class="btn ghost" href="{% url 'web:marketing' %}">← Marketing</a>
+</div>
+
+<div class="grid">
+  <div class="tile"><div class="n">{{ total_leads }}</div><div class="l">Total leads</div></div>
+  <div class="tile"><div class="n">{{ total_opps }}</div><div class="l">Opportunities</div></div>
+  <div class="tile"><div class="n">{{ total_won }}</div><div class="l">Won</div></div>
+</div>
+
+<div class="card" style="padding:0;">
+  <div style="overflow-x:auto;">
+    <table>
+      <tr><th>Source</th><th class="right">Leads</th><th class="right">Opportunities</th><th class="right">Won</th><th class="right">Win rate</th></tr>
+      {% for r in rows %}
+      <tr>
+        <td><strong>{{ r.source }}</strong></td>
+        <td class="right">{{ r.leads }}</td>
+        <td class="right">{{ r.opportunities }}</td>
+        <td class="right">{{ r.won }}</td>
+        <td class="right"><span class="chip {% if r.win_rate >= 30 %}ok{% elif r.win_rate > 0 %}info{% endif %}">{{ r.win_rate }}%</span></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="muted" style="padding:22px;">No lead data yet — as you capture leads with a source in the CRM, this shows which channels convert.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}

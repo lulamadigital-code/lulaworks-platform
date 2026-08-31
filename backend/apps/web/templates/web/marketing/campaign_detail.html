@@ -1,0 +1,69 @@
+{% extends "web/base.html" %}
+{% block title %}{{ campaign.name }}{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>{{ campaign.name }}
+      <span class="chip {% if campaign.status == 'completed' %}ok{% elif campaign.status == 'running' %}info{% elif campaign.status == 'cancelled' %}bad{% elif campaign.status == 'scheduled' %}warn{% endif %}">{{ campaign.get_status_display }}</span>
+    </h1>
+    <p class="sub" style="margin:0;">{{ campaign.get_channel_display }}{% if campaign.objective %} · {{ campaign.objective }}{% endif %}</p>
+  </div>
+  <a class="btn ghost" href="{% url 'web:marketing_campaigns' %}">← Campaigns</a>
+</div>
+
+<div class="grid2">
+  <div>
+    <div class="card">
+      <div class="teamrow"><span class="muted" style="width:120px;">Audience</span>
+        <span style="flex:1;">{% if campaign.segment %}<a href="{% url 'web:marketing_segments' %}">{{ campaign.segment.name }}</a>{% if audience_count is not None %} · {{ audience_count }} in segment now{% endif %}{% else %}<span class="muted">No segment set</span>{% endif %}</span></div>
+      <div class="teamrow"><span class="muted" style="width:120px;">Sender</span>
+        <span style="flex:1;">{% if campaign.sender %}{{ campaign.sender.get_full_name|default:campaign.sender.email }}{% else %}—{% endif %}</span></div>
+      <div class="teamrow"><span class="muted" style="width:120px;">Scheduled</span>
+        <span style="flex:1;">{% if campaign.scheduled_at %}{{ campaign.scheduled_at|date:"d M Y H:i" }}{% else %}<span class="muted">Not scheduled</span>{% endif %}</span></div>
+      {% if campaign.subject %}<div class="teamrow"><span class="muted" style="width:120px;">Subject</span><span style="flex:1;">{{ campaign.subject }}</span></div>{% endif %}
+    </div>
+
+    {% if campaign.content %}
+    <h2>Message</h2>
+    <div class="card"><div style="white-space:pre-wrap;">{{ campaign.content }}</div></div>
+    {% endif %}
+
+    <h2>Results</h2>
+    <div class="card">
+      <p class="muted" style="margin:0 0 12px;font-size:12.5px;">Populated once channel sending is enabled (email / WhatsApp phases).</p>
+      <div class="grid">
+        <div class="tile"><div class="n">{{ campaign.sent }}</div><div class="l">Sent</div></div>
+        <div class="tile"><div class="n">{{ campaign.delivered }}</div><div class="l">Delivered</div></div>
+        <div class="tile"><div class="n">{{ campaign.opened }}</div><div class="l">Opened</div></div>
+        <div class="tile"><div class="n">{{ campaign.clicked }}</div><div class="l">Clicked</div></div>
+        <div class="tile"><div class="n">{{ campaign.replied }}</div><div class="l">Replied</div></div>
+        <div class="tile"><div class="n">{{ campaign.converted }}</div><div class="l">Converted</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h2>Status</h2>
+    <div class="card">
+      <p class="muted" style="font-size:12.5px;margin:0 0 12px;">Sending isn't wired yet — these move the campaign through its lifecycle for now.</p>
+      <form method="post" style="display:flex;flex-direction:column;gap:8px;">{% csrf_token %}
+        {% if campaign.status == 'draft' %}
+          <button class="btn" name="action" value="schedule">Mark scheduled</button>
+          <button class="btn ghost" name="action" value="run">Mark running</button>
+        {% elif campaign.status == 'scheduled' %}
+          <button class="btn" name="action" value="run">Mark running</button>
+          <button class="btn ghost" name="action" value="reopen">Back to draft</button>
+        {% elif campaign.status == 'running' %}
+          <button class="btn" name="action" value="complete">Mark completed</button>
+        {% elif campaign.status == 'completed' or campaign.status == 'cancelled' %}
+          <button class="btn ghost" name="action" value="reopen">Reopen as draft</button>
+        {% endif %}
+        {% if campaign.status != 'cancelled' and campaign.status != 'completed' %}
+          <button class="btn ghost" name="action" value="cancel" style="color:var(--red);">Cancel campaign</button>
+        {% endif %}
+        <button class="btn ghost" name="action" value="delete" data-confirm="Delete “{{ campaign.name|escapejs }}”?" style="color:var(--red);">Delete</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,254 @@
+"""Marketing module (web) — Phase 1.
+
+Overview, Campaigns, Segments and Lead-source performance, all reading the CRM.
+Gated by ``customers.manage`` (the same permission that owns the CRM records
+Marketing operates on). Channel sending (email/WhatsApp) arrives in later phases.
+"""
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+
+from apps.campaigns.models import (
+    AUDIENCE_CHOICES,
+    Campaign,
+    CampaignChannel,
+    CampaignStatus,
+    Segment,
+)
+from apps.campaigns.services import (
+    lead_source_performance,
+    marketing_overview,
+    segment_count,
+    segment_queryset,
+)
+from apps.customers.models import (
+    LEAD_SOURCES,
+    CustomerStatus,
+    CustomerType,
+    Lead,
+)
+
+
+def _can_market(user) -> bool:
+    return user.has_perm_code("customers.manage")
+
+
+def _guard(request):
+    if not _can_market(request.user):
+        messages.error(request, "You do not have permission to manage marketing.")
+        return redirect("web:dashboard")
+    return None
+
+
+def _parse_iso_dt(raw):
+    from django.utils.dateparse import parse_datetime
+    if not raw:
+        return None
+    dt = parse_datetime(raw)
+    if dt and timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+    return dt
+
+
+# ── Overview ──────────────────────────────────────────────────────────────────
+
+@login_required
+def marketing_home(request):
+    if (r := _guard(request)):
+        return r
+    ctx = marketing_overview()
+    ctx["recent_campaigns"] = Campaign.objects.all()[:6]
+    return render(request, "web/marketing/overview.html", ctx)
+
+
+# ── Campaigns ──────────────────────────────────────────────────────────────────
+
+@login_required
+def campaigns_list(request):
+    if (r := _guard(request)):
+        return r
+    status = (request.GET.get("status") or "").strip()
+    qs = Campaign.objects.select_related("segment").all()
+    if status:
+        qs = qs.filter(status=status)
+    return render(request, "web/marketing/campaigns.html", {
+        "campaigns": qs,
+        "status": status,
+        "statuses": CampaignStatus.choices,
+        "channels": CampaignChannel.choices,
+    })
+
+
+@login_required
+def campaign_new(request):
+    if (r := _guard(request)):
+        return r
+    if request.method == "POST":
+        name = (request.POST.get("name") or "").strip()
+        if not name:
+            messages.error(request, "Give the campaign a name.")
+            return redirect("web:marketing_campaigns")
+        segment = None
+        if request.POST.get("segment"):
+            segment = Segment.objects.filter(pk=request.POST["segment"]).first()
+        Campaign.objects.create(
+            company=request.user.active_company,
+            name=name,
+            objective=(request.POST.get("objective") or "").strip(),
+            channel=request.POST.get("channel") or CampaignChannel.EMAIL,
+            segment=segment,
+            subject=(request.POST.get("subject") or "").strip(),
+            content=(request.POST.get("content") or "").strip(),
+            scheduled_at=_parse_iso_dt(request.POST.get("scheduled_at")),
+            sender=request.user,
+            status=CampaignStatus.DRAFT,
+            created_by=request.user, updated_by=request.user,
+        )
+        messages.success(request, f"Campaign “{name}” created as a draft.")
+        return redirect("web:marketing_campaigns")
+    return render(request, "web/marketing/campaign_form.html", {
+        "segments": Segment.objects.all(),
+        "channels": CampaignChannel.choices,
+    })
+
+
+@login_required
+def campaign_detail(request, pk):
+    if (r := _guard(request)):
+        return r
+    campaign = get_object_or_404(Campaign.objects.select_related("segment", "sender"), pk=pk)
+    if request.method == "POST":
+        action = request.POST.get("action")
+        # Phase 1: channel sending isn't wired yet, so status moves are manual
+        # markers a person sets — never an automatic send.
+        transitions = {
+            "schedule": CampaignStatus.SCHEDULED,
+            "run": CampaignStatus.RUNNING,
+            "complete": CampaignStatus.COMPLETED,
+            "cancel": CampaignStatus.CANCELLED,
+            "reopen": CampaignStatus.DRAFT,
+        }
+        if action in transitions:
+            campaign.status = transitions[action]
+            campaign.updated_by = request.user
+            campaign.save(update_fields=["status", "updated_by", "updated_at"])
+            messages.success(request, f"Campaign marked {campaign.get_status_display()}.")
+        elif action == "delete":
+            campaign.delete()
+            messages.success(request, "Campaign deleted.")
+            return redirect("web:marketing_campaigns")
+        return redirect("web:marketing_campaign_detail", pk=campaign.id)
+
+    audience_count = segment_count(campaign.segment) if campaign.segment else None
+    return render(request, "web/marketing/campaign_detail.html", {
+        "campaign": campaign,
+        "audience_count": audience_count,
+    })
+
+
+# ── Segments ───────────────────────────────────────────────────────────────────
+
+@login_required
+def segments_list(request):
+    if (r := _guard(request)):
+        return r
+    segments = list(Segment.objects.all())
+    rows = [{"segment": s, "count": segment_count(s)} for s in segments]
+    return render(request, "web/marketing/segments.html", {"rows": rows})
+
+
+@login_required
+def segment_new(request):
+    if (r := _guard(request)):
+        return r
+    if request.method == "POST":
+        name = (request.POST.get("name") or "").strip()
+        if not name:
+            messages.error(request, "Give the segment a name.")
+            return redirect("web:marketing_segments")
+        audience = request.POST.get("audience") or "leads"
+        Segment.objects.create(
+            company=request.user.active_company,
+            name=name,
+            description=(request.POST.get("description") or "").strip(),
+            audience=audience,
+            criteria=_criteria_from_post(request.POST, audience),
+            created_by=request.user, updated_by=request.user,
+        )
+        messages.success(request, f"Segment “{name}” saved.")
+        return redirect("web:marketing_segments")
+    return render(request, "web/marketing/segment_form.html", _segment_form_ctx())
+
+
+@login_required
+def segment_preview(request):
+    """Live count for the segment being built (used by the builder)."""
+    if not _can_market(request.user):
+        from django.http import JsonResponse
+        return JsonResponse({"count": 0})
+    audience = request.GET.get("audience") or "leads"
+    dummy = Segment(company=request.user.active_company, audience=audience,
+                    criteria=_criteria_from_post(request.GET, audience))
+    from django.http import JsonResponse
+    return JsonResponse({"count": segment_queryset(dummy).count()})
+
+
+@login_required
+def segment_delete(request, pk):
+    if (r := _guard(request)):
+        return r
+    if request.method == "POST":
+        seg = get_object_or_404(Segment.objects.all(), pk=pk)
+        seg.delete()
+        messages.success(request, "Segment deleted.")
+    return redirect("web:marketing_segments")
+
+
+def _criteria_from_post(data, audience) -> dict:
+    """Build the criteria dict from posted filter fields (blank ones dropped).
+
+    The builder renders both audiences' inputs in one form, so the customer
+    inputs are ``cust_``-prefixed to avoid clashing with the lead inputs. We map
+    them back to the canonical criteria keys here."""
+    crit = {}
+    if audience == "customers":
+        mapping = {"cust_status": "status", "customer_type": "customer_type",
+                   "cust_industry": "industry", "cust_country": "country",
+                   "cust_city": "city", "no_activity_days": "no_activity_days"}
+    else:
+        if data.get("uncontacted"):
+            crit["uncontacted"] = True
+        mapping = {"status": "status", "source": "source", "industry": "industry",
+                   "country": "country", "city": "city",
+                   "no_contact_days": "no_contact_days"}
+    for src, key in mapping.items():
+        v = (data.get(src) or "").strip()
+        if v:
+            crit[key] = v
+    return crit
+
+
+def _segment_form_ctx() -> dict:
+    return {
+        "audiences": AUDIENCE_CHOICES,
+        "sources": LEAD_SOURCES,
+        "lead_statuses": Lead.Status.choices,
+        "customer_statuses": CustomerStatus.choices,
+        "customer_types": CustomerType.choices,
+    }
+
+
+# ── Lead sources ───────────────────────────────────────────────────────────────
+
+@login_required
+def lead_sources(request):
+    if (r := _guard(request)):
+        return r
+    rows = lead_source_performance()
+    return render(request, "web/marketing/lead_sources.html", {
+        "rows": rows,
+        "total_leads": sum(r["leads"] for r in rows),
+        "total_opps": sum(r["opportunities"] for r in rows),
+        "total_won": sum(r["won"] for r in rows),
+    })

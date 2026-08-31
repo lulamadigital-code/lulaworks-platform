@@ -1,0 +1,95 @@
+{% extends "web/base.html" %}
+{% block title %}New segment{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div><h1>New segment</h1>
+    <p class="sub" style="margin:0;">Filter your CRM into a reusable audience. The count updates as you build.</p></div>
+  <a class="btn ghost" href="{% url 'web:marketing_segments' %}">← Segments</a>
+</div>
+
+<div class="card" style="max-width:720px;">
+  <form method="post" action="{% url 'web:marketing_segment_new' %}" id="segform">
+    {% csrf_token %}
+    <label>Segment name</label>
+    <input type="text" name="name" required placeholder="e.g. Mining prospects needing follow-up">
+    <label>Description</label>
+    <input type="text" name="description" placeholder="Optional — what this segment is for">
+
+    <label style="margin-top:14px;">Audience</label>
+    <select name="audience" id="audience">
+      {% for v, l in audiences %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+    </select>
+
+    {# ── Lead filters ─────────────────────────────────────────────────────── #}
+    <div class="aud aud-leads">
+      <div class="two" style="margin-top:8px;">
+        <div><label>Lead status</label>
+          <select name="status"><option value="">Any</option>
+            {% for v, l in lead_statuses %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+        <div><label>Source</label>
+          <select name="source"><option value="">Any</option>
+            {% for s in sources %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select></div>
+        <div><label>Industry contains</label><input type="text" name="industry" placeholder="e.g. Mining"></div>
+        <div><label>Country contains</label><input type="text" name="country"></div>
+        <div><label>City contains</label><input type="text" name="city"></div>
+        <div><label>No contact in (days)</label><input type="number" name="no_contact_days" min="1" placeholder="e.g. 30"></div>
+      </div>
+      <label class="inline" style="display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:normal;">
+        <input type="checkbox" name="uncontacted" value="1" style="width:auto;"> Only leads never contacted (status = New)</label>
+    </div>
+
+    {# ── Customer filters ─────────────────────────────────────────────────── #}
+    <div class="aud aud-customers" style="display:none;">
+      <div class="two" style="margin-top:8px;">
+        <div><label>Customer status</label>
+          <select name="cust_status"><option value="">Any</option>
+            {% for v, l in customer_statuses %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+        <div><label>Type</label>
+          <select name="customer_type"><option value="">Any</option>
+            {% for v, l in customer_types %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+        <div><label>Industry contains</label><input type="text" name="cust_industry" placeholder="e.g. Mining"></div>
+        <div><label>Country contains</label><input type="text" name="cust_country"></div>
+        <div><label>City contains</label><input type="text" name="cust_city"></div>
+        <div><label>No activity in (days)</label><input type="number" name="no_activity_days" min="1" placeholder="e.g. 90"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px;background:var(--primary-t);border-color:transparent;">
+      <strong id="segcount">—</strong> <span class="muted">records match this segment right now.</span>
+    </div>
+
+    <div class="secbtns" style="margin-top:6px;">
+      <button class="btn" type="submit">Save segment</button>
+      <a class="btn ghost" href="{% url 'web:marketing_segments' %}">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+(function(){
+  var form = document.getElementById('segform');
+  var audSel = document.getElementById('audience');
+  var out = document.getElementById('segcount');
+  function showAudience(){
+    var a = audSel.value;
+    document.querySelectorAll('.aud-leads').forEach(function(e){ e.style.display = a==='leads'?'':'none'; });
+    document.querySelectorAll('.aud-customers').forEach(function(e){ e.style.display = a==='customers'?'':'none'; });
+  }
+  function preview(){
+    // Send the whole form as-is (raw field names + audience). The backend maps
+    // the cust_-prefixed customer inputs to criteria keys — same code path the
+    // save uses, so the preview always matches what gets stored.
+    var fd = new FormData(form);
+    var p = new URLSearchParams();
+    fd.forEach(function(v, k){ if(k !== 'csrfmiddlewaretoken' && v) p.set(k, v); });
+    fetch('{% url 'web:marketing_segment_preview' %}?' + p.toString(), {headers:{'X-Requested-With':'fetch'}})
+      .then(function(r){ return r.json(); })
+      .then(function(d){ out.textContent = d.count; })
+      .catch(function(){ out.textContent = '—'; });
+  }
+  audSel.addEventListener('change', function(){ showAudience(); preview(); });
+  form.addEventListener('input', preview);
+  showAudience(); preview();
+})();
+</script>
+{% endblock %}
