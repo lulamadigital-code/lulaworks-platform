@@ -2755,20 +2755,42 @@ def request_fulfil(request, pk):
 
 
 @login_required
-@require_POST
 def request_settings(request):
-    """Toggle whether purchases need approval (optional per company)."""
+    """Purchase-request approval settings: whether purchases need approval, and
+    the rand threshold below which requests auto-approve. GET renders the page;
+    POST saves."""
     from apps.administration.models import CompanySettings
+    from apps.procurement.services import (
+        procurement_approval_required,
+        procurement_approval_threshold,
+    )
+    company = request.user.active_company
     if not request.user.has_perm_code("company.manage"):
         messages.error(request, "You do not have permission.")
         return redirect("web:requests")
-    s, _ = CompanySettings.objects.get_or_create(company=request.user.active_company)
-    rules = dict(s.approval_rules or {})
-    rules["procurement_required"] = bool(request.POST.get("procurement_required"))
-    s.approval_rules = rules
-    s.save(update_fields=["approval_rules", "updated_at"])
-    messages.success(request, "Procurement approval setting updated.")
-    return redirect("web:requests")
+    s, _ = CompanySettings.objects.get_or_create(company=company)
+    if request.method == "POST":
+        rules = dict(s.approval_rules or {})
+        rules["procurement_required"] = bool(request.POST.get("procurement_required"))
+        raw = (request.POST.get("procurement_threshold") or "").strip() \
+            .replace(",", "").replace("R", "").replace(" ", "")
+        try:
+            thr = Decimal(raw) if raw else Decimal("0")
+        except (InvalidOperation, ValueError):
+            thr = Decimal("0")
+        rules["procurement_threshold"] = str(thr if thr > 0 else Decimal("0"))
+        s.approval_rules = rules
+        s.save(update_fields=["approval_rules", "updated_at"])
+        messages.success(request, "Purchase request settings updated.")
+        return redirect("web:request_settings")
+    approvers = [m.user for m in company_members(company, include_inactive=False)
+                 if m.user.has_perm_code("procurement.manage")]
+    return render(request, "web/request_settings.html", {
+        "required": procurement_approval_required(company),
+        "threshold": procurement_approval_threshold(company),
+        "currency": company.currency,
+        "approvers": approvers,
+    })
 
 
 @login_required

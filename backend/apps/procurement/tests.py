@@ -175,3 +175,28 @@ class PurchaseOrderAPITests(APITestCase):
         self.assertNotIn("total", row)  # money stripped
         self.assertNotIn("unit_price", row["lines"][0])
         self.assertIn("number", row)
+
+
+class ProcurementApprovalThresholdTests(APITestCase):
+    """Approval is gated by a value threshold: below it auto-approves, at/above
+    it needs approval; threshold 0 means every request needs approval."""
+
+    def test_threshold_gates_whether_a_request_needs_approval(self):
+        from apps.administration.models import CompanySettings
+        from apps.procurement.services import procurement_needs_approval
+
+        c = make_company()
+        with tenant_scope(c.id):
+            s, _ = CompanySettings.objects.get_or_create(company=c)
+            # Approval OFF → nothing needs approval regardless of value.
+            self.assertFalse(procurement_needs_approval(c, Decimal("10000")))
+            # ON, threshold 0 → everything needs approval.
+            s.approval_rules = {"procurement_required": True, "procurement_threshold": "0"}
+            s.save()
+            self.assertTrue(procurement_needs_approval(c, Decimal("50")))
+            # ON, threshold 1000 → below auto-approves, at/above needs approval.
+            s.approval_rules = {"procurement_required": True, "procurement_threshold": "1000"}
+            s.save()
+            self.assertFalse(procurement_needs_approval(c, Decimal("999.99")))
+            self.assertTrue(procurement_needs_approval(c, Decimal("1000")))
+            self.assertTrue(procurement_needs_approval(c, Decimal("2500")))

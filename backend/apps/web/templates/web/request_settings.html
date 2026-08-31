@@ -1,0 +1,54 @@
+{% extends "web/base.html" %}
+{% block title %}Purchase request settings{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Purchase request settings</h1>
+    <p class="sub" style="margin:0;">Control when a purchase needs approval before it can be bought.</p>
+  </div>
+  <a class="btn ghost" href="{% url 'web:requests' %}">← Requests</a>
+</div>
+
+<div class="card" style="max-width:640px;">
+  <form method="post" action="{% url 'web:request_settings' %}">
+    {% csrf_token %}
+
+    <label class="inline" style="display:flex;align-items:center;gap:10px;font-weight:600;margin:0;">
+      <input type="checkbox" name="procurement_required" value="1" {% if required %}checked{% endif %} style="width:auto;">
+      Require approval before purchases
+    </label>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0;">
+      Off = small teams buy directly (every request auto-approves). On = a request
+      must be approved before it's turned into an order.
+    </p>
+
+    <label style="margin-top:20px;">Approval threshold ({{ currency }})</label>
+    <input type="text" name="procurement_threshold" value="{{ threshold|floatformat:2 }}"
+           inputmode="decimal" placeholder="0.00">
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0;">
+      Requests <strong>below</strong> this value auto-approve; those at or above it
+      need approval. Leave <strong>0</strong> to require approval for every request.
+      Only applies while “Require approval” is on.
+    </p>
+
+    <div class="secbtns" style="margin-top:22px;">
+      <button class="btn" type="submit">Save settings</button>
+      <a class="btn ghost" href="{% url 'web:requests' %}">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<h2>Who can approve</h2>
+<div class="card" style="max-width:640px;">
+  {% if approvers %}
+    <p class="muted" style="margin:0 0 10px;font-size:13px;">
+      Members with the <strong>Procurement</strong> permission can approve or reject requests:</p>
+    {% for u in approvers %}
+      <span class="chip info" style="margin:0 6px 6px 0;">{{ u.get_full_name|default:u.email }}</span>
+    {% endfor %}
+  {% else %}
+    <p class="muted" style="margin:0;">No one currently has the Procurement permission —
+      grant it on the <a href="{% url 'web:people' %}">People</a> page so requests can be approved.</p>
+  {% endif %}
+</div>
+{% endblock %}

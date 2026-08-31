@@ -335,6 +335,31 @@ def procurement_approval_required(company) -> bool:
     return bool(s and (s.approval_rules or {}).get("procurement_required"))
 
 
+def procurement_approval_threshold(company) -> Decimal:
+    """The rand value at/above which a request needs approval. 0 = every request
+    needs approval (when approval is on). Requests below it auto-approve."""
+    from apps.administration.models import CompanySettings
+    s = CompanySettings.objects.filter(company=company).first()
+    raw = (s.approval_rules or {}).get("procurement_threshold") if s else None
+    try:
+        return Decimal(str(raw)) if raw not in (None, "") else Decimal("0")
+    except Exception:                                          # noqa: BLE001
+        return Decimal("0")
+
+
+def procurement_needs_approval(company, amount) -> bool:
+    """A specific request needs approval when approval is ON for the company AND
+    its value is at/above the threshold (threshold 0 = everything needs it)."""
+    if not procurement_approval_required(company):
+        return False
+    thr = procurement_approval_threshold(company)
+    try:
+        value = Decimal(str(amount or 0))
+    except Exception:                                          # noqa: BLE001
+        value = Decimal("0")
+    return thr <= 0 or value >= thr
+
+
 def _last_price_for(company, description):
     """Best estimate for a line — the most recent price we've paid, if any."""
     product = resolve_product(company, None, description, create=False)
@@ -377,7 +402,7 @@ def submit_request(req, user):
     require approval."""
     if req.status != ProcurementRequestStatus.DRAFT:
         return req
-    if procurement_approval_required(req.company):
+    if procurement_needs_approval(req.company, req.est_total):
         req.status = ProcurementRequestStatus.SUBMITTED
     else:
         req.status = ProcurementRequestStatus.APPROVED
