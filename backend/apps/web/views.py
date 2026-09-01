@@ -3006,6 +3006,10 @@ def lulaai(request):
         messages.error(request, "AI features require the ai.generate permission.")
         return redirect("web:dashboard")
     ctx = {"quick": _lulaai_quick_actions(request.user)}
+    if request.method == "GET":
+        # Role daily briefing — "here's what needs attention", permission-scoped.
+        from apps.ai_platform.briefing import daily_brief
+        ctx["brief"] = daily_brief(request.user.active_company, request.user)
     if request.method == "POST":
         from apps.ai_platform.assistant import ask, execute
         action = request.POST.get("action")

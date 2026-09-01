@@ -139,3 +139,44 @@ class WriteDraftTests(APITestCase):
             u = _user_with(c, ["ai.generate", "projects.view"], email="np2@lula.co.za")
             res = ask(c, u, "draft an email to someone about the job")
             self.assertTrue(res["denied"])
+
+
+class DailyBriefTests(APITestCase):
+    """Role daily briefing (§24/§25): permission-scoped attention list — never
+    surfaces anything the user's role can't access."""
+
+    def test_overdue_surfaced_for_authorised_user(self):
+        from apps.ai_platform.briefing import daily_brief
+        c = _company()
+        with tenant_scope(c.id):
+            u = _user_with(c, ["ai.generate", "projects.view"], email="own@lula.co.za")
+            Task.objects.create(company=c, name="Late job",
+                                due_date=timezone.localdate() - timedelta(days=3))
+            brief = daily_brief(c, u)
+        self.assertTrue(brief["has_attention"])
+        self.assertTrue(brief["greeting"].startswith("Good"))
+        overdue = [i for i in brief["items"] if i["label"] == "overdue"]
+        self.assertEqual(len(overdue), 1)
+        self.assertEqual(overdue[0]["count"], 1)
+        self.assertEqual(overdue[0]["severity"], "bad")
+
+    def test_unauthorised_info_is_hidden(self):
+        from apps.ai_platform.briefing import daily_brief
+        c = _company()
+        with tenant_scope(c.id):
+            # same overdue task exists, but this user lacks projects.view
+            Task.objects.create(company=c, name="Late job",
+                                due_date=timezone.localdate() - timedelta(days=3))
+            u = _user_with(c, ["ai.generate"], email="noperm@lula.co.za")
+            brief = daily_brief(c, u)
+        self.assertFalse(brief["has_attention"])
+        self.assertEqual(brief["items"], [])
+
+    def test_all_caught_up(self):
+        from apps.ai_platform.briefing import daily_brief
+        c = _company()
+        with tenant_scope(c.id):
+            u = _user_with(c, ["ai.generate", "projects.view"], email="clear@lula.co.za")
+            brief = daily_brief(c, u)
+        self.assertFalse(brief["has_attention"])
+        self.assertIn("caught up", brief["line"].lower())

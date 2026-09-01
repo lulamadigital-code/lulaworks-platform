@@ -8,6 +8,31 @@
   </div>
 </div>
 
+{% if brief and not result %}
+<div class="card" style="max-width:760px;margin-bottom:14px;">
+  <div style="display:flex;align-items:flex-start;gap:12px;">
+    <div style="flex:0 0 34px;height:34px;border-radius:9px;background:var(--primary-t);color:var(--primary-d);display:flex;align-items:center;justify-content:center;font-weight:800;">☀</div>
+    <div style="flex:1;">
+      <p style="margin:0 0 2px;font-weight:700;">{{ brief.greeting }}</p>
+      <p class="muted" style="margin:0;font-size:13px;">{{ brief.line }}</p>
+    </div>
+  </div>
+  {% if brief.has_attention %}
+  <div class="filterbar" style="margin-top:14px;gap:8px;flex-wrap:wrap;">
+    {% for i in brief.items %}
+    <form method="post" action="{% url 'web:lulaai' %}" style="display:inline;">
+      {% csrf_token %}<input type="hidden" name="message" value="{{ i.query }}">
+      <button class="chip {% if i.severity == 'bad' %}bad{% elif i.severity == 'warn' %}warn{% else %}info{% endif %}" type="submit"
+              style="cursor:pointer;font-weight:600;">
+        {{ i.count }} {{ i.label }}
+      </button>
+    </form>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
 <div class="card" style="max-width:760px;">
   <form method="post" action="{% url 'web:lulaai' %}" style="display:flex;gap:10px;align-items:center;">
     {% csrf_token %}
