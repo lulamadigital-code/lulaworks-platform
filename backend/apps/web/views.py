@@ -3007,16 +3007,28 @@ def lulaai(request):
         return redirect("web:dashboard")
     ctx = {"quick": _lulaai_quick_actions(request.user)}
     if request.method == "POST":
-        from apps.ai_platform.assistant import ask
-        message = (request.POST.get("message") or "").strip()
-        if message:
-            page_ctx = None
-            ct, cid = request.POST.get("ctx_type"), request.POST.get("ctx_id")
-            if ct and cid:
-                page_ctx = {"type": ct, "id": cid}
-            ctx["message"] = message
-            ctx["result"] = ask(request.user.active_company, request.user,
-                                 message, context=page_ctx)
+        from apps.ai_platform.assistant import ask, execute
+        action = request.POST.get("action")
+        if action:
+            # A confirmed write (from a draft). Collect only that action's fields.
+            allowed = {
+                "create_task": ("title", "assignee", "due", "notes"),
+                "send_customer_email": ("to", "subject", "body", "customer_id"),
+                "send_whatsapp_text": ("phone", "text"),
+            }.get(action, ())
+            params = {k: (request.POST.get(k) or "").strip() for k in allowed}
+            ctx["result"] = execute(request.user.active_company, request.user,
+                                    action, params)
+        else:
+            message = (request.POST.get("message") or "").strip()
+            if message:
+                page_ctx = None
+                ct, cid = request.POST.get("ctx_type"), request.POST.get("ctx_id")
+                if ct and cid:
+                    page_ctx = {"type": ct, "id": cid}
+                ctx["message"] = message
+                ctx["result"] = ask(request.user.active_company, request.user,
+                                    message, context=page_ctx)
     return render(request, "web/lulaai.html", ctx)
 
 

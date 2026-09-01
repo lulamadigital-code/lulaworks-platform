@@ -227,3 +227,97 @@ def _job_summary(user, *, task_id="", project_id=""):
     dash["found"] = True
     dash["source"] = f"Job · {task.name}"
     return dash
+
+
+# ── LulaAI WRITE tools (Phase 1b) ─────────────────────────────────────────────
+# High-risk: only ever invoked via an explicit user confirmation (assistant draft
+# → confirm). Permission-checked + audited like every tool.
+
+def _resolve_member(user, token):
+    """Find a company member by first-name / email prefix (best-effort)."""
+    if not token:
+        return None
+    from apps.identity.models import Membership
+    token = token.strip().lower()
+    for m in Membership.objects.filter(company=user.active_company).select_related("user"):
+        u = m.user
+        name = (u.get_full_name() or "").lower()
+        if (name.startswith(token) or token in name.split()
+                or (u.email or "").lower().startswith(token)):
+            return u
+    return None
+
+
+@register("create_task", required_perm="work.create",
+          description="Create a task (title, optional assignee/due/job)")
+def _create_task(user, *, title, assignee="", assignee_id="", due="", project_id="",
+                 notes=""):
+    from datetime import date
+
+    from apps.execution.models import Task
+    due_val = None
+    if due:
+        try:
+            due_val = date.fromisoformat(due)
+        except ValueError:
+            due_val = None
+    # Task.assignee is a Resource, and person-assignment is a separate team step,
+    # so we record the requested name in the description rather than mis-assign.
+    desc = notes or ""
+    if assignee:
+        desc = (f"Requested assignee: {assignee}\n{desc}").strip()
+    task = Task.objects.create(
+        company=user.active_company, name=title.strip(), due_date=due_val,
+        project_id=project_id or None, description=desc,
+        created_by=user, updated_by=user)
+    return {"ok": True, "id": str(task.id), "name": task.name,
+            "assignee": assignee or "unassigned"}
+
+
+@register("send_customer_email", required_perm="customers.manage",
+          description="Send an email to a customer/contact (subject + body)")
+def _send_customer_email(user, *, to, subject, body, customer_id=""):
+    from apps.notifications.models import EmailCategory
+    from apps.notifications.service import send_email
+    if not (to and subject):
+        raise ValueError("An email needs a recipient and a subject.")
+    log = send_email(to=to.strip(), subject=subject.strip(), template="generic",
+                     context={"body": body or "", "subject": subject.strip()},
+                     company=user.active_company, category=EmailCategory.CRM,
+                     sent_by=user)
+    return {"ok": True, "to": to.strip(), "log_id": str(log.id)}
+
+
+@register("send_whatsapp_text", required_perm="customers.manage",
+          description="Send a WhatsApp text to one number via the company's connection")
+def _send_whatsapp_text(user, *, phone, text):
+    from apps.campaigns.whatsapp import _post_message, _wa_number, get_connection
+    conn = get_connection(user.active_company)
+    if not (conn and conn.is_connected):
+        raise ValueError("WhatsApp isn't connected for this company yet.")
+    if not phone:
+        raise ValueError("A WhatsApp recipient number is required.")
+    mid = _post_message(conn, _wa_number(phone), text=text or "")
+    return {"ok": True, "phone": phone, "message_id": mid}
+
+
+# ── One more read tool: customer relationship summary (§20) ───────────────────
+
+@register("customer_summary", required_perm="customers.manage",
+          description="A customer's relationship snapshot: status, opportunities, last touch")
+def _customer_summary(user, *, customer_id="", name=""):
+    from apps.customers.models import Customer, OpportunityStage
+    cust = None
+    if customer_id:
+        cust = Customer.objects.filter(pk=customer_id).first()
+    elif name:
+        cust = Customer.objects.filter(name__icontains=name).first()
+    if cust is None:
+        return {"found": False, "source": "Customers"}
+    opps = cust.opportunities.all()
+    open_opps = [o for o in opps if o.stage not in (OpportunityStage.WON, OpportunityStage.LOST)]
+    return {"found": True, "name": cust.name, "status": cust.get_status_display(),
+            "industry": cust.industry, "open_opportunities": len(open_opps),
+            "total_opportunities": opps.count(),
+            "last_touch": cust.updated_at.date().isoformat(),
+            "source": f"Customer · {cust.name}"}

@@ -28,7 +28,35 @@
   {% endif %}
 </div>
 
-{% if result %}
+{% if result and result.kind == 'draft' %}
+<div class="card" style="max-width:760px;">
+  <div style="display:flex;align-items:flex-start;gap:12px;">
+    <div style="flex:0 0 34px;height:34px;border-radius:9px;background:var(--primary-t);color:var(--primary-d);display:flex;align-items:center;justify-content:center;font-weight:800;">◎</div>
+    <div style="flex:1;">
+      <p style="margin:0 0 2px;font-weight:600;">{{ result.answer }}</p>
+      {% if result.high_risk %}<span class="chip warn" style="font-size:11px;">Requires your confirmation to send</span>{% endif %}
+    </div>
+  </div>
+  <form method="post" action="{% url 'web:lulaai' %}" style="margin-top:12px;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="{{ result.action }}">
+    {% for f in result.fields %}
+      <label>{{ f.label }}</label>
+      {% if f.type == 'textarea' %}<textarea name="{{ f.name }}" rows="5">{{ f.value }}</textarea>
+      {% else %}<input type="text" name="{{ f.name }}" value="{{ f.value }}">{% endif %}
+    {% endfor %}
+    {% if result.draft.customer_id %}<input type="hidden" name="customer_id" value="{{ result.draft.customer_id }}">{% endif %}
+    <div class="secbtns" style="margin-top:16px;">
+      <button class="btn" type="submit">{% if result.action == 'create_task' %}Create task{% elif result.action == 'send_customer_email' %}Send email{% else %}Send WhatsApp{% endif %}</button>
+      <span class="muted" style="font-size:12px;">LulaAI never sends without this confirmation.</span>
+    </div>
+  </form>
+</div>
+{% elif result and result.kind == 'result' %}
+<div class="card" style="max-width:760px;{% if not result.ok %}border-color:var(--red-t);{% endif %}">
+  <p style="margin:0;font-weight:600;">{% if result.ok %}✓ {% endif %}{{ result.answer }}</p>
+</div>
+{% elif result %}
 <div class="card" style="max-width:760px;{% if result.denied %}border-color:var(--orange-t);{% endif %}">
   <div style="display:flex;align-items:flex-start;gap:12px;">
     <div style="flex:0 0 34px;height:34px;border-radius:9px;background:var(--primary-t);color:var(--primary-d);display:flex;align-items:center;justify-content:center;font-weight:800;">◎</div>

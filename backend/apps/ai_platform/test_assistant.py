@@ -85,3 +85,57 @@ class AskPermissionTests(APITestCase):
         # a projects-only user is never offered supplier/invoice capabilities
         self.assertNotIn("supplier", res["answer"].lower())
         self.assertNotIn("invoice", res["answer"].lower())
+
+
+class WriteDraftTests(APITestCase):
+    """Writes are prepared as drafts then executed only on confirmation, through
+    permission-checked tools."""
+
+    def test_create_task_draft_then_confirm(self):
+        from apps.ai_platform.assistant import ask, execute
+        from apps.execution.models import Task
+        c = _company()
+        with tenant_scope(c.id):
+            u = _user_with(c, ["ai.generate", "work.create"], email="mgr@lula.co.za")
+            thabo = _user_with(c, ["work.edit"], email="thabo@lula.co.za")
+            thabo.first_name = "Thabo"
+            thabo.save()
+            draft = ask(c, u, "create a task for Thabo to collect the materials tomorrow")
+            self.assertEqual(draft["kind"], "draft")
+            self.assertEqual(draft["action"], "create_task")
+            params = {f["name"]: f["value"] for f in draft["fields"]}
+            res = execute(c, u, "create_task", params)
+            self.assertTrue(res["ok"])
+            self.assertEqual(res["result"]["assignee"], "Thabo")
+            t = Task.objects.filter(name__icontains="collect").first()
+            self.assertIsNotNone(t)
+            self.assertIn("Thabo", t.description)          # requested assignee recorded
+
+    def test_create_task_denied_without_permission(self):
+        from apps.ai_platform.assistant import ask
+        c = _company()
+        with tenant_scope(c.id):
+            u = _user_with(c, ["ai.generate", "projects.view"], email="v@lula.co.za")
+            res = ask(c, u, "create a task to inspect the pump")
+            self.assertTrue(res["denied"])
+
+    def test_draft_email_then_send(self):
+        from apps.ai_platform.assistant import ask, execute
+        c = _company()
+        with tenant_scope(c.id):
+            u = _user_with(c, ["ai.generate", "customers.manage"], email="s@lula.co.za")
+            draft = ask(c, u, "draft an email to ABC asking for the PO")
+            self.assertEqual(draft["action"], "send_customer_email")
+            self.assertIn("Purchase order", draft["draft"]["subject"])
+            res = execute(c, u, "send_customer_email",
+                          {"to": "client@abc.co.za", "subject": "PO please",
+                           "body": "Hi"})
+            self.assertTrue(res["ok"])
+
+    def test_draft_email_denied_without_customers_manage(self):
+        from apps.ai_platform.assistant import ask
+        c = _company()
+        with tenant_scope(c.id):
+            u = _user_with(c, ["ai.generate", "projects.view"], email="np2@lula.co.za")
+            res = ask(c, u, "draft an email to someone about the job")
+            self.assertTrue(res["denied"])
