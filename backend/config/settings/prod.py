@@ -38,4 +38,25 @@ SECURE_HSTS_PRELOAD = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
+# ── Error monitoring (Sentry) ─────────────────────────────────────────────────
+# Off unless SENTRY_DSN is set, so the same image runs with or without it. The
+# Django / Celery / Redis integrations auto-enable because those libs are in the
+# image; unhandled exceptions and ERROR logs become Sentry events.
+#
+# Privacy (POPIA): send_default_pii stays False — no request bodies, cookies or
+# user emails are shipped to Sentry. Tracing/profiling default OFF (sample rate
+# 0) to control cost; raise SENTRY_TRACES_SAMPLE_RATE per environment if wanted.
+_SENTRY_DSN = config("SENTRY_DSN", default="")
+if _SENTRY_DSN:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=_SENTRY_DSN,
+        environment=config("SENTRY_ENVIRONMENT", default="production"),
+        release=config("SENTRY_RELEASE", default="") or None,
+        traces_sample_rate=config("SENTRY_TRACES_SAMPLE_RATE", default=0.0, cast=float),
+        profiles_sample_rate=config("SENTRY_PROFILES_SAMPLE_RATE", default=0.0, cast=float),
+        send_default_pii=False,
+    )
+
 # S3 storage + CloudWatch logging wired here when the AWS account is provisioned.

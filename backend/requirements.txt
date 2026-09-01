@@ -45,3 +45,6 @@ coverage[toml]==7.6.1
 # HTTP-API email (Brevo/SendGrid/Mailgun/Postmark) for hosts that block outbound
 # SMTP (e.g. DigitalOcean). Selected via EMAIL_BACKEND=anymail.backends.<esp>.
 django-anymail==11.1
+# Error monitoring (production). Off unless SENTRY_DSN is set; auto-instruments
+# Django, Celery and Redis (their integrations enable when the libs are present).
+sentry-sdk==2.18.0
