@@ -17,6 +17,13 @@ PERMISSIONS = [
     ("finance.manage", "finance", "Manage budgets, invoices, cost entries"),
     ("projects.create", "projects", "Create projects"),
     ("projects.view", "projects", "View projects"),
+    # Customers & CRM. These gate the customer database and the CRM module
+    # (leads/opportunities/pipeline at /crm/). They were checked throughout the
+    # code but were missing from this catalogue — so no role, not even the
+    # all-permissions Company Owner, actually held them. Seeding them here (and
+    # re-running seed_platform) grants them to the "*" roles retroactively.
+    ("customers.manage", "customers", "Manage customers, contacts & branches"),
+    ("crm.manage", "crm", "Manage CRM — leads, opportunities & pipeline"),
     ("rfq.upload", "rfq", "Upload RFQs"),
     ("rfq.approve", "rfq", "Approve RFQ extractions"),
     ("quotes.create", "estimating", "Create & edit draft quotations"),
@@ -53,14 +60,14 @@ ROLES = {
                             "estimating.manage", "compliance.manage", "execution.manage",
                             "timesheet.approve", "ai.generate", "work.create", "work.edit",
                             "work.delete", "work.assign", "work.approve", "work.close",
-                            "work.files"],
+                            "work.files", "customers.manage", "crm.manage"],
     "Finance Manager": ["finance.view_money", "finance.manage", "invoices.approve",
                         "billing.manage", "po.approve", "estimating.approve",
-                        "quotes.download", "projects.view"],
+                        "quotes.download", "projects.view", "customers.manage"],
     # An estimator prepares and downloads quotations, but approval is a separate,
     # authorised step (separation of duties).
     "Estimator": ["estimating.manage", "finance.view_money", "quotes.create",
-                  "quotes.download", "projects.view", "ai.generate"],
+                  "quotes.download", "projects.view", "ai.generate", "customers.manage"],
     "Procurement Officer": ["procurement.manage", "finance.view_money", "projects.view"],
     "Safety Officer": ["compliance.manage", "compliance.override", "projects.view"],
     "Supervisor": ["projects.view", "execution.manage", "timesheet.approve", "ai.generate",
