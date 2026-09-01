@@ -1,11 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'api/api_client.dart';
 import 'screens/home_shell.dart';
 import 'screens/login_screen.dart';
 import 'theme.dart';
 
+// Crash reporting is compile-time gated: pass the DSN at build with
+// `--dart-define=SENTRY_DSN=…` and the release reports crashes; omit it (dev,
+// local builds) and Sentry stays completely off. Mirrors the backend's
+// env-gated Sentry so the same source runs with or without it.
+const _sentryDsn = String.fromEnvironment('SENTRY_DSN');
+const _sentryEnv =
+    String.fromEnvironment('SENTRY_ENVIRONMENT', defaultValue: 'production');
+
 Future<void> main() async {
+  if (_sentryDsn.isEmpty) {
+    await _boot(); // no DSN → run normally, no crash reporting
+    return;
+  }
+  await SentryFlutter.init(
+    (o) {
+      o.dsn = _sentryDsn;
+      o.environment = _sentryEnv;
+      // Performance tracing off by default (cost); raise per build if wanted.
+      o.tracesSampleRate = 0.0;
+      // POPIA: never ship PII (no user emails, request bodies, screenshots).
+      o.sendDefaultPii = false;
+    },
+    // SentryFlutter captures uncaught Flutter + Dart errors around this runner.
+    appRunner: _boot,
+  );
+}
+
+Future<void> _boot() async {
   WidgetsFlutterBinding.ensureInitialized();
   final api = await ApiClient.create();
   runApp(LulaworksApp(api: api));
@@ -71,6 +99,9 @@ class _LulaworksAppState extends State<LulaworksApp> {
       title: 'Lulaworks',
       debugShowCheckedModeBanner: false,
       navigatorKey: _navKey,
+      // Route breadcrumbs give each crash report the screen trail that led to
+      // it. No-op when Sentry isn't initialised (no DSN).
+      navigatorObservers: [SentryNavigatorObserver()],
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
       home: _signedIn
