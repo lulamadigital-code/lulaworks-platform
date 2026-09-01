@@ -3005,18 +3005,37 @@ def lulaai(request):
     if not request.user.has_perm_code("ai.generate"):
         messages.error(request, "AI features require the ai.generate permission.")
         return redirect("web:dashboard")
-    context = {"projects": Project.objects.all(), "request_text": "Prepare this project"}
+    ctx = {"quick": _lulaai_quick_actions(request.user)}
     if request.method == "POST":
-        project = None
-        pid = request.POST.get("project")
-        if pid:
-            project = get_object_or_404(Project.objects.all(), pk=pid)
-        text = request.POST.get("request", "").strip() or "Give me a status overview"
-        context["request_text"] = text
-        context["selected_project"] = pid
-        context["interaction"] = orchestrate(
-            request.user.active_company, request.user, text, project=project)
-    return render(request, "web/lulaai.html", context)
+        from apps.ai_platform.assistant import ask
+        message = (request.POST.get("message") or "").strip()
+        if message:
+            page_ctx = None
+            ct, cid = request.POST.get("ctx_type"), request.POST.get("ctx_id")
+            if ct and cid:
+                page_ctx = {"type": ct, "id": cid}
+            ctx["message"] = message
+            ctx["result"] = ask(request.user.active_company, request.user,
+                                 message, context=page_ctx)
+    return render(request, "web/lulaai.html", ctx)
+
+
+def _lulaai_quick_actions(user):
+    """Permission-aware suggestions for the LulaAI home (never show what the user
+    can't do)."""
+    out = []
+    if user.has_perm_code("projects.view"):
+        out += [{"label": "Review overdue work", "q": "Show me overdue tasks"},
+                {"label": "My tasks", "q": "What are my tasks?"}]
+    if user.has_perm_code("projects.view"):
+        out += [{"label": "Check quotations", "q": "Which quotations are awaiting approval?"}]
+    if user.has_perm_code("finance.view_money"):
+        out += [{"label": "Unpaid invoices", "q": "Which invoices are unpaid?"}]
+    if user.has_perm_code("procurement.manage"):
+        out += [{"label": "Find a supplier price", "q": "Supplier price for hydraulic pipe"}]
+    if user.has_perm_code("customers.manage"):
+        out += [{"label": "Customers to follow up", "q": "Which customers haven't been contacted in 30 days?"}]
+    return out
 
 
 # ── Operating actions (managers actually do the work here) ────────────────────

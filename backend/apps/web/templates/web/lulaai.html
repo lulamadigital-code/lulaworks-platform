@@ -1,68 +1,74 @@
 {% extends "web/base.html" %}
 {% block title %}LulaAI{% endblock %}
 {% block content %}
-<h1>LulaAI</h1>
-<p class="sub">Your AI Operations Director. LulaAI coordinates the specialised agents
-  and returns one draft to review — it proposes, you approve.</p>
-
-<div class="card">
-  <form method="post" action="{% url 'web:lulaai' %}">
-    {% csrf_token %}
-    <label>Project (optional)</label>
-    <select name="project" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;">
-      <option value="">Portfolio-wide</option>
-      {% for p in projects %}
-      <option value="{{ p.id }}" {% if selected_project == p.id|stringformat:'s' %}selected{% endif %}>
-        {{ p.number }} · {{ p.client_name }}</option>
-      {% endfor %}
-    </select>
-    <label>Ask LulaAI</label>
-    <input type="text" name="request" value="{{ request_text }}">
-    <button class="btn" type="submit" style="margin-top:14px;">Ask</button>
-  </form>
-</div>
-
-{% if interaction %}
-{% with r=interaction.result %}
-<div class="row" style="margin-top:8px;">
-  <h2 style="margin:0;">Consolidated draft</h2>
-  <span class="sp" style="flex:1;"></span>
-  <span class="chip">confidence {{ interaction.confidence }}</span>
-</div>
-
-{% if r.executive_briefing %}
-<div class="card" style="background:#eef7f7;">{{ r.executive_briefing }}</div>
-{% endif %}
-
-{% for a in r.agents %}
-<div class="card">
-  <div class="row"><strong>{{ a.agent|capfirst }}</strong>
-    <span class="sp" style="flex:1;"></span>
-    <span class="chip">conf {{ a.confidence }}</span></div>
-  <p style="margin:6px 0 0;">{{ a.summary }}</p>
-  {% if a.sources %}<p class="muted" style="margin:6px 0 0; font-size:12px;">Sources: {{ a.sources|join:", " }}</p>{% endif %}
-</div>
-{% endfor %}
-
-{% if r.proposed_actions %}
-<h2>Proposed actions</h2>
-<div class="card">
-  {% for p in r.proposed_actions %}
-  <div class="row" style="margin-bottom:8px;">
-    <span>{{ p.description }}</span>
-    <span class="sp" style="flex:1;"></span>
-    {% if p.requires_approval %}<span class="chip warn">needs approval</span>
-    {% else %}<span class="chip">advisory</span>{% endif %}
+<div class="pagehead">
+  <div>
+    <h1>LulaAI <span class="chip info" style="font-size:11px;vertical-align:middle;">assistant</span></h1>
+    <p class="sub" style="margin:0;">Your intelligent work assistant — ask about jobs, tasks, suppliers, quotations, invoices or customers.</p>
   </div>
-  {% endfor %}
-  <p class="muted" style="margin:4px 0 0; font-size:12px;">LulaAI never executes these — a human approves them.</p>
 </div>
-{% endif %}
 
-{% if r.omitted_agents %}
-<p class="muted" style="font-size:13px;">Withheld by your permissions:
-  {% for o in r.omitted_agents %}{{ o.agent }}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
-{% endif %}
-{% endwith %}
+<div class="card" style="max-width:760px;">
+  <form method="post" action="{% url 'web:lulaai' %}" style="display:flex;gap:10px;align-items:center;">
+    {% csrf_token %}
+    <input type="text" name="message" value="{{ message|default:'' }}" autofocus
+           placeholder="Ask about jobs, suppliers, customers, quotations or tasks…"
+           style="flex:1;">
+    <button class="btn" type="submit">Ask</button>
+  </form>
+  {% if quick %}
+  <div class="filterbar" style="margin-top:14px;gap:8px;">
+    {% for a in quick %}
+    <form method="post" action="{% url 'web:lulaai' %}" style="display:inline;">
+      {% csrf_token %}<input type="hidden" name="message" value="{{ a.q }}">
+      <button class="chip" type="submit" style="cursor:pointer;border:1px solid var(--line);background:var(--surface);">{{ a.label }}</button>
+    </form>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{% if result %}
+<div class="card" style="max-width:760px;{% if result.denied %}border-color:var(--orange-t);{% endif %}">
+  <div style="display:flex;align-items:flex-start;gap:12px;">
+    <div style="flex:0 0 34px;height:34px;border-radius:9px;background:var(--primary-t);color:var(--primary-d);display:flex;align-items:center;justify-content:center;font-weight:800;">◎</div>
+    <div style="flex:1;">
+      <p style="margin:0 0 2px;font-weight:600;">{{ result.answer }}</p>
+      {% if result.confidence and result.confidence != 'high' %}
+      <span class="chip warn" style="font-size:11px;">{{ result.confidence }} confidence</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if result.items %}
+  <div style="overflow-x:auto;margin-top:14px;">
+    <table>
+      <tr>
+        {% with row=result.items.0 %}{% for k, v in row.items %}{% if k != 'id' and k != 'source' %}<th>{{ k|title }}</th>{% endif %}{% endfor %}{% endwith %}
+      </tr>
+      {% for row in result.items %}
+      <tr>
+        {% for k, v in row.items %}{% if k != 'id' and k != 'source' %}<td>{{ v|default:"—" }}</td>{% endif %}{% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  {% if result.sources %}
+  <p class="muted" style="font-size:12px;margin:12px 0 0;">
+    Source: {% for s in result.sources %}{{ s }}{% if not forloop.last %} · {% endif %}{% endfor %}
+    <span title="LulaAI only answers from your LulaWorks data, within your permissions.">ⓘ</span>
+  </p>
+  {% endif %}
+
+  {% if result.actions %}
+  <div class="secbtns" style="margin-top:14px;">
+    {% for a in result.actions %}<a class="btn ghost" href="{{ a.url }}">{{ a.label }}</a>{% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<p class="muted" style="max-width:760px;font-size:13px;">LulaAI answers from your company's real data — jobs, tasks, suppliers, quotations, invoices and CRM — never made-up figures, and only what your role can see.</p>
 {% endif %}
 {% endblock %}

@@ -195,17 +195,22 @@ class CommercialAndLulamaTests(TestCase):
         self.client.force_login(rich)
         self.assertContains(self.client.get("/commercial/"), "Aging")
 
-    def test_lulama_ask_renders_draft(self):
+    def test_lulaai_answers_from_company_data(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.execution.models import Task
         c = make_company()
-        with tenant_scope(c.id):
-            project = awarded_project(c)
         user = user_with(c, ["projects.view", "ai.generate"])
         self.client.force_login(user)
+        with tenant_scope(c.id):
+            Task.objects.create(company=c, name="Overdue widget",
+                                due_date=timezone.localdate() - timedelta(days=1))
         self.assertEqual(self.client.get("/lulaai/").status_code, 200)
-        resp = self.client.post("/lulaai/", {"request": "Prepare this project",
-                                             "project": str(project.id)})
-        self.assertContains(resp, "Consolidated draft")
-        self.assertContains(resp, "confidence")
+        resp = self.client.post("/lulaai/", {"message": "show me overdue tasks"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Overdue widget")   # grounded in real data
 
     def test_lulama_requires_ai_permission(self):
         c = make_company()

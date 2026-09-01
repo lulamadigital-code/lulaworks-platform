@@ -103,3 +103,127 @@ def _project_profit_forecast(user, *, project):
 def _commercial_dashboard(user):
     from apps.finance.services import commercial_dashboard
     return commercial_dashboard(user.active_company)
+
+
+# ── LulaAI assistant read tools (Phase 1a) ────────────────────────────────────
+# Each returns grounded data + a human "source" label the assistant cites. Money
+# is included ONLY when the user holds finance.view_money (Golden Rule).
+
+def _can_money(user) -> bool:
+    return user.has_perm_code("finance.view_money")
+
+
+@register("supplier_prices", required_perm="procurement.manage",
+          description="Recorded supplier prices for an item — who we buy it from, latest price, when")
+def _supplier_prices(user, *, item="", limit=8):
+    from apps.procurement.models import SupplierPrice
+    qs = SupplierPrice.objects.select_related("supplier").all()
+    if item:
+        qs = qs.filter(description__icontains=item)
+    rows = list(qs.order_by("-date", "-created_at")[:limit])
+    out = [{"supplier": getattr(p.supplier, "name", "—"), "item": p.description,
+            "price": str(p.unit_price), "unit": getattr(p, "unit", "") or "",
+            "date": p.date.isoformat() if getattr(p, "date", None) else "",
+            "source": "Supplier purchase history"} for p in rows]
+    return {"items": out, "source": "Supplier purchase history"}
+
+
+@register("overdue_tasks", required_perm="projects.view",
+          description="Open tasks that are past their due date")
+def _overdue_tasks(user, *, limit=15):
+    from apps.execution.models import Task
+    rows = [t for t in Task.objects.select_related("project", "assignee").all()
+            if t.is_overdue][:limit]
+    out = [{"id": str(t.id), "name": t.name, "status": t.get_status_display(),
+            "due": t.due_date.isoformat() if t.due_date else "",
+            "job": getattr(t.project, "name", "") if t.project_id else "",
+            "assignee": str(t.assignee) if t.assignee_id else "unassigned"} for t in rows]
+    return {"items": out, "count": len(out), "source": "Tasks"}
+
+
+@register("my_tasks", required_perm="projects.view",
+          description="The current user's open/assigned tasks")
+def _my_tasks(user, *, limit=15):
+    from apps.execution.models import Task, TaskStatus
+    open_statuses = [s for s in TaskStatus.values if s not in ("completed", "closed", "cancelled")]
+    rows = Task.objects.select_related("project").filter(
+        assignee=user, status__in=open_statuses).order_by("due_date")[:limit]
+    out = [{"id": str(t.id), "name": t.name, "status": t.get_status_display(),
+            "due": t.due_date.isoformat() if t.due_date else "",
+            "job": getattr(t.project, "name", "") if t.project_id else ""} for t in rows]
+    return {"items": out, "count": len(out), "source": "My tasks"}
+
+
+@register("quotations_awaiting_approval", required_perm="projects.view",
+          description="Quotations waiting for manager/commercial approval")
+def _quotes_awaiting(user, *, limit=15):
+    from apps.quotes.models import Quotation, QuotationStatus
+    qs = Quotation.objects.filter(status__in=[QuotationStatus.MANAGER_APPROVAL,
+                                              QuotationStatus.COMMERCIAL_APPROVAL])
+    rows = list(qs.order_by("-created_at")[:limit])
+    money = _can_money(user)
+    out = []
+    for q in rows:
+        row = {"id": str(q.id), "number": q.number, "client": q.client_name,
+               "status": q.get_status_display()}
+        if money:
+            try:
+                row["value"] = str(getattr(q, "grand_total", None) or q.net_total)
+            except Exception:                                  # noqa: BLE001
+                pass
+        out.append(row)
+    return {"items": out, "count": len(out), "source": "Quotations"}
+
+
+@register("unpaid_invoices", required_perm="finance.view_money",
+          description="Customer invoices that are not fully paid")
+def _unpaid_invoices(user, *, limit=15):
+    from apps.finance.models import Invoice, InvoiceStatus
+    paid = [InvoiceStatus.PAID]
+    rows = list(Invoice.objects.exclude(status__in=paid)
+                .exclude(status=InvoiceStatus.DRAFT).order_by("due_date")[:limit])
+    out = []
+    for inv in rows:
+        row = {"id": str(inv.id), "number": inv.number, "client": inv.client_name,
+               "status": inv.get_status_display(),
+               "due": inv.due_date.isoformat() if getattr(inv, "due_date", None) else ""}
+        try:
+            row["total"] = str(getattr(inv, "total", None) or (inv.subtotal + inv.vat_amount))
+        except Exception:                                      # noqa: BLE001
+            pass
+        out.append(row)
+    return {"items": out, "count": len(out), "source": "Invoices"}
+
+
+@register("uncontacted_customers", required_perm="customers.manage",
+          description="Customers with no recent recorded activity")
+def _uncontacted_customers(user, *, days=30, limit=15):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.customers.models import Customer
+    cutoff = timezone.now() - timedelta(days=int(days))
+    rows = list(Customer.objects.filter(updated_at__lt=cutoff).order_by("updated_at")[:limit])
+    out = [{"id": str(c.id), "name": c.name, "industry": c.industry,
+            "last_touch": c.updated_at.date().isoformat()} for c in rows]
+    return {"items": out, "count": len(out), "days": int(days),
+            "source": f"Customers with no activity in {int(days)} days"}
+
+
+@register("job_summary", required_perm="projects.view",
+          description="Operational summary of a job/task: progress, outstanding, money (if permitted)")
+def _job_summary(user, *, task_id="", project_id=""):
+    from apps.execution.models import Task
+    from apps.execution.work_execution import task_operational_dashboard
+    task = None
+    if task_id:
+        task = Task.objects.filter(pk=task_id).first()
+    elif project_id:
+        task = Task.objects.filter(project_id=project_id).order_by("created_at").first()
+    if task is None:
+        return {"found": False, "source": "Tasks"}
+    dash = task_operational_dashboard(task, user)   # already Golden-Rule gated by user
+    dash["found"] = True
+    dash["source"] = f"Job · {task.name}"
+    return dash
