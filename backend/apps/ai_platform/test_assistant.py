@@ -180,3 +180,51 @@ class DailyBriefTests(APITestCase):
             brief = daily_brief(c, u)
         self.assertFalse(brief["has_attention"])
         self.assertIn("caught up", brief["line"].lower())
+
+
+class AssistantApiTests(APITestCase):
+    """The REST surface the mobile app uses — ask / execute / brief — enforces
+    the same permissions as the web console."""
+
+    def test_ask_endpoint_grounded(self):
+        c = _company()
+        with tenant_scope(c.id):
+            u = _user_with(c, ["ai.generate", "projects.view"], email="api@lula.co.za")
+            Task.objects.create(company=c, name="Late job",
+                                due_date=timezone.localdate() - timedelta(days=2))
+        self.client.force_authenticate(u)
+        res = self.client.post("/api/v1/ai/assistant/ask/", {"message": "show me overdue tasks"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["intent"], "overdue_tasks")
+        self.assertEqual(len(res.data["items"]), 1)
+
+    def test_ask_requires_ai_generate(self):
+        c = _company()
+        with tenant_scope(c.id):
+            u = _user_with(c, ["projects.view"], email="noai@lula.co.za")
+        self.client.force_authenticate(u)
+        res = self.client.post("/api/v1/ai/assistant/ask/", {"message": "hi"})
+        self.assertEqual(res.status_code, 403)
+
+    def test_brief_endpoint(self):
+        c = _company()
+        with tenant_scope(c.id):
+            u = _user_with(c, ["ai.generate", "projects.view"], email="brf@lula.co.za")
+        self.client.force_authenticate(u)
+        res = self.client.get("/api/v1/ai/assistant/brief/")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("greeting", res.data)
+        self.assertIn("has_attention", res.data)
+
+    def test_execute_create_task(self):
+        from apps.execution.models import Task
+        c = _company()
+        with tenant_scope(c.id):
+            u = _user_with(c, ["ai.generate", "work.create"], email="ex@lula.co.za")
+        self.client.force_authenticate(u)
+        res = self.client.post("/api/v1/ai/assistant/execute/",
+                               {"action": "create_task", "title": "Collect materials"})
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(res.data["ok"])
+        with tenant_scope(c.id):
+            self.assertTrue(Task.objects.filter(name="Collect materials").exists())
