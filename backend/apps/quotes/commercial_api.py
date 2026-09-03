@@ -164,6 +164,14 @@ class CommercialDocumentViewSet(TenantViewSet):
             return Response({"error": {"code": "forbidden", "message": "Need quotes.download."}},
                             status=status.HTTP_403_FORBIDDEN)
         doc = self.get_object()
+        # Progressive requirement (§8): generating the document PDF needs the
+        # company info it depends on. Raises CompanySetupRequired → 422 with the
+        # structured payload the app renders as a block dialog.
+        from apps.identity.company_setup import require_action
+        require_action(request.user.active_company,
+                       "EXPORT_INVOICE_PDF"
+                       if doc.kind == CommercialDocument.Kind.INVOICE
+                       else "EXPORT_DELIVERY_NOTE_PDF")
         pdf_bytes = (invoice_pdf_bytes(doc)
                      if doc.kind == CommercialDocument.Kind.INVOICE
                      else delivery_note_pdf_bytes(doc))

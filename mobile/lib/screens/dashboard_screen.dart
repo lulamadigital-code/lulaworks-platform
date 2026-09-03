@@ -5,6 +5,7 @@ import '../models.dart';
 import '../nav/app_nav.dart';
 import '../theme.dart';
 import '../widgets/brand_logo.dart';
+import '../widgets/company_setup.dart';
 import 'customer_form_screen.dart';
 import 'customers_screen.dart';
 import 'my_tasks_screen.dart';
@@ -62,6 +63,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       api.canViewMoney
           ? api.get('/finance/commercial-dashboard/').catchError((_) => null)
           : Future<dynamic>.value(null),
+      api.get('/company/setup/').catchError((_) => null),
     ]);
     final unreadCount = r[3] is Map ? (r[3]['count'] as int? ?? 0) : 0;
     api.unread.value = unreadCount; // seed the live badge
@@ -73,6 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       unread: unreadCount,
       quotations: pageResults(r[4]),
       finance: r[5] is Map ? (r[5] as Map).cast<String, dynamic>() : null,
+      setup: SetupStatus.fromJson(r[6]),
     );
   }
 
@@ -125,6 +128,10 @@ class _DashboardScreenState extends State<DashboardScreen>
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
       children: [
         _header(context, h),
+        if (h.setup != null && !h.setup!.requiredComplete && h.setup!.canEdit) ...[
+          const SizedBox(height: 16),
+          SetupCard(api: api, status: h.setup!),
+        ],
         const SizedBox(height: 20),
         _quickActions(context, h),
         const SizedBox(height: 24),
@@ -824,6 +831,7 @@ class _Home {
     required this.unread,
     required this.quotations,
     required this.finance,
+    this.setup,
   });
   final Map<String, dynamic> me;
   final List<Project> projects;
@@ -832,6 +840,7 @@ class _Home {
   final int unread;
   final List<Map<String, dynamic>> quotations;
   final Map<String, dynamic>? finance;
+  final SetupStatus? setup;
 }
 
 class _QA {

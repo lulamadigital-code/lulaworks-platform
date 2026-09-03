@@ -18,7 +18,15 @@ from .services import (
 
 class CommercialDocumentAPITests(APITestCase):
     def setUp(self):
-        self.company = Company.objects.create(name="Lulama")
+        # A fully set-up company so issuing an invoice PDF isn't blocked by the
+        # progressive company-setup requirements (identity + tax + banking).
+        self.company = Company.objects.create(
+            name="Lulama", street_address="1 Main Rd", city="Johannesburg",
+            phone="011 555 0000", registration_no="2020/123456/07")
+        from apps.identity.models import CompanyBankAccount
+        CompanyBankAccount.objects.create(
+            company=self.company, bank_name="FNB", account_name="Lulama",
+            account_number="620000000", is_default=True)
         codes = ["finance.view_money", "invoices.approve", "quotes.download",
                  "quotes.approve"]
         perms = [Permission.objects.create(codename=c, module=c.split(".")[0], label=c)

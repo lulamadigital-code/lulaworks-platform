@@ -9,13 +9,25 @@ import 'config.dart';
 /// Raised for a non-2xx response. Carries the backend's error envelope
 /// ({"error": {code, message, detail}}) so screens can show a real message.
 class ApiException implements Exception {
-  ApiException(this.statusCode, this.message, {this.code});
+  ApiException(this.statusCode, this.message, {this.code, this.data});
   final int statusCode;
   final String message;
   final String? code;
 
+  /// The full parsed error body — carries the structured payload for a
+  /// progressive company-setup block (action, missing_detail, settings_url).
+  final Map<String, dynamic>? data;
+
   bool get isAuth => statusCode == 401;
   bool get isForbidden => statusCode == 403; // e.g. Golden-Rule / RBAC gate
+  /// A company-setup requirement the user must complete before this action
+  /// (backend returns HTTP 422 COMPANY_SETUP_REQUIRED — see company_setup.py).
+  bool get isSetupRequired =>
+      code == 'COMPANY_SETUP_REQUIRED' || statusCode == 422;
+  List<Map<String, dynamic>> get missing =>
+      ((data?['missing_detail'] as List?) ?? const [])
+          .map((e) => (e as Map).cast<String, dynamic>())
+          .toList();
   @override
   String toString() => message;
 }
@@ -358,15 +370,21 @@ class ApiClient {
   ApiException _error(http.Response resp) {
     String message = 'Request failed (${resp.statusCode}).';
     String? code;
+    Map<String, dynamic>? body;
     try {
       final data = jsonDecode(utf8.decode(resp.bodyBytes));
-      if (data is Map && data['error'] is Map) {
-        message = data['error']['message']?.toString() ?? message;
-        code = data['error']['code']?.toString();
-      } else if (data is Map && data['detail'] != null) {
-        message = data['detail'].toString();
+      if (data is Map) {
+        body = data.cast<String, dynamic>();
+        if (data['error'] is Map) {
+          message = data['error']['message']?.toString() ?? message;
+          code = data['error']['code']?.toString();
+        } else if (data['detail'] != null) {
+          message = data['detail'].toString();
+        }
+        // A setup block carries top-level code/message alongside the envelope.
+        code ??= data['code']?.toString();
       }
     } catch (_) {/* keep default message */}
-    return ApiException(resp.statusCode, message, code: code);
+    return ApiException(resp.statusCode, message, code: code, data: body);
   }
 }
