@@ -40,6 +40,23 @@ def _date_or_none(raw):
         return None
 
 
+def _save_po_lines(po, lines, user):
+    """Persist the line items read off a PO document (best-effort — skip blanks)."""
+    from apps.quotes.models import CustomerPurchaseOrderLine
+    for i, ln in enumerate(lines or []):
+        if not isinstance(ln, dict):
+            continue
+        desc = (str(ln.get("description") or "")).strip()
+        if not desc:
+            continue
+        CustomerPurchaseOrderLine.objects.create(
+            company=po.company, purchase_order=po, position=i,
+            description=desc[:500], qty=_decimal_or_none(ln.get("qty")) or 1,
+            unit=(str(ln.get("unit") or "each"))[:32],
+            unit_price=_decimal_or_none(ln.get("unit_price")) or 0,
+            created_by=user, updated_by=user)
+
+
 @login_required
 def customer_pos(request):
     """Workspace: status summary + recent POs + Add."""
@@ -90,6 +107,7 @@ def customer_po_add(request):
         f = request.FILES.get("document")
         data = {k: (request.POST.get(k) or "").strip()
                 for k in ("po_number", "client_name", "site", "value", "po_date", "notes")}
+        extracted_lines = []
         if f:
             try:
                 validate_upload(f)
@@ -105,6 +123,7 @@ def customer_po_add(request):
                     data[key] = str(fields[key])
             if not data.get("client_name") and fields.get("client"):
                 data["client_name"] = str(fields["client"])
+            extracted_lines = fields.get("lines") or []
         if not any([data["po_number"], data["value"], data["client_name"], f]):
             messages.error(request, "Add a PO number, or upload the PO document.")
             return redirect("web:customer_po_add")
@@ -115,6 +134,7 @@ def customer_po_add(request):
             value=_decimal_or_none(data["value"]) or 0,
             po_date=_date_or_none(data["po_date"]), notes=data["notes"][:255],
             document=f or None, created_by=request.user, updated_by=request.user)
+        _save_po_lines(po, extracted_lines, request.user)
         from apps.core.audit import audit
         audit(request, "customer_po.added", entity=po)
         messages.success(request, f"PO {po.po_number} captured — match it to a quotation below.")
@@ -151,12 +171,14 @@ def customer_po_detail(request, pk):
         return redirect("web:dashboard")
     from apps.projects.models import Project
     from apps.quotes.models import CustomerPurchaseOrder
-    from apps.quotes.services import po_variance, suggest_quotations_for_po
+    from apps.quotes.services import (po_line_variance, po_variance,
+                                      suggest_quotations_for_po)
 
     po = get_object_or_404(CustomerPurchaseOrder.objects.select_related(
-        "quotation", "quotation__customer"), pk=pk)
+        "quotation", "quotation__customer").prefetch_related("lines"), pk=pk)
     suggestions, job, search = [], None, (request.GET.get("q") or "").strip()
     variance = po_variance(po) if po.is_matched else None
+    line_variance = po_line_variance(po) if po.is_matched else None
     if not po.is_matched:
         suggestions = suggest_quotations_for_po(
             request.user.active_company, po_number=po.po_number,
@@ -174,6 +196,7 @@ def customer_po_detail(request, pk):
         job = Project.objects.filter(quotation=po.quotation).first()
     return render(request, "web/customer_po_detail.html", {
         "po": po, "suggestions": suggestions, "job": job, "variance": variance,
+        "line_variance": line_variance, "po_lines": list(po.lines.all()),
         "search": search, "search_results": search_results,
         "can_edit": _can_edit(request.user),
         "statuses": CustomerPurchaseOrder.Status.choices})

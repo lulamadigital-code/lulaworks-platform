@@ -97,6 +97,44 @@ class CustomerPOTests(TestCase):
                 created_by=self.u, updated_by=self.u)
             self.assertFalse(po_variance(po)["has_variance"])
 
+    def test_line_qty_variance_flagged(self):
+        from apps.quotes.models import CustomerPurchaseOrderLine, QuotationLine
+        from apps.quotes.services import po_line_variance
+        with tenant_scope(self.c.id):
+            q = Quotation.objects.create(company=self.c, number="QTN-L",
+                                         client_name="ABC", vat_rate=0)
+            QuotationLine.objects.create(company=self.c, quotation=q,
+                                         description="Hydraulic Pipes", qty=100, unit_price=10)
+            po = CustomerPurchaseOrder.objects.create(
+                company=self.c, po_number="PO-L", value=800, quotation=q,
+                created_by=self.u, updated_by=self.u)
+            CustomerPurchaseOrderLine.objects.create(
+                company=self.c, purchase_order=po, description="Hydraulic Pipes",
+                qty=80, unit_price=10, created_by=self.u, updated_by=self.u)
+            lv = po_line_variance(po)
+            self.assertTrue(lv["has_variance"])
+            row = lv["rows"][0]
+            self.assertEqual(row["kind"], "qty")
+            self.assertEqual(row["diff"], -20)
+        r = self.client.get(f"/customer-pos/{po.pk}/")
+        self.assertContains(r, "PO line items differ")
+
+    def test_no_line_variance_when_quantities_match(self):
+        from apps.quotes.models import CustomerPurchaseOrderLine, QuotationLine
+        from apps.quotes.services import po_line_variance
+        with tenant_scope(self.c.id):
+            q = Quotation.objects.create(company=self.c, number="QTN-S",
+                                         client_name="ABC", vat_rate=0)
+            QuotationLine.objects.create(company=self.c, quotation=q,
+                                         description="Hydraulic Pipes", qty=100, unit_price=10)
+            po = CustomerPurchaseOrder.objects.create(
+                company=self.c, po_number="PO-S", quotation=q,
+                created_by=self.u, updated_by=self.u)
+            CustomerPurchaseOrderLine.objects.create(
+                company=self.c, purchase_order=po, description="hydraulic pipes  ",
+                qty=100, created_by=self.u, updated_by=self.u)   # case/space-insensitive
+            self.assertFalse(po_line_variance(po)["has_variance"])
+
     def test_add_requires_permission(self):
         viewer = _user(self.c, ["projects.view"], email="viewer@acme.co")
         self.client.force_login(viewer)

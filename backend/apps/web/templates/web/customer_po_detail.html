@@ -111,4 +111,46 @@
     {% endif %}
   </div>
 </div>
+
+{% if line_variance.has_variance %}
+<div class="card" style="border:1px solid var(--orange-t,#f6dfc0);background:#fdf6ec;margin-top:16px;">
+  <div style="font-weight:700;color:#9a6a12;">⚠️ PO line items differ from the quotation</div>
+  <p class="muted" style="font-size:13px;margin:4px 0 12px;">The customer ordered different quantities from what was quoted — confirm the scope before you invoice.</p>
+  <div style="overflow-x:auto;">
+    <table>
+      <tr><th>Item</th><th class="right">Quoted</th><th class="right">On PO</th><th class="right">Difference</th></tr>
+      {% for r in line_variance.rows %}
+      <tr>
+        <td>{{ r.description }}</td>
+        <td style="text-align:right;">{% if r.quote_qty is not None %}{{ r.quote_qty|floatformat:"-2" }}{% else %}<span class="muted">not quoted</span>{% endif %}</td>
+        <td style="text-align:right;">{% if r.po_qty is not None %}{{ r.po_qty|floatformat:"-2" }}{% else %}<span class="muted">not on PO</span>{% endif %}</td>
+        <td style="text-align:right;">
+          {% if r.kind == 'qty' %}<strong style="color:{% if r.diff > 0 %}#0a8f57{% else %}#c0392b{% endif %};">{{ r.diff|floatformat:"-2" }}</strong>
+          {% elif r.kind == 'missing_on_po' %}<span class="chip warn">Missing on PO</span>
+          {% else %}<span class="chip info">Extra on PO</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if po_lines %}
+<div class="card" style="margin-top:16px;padding:0;overflow-x:auto;">
+  <div style="padding:14px 16px 0;font-weight:600;">PO line items</div>
+  <table style="margin-top:8px;">
+    <tr><th>#</th><th>Description</th><th class="right">Qty</th><th>Unit</th><th class="right">Unit price</th></tr>
+    {% for l in po_lines %}
+    <tr>
+      <td class="muted">{{ forloop.counter }}</td>
+      <td>{{ l.description }}</td>
+      <td style="text-align:right;">{{ l.qty|floatformat:"-2" }}</td>
+      <td class="muted">{{ l.unit }}</td>
+      <td style="text-align:right;">{% if l.unit_price %}{{ l.unit_price|floatformat:2 }}{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
 {% endblock %}

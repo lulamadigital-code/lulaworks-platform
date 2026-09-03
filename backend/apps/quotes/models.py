@@ -618,6 +618,25 @@ class CustomerPurchaseOrder(TenantBaseModel):
         return self.client_name or "—"
 
 
+class CustomerPurchaseOrderLine(TenantBaseModel):
+    """One line read off the customer's PO — kept so LulaWorks can compare what
+    the customer actually ordered against what was quoted (quantity variance)."""
+
+    purchase_order = models.ForeignKey(CustomerPurchaseOrder, on_delete=models.CASCADE,
+                                       related_name="lines")
+    position = models.PositiveSmallIntegerField(default=0)
+    description = models.CharField(max_length=500)
+    qty = models.DecimalField(max_digits=12, decimal_places=2, default=1)
+    unit = models.CharField(max_length=32, default="each", blank=True)
+    unit_price = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+
+    class Meta:
+        ordering = ["purchase_order", "position"]
+
+    def __str__(self):
+        return f"{self.qty} × {self.description[:40]}"
+
+
 class QuotationEvent(TenantBaseModel):
     """Every state change and customer response, kept forever.
 

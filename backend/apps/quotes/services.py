@@ -150,6 +150,55 @@ def po_variance(po) -> dict | None:
     }
 
 
+def po_line_variance(po) -> dict:
+    """Compare the PO's line items against the quotation's, by item — so a PO
+    that orders 80 of something quoted at 100 is caught. Matches on a normalised
+    description and aggregates duplicates. Returns {has_variance, rows[]} where
+    each row is one difference: a quantity change, an item only on the quote, or
+    an item only on the PO."""
+    import re
+    from decimal import Decimal
+
+    if not getattr(po, "quotation_id", None):
+        return {"has_variance": False, "rows": []}
+
+    def norm(s):
+        return re.sub(r"\s+", " ", (s or "").strip().lower())
+
+    quoted, ordered = {}, {}
+    for ql in po.quotation.lines.all():
+        k = norm(ql.description)
+        if not k:
+            continue
+        e = quoted.setdefault(k, {"desc": ql.description, "qty": Decimal("0")})
+        e["qty"] += ql.qty or 0
+    for pl in po.lines.all():
+        k = norm(pl.description)
+        if not k:
+            continue
+        e = ordered.setdefault(k, {"desc": pl.description, "qty": Decimal("0")})
+        e["qty"] += pl.qty or 0
+
+    if not ordered:                       # PO has no line items → nothing to compare
+        return {"has_variance": False, "rows": [], "no_po_lines": True}
+
+    rows = []
+    for k in sorted(set(quoted) | set(ordered)):
+        q, p = quoted.get(k), ordered.get(k)
+        if q and p:
+            if q["qty"] != p["qty"]:
+                rows.append({"kind": "qty", "description": p["desc"],
+                             "quote_qty": q["qty"], "po_qty": p["qty"],
+                             "diff": p["qty"] - q["qty"]})
+        elif q:
+            rows.append({"kind": "missing_on_po", "description": q["desc"],
+                         "quote_qty": q["qty"], "po_qty": None})
+        else:
+            rows.append({"kind": "extra_on_po", "description": p["desc"],
+                         "quote_qty": None, "po_qty": p["qty"]})
+    return {"has_variance": bool(rows), "rows": rows}
+
+
 def can_generate_documents(quote) -> bool:
     """A tax invoice or delivery note may be raised once the quotation is
     finalized. A purchase order is optional — many smaller contractors work from
