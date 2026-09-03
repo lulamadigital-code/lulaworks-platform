@@ -1324,6 +1324,49 @@ def _lines(raw):
 
 
 @login_required
+def platform_content_preview(request, kind, slug):
+    """Preview a piece of Learning-centre content WITHOUT leaving the console —
+    the public page is embedded here, so an admin never gets bounced out to the
+    marketing site. `?preview=1` lets it show unpublished drafts."""
+    from django.http import Http404
+    from django.urls import reverse
+
+    if not request.user.can_platform("console"):
+        messages.error(request, "The platform console is for platform staff only.")
+        return redirect("web:dashboard")
+
+    if kind == "learn":
+        from apps.education.models import Resource
+        obj = Resource.objects.filter(slug=slug).first()
+        public, editor, active, back = (
+            "marketing:learn_resource", "web:platform_learn", "learn", "Articles & guides")
+    elif kind == "tool":
+        from apps.education.models import Tool
+        obj = Tool.objects.filter(slug=slug).first()
+        public, editor, active, back = (
+            "marketing:tool", "web:platform_tools", "tools", "Free tools")
+    elif kind == "template":
+        from apps.education.models import Template
+        obj = Template.objects.filter(slug=slug).first()
+        public, editor, active, back = (
+            "marketing:template_detail", "web:platform_content_templates",
+            "templates", "Templates")
+    else:
+        raise Http404("Unknown content type")
+
+    if obj is None:
+        messages.error(request, "That item no longer exists.")
+        return redirect(editor)
+
+    return render(request, "web/platform/content_preview.html", {
+        "active": active, "title": obj.title, "is_published": obj.is_published,
+        "src": reverse(public, args=[slug]) + "?preview=1",
+        "editor_url": reverse(editor), "edit_url": f"{reverse(editor)}?edit={obj.pk}",
+        "back_label": back, "can_edit": request.user.can_platform("settings"),
+    })
+
+
+@login_required
 def platform_tools(request):
     """Manage the public Free Tools (/tools/). Presentation is editable here; the
     calculation stays in code, keyed by `compute_key`. Editing needs owner/admin

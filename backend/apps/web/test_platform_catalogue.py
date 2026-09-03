@@ -89,6 +89,27 @@ class ConsoleEditingTests(TestCase):
         self.assertEqual(
             self.client.get(f"/tools/{d.slug}/?preview=1").status_code, 200)
 
+    def test_preview_embeds_in_console_not_marketing(self):
+        # Preview for a tool renders INSIDE the console (sidebar present) and
+        # embeds the public page in an iframe — it never navigates to /tools/.
+        r = self.client.get("/platform/preview/tool/job-profit-calculator/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "<iframe")
+        self.assertContains(r, "/tools/job-profit-calculator/?preview=1")
+        self.assertContains(r, "Learning centre")          # console shell, still in admin
+
+    def test_preview_template_and_learn(self):
+        self.assertEqual(
+            self.client.get("/platform/preview/template/tax-invoice-template/").status_code, 200)
+        from apps.education.models import Resource
+        res = Resource.objects.create(title="Guide X", author=self.owner)
+        r = self.client.get(f"/platform/preview/learn/{res.slug}/")
+        self.assertContains(r, f"/learn/{res.slug}/?preview=1")
+
+    def test_preview_missing_item_redirects_to_editor(self):
+        r = self.client.get("/platform/preview/tool/does-not-exist/", follow=True)
+        self.assertContains(r, "no longer exists")
+
     def test_only_owner_admin_can_edit(self):
         support = User.objects.create_user("support@lulaworks.com", "x")
         support.platform_role = "support"          # console+support, NOT settings

@@ -85,7 +85,7 @@
       <td class="muted" style="font-family:ui-monospace,monospace;font-size:12px;">{{ t.compute_key }}</td>
       <td>{% if t.is_published %}<span class="chip pub">Published</span>{% else %}<span class="chip draft">Draft</span>{% endif %}</td>
       <td style="text-align:right;white-space:nowrap;">
-        <a class="btn ghost" href="{% url 'marketing:tool' t.slug %}?preview=1" target="_blank" rel="noopener" style="padding:5px 10px;">Preview ↗</a>
+        <a class="btn ghost" href="{% url 'web:platform_content_preview' 'tool' t.slug %}" style="padding:5px 10px;">Preview</a>
         {% if can_edit %}
         <a class="btn ghost" href="?edit={{ t.pk }}" style="padding:5px 10px;">Edit</a>
         <form method="post" style="display:inline;" onsubmit="return confirm('Delete “{{ t.title }}”?');">{% csrf_token %}

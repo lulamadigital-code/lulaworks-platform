@@ -1,0 +1,51 @@
+{% extends "web/base.html" %}
+{% block title %}Preview · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active=active %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .pbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px}
+  .pbar h1{font-size:19px;margin:0;letter-spacing:-.01em}
+  .pbar .spacer{flex:1}
+  .chip{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .chip.pub{background:var(--green-t);color:#0a8f57} .chip.draft{background:#f7ecd5;color:#8f6210}
+  .btn.ghost{background:var(--surface,#fff);color:var(--primary-d);border:1px solid var(--line)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{border:0;background:var(--surface,#fff);padding:7px 12px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+  .seg button.on{background:var(--primary,#17a2b8);color:#fff}
+  .frame-wrap{background:var(--sunk,#eef1f4);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;justify-content:center}
+  #pv{width:100%;max-width:100%;height:74vh;border:0;border-radius:8px;background:#fff;box-shadow:0 6px 24px rgba(20,24,29,.10);transition:max-width .2s ease}
+  .note{font-size:12.5px;color:var(--muted);margin:10px 2px 0}
+</style>
+{% endblock %}
+
+{% block content %}
+{% include "web/platform/_content_tabs.html" %}
+<div class="pbar">
+  <a class="btn ghost" href="{{ editor_url }}" style="padding:7px 12px;">← {{ back_label }}</a>
+  <h1>{{ title }}</h1>
+  {% if is_published %}<span class="chip pub">Published</span>{% else %}<span class="chip draft">Draft preview</span>{% endif %}
+  <span class="spacer"></span>
+  <div class="seg" role="group" aria-label="Preview width">
+    <button type="button" id="w-desktop" class="on" onclick="setW('100%',this)">Desktop</button>
+    <button type="button" id="w-mobile" onclick="setW('420px',this)">Mobile</button>
+  </div>
+  {% if can_edit %}<a class="btn" href="{{ edit_url }}" style="padding:7px 14px;">Edit</a>{% endif %}
+</div>
+
+<div class="frame-wrap">
+  <iframe id="pv" src="{{ src }}" title="Preview of {{ title }}" loading="lazy"></iframe>
+</div>
+<p class="note">Previewing inside the console — this never leaves the admin. {% if not is_published %}This item is a <b>draft</b>; the public page shows it only in preview.{% endif %}</p>
+
+<script>
+  function setW(w, btn){
+    document.getElementById('pv').style.maxWidth = w;
+    document.querySelectorAll('.seg button').forEach(function(b){ b.classList.remove('on'); });
+    btn.classList.add('on');
+  }
+</script>
+{% endblock %}
