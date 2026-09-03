@@ -48,3 +48,6 @@ django-anymail==11.1
 # Error monitoring (production). Off unless SENTRY_DSN is set; auto-instruments
 # Django, Celery and Redis (their integrations enable when the libs are present).
 sentry-sdk==2.18.0
+# SMS / WhatsApp via Twilio (lazy-imported in apps.notifications.sms; only used
+# when SMS_PROVIDER=twilio + TWILIO_* creds are set). Opt-in, per-message billed.
+twilio==9.11.0
