@@ -16,7 +16,7 @@ import re
 
 from .tools import ToolPermissionError, run_tool
 
-_STOP = "i couldn't find that in LulaWorks."
+_STOP = "i couldn't find that in Lulaworks."
 
 
 def _item_after(msg, *keywords):
@@ -218,7 +218,7 @@ def _maybe_phrase(company, user, title, items):
         from .routing import TaskType
         if not ai_configured():
             return None
-        system = ("You are LulaAI, an assistant inside the LulaWorks business "
+        system = ("You are LulaAI, an assistant inside the Lulaworks business "
                   "system. Summarise ONLY the facts in the data below in 1-2 short "
                   "sentences. Do not invent anything not present. No preamble.")
         prompt = f"{title}:\n{json.dumps(items[:15], default=str)}"
@@ -391,7 +391,7 @@ def _capabilities(user) -> dict:
     if user.has_perm_code("customers.manage"):
         caps += ["find customers to follow up"]
     caps = caps or ["see your work"]
-    return {"answer": "I can help you with your LulaWorks work — try: "
+    return {"answer": "I can help you with your Lulaworks work — try: "
             + "; ".join(caps) + ".",
             "intent": "unknown", "items": [], "sources": [], "actions": [],
             "confidence": "high"}

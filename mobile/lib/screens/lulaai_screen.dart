@@ -60,7 +60,7 @@ class _LulaAiScreenState extends State<LulaAiScreen> {
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'Could not reach LulaWorks.');
+      setState(() => _error = 'Could not reach Lulaworks.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
