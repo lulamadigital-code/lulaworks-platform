@@ -364,6 +364,10 @@
     literal text in the sidebar, which is exactly what happened here.
     {% endcomment %}
     {% block sidebar_nav %}
+    <form method="get" action="{% url 'web:search' %}" role="search" style="padding:0 12px 8px;">
+      <input type="search" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search customers, jobs…" aria-label="Search"
+        style="width:100%;box-sizing:border-box;padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--bg,#f7f8fa);color:var(--ink);">
+    </form>
     <nav class="nav">
       {% include "web/_navlink.html" with url='web:dashboard' key='dashboard' label='Dashboard' icon='grid' %}
       {% include "web/_navlink.html" with url='web:crm_hub' key='crm' label='CRM' icon='org' %}

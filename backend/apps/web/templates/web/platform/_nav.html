@@ -9,6 +9,10 @@
 .nav a.subnav.active{border-left-color:var(--primary,#17a2b8);}
 .nav a.subnav svg{width:15px;height:15px;}
 </style>
+<form method="get" action="{% url 'web:platform_search' %}" role="search" style="padding:0 12px 10px;">
+  <input type="search" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search companies, users…" aria-label="Search platform"
+    style="width:100%;box-sizing:border-box;padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--bg,#f7f8fa);color:var(--ink);">
+</form>
 <nav class="nav">
   <a {% if active == 'overview' %}class="active"{% endif %} href="{% url 'web:platform_home' %}"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
   <a {% if active == 'analytics' %}class="active"{% endif %} href="{% url 'web:platform_analytics' %}"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 8l-5 6-3-3-4 5"/></svg>Analytics</a>

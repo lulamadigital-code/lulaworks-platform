@@ -1318,6 +1318,59 @@ def platform_learn(request):
     })
 
 
+@login_required
+def platform_search(request):
+    """Global search across the platform — companies and users. Platform staff
+    only; runs in system scope (across all tenants)."""
+    from django.db.models import Q
+    from django.urls import reverse
+
+    from apps.core.context import system_scope
+
+    if not request.user.can_platform("console"):
+        messages.error(request, "The platform console is for platform staff only.")
+        return redirect("web:dashboard")
+
+    q = (request.GET.get("q") or "").strip()
+    groups = []
+
+    def grp(label, items):
+        if items:
+            groups.append({"label": label, "items": items})
+
+    if len(q) >= 2:
+        from apps.identity.models import Company, User
+        with system_scope():
+            companies = Company.objects.filter(
+                Q(name__icontains=q) | Q(registration_number__icontains=q))[:10] \
+                if _has_field(Company, "registration_number") \
+                else Company.objects.filter(name__icontains=q)[:10]
+            grp("Companies", [{"title": c.name,
+                               "sub": getattr(c, "industry", "") or "",
+                               "url": reverse("web:platform_tenant", args=[c.pk])}
+                              for c in companies])
+            users = User.objects.filter(
+                Q(email__icontains=q) | Q(first_name__icontains=q)
+                | Q(last_name__icontains=q))[:10]
+            items = []
+            for usr in users:
+                comp = getattr(usr, "active_company", None)
+                items.append({
+                    "title": usr.get_full_name() or usr.email,
+                    "sub": (usr.email if usr.get_full_name() else "")
+                           + (f" · {comp.name}" if comp else ""),
+                    "url": reverse("web:platform_tenant", args=[comp.pk]) if comp else ""})
+            grp("Users", items)
+
+    total = sum(len(g["items"]) for g in groups)
+    return render(request, "web/platform/platform_search.html",
+                  {"active": "", "q": q, "groups": groups, "total": total})
+
+
+def _has_field(model, name):
+    return any(f.name == name for f in model._meta.get_fields())
+
+
 def _lines(raw):
     """A textarea of one-per-line values → a clean list (blank lines dropped)."""
     return [ln.strip() for ln in (raw or "").splitlines() if ln.strip()]

@@ -3054,6 +3054,72 @@ def _lulaai_quick_actions(user):
     return out
 
 
+@login_required
+def search(request):
+    """Global search across the company's data — permission-aware and tenant-
+    scoped (the managers already scope to the active company). Each group is only
+    searched when the user is allowed to see it."""
+    from django.db.models import Q
+    from django.urls import reverse
+
+    q = (request.GET.get("q") or "").strip()
+    u = request.user
+    groups = []
+
+    def grp(label, items):
+        if items:
+            groups.append({"label": label, "items": items})
+
+    if len(q) >= 2:
+        can = u.has_perm_code
+        if can("customers.manage") or can("crm.manage") or can("quotes.create") \
+                or can("projects.create"):
+            from apps.customers.models import Customer
+            rows = Customer.objects.filter(
+                Q(name__icontains=q) | Q(trading_name__icontains=q)
+                | Q(code__icontains=q) | Q(registration_no__icontains=q))[:6]
+            grp("Customers", [{"title": c.name, "sub": c.trading_name or c.code or c.industry,
+                               "url": reverse("web:customer_detail", args=[c.pk])} for c in rows])
+        if can("projects.view"):
+            from apps.projects.models import Project
+            rows = Project.objects.filter(
+                Q(number__icontains=q) | Q(title__icontains=q)
+                | Q(client_name__icontains=q))[:6]
+            grp("Projects", [{"title": f"{p.number} · {p.title}".strip(" ·"),
+                              "sub": p.client_name,
+                              "url": reverse("web:project_detail", args=[p.pk])} for p in rows])
+            from apps.execution.models import Task
+            trows = Task.objects.filter(
+                Q(name__icontains=q) | Q(client_name__icontains=q))[:6]
+            grp("Jobs", [{"title": t.name, "sub": t.client_name or "",
+                          "url": reverse("web:work_detail", args=[t.pk])} for t in trows])
+        if can("quotes.create") or can("quotes.approve") or can("quotes.download"):
+            from apps.quotes.models import Quotation
+            rows = Quotation.objects.filter(
+                Q(number__icontains=q) | Q(title__icontains=q)
+                | Q(client_name__icontains=q))[:6]
+            grp("Quotations", [{"title": f"{r.number} · {r.client_name}".strip(" ·"),
+                                "sub": r.title,
+                                "url": reverse("web:quotation_detail", args=[r.pk])} for r in rows])
+        if can("finance.view_money") or can("invoices.approve") or can("quotes.download"):
+            from apps.quotes.models import CommercialDocument
+            rows = CommercialDocument.objects.filter(
+                number__icontains=q).select_related("quotation")[:6]
+            grp("Tax invoices", [{"title": d.number,
+                                  "sub": getattr(d.quotation, "client_name", "") if d.quotation_id else "",
+                                  "url": reverse("web:commercial_document_detail", args=[d.pk])} for d in rows])
+        if can("procurement.manage"):
+            from apps.procurement.models import Supplier
+            rows = Supplier.objects.filter(
+                Q(name__icontains=q) | Q(contact_person__icontains=q)
+                | Q(email__icontains=q))[:6]
+            grp("Suppliers", [{"title": s.name, "sub": s.contact_person or s.email,
+                               "url": reverse("web:supplier_detail", args=[s.pk])} for s in rows])
+
+    total = sum(len(g["items"]) for g in groups)
+    return render(request, "web/search.html", {"q": q, "groups": groups, "total": total})
+
+
 # ── Operating actions (managers actually do the work here) ────────────────────
 
 def _to_decimal(raw, default="0"):

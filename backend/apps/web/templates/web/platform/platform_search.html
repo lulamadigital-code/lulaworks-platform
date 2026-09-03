@@ -1,0 +1,9 @@
+{% extends "web/base.html" %}
+{% block title %}Search · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="" %}{% endblock %}
+{% block extra_head %}<style>.nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}</style>{% endblock %}
+{% block content %}
+{% include "web/_search_results.html" with action="/platform/search/" %}
+{% endblock %}

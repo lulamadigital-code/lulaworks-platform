@@ -1,0 +1,37 @@
+{# Shared search results. Expects: q, groups[{label, items[{title, sub, url}]}], total, action. #}
+<div class="pagehead">
+  <div>
+    <h1>Search</h1>
+    <p class="sub" style="margin:0;">{% if q %}{{ total }} result{{ total|pluralize }} for “{{ q }}”{% else %}Type at least two characters to search.{% endif %}</p>
+  </div>
+</div>
+
+<form method="get" action="{{ action }}" role="search" class="card" style="max-width:640px;display:flex;gap:10px;">
+  <input type="search" name="q" value="{{ q }}" autofocus placeholder="Search…" style="flex:1;" aria-label="Search">
+  <button class="btn" type="submit">Search</button>
+</form>
+
+{% if q %}
+  {% if groups %}
+    {% for g in groups %}
+    <div class="card" style="max-width:640px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 8px;">{{ g.label }}</div>
+      {% for it in g.items %}
+        {% if it.url %}<a href="{{ it.url }}" class="sr-row">{% else %}<div class="sr-row">{% endif %}
+          <span class="sr-title">{{ it.title }}</span>
+          {% if it.sub %}<span class="sr-sub">{{ it.sub }}</span>{% endif %}
+        {% if it.url %}</a>{% else %}</div>{% endif %}
+      {% endfor %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="card" style="max-width:640px;color:var(--muted);">No matches for “{{ q }}”. Try a name, number or reference.</div>
+  {% endif %}
+{% endif %}
+
+<style>
+  .sr-row{display:flex;align-items:baseline;gap:10px;padding:9px 8px;border-radius:8px;text-decoration:none;color:var(--ink);border:1px solid transparent;}
+  a.sr-row:hover{background:var(--surface-2,#f2f4f7);border-color:var(--line);}
+  .sr-title{font-weight:600;font-size:14px;}
+  .sr-sub{color:var(--muted);font-size:12.5px;margin-left:auto;text-align:right;}
+</style>
