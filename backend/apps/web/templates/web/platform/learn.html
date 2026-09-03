@@ -30,8 +30,9 @@
 {% endblock %}
 
 {% block content %}
+{% include "web/platform/_content_tabs.html" %}
 <div class="head">
-  <div><h1>Learning centre</h1>
+  <div><h1>Articles &amp; guides</h1>
     <p class="sub">The public articles &amp; guides at <code>/learn/</code> — managed here, no Django admin needed.</p></div>
   {% if can_edit %}<a class="btn" href="?edit=new">+ New article</a>{% endif %}
 </div>

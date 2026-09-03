@@ -1,0 +1,13 @@
+{# Learning-centre sub-tabs. Highlights by the page's `active` value. #}
+<style>
+  .ctabs{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 18px;border-bottom:1px solid var(--line);padding-bottom:0}
+  .ctabs a{padding:8px 14px;font-size:14px;font-weight:600;color:var(--muted);text-decoration:none;
+    border-bottom:2px solid transparent;margin-bottom:-1px}
+  .ctabs a:hover{color:var(--ink)}
+  .ctabs a.on{color:var(--primary-d,#0e7c8b);border-bottom-color:var(--primary,#17a2b8)}
+</style>
+<div class="ctabs">
+  <a href="{% url 'web:platform_learn' %}" class="{% if active == 'learn' %}on{% endif %}">Articles &amp; guides</a>
+  <a href="{% url 'web:platform_tools' %}" class="{% if active == 'tools' %}on{% endif %}">Free tools</a>
+  <a href="{% url 'web:platform_content_templates' %}" class="{% if active == 'templates' %}on{% endif %}">Templates</a>
+</div>
