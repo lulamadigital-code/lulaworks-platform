@@ -242,6 +242,13 @@ def dashboard(request):
     }
     if context["can_view_money"]:
         context["commercial"] = commercial_dashboard(request.user.active_company)
+    # Non-blocking progressive-setup card — only for the person who can fix it,
+    # and only while required setup is incomplete (§12). Never a full-screen lock.
+    if request.user.has_perm_code("company.manage"):
+        from apps.identity.company_setup import status as _setup_status
+        s = _setup_status(request.user.active_company)
+        if not s["required_complete"]:
+            context["company_setup"] = s
     return render(request, "web/dashboard.html", context)
 
 
@@ -2028,12 +2035,19 @@ def _quotation_review(request, quote):
 @xframe_options_sameorigin  # so the review page can preview it in an <iframe>
 def quotation_pdf(request, pk):
     quote = get_object_or_404(Quotation.objects.all().prefetch_related("lines"), pk=pk)
-    pdf = quotation_pdf_bytes(quote)
     # The on-screen preview (inline) is available to anyone who may view the
     # quotation; taking a copy (attachment) needs the download permission.
     inline = bool(request.GET.get("inline"))
     if not inline and not request.user.has_perm_code("quotes.download"):
         return HttpResponseForbidden("You do not have permission to download this.")
+    if not inline:
+        from apps.identity.company_setup import validate_document_requirements
+        chk = validate_document_requirements("quotation", request.user.active_company)
+        if not chk["allowed"]:
+            miss = ", ".join(m["label"] for m in chk["missing"])
+            messages.error(request, f"{chk['message']} Missing: {miss}. "
+                           "Complete it in Company settings.")
+            return redirect("web:quotation_detail", pk=pk)
     pdf = quotation_pdf_bytes(quote)
     resp = HttpResponse(pdf, content_type="application/pdf")
     disposition = "inline" if inline else "attachment"
@@ -4152,6 +4166,17 @@ def commercial_document_pdf(request, pk):
     inline = bool(request.GET.get("inline"))
     if not inline and not request.user.has_perm_code("quotes.download"):
         return HttpResponseForbidden("You do not have permission to download this.")
+    # Progressive requirement: previewing a draft is always fine; ISSUING the
+    # document (downloading the final PDF) needs the company info it depends on.
+    if not inline:
+        from apps.identity.company_setup import validate_document_requirements
+        dtype = "invoice" if doc.kind == CommercialDocument.Kind.INVOICE else "delivery_note"
+        chk = validate_document_requirements(dtype, request.user.active_company)
+        if not chk["allowed"]:
+            miss = ", ".join(m["label"] for m in chk["missing"])
+            messages.error(request, f"{chk['message']} Missing: {miss}. "
+                           "Complete it in Company settings.")
+            return redirect("web:commercial_document_detail", pk=pk)
     if doc.kind == CommercialDocument.Kind.INVOICE:
         pdf = invoice_pdf_bytes(doc)
     else:

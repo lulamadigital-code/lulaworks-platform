@@ -4,6 +4,47 @@
 <h1>Operations dashboard</h1>
 <p class="sub">Your whole business at a glance.</p>
 
+{% if company_setup %}
+{% with s=company_setup %}
+<div id="setup-card" class="card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;border:1px solid var(--primary-t);background:linear-gradient(0deg,var(--primary-t),transparent);margin-bottom:18px;">
+  <div style="flex:1;min-width:220px;">
+    <div style="font-weight:700;">Finish your company setup</div>
+    <div class="muted" style="font-size:13px;margin:2px 0 8px;">
+      {{ s.overall_percentage }}% complete · {{ s.items_remaining }} item{{ s.items_remaining|pluralize }} left.
+      Complete your details to unlock invoicing &amp; professional documents.
+    </div>
+    <div style="height:8px;border-radius:6px;background:var(--line);overflow:hidden;max-width:360px;">
+      <div style="height:100%;width:{{ s.overall_percentage }}%;background:var(--primary);"></div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;">
+      {% for key, sec in s.sections.items %}
+        <span class="chip" style="font-size:11px;background:{% if sec.complete %}var(--green-t){% else %}#eef0f5{% endif %};color:{% if sec.complete %}#0a8f57{% else %}var(--muted){% endif %};">
+          {% if sec.complete %}✓{% else %}○{% endif %} {{ sec.label }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="secbtns" style="display:flex;gap:8px;">
+    <a class="btn" href="{{ s.settings_url }}">Complete setup</a>
+    <button class="btn ghost" type="button" onclick="dismissSetup({{ s.overall_percentage }})">Remind me later</button>
+  </div>
+</div>
+<script>
+  (function(){
+    try{
+      var pct = {{ s.overall_percentage }};
+      if (localStorage.getItem('lw_setup_dismissed') === String(pct)) {
+        var el = document.getElementById('setup-card'); if (el) el.style.display='none';
+      }
+    }catch(e){}
+  })();
+  function dismissSetup(pct){
+    try{ localStorage.setItem('lw_setup_dismissed', String(pct)); }catch(e){}
+    var el = document.getElementById('setup-card'); if (el) el.style.display='none';
+  }
+</script>
+{% endwith %}
+{% endif %}
+
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">📁</div>
     <div class="n">{{ project_count }}</div><div class="l">Projects</div></div>

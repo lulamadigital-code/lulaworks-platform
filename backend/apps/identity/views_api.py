@@ -142,6 +142,23 @@ class CompanyView(RetrieveUpdateAPIView):
         return super().update(request, *args, **kwargs)
 
 
+class CompanySetupView(APIView):
+    """Progressive-setup state for the active company (§21) — overall %, per
+    section, and which actions are allowed. Web + Flutter render from this, so
+    both show identical state. Read-only; any member may read."""
+
+    def get(self, request):
+        from apps.identity.company_setup import status as setup_status
+        company = request.user.active_company
+        if company is None:
+            return Response({"error": {"code": "no_company",
+                             "message": "No active company."}}, status=400)
+        data = setup_status(company)
+        # employees can't fix company settings — tell the UI who can (§24)
+        data["can_edit"] = request.user.has_perm_code("company.manage")
+        return Response(data)
+
+
 class MembershipViewSet(viewsets.ModelViewSet):
     """Team members of the active company. Create = invite by email + role."""
 

@@ -10,6 +10,23 @@ from .permissions import HasPermission
 
 def exception_handler(exc, context):
     """Consistent error envelope: {"error": {"code", "message", "detail"}}."""
+    # Progressive company-setup block → structured 422 (§22). Same engine as web,
+    # so a required setting can't be bypassed via the API or LulaAI.
+    from apps.identity.company_setup import CompanySetupRequired
+    if isinstance(exc, CompanySetupRequired):
+        from rest_framework.response import Response
+        r = exc.result
+        return Response({
+            "error": {"code": r.get("code", "COMPANY_SETUP_REQUIRED"),
+                      "message": r.get("message"), "detail": r},
+            "code": r.get("code", "COMPANY_SETUP_REQUIRED"),
+            "action": r.get("action"),
+            "message": r.get("message"),
+            "missing": [m["field"] for m in r.get("missing", [])],
+            "missing_detail": r.get("missing", []),
+            "settings_url": r.get("settings_url"),
+        }, status=422)
+
     response = drf_exception_handler(exc, context)
     if response is None:
         return None

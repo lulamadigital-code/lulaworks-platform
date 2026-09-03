@@ -76,39 +76,20 @@ class ForcePasswordChangeMiddleware:
 
 
 class CompanySetupMiddleware:
-    """Until a new company's essential profile is filled in (address, contact,
-    registration/VAT number, banking), send the person who can complete it —
-    the company manager — to the Company Profile page. So quotations and invoices
-    are never issued from a half-set-up company. Regular staff are never gated
-    (they can't edit the company); the manager can always reach the whole
-    /company/ settings area and can sign out."""
+    """DEPRECATED — retired 2026-09-03. This used to full-screen-LOCK a new
+    company owner onto the Company Profile page until every essential field was
+    filled in. That's the wrong model: owners must be able to enter and explore
+    LulaWorks immediately. Company setup is now a PROGRESSIVE REQUIREMENT — a
+    missing setting blocks only the specific action that needs it (issuing an
+    invoice, generating a PDF), via apps.identity.company_setup. This class is a
+    no-op kept only so an old MIDDLEWARE entry can't break; it is no longer
+    wired in settings and can be deleted once no environment references it."""
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        user = getattr(request, "user", None)
-        if (user is not None and user.is_authenticated
-                and not getattr(user, "must_change_password", False)
-                and self._is_guarded(request)):
-            company = getattr(user, "active_company", None)
-            if (company is not None
-                    and user.has_perm_code("company.manage")
-                    and not company.is_setup_complete):
-                return redirect("web:company_profile")
         return self.get_response(request)
-
-    @staticmethod
-    def _is_guarded(request) -> bool:
-        path = request.path
-        # Allow the whole company-settings area (where they finish setup), the
-        # API/mobile, static/media, admin, and the auth escape routes.
-        if path.startswith(("/api/", "/static/", "/media/", "/admin/", "/health",
-                            "/company/")):
-            return False
-        allowed = {reverse("web:logout"), reverse("web:login"),
-                   reverse("web:change_password")}
-        return path not in allowed
 
 
 class RequestIDMiddleware:

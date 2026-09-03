@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views_api import (
+    CompanySetupView,
     CompanyView,
     MeAvatarView,
     MeChangePasswordView,
@@ -21,5 +22,6 @@ urlpatterns = [
     path("me/avatar/", MeAvatarView.as_view(), name="me-avatar"),
     path("me/change-password/", MeChangePasswordView.as_view(), name="me-change-password"),
     path("company/", CompanyView.as_view(), name="company"),
+    path("company/setup/", CompanySetupView.as_view(), name="company-setup"),
     path("", include(router.urls)),
 ]
