@@ -118,6 +118,38 @@ def suggest_quotations_for_po(company, *, po_number="", client_name="", value=No
     return out[:limit]
 
 
+def po_variance(po) -> dict | None:
+    """Compare a matched customer PO against the quotation it confirms, so
+    LulaWorks understands the commercial relationship rather than just storing
+    documents. A PO may legitimately be raised for the net total OR the
+    tax-inclusive invoice total, so we measure against whichever is nearer;
+    anything beyond the match tolerance is a real variance worth flagging.
+
+    Returns None if the PO isn't matched or has no value; otherwise a dict with
+    has_variance + the numbers + a human message. (Line-item quantity variance
+    arrives with PO line-item extraction — Phase 2b.)"""
+    if not getattr(po, "quotation_id", None) or not po.value:
+        return None
+    q = po.quotation
+    targets = {"quotation total": q.total or 0,
+               "invoice total (incl. tax)": q.invoice_total or 0}
+    basis, target = min(targets.items(), key=lambda kv: abs(po.value - kv[1]))
+    diff = po.value - target
+    if abs(diff) <= _PO_MATCH_TOLERANCE:
+        return {"has_variance": False, "basis": basis,
+                "po_value": po.value, "quote_value": target}
+    pct = (diff / target * 100) if target else None
+    higher = diff > 0
+    return {
+        "has_variance": True, "basis": basis,
+        "po_value": po.value, "quote_value": target,
+        "diff": diff, "abs_diff": abs(diff), "pct": pct,
+        "direction": "higher" if higher else "lower", "severity": "warn",
+        "message": (f"PO value is {abs(diff):,.2f} {'higher' if higher else 'lower'} "
+                    f"than the {basis} ({target:,.2f})."),
+    }
+
+
 def can_generate_documents(quote) -> bool:
     """A tax invoice or delivery note may be raised once the quotation is
     finalized. A purchase order is optional — many smaller contractors work from

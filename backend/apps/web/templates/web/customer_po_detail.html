@@ -13,6 +13,27 @@
   <a class="btn ghost" href="{% url 'web:customer_pos' %}">← All POs</a>
 </div>
 
+{% if variance %}
+  {% if variance.has_variance %}
+  <div class="card" style="border:1px solid var(--orange-t,#f6dfc0);background:#fdf6ec;display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;">
+    <span style="font-size:18px;">⚠️</span>
+    <div>
+      <div style="font-weight:700;color:#9a6a12;">PO differs from the quotation</div>
+      <div class="muted" style="font-size:13px;margin-top:3px;">
+        {{ variance.message }}
+        (PO {{ variance.po_value|floatformat:2 }} vs {{ variance.quote_value|floatformat:2 }}{% if variance.pct %} · {{ variance.pct|floatformat:1 }}%{% endif %}).
+        Confirm the scope before you invoice — you may need to update the job to match the PO.
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="border:1px solid var(--green-t);background:#eefaf3;display:flex;gap:10px;align-items:center;margin-bottom:16px;">
+    <span>✓</span>
+    <div class="muted" style="font-size:13px;">PO value matches the {{ variance.basis }} ({{ variance.quote_value|floatformat:2 }}).</div>
+  </div>
+  {% endif %}
+{% endif %}
+
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
   {# Overview #}
   <div class="card">

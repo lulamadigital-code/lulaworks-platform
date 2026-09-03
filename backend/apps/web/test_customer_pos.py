@@ -68,6 +68,35 @@ class CustomerPOTests(TestCase):
         po.refresh_from_db()
         self.assertFalse(po.is_matched)
 
+    def test_variance_flagged_when_po_differs(self):
+        from apps.quotes.models import QuotationLine
+        from apps.quotes.services import po_variance
+        with tenant_scope(self.c.id):
+            q = Quotation.objects.create(company=self.c, number="QTN-V", client_name="ABC", vat_rate=0)
+            QuotationLine.objects.create(company=self.c, quotation=q, description="Work",
+                                         qty=1, unit_price=485000)
+            po = CustomerPurchaseOrder.objects.create(
+                company=self.c, po_number="PO-V", client_name="ABC", value=535000,
+                quotation=q, created_by=self.u, updated_by=self.u)
+            v = po_variance(po)
+            self.assertTrue(v["has_variance"])
+            self.assertEqual(v["direction"], "higher")
+            self.assertEqual(v["abs_diff"], 50000)
+        r = self.client.get(f"/customer-pos/{po.pk}/")
+        self.assertContains(r, "PO differs from the quotation")
+
+    def test_no_variance_when_po_matches_quote(self):
+        from apps.quotes.models import QuotationLine
+        from apps.quotes.services import po_variance
+        with tenant_scope(self.c.id):
+            q = Quotation.objects.create(company=self.c, number="QTN-M", client_name="ABC", vat_rate=0)
+            QuotationLine.objects.create(company=self.c, quotation=q, description="Work",
+                                         qty=1, unit_price=485000)
+            po = CustomerPurchaseOrder.objects.create(
+                company=self.c, po_number="PO-M", value=485000, quotation=q,
+                created_by=self.u, updated_by=self.u)
+            self.assertFalse(po_variance(po)["has_variance"])
+
     def test_add_requires_permission(self):
         viewer = _user(self.c, ["projects.view"], email="viewer@acme.co")
         self.client.force_login(viewer)

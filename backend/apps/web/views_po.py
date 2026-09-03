@@ -151,11 +151,12 @@ def customer_po_detail(request, pk):
         return redirect("web:dashboard")
     from apps.projects.models import Project
     from apps.quotes.models import CustomerPurchaseOrder
-    from apps.quotes.services import suggest_quotations_for_po
+    from apps.quotes.services import po_variance, suggest_quotations_for_po
 
     po = get_object_or_404(CustomerPurchaseOrder.objects.select_related(
         "quotation", "quotation__customer"), pk=pk)
     suggestions, job, search = [], None, (request.GET.get("q") or "").strip()
+    variance = po_variance(po) if po.is_matched else None
     if not po.is_matched:
         suggestions = suggest_quotations_for_po(
             request.user.active_company, po_number=po.po_number,
@@ -172,7 +173,7 @@ def customer_po_detail(request, pk):
         search_results = []
         job = Project.objects.filter(quotation=po.quotation).first()
     return render(request, "web/customer_po_detail.html", {
-        "po": po, "suggestions": suggestions, "job": job,
+        "po": po, "suggestions": suggestions, "job": job, "variance": variance,
         "search": search, "search_results": search_results,
         "can_edit": _can_edit(request.user),
         "statuses": CustomerPurchaseOrder.Status.choices})
