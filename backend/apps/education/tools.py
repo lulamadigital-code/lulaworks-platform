@@ -78,6 +78,11 @@ class ToolSpec:
     problem: str                   # HTML — the business problem
     explainer: str                 # HTML — teach the concept
     inputs: list = field(default_factory=list)
+    compute_key: str = ""          # which compute() branch runs; "" → slug
+
+    @property
+    def maths_key(self):
+        return self.compute_key or self.slug
 
 
 def _dec(v, default="0"):
@@ -183,6 +188,21 @@ TOOLS = {
             Field("variable", "Variable cost per unit / job", "money", "0"),
         ]),
 }
+
+
+def published_tool_specs():
+    """Published tools from the DB, as ToolSpecs. Falls back to the code seed
+    when the table is empty, so the public site works before it's seeded."""
+    from .models import ContentStatus, Tool
+    rows = list(Tool.objects.filter(status=ContentStatus.PUBLISHED))
+    return [t.to_spec() for t in rows] if rows else list(TOOLS.values())
+
+
+def tool_spec(slug):
+    """One published tool as a ToolSpec (DB first, code seed fallback), or None."""
+    from .models import ContentStatus, Tool
+    row = Tool.objects.filter(slug=slug, status=ContentStatus.PUBLISHED).first()
+    return row.to_spec() if row else TOOLS.get(slug)
 
 
 def compute(slug, values, symbol="R", tax_name="VAT"):

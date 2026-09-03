@@ -33,6 +33,21 @@ class TemplateSpec:
     samples: list = field(default_factory=list)     # email: [{title, text}]
 
 
+def published_template_specs():
+    """Published templates from the DB, as TemplateSpecs; code-seed fallback when
+    the table is empty so the public site works before it's seeded."""
+    from .models import ContentStatus, Template
+    rows = list(Template.objects.filter(status=ContentStatus.PUBLISHED))
+    return [t.to_spec() for t in rows] if rows else list(TEMPLATES.values())
+
+
+def template_spec(slug):
+    """One published template as a TemplateSpec (DB first, code fallback) or None."""
+    from .models import ContentStatus, Template
+    row = Template.objects.filter(slug=slug, status=ContentStatus.PUBLISHED).first()
+    return row.to_spec() if row else TEMPLATES.get(slug)
+
+
 TEMPLATES = {
     "professional-quotation-template": TemplateSpec(
         slug="professional-quotation-template",

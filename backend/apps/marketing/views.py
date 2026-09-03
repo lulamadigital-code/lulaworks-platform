@@ -384,11 +384,13 @@ def tools(request):
     """Index of the free calculators — each a genuinely useful tool that connects
     to a Lulaworks feature."""
     from apps.billing.models import currency_symbol
-    from apps.education.tools import TOOLS, localize_tax_spec, tax_for
+    from apps.education.tools import (localize_tax_spec, published_tool_specs,
+                                      tax_for)
     from apps.marketing.geo import detect_currency
     tax_name, tax_rate = tax_for(detect_currency(request))
     tools_list = [localize_tax_spec(t, tax_name, tax_rate)
-                  if t.slug == "vat-calculator" else t for t in TOOLS.values()]
+                  if t.maths_key == "vat-calculator" else t
+                  for t in published_tool_specs()]
     ctx = _seo("Free tools for contractors — profit, markup, tax & break-even calculators",
                "Free calculators for contractors and suppliers: job profit, markup "
                "vs margin, tax and break-even. No signup required.")
@@ -402,8 +404,15 @@ def tool(request, slug):
     from django.http import Http404
 
     from apps.analytics.services import track
-    from apps.education.tools import TOOLS, compute
-    spec = TOOLS.get(slug)
+    from apps.education.tools import compute, published_tool_specs, tool_spec
+    # Staff preview: view an unpublished draft via ?preview=1 (console Preview btn).
+    if request.GET.get("preview") and request.user.is_authenticated \
+            and request.user.can_platform("console"):
+        from apps.education.models import Tool
+        row = Tool.objects.filter(slug=slug).first()
+        spec = row.to_spec() if row else None
+    else:
+        spec = tool_spec(slug)
     if spec is None:
         raise Http404("Unknown tool")
 
@@ -415,13 +424,14 @@ def tool(request, slug):
     ccy = detect_currency(request)
     sym = currency_symbol(ccy)
     tax_name, tax_rate = tax_for(ccy)
-    if slug == "vat-calculator":
+    maths_key = spec.maths_key
+    if maths_key == "vat-calculator":
         spec = localize_tax_spec(spec, tax_name, tax_rate)
 
     results, values = None, {}
     if request.method == "POST":
         values = {f.name: request.POST.get(f.name, "") for f in spec.inputs}
-        results = compute(slug, values, symbol=sym, tax_name=tax_name)
+        results = compute(maths_key, values, symbol=sym, tax_name=tax_name)
         track("tool_completed", request=request, module="education",
               feature=spec.related_feature, source="tools",
               metadata={"slug": slug, "currency": ccy})
@@ -432,8 +442,8 @@ def tool(request, slug):
 
     fields = [{"f": f, "value": values.get(f.name, "")} for f in spec.inputs]
     ctx = _seo(f"{spec.title} — free tool by Lulaworks", spec.summary)
-    others = [localize_tax_spec(t, tax_name, tax_rate) if t.slug == "vat-calculator" else t
-              for t in TOOLS.values() if t.slug != slug][:3]
+    others = [localize_tax_spec(t, tax_name, tax_rate) if t.maths_key == "vat-calculator" else t
+              for t in published_tool_specs() if t.slug != slug][:3]
     ctx.update({"tool": spec, "results": results, "fields": fields,
                 "currency": ccy, "currency_symbol": sym,
                 "currencies": list(CURRENCY_SYMBOLS.items()),
@@ -493,12 +503,12 @@ def unsubscribe(request, token):
 
 def templates_lib(request):
     """Index of the free business templates — delivered through Lulaworks."""
-    from apps.education.templates_lib import TEMPLATES
+    from apps.education.templates_lib import published_template_specs
     ctx = _seo("Free business templates for contractors — quotation, invoice, RFQ & more",
                "Free, professional templates for contractors and suppliers: "
                "quotation, tax invoice, delivery note, RFQ, purchase order, "
                "checklists and payment follow-up emails.")
-    ctx["templates"] = list(TEMPLATES.values())
+    ctx["templates"] = published_template_specs()
     return render(request, "marketing/templates_lib.html", ctx)
 
 
@@ -508,15 +518,21 @@ def template_detail(request, slug):
     from django.http import Http404
 
     from apps.analytics.services import track
-    from apps.education.templates_lib import TEMPLATES
-    spec = TEMPLATES.get(slug)
+    from apps.education.templates_lib import published_template_specs, template_spec
+    if request.GET.get("preview") and request.user.is_authenticated \
+            and request.user.can_platform("console"):
+        from apps.education.models import Template
+        row = Template.objects.filter(slug=slug).first()
+        spec = row.to_spec() if row else None
+    else:
+        spec = template_spec(slug)
     if spec is None:
         raise Http404("Unknown template")
     track("template_viewed", request=request, module="education",
           feature=spec.related_feature, source="templates", metadata={"slug": slug})
     ctx = _seo(f"{spec.title} — free template by Lulaworks", spec.summary)
     ctx.update({"tpl": spec,
-                "others": [t for t in TEMPLATES.values() if t.slug != slug][:3]})
+                "others": [t for t in published_template_specs() if t.slug != slug][:3]})
     return render(request, "marketing/template_detail.html", ctx)
 
 

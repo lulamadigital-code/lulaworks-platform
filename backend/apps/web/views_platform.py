@@ -1318,43 +1318,161 @@ def platform_learn(request):
     })
 
 
+def _lines(raw):
+    """A textarea of one-per-line values → a clean list (blank lines dropped)."""
+    return [ln.strip() for ln in (raw or "").splitlines() if ln.strip()]
+
+
 @login_required
 def platform_tools(request):
-    """The public Free Tools (/tools/) — calculators defined in code. Listed here
-    with a live preview so staff can see the catalogue; editing a calculator is a
-    code change (their logic lives in apps.education.tools)."""
+    """Manage the public Free Tools (/tools/). Presentation is editable here; the
+    calculation stays in code, keyed by `compute_key`. Editing needs owner/admin
+    (the `settings` capability)."""
     if not request.user.can_platform("console"):
         messages.error(request, "The platform console is for platform staff only.")
         return redirect("web:dashboard")
-    from apps.education.tools import TOOLS
-    rows = [{"slug": t.slug, "title": t.title,
-             "summary": getattr(t, "summary", ""),
-             "category": getattr(t, "category", "")} for t in TOOLS.values()]
-    return render(request, "web/platform/content_catalogue.html", {
-        "active": "tools", "rows": rows, "heading": "Free tools",
-        "blurb": "The calculators at /tools/. Defined in code (apps/education/tools.py) — "
-                 "preview them here; changing a calculator is a code change.",
-        "url_name": "marketing:tool", "public_index": "marketing:tools",
+
+    import json
+
+    from apps.education.models import ContentStatus, Tool
+
+    can_edit = request.user.can_platform("settings")
+    if request.method == "POST":
+        if not can_edit:
+            messages.error(request, "Only a platform owner or admin can edit content.")
+            return redirect("web:platform_tools")
+        action = request.POST.get("action")
+        try:
+            if action == "save":
+                title = (request.POST.get("title") or "").strip()
+                if not title:
+                    raise ValueError("A title is required.")
+                pk = request.POST.get("id") or ""
+                t = Tool.objects.filter(pk=pk).first() if pk else Tool()
+                if t is None:
+                    raise ValueError("That tool no longer exists.")
+                raw = (request.POST.get("inputs") or "").strip()
+                try:
+                    inputs = json.loads(raw) if raw else []
+                except json.JSONDecodeError as exc:
+                    raise ValueError(f"Inputs must be valid JSON — {exc}.")
+                if not isinstance(inputs, list):
+                    raise ValueError("Inputs must be a JSON list of field objects.")
+                t.title = title[:200]
+                t.summary = (request.POST.get("summary") or "")[:300]
+                t.category = (request.POST.get("category") or "")[:80]
+                t.related_feature = (request.POST.get("related_feature") or "")[:80]
+                t.icon = (request.POST.get("icon") or "")[:8]
+                t.problem = request.POST.get("problem", "")
+                t.explainer = request.POST.get("explainer", "")
+                t.inputs = inputs
+                t.cta_label = (request.POST.get("cta_label") or "")[:120]
+                t.cta_url = (request.POST.get("cta_url") or "/start-free-trial/")[:300]
+                t.compute_key = (request.POST.get("compute_key") or "").strip()[:140]
+                try:
+                    t.order = int(request.POST.get("order") or 100)
+                except ValueError:
+                    t.order = 100
+                t.status = (ContentStatus.PUBLISHED
+                            if request.POST.get("is_published") == "on"
+                            else ContentStatus.DRAFT)
+                t.save()
+                messages.success(request, "Tool saved.")
+            elif action == "delete":
+                Tool.objects.filter(pk=request.POST.get("id")).delete()
+                messages.success(request, "Tool deleted.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        return redirect("web:platform_tools")
+
+    editing = None
+    eid = request.GET.get("edit")
+    if eid == "new":
+        editing = Tool(status=ContentStatus.PUBLISHED)
+    elif eid:
+        editing = Tool.objects.filter(pk=eid).first()
+    editing_inputs = ""
+    if editing is not None:
+        editing_inputs = json.dumps(editing.inputs or [], indent=2)
+    return render(request, "web/platform/tool_edit.html", {
+        "active": "tools", "tools": list(Tool.objects.all()), "editing": editing,
+        "editing_inputs": editing_inputs, "can_edit": can_edit,
     })
 
 
 @login_required
 def platform_templates(request):
-    """The public Templates (/templates/) — document/checklist/email templates
-    defined in code (apps.education.templates_lib). Listed with a live preview."""
+    """Manage the public Templates (/templates/) — fully editable content.
+    Editing needs owner/admin (the `settings` capability)."""
     if not request.user.can_platform("console"):
         messages.error(request, "The platform console is for platform staff only.")
         return redirect("web:dashboard")
-    from apps.education.templates_lib import TEMPLATES
-    rows = [{"slug": t.slug, "title": t.title, "icon": getattr(t, "icon", ""),
-             "summary": getattr(t, "summary", ""),
-             "category": getattr(t, "kind", "") or getattr(t, "category", "")}
-            for t in TEMPLATES.values()]
-    return render(request, "web/platform/content_catalogue.html", {
-        "active": "templates", "rows": rows, "heading": "Templates",
-        "blurb": "The templates at /templates/. Defined in code "
-                 "(apps/education/templates_lib.py) — preview them here.",
-        "url_name": "marketing:template_detail", "public_index": "marketing:templates",
+
+    import json
+
+    from apps.education.models import ContentStatus, Template
+
+    can_edit = request.user.can_platform("settings")
+    if request.method == "POST":
+        if not can_edit:
+            messages.error(request, "Only a platform owner or admin can edit content.")
+            return redirect("web:platform_content_templates")
+        action = request.POST.get("action")
+        try:
+            if action == "save":
+                title = (request.POST.get("title") or "").strip()
+                if not title:
+                    raise ValueError("A title is required.")
+                pk = request.POST.get("id") or ""
+                t = Template.objects.filter(pk=pk).first() if pk else Template()
+                if t is None:
+                    raise ValueError("That template no longer exists.")
+                raw = (request.POST.get("samples") or "").strip()
+                try:
+                    samples = json.loads(raw) if raw else []
+                except json.JSONDecodeError as exc:
+                    raise ValueError(f"Email samples must be valid JSON — {exc}.")
+                t.title = title[:200]
+                t.summary = (request.POST.get("summary") or "")[:300]
+                t.kind = request.POST.get("kind", "document")
+                t.category = (request.POST.get("category") or "")[:80]
+                t.related_feature = (request.POST.get("related_feature") or "")[:80]
+                t.icon = (request.POST.get("icon") or "")[:8]
+                t.problem = request.POST.get("problem", "")
+                t.cta_label = (request.POST.get("cta_label") or "")[:120]
+                t.cta_url = (request.POST.get("cta_url") or "/start-free-trial/")[:300]
+                t.includes = _lines(request.POST.get("includes"))
+                t.items = _lines(request.POST.get("items"))
+                t.samples = samples
+                try:
+                    t.order = int(request.POST.get("order") or 100)
+                except ValueError:
+                    t.order = 100
+                t.status = (ContentStatus.PUBLISHED
+                            if request.POST.get("is_published") == "on"
+                            else ContentStatus.DRAFT)
+                t.save()
+                messages.success(request, "Template saved.")
+            elif action == "delete":
+                Template.objects.filter(pk=request.POST.get("id")).delete()
+                messages.success(request, "Template deleted.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        return redirect("web:platform_content_templates")
+
+    editing = None
+    eid = request.GET.get("edit")
+    if eid == "new":
+        editing = Template(status=ContentStatus.PUBLISHED)
+    elif eid:
+        editing = Template.objects.filter(pk=eid).first()
+    editing_samples = ""
+    if editing is not None:
+        editing_samples = json.dumps(editing.samples or [], indent=2)
+    return render(request, "web/platform/template_edit.html", {
+        "active": "templates", "templates": list(Template.objects.all()),
+        "editing": editing, "editing_samples": editing_samples, "can_edit": can_edit,
+        "kinds": Template.KIND_CHOICES,
     })
 
 

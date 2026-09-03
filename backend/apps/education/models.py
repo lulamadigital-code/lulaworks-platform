@@ -242,3 +242,118 @@ class LearningPathStep(models.Model):
     @property
     def label(self) -> str:
         return self.title or (self.resource.title if self.resource else "Step")
+
+
+class Tool(models.Model):
+    """A free calculator at /tools/. Presentation (copy, inputs, CTA, order) is
+    editable in the platform console; the CALCULATION stays in code, keyed by
+    `compute_key` (apps.education.tools.compute) — so admins tune everything a
+    calculator says and asks, while the maths stays safe and testable."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    slug = models.SlugField(max_length=140, unique=True, blank=True)
+    title = models.CharField(max_length=200)
+    summary = models.CharField(max_length=300, blank=True)
+    category = models.CharField(max_length=80, blank=True)   # ResourceCategory slug (grouping)
+    related_feature = models.CharField(max_length=80, blank=True)
+    icon = models.CharField(max_length=8, blank=True)
+    problem = models.TextField(blank=True)                   # HTML — the business problem
+    explainer = models.TextField(blank=True)                 # HTML — teach the concept
+    #: Input fields: [{name,label,kind,default,help,choices}] — kind money|percent|number|choice
+    inputs = models.JSONField(default=list, blank=True)
+    cta_label = models.CharField(max_length=120, blank=True)
+    cta_url = models.CharField(max_length=300, default="/start-free-trial/")
+    #: Which code compute() branch runs the maths. Defaults to the slug.
+    compute_key = models.CharField(max_length=140, blank=True)
+    status = models.CharField(max_length=12, choices=ContentStatus.choices,
+                              default=ContentStatus.PUBLISHED)
+    order = models.PositiveSmallIntegerField(default=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order", "title"]
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = _unique_slug(Tool, self.title, pk=self.pk)
+        if not self.compute_key:
+            self.compute_key = self.slug
+        super().save(*args, **kwargs)
+
+    @property
+    def is_published(self) -> bool:
+        return self.status == ContentStatus.PUBLISHED
+
+    def to_spec(self):
+        """A ToolSpec the public pages + localiser/compute already understand."""
+        from .tools import Field, ToolSpec
+        fields = []
+        for f in (self.inputs or []):
+            fields.append(Field(
+                name=f.get("name", ""), label=f.get("label", ""),
+                kind=f.get("kind", "money"), default=str(f.get("default", "")),
+                help=f.get("help", ""),
+                choices=tuple(tuple(c) for c in f.get("choices", ())),
+            ))
+        return ToolSpec(
+            slug=self.slug, title=self.title, summary=self.summary,
+            category=self.category, related_feature=self.related_feature,
+            cta_label=self.cta_label, cta_url=self.cta_url, icon=self.icon,
+            problem=self.problem, explainer=self.explainer, inputs=fields)
+
+
+class Template(models.Model):
+    """A free business template at /templates/ — fully editable content. Three
+    kinds: document (what a good one includes + create-in-app CTA), checklist
+    (a copyable list) and email (copyable message samples)."""
+
+    KIND_CHOICES = [("document", "Document"), ("checklist", "Checklist"),
+                    ("email", "Email")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    slug = models.SlugField(max_length=140, unique=True, blank=True)
+    title = models.CharField(max_length=200)
+    summary = models.CharField(max_length=300, blank=True)
+    kind = models.CharField(max_length=12, choices=KIND_CHOICES, default="document")
+    category = models.CharField(max_length=80, blank=True)
+    related_feature = models.CharField(max_length=80, blank=True)
+    icon = models.CharField(max_length=8, blank=True)
+    problem = models.TextField(blank=True)                   # HTML — why it matters
+    cta_label = models.CharField(max_length=120, blank=True)
+    cta_url = models.CharField(max_length=300, default="/start-free-trial/")
+    includes = models.JSONField(default=list, blank=True)    # document: list[str]
+    items = models.JSONField(default=list, blank=True)       # checklist: list[str]
+    samples = models.JSONField(default=list, blank=True)     # email: [{title, text}]
+    status = models.CharField(max_length=12, choices=ContentStatus.choices,
+                              default=ContentStatus.PUBLISHED)
+    order = models.PositiveSmallIntegerField(default=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order", "title"]
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = _unique_slug(Template, self.title, pk=self.pk)
+        super().save(*args, **kwargs)
+
+    @property
+    def is_published(self) -> bool:
+        return self.status == ContentStatus.PUBLISHED
+
+    def to_spec(self):
+        from .templates_lib import TemplateSpec
+        return TemplateSpec(
+            slug=self.slug, title=self.title, summary=self.summary, kind=self.kind,
+            category=self.category, related_feature=self.related_feature,
+            icon=self.icon, problem=self.problem, cta_label=self.cta_label,
+            cta_url=self.cta_url, includes=list(self.includes or []),
+            items=list(self.items or []), samples=list(self.samples or []))
