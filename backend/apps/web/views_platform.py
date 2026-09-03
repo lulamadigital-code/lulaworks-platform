@@ -1230,6 +1230,95 @@ def platform_kb(request):
 
 
 @login_required
+def platform_learn(request):
+    """Manage the public Learning Centre (/learn/) — articles/guides and their
+    categories — from the branded console, so staff never need Django admin.
+    Any platform staff may view; editing needs settings access."""
+    if not request.user.can_platform("console"):
+        messages.error(request, "The platform console is for platform staff only.")
+        return redirect("web:dashboard")
+
+    from apps.education.models import (ContentStatus, Difficulty, Resource,
+                                       ResourceCategory, ResourceKind)
+
+    can_edit = request.user.can_platform("settings")
+    if request.method == "POST":
+        if not can_edit:
+            messages.error(request, "You don't have content-editing access.")
+            return redirect("web:platform_learn")
+        action = request.POST.get("action")
+        try:
+            if action == "save":
+                title = (request.POST.get("title") or "").strip()
+                if not title:
+                    raise ValueError("A title is required.")
+                pk = request.POST.get("id") or ""
+                # A fresh Resource() already has a UUID pk (field default), so
+                # "new" is decided by whether an existing id was posted, not pk.
+                is_new = not pk
+                r = Resource.objects.filter(pk=pk).first() if pk else Resource()
+                if r is None:
+                    raise ValueError("That article no longer exists.")
+                r.title = title[:200]
+                r.kind = request.POST.get("kind", ResourceKind.ARTICLE)
+                r.category_id = request.POST.get("category") or None
+                r.difficulty = request.POST.get("difficulty", Difficulty.BEGINNER)
+                try:
+                    r.read_minutes = max(1, int(request.POST.get("read_minutes") or 4))
+                except ValueError:
+                    r.read_minutes = 4
+                r.summary = (request.POST.get("summary") or "")[:300]
+                r.body = request.POST.get("body", "")
+                r.cta_label = (request.POST.get("cta_label") or "")[:80]
+                r.cta_url = (request.POST.get("cta_url") or "")[:300]
+                r.is_featured = request.POST.get("is_featured") == "on"
+                r.status = (ContentStatus.PUBLISHED
+                            if request.POST.get("is_published") == "on"
+                            else ContentStatus.DRAFT)
+                if is_new:
+                    r.author = request.user
+                r.save()
+                messages.success(request, "Article saved.")
+            elif action == "delete":
+                Resource.objects.filter(pk=request.POST.get("id")).delete()
+                messages.success(request, "Article deleted.")
+            elif action == "save_category":
+                name = (request.POST.get("name") or "").strip()
+                if not name:
+                    raise ValueError("A category name is required.")
+                cat = ResourceCategory(name=name[:120],
+                                       icon=(request.POST.get("icon") or "")[:8],
+                                       description=(request.POST.get("description") or "")[:255])
+                try:
+                    cat.order = int(request.POST.get("order") or 100)
+                except ValueError:
+                    cat.order = 100
+                cat.save()
+                messages.success(request, "Category added.")
+            elif action == "delete_category":
+                ResourceCategory.objects.filter(pk=request.POST.get("id")).delete()
+                messages.success(request, "Category deleted.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        return redirect("web:platform_learn")
+
+    editing = None
+    eid = request.GET.get("edit")
+    if eid == "new":
+        editing = Resource(status=ContentStatus.DRAFT)
+    elif eid:
+        editing = Resource.objects.filter(pk=eid).first()
+
+    resources = list(Resource.objects.select_related("category").all())
+    categories = list(ResourceCategory.objects.all())
+    return render(request, "web/platform/learn.html", {
+        "active": "learn", "resources": resources, "categories": categories,
+        "editing": editing, "can_edit": can_edit,
+        "kinds": ResourceKind.choices, "difficulties": Difficulty.choices,
+    })
+
+
+@login_required
 def platform_tenants_csv(request):
     """Download every tenant with plan, users, AI credits + 30-day usage."""
     import csv

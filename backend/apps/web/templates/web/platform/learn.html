@@ -1,0 +1,122 @@
+{% extends "web/base.html" %}
+{% block title %}Learning centre · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="learn" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em} .sub{color:var(--muted);margin:0 0 16px} .muted{color:var(--muted)}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  table.kb{width:100%;border-collapse:collapse}
+  .kb th,.kb td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);font-size:13.5px}
+  .kb th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .kb tr:last-child td{border-bottom:0}
+  .chip{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .chip.pub{background:var(--green-t);color:#0a8f57} .chip.draft{background:#eef0f5;color:var(--muted)}
+  .chip.kind{background:var(--primary-t);color:var(--primary-d);font-weight:600;text-transform:capitalize}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 5px;font-weight:600}
+  input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fff;color:var(--ink)}
+  textarea{min-height:200px;resize:vertical;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px} .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .btn.ghost{background:#fff;color:var(--primary-d);border:1px solid var(--line)}
+  .catbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .cattag{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:4px 6px 4px 12px;font-size:13px}
+  .cattag button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:0 2px}
+  .catform{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:12px}
+  .catform > div{flex:1;min-width:120px} .catform .grow{flex:2;min-width:180px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="head">
+  <div><h1>Learning centre</h1>
+    <p class="sub">The public articles &amp; guides at <code>/learn/</code> — managed here, no Django admin needed.</p></div>
+  {% if can_edit %}<a class="btn" href="?edit=new">+ New article</a>{% endif %}
+</div>
+
+{# ── Categories ─────────────────────────────────────────────────────────── #}
+<div class="card">
+  <h2 style="margin:0 0 10px;font-size:15px;">Categories</h2>
+  <div class="catbar">
+    {% for c in categories %}
+      <span class="cattag">{% if c.icon %}{{ c.icon }} {% endif %}{{ c.name }}
+        {% if can_edit %}<form method="post" style="display:inline;" onsubmit="return confirm('Delete category “{{ c.name }}”? Articles keep their content but lose this category.');">{% csrf_token %}
+          <input type="hidden" name="action" value="delete_category"><input type="hidden" name="id" value="{{ c.pk }}">
+          <button type="submit" title="Delete">×</button></form>{% endif %}
+      </span>
+    {% empty %}<span class="muted" style="font-size:13px;">No categories yet — add one below.</span>{% endfor %}
+  </div>
+  {% if can_edit %}
+  <form method="post" class="catform">{% csrf_token %}<input type="hidden" name="action" value="save_category">
+    <div class="grow"><label>New category name</label><input type="text" name="name" placeholder="Quoting, Procurement, Profitability…" required></div>
+    <div style="max-width:80px;"><label>Icon</label><input type="text" name="icon" maxlength="2" placeholder="📈"></div>
+    <div style="max-width:90px;"><label>Order</label><input type="number" name="order" value="100"></div>
+    <div style="flex:0;"><button class="btn ghost" type="submit">Add</button></div>
+  </form>
+  {% endif %}
+</div>
+
+{# ── Article editor ─────────────────────────────────────────────────────── #}
+{% if editing %}
+<div class="card">
+  <h2 style="margin-top:0;">{% if editing.pk %}Edit article{% else %}New article{% endif %}</h2>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="save">
+    <input type="hidden" name="id" value="{{ editing.pk|default:'' }}">
+    <label>Title</label>
+    <input type="text" name="title" value="{{ editing.title }}" required>
+    <div class="row3" style="margin-top:10px;">
+      <div><label>Type</label>
+        <select name="kind">{% for value, label in kinds %}<option value="{{ value }}" {% if editing.kind == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div><label>Category</label>
+        <select name="category"><option value="">— none —</option>{% for c in categories %}<option value="{{ c.pk }}" {% if editing.category_id == c.pk %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
+      <div><label>Difficulty</label>
+        <select name="difficulty">{% for value, label in difficulties %}<option value="{{ value }}" {% if editing.difficulty == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    </div>
+    <label style="margin-top:10px;">Summary (one line, shown on the index)</label>
+    <input type="text" name="summary" value="{{ editing.summary }}" maxlength="300">
+    <label style="margin-top:10px;">Body (Markdown or HTML)</label>
+    <textarea name="body">{{ editing.body }}</textarea>
+    <div class="row3" style="margin-top:10px;">
+      <div><label>Read time (min)</label><input type="number" name="read_minutes" value="{{ editing.read_minutes|default:4 }}" min="1"></div>
+      <div><label>CTA label (optional)</label><input type="text" name="cta_label" value="{{ editing.cta_label }}" placeholder="Try it in Lulaworks"></div>
+      <div><label>CTA link (optional)</label><input type="text" name="cta_url" value="{{ editing.cta_url }}" placeholder="/start-free-trial/"></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:20px;flex-wrap:wrap;">
+      <label style="font-weight:600;color:var(--ink);display:inline-flex;gap:8px;align-items:center;margin:0;">
+        <input type="checkbox" name="is_published" style="width:auto;" {% if editing.is_published %}checked{% endif %}> Published (live on /learn/)</label>
+      <label style="font-weight:600;color:var(--ink);display:inline-flex;gap:8px;align-items:center;margin:0;">
+        <input type="checkbox" name="is_featured" style="width:auto;" {% if editing.is_featured %}checked{% endif %}> Featured</label>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px;">
+      <button class="btn" type="submit">Save article</button>
+      <a class="btn ghost" href="{% url 'web:platform_learn' %}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+{# ── Article list ───────────────────────────────────────────────────────── #}
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table class="kb">
+    <tr><th>Title</th><th>Type</th><th>Category</th><th>Status</th>{% if can_edit %}<th></th>{% endif %}</tr>
+    {% for a in resources %}
+    <tr>
+      <td><strong>{{ a.title }}</strong><div class="muted" style="font-size:12px;">{{ a.summary|truncatechars:70 }}</div></td>
+      <td><span class="chip kind">{{ a.get_kind_display }}</span></td>
+      <td class="muted">{{ a.category.name|default:"—" }}</td>
+      <td>{% if a.is_published %}<span class="chip pub">Published</span>{% else %}<span class="chip draft">{{ a.get_status_display }}</span>{% endif %}</td>
+      {% if can_edit %}
+      <td style="text-align:right;white-space:nowrap;">
+        <a class="btn ghost" href="?edit={{ a.pk }}" style="padding:5px 10px;">Edit</a>
+        <form method="post" style="display:inline;" onsubmit="return confirm('Delete “{{ a.title }}”?');">{% csrf_token %}
+          <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ a.pk }}">
+          <button class="btn ghost" type="submit" style="padding:5px 10px;">Delete</button></form>
+      </td>
+      {% endif %}
+    </tr>
+    {% empty %}<tr><td colspan="5" style="padding:18px;color:var(--muted);">No articles yet. {% if can_edit %}<a href="?edit=new">Write the first one</a>.{% endif %}</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}
