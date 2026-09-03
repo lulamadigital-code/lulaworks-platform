@@ -1319,6 +1319,46 @@ def platform_learn(request):
 
 
 @login_required
+def platform_tools(request):
+    """The public Free Tools (/tools/) — calculators defined in code. Listed here
+    with a live preview so staff can see the catalogue; editing a calculator is a
+    code change (their logic lives in apps.education.tools)."""
+    if not request.user.can_platform("console"):
+        messages.error(request, "The platform console is for platform staff only.")
+        return redirect("web:dashboard")
+    from apps.education.tools import TOOLS
+    rows = [{"slug": t.slug, "title": t.title,
+             "summary": getattr(t, "summary", ""),
+             "category": getattr(t, "category", "")} for t in TOOLS.values()]
+    return render(request, "web/platform/content_catalogue.html", {
+        "active": "tools", "rows": rows, "heading": "Free tools",
+        "blurb": "The calculators at /tools/. Defined in code (apps/education/tools.py) — "
+                 "preview them here; changing a calculator is a code change.",
+        "url_name": "marketing:tool", "public_index": "marketing:tools",
+    })
+
+
+@login_required
+def platform_templates(request):
+    """The public Templates (/templates/) — document/checklist/email templates
+    defined in code (apps.education.templates_lib). Listed with a live preview."""
+    if not request.user.can_platform("console"):
+        messages.error(request, "The platform console is for platform staff only.")
+        return redirect("web:dashboard")
+    from apps.education.templates_lib import TEMPLATES
+    rows = [{"slug": t.slug, "title": t.title, "icon": getattr(t, "icon", ""),
+             "summary": getattr(t, "summary", ""),
+             "category": getattr(t, "kind", "") or getattr(t, "category", "")}
+            for t in TEMPLATES.values()]
+    return render(request, "web/platform/content_catalogue.html", {
+        "active": "templates", "rows": rows, "heading": "Templates",
+        "blurb": "The templates at /templates/. Defined in code "
+                 "(apps/education/templates_lib.py) — preview them here.",
+        "url_name": "marketing:template_detail", "public_index": "marketing:templates",
+    })
+
+
+@login_required
 def platform_tenants_csv(request):
     """Download every tenant with plan, users, AI credits + 30-day usage."""
     import csv

@@ -100,21 +100,22 @@
 {# ── Article list ───────────────────────────────────────────────────────── #}
 <div class="card" style="padding:0;overflow-x:auto;">
   <table class="kb">
-    <tr><th>Title</th><th>Type</th><th>Category</th><th>Status</th>{% if can_edit %}<th></th>{% endif %}</tr>
+    <tr><th>Title</th><th>Type</th><th>Category</th><th>Status</th><th></th></tr>
     {% for a in resources %}
     <tr>
       <td><strong>{{ a.title }}</strong><div class="muted" style="font-size:12px;">{{ a.summary|truncatechars:70 }}</div></td>
       <td><span class="chip kind">{{ a.get_kind_display }}</span></td>
       <td class="muted">{{ a.category.name|default:"—" }}</td>
       <td>{% if a.is_published %}<span class="chip pub">Published</span>{% else %}<span class="chip draft">{{ a.get_status_display }}</span>{% endif %}</td>
-      {% if can_edit %}
       <td style="text-align:right;white-space:nowrap;">
+        <a class="btn ghost" href="{% url 'marketing:learn_resource' a.slug %}?preview=1" target="_blank" rel="noopener" style="padding:5px 10px;">Preview ↗</a>
+        {% if can_edit %}
         <a class="btn ghost" href="?edit={{ a.pk }}" style="padding:5px 10px;">Edit</a>
         <form method="post" style="display:inline;" onsubmit="return confirm('Delete “{{ a.title }}”?');">{% csrf_token %}
           <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ a.pk }}">
           <button class="btn ghost" type="submit" style="padding:5px 10px;">Delete</button></form>
+        {% endif %}
       </td>
-      {% endif %}
     </tr>
     {% empty %}<tr><td colspan="5" style="padding:18px;color:var(--muted);">No articles yet. {% if can_edit %}<a href="?edit=new">Write the first one</a>.{% endif %}</td></tr>{% endfor %}
   </table>

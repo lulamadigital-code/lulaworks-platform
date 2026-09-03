@@ -48,6 +48,8 @@ urlpatterns = [
     # Support desk (platform side)
     path("platform/support/", views_platform.platform_support, name="platform_support"),
     path("platform/learn/", views_platform.platform_learn, name="platform_learn"),
+    path("platform/tools/", views_platform.platform_tools, name="platform_tools"),
+    path("platform/content-templates/", views_platform.platform_templates, name="platform_content_templates"),
     path("platform/support/kb/", views_platform.platform_kb, name="platform_kb"),
     path("platform/support/sla/", views_platform.platform_support_sla, name="platform_support_sla"),
     path("platform/support/<uuid:pk>/", views_platform.platform_support_detail, name="platform_support_detail"),

@@ -17,6 +17,8 @@
   <a {% if active == 'audit' %}class="active"{% endif %} href="{% url 'web:platform_audit' %}"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3zM9.5 12l1.8 1.8L15 10"/></svg>Audit logs</a>
   <span class="nav-group">Content</span>
   <a {% if active == 'learn' %}class="active"{% endif %} href="{% url 'web:platform_learn' %}"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v14H6.5A2.5 2.5 0 0 0 4 19.5zM4 19.5A2.5 2.5 0 0 0 6.5 22H20"/><path d="M9 7h7M9 11h5"/></svg>Learning centre</a>
+  <a {% if active == 'tools' %}class="active"{% endif %} href="{% url 'web:platform_tools' %}"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5 5L3 18v3h3l6.7-6.7a4 4 0 0 0 5-5l-2.4 2.4-2.1-.6-.6-2.1z"/></svg>Free tools</a>
+  <a {% if active == 'templates' %}class="active"{% endif %} href="{% url 'web:platform_content_templates' %}"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>Templates</a>
   <span class="nav-gap"></span>
   <a {% if active == 'support' %}class="active"{% endif %} href="{% url 'web:platform_support' %}"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Support desk{% if support_open_count %}<span class="nav-badge" title="{{ support_open_count }} ticket{{ support_open_count|pluralize }} awaiting a reply">{{ support_open_count }}</span>{% endif %}</a>
   <a href="{% url 'web:platform_kb' %}"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Knowledge Base</a>

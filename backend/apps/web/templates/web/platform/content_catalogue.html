@@ -1,0 +1,48 @@
+{% extends "web/base.html" %}
+{% block title %}{{ heading }} · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active=active %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em} .sub{color:var(--muted);margin:0 0 16px;max-width:70ch} .muted{color:var(--muted)}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  table.kb{width:100%;border-collapse:collapse}
+  .kb th,.kb td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:top}
+  .kb th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .kb tr:last-child td{border-bottom:0}
+  .chip{display:inline-flex;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;background:var(--primary-t);color:var(--primary-d);text-transform:capitalize}
+  .btn.ghost{background:#fff;color:var(--primary-d);border:1px solid var(--line)}
+  .note{background:#f7f8fb;border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-size:13px;color:var(--muted);margin:0 0 16px}
+  .note b{color:var(--ink)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="head">
+  <div><h1>{{ heading }}</h1>
+    <p class="sub">{{ blurb }}</p></div>
+  <a class="btn ghost" href="{% url public_index %}" target="_blank" rel="noopener">View public page ↗</a>
+</div>
+
+<div class="note">🔒 <b>Read-only.</b> These are defined in code, so their content and logic are edited by a developer and shipped in a deploy — not here. Use <b>Preview</b> to see each one live.</div>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table class="kb">
+    <tr><th>Title</th><th>Category</th><th>Summary</th><th></th></tr>
+    {% for r in rows %}
+    <tr>
+      <td><strong>{% if r.icon %}{{ r.icon }} {% endif %}{{ r.title }}</strong>
+        <div class="muted" style="font-size:12px;">/{{ active }}/{{ r.slug }}/</div></td>
+      <td>{% if r.category %}<span class="chip">{{ r.category }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="muted">{{ r.summary|truncatechars:90|default:"—" }}</td>
+      <td style="text-align:right;white-space:nowrap;">
+        <a class="btn ghost" href="{% url url_name r.slug %}" target="_blank" rel="noopener" style="padding:5px 10px;">Preview ↗</a>
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="4" style="padding:18px;color:var(--muted);">Nothing here yet.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

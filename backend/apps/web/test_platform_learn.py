@@ -61,6 +61,29 @@ class PlatformLearnTests(TestCase):
         r = self.client.get("/platform/learn/", follow=True)
         self.assertNotContains(r, "Learning centre", status_code=200)
 
+    def test_tools_and_templates_catalogues_load(self):
+        tools = self.client.get("/platform/tools/")
+        self.assertEqual(tools.status_code, 200)
+        self.assertContains(tools, "Free tools")
+        self.assertContains(tools, "Preview")            # each has a preview link
+        tpl = self.client.get("/platform/content-templates/")
+        self.assertEqual(tpl.status_code, 200)
+        self.assertContains(tpl, "Templates")
+
+    def test_staff_can_preview_draft_but_public_cannot(self):
+        draft = Resource.objects.create(title="Unpublished guide",
+                                        author=self.owner, body="secret draft")
+        # published_resources() excludes drafts → anonymous gets 404
+        self.client.logout()
+        self.assertEqual(self.client.get(f"/learn/{draft.slug}/").status_code, 404)
+        self.assertEqual(
+            self.client.get(f"/learn/{draft.slug}/?preview=1").status_code, 404)
+        # platform staff with ?preview=1 sees the draft
+        self.client.force_login(self.owner)
+        r = self.client.get(f"/learn/{draft.slug}/?preview=1")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Unpublished guide")
+
     def test_viewer_without_settings_cannot_edit(self):
         from apps.identity.models import User as U
         support = U.objects.create_user("support@lulaworks.com", "x")

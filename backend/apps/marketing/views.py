@@ -339,12 +339,21 @@ def learn_resource(request, slug):
     from django.shortcuts import get_object_or_404
 
     from apps.analytics.services import track
+    from apps.education.models import Resource
     from apps.education.services import published_resources
-    resource = get_object_or_404(published_resources(), slug=slug)
-    track("content_viewed", request=request, module="education",
-          feature=resource.kind, source="learn",
-          metadata={"slug": resource.slug, "category":
-                    resource.category.slug if resource.category_id else ""})
+    # Staff preview: platform staff can view an unpublished draft via ?preview=1
+    # (so the console's Preview button works before publishing). Everyone else
+    # only ever sees published content.
+    is_preview = bool(request.GET.get("preview")) and \
+        request.user.is_authenticated and request.user.can_platform("console")
+    if is_preview:
+        resource = get_object_or_404(Resource, slug=slug)
+    else:
+        resource = get_object_or_404(published_resources(), slug=slug)
+        track("content_viewed", request=request, module="education",
+              feature=resource.kind, source="learn",
+              metadata={"slug": resource.slug, "category":
+                        resource.category.slug if resource.category_id else ""})
     related = list(published_resources()
                    .filter(category=resource.category)
                    .exclude(pk=resource.pk)[:4]) if resource.category_id else []
