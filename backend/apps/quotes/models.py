@@ -575,11 +575,17 @@ class CustomerPurchaseOrder(TenantBaseModel):
         COMPLETE = "complete", "Complete"
         CANCELLED = "cancelled", "Cancelled"
 
+    # Nullable: a PO can be captured (uploaded/typed) BEFORE it's matched to a
+    # quotation — it lives as an "unmatched" PO in the workspace until linked.
     quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE,
-                                  related_name="customer_pos")
+                                  related_name="customer_pos", null=True, blank=True)
     po_number = models.CharField(max_length=64)
     po_date = models.DateField(null=True, blank=True)
     value = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    # Captured from the PO itself so an unmatched PO still shows who it's from and
+    # where — used to suggest the quotation to match it to.
+    client_name = models.CharField(max_length=255, blank=True)
+    site = models.CharField(max_length=255, blank=True)
     document = models.FileField(upload_to=po_upload_path, blank=True, null=True)
     issued_by = models.ForeignKey(
         "customers.CustomerContact", on_delete=models.SET_NULL, null=True, blank=True,
@@ -599,6 +605,17 @@ class CustomerPurchaseOrder(TenantBaseModel):
 
     def __str__(self):
         return self.po_number
+
+    @property
+    def is_matched(self) -> bool:
+        """Whether this PO has been linked to a quotation yet."""
+        return self.quotation_id is not None
+
+    @property
+    def customer_display(self) -> str:
+        if self.quotation_id and self.quotation.customer_id:
+            return self.quotation.customer.display_name
+        return self.client_name or "—"
 
 
 class QuotationEvent(TenantBaseModel):

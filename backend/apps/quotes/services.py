@@ -78,6 +78,46 @@ def matching_purchase_order(quote):
     return None
 
 
+def suggest_quotations_for_po(company, *, po_number="", client_name="", value=None,
+                              limit=3):
+    """Suggest which quotation an unmatched customer PO belongs to. Deterministic
+    scoring: a value match is strongest, then the customer name, then the PO's
+    reference appearing in the quote number. Returns [{quotation, score, reason}]
+    best-first — the workspace shows these as one-click 'Link' suggestions."""
+    from decimal import Decimal, InvalidOperation
+
+    val = None
+    if value not in (None, ""):
+        try:
+            val = Decimal(str(value))
+        except (InvalidOperation, TypeError):
+            val = None
+    cn = (client_name or "").lower().strip()
+    pn = (po_number or "").lower().strip()
+
+    out = []
+    for q in Quotation.objects.select_related("customer").all()[:500]:
+        score, reasons = 0, []
+        if val is not None:
+            for t in (q.total, q.invoice_total):
+                if t and abs(val - t) <= _PO_MATCH_TOLERANCE:
+                    score += 60
+                    reasons.append("value matches")
+                    break
+        qc = (q.client_name or (q.customer.display_name if q.customer_id else "")).lower()
+        if cn and qc and (cn in qc or qc in cn):
+            score += 30
+            reasons.append("customer matches")
+        if pn and q.number and pn in q.number.lower():
+            score += 10
+            reasons.append("reference matches")
+        if score:
+            out.append({"quotation": q, "score": min(score, 99),
+                        "reason": ", ".join(reasons)})
+    out.sort(key=lambda c: -c["score"])
+    return out[:limit]
+
+
 def can_generate_documents(quote) -> bool:
     """A tax invoice or delivery note may be raised once the quotation is
     finalized. A purchase order is optional — many smaller contractors work from

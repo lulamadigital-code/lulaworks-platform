@@ -11,6 +11,7 @@ from . import (
     views_email,
     views_marketing,
     views_platform,
+    views_po,
     views_support,
     views_tax,
 )
@@ -84,6 +85,15 @@ urlpatterns = [
     path("m/wa/webhook/", views_marketing.whatsapp_webhook, name="marketing_whatsapp_webhook"),
     path("crm/", views_crm.crm_hub, name="crm_hub"),
     path("search/", views.search, name="search"),
+    # Customer Purchase Orders — the Sales→Operations bridge (distinct from the
+    # supplier POs under Procurement).
+    path("customer-pos/", views_po.customer_pos, name="customer_pos"),
+    path("customer-pos/add/", views_po.customer_po_add, name="customer_po_add"),
+    path("customer-pos/extract/", views_po.customer_po_extract, name="customer_po_extract"),
+    path("customer-pos/<uuid:pk>/", views_po.customer_po_detail, name="customer_po_detail"),
+    path("customer-pos/<uuid:pk>/link/", views_po.customer_po_link, name="customer_po_link"),
+    path("customer-pos/<uuid:pk>/create-job/", views_po.customer_po_create_job, name="customer_po_create_job"),
+    path("customer-pos/<uuid:pk>/status/", views_po.customer_po_status, name="customer_po_status"),
     path("crm/search/", views_crm.crm_search, name="crm_search"),
     path("crm/reports/", views_crm.crm_reports, name="crm_reports"),
     path("crm/analytics/", views_crm.crm_analytics, name="crm_analytics"),

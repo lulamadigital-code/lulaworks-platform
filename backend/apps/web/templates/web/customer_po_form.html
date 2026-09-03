@@ -1,0 +1,60 @@
+{% extends "web/base.html" %}
+{% block title %}Add Purchase Order{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Add Purchase Order</h1>
+    <p class="sub" style="margin:0;">Upload the customer's PO to read it automatically, or type the details. You'll match it to a quotation next.</p>
+  </div>
+  <a class="btn ghost" href="{% url 'web:customer_pos' %}">← Back</a>
+</div>
+
+<form method="post" enctype="multipart/form-data" action="{% url 'web:customer_po_add' %}" class="card" style="max-width:640px;">
+  {% csrf_token %}
+  <label>Upload PO document (PDF, image or Excel) — optional</label>
+  <input type="file" name="document" id="po-file" accept=".pdf,.png,.jpg,.jpeg,.xlsx,.xls,.csv">
+  <p class="muted" id="po-extract-note" style="font-size:12px;margin:6px 0 0;">We'll read the PO number, value and date off the file — you just confirm.</p>
+
+  <div style="height:1px;background:var(--line);margin:18px 0;"></div>
+
+  <label>PO number</label>
+  <input type="text" name="po_number" id="f_po_number" placeholder="e.g. PO-45821">
+  <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
+    <div><label>Customer</label><input type="text" name="client_name" id="f_client_name" placeholder="ABC Mining"></div>
+    <div><label>PO value</label><input type="text" name="value" id="f_value" placeholder="485000.00"></div>
+  </div>
+  <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
+    <div><label>PO date</label><input type="date" name="po_date" id="f_po_date"></div>
+    <div><label>Site (optional)</label><input type="text" name="site" placeholder="Rustenburg"></div>
+  </div>
+  <label style="margin-top:10px;">Notes (optional)</label>
+  <input type="text" name="notes" maxlength="255" placeholder="Payment terms, reference…">
+
+  <div class="secbtns" style="margin-top:16px;display:flex;gap:8px;">
+    <button class="btn" type="submit">Capture PO</button>
+    <a class="btn ghost" href="{% url 'web:customer_pos' %}">Cancel</a>
+  </div>
+</form>
+
+<script>
+  // Auto-extract on file choose: fill the blanks so the user confirms, not retypes.
+  document.getElementById('po-file').addEventListener('change', function (ev) {
+    var f = ev.target.files[0]; if (!f) return;
+    var note = document.getElementById('po-extract-note');
+    note.textContent = 'Reading “' + f.name + '”…';
+    var fd = new FormData(); fd.append('document', f);
+    fd.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    fetch('{% url "web:customer_po_extract" %}', {method: 'POST', body: fd})
+      .then(function (r) { return r.ok ? r.json() : {}; })
+      .then(function (d) {
+        function set(id, v) { var el = document.getElementById(id); if (el && v && !el.value) el.value = v; }
+        set('f_po_number', d.po_number); set('f_value', d.value);
+        set('f_po_date', d.po_date); set('f_client_name', d.client);
+        var got = d.po_number || d.value || d.po_date;
+        note.textContent = got ? '✓ Read from the document — please confirm.' :
+          'Couldn’t read the details — enter them below.';
+      })
+      .catch(function () { note.textContent = 'Couldn’t read the file — enter the details below.'; });
+  });
+</script>
+{% endblock %}

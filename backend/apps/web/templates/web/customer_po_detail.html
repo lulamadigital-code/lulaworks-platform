@@ -1,0 +1,93 @@
+{% extends "web/base.html" %}
+{% block title %}{{ po.po_number }}{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>{{ po.po_number }}</h1>
+    <p class="sub" style="margin:0;">
+      {{ po.customer_display }}
+      {% if po.is_matched %}<span class="chip info" style="margin-left:6px;">Matched</span>
+      {% else %}<span class="chip warn" style="margin-left:6px;">Unmatched</span>{% endif %}
+    </p>
+  </div>
+  <a class="btn ghost" href="{% url 'web:customer_pos' %}">← All POs</a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+  {# Overview #}
+  <div class="card">
+    <h2 style="margin-top:0;font-size:15px;">Overview</h2>
+    <table style="width:100%;">
+      <tr><td class="muted" style="padding:6px 0;">Customer</td><td style="text-align:right;">{{ po.customer_display }}</td></tr>
+      <tr><td class="muted" style="padding:6px 0;">PO value</td><td style="text-align:right;">{{ po.value|floatformat:2 }}</td></tr>
+      <tr><td class="muted" style="padding:6px 0;">PO date</td><td style="text-align:right;">{{ po.po_date|default:"—" }}</td></tr>
+      {% if po.site %}<tr><td class="muted" style="padding:6px 0;">Site</td><td style="text-align:right;">{{ po.site }}</td></tr>{% endif %}
+      <tr><td class="muted" style="padding:6px 0;">Status</td><td style="text-align:right;">{{ po.get_status_display }}</td></tr>
+      {% if po.notes %}<tr><td class="muted" style="padding:6px 0;">Notes</td><td style="text-align:right;">{{ po.notes }}</td></tr>{% endif %}
+    </table>
+    {% if po.document %}
+    <a class="btn ghost" href="{{ po.document.url }}" target="_blank" rel="noopener" style="margin-top:12px;">View PO document ↗</a>
+    {% endif %}
+    {% if can_edit %}
+    <form method="post" action="{% url 'web:customer_po_status' po.pk %}" style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+      {% csrf_token %}
+      <select name="status" style="max-width:200px;">{% for v, l in statuses %}<option value="{{ v }}" {% if po.status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      <button class="btn ghost" type="submit">Update status</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {# Quotation / matching #}
+  <div class="card">
+    <h2 style="margin-top:0;font-size:15px;">Quotation</h2>
+    {% if po.is_matched %}
+      <p style="margin:0 0 6px;">Linked to <a href="{% url 'web:quotation_detail' po.quotation.pk %}"><strong>{{ po.quotation.number }}</strong></a> — {{ po.quotation.client_name }}</p>
+      <p class="muted" style="font-size:13px;margin:0 0 12px;">Quotation value: {{ po.quotation.total|floatformat:2 }}</p>
+      {% if job %}
+        <a class="btn" href="{% url 'web:project_detail' job.id %}">View job {{ job.number }} →</a>
+      {% elif can_edit %}
+        <form method="post" action="{% url 'web:customer_po_create_job' po.pk %}">
+          {% csrf_token %}<button class="btn" type="submit">Create job from this PO</button>
+        </form>
+        <p class="muted" style="font-size:12px;margin:8px 0 0;">Builds the project · phases · tasks from the quotation — nothing re-entered.</p>
+      {% endif %}
+    {% else %}
+      <p class="muted" style="font-size:13px;margin:0 0 12px;">Match this PO to the quotation it confirms.</p>
+      {% if suggestions %}
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:6px;">Suggested matches</div>
+      {% for s in suggestions %}
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);">
+        <div style="flex:1;">
+          <strong>{{ s.quotation.number }}</strong> · {{ s.quotation.client_name }}
+          <div class="muted" style="font-size:12px;">{{ s.quotation.total|floatformat:2 }} · {{ s.reason }}</div>
+        </div>
+        <span class="chip {% if s.score >= 80 %}info{% else %}warn{% endif %}">{{ s.score }}%</span>
+        {% if can_edit %}
+        <form method="post" action="{% url 'web:customer_po_link' po.pk %}" style="display:inline;">
+          {% csrf_token %}<input type="hidden" name="quotation" value="{{ s.quotation.pk }}">
+          <button class="btn" type="submit" style="padding:5px 12px;">Link</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if can_edit %}
+      <form method="get" style="margin-top:14px;display:flex;gap:8px;">
+        <input type="search" name="q" value="{{ search }}" placeholder="Search quotations by number, customer…" style="flex:1;">
+        <button class="btn ghost" type="submit">Search</button>
+      </form>
+      {% for q in search_results %}
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
+        <div style="flex:1;"><strong>{{ q.number }}</strong> · {{ q.client_name }}<div class="muted" style="font-size:12px;">{{ q.total|floatformat:2 }}</div></div>
+        <form method="post" action="{% url 'web:customer_po_link' po.pk %}" style="display:inline;">
+          {% csrf_token %}<input type="hidden" name="quotation" value="{{ q.pk }}">
+          <button class="btn ghost" type="submit" style="padding:5px 12px;">Link</button>
+        </form>
+      </div>
+      {% endfor %}
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
