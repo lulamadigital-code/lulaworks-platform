@@ -9,19 +9,23 @@ from rest_framework.response import Response
 
 from apps.core.api import TenantViewSet
 
-from .models import Customer, CustomerContact
+from .models import Customer, CustomerContact, Lead
 from .serializers import (
     CustomerContactSerializer,
     CustomerListSerializer,
     CustomerSerializer,
+    LeadSerializer,
 )
 from .services import (
     CRMError,
     add_note,
+    convert_lead,
     create_customer,
+    create_lead,
     customer_overview,
     customer_timeline,
     log_interaction,
+    mark_lead_lost,
     schedule_activity,
 )
 
@@ -162,6 +166,60 @@ class CustomerViewSet(TenantViewSet):
         if not cid:
             return None
         return CustomerContact.objects.filter(id=cid).first()
+
+
+class LeadViewSet(TenantViewSet):
+    """Sales leads (pre-customer). Read for any member; writes need crm.manage.
+    `?status=open` hides converted/lost; `?status=<value>` filters exactly."""
+
+    model = Lead
+    serializer_class = LeadSerializer
+    search_fields = ["company_name", "contact_name", "email", "city"]
+    ordering_fields = ["created_at", "company_name", "estimated_value"]
+    required_perms = {"create": "crm.manage", "update": "crm.manage",
+                      "partial_update": "crm.manage", "destroy": "crm.manage"}
+
+    def get_queryset(self):
+        qs = Lead.objects.all()
+        f = self.request.query_params.get("status")
+        if f == "open":
+            qs = qs.exclude(status__in=[Lead.Status.CONVERTED, Lead.Status.LOST])
+        elif f:
+            qs = qs.filter(status=f)
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        ser = LeadSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        data = dict(ser.validated_data)
+        name = data.pop("company_name")
+        lead = create_lead(request.user.active_company, request.user,
+                           company_name=name, **data)
+        return Response(LeadSerializer(lead).data, status=201)
+
+    @action(detail=True, methods=["post"])
+    def convert(self, request, pk=None):
+        if not request.user.has_perm_code("crm.manage"):
+            return Response({"error": {"code": "forbidden",
+                             "message": "Need crm.manage."}}, status=403)
+        lead = self.get_object()
+        try:
+            customer = convert_lead(lead, request.user,
+                                    opportunity_title=request.data.get("opportunity_title", ""))
+        except CRMError as exc:
+            return Response({"error": {"code": "crm", "message": str(exc)}}, status=400)
+        lead.refresh_from_db()
+        return Response({"ok": True, "customer_id": str(customer.id),
+                         "lead": LeadSerializer(lead).data}, status=200)
+
+    @action(detail=True, methods=["post"])
+    def lost(self, request, pk=None):
+        if not request.user.has_perm_code("crm.manage"):
+            return Response({"error": {"code": "forbidden",
+                             "message": "Need crm.manage."}}, status=403)
+        lead = self.get_object()
+        mark_lead_lost(lead, request.user, reason=request.data.get("reason", ""))
+        return Response(LeadSerializer(lead).data)
 
 
 class CustomerContactViewSet(TenantViewSet):

@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../screens/commercial_documents_screen.dart';
 import '../screens/company_settings_screen.dart';
 import '../screens/customers_screen.dart';
+import '../screens/leads_screen.dart';
 import '../screens/attendance_review_screen.dart';
 import '../screens/attendance_screen.dart';
 import '../screens/chat_inbox_screen.dart';
@@ -245,6 +246,14 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
         visible: (a) => a.canSeeCustomers,
         hiddenIfTab: 'crm',
         build: (a, _) => CustomersScreen(api: a),
+      ),
+      MoreItem(
+        id: 'leads',
+        title: 'Leads',
+        subtitle: 'Prospects — convert or track',
+        icon: Icons.person_search_outlined,
+        visible: (a) => a.canSeeCustomers,
+        build: (a, _) => LeadsScreen(api: a),
       ),
     ]),
     MoreGroup('OPERATIONS', [
