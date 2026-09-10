@@ -12,7 +12,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from apps.knowledge import historical_import as imp
-from apps.knowledge.models import ImportBatch, StagedEntity
+from apps.knowledge import job_reconstruction as jr
+from apps.knowledge.models import HistoricalJob, ImportBatch, StagedEntity
 
 
 def _can(user):
@@ -69,9 +70,40 @@ def import_batch(request, pk):
     # Split into what needs a human vs. what's settled, so the queue is obvious.
     pending = [e for e in entities if e.review_status == StagedEntity.Review.PENDING]
     done = [e for e in entities if e.review_status != StagedEntity.Review.PENDING]
+    jobs = list(batch.jobs.exclude(status=HistoricalJob.Status.DISMISSED)
+                .order_by("status", "-confidence"))
     return render(request, "web/import_batch.html", {
         "batch": batch, "summary": summary, "documents": documents,
-        "pending": pending, "done": done})
+        "pending": pending, "done": done, "jobs": jobs})
+
+
+@login_required
+@require_POST
+def import_reconstruct(request, pk):
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    batch = get_object_or_404(ImportBatch.objects.all(), pk=pk)
+    jobs = jr.reconstruct_jobs(batch, request.user)
+    messages.success(request, f"Found {len(jobs)} possible job{'s' if len(jobs) != 1 else ''} "
+                              "from your documents. Confirm the ones that are right.")
+    return redirect("web:import_batch", pk=pk)
+
+
+@login_required
+@require_POST
+def import_job(request, pk, jid):
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    batch = get_object_or_404(ImportBatch.objects.all(), pk=pk)
+    job = get_object_or_404(batch.jobs, pk=jid)
+    try:
+        jr.confirm_job(job, request.user, decision=(request.POST.get("decision") or "").strip())
+        messages.success(request, f"{job.title} — {job.get_status_display().lower()}.")
+    except (PermissionError, ValueError) as exc:
+        messages.error(request, str(exc))
+    return redirect("web:import_batch", pk=pk)
 
 
 @login_required

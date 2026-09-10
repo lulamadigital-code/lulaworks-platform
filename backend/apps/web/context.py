@@ -106,6 +106,7 @@ _SECTIONS = {
     "lulaai": "lulaai",
     "import_centre": "import_centre", "import_batch": "import_centre",
     "import_upload": "import_centre", "import_commit": "import_centre",
+    "import_reconstruct": "import_centre", "import_job": "import_centre",
 }
 
 

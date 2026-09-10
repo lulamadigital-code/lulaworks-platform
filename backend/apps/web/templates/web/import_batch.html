@@ -100,6 +100,52 @@
 </div>
 {% endif %}
 
+{# Reconstructed historical jobs (§12) — documents stitched into one past job. #}
+{% if summary.documents > 1 %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin:26px 0 10px;gap:12px;flex-wrap:wrap;">
+  <h2 style="font-size:15px;margin:0;">Reconstructed jobs</h2>
+  <form method="post" action="{% url 'web:import_reconstruct' batch.pk %}" style="margin:0;">{% csrf_token %}
+    <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;">
+      {% if jobs %}Re-scan for jobs{% else %}Find jobs in these documents{% endif %}</button>
+  </form>
+</div>
+{% if jobs %}
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Job</th><th>Evidence</th><th>Confidence</th><th class="right">Decide</th></tr>
+    {% for j in jobs %}
+    <tr>
+      <td>
+        <strong>{{ j.title }}</strong>
+        {% if j.reference %}<div class="muted" style="font-size:12px;">Ref {{ j.reference|upper }}</div>{% endif %}
+      </td>
+      <td class="muted" style="font-size:12.5px;">{{ j.evidence }}</td>
+      <td>
+        {% if j.status == 'confirmed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Confirmed</span>
+        {% else %}<span class="chip info">{{ j.confidence }}</span>{% endif %}
+      </td>
+      <td style="text-align:right;white-space:nowrap;">
+        {% if j.status != 'confirmed' %}
+        <form method="post" action="{% url 'web:import_job' batch.pk j.pk %}" style="display:inline;">{% csrf_token %}
+          <input type="hidden" name="decision" value="confirm">
+          <button class="btn" type="submit" style="padding:5px 11px;font-size:12.5px;">Confirm job</button>
+        </form>
+        <form method="post" action="{% url 'web:import_job' batch.pk j.pk %}" style="display:inline;">{% csrf_token %}
+          <input type="hidden" name="decision" value="dismiss">
+          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">Not a job</button>
+        </form>
+        {% else %}<span class="muted">✓</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<div class="card"><p class="muted" style="margin:0;">Documents that share a quote, PO or
+  invoice number get stitched into one past job. Click <strong>Find jobs</strong> to scan.</p></div>
+{% endif %}
+{% endif %}
+
 {# Documents processed. #}
 {% if documents %}
 <h2 style="font-size:15px;margin:24px 0 10px;">Documents ({{ documents|length }})</h2>

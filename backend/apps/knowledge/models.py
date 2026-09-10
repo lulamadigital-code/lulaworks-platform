@@ -201,6 +201,8 @@ class ImportedDocument(TenantBaseModel):
         OTHER = "other", "Other"
 
     batch = models.ForeignKey(ImportBatch, on_delete=models.CASCADE, related_name="documents")
+    job = models.ForeignKey("HistoricalJob", on_delete=models.SET_NULL, null=True,
+                            blank=True, related_name="documents")
     filename = models.CharField(max_length=255)
     doc_type = models.CharField(max_length=20, choices=DocType.choices, default=DocType.OTHER)
     doc_type_confidence = models.FloatField(default=0.0)
@@ -254,3 +256,30 @@ class StagedEntity(TenantBaseModel):
 
     def __str__(self):
         return f"{self.raw_name} [{self.kind}/{self.verdict}]"
+
+
+class HistoricalJob(TenantBaseModel):
+    """A past job reconstructed from imported documents that belong together —
+    the quotation, its customer PO, supplier quotes, delivery note and invoice
+    that were one piece of work (AI OS §12). Proposed by the reconstructor with
+    a confidence; a human confirms before it becomes company knowledge."""
+
+    class Status(models.TextChoices):
+        PROPOSED = "proposed", "Proposed"
+        CONFIRMED = "confirmed", "Confirmed"
+        DISMISSED = "dismissed", "Dismissed"
+
+    batch = models.ForeignKey(ImportBatch, on_delete=models.CASCADE, related_name="jobs")
+    title = models.CharField(max_length=200)
+    reference = models.CharField(max_length=120, blank=True)   # the shared ref that grouped them
+    customer_id = models.CharField(max_length=64, blank=True)  # resolved customer, if known
+    customer_name = models.CharField(max_length=255, blank=True)
+    confidence = models.FloatField(default=0.0)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PROPOSED)
+    evidence = models.TextField(blank=True)                    # human-readable "why these belong"
+
+    class Meta:
+        indexes = [models.Index(fields=["batch", "status"])]
+
+    def __str__(self):
+        return self.title or f"Historical job {self.pk}"
