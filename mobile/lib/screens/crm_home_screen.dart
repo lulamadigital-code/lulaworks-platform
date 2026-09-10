@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
 import 'activities_screen.dart';
+import 'contact_detail_screen.dart';
 import 'contacts_screen.dart';
 import 'customers_screen.dart';
 import 'leads_screen.dart';
@@ -189,7 +190,9 @@ class _CrmHomeScreenState extends State<CrmHomeScreen> {
       ]),
       subtitle: Text(sub, overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 12, color: kMuted)),
-      onTap: () => _push(ContactsScreen(api: widget.api)),
+      trailing: const Icon(Icons.chevron_right, color: kMuted, size: 20),
+      onTap: () => _push(
+          ContactDetailScreen(api: widget.api, contactId: '${p['id']}')),
     );
   }
 

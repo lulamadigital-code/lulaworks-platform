@@ -356,3 +356,53 @@ class CustomerContactViewSet(TenantViewSet):
               .order_by("-is_primary", "full_name"))
         customer = self.request.query_params.get("customer")
         return qs.filter(customer_id=customer) if customer else qs
+
+    @action(detail=True, methods=["get"])
+    def profile(self, request, pk=None):
+        """The relationship view for one person — the same data behind the web
+        Contact Profile: contact card, roles/responsibilities, overview tallies,
+        and a merged, chronological activity feed. Read-only."""
+        from .services import contact_profile
+
+        contact = self.get_object()
+        p = contact_profile(contact)
+
+        def _iso(dt):
+            return dt.isoformat() if dt else None
+
+        ov = p.get("overview", {}) or {}
+        overview = {
+            "last_contact": _iso(ov.get("last_contact")),
+            "next_follow_up": _iso(ov.get("next_follow_up")),
+            "calls": ov.get("calls", 0),
+            "meetings": ov.get("meetings", 0),
+            "emails": ov.get("emails", 0),
+            "whatsapp": ov.get("whatsapp", 0),
+            "open_opportunities": ov.get("open_opportunities", 0),
+            "active_jobs": ov.get("active_jobs", 0),
+        }
+
+        feed = []
+        for e in (p.get("feed") or []):
+            feed.append({
+                "when": _iso(e.get("when")),
+                "kind": e.get("kind") or "",
+                "title": e.get("title") or "",
+                "detail": e.get("detail") or "",
+            })
+
+        return Response({
+            "contact": CustomerContactSerializer(contact).data,
+            "customer_name": getattr(contact.customer, "display_name", None)
+            or (str(contact.customer) if contact.customer else ""),
+            "customer_id": str(contact.customer_id) if contact.customer_id else None,
+            "roles": list(p.get("roles") or []),
+            "responsibilities": list(p.get("responsibilities") or []),
+            "overview": overview,
+            "open_opportunities": [
+                {"id": str(o.id), "title": getattr(o, "title", "") or "",
+                 "stage": getattr(o, "get_stage_display", lambda: "")()}
+                for o in (p.get("open_opportunities") or [])
+            ],
+            "feed": feed,
+        })

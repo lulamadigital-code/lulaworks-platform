@@ -52,3 +52,15 @@ class ContactsApiTests(APITestCase):
         results = r.data.get("results") or r.data
         names = [x["full_name"] for x in results]
         self.assertEqual(names, ["Thabo Molefe"])
+
+    def test_profile_returns_relationship_view(self):
+        with tenant_scope(self.c.id):
+            person = CustomerContact.objects.filter(full_name="Thabo Molefe").first()
+        self.client.force_authenticate(self.mgr)
+        r = self.client.get(f"/api/v1/customer-contacts/{person.pk}/profile/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data["contact"]["full_name"], "Thabo Molefe")
+        self.assertEqual(r.data["customer_name"], "Zenith Mining")
+        self.assertIn("overview", r.data)
+        self.assertIn("calls", r.data["overview"])
+        self.assertIsInstance(r.data["feed"], list)

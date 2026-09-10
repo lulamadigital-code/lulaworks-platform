@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
+import 'contact_detail_screen.dart';
 
 /// People we work with — the real humans at your clients. One searchable list
 /// across every customer's contacts, with tap-to-call / email / WhatsApp.
@@ -144,14 +145,20 @@ class _ContactsScreenState extends State<ContactsScreen> {
 
     final sub = [role.isEmpty ? 'Contact' : role, if (company.isNotEmpty) company].join(' · ');
 
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kLine),
-      ),
-      child: Row(children: [
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => ContactDetailScreen(api: widget.api, contactId: '${p['id']}'))),
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: kLine),
+          ),
+          child: Row(children: [
         Container(
           width: 44,
           height: 44,
@@ -192,7 +199,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
         if (whatsapp.isNotEmpty)
           _reachBtn(Icons.chat_outlined, 'WhatsApp',
               () => _launch('https://wa.me/${whatsapp.replaceAll(RegExp(r'[^0-9]'), '')}')),
-      ]),
+          ]),
+        ),
+      ),
     );
   }
 
