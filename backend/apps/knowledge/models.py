@@ -156,3 +156,101 @@ class AggregateSample(models.Model):
 
     def __str__(self):
         return f"{self.metric_key}/{self.bucket}={self.value}"
+
+
+# ── Historical Business Import (AI OS §5, §22) ────────────────────────────────
+# "Bring Your Business History": a contractor uploads its existing documents;
+# we classify, extract entities, resolve them against the ERP, and stage the
+# results for human confirmation before anything is written. The staging models
+# make the pipeline safe — nothing enters the ERP until a person confirms.
+
+class ImportBatch(TenantBaseModel):
+    """One upload session of historical documents."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        PROCESSING = "processing", "Processing"
+        REVIEW = "review", "Ready for review"
+        COMMITTED = "committed", "Committed"
+        FAILED = "failed", "Failed"
+
+    label = models.CharField(max_length=160, blank=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    document_count = models.PositiveIntegerField(default=0)
+    entity_count = models.PositiveIntegerField(default=0)
+    notes = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.label or f"Import {self.pk}"
+
+
+class ImportedDocument(TenantBaseModel):
+    """One document inside a batch — classified, with its extracted text kept
+    for entity extraction and later re-processing."""
+
+    class DocType(models.TextChoices):
+        QUOTATION = "quotation", "Quotation"
+        CUSTOMER_PO = "customer_po", "Customer PO"
+        SUPPLIER_QUOTE = "supplier_quote", "Supplier Quotation"
+        SUPPLIER_INVOICE = "supplier_invoice", "Supplier Invoice"
+        INVOICE = "invoice", "Customer Invoice"
+        DELIVERY_NOTE = "delivery_note", "Delivery Note"
+        RFQ = "rfq", "RFQ / Tender"
+        JOB_REPORT = "job_report", "Job Report"
+        PRICE_LIST = "price_list", "Price List"
+        OTHER = "other", "Other"
+
+    batch = models.ForeignKey(ImportBatch, on_delete=models.CASCADE, related_name="documents")
+    filename = models.CharField(max_length=255)
+    doc_type = models.CharField(max_length=20, choices=DocType.choices, default=DocType.OTHER)
+    doc_type_confidence = models.FloatField(default=0.0)
+    text = models.TextField(blank=True)          # extracted plain text (capped on ingest)
+    text_chars = models.PositiveIntegerField(default=0)
+    failed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.filename} ({self.get_doc_type_display()})"
+
+
+class StagedEntity(TenantBaseModel):
+    """A company/person found in an imported document, resolved against the ERP
+    and awaiting human confirmation. Nothing is written to the ERP until this is
+    confirmed — the guardrail that keeps historical import honest."""
+
+    class Kind(models.TextChoices):
+        CUSTOMER = "customer", "Customer"
+        SUPPLIER = "supplier", "Supplier"
+        CONTACT = "contact", "Contact"
+
+    class Verdict(models.TextChoices):
+        MATCHED = "matched", "Matched"
+        REVIEW = "review", "Needs review"
+        NEW = "new", "New"
+
+    class Review(models.TextChoices):
+        PENDING = "pending", "Pending"
+        LINKED = "linked", "Linked to existing"
+        CREATED = "created", "Created new"
+        REJECTED = "rejected", "Rejected"
+
+    batch = models.ForeignKey(ImportBatch, on_delete=models.CASCADE, related_name="entities")
+    document = models.ForeignKey(ImportedDocument, on_delete=models.SET_NULL,
+                                 null=True, blank=True, related_name="entities")
+    kind = models.CharField(max_length=12, choices=Kind.choices)
+    raw_name = models.CharField(max_length=255)
+    email = models.CharField(max_length=255, blank=True)
+    phone = models.CharField(max_length=64, blank=True)
+    reference = models.CharField(max_length=64, blank=True)   # reg/VAT if seen
+    verdict = models.CharField(max_length=12, choices=Verdict.choices)
+    confidence = models.FloatField(default=0.0)
+    match_id = models.CharField(max_length=64, blank=True)    # candidate ERP id
+    match_label = models.CharField(max_length=255, blank=True)
+    review_status = models.CharField(max_length=12, choices=Review.choices,
+                                     default=Review.PENDING)
+    resolved_id = models.CharField(max_length=64, blank=True) # ERP id after commit
+
+    class Meta:
+        indexes = [models.Index(fields=["batch", "kind", "verdict"])]
+
+    def __str__(self):
+        return f"{self.raw_name} [{self.kind}/{self.verdict}]"

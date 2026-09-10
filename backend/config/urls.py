@@ -60,6 +60,7 @@ urlpatterns = [
     path("api/v1/", include("apps.ai_platform.urls")),
     # Customers & Contacts
     path("api/v1/", include("apps.customers.urls")),
+    path("api/v1/", include("apps.knowledge.urls")),
     # Support tickets (mobile Help & Support)
     path("api/v1/", include("apps.support.urls")),
     # OpenAPI
