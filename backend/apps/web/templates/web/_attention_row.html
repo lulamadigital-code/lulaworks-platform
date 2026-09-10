@@ -1,0 +1,9 @@
+{# One Attention Centre row. Pass `it` = {severity, category, title, detail, url}. #}
+<a href="{{ it.url }}" class="card" style="display:flex;align-items:flex-start;gap:12px;text-decoration:none;color:var(--ink);margin-bottom:10px;border-left:3px solid {% if it.severity == 'critical' %}#c0392b{% elif it.severity == 'warning' %}#9a6a12{% else %}#0a8f57{% endif %};">
+  <span style="font-size:16px;line-height:1.3;">{% if it.severity == 'critical' %}🔴{% elif it.severity == 'warning' %}🟠{% else %}🟢{% endif %}</span>
+  <div style="flex:1;">
+    <div style="font-weight:600;">{{ it.title }}</div>
+    <div class="muted" style="font-size:13px;">{{ it.detail }}</div>
+  </div>
+  <span class="chip" style="font-size:11px;">{{ it.category }}</span>
+</a>

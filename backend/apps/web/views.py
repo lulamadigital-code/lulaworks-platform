@@ -3136,6 +3136,17 @@ def search(request):
     return render(request, "web/search.html", {"q": q, "groups": groups, "total": total})
 
 
+@login_required
+def attention_centre(request):
+    """The Attention Centre — cross-module exceptions that need a human, grouped
+    by severity. Permission-gated inside the detector."""
+    from apps.web.attention import attention_items
+    if not getattr(request.user, "active_company_id", None):
+        return redirect("web:dashboard")
+    return render(request, "web/attention.html",
+                  {"a": attention_items(request.user.active_company, request.user)})
+
+
 # ── Operating actions (managers actually do the work here) ────────────────────
 
 def _to_decimal(raw, default="0"):

@@ -85,6 +85,7 @@ urlpatterns = [
     path("m/wa/webhook/", views_marketing.whatsapp_webhook, name="marketing_whatsapp_webhook"),
     path("crm/", views_crm.crm_hub, name="crm_hub"),
     path("search/", views.search, name="search"),
+    path("attention/", views.attention_centre, name="attention"),
     # Customer Purchase Orders — the Sales→Operations bridge (distinct from the
     # supplier POs under Procurement).
     path("customer-pos/", views_po.customer_pos, name="customer_pos"),

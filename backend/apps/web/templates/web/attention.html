@@ -1,0 +1,28 @@
+{% extends "web/base.html" %}
+{% block title %}Attention Centre{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Attention Centre</h1>
+    <p class="sub" style="margin:0;">What needs a human across your business — right now, in one place.</p>
+  </div>
+</div>
+
+<div class="grid" style="grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;">
+  <div class="tile"><div class="ic" style="background:var(--red-t,#fbe3e6);color:#c0392b;">🔴</div><div class="n">{{ a.counts.critical }}</div><div class="l">Critical</div></div>
+  <div class="tile"><div class="ic" style="background:#fbe9d6;color:#9a6a12;">🟠</div><div class="n">{{ a.counts.warning }}</div><div class="l">Needs attention</div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">🟢</div><div class="n">{{ a.counts.info }}</div><div class="l">For info</div></div>
+</div>
+
+{% if a.total == 0 %}
+<div class="card" style="text-align:center;padding:36px;">
+  <div style="font-size:32px;">✅</div>
+  <div style="font-weight:700;margin-top:8px;">All clear</div>
+  <div class="muted" style="font-size:13px;">Nothing needs your attention right now.</div>
+</div>
+{% endif %}
+
+{% for bucket in a.critical %}{% include "web/_attention_row.html" with it=bucket %}{% endfor %}
+{% for bucket in a.warning %}{% include "web/_attention_row.html" with it=bucket %}{% endfor %}
+{% for bucket in a.info %}{% include "web/_attention_row.html" with it=bucket %}{% endfor %}
+{% endblock %}
