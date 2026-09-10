@@ -322,6 +322,8 @@ def project_detail(request, pk):
         context["profitability"] = profitability(project)
         context["forecast"] = profit_forecast(project)
         context["budget"] = budget_vs_actual(project)
+    from apps.web.relations import related_records
+    context["related"] = related_records(project)
     context.update(_job_hub(project))
     return render(request, "web/project_detail.html", context)
 
@@ -4213,9 +4215,11 @@ def commercial_document_detail(request, pk):
     timeline = [{"label": label, "done": i <= stage, "current": i == stage}
                 for i, label in enumerate(_COMDOC_STEPS)]
 
+    from apps.web.relations import related_records
     return render(request, "web/commercial_document_detail.html", {
         "doc": doc,
         "quote": doc.quotation,
+        "related": related_records(doc),
         "is_invoice": doc.kind == CommercialDocument.Kind.INVOICE,
         "can_view_money": _can_view_money(request.user),
         # Approve is the single, final step; there is no finalize or send.

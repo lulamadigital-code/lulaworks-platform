@@ -135,6 +135,34 @@ class CustomerPOTests(TestCase):
                 qty=100, created_by=self.u, updated_by=self.u)   # case/space-insensitive
             self.assertFalse(po_line_variance(po)["has_variance"])
 
+    def test_related_records_link_po_and_quotation(self):
+        from apps.web.relations import related_records
+        with tenant_scope(self.c.id):
+            q = Quotation.objects.create(company=self.c, number="QTN-R",
+                                         client_name="ABC Mining")
+            po = CustomerPurchaseOrder.objects.create(
+                company=self.c, po_number="PO-R", quotation=q,
+                created_by=self.u, updated_by=self.u)
+            # from the PO you can reach the quotation…
+            po_rel = related_records(po)
+            po_labels = [it["label"] for s in po_rel for it in s["items"]]
+            self.assertIn("QTN-R", po_labels)
+            # …and from the quotation you can reach the PO (upstream ↔ downstream)
+            q_rel = related_records(q)
+            q_labels = [it["label"] for s in q_rel for it in s["items"]]
+            self.assertIn("PO-R", q_labels)
+
+    def test_related_panel_renders_on_po_detail(self):
+        with tenant_scope(self.c.id):
+            q = Quotation.objects.create(company=self.c, number="QTN-RP",
+                                         client_name="ABC")
+            po = CustomerPurchaseOrder.objects.create(
+                company=self.c, po_number="PO-RP", quotation=q,
+                created_by=self.u, updated_by=self.u)
+        r = self.client.get(f"/customer-pos/{po.pk}/")
+        self.assertContains(r, "Related records")
+        self.assertContains(r, "QTN-RP")
+
     def test_add_requires_permission(self):
         viewer = _user(self.c, ["projects.view"], email="viewer@acme.co")
         self.client.force_login(viewer)
