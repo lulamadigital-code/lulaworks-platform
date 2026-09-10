@@ -16,7 +16,7 @@ import '../screens/dashboard_screen.dart';
 import '../screens/estimates_screen.dart';
 import '../screens/field_home_screen.dart';
 import '../screens/finance_screen.dart';
-import '../screens/lulaai_screen.dart';
+import '../screens/intelligence_screen.dart';
 import '../screens/more_screen.dart';
 import '../screens/my_tasks_screen.dart';
 import '../screens/notifications_screen.dart';
@@ -377,12 +377,12 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
         build: (a, _) => CompanySettingsScreen(api: a),
       ),
       MoreItem(
-        id: 'ai',
-        title: 'Lulaworks AI',
-        subtitle: 'Ask the assistant',
+        id: 'intelligence',
+        title: 'Intelligence',
+        subtitle: 'Predictions, attention & LulaAI',
         icon: Icons.auto_awesome_outlined,
         visible: (a) => a.canGenerateAi,
-        build: (a, _) => LulaAiScreen(api: a),
+        build: (a, _) => IntelligenceScreen(api: a),
       ),
     ]),
     MoreGroup('ACCOUNT', [
