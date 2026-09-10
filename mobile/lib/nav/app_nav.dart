@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../screens/commercial_documents_screen.dart';
 import '../screens/company_settings_screen.dart';
 import '../screens/customers_screen.dart';
+import '../screens/crm_home_screen.dart';
 import '../screens/leads_screen.dart';
 import '../screens/pipeline_screen.dart';
 import '../screens/activities_screen.dart';
@@ -142,7 +143,7 @@ List<NavTab> bottomTabsFor(ApiClient api) {
     label: 'CRM',
     icon: Icons.contacts_outlined,
     activeIcon: Icons.contacts,
-    build: (api, a) => CustomersScreen(api: api),
+    build: (api, a) => CrmHomeScreen(api: api),
   );
   final jobs = NavTab(
     id: 'jobs',
@@ -255,6 +256,7 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
         subtitle: 'Prospects — convert or track',
         icon: Icons.person_search_outlined,
         visible: (a) => a.canSeeCustomers,
+        hiddenIfTab: 'crm',
         build: (a, _) => LeadsScreen(api: a),
       ),
       MoreItem(
@@ -263,6 +265,7 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
         subtitle: 'Open deals by stage',
         icon: Icons.filter_alt_outlined,
         visible: (a) => a.canSeeCustomers,
+        hiddenIfTab: 'crm',
         build: (a, _) => PipelineScreen(api: a),
       ),
       MoreItem(
@@ -271,6 +274,7 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
         subtitle: 'Your calls, meetings & follow-ups',
         icon: Icons.event_available_outlined,
         visible: (a) => a.canSeeCustomers,
+        hiddenIfTab: 'crm',
         build: (a, _) => ActivitiesScreen(api: a),
       ),
     ]),
