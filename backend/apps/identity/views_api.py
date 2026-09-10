@@ -159,6 +159,21 @@ class CompanySetupView(APIView):
         return Response(data)
 
 
+class AttentionView(APIView):
+    """Attention Centre over REST — cross-module exceptions grouped by severity,
+    permission-gated by the same detector the web console uses. For the mobile
+    'what needs attention' view."""
+
+    def get(self, request):
+        from apps.core.middleware import set_tenant_from_request
+        set_tenant_from_request(request)
+        if not getattr(request.user, "active_company_id", None):
+            return Response({"error": {"code": "no_company",
+                             "message": "No active company."}}, status=400)
+        from apps.web.attention import attention_items
+        return Response(attention_items(request.user.active_company, request.user))
+
+
 class MembershipViewSet(viewsets.ModelViewSet):
     """Team members of the active company. Create = invite by email + role."""
 

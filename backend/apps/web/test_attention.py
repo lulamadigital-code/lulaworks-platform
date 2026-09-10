@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from django.test import TestCase
 from django.utils import timezone
+from rest_framework.test import APITestCase
 
 from apps.core.context import tenant_scope
 from apps.execution.models import Task
@@ -70,3 +71,17 @@ class AttentionTests(TestCase):
         # 1 overdue task (critical) + quote awaiting + unmatched PO (warnings)
         self.assertGreaterEqual(r.context["attention_count"], 3)
         self.assertTrue(r.context["attention_critical"])   # overdue → red badge
+
+
+class AttentionApiTests(APITestCase):
+    def test_attention_endpoint(self):
+        c = Company.objects.create(name="Api Co")
+        with tenant_scope(c.id):
+            Task.objects.create(company=c, name="Late",
+                                due_date=timezone.localdate() - timedelta(days=2))
+            u = _user(c, ["projects.view"], "api@co.co")
+        self.client.force_authenticate(u)
+        r = self.client.get("/api/v1/attention/")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("counts", r.data)
+        self.assertGreaterEqual(r.data["counts"]["critical"], 1)

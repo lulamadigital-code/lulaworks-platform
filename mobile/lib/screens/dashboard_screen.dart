@@ -6,6 +6,7 @@ import '../nav/app_nav.dart';
 import '../theme.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/company_setup.dart';
+import 'attention_screen.dart';
 import 'customer_form_screen.dart';
 import 'customers_screen.dart';
 import 'my_tasks_screen.dart';
@@ -64,6 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           ? api.get('/finance/commercial-dashboard/').catchError((_) => null)
           : Future<dynamic>.value(null),
       api.get('/company/setup/').catchError((_) => null),
+      api.get('/attention/').catchError((_) => null),
     ]);
     final unreadCount = r[3] is Map ? (r[3]['count'] as int? ?? 0) : 0;
     api.unread.value = unreadCount; // seed the live badge
@@ -76,6 +78,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       quotations: pageResults(r[4]),
       finance: r[5] is Map ? (r[5] as Map).cast<String, dynamic>() : null,
       setup: SetupStatus.fromJson(r[6]),
+      attention: r[7] is Map ? (r[7] as Map).cast<String, dynamic>() : null,
     );
   }
 
@@ -92,6 +95,45 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   void _push(Widget screen) =>
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+
+  Widget _attentionBanner(BuildContext context, Map<String, dynamic> a) {
+    final counts = (a['counts'] as Map?)?.cast<String, dynamic>() ?? {};
+    final crit = (counts['critical'] as int?) ?? 0;
+    final warn = (counts['warning'] as int?) ?? 0;
+    final total = (a['total'] as int?) ?? 0;
+    final accent = crit > 0 ? const Color(0xFFC0392B) : const Color(0xFF9A6A12);
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => _push(AttentionScreen(api: api)),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border(
+            left: BorderSide(color: accent, width: 3),
+            top: const BorderSide(color: kLine), right: const BorderSide(color: kLine),
+            bottom: const BorderSide(color: kLine)),
+        ),
+        child: Row(children: [
+          const Icon(Icons.notifications_active_outlined, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Attention Centre',
+                  style: TextStyle(fontWeight: FontWeight.w700, color: kInk)),
+              Text(
+                '$total item${total == 1 ? '' : 's'} need attention'
+                '${crit > 0 ? ' · $crit critical' : ''}'
+                '${warn > 0 ? ' · $warn to review' : ''}',
+                style: const TextStyle(fontSize: 12.5, color: kMuted)),
+            ]),
+          ),
+          const Icon(Icons.chevron_right, color: kMuted),
+        ]),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -131,6 +173,10 @@ class _DashboardScreenState extends State<DashboardScreen>
         if (h.setup != null && !h.setup!.requiredComplete && h.setup!.canEdit) ...[
           const SizedBox(height: 16),
           SetupCard(api: api, status: h.setup!),
+        ],
+        if (h.attention != null && ((h.attention!['total'] as int?) ?? 0) > 0) ...[
+          const SizedBox(height: 16),
+          _attentionBanner(context, h.attention!),
         ],
         const SizedBox(height: 20),
         _quickActions(context, h),
@@ -832,6 +878,7 @@ class _Home {
     required this.quotations,
     required this.finance,
     this.setup,
+    this.attention,
   });
   final Map<String, dynamic> me;
   final List<Project> projects;
@@ -841,6 +888,7 @@ class _Home {
   final List<Map<String, dynamic>> quotations;
   final Map<String, dynamic>? finance;
   final SetupStatus? setup;
+  final Map<String, dynamic>? attention;
 }
 
 class _QA {
