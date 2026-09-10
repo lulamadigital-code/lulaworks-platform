@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../api/api_client.dart';
 import '../theme.dart';
+import 'customer_detail_screen.dart';
 
 /// Contact profile — the relationship view for one person, matching the web
 /// Contact Profile: who they are, how to reach them, the overview tallies
@@ -65,6 +66,10 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 _header(c, '${d['customer_name'] ?? ''}'),
+                if ('${d['customer_id'] ?? ''}'.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _customerLink('${d['customer_name'] ?? 'Customer'}', '${d['customer_id']}'),
+                ],
                 const SizedBox(height: 16),
                 _reachRow(c),
                 const SizedBox(height: 16),
@@ -130,6 +135,35 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         ]),
       ),
     ]);
+  }
+
+  Widget _customerLink(String name, String customerId) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => CustomerDetailScreen(api: widget.api, customerId: customerId))),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: kLine),
+          ),
+          child: Row(children: [
+            const Icon(Icons.business_outlined, size: 20, color: kBrandDark),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(name,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kInk)),
+            ),
+            const Icon(Icons.chevron_right, color: kMuted, size: 20),
+          ]),
+        ),
+      ),
+    );
   }
 
   Widget _reachRow(Map<String, dynamic> c) {

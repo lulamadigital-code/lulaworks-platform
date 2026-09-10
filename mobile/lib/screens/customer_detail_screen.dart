@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../theme.dart';
+import 'contact_detail_screen.dart';
 import 'crm_log_screen.dart';
 import 'customer_form_screen.dart';
 
@@ -164,7 +165,15 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       ]);
     }
     return ListView(
-      children: [for (final c in contacts) _ContactTile(contact: c)],
+      children: [
+        for (final c in contacts)
+          _ContactTile(
+            contact: c,
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) =>
+                    ContactDetailScreen(api: widget.api, contactId: '${c['id']}'))),
+          ),
+      ],
     );
   }
 
@@ -240,13 +249,15 @@ class _TimelineTile extends StatelessWidget {
 }
 
 class _ContactTile extends StatelessWidget {
-  const _ContactTile({required this.contact});
+  const _ContactTile({required this.contact, this.onTap});
   final Map<String, dynamic> contact;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final primary = contact['is_primary'] == true;
     return ListTile(
+      onTap: onTap,
       leading: CircleAvatar(child: Text(_initials('${contact['full_name']}'))),
       title: Row(children: [
         Flexible(child: Text('${contact['full_name']}')),
@@ -259,6 +270,9 @@ class _ContactTile extends StatelessWidget {
         if ('${contact['job_title'] ?? ''}'.isNotEmpty) '${contact['job_title']}',
         if ('${contact['reach'] ?? ''}'.isNotEmpty) '${contact['reach']}',
       ].join(' · ')),
+      trailing: onTap == null
+          ? null
+          : const Icon(Icons.chevron_right, color: kMuted, size: 20),
     );
   }
 
