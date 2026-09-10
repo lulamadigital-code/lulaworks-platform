@@ -174,18 +174,69 @@ def commit_entity(staged: StagedEntity, user, *, decision, customer_id=None) -> 
         staged.resolved_id = staged.match_id
         staged.review_status = StagedEntity.Review.LINKED
         staged.save(update_fields=["resolved_id", "review_status", "updated_at"])
+        prices = _capture_supplier_prices(staged, user)
         return {"ok": True, "review_status": staged.review_status,
-                "resolved_id": staged.resolved_id}
+                "resolved_id": staged.resolved_id, "prices_recorded": prices}
 
     if decision == "create":
         resolved_id = _create_record(staged, user, customer_id=customer_id)
         staged.resolved_id = str(resolved_id)
         staged.review_status = StagedEntity.Review.CREATED
         staged.save(update_fields=["resolved_id", "review_status", "updated_at"])
+        prices = _capture_supplier_prices(staged, user)
         return {"ok": True, "review_status": staged.review_status,
-                "resolved_id": staged.resolved_id}
+                "resolved_id": staged.resolved_id, "prices_recorded": prices}
 
     raise CommitError(f"Unknown decision '{decision}'.")
+
+
+def _capture_supplier_prices(staged: StagedEntity, user) -> int:
+    """When a supplier from a supplier quote/invoice is confirmed, turn the
+    document's line items into price history (§11) — the bridge from Historical
+    Import into the price ledger. Only real, priced lines are recorded."""
+    if staged.kind != StagedEntity.Kind.SUPPLIER or not staged.resolved_id:
+        return 0
+    doc = staged.document
+    price_docs = (ImportedDocument.DocType.SUPPLIER_QUOTE,
+                  ImportedDocument.DocType.SUPPLIER_INVOICE)
+    if doc is None or doc.doc_type not in price_docs or not doc.text:
+        return 0
+    from apps.procurement.models import Supplier
+    from apps.procurement.services import record_prices
+
+    supplier = Supplier.objects.filter(pk=staged.resolved_id).first()
+    if supplier is None:
+        return 0
+    items = _extract_priced_lines(doc.text)
+    if not items:
+        return 0
+    return record_prices(staged.company, supplier, items, user=user)
+
+
+# A line with a clear trailing money amount: optional "qty unit", a description
+# (must contain letters), then a currency amount with cents. The cents requirement
+# keeps us from mistaking a bare quantity for a price — we only record real prices.
+_PRICED_LINE = re.compile(
+    r"^\s*(?:(?P<qty>\d+(?:\.\d+)?)\s*(?P<unit>[A-Za-z]{1,6})?\s+)?"
+    r"(?P<desc>.*?[A-Za-z].*?)\s+"
+    r"(?:R|ZAR)?\s*(?P<price>\d[\d ,]*\.\d{2})\s*$")
+
+
+def _extract_priced_lines(text: str) -> list[dict]:
+    """Deterministically pull priced lines from a supplier document. Only lines
+    with an explicit amount (with cents) are returned — never an invented price."""
+    out: list[dict] = []
+    for raw in (text or "").splitlines():
+        m = _PRICED_LINE.match(raw)
+        if not m:
+            continue
+        desc = m.group("desc").strip(" \t:-|")
+        if len(desc) < 3:
+            continue
+        price = m.group("price").replace(" ", "").replace(",", "")
+        out.append({"description": desc, "unit": m.group("unit") or "each",
+                    "unit_price": price})
+    return out
 
 
 def _create_record(staged: StagedEntity, user, *, customer_id=None):

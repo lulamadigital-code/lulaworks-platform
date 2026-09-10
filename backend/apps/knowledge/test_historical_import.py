@@ -103,6 +103,24 @@ class ImportPipelineTests(TestCase):
             with self.assertRaises(imp.CommitError):
                 imp.commit_entity(cust, self.viewer, decision="link")
 
+    def test_supplier_invoice_feeds_price_history(self):
+        from apps.procurement.models import SupplierPrice
+        invoice = (
+            b"SUPPLIER INVOICE\n"
+            b"Invoice No: INV-2024-55\n"
+            b"Supplier: Hydraulics SA\n"
+            b"3 m  Hydraulic pipe  R173.00\n"
+            b"2 each  Gasket kit  R42.50\n")
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="Prices")
+            imp.ingest(batch, "inv.txt", invoice, self.mgr)
+            supp = batch.entities.get(kind=StagedEntity.Kind.SUPPLIER)
+            res = imp.commit_entity(supp, self.mgr, decision="create")
+            # Committing the supplier captured the invoice's priced lines.
+            self.assertGreaterEqual(res["prices_recorded"], 1)
+            self.assertTrue(SupplierPrice.objects.filter(
+                description__icontains="Hydraulic pipe").exists())
+
     def test_contact_create_needs_customer(self):
         with tenant_scope(self.company.id):
             batch = imp.create_batch(self.mgr, label="History")

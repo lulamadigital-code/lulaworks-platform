@@ -487,3 +487,96 @@ def procurement_dashboard_metrics(company):
             SupplierPrice.objects.select_related("supplier", "product")
             .order_by("-date", "-created_at")[:8]),
     }
+
+
+# ── Historical price intelligence (AI OS §11, §18) ────────────────────────────
+
+def record_prices(company, supplier, items, *, user=None, date=None, currency="ZAR") -> int:
+    """Append price points for a known supplier straight into the ledger.
+
+    `items` is an iterable of dicts/objects with description / unit / unit_price
+    (the shape document_intelligence.extract_items returns). Lines without a
+    stated price are skipped — an invented price is worse than none. Returns the
+    number of price points recorded."""
+    day = date or timezone.localdate()
+    n = 0
+    for item in items:
+        get = (lambda k: item.get(k)) if isinstance(item, dict) else (lambda k: getattr(item, k, None))
+        desc = (get("description") or "").strip()
+        raw = get("unit_price")
+        try:
+            price = Decimal(str(raw)) if raw not in (None, "") else Decimal("0")
+        except Exception:                            # noqa: BLE001
+            price = Decimal("0")
+        if not desc or price <= 0:
+            continue
+        SupplierPrice.objects.create(
+            company=company, supplier=supplier,
+            product=resolve_product(company, user, desc),
+            item_key=normalise(desc), description=desc,
+            unit=get("unit") or "each", unit_price=price,
+            currency=currency or "ZAR", date=day)
+        n += 1
+    return n
+
+
+def price_intelligence(company, item, *, limit=300) -> dict:
+    """Answer the §18 price questions for an item from the append-only ledger:
+    who we buy it from, the latest/cheapest/average price, and the trend. Reads
+    only real recorded prices — nothing invented; empty when we have no history."""
+    key = normalise(item or "")
+    qs = SupplierPrice.objects.select_related("supplier").all()
+    if key:
+        matched = qs.filter(item_key=key)
+        qs = matched if matched.exists() else qs.filter(description__icontains=item)
+    points = list(qs.order_by("date", "created_at")[:limit])
+    if not points:
+        return {"item": item, "found": False, "points": [], "suppliers": [],
+                "source": "Supplier price history"}
+
+    def _f(d):
+        return str(d) if d is not None else None
+
+    prices = [p.unit_price for p in points]
+    per_supplier: dict = {}
+    for p in points:
+        name = getattr(p.supplier, "name", "—")
+        s = per_supplier.setdefault(name, {"supplier": name, "count": 0,
+                                           "last_price": None, "last_date": None,
+                                           "min_price": p.unit_price})
+        s["count"] += 1
+        s["min_price"] = min(s["min_price"], p.unit_price)
+        if s["last_date"] is None or p.date >= s["last_date"]:
+            s["last_date"], s["last_price"] = p.date, p.unit_price
+
+    # Trend: earliest third vs latest third average.
+    def _avg(seq):
+        return sum(seq) / len(seq) if seq else None
+    third = max(1, len(prices) // 3)
+    early, late = _avg(prices[:third]), _avg(prices[-third:])
+    trend = "flat"
+    change_pct = None
+    if early and late and early != 0:
+        change_pct = round(float((late - early) / early) * 100, 1)
+        trend = "up" if change_pct > 2 else "down" if change_pct < -2 else "flat"
+
+    latest = points[-1]
+    cheapest = min(per_supplier.values(), key=lambda s: s["last_price"])
+    suppliers = sorted(per_supplier.values(), key=lambda s: s["last_price"])
+    return {
+        "item": item, "found": True,
+        "last_price": _f(latest.unit_price), "last_supplier": getattr(latest.supplier, "name", "—"),
+        "last_date": latest.date.isoformat() if latest.date else None,
+        "cheapest_supplier": cheapest["supplier"], "cheapest_price": _f(cheapest["last_price"]),
+        "min_price": _f(min(prices)), "max_price": _f(max(prices)),
+        "avg_price": _f((sum(prices) / len(prices)).quantize(Decimal("0.01"))),
+        "trend": trend, "change_pct": change_pct, "point_count": len(points),
+        "suppliers": [{"supplier": s["supplier"], "last_price": _f(s["last_price"]),
+                       "last_date": s["last_date"].isoformat() if s["last_date"] else None,
+                       "min_price": _f(s["min_price"]), "count": s["count"]}
+                      for s in suppliers],
+        "points": [{"supplier": getattr(p.supplier, "name", "—"),
+                    "price": _f(p.unit_price), "unit": p.unit,
+                    "date": p.date.isoformat() if p.date else None} for p in points],
+        "source": "Supplier price history",
+    }

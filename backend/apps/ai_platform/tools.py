@@ -342,3 +342,11 @@ def _resolve_contact(user, *, full_name="", customer_id=None, email="", phone=""
     from apps.knowledge.entity_resolution import resolve_contact
     return resolve_contact(full_name, company_id=customer_id, email=email,
                            phone=phone).as_dict()
+
+
+@register("price_intelligence", required_perm="procurement.manage",
+          description="What we've paid for an item: last price, cheapest supplier, "
+                      "average, and the price trend — from real purchase history")
+def _price_intelligence(user, *, item=""):
+    from apps.procurement.services import price_intelligence
+    return price_intelligence(user.active_company, item)
