@@ -63,3 +63,10 @@ class AttentionTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "Attention Centre")
         self.assertContains(r, "overdue")
+
+    def test_sidebar_badge_count_cached(self):
+        self.client.force_login(self.u_mgr)
+        r = self.client.get("/attention/")
+        # 1 overdue task (critical) + quote awaiting + unmatched PO (warnings)
+        self.assertGreaterEqual(r.context["attention_count"], 3)
+        self.assertTrue(r.context["attention_critical"])   # overdue → red badge

@@ -94,6 +94,10 @@ _SECTIONS = {
     "po_approve": "procurement", "po_receive": "procurement",
     "products": "procurement", "product_detail": "procurement",
     "requests": "procurement", "request_new": "procurement", "request_detail": "procurement",
+    "attention": "attention",
+    "customer_pos": "customer_pos", "customer_po_add": "customer_pos",
+    "customer_po_detail": "customer_pos", "customer_po_link": "customer_pos",
+    "customer_po_create_job": "customer_pos", "customer_po_status": "customer_pos",
     "invoices": "invoices", "invoice_new": "invoices",
     "commercial_document_detail": "invoices", "commercial_document_pdf": "invoices",
     "commercial_document_send": "invoices", "commercial_document_transition": "invoices",
@@ -135,6 +139,25 @@ def nav_flags(request):
         except Exception:
             support_open = 0
 
+    # Attention Centre badge — critical+warning count, CACHED per user (90s) so
+    # the cross-module detector runs at most once a minute-and-a-half, not on
+    # every page render. Colour turns red only when something is critical.
+    attention_count, attention_critical = 0, False
+    if signed_in and getattr(user, "active_company_id", None):
+        from django.core.cache import cache
+        key = f"attn:{user.id}:{user.active_company_id}"
+        cached = cache.get(key)
+        if cached is None:
+            try:
+                from apps.web.attention import attention_items
+                d = attention_items(user.active_company, user)
+                cached = (d["counts"]["critical"] + d["counts"]["warning"],
+                          d["counts"]["critical"] > 0)
+            except Exception:                        # noqa: BLE001
+                cached = (0, False)
+            cache.set(key, cached, 90)
+        attention_count, attention_critical = cached
+
     from django.conf import settings as _s
     return {"perms_money": can, "perms_procurement": can_proc,
             "perms_marketing": can_market,
@@ -142,5 +165,7 @@ def nav_flags(request):
             "logo_static": logo_static_name(), "nav_section": section,
             "unread_notifications": unread,
             "support_open_count": support_open,
+            "attention_count": attention_count,
+            "attention_critical": attention_critical,
             "idle_timeout": getattr(_s, "SESSION_IDLE_TIMEOUT", 0),
             "ga4_id": getattr(_s, "GA4_MEASUREMENT_ID", "")}
