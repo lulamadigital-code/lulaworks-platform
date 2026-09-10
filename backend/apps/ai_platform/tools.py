@@ -321,3 +321,24 @@ def _customer_summary(user, *, customer_id="", name=""):
             "total_opportunities": opps.count(),
             "last_touch": cust.updated_at.date().isoformat(),
             "source": f"Customer · {cust.name}"}
+
+
+# ── Entity resolution (Company Knowledge Engine keystone, §6–§8) ──────────────
+
+@register("resolve_company", required_perm="customers.manage",
+          description="Find the existing Customer/Supplier a name refers to (dedup) "
+                      "with a matched/review/new verdict — never creates records")
+def _resolve_company(user, *, company_name="", kind="customer", email="", phone="",
+                     reg_no="", vat_no=""):
+    from apps.knowledge.entity_resolution import resolve_company
+    return resolve_company(company_name, kind=kind, email=email, phone=phone,
+                           reg_no=reg_no, vat_no=vat_no).as_dict()
+
+
+@register("resolve_contact", required_perm="customers.manage",
+          description="Find the existing person (CustomerContact) a name refers to "
+                      "with a matched/review/new verdict — never creates records")
+def _resolve_contact(user, *, full_name="", customer_id=None, email="", phone=""):
+    from apps.knowledge.entity_resolution import resolve_contact
+    return resolve_contact(full_name, company_id=customer_id, email=email,
+                           phone=phone).as_dict()

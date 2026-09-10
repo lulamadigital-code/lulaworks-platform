@@ -116,6 +116,37 @@ class AssistantView(APIView):
         return Response(daily_brief(request.user.active_company, request.user))
 
 
+class AIContextView(APIView):
+    """AI Context Engine over REST — "what does LulaAI know at THIS record?".
+
+    GET /ai/context/<kind>/<pk>/  → the grounded, permission-scoped context
+    bundle (facts + related-records chain + a prompt-ready text block) for a
+    quotation / customer_po / job / commercial_document / customer. Money facts
+    are withheld without finance.view_money; a record outside the tenant, or an
+    unknown kind, returns 404 rather than leaking or guessing (AI OS §3/§19).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, kind, pk):
+        set_tenant_from_request(request)
+        if not request.user.has_perm_code("ai.generate"):
+            return Response(
+                {"error": {"code": "forbidden", "message": "AI features require the "
+                           "ai.generate permission."}},
+                status=status.HTTP_403_FORBIDDEN)
+        from apps.knowledge.context_engine import context_for
+        bundle = context_for(request.user, kind, pk)
+        if bundle is None:
+            return Response(
+                {"error": {"code": "not_found",
+                           "message": "No context for that record in Lulaworks."}},
+                status=status.HTTP_404_NOT_FOUND)
+        data = bundle.as_dict()
+        data["prompt_text"] = bundle.as_prompt_text()
+        return Response(data)
+
+
 class AIDashboardView(APIView):
     """AI operations dashboard (AI_PLATFORM §10): credits, agent activity, recent
     drafts + decisions, and the tools this user is permitted to invoke."""
