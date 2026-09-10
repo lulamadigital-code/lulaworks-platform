@@ -60,6 +60,30 @@ class AutomationTests(TestCase):
             self.assertTrue(item["awaiting_approval"])
             self.assertFalse(item["proposal"]["executed_by_ai"])
 
+    def test_scheduled_sweep_runs_each_tenant_as_creator(self):
+        from apps.ai_platform.automations import run_all_tenants
+        # Company A has price data + an enabled rule (from setUp signal); add the rule.
+        with tenant_scope(self.company.id):
+            Automation.objects.create(
+                company=self.company, name="A price rises",
+                trigger=Automation.Trigger.PRICE_RISE,
+                action=Automation.Action.NOTIFY_ME, created_by=self.mgr)
+            # A disabled rule must NOT run.
+            Automation.objects.create(
+                company=self.company, name="Disabled", enabled=False,
+                trigger=Automation.Trigger.PRICE_RISE,
+                action=Automation.Action.NOTIFY_ME, created_by=self.mgr)
+        result = run_all_tenants()
+        self.assertEqual(result["automations_run"], 1)      # only the enabled one
+        self.assertGreaterEqual(result["items_handled"], 1)
+        with tenant_scope(self.company.id):
+            self.assertEqual(AutomationRun.objects.count(), 1)
+
+    def test_scheduled_task_wrapper(self):
+        from apps.ai_platform.tasks import run_scheduled_automations
+        out = run_scheduled_automations()
+        self.assertIn("automations_run", out)
+
     def test_no_signal_is_nothing_to_do(self):
         with tenant_scope(self.company.id):
             rule = Automation.objects.create(

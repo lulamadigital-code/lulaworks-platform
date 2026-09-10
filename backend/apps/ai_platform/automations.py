@@ -84,9 +84,31 @@ def _notify(company, user, *, title, body):
 
 
 def run_all(company, user) -> list[AutomationRun]:
-    """Run every enabled automation for the tenant (a daily/beat entry point or
-    a manual 'run all')."""
+    """Run every enabled automation for the tenant (a manual 'run all')."""
     runs = []
     for a in Automation.objects.filter(enabled=True):
         runs.append(run_automation(a, user))
     return runs
+
+
+def run_all_tenants() -> dict:
+    """Scheduled sweep across every tenant: run each enabled automation as the
+    person who created it (so 'notify me' reaches the right inbox and permission
+    checks are theirs). Cross-tenant, but each run is scoped to its own company.
+    Resilient — one failing automation never stops the rest."""
+    from apps.core.context import tenant_scope
+
+    autos = list(Automation.all_objects.filter(enabled=True)
+                 .select_related("company", "created_by"))
+    ran, matched = 0, 0
+    for a in autos:
+        if not a.created_by_id:
+            continue                        # no one to act as / notify
+        try:
+            with tenant_scope(a.company_id):
+                run = run_automation(a, a.created_by)
+            ran += 1
+            matched += run.matches
+        except Exception:                    # noqa: BLE001
+            continue
+    return {"automations_run": ran, "items_handled": matched}

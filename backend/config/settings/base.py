@@ -310,6 +310,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.notifications.tasks.daily_reminders",
         "schedule": crontab(hour=7, minute=0),
     },
+    # Fire enabled AI automations once a day (AI OS §15). Safe actions run;
+    # high-risk actions are only proposed for approval, never sent.
+    "daily-ai-automations": {
+        "task": "apps.ai_platform.tasks.run_scheduled_automations",
+        "schedule": crontab(hour=7, minute=15),
+    },
 }
 CACHES = {
     "default": {

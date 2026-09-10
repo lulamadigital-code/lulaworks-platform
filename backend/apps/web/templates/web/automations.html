@@ -4,9 +4,9 @@
 <div class="pagehead">
   <div>
     <h1>AI Automations</h1>
-    <p class="sub" style="margin:0;">Rules that watch your business and act for you. Safe
-      actions run automatically; anything that reaches a customer or supplier is prepared
-      for your approval first — never sent on its own.</p>
+    <p class="sub" style="margin:0;">Rules that watch your business and act for you. They run
+      automatically once a day — or press Run now any time. Safe actions run; anything that
+      reaches a customer or supplier is prepared for your approval first, never sent on its own.</p>
   </div>
   {% if rules %}
   <form method="post" action="{% url 'web:automations_run_all' %}" style="margin:0;">{% csrf_token %}
