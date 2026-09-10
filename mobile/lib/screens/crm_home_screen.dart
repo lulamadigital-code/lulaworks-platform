@@ -85,6 +85,7 @@ class _CrmHomeScreenState extends State<CrmHomeScreen> {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                _peopleSection(d),
                 _tile(Icons.contacts_outlined, 'Customers',
                     'Companies, contacts & activity', null,
                     () => _push(CustomersScreen(api: widget.api))),
@@ -97,11 +98,6 @@ class _CrmHomeScreenState extends State<CrmHomeScreen> {
                 _tile(Icons.event_available_outlined, 'Activities',
                     'Your calls, meetings & follow-ups', d.activities,
                     () => _push(ActivitiesScreen(api: widget.api))),
-                _tile(Icons.groups_outlined, 'People we work with',
-                    'The real humans at your clients',
-                    d.peopleTotal > 0 ? d.peopleTotal : null,
-                    () => _push(ContactsScreen(api: widget.api))),
-                _peopleSection(d),
               ],
             );
           },
