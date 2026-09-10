@@ -100,3 +100,25 @@ class OpportunityApiTests(APITestCase):
         r = self.client.post("/api/v1/opportunities/",
                              {"customer": str(self.customer.id), "title": "X"}, format="json")
         self.assertEqual(r.status_code, 403)
+
+
+class ActivityApiTests(APITestCase):
+    def setUp(self):
+        from apps.customers.services import create_customer, schedule_activity
+        self.c = Company.objects.create(name="Acme")
+        self.mgr = _user(self.c, ["crm.manage", "customers.manage"], "amgr@acme.co")
+        with tenant_scope(self.c.id):
+            cust = create_customer(self.c, self.mgr, name="Zenith")
+            self.act = schedule_activity(self.c, self.mgr, subject="Call Zenith",
+                                         customer=cust)
+
+    def test_list_mine_and_complete(self):
+        self.client.force_authenticate(self.mgr)
+        lst = self.client.get("/api/v1/activities/?mine=1&status=open")
+        self.assertEqual(lst.status_code, 200)
+        subjects = [x["subject"] for x in (lst.data.get("results") or lst.data)]
+        self.assertIn("Call Zenith", subjects)
+        cm = self.client.post(f"/api/v1/activities/{self.act.id}/complete/",
+                              {"outcome": "spoke"}, format="json")
+        self.assertEqual(cm.status_code, 200)
+        self.assertEqual(cm.data["status"], "done")

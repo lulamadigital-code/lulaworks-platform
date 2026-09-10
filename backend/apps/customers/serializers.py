@@ -6,7 +6,7 @@ stays in services.py; these serializers only shape data in and out.
 """
 from rest_framework import serializers
 
-from .models import Customer, CustomerContact, Lead, Opportunity
+from .models import Activity, Customer, CustomerContact, Lead, Opportunity
 
 
 class CustomerListSerializer(serializers.ModelSerializer):
@@ -80,3 +80,21 @@ class OpportunitySerializer(serializers.ModelSerializer):
                   "quotation", "closed_at", "lost_reason", "created_at", "updated_at"]
         read_only_fields = ["id", "stage_display", "customer_name", "closed_at",
                             "lost_reason", "created_at", "updated_at"]
+
+
+class ActivitySerializer(serializers.ModelSerializer):
+    """A CRM to-do (call/meeting/follow-up) attached to a customer/lead/deal."""
+    type_display = serializers.CharField(source="get_activity_type_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    customer_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Activity
+        fields = ["id", "activity_type", "type_display", "subject", "detail",
+                  "customer", "customer_name", "lead", "opportunity", "due_at",
+                  "status", "status_display", "completed_at", "outcome", "created_at"]
+        read_only_fields = ["id", "type_display", "status_display", "customer_name",
+                            "completed_at", "created_at"]
+
+    def get_customer_name(self, obj):
+        return obj.customer.display_name if obj.customer_id else ""

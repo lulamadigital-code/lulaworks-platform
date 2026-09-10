@@ -6,6 +6,7 @@ import '../screens/company_settings_screen.dart';
 import '../screens/customers_screen.dart';
 import '../screens/leads_screen.dart';
 import '../screens/pipeline_screen.dart';
+import '../screens/activities_screen.dart';
 import '../screens/attendance_review_screen.dart';
 import '../screens/attendance_screen.dart';
 import '../screens/chat_inbox_screen.dart';
@@ -263,6 +264,14 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
         icon: Icons.filter_alt_outlined,
         visible: (a) => a.canSeeCustomers,
         build: (a, _) => PipelineScreen(api: a),
+      ),
+      MoreItem(
+        id: 'activities',
+        title: 'Activities',
+        subtitle: 'Your calls, meetings & follow-ups',
+        icon: Icons.event_available_outlined,
+        visible: (a) => a.canSeeCustomers,
+        build: (a, _) => ActivitiesScreen(api: a),
       ),
     ]),
     MoreGroup('OPERATIONS', [

@@ -9,8 +9,10 @@ from rest_framework.response import Response
 
 from apps.core.api import TenantViewSet
 
-from .models import Customer, CustomerContact, Lead, Opportunity, OpportunityStage
+from .models import (Activity, Customer, CustomerContact, Lead, Opportunity,
+                     OpportunityStage)
 from .serializers import (
+    ActivitySerializer,
     CustomerContactSerializer,
     CustomerListSerializer,
     CustomerSerializer,
@@ -20,6 +22,7 @@ from .serializers import (
 from .services import (
     CRMError,
     add_note,
+    complete_activity,
     convert_lead,
     create_customer,
     create_lead,
@@ -287,6 +290,51 @@ class OpportunityViewSet(TenantViewSet):
             set_opportunity_stage(opp, request.user, new)
         opp.refresh_from_db()
         return Response(OpportunitySerializer(opp).data)
+
+
+class ActivityViewSet(TenantViewSet):
+    """CRM to-dos. `?mine=1` limits to the caller's; `?status=open` (default) or
+    `?status=all`. Complete via the `complete` action."""
+
+    model = Activity
+    serializer_class = ActivitySerializer
+    ordering_fields = ["due_at", "created_at"]
+    required_perms = {"create": "crm.manage", "update": "crm.manage",
+                      "partial_update": "crm.manage", "destroy": "crm.manage"}
+
+    def get_queryset(self):
+        qs = Activity.objects.select_related("customer").all()
+        p = self.request.query_params
+        if p.get("mine") == "1":
+            qs = qs.filter(assigned_to=self.request.user)
+        f = p.get("status", "open")
+        if f == "open":
+            qs = qs.filter(status=Activity.Status.OPEN)
+        elif f and f != "all":
+            qs = qs.filter(status=f)
+        return qs.order_by("due_at", "-created_at")
+
+    def create(self, request, *args, **kwargs):
+        ser = ActivitySerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        data = dict(ser.validated_data)
+        subject = data.pop("subject", "")
+        try:
+            activity = schedule_activity(request.user.active_company, request.user,
+                                         subject=subject, **data)
+        except CRMError as exc:
+            return Response({"error": {"code": "crm", "message": str(exc)}}, status=400)
+        return Response(ActivitySerializer(activity).data, status=201)
+
+    @action(detail=True, methods=["post"])
+    def complete(self, request, pk=None):
+        if not request.user.has_perm_code("crm.manage"):
+            return Response({"error": {"code": "forbidden",
+                             "message": "Need crm.manage."}}, status=403)
+        activity = self.get_object()
+        complete_activity(activity, request.user, outcome=request.data.get("outcome", ""))
+        activity.refresh_from_db()
+        return Response(ActivitySerializer(activity).data)
 
 
 class CustomerContactViewSet(TenantViewSet):
