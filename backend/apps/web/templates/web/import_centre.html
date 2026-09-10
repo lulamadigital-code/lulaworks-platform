@@ -1,0 +1,38 @@
+{% extends "web/base.html" %}
+{% block title %}Bring Your Business History{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Bring your business history</h1>
+    <p class="sub" style="margin:0;">Upload your old quotes, POs, invoices and supplier
+      documents. Lulaworks reads them, finds the companies and people you've worked
+      with, and matches them to your records — you confirm before anything is saved.</p>
+  </div>
+  <form method="post" action="{% url 'web:import_start' %}" style="margin:0;">{% csrf_token %}
+    <button class="btn" type="submit">+ New import</button>
+  </form>
+</div>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Import</th><th>Status</th><th class="right">Documents</th><th class="right">Entities found</th><th>Started</th></tr>
+    {% for b in batches %}
+    <tr onclick="location.href='{% url 'web:import_batch' b.pk %}'" style="cursor:pointer;">
+      <td><strong>{{ b.label|default:"Untitled import" }}</strong></td>
+      <td>
+        {% if b.status == 'committed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Committed</span>
+        {% elif b.status == 'review' %}<span class="chip info">Ready for review</span>
+        {% elif b.status == 'failed' %}<span class="chip warn">Failed</span>
+        {% else %}<span class="chip">{{ b.get_status_display }}</span>{% endif %}
+      </td>
+      <td style="text-align:right;">{{ b.document_count }}</td>
+      <td style="text-align:right;">{{ b.entity_count }}</td>
+      <td class="muted">{{ b.created_at|date:"j M Y" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" style="padding:22px;color:var(--muted);">
+      No imports yet. Click <strong>New import</strong> to bring in your existing business documents.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

@@ -104,6 +104,8 @@ _SECTIONS = {
     "commercial_document_excel": "invoices", "commercial_document_payment": "invoices",
     "commercial": "commercial", "invoice_payment": "commercial",
     "lulaai": "lulaai",
+    "import_centre": "import_centre", "import_batch": "import_centre",
+    "import_upload": "import_centre", "import_commit": "import_centre",
 }
 
 
@@ -160,7 +162,7 @@ def nav_flags(request):
 
     from django.conf import settings as _s
     return {"perms_money": can, "perms_procurement": can_proc,
-            "perms_marketing": can_market,
+            "perms_marketing": can_market, "perms_import": can_market,
             "has_logo": has_logo_file(),
             "logo_static": logo_static_name(), "nav_section": section,
             "unread_notifications": unread,

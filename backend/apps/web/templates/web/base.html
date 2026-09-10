@@ -388,6 +388,7 @@
       {% include "web/_navlink.html" with url='web:people' key='people' label='People' icon='users' %}
 
       <span class="nav-gap"></span>
+      {% if perms_import %}{% include "web/_navlink.html" with url='web:import_centre' key='import_centre' label='Business history' icon='building' %}{% endif %}
       {% include "web/_navlink.html" with url='web:settings' key='settings' label='Settings' icon='gear' %}
       {% include "web/_navlink.html" with url='web:support_home' key='support' label='Help & Support' icon='help' %}
     </nav>

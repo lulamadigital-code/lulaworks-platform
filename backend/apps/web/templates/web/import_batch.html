@@ -1,0 +1,119 @@
+{% extends "web/base.html" %}
+{% block title %}{{ batch.label|default:"Import" }}{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_centre' %}">← Business history</a></p>
+    <h1>{{ batch.label|default:"Untitled import" }}</h1>
+    <p class="sub" style="margin:0;">Upload documents, then confirm the companies and people we found.</p>
+  </div>
+</div>
+
+{# Discovery counts (§22) — only what's really been staged. #}
+<div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;">
+  {% with s=summary %}
+  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">▤</div><div class="n">{{ s.documents }}</div><div class="l">Documents</div></div>
+  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">◎</div><div class="n">{{ s.customers }}</div><div class="l">Customers</div></div>
+  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">▣</div><div class="n">{{ s.suppliers }}</div><div class="l">Suppliers</div></div>
+  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">☺</div><div class="n">{{ s.contacts }}</div><div class="l">People</div></div>
+  {% endwith %}
+</div>
+
+<div class="card" style="margin-bottom:18px;">
+  <form method="post" action="{% url 'web:import_batch' batch.pk %}" enctype="multipart/form-data"
+        style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0;">{% csrf_token %}
+    <input type="file" name="documents" multiple
+           accept=".pdf,.docx,.xlsx,.csv,.txt,.eml,.zip,.png,.jpg,.jpeg" required
+           style="flex:1;min-width:220px;">
+    <button class="btn" type="submit">Upload &amp; process</button>
+  </form>
+  <p class="muted" style="margin:10px 0 0;font-size:12.5px;">
+    Quotes, POs, invoices, supplier quotations, delivery notes, RFQs — PDF, Word, Excel,
+    CSV, email or images. You can upload in batches.</p>
+</div>
+
+{# The review queue — the human decision. #}
+<h2 style="font-size:15px;margin:22px 0 10px;">Review — {{ pending|length }} to confirm
+  {% if summary.auto_matched %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {{ summary.auto_matched }} auto-matched</span>{% endif %}</h2>
+{% if pending %}
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Found</th><th>Type</th><th>Best match</th><th>Confidence</th><th class="right">Decide</th></tr>
+    {% for e in pending %}
+    <tr>
+      <td>
+        <strong>{{ e.raw_name }}</strong>
+        {% if e.email %}<div class="muted" style="font-size:12px;">{{ e.email }}</div>{% endif %}
+      </td>
+      <td><span class="chip">{{ e.get_kind_display }}</span></td>
+      <td>
+        {% if e.match_label %}{{ e.match_label }}{% else %}<span class="muted">— none —</span>{% endif %}
+      </td>
+      <td>
+        {% if e.verdict == 'matched' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Strong</span>
+        {% elif e.verdict == 'review' %}<span class="chip warn">Review</span>
+        {% else %}<span class="chip info">New</span>{% endif %}
+      </td>
+      <td style="text-align:right;white-space:nowrap;">
+        {% if e.match_id %}
+        <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" style="display:inline;">{% csrf_token %}
+          <input type="hidden" name="decision" value="link">
+          <button class="btn" type="submit" style="padding:5px 11px;font-size:12.5px;">Link</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" style="display:inline;">{% csrf_token %}
+          <input type="hidden" name="decision" value="create">
+          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">Create new</button>
+        </form>
+        <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" style="display:inline;">{% csrf_token %}
+          <input type="hidden" name="decision" value="reject">
+          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;" title="Ignore this one">Skip</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<div class="card"><p class="muted" style="margin:0;">
+  {% if summary.documents %}Nothing left to review — every entity has been handled. 🎉
+  {% else %}Upload some documents above to get started.{% endif %}</p></div>
+{% endif %}
+
+{% if done %}
+<h2 style="font-size:15px;margin:24px 0 10px;">Handled ({{ done|length }})</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Entity</th><th>Type</th><th>Outcome</th></tr>
+    {% for e in done %}
+    <tr>
+      <td>{{ e.raw_name }}</td>
+      <td><span class="chip">{{ e.get_kind_display }}</span></td>
+      <td>
+        {% if e.review_status == 'linked' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Linked to existing</span>
+        {% elif e.review_status == 'created' %}<span class="chip info">Created new</span>
+        {% else %}<span class="chip">Skipped</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{# Documents processed. #}
+{% if documents %}
+<h2 style="font-size:15px;margin:24px 0 10px;">Documents ({{ documents|length }})</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>File</th><th>Detected type</th><th class="right">Text read</th></tr>
+    {% for d in documents %}
+    <tr>
+      <td>{{ d.filename }}{% if d.failed %} <span class="chip warn">unreadable</span>{% endif %}</td>
+      <td>{{ d.get_doc_type_display }}{% if d.doc_type_confidence %} <span class="muted" style="font-size:12px;">· {{ d.doc_type_confidence }}</span>{% endif %}</td>
+      <td style="text-align:right;" class="muted">{{ d.text_chars }} chars</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endblock %}

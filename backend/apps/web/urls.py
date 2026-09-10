@@ -9,6 +9,7 @@ from . import (
     views_crm,
     views_doctemplates,
     views_email,
+    views_import,
     views_marketing,
     views_platform,
     views_po,
@@ -95,6 +96,13 @@ urlpatterns = [
     path("customer-pos/<uuid:pk>/link/", views_po.customer_po_link, name="customer_po_link"),
     path("customer-pos/<uuid:pk>/create-job/", views_po.customer_po_create_job, name="customer_po_create_job"),
     path("customer-pos/<uuid:pk>/status/", views_po.customer_po_status, name="customer_po_status"),
+
+    # Bring Your Business History — historical import.
+    path("import/", views_import.import_centre, name="import_centre"),
+    path("import/start/", views_import.import_start, name="import_start"),
+    path("import/<uuid:pk>/", views_import.import_batch, name="import_batch"),
+    path("import/<uuid:pk>/entity/<uuid:eid>/commit/", views_import.import_commit,
+         name="import_commit"),
     path("crm/search/", views_crm.crm_search, name="crm_search"),
     path("crm/reports/", views_crm.crm_reports, name="crm_reports"),
     path("crm/analytics/", views_crm.crm_analytics, name="crm_analytics"),
