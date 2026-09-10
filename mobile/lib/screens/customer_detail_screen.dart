@@ -52,6 +52,19 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     if (ok == true) _reload();
   }
 
+  Future<void> _newOpportunity(Map<String, dynamic> cst) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final created = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _OpportunityForm(api: widget.api, customerId: widget.customerId),
+    );
+    if (created == true) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Deal created in the pipeline.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<_CustomerDetail>(
@@ -74,6 +87,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             appBar: AppBar(
               title: Text('${cst['code'] ?? ''}'),
               actions: [
+                if (widget.api.can('crm.manage'))
+                  IconButton(
+                      icon: const Icon(Icons.add_business_outlined),
+                      tooltip: 'New opportunity',
+                      onPressed: () => _newOpportunity(cst)),
                 if (widget.api.canManageCustomers)
                   IconButton(
                       icon: const Icon(Icons.edit_outlined),
@@ -286,4 +304,88 @@ class _CustomerDetail {
   final Map<String, dynamic> overview;
   final List<Map<String, dynamic>> contacts;
   final List<Map<String, dynamic>> timeline;
+}
+
+class _OpportunityForm extends StatefulWidget {
+  const _OpportunityForm({required this.api, required this.customerId});
+  final ApiClient api;
+  final String customerId;
+  @override
+  State<_OpportunityForm> createState() => _OpportunityFormState();
+}
+
+class _OpportunityFormState extends State<_OpportunityForm> {
+  final _title = TextEditingController();
+  final _value = TextEditingController();
+  final _notes = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    for (final c in [_title, _value, _notes]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_title.text.trim().isEmpty) {
+      setState(() => _error = 'A title is required.');
+      return;
+    }
+    setState(() { _busy = true; _error = null; });
+    try {
+      await widget.api.post('/opportunities/', {
+        'customer': widget.customerId,
+        'title': _title.text.trim(),
+        if (_value.text.trim().isNotEmpty) 'estimated_value': _value.text.trim(),
+        if (_notes.text.trim().isNotEmpty) 'description': _notes.text.trim(),
+      });
+      if (mounted) Navigator.of(context).pop(true);
+    } on ApiException catch (e) {
+      setState(() => _error = e.message);
+    } catch (_) {
+      setState(() => _error = 'Could not create the deal.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottom),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('New opportunity',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 14),
+        TextField(controller: _title, decoration: const InputDecoration(
+            labelText: 'Title *', border: OutlineInputBorder())),
+        const SizedBox(height: 10),
+        TextField(controller: _value, keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+                labelText: 'Estimated value', border: OutlineInputBorder())),
+        const SizedBox(height: 10),
+        TextField(controller: _notes, minLines: 2, maxLines: 4,
+            decoration: const InputDecoration(
+                labelText: 'Notes', border: OutlineInputBorder())),
+        if (_error != null) ...[
+          const SizedBox(height: 6),
+          Text(_error!, style: const TextStyle(color: Color(0xFFC0392B), fontSize: 13)),
+        ],
+        const SizedBox(height: 14),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: _busy ? null : _save,
+            child: _busy
+                ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Text('Create deal'),
+          ),
+        ),
+      ]),
+    );
+  }
 }
