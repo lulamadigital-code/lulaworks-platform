@@ -350,3 +350,12 @@ def _resolve_contact(user, *, full_name="", customer_id=None, email="", phone=""
 def _price_intelligence(user, *, item=""):
     from apps.procurement.services import price_intelligence
     return price_intelligence(user.active_company, item)
+
+
+@register("predictions", required_perm="projects.view",
+          description="Grounded forward-looking predictions (price rises, repeat "
+                      "customers, jobs at risk) with confidence, reasoning and sources")
+def _predictions(user, *, limit=20):
+    from apps.ai_platform.predictions import predictions
+    return {"predictions": predictions(user.active_company, user, limit=limit),
+            "source": "Prediction engine"}

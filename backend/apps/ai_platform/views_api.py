@@ -147,6 +147,23 @@ class AIContextView(APIView):
         return Response(data)
 
 
+class AIPredictionsView(APIView):
+    """AI Prediction Engine over REST (§16) — grounded foresight for this tenant,
+    scoped to what the user may see. GET /ai/predictions/."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        set_tenant_from_request(request)
+        if not request.user.has_perm_code("ai.generate"):
+            return Response(
+                {"error": {"code": "forbidden", "message": "AI features require the "
+                           "ai.generate permission."}},
+                status=status.HTTP_403_FORBIDDEN)
+        from apps.ai_platform.predictions import predictions
+        return Response({"predictions": predictions(request.user.active_company, request.user)})
+
+
 class AIDashboardView(APIView):
     """AI operations dashboard (AI_PLATFORM §10): credits, agent activity, recent
     drafts + decisions, and the tools this user is permitted to invoke."""
