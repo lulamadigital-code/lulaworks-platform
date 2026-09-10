@@ -107,6 +107,7 @@ _SECTIONS = {
     "import_centre": "import_centre", "import_batch": "import_centre",
     "import_upload": "import_centre", "import_commit": "import_centre",
     "import_reconstruct": "import_centre", "import_job": "import_centre",
+    "ai_centre": "ai_centre",
     "automations": "automations", "automation_create": "automations",
     "automation_run": "automations", "automation_toggle": "automations",
     "automations_run_all": "automations",

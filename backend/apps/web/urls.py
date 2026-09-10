@@ -8,6 +8,7 @@ from . import (
     views_billing,
     views_crm,
     views_doctemplates,
+    views_ai_centre,
     views_automations,
     views_email,
     views_import,
@@ -107,6 +108,9 @@ urlpatterns = [
     path("import/<uuid:pk>/reconstruct/", views_import.import_reconstruct,
          name="import_reconstruct"),
     path("import/<uuid:pk>/job/<uuid:jid>/", views_import.import_job, name="import_job"),
+
+    # AI command centre.
+    path("intelligence/", views_ai_centre.ai_centre, name="ai_centre"),
 
     # AI Automations.
     path("automations/", views_automations.automations, name="automations"),

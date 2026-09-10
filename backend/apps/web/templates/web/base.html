@@ -375,6 +375,7 @@
         Attention
         {% if attention_count %}<span style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;font-size:11px;font-weight:800;line-height:18px;text-align:center;color:#fff;background:{% if attention_critical %}#e2445c{% else %}#f0a020{% endif %};">{{ attention_count }}</span>{% endif %}
       </a>
+      {% if perms_ai %}{% include "web/_navlink.html" with url='web:ai_centre' key='ai_centre' label='Intelligence' icon='spark' %}{% endif %}
       {% include "web/_navlink.html" with url='web:crm_hub' key='crm' label='CRM' icon='org' %}
       {% if perms_marketing %}{% include "web/_navlink.html" with url='web:marketing' key='marketing' label='Marketing' icon='megaphone' %}{% endif %}
       {% if perms_procurement %}{% include "web/_navlink.html" with url='web:procurement' key='procurement' label='Procurement' icon='cart' %}{% endif %}

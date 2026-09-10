@@ -1,0 +1,80 @@
+{% extends "web/base.html" %}
+{% block title %}Lulaworks Intelligence{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Lulaworks Intelligence</h1>
+    <p class="sub" style="margin:0;">What your business needs now, what's coming, and what
+      Lulaworks is watching for you. Every item links to the record behind it.</p>
+  </div>
+  <a class="btn" href="{% url 'web:lulaai' %}">Ask LulaAI</a>
+</div>
+
+{# Attention — the exceptions that need a human now. #}
+<div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 10px;">
+  <h2 style="font-size:15px;margin:0;">Attention
+    {% if attention.total %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {{ attention.total }}</span>{% endif %}</h2>
+  <a class="muted" style="font-size:12.5px;" href="{% url 'web:attention' %}">See all →</a>
+</div>
+{% if attention_top %}
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:22px;">
+  {% for i in attention_top %}
+  <a href="{{ i.url|default:'#' }}" style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line);color:var(--ink);">
+    <span style="width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:{% if i.severity == 'critical' %}#e2445c{% else %}#f0a020{% endif %};"></span>
+    <span style="min-width:0;flex:1;">
+      <strong style="font-size:13.5px;">{{ i.title }}</strong>
+      <span class="muted" style="display:block;font-size:12.5px;">{{ i.category }} · {{ i.detail }}</span>
+    </span>
+    <span class="muted" style="font-size:18px;line-height:1;">›</span>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="margin-bottom:22px;"><p class="muted" style="margin:0;">Nothing needs your attention right now. 🎉</p></div>
+{% endif %}
+
+{# Predictions — foresight, with confidence + reasoning. #}
+<h2 style="font-size:15px;margin:0 0 10px;">Predictions</h2>
+{% if predictions %}
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:22px;">
+  {% for p in predictions %}
+  <div class="card" style="margin:0;">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:start;">
+      <strong style="font-size:13.5px;">{{ p.subject }}</strong>
+      <span class="chip info" title="Confidence">{{ p.confidence }}</span>
+    </div>
+    <p style="margin:8px 0 6px;font-size:13px;">{{ p.statement }}</p>
+    {% for r in p.reasoning %}<p class="muted" style="margin:0;font-size:12px;">• {{ r }}</p>{% endfor %}
+    <p class="muted" style="margin:8px 0 0;font-size:11.5px;">Source: {{ p.source }}</p>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="margin-bottom:22px;"><p class="muted" style="margin:0;">No predictions yet —
+  they appear as Lulaworks builds up price history, quoting patterns and job data.</p></div>
+{% endif %}
+
+{# Automations — what's running in the background. #}
+<div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 10px;">
+  <h2 style="font-size:15px;margin:0;">Automations
+    {% if enabled_automations %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {{ enabled_automations|length }} active</span>{% endif %}</h2>
+  <a class="muted" style="font-size:12.5px;" href="{% url 'web:automations' %}">Manage →</a>
+</div>
+{% if automations %}
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Automation</th><th>When → Do</th><th class="right">Runs</th></tr>
+    {% for a in automations %}
+    <tr onclick="location.href='{% url 'web:automations' %}';" style="cursor:pointer;">
+      <td><strong>{{ a.name }}</strong>{% if not a.enabled %} <span class="chip">Paused</span>{% endif %}</td>
+      <td class="muted" style="font-size:12.5px;">{{ a.get_trigger_display }} → {{ a.get_action_display }}</td>
+      <td style="text-align:right;">{{ a.run_count }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<div class="card"><p class="muted" style="margin:0;">No automations yet.
+  <a href="{% url 'web:automations' %}">Create one</a> to let Lulaworks act for you.</p></div>
+{% endif %}
+{% endblock %}
