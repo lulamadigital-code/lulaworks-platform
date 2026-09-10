@@ -12,45 +12,54 @@ detail page, so any lookup that fails is simply dropped.
 from django.urls import reverse
 
 
-def _u(name, pk):
+# record type → the web detail route that renders it. The API returns the
+# type + id so a client (Flutter) can open its OWN screen for that type.
+_WEB_ROUTE = {
+    "customer": "web:customer_detail",
+    "rfq": "web:rfq_detail",
+    "quotation": "web:quotation_detail",
+    "customer_po": "web:customer_po_detail",
+    "job": "web:project_detail",
+    "commercial_document": "web:commercial_document_detail",
+    "supplier_po": "web:po_detail",
+}
+
+
+def _item(label, sub, rtype, pk):
     try:
-        return reverse(name, args=[pk])
+        url = reverse(_WEB_ROUTE[rtype], args=[pk])
     except Exception:                                # noqa: BLE001
-        return ""
-
-
-def _item(label, sub, name, pk):
-    url = _u(name, pk)
-    return {"label": str(label), "sub": sub, "url": url} if url else None
+        url = ""
+    return {"label": str(label), "sub": sub, "type": rtype, "id": str(pk),
+            "url": url}
 
 
 def _customer_item(c):
-    return _item(getattr(c, "display_name", "") or c.name, "Customer",
-                 "web:customer_detail", c.pk)
+    return _item(getattr(c, "display_name", "") or c.name, "Customer", "customer", c.pk)
 
 
 def _quote_item(q):
-    return _item(q.number, q.client_name or "Quotation", "web:quotation_detail", q.pk)
+    return _item(q.number, q.client_name or "Quotation", "quotation", q.pk)
 
 
 def _rfq_item(r):
-    return _item(getattr(r, "number", "") or "RFQ", "RFQ", "web:rfq_detail", r.pk)
+    return _item(getattr(r, "number", "") or "RFQ", "RFQ", "rfq", r.pk)
 
 
 def _po_item(p):
-    return _item(p.po_number, "Customer PO", "web:customer_po_detail", p.pk)
+    return _item(p.po_number, "Customer PO", "customer_po", p.pk)
 
 
 def _job_item(j):
-    return _item(j.number, getattr(j, "title", "") or "Job", "web:project_detail", j.pk)
+    return _item(j.number, getattr(j, "title", "") or "Job", "job", j.pk)
 
 
 def _comdoc_item(d):
-    return _item(d.number, d.get_kind_display(), "web:commercial_document_detail", d.pk)
+    return _item(d.number, d.get_kind_display(), "commercial_document", d.pk)
 
 
 def _supplier_po_item(p):
-    return _item(p.number, "Supplier PO", "web:po_detail", p.pk)
+    return _item(p.number, "Supplier PO", "supplier_po", p.pk)
 
 
 def related_records(obj) -> list:
@@ -100,6 +109,29 @@ def related_records(obj) -> list:
             if q:
                 add("Customer POs", [_po_item(p) for p in q.customer_pos.all()])
                 add("Jobs", [_job_item(j) for j in q.projects.all()])
+
+        else:  # Customer
+            from apps.customers.models import Customer
+            if isinstance(obj, Customer):
+                add("Quotations", [_quote_item(q) for q in
+                                   Quotation.objects.filter(customer=obj)[:20]])
+                add("Jobs", [_job_item(j) for j in
+                             Project.objects.filter(customer=obj)[:20]])
+                add("Customer POs", [_po_item(p) for p in
+                                     CustomerPurchaseOrder.objects
+                                     .filter(quotation__customer=obj)[:20]])
     except Exception:                                # noqa: BLE001
         return sections
     return sections
+
+
+# record type → model, for resolving an API subject by type + id.
+def resolve_subject(rtype, pk):
+    from apps.customers.models import Customer
+    from apps.projects.models import Project
+    from apps.quotes.models import (CommercialDocument, CustomerPurchaseOrder,
+                                    Quotation)
+    model = {"quotation": Quotation, "customer_po": CustomerPurchaseOrder,
+             "job": Project, "commercial_document": CommercialDocument,
+             "customer": Customer}.get(rtype)
+    return model.objects.filter(pk=pk).first() if model else None

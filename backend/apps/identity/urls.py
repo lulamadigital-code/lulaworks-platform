@@ -5,6 +5,7 @@ from .views_api import (
     AttentionView,
     CompanySetupView,
     CompanyView,
+    RelatedRecordsView,
     MeAvatarView,
     MeChangePasswordView,
     MembershipViewSet,
@@ -25,5 +26,6 @@ urlpatterns = [
     path("company/", CompanyView.as_view(), name="company"),
     path("company/setup/", CompanySetupView.as_view(), name="company-setup"),
     path("attention/", AttentionView.as_view(), name="attention"),
+    path("related/<str:kind>/<uuid:pk>/", RelatedRecordsView.as_view(), name="related-records"),
     path("", include(router.urls)),
 ]

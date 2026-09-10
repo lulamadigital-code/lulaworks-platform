@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
+import '../widgets/related_records.dart';
 import '../widgets/status_pill.dart';
 import 'pdf_viewer_screen.dart';
 
@@ -343,6 +344,7 @@ class _DocDetailState extends State<_DocDetail> {
         ),
       ],
       _workflow(context, d),
+      RelatedRecords(api: widget.api, type: 'commercial_document', id: widget.docId),
     ]);
   }
 
@@ -380,6 +382,7 @@ class _DocDetailState extends State<_DocDetail> {
             style: const TextStyle(fontSize: 13, color: kInk)),
       ],
       _workflow(context, d),
+      RelatedRecords(api: widget.api, type: 'commercial_document', id: widget.docId),
     ]);
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
+import '../widgets/related_records.dart';
 import '../theme.dart';
 import '../widgets/status_pill.dart';
 import 'pdf_viewer_screen.dart';
@@ -315,6 +316,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
             ),
         ]),
       ],
+      RelatedRecords(api: widget.api, type: 'quotation', id: widget.quoteId),
     ]);
   }
 

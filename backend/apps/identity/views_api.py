@@ -174,6 +174,22 @@ class AttentionView(APIView):
         return Response(attention_items(request.user.active_company, request.user))
 
 
+class RelatedRecordsView(APIView):
+    """The business-transaction graph for one record — its upstream + downstream
+    related records as {type, id, label, sub}, so the app can open its own
+    screen for each. `kind` ∈ quotation|customer_po|job|commercial_document|customer."""
+
+    def get(self, request, kind, pk):
+        from apps.core.middleware import set_tenant_from_request
+        set_tenant_from_request(request)
+        from apps.web.relations import related_records, resolve_subject
+        obj = resolve_subject(kind, pk)
+        if obj is None:
+            return Response({"error": {"code": "not_found",
+                             "message": "Unknown record."}}, status=404)
+        return Response({"sections": related_records(obj)})
+
+
 class MembershipViewSet(viewsets.ModelViewSet):
     """Team members of the active company. Create = invite by email + role."""
 

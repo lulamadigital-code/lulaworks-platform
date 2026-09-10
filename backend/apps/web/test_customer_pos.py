@@ -168,3 +168,24 @@ class CustomerPOTests(TestCase):
         self.client.force_login(viewer)
         r = self.client.get("/customer-pos/add/", follow=True)
         self.assertNotContains(r, "Upload PO document")   # bounced, not on the form
+
+
+class RelatedRecordsApiTests(TestCase):
+    def test_related_endpoint_returns_typed_items(self):
+        from rest_framework.test import APIClient
+        c = Company.objects.create(name="RC")
+        with tenant_scope(c.id):
+            u = _user(c, ["quotes.create"], "rapi@x.co")
+            q = Quotation.objects.create(company=c, number="QTN-API", client_name="ABC")
+            po = CustomerPurchaseOrder.objects.create(
+                company=c, po_number="PO-API", quotation=q,
+                created_by=u, updated_by=u)
+        api = APIClient()
+        api.force_authenticate(u)
+        r = api.get(f"/api/v1/related/customer_po/{po.pk}/")
+        self.assertEqual(r.status_code, 200)
+        items = [it for s in r.data["sections"] for it in s["items"]]
+        quote_items = [it for it in items if it["type"] == "quotation"]
+        self.assertTrue(quote_items)
+        self.assertEqual(quote_items[0]["id"], str(q.pk))
+        self.assertEqual(quote_items[0]["label"], "QTN-API")
