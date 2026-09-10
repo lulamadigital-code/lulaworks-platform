@@ -38,16 +38,23 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 class CustomerContactSerializer(serializers.ModelSerializer):
     reach = serializers.CharField(read_only=True)
+    customer_name = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomerContact
         fields = [
-            "id", "customer", "department", "full_name", "job_title",
+            "id", "customer", "customer_name", "department", "full_name", "job_title",
             "email", "telephone", "mobile", "whatsapp", "extension",
             "preferred_method", "status", "roles", "responsibilities",
             "is_primary", "notes", "reach",
         ]
-        read_only_fields = ["id", "reach"]
+        read_only_fields = ["id", "reach", "customer_name"]
+
+    def get_customer_name(self, obj):
+        c = getattr(obj, "customer", None)
+        if not c:
+            return ""
+        return getattr(c, "display_name", None) or str(c)
 
 
 class LeadSerializer(serializers.ModelSerializer):

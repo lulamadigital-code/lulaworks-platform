@@ -8,6 +8,7 @@ import '../screens/crm_home_screen.dart';
 import '../screens/leads_screen.dart';
 import '../screens/pipeline_screen.dart';
 import '../screens/activities_screen.dart';
+import '../screens/contacts_screen.dart';
 import '../screens/attendance_review_screen.dart';
 import '../screens/attendance_screen.dart';
 import '../screens/chat_inbox_screen.dart';
@@ -276,6 +277,15 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
         visible: (a) => a.canSeeCustomers,
         hiddenIfTab: 'crm',
         build: (a, _) => ActivitiesScreen(api: a),
+      ),
+      MoreItem(
+        id: 'contacts',
+        title: 'People we work with',
+        subtitle: 'The real humans at your clients',
+        icon: Icons.groups_outlined,
+        visible: (a) => a.canSeeCustomers,
+        hiddenIfTab: 'crm',
+        build: (a, _) => ContactsScreen(api: a),
       ),
     ]),
     MoreGroup('OPERATIONS', [

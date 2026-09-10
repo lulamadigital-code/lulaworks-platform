@@ -351,6 +351,8 @@ class CustomerContactViewSet(TenantViewSet):
     }
 
     def get_queryset(self):
-        qs = CustomerContact.objects.all().select_related("customer", "department")
+        qs = (CustomerContact.objects.all()
+              .select_related("customer", "department")
+              .order_by("-is_primary", "full_name"))
         customer = self.request.query_params.get("customer")
         return qs.filter(customer_id=customer) if customer else qs
