@@ -1,0 +1,77 @@
+{% extends "web/base.html" %}
+{% block title %}AI Automations{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>AI Automations</h1>
+    <p class="sub" style="margin:0;">Rules that watch your business and act for you. Safe
+      actions run automatically; anything that reaches a customer or supplier is prepared
+      for your approval first — never sent on its own.</p>
+  </div>
+  {% if rules %}
+  <form method="post" action="{% url 'web:automations_run_all' %}" style="margin:0;">{% csrf_token %}
+    <button class="btn ghost" type="submit">Run all now</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="card" style="margin-bottom:18px;">
+  <form method="post" action="{% url 'web:automation_create' %}"
+        style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin:0;">{% csrf_token %}
+    <label style="flex:1;min-width:180px;">
+      <span class="muted" style="font-size:12px;">Name</span>
+      <input type="text" name="name" required placeholder="e.g. Warn me on price rises"
+        style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--line);border-radius:8px;">
+    </label>
+    <label>
+      <span class="muted" style="font-size:12px;">When</span><br>
+      <select name="trigger" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;">
+        {% for val, label in triggers %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>
+      <span class="muted" style="font-size:12px;">Do</span><br>
+      <select name="action" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;">
+        {% for val, label in actions %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <button class="btn" type="submit">Add automation</button>
+  </form>
+</div>
+
+{% if rules %}
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Automation</th><th>When → Do</th><th class="right">Runs</th><th>Last result</th><th class="right">Actions</th></tr>
+    {% for r in rules %}
+    <tr>
+      <td><strong>{{ r.name }}</strong>
+        {% if not r.enabled %}<span class="chip" style="margin-left:6px;">Paused</span>{% endif %}</td>
+      <td class="muted" style="font-size:12.5px;">{{ r.get_trigger_display }} → {{ r.get_action_display }}</td>
+      <td style="text-align:right;">{{ r.run_count }}</td>
+      <td>
+        {% with last=r.runs.first %}
+        {% if last %}
+          {% if last.result == 'awaiting_approval' %}<span class="chip warn">{{ last.matches }} awaiting approval</span>
+          {% elif last.result == 'done' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">{{ last.matches }} handled</span>
+          {% else %}<span class="chip">Nothing to do</span>{% endif %}
+        {% else %}<span class="muted">—</span>{% endif %}
+        {% endwith %}
+      </td>
+      <td style="text-align:right;white-space:nowrap;">
+        <form method="post" action="{% url 'web:automation_run' r.pk %}" style="display:inline;">{% csrf_token %}
+          <button class="btn" type="submit" style="padding:5px 11px;font-size:12.5px;">Run now</button>
+        </form>
+        <form method="post" action="{% url 'web:automation_toggle' r.pk %}" style="display:inline;">{% csrf_token %}
+          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">{% if r.enabled %}Pause{% else %}Enable{% endif %}</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<div class="card"><p class="muted" style="margin:0;">No automations yet. Add one above —
+  for example, “When a supplier price is rising → notify me”.</p></div>
+{% endif %}
+{% endblock %}

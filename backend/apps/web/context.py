@@ -107,6 +107,9 @@ _SECTIONS = {
     "import_centre": "import_centre", "import_batch": "import_centre",
     "import_upload": "import_centre", "import_commit": "import_centre",
     "import_reconstruct": "import_centre", "import_job": "import_centre",
+    "automations": "automations", "automation_create": "automations",
+    "automation_run": "automations", "automation_toggle": "automations",
+    "automations_run_all": "automations",
 }
 
 
@@ -116,6 +119,7 @@ def nav_flags(request):
     can = bool(signed_in and user.has_perm_code("finance.view_money"))
     can_proc = bool(signed_in and user.has_perm_code("procurement.manage"))
     can_market = bool(signed_in and user.has_perm_code("customers.manage"))
+    can_ai = bool(signed_in and user.has_perm_code("ai.generate"))
     rm = getattr(request, "resolver_match", None)
     section = _SECTIONS.get(rm.url_name, "") if rm else ""
 
@@ -164,6 +168,7 @@ def nav_flags(request):
     from django.conf import settings as _s
     return {"perms_money": can, "perms_procurement": can_proc,
             "perms_marketing": can_market, "perms_import": can_market,
+            "perms_ai": can_ai,
             "has_logo": has_logo_file(),
             "logo_static": logo_static_name(), "nav_section": section,
             "unread_notifications": unread,

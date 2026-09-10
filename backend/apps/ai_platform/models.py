@@ -149,3 +149,51 @@ class AIInteraction(TenantBaseModel):
 
     def __str__(self):
         return f"{self.agent}: {self.request_text[:40]} [{self.approval_status}]"
+
+
+# ── AI Automations (AI OS §15) ────────────────────────────────────────────────
+# User-configurable "when X, do Y" rules. Triggers evaluate live prediction
+# signals; safe actions run, high-risk actions are proposed for human approval.
+
+class Automation(TenantBaseModel):
+    class Trigger(models.TextChoices):
+        PRICE_RISE = "price_rise", "A supplier price is rising"
+        CUSTOMER_DUE = "customer_due", "A customer is due for another quote"
+        JOB_AT_RISK = "job_at_risk", "A job is at risk of slipping"
+
+    class Action(models.TextChoices):
+        NOTIFY_ME = "notify_me", "Notify me"
+        PROPOSE_FOLLOWUP = "propose_followup", "Draft a follow-up for approval"
+
+    name = models.CharField(max_length=160)
+    trigger = models.CharField(max_length=24, choices=Trigger.choices)
+    action = models.CharField(max_length=24, choices=Action.choices,
+                              default=Action.NOTIFY_ME)
+    enabled = models.BooleanField(default=True)
+    run_count = models.PositiveIntegerField(default=0)
+    last_run = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+
+class AutomationRun(TenantBaseModel):
+    class Result(models.TextChoices):
+        DONE = "done", "Done"
+        AWAITING_APPROVAL = "awaiting_approval", "Awaiting approval"
+        NOTHING = "nothing", "Nothing to do"
+        FAILED = "failed", "Failed"
+
+    automation = models.ForeignKey(Automation, on_delete=models.CASCADE, related_name="runs")
+    result = models.CharField(max_length=20, choices=Result.choices)
+    matches = models.PositiveIntegerField(default=0)
+    detail = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.automation_id} · {self.result}"

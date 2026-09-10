@@ -8,6 +8,7 @@ from . import (
     views_billing,
     views_crm,
     views_doctemplates,
+    views_automations,
     views_email,
     views_import,
     views_marketing,
@@ -106,6 +107,13 @@ urlpatterns = [
     path("import/<uuid:pk>/reconstruct/", views_import.import_reconstruct,
          name="import_reconstruct"),
     path("import/<uuid:pk>/job/<uuid:jid>/", views_import.import_job, name="import_job"),
+
+    # AI Automations.
+    path("automations/", views_automations.automations, name="automations"),
+    path("automations/create/", views_automations.automation_create, name="automation_create"),
+    path("automations/run-all/", views_automations.automations_run_all, name="automations_run_all"),
+    path("automations/<uuid:pk>/run/", views_automations.automation_run, name="automation_run"),
+    path("automations/<uuid:pk>/toggle/", views_automations.automation_toggle, name="automation_toggle"),
     path("crm/search/", views_crm.crm_search, name="crm_search"),
     path("crm/reports/", views_crm.crm_reports, name="crm_reports"),
     path("crm/analytics/", views_crm.crm_analytics, name="crm_analytics"),
