@@ -409,3 +409,62 @@ def suggest_related_items(text: str, existing: list[str] | None = None) -> list[
             seen.add(key)
             out.append(item)
     return out[:6]
+
+
+# ── AI extraction for Historical Import (deterministic-first, AI enriches) ─────
+# Same contract as the other _ai_json callers: gated by ai_configured(), returns
+# nothing extra when no provider is set, never invents. The import pipeline's own
+# deterministic pass is always the baseline; these only ADD what a regex misses.
+
+_ENTITIES_PROMPT = (
+    "From this business document, list the organisations and named people it "
+    "mentions, as strict JSON: "
+    '{"entities":[{"kind":"customer|supplier|contact","name":"","email":"",'
+    '"phone":"","reference":""}]}. '
+    "kind: customer = the buyer/client the document is addressed to or from a "
+    "customer; supplier = a seller/vendor; contact = a named individual person. "
+    "Use only what the text states; leave a field empty if absent. Do not invent "
+    "names, emails or numbers. Text:\n\n{text}"
+)
+
+_PRICES_PROMPT = (
+    "From this supplier document, list the priced line items as strict JSON: "
+    '{"lines":[{"description":"","unit":"","unit_price":0}]}. '
+    "Include a line ONLY if the text states a price for it. unit_price is a "
+    "number with no currency symbol. Do not invent prices or items. "
+    "Text:\n\n{text}"
+)
+
+_KINDS = {"customer", "supplier", "contact"}
+
+
+def ai_extract_entities(text: str, *, company, user) -> list[dict]:
+    """AI-found companies/people, normalised to the import pipeline's shape.
+    Empty when no provider is configured — the caller keeps its regex results."""
+    data = _ai_json(company, user, _ENTITIES_PROMPT, text, agent="import_entities")
+    out = []
+    for e in (data.get("entities") or []) if isinstance(data, dict) else []:
+        kind = str(e.get("kind", "")).strip().lower()
+        name = str(e.get("name", "")).strip()
+        if kind not in _KINDS or not name:
+            continue
+        out.append({"kind": kind, "raw_name": name,
+                    "email": str(e.get("email", "") or "").strip(),
+                    "phone": str(e.get("phone", "") or "").strip(),
+                    "reference": str(e.get("reference", "") or "").strip()})
+    return out
+
+
+def ai_extract_prices(text: str, *, company, user) -> list[dict]:
+    """AI-found priced lines, in extract_items' shape. Prices only — never
+    invented. Empty when no provider is configured."""
+    data = _ai_json(company, user, _PRICES_PROMPT, text, agent="import_prices")
+    out = []
+    for ln in (data.get("lines") or []) if isinstance(data, dict) else []:
+        desc = str(ln.get("description", "")).strip()
+        price = ln.get("unit_price")
+        if not desc or price in (None, "", 0, "0"):
+            continue
+        out.append({"description": desc, "unit": str(ln.get("unit", "") or "each"),
+                    "unit_price": str(price)})
+    return out

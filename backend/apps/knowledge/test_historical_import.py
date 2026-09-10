@@ -1,6 +1,8 @@
 """Historical Business Import — the "Bring Your Business History" pipeline.
 Locks the guardrail: documents are classified and entities resolved, but
 NOTHING enters the ERP until a person confirms."""
+from unittest.mock import patch
+
 from django.test import TestCase
 
 from apps.core.context import tenant_scope
@@ -120,6 +122,32 @@ class ImportPipelineTests(TestCase):
             self.assertGreaterEqual(res["prices_recorded"], 1)
             self.assertTrue(SupplierPrice.objects.filter(
                 description__icontains="Hydraulic pipe").exists())
+
+    def test_ai_enrichment_adds_missed_entities(self):
+        # A document with no labelled customer line — the regex finds nothing,
+        # but the (mocked) AI extractor surfaces the buyer. AI only ADDS.
+        text = b"We completed the pump overhaul for Kumba Iron Ore last quarter.\n"
+        ai_hits = [{"kind": "customer", "raw_name": "Kumba Iron Ore",
+                    "email": "", "phone": "", "reference": ""}]
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="AI")
+            with patch("apps.knowledge.document_intelligence.ai_extract_entities",
+                       return_value=ai_hits):
+                imp.ingest(batch, "note.txt", text, self.mgr)
+            self.assertTrue(batch.entities.filter(
+                kind=StagedEntity.Kind.CUSTOMER, raw_name="Kumba Iron Ore").exists())
+
+    def test_ai_prices_merge_without_duplicates(self):
+        from apps.knowledge.historical_import import _extract_priced_lines
+        text = "5 m  Hydraulic pipe  R173.00\n"   # deterministic catches this
+        ai_lines = [{"description": "Hydraulic pipe", "unit": "m", "unit_price": "173.00"},
+                    {"description": "Gasket kit", "unit": "each", "unit_price": "42.50"}]
+        with patch("apps.knowledge.document_intelligence.ai_extract_prices",
+                   return_value=ai_lines):
+            lines = _extract_priced_lines(text, company=self.company, user=self.mgr, use_ai=True)
+        descs = sorted(l["description"] for l in lines)
+        # Hydraulic pipe appears once (deduped), Gasket kit added by AI.
+        self.assertEqual(descs, ["Gasket kit", "Hydraulic pipe"])
 
     def test_contact_create_needs_customer(self):
         with tenant_scope(self.company.id):

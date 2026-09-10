@@ -52,7 +52,9 @@ def ingest(batch: ImportBatch, filename: str, data: bytes, user) -> ImportedDocu
         doc_type_confidence=confidence, text=text[:_TEXT_CAP],
         text_chars=len(text), failed=(text == ""))
 
-    for cand in _extract_entities(text):
+    # Deterministic-first, then AI enriches (metered; a document upload is a
+    # deliberate action). With no provider configured this is regex-only.
+    for cand in _extract_entities(text, company=batch.company, user=user, use_ai=True):
         _stage(batch, doc, cand)
 
     batch.document_count = batch.documents.count()
@@ -83,7 +85,7 @@ def _stage(batch, doc, cand: dict) -> StagedEntity:
 
 
 # ── entity extraction (deterministic first pass) ──────────────────────────────
-def _extract_entities(text: str) -> list[dict]:
+def _extract_entities(text: str, *, company=None, user=None, use_ai=False) -> list[dict]:
     if not text:
         return []
     found: list[dict] = []
@@ -93,7 +95,7 @@ def _extract_entities(text: str) -> list[dict]:
         name = (raw_name or "").strip(" \t:-|,.")
         if not name or not re.search(r"[A-Za-z]", name) or len(name) < 2:
             return
-        key = (kind, er.normalise_name(name) or email.lower())
+        key = (kind, er.normalise_name(name) or (email or "").lower())
         if key in seen:
             return
         seen.add(key)
@@ -113,6 +115,13 @@ def _extract_entities(text: str) -> list[dict]:
         local = email.split("@")[0]
         guessed = re.sub(r"[._\-]+", " ", local).title()
         add(StagedEntity.Kind.CONTACT, guessed, email=email)
+
+    # AI enrichment — only ADDS what the regex missed; dedup via `add`/`seen`.
+    if use_ai and company is not None and user is not None:
+        from .document_intelligence import ai_extract_entities
+        for e in ai_extract_entities(text, company=company, user=user):
+            add(e["kind"], e["raw_name"], email=e.get("email", ""),
+                phone=e.get("phone", ""), reference=e.get("reference", ""))
 
     return found
 
@@ -207,7 +216,7 @@ def _capture_supplier_prices(staged: StagedEntity, user) -> int:
     supplier = Supplier.objects.filter(pk=staged.resolved_id).first()
     if supplier is None:
         return 0
-    items = _extract_priced_lines(doc.text)
+    items = _extract_priced_lines(doc.text, company=staged.company, user=user, use_ai=True)
     if not items:
         return 0
     return record_prices(staged.company, supplier, items, user=user)
@@ -222,20 +231,33 @@ _PRICED_LINE = re.compile(
     r"(?:R|ZAR)?\s*(?P<price>\d[\d ,]*\.\d{2})\s*$")
 
 
-def _extract_priced_lines(text: str) -> list[dict]:
-    """Deterministically pull priced lines from a supplier document. Only lines
-    with an explicit amount (with cents) are returned — never an invented price."""
+def _extract_priced_lines(text: str, *, company=None, user=None, use_ai=False) -> list[dict]:
+    """Pull priced lines from a supplier document. Deterministic first (lines with
+    an explicit amount + cents), then AI adds priced lines a regex missed. Never
+    an invented price."""
     out: list[dict] = []
+    seen: set[str] = set()
+
+    def add(desc, unit, price):
+        desc = (desc or "").strip(" \t:-|")
+        key = desc.lower()
+        if len(desc) < 3 or key in seen:
+            return
+        seen.add(key)
+        out.append({"description": desc, "unit": unit or "each", "unit_price": price})
+
     for raw in (text or "").splitlines():
         m = _PRICED_LINE.match(raw)
         if not m:
             continue
-        desc = m.group("desc").strip(" \t:-|")
-        if len(desc) < 3:
-            continue
         price = m.group("price").replace(" ", "").replace(",", "")
-        out.append({"description": desc, "unit": m.group("unit") or "each",
-                    "unit_price": price})
+        add(m.group("desc"), m.group("unit"), price)
+
+    if use_ai and company is not None and user is not None:
+        from .document_intelligence import ai_extract_prices
+        for ln in ai_extract_prices(text, company=company, user=user):
+            add(ln["description"], ln.get("unit"), ln["unit_price"])
+
     return out
 
 
