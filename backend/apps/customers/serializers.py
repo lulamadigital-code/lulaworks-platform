@@ -6,7 +6,7 @@ stays in services.py; these serializers only shape data in and out.
 """
 from rest_framework import serializers
 
-from .models import Customer, CustomerContact, Lead
+from .models import Customer, CustomerContact, Lead, Opportunity
 
 
 class CustomerListSerializer(serializers.ModelSerializer):
@@ -64,3 +64,19 @@ class LeadSerializer(serializers.ModelSerializer):
                   "lost_reason", "created_at", "updated_at"]
         read_only_fields = ["id", "status_display", "converted_customer",
                             "converted_at", "lost_reason", "created_at", "updated_at"]
+
+
+class OpportunitySerializer(serializers.ModelSerializer):
+    """A deal in the pipeline. Stage changes go through the view's `stage` action
+    so WON/LOST run the proper close logic."""
+    stage_display = serializers.CharField(source="get_stage_display", read_only=True)
+    customer_name = serializers.CharField(source="customer.display_name", read_only=True)
+
+    class Meta:
+        model = Opportunity
+        fields = ["id", "customer", "customer_name", "title", "reference",
+                  "description", "stage", "stage_display", "estimated_value",
+                  "currency", "probability", "expected_close_date", "source",
+                  "quotation", "closed_at", "lost_reason", "created_at", "updated_at"]
+        read_only_fields = ["id", "stage_display", "customer_name", "closed_at",
+                            "lost_reason", "created_at", "updated_at"]

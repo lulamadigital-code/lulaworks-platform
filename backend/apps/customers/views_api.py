@@ -9,12 +9,13 @@ from rest_framework.response import Response
 
 from apps.core.api import TenantViewSet
 
-from .models import Customer, CustomerContact, Lead
+from .models import Customer, CustomerContact, Lead, Opportunity, OpportunityStage
 from .serializers import (
     CustomerContactSerializer,
     CustomerListSerializer,
     CustomerSerializer,
     LeadSerializer,
+    OpportunitySerializer,
 )
 from .services import (
     CRMError,
@@ -22,11 +23,15 @@ from .services import (
     convert_lead,
     create_customer,
     create_lead,
+    create_opportunity_for,
     customer_overview,
     customer_timeline,
     log_interaction,
+    lose_opportunity,
     mark_lead_lost,
     schedule_activity,
+    set_opportunity_stage,
+    win_opportunity,
 )
 
 
@@ -220,6 +225,68 @@ class LeadViewSet(TenantViewSet):
         lead = self.get_object()
         mark_lead_lost(lead, request.user, reason=request.data.get("reason", ""))
         return Response(LeadSerializer(lead).data)
+
+
+class OpportunityViewSet(TenantViewSet):
+    """Pipeline deals. Read for any member; writes need crm.manage. `?stage=open`
+    hides won/lost; `?stage=<value>` filters exactly."""
+
+    model = Opportunity
+    serializer_class = OpportunitySerializer
+    search_fields = ["title", "reference", "customer__name"]
+    ordering_fields = ["created_at", "estimated_value", "expected_close_date"]
+    required_perms = {"create": "crm.manage", "update": "crm.manage",
+                      "partial_update": "crm.manage", "destroy": "crm.manage"}
+
+    def get_queryset(self):
+        qs = Opportunity.objects.select_related("customer").all()
+        f = self.request.query_params.get("stage")
+        if f == "open":
+            qs = qs.exclude(stage__in=[OpportunityStage.WON, OpportunityStage.LOST])
+        elif f:
+            qs = qs.filter(stage=f)
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        ser = OpportunitySerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        data = dict(ser.validated_data)
+        customer = data.pop("customer", None)
+        if customer is None:
+            return Response({"error": {"code": "customer_required",
+                             "message": "An opportunity needs a customer."}}, status=400)
+        title = data.pop("title", "")
+        stage = data.pop("stage", OpportunityStage.LEAD)
+        try:
+            opp = create_opportunity_for(customer, request.user, title=title,
+                                         stage=stage, **data)
+        except CRMError as exc:
+            return Response({"error": {"code": "crm", "message": str(exc)}}, status=400)
+        return Response(OpportunitySerializer(opp).data, status=201)
+
+    @action(detail=False, methods=["get"])
+    def stages(self, request):
+        """The stage catalogue, so a client can build the pipeline columns."""
+        return Response([{"value": v, "label": l} for v, l in OpportunityStage.choices])
+
+    @action(detail=True, methods=["post"])
+    def stage(self, request, pk=None):
+        if not request.user.has_perm_code("crm.manage"):
+            return Response({"error": {"code": "forbidden",
+                             "message": "Need crm.manage."}}, status=403)
+        opp = self.get_object()
+        new = request.data.get("stage")
+        if new not in dict(OpportunityStage.choices):
+            return Response({"error": {"code": "bad_stage",
+                             "message": "Unknown stage."}}, status=400)
+        if new == OpportunityStage.WON:
+            win_opportunity(opp, request.user)
+        elif new == OpportunityStage.LOST:
+            lose_opportunity(opp, request.user, reason=request.data.get("reason", ""))
+        else:
+            set_opportunity_stage(opp, request.user, new)
+        opp.refresh_from_db()
+        return Response(OpportunitySerializer(opp).data)
 
 
 class CustomerContactViewSet(TenantViewSet):

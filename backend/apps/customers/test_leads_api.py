@@ -62,3 +62,41 @@ class LeadApiTests(APITestCase):
         self.client.force_authenticate(self.viewer)
         r = self.client.post("/api/v1/leads/", {"company_name": "Nope"}, format="json")
         self.assertEqual(r.status_code, 403)
+
+
+class OpportunityApiTests(APITestCase):
+    def setUp(self):
+        from apps.customers.services import create_customer
+        self.c = Company.objects.create(name="Acme")
+        self.mgr = _user(self.c, ["crm.manage", "customers.manage"], "omgr@acme.co")
+        with tenant_scope(self.c.id):
+            self.customer = create_customer(self.c, self.mgr, name="Zenith")
+
+    def test_create_list_stages_and_move(self):
+        self.client.force_authenticate(self.mgr)
+        # stage catalogue (columns)
+        st = self.client.get("/api/v1/opportunities/stages/")
+        self.assertEqual(st.status_code, 200)
+        self.assertTrue(any(s["value"] == "won" for s in st.data))
+        # create
+        r = self.client.post("/api/v1/opportunities/", {
+            "customer": str(self.customer.id), "title": "Pump refurb",
+            "estimated_value": "120000"}, format="json")
+        self.assertEqual(r.status_code, 201)
+        oid = r.data["id"]
+        # open list includes it
+        lst = self.client.get("/api/v1/opportunities/?stage=open")
+        titles = [x["title"] for x in (lst.data.get("results") or lst.data)]
+        self.assertIn("Pump refurb", titles)
+        # move to won
+        mv = self.client.post(f"/api/v1/opportunities/{oid}/stage/",
+                              {"stage": "won"}, format="json")
+        self.assertEqual(mv.status_code, 200)
+        self.assertEqual(mv.data["stage"], "won")
+
+    def test_create_needs_crm_manage(self):
+        viewer = _user(self.c, ["projects.view"], "oview@acme.co")
+        self.client.force_authenticate(viewer)
+        r = self.client.post("/api/v1/opportunities/",
+                             {"customer": str(self.customer.id), "title": "X"}, format="json")
+        self.assertEqual(r.status_code, 403)
