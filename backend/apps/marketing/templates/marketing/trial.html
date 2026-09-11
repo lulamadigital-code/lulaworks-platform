@@ -25,7 +25,22 @@
           <div class="field"><label>Company name *</label><input name="company" required value="{{ form.company|default:'' }}"></div>
           <div class="field"><label>Full name *</label><input name="full_name" required value="{{ form.full_name|default:'' }}"></div>
           <div class="field"><label>Work email *</label><input type="email" name="email" required value="{{ form.email|default:'' }}"></div>
-          <div class="field"><label>Password *</label><input type="password" name="password" required minlength="8"></div>
+          <div class="field"><label>Password *</label>
+            <div style="position:relative;">
+              <input type="password" name="password" id="tp-pw" required minlength="8" style="padding-right:60px;">
+              <button type="button" aria-label="Show password"
+                onclick="var i=document.getElementById('tp-pw');var s=i.type==='password';i.type=s?'text':'password';this.textContent=s?'Hide':'Show';"
+                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:#17a2b8;font-size:12.5px;font-weight:600;cursor:pointer;padding:4px;">Show</button>
+            </div>
+          </div>
+          <div class="field"><label>Confirm password *</label>
+            <div style="position:relative;">
+              <input type="password" name="confirm_password" id="tp-pw2" required minlength="8" style="padding-right:60px;">
+              <button type="button" aria-label="Show password"
+                onclick="var i=document.getElementById('tp-pw2');var s=i.type==='password';i.type=s?'text':'password';this.textContent=s?'Hide':'Show';"
+                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:#17a2b8;font-size:12.5px;font-weight:600;cursor:pointer;padding:4px;">Show</button>
+            </div>
+          </div>
           <div class="two">
             <div class="field"><label>Phone</label><input name="phone" value="{{ form.phone|default:'' }}"></div>
             <div class="field"><label>Industry</label>

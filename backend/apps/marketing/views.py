@@ -254,12 +254,18 @@ def trial(request):
         return redirect("web:dashboard")
     if request.method == "POST":
         from .geo import detect_currency
+        password = request.POST.get("password", "")
+        if password != request.POST.get("confirm_password", ""):
+            messages.error(request, "The two passwords don't match.")
+            return render(request, "marketing/trial.html",
+                          {**_seo("Start Free Trial — Lulaworks", ""),
+                           "form": request.POST})
         try:
             user = register_trial_company(
                 company_name=request.POST.get("company", ""),
                 full_name=request.POST.get("full_name", ""),
                 email=request.POST.get("email", ""),
-                password=request.POST.get("password", ""),
+                password=password,
                 phone=request.POST.get("phone", ""),
                 industry=request.POST.get("industry", ""),
                 currency=detect_currency(request),   # bill the new company in its local currency
