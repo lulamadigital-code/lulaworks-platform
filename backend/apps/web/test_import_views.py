@@ -152,8 +152,8 @@ class DocumentsExplorerTests(TestCase):
         self.assertContains(self.client.get("/import/documents/?type=quotation"), "abc_quote.pdf")
         detail = self.client.get(f"/import/documents/{doc.pk}/")
         self.assertEqual(detail.status_code, 200)
-        self.assertContains(detail, "ABC Mining")       # extracted entity shown
-        self.assertContains(detail, "Extracted text")
+        self.assertContains(detail, "abc_quote.pdf")     # the document itself
+        self.assertNotContains(detail, "Extracted from this document")  # view-only now
 
 
 @override_settings(CELERY_TASK_ALWAYS_EAGER=True)

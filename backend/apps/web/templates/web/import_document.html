@@ -31,8 +31,7 @@
 </div>
 {% else %}
 <div class="card" style="margin-bottom:20px;">
-  <p class="muted" style="margin:0;">The original file isn't stored for this document
-    {% if doc.status == 'duplicate' %}(it's a duplicate of another){% else %}— the extracted text is shown below{% endif %}.
+  <p class="muted" style="margin:0;">The original file isn't stored for this document{% if doc.status == 'duplicate' %} (it's a duplicate of another){% endif %}.
     Re-upload it to keep a previewable copy.</p>
 </div>
 {% endif %}
@@ -42,38 +41,5 @@
   <strong style="color:#c0392b;">Processing failed</strong>
   <p class="muted" style="margin:6px 0 0;">{{ doc.processing_error }}</p>
 </div>
-{% endif %}
-
-{# Extracted entities — the evidence. #}
-<h2 style="font-size:15px;margin:0 0 10px;">Extracted from this document</h2>
-{% if entities %}
-<div class="card" style="padding:0;overflow-x:auto;margin-bottom:20px;">
-  <table>
-    <tr><th>Kind</th><th>Name</th><th>Email</th><th>Match / status</th></tr>
-    {% for e in entities %}
-    <tr>
-      <td><span class="chip">{{ e.get_kind_display }}</span></td>
-      <td><strong>{{ e.raw_name }}</strong>{% if e.mentions > 1 %}<span class="muted" style="font-size:11.5px;"> · {{ e.mentions }} docs</span>{% endif %}</td>
-      <td class="muted">{{ e.email|default:"—" }}</td>
-      <td>
-        {% if e.review_status == 'linked' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Linked</span>
-        {% elif e.review_status == 'created' %}<span class="chip info">Created</span>
-        {% elif e.review_status == 'rejected' %}<span class="chip">Rejected</span>
-        {% elif e.match_label %}<span class="muted">≈ {{ e.match_label }}</span>
-        {% else %}<span class="chip">{{ e.get_verdict_display }}</span>{% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </table>
-</div>
-{% else %}
-<div class="card" style="margin-bottom:20px;"><p class="muted" style="margin:0;">
-  No entities were extracted from this document{% if doc.status == 'duplicate' %} (it's a duplicate of another){% endif %}.</p></div>
-{% endif %}
-
-{# Extracted text preview. #}
-{% if doc.text %}
-<h2 style="font-size:15px;margin:0 0 10px;">Extracted text <span class="muted" style="font-weight:400;font-size:12.5px;">· {{ doc.text_chars }} characters</span></h2>
-<div class="card"><pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-size:12.5px;color:var(--ink);max-height:420px;overflow:auto;">{{ doc.text }}</pre></div>
 {% endif %}
 {% endblock %}

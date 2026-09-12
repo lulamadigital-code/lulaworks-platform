@@ -87,7 +87,6 @@ def import_document(request, pk):
         return redirect("web:dashboard")
     from apps.knowledge.models import ImportedDocument
     doc = get_object_or_404(ImportedDocument.objects.select_related("batch"), pk=pk)
-    entities = list(doc.entities.all().order_by("kind", "-confidence"))
     # Decide how to preview the original file (if we kept it).
     file_kind = ""
     if doc.file and doc.file.name:
@@ -99,7 +98,7 @@ def import_document(request, pk):
         else:
             file_kind = "other"
     return render(request, "web/import_document.html",
-                  {"doc": doc, "entities": entities, "file_kind": file_kind})
+                  {"doc": doc, "file_kind": file_kind})
 
 
 @login_required
