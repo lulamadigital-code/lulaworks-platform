@@ -112,7 +112,12 @@ def process_document(doc: ImportedDocument) -> ImportedDocument:
         doc.entities.all().delete()
         for cand in _extract_entities(text, company=doc.company, user=doc.created_by, use_ai=True):
             _stage(doc.batch, doc, cand)
-        doc.status = ImportedDocument.Status.COMPLETED
+        # High-confidence matches auto-link to existing records (so historical
+        # customers/suppliers connect without a manual click); NEW/uncertain ones
+        # wait in the review queue → the doc is COMPLETED only if nothing is pending.
+        pending = _auto_apply(doc, doc.created_by)
+        doc.status = (ImportedDocument.Status.NEEDS_REVIEW if pending
+                      else ImportedDocument.Status.COMPLETED)
         doc.failed = False
         doc.completed_at = timezone.now()
         doc.save(update_fields=["status", "failed", "completed_at", "updated_at"])
@@ -125,9 +130,34 @@ def process_document(doc: ImportedDocument) -> ImportedDocument:
     return doc
 
 
+def _auto_apply(doc: ImportedDocument, user) -> int:
+    """Auto-link this document's high-confidence MATCHED entities to the existing
+    ERP records they resolved to — the safe half of "load customers from history"
+    (it connects, never invents). NEW / needs-review entities are left PENDING for
+    a human. Returns the count still pending."""
+    can = bool(user and user.has_perm_code("customers.manage"))
+    pending = 0
+    for e in doc.entities.all():
+        if e.review_status != StagedEntity.Review.PENDING:
+            continue
+        if can and e.verdict == StagedEntity.Verdict.MATCHED and e.match_id:
+            e.resolved_id = e.match_id
+            e.review_status = StagedEntity.Review.LINKED
+            e.save(update_fields=["resolved_id", "review_status", "updated_at"])
+            if e.kind == StagedEntity.Kind.SUPPLIER:
+                try:
+                    _capture_supplier_prices(e, user)
+                except Exception:                    # noqa: BLE001
+                    pass
+        else:
+            pending += 1
+    return pending
+
+
 def _refresh_batch(batch: ImportBatch) -> None:
     docs = list(batch.documents.all())
     done = all(d.status in (ImportedDocument.Status.COMPLETED,
+                            ImportedDocument.Status.NEEDS_REVIEW,
                             ImportedDocument.Status.DUPLICATE,
                             ImportedDocument.Status.FAILED) for d in docs)
     batch.document_count = len(docs)

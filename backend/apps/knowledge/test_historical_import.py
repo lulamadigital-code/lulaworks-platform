@@ -75,6 +75,17 @@ class ImportPipelineTests(TestCase):
         self.assertGreaterEqual(summary["documents"], 1)
         self.assertGreaterEqual(summary["auto_matched"], 1)
 
+    def test_high_confidence_match_auto_links(self):
+        # ABC Mining already exists → the historical mention should auto-link to
+        # it (no manual click), connecting the customer from history.
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="History")
+            imp.ingest(batch, "po.txt", _PO_TEXT, self.mgr)
+            cust = batch.entities.get(kind=StagedEntity.Kind.CUSTOMER)
+            self.assertEqual(cust.review_status, StagedEntity.Review.LINKED)
+            self.assertEqual(cust.resolved_id, str(self.existing.id))
+            self.assertEqual(Customer.objects.count(), 1)    # linked, not duplicated
+
     def test_nothing_written_until_commit(self):
         with tenant_scope(self.company.id):
             batch = imp.create_batch(self.mgr, label="History")
@@ -191,7 +202,9 @@ class ImportArchitectureTests(TestCase):
             self.assertEqual(doc.entities.count(), 0)      # nothing staged yet
             imp.process_document(doc)
             doc.refresh_from_db()
-            self.assertEqual(doc.status, ImportedDocument.Status.COMPLETED)
+            # Done-processing = COMPLETED, or NEEDS_REVIEW when entities await a human.
+            self.assertIn(doc.status, [ImportedDocument.Status.COMPLETED,
+                                       ImportedDocument.Status.NEEDS_REVIEW])
             self.assertIsNotNone(doc.completed_at)
             self.assertTrue(doc.entities.exists())
 
