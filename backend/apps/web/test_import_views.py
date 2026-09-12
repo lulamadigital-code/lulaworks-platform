@@ -226,6 +226,40 @@ class ZipUploadTests(TestCase):
             self.assertEqual(names, {"po1.txt", "invoice2.txt"})   # junk + __MACOSX skipped
 
 
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True, MEDIA_ROOT=_tempfile.mkdtemp())
+class StorageQuotaTests(TestCase):
+    def test_upload_blocked_when_over_quota(self):
+        from apps.knowledge.models import ImportBatch, ImportedDocument
+        company = Company.objects.create(name="C", storage_quota_bytes=10,
+                                         storage_used_bytes=0)
+        mgr = _user(company, ["customers.manage"], "m@c.co")
+        self.client.force_login(mgr)
+        with tenant_scope(company.id):
+            batch = ImportBatch.objects.create(company=company, label="H", created_by=mgr)
+        f = SimpleUploadedFile("po.txt", _PO, content_type="text/plain")   # > 10 bytes
+        r = self.client.post(f"/import/{batch.pk}/", {"documents": f}, follow=True)
+        self.assertContains(r, "Not enough storage")
+        with tenant_scope(company.id):
+            self.assertEqual(ImportedDocument.objects.filter(batch=batch).count(), 0)  # nothing stored
+            company.refresh_from_db()
+            self.assertEqual(company.storage_used_bytes, 0)
+
+    def test_upload_allowed_updates_usage(self):
+        from apps.knowledge.models import ImportBatch, ImportedDocument
+        company = Company.objects.create(name="C", storage_quota_bytes=10_000_000,
+                                         storage_used_bytes=0)
+        mgr = _user(company, ["customers.manage"], "m@c.co")
+        self.client.force_login(mgr)
+        with tenant_scope(company.id):
+            batch = ImportBatch.objects.create(company=company, label="H", created_by=mgr)
+        f = SimpleUploadedFile("po.txt", _PO, content_type="text/plain")
+        self.client.post(f"/import/{batch.pk}/", {"documents": f})
+        with tenant_scope(company.id):
+            self.assertEqual(ImportedDocument.objects.filter(batch=batch).count(), 1)
+            company.refresh_from_db()
+            self.assertEqual(company.storage_used_bytes, len(_PO))   # usage tracked
+
+
 @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
 class DuplicateDocsTests(TestCase):
     def test_duplicates_hidden_and_removable(self):

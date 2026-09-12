@@ -31,6 +31,15 @@ def _is_ajax(request):
 _MAX_ZIP_MEMBER_BYTES = 60 * 1024 * 1024
 
 
+def _human_bytes(n: int) -> str:
+    """Human-readable size for storage messages (e.g. '1.4 GB', '320 MB')."""
+    n = float(max(n, 0))
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if n < 1024 or unit == "TB":
+            return f"{n:.0f} {unit}" if unit in ("B", "KB") else f"{n:.1f} {unit}"
+        n /= 1024
+
+
 def _iter_upload_files(files):
     """Yield (filename, content_bytes) for every document to import.
 
@@ -197,9 +206,26 @@ def import_batch(request, pk):
             messages.error(request, "Choose at least one document to upload.")
             return redirect("web:import_batch", pk=pk)
         from apps.knowledge.tasks import process_import_document
+        from apps.storage.services import check_quota, register_upload
         import logging
-        queued = dupes = errors = 0
-        for name, content in _iter_upload_files(files):
+        # Expand zips up front so we know the true byte footprint, then enforce the
+        # plan's storage quota BEFORE storing anything — either the whole upload
+        # fits or none of it lands (no half-imported archive).
+        items = list(_iter_upload_files(files))
+        incoming_bytes = sum(len(c) for _, c in items)
+        quota = check_quota(batch.company, incoming_bytes)
+        if not quota.allowed:
+            free = max(batch.company.storage_quota_bytes - batch.company.storage_used_bytes, 0)
+            messages.error(
+                request,
+                f"Not enough storage on your plan. This upload needs "
+                f"{_human_bytes(incoming_bytes)} but only {_human_bytes(free)} is free "
+                f"({_human_bytes(batch.company.storage_used_bytes)} of "
+                f"{_human_bytes(batch.company.storage_quota_bytes)} used). "
+                "Free up space or upgrade your plan, then try again.")
+            return redirect("web:import_batch", pk=pk)
+        queued = dupes = errors = stored_bytes = 0
+        for name, content in items:
             try:
                 doc = imp.queue_document(batch, name, content, request.user)
             except Exception as exc:                     # noqa: BLE001
@@ -208,16 +234,21 @@ def import_batch(request, pk):
                     "Import upload failed for %s: %s", name, exc)
                 continue
             if doc.status == ImportedDocument.Status.DUPLICATE:
-                dupes += 1
+                dupes += 1      # no new bytes stored — don't bill quota for it
             else:
                 queued += 1
+                stored_bytes += len(content)
                 process_import_document.delay(str(doc.id))
+        if stored_bytes:
+            register_upload(batch.company, stored_bytes)     # keep storage usage in sync
         if queued:
             msg = f"{queued} document{'s' if queued != 1 else ''} uploaded — processing in "
             msg += "the background. You can leave this page and come back."
             if dupes:
                 msg += f" {dupes} duplicate{'s' if dupes != 1 else ''} skipped."
             messages.success(request, msg)
+            if quota.warn:
+                messages.warning(request, quota.reason + " Consider upgrading your plan soon.")
         if errors:
             messages.error(request, f"{errors} file{'s' if errors != 1 else ''} could not be "
                                     "stored and were not imported — please try again.")
