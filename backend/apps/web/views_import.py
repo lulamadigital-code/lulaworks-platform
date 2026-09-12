@@ -103,6 +103,32 @@ def import_consolidate(request, pk):
 
 @login_required
 @require_POST
+def import_merge(request, pk):
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    batch = get_object_or_404(ImportBatch.objects.all(), pk=pk)
+    ids = request.POST.getlist("entity_ids")
+    if len(ids) < 2:
+        messages.error(request, "Pick at least two rows to merge.")
+        return redirect("web:import_batch", pk=pk)
+    # Primary = the one with the most mentions (most evidence) so its name wins.
+    from apps.knowledge.models import StagedEntity
+    chosen = list(StagedEntity.objects.filter(batch=batch, pk__in=ids).order_by("-mentions"))
+    if len(chosen) < 2:
+        messages.error(request, "Those rows could not be merged.")
+        return redirect("web:import_batch", pk=pk)
+    primary = chosen[0]
+    try:
+        n = imp.merge_entities(batch, primary.pk, [e.pk for e in chosen[1:]], request.user)
+        messages.success(request, f"Merged {n} row{'s' if n != 1 else ''} into “{primary.raw_name}”.")
+    except imp.CommitError as exc:
+        messages.error(request, str(exc))
+    return redirect("web:import_batch", pk=pk)
+
+
+@login_required
+@require_POST
 def import_reconstruct(request, pk):
     if not _can(request.user):
         messages.error(request, "You don't have permission to import business history.")

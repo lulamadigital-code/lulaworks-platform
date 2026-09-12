@@ -287,6 +287,39 @@ class DedupAndCleaningTests(TestCase):
         self.assertEqual(contacts[0].raw_name, "Lucky Macheke")  # real name preferred
         self.assertEqual(contacts[0].mentions, 2)
 
+    def test_consolidate_merges_site_and_doctype_variants(self):
+        # All the same customer — site suffix + doc-type typo variants collapse.
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            for nm in ["Sibanye Stillwater K4 Shaft", "Sibanye Stillwater",
+                       "Sibanye Stillwater K4 Shaft Qoutation"]:
+                StagedEntity.objects.create(batch=batch, company=self.company,
+                    kind=StagedEntity.Kind.CUSTOMER, raw_name=nm,
+                    verdict=StagedEntity.Verdict.NEW, created_by=self.mgr)
+            imp.consolidate_batch(batch)
+            custs = list(batch.entities.filter(kind=StagedEntity.Kind.CUSTOMER))
+        self.assertEqual(len(custs), 1)
+        self.assertEqual(custs[0].raw_name, "Sibanye Stillwater")
+        self.assertEqual(custs[0].mentions, 3)
+
+    def test_manual_merge_trading_and_registered_name(self):
+        # Only a human knows Western Platinum (Pty) Ltd == Sibanye Stillwater.
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            a = StagedEntity.objects.create(batch=batch, company=self.company,
+                kind=StagedEntity.Kind.CUSTOMER, raw_name="Sibanye Stillwater",
+                mentions=5, verdict=StagedEntity.Verdict.NEW, created_by=self.mgr)
+            b = StagedEntity.objects.create(batch=batch, company=self.company,
+                kind=StagedEntity.Kind.CUSTOMER, raw_name="Western Platinum (Pty) Ltd",
+                mentions=2, verdict=StagedEntity.Verdict.NEW, created_by=self.mgr)
+            imp.consolidate_batch(batch)   # won't auto-merge these (different names)
+            self.assertEqual(batch.entities.filter(kind=StagedEntity.Kind.CUSTOMER).count(), 2)
+            n = imp.merge_entities(batch, a.pk, [b.pk], self.mgr)
+            custs = list(batch.entities.filter(kind=StagedEntity.Kind.CUSTOMER))
+        self.assertEqual(n, 1)
+        self.assertEqual(len(custs), 1)
+        self.assertEqual(custs[0].mentions, 7)       # 5 + 2
+
     def test_consolidate_existing_duplicates(self):
         # Stage duplicates directly (simulating the pre-fix data), then consolidate.
         with tenant_scope(self.company.id):

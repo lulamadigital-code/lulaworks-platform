@@ -57,19 +57,27 @@
 <div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;gap:12px;flex-wrap:wrap;">
   <h2 style="font-size:15px;margin:0;">Review — {{ pending|length }} to confirm
     {% if summary.auto_matched %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {{ summary.auto_matched }} auto-matched</span>{% endif %}</h2>
-  <form method="post" action="{% url 'web:import_consolidate' batch.pk %}" style="margin:0;">{% csrf_token %}
-    <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;"
-      title="Merge the same customer/person seen across many documents into one row">Merge duplicates</button>
-  </form>
+  <div style="display:flex;gap:8px;">
+    <button class="btn ghost" type="submit" form="mergeform" style="padding:6px 12px;font-size:12.5px;"
+      title="Tick two or more rows that are the same real company/person, then merge">Merge selected</button>
+    <form method="post" action="{% url 'web:import_consolidate' batch.pk %}" style="margin:0;">{% csrf_token %}
+      <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;"
+        title="Auto-merge obvious duplicates across documents">Auto-merge duplicates</button>
+    </form>
+  </div>
 </div>
+{# Merge form lives outside the table; checkboxes associate via the form= attribute. #}
+<form id="mergeform" method="post" action="{% url 'web:import_merge' batch.pk %}">{% csrf_token %}</form>
 {% if pending %}
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Found</th><th>Type</th><th>Best match</th><th>Confidence</th><th class="right">Decide</th></tr>
+    <tr><th></th><th>Found</th><th>Type</th><th>Best match</th><th>Confidence</th><th class="right">Decide</th></tr>
     {% for e in pending %}
     <tr>
+      <td><input type="checkbox" name="entity_ids" value="{{ e.pk }}" form="mergeform"></td>
       <td>
         <strong>{{ e.raw_name }}</strong>
+        {% if e.mentions > 1 %}<span class="muted" style="font-size:11.5px;"> · {{ e.mentions }} docs</span>{% endif %}
         {% if e.email %}<div class="muted" style="font-size:12px;">{{ e.email }}</div>{% endif %}
       </td>
       <td><span class="chip">{{ e.get_kind_display }}</span></td>

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from difflib import SequenceMatcher
 
 from django.core.files.base import ContentFile
 from django.db import IntegrityError
@@ -191,16 +192,23 @@ def ingest(batch: ImportBatch, filename: str, data: bytes, user) -> ImportedDocu
 
 
 # Trailing document-type words that pollute an extracted organisation name, e.g.
-# "Western Platinum (Pty) Ltd QUOTATION" → "Western Platinum (Pty) Ltd".
+# "Western Platinum (Pty) Ltd QUOTATION" → "Western Platinum (Pty) Ltd". Includes
+# common OCR/typo variants (qoutation, quatation, delivary…).
 _DOCTYPE_TAIL = re.compile(
-    r"\s*\b(tax\s*invoice|invoice|quotation|quote|statement|delivery\s*note|"
-    r"dispatch\s*note|waybill|purchase\s*order|credit\s*note|order|rfq|"
-    r"bill\s*to|sold\s*to|ship\s*to)\b.*$", re.I)
+    r"\s*\b(tax\s*invoice|invoice|q[ou]+tation|qu[ao]tation|quotation|quote|statement|"
+    r"deliv[ae]ry\s*note|dispatch\s*note|waybill|purchase\s*order|credit\s*note|"
+    r"order|rfq|bill\s*to|sold\s*to|ship\s*to)\b.*$", re.I)
+# Trailing SITE / operation descriptors — a shaft/plant/mine is a site OF the
+# customer, not a separate customer: "Sibanye Stillwater K4 Shaft" → "Sibanye Stillwater".
+_SITE_TAIL = re.compile(
+    r"\s+(?:no\.?\s*\d+\s*)?(?:[a-z]?\d+\s*)?\b(shaft|plant|mine|colliery|section|"
+    r"smelter|refinery|concentrator|mill|operations?|project|site|works)\b.*$", re.I)
 
 
 def _clean_company_name(name: str) -> str:
     n = (name or "").strip(" \t:-|,.")
     n = _DOCTYPE_TAIL.sub("", n).strip(" \t:-|,.")
+    n = _SITE_TAIL.sub("", n).strip(" \t:-|,.")
     n = re.sub(r"(?<=[A-Za-z0-9])\(", " (", n)              # "Platinum(Pty)" → "Platinum (Pty)"
     n = re.sub(r"\(\s*pty\s*\)\s*ltd", "(Pty) Ltd", n, flags=re.I)
     n = re.sub(r"\s{2,}", " ", n)
@@ -267,41 +275,110 @@ def _stage(batch, doc, cand: dict) -> StagedEntity | None:
         return existing
 
 
+_FUZZY_MERGE = 0.86   # conservative auto-merge for OCR/near-duplicate company names
+
+
+def _match_token(kind, name, email) -> str:
+    """A spaceless normalised token for fuzzy comparison of company names."""
+    if kind == StagedEntity.Kind.CONTACT:
+        return er.normalise_email(email) or er.normalise_name(name).replace(" ", "")
+    return er.normalise_name(_clean_company_name(name)).replace(" ", "")
+
+
 def consolidate_batch(batch: ImportBatch) -> int:
-    """Merge already-staged duplicates in a batch into one row per real entity
-    (cleaning names, summing mentions, keeping the best name / any resolved match).
-    Lets an existing noisy batch be cleaned up without re-uploading. Returns the
-    number of duplicate rows removed."""
+    """Merge already-staged duplicates in a batch into one row per real entity.
+    Two phases: (1) exact key (cleaned+normalised name / email), then (2) a
+    conservative FUZZY pass for companies so OCR variants like "Sibanye Stillwater
+    K4 Shaft" and "Slbanye Stlllwatu" collapse together. Cleans names, sums
+    mentions, keeps any resolved match. Returns the number of rows merged away."""
     from collections import defaultdict
 
-    groups: dict = defaultdict(list)
-    for e in StagedEntity.objects.filter(batch=batch):
-        name = e.raw_name if e.kind == StagedEntity.Kind.CONTACT else _clean_company_name(e.raw_name)
-        groups[(e.kind, _dedup_key(e.kind, name, e.email))].append(e)
-
     removed = 0
-    for (kind, key), ents in groups.items():
-        # Canonical = an already-committed row if any, else the best-named one.
-        ents.sort(key=lambda x: (x.review_status == StagedEntity.Review.PENDING,
-                                 0 if " " in x.raw_name.strip() else 1,
-                                 -len(x.raw_name)))
-        canon = ents[0]
-        canon.dedup_key = key
-        canon.mentions = len(ents)
+    by_kind: dict = defaultdict(list)
+    for e in StagedEntity.objects.filter(batch=batch):
+        by_kind[e.kind].append(e)
+
+    for kind, items in by_kind.items():
+        # Phase 1 — exact dedup-key groups.
+        groups: dict = defaultdict(list)
+        for e in items:
+            name = e.raw_name if kind == StagedEntity.Kind.CONTACT else _clean_company_name(e.raw_name)
+            groups[_dedup_key(kind, name, e.email)].append(e)
+        clusters = [list(g) for g in groups.values()]
+
+        # Phase 2 — fuzzy-merge company clusters by token similarity.
         if kind != StagedEntity.Kind.CONTACT:
-            canon.raw_name = (_clean_company_name(canon.raw_name) or canon.raw_name)[:255]
-        if not canon.email:
-            for e in ents:
-                if e.email:
-                    canon.email = e.email
-                    break
-        canon.save(update_fields=["dedup_key", "mentions", "raw_name", "email", "updated_at"])
-        for dup in ents[1:]:
-            dup.delete()
-            removed += 1
+            merged: list = []            # [(token, [entities])]
+            for g in clusters:
+                token = _match_token(kind, g[0].raw_name, g[0].email)
+                placed = False
+                for m in merged:
+                    if token and m[0] and SequenceMatcher(None, token, m[0]).ratio() >= _FUZZY_MERGE:
+                        m[1].extend(g)
+                        placed = True
+                        break
+                if not placed:
+                    merged.append((token, g))
+            clusters = [g for _t, g in merged]
+
+        for g in clusters:
+            removed += _collapse_cluster(g, kind)
+
     batch.entity_count = batch.entities.count()
     batch.save(update_fields=["entity_count", "updated_at"])
     return removed
+
+
+def _collapse_cluster(ents: list, kind) -> int:
+    """Keep one canonical entity for a cluster; sum mentions; soft-delete the rest."""
+    # Canonical: prefer a resolved/committed row, then a real (spaced) name, then
+    # the most-mentioned, then the longest.
+    ents.sort(key=lambda x: (x.review_status == StagedEntity.Review.PENDING,
+                             0 if " " in x.raw_name.strip() else 1,
+                             -(x.mentions or 1), -len(x.raw_name)))
+    canon = ents[0]
+    total = sum(e.mentions or 1 for e in ents)
+    if kind != StagedEntity.Kind.CONTACT:
+        canon.raw_name = (_clean_company_name(canon.raw_name) or canon.raw_name)[:255]
+    canon.dedup_key = _dedup_key(kind, canon.raw_name, canon.email)
+    canon.mentions = total
+    if not canon.email:
+        for e in ents:
+            if e.email:
+                canon.email = e.email
+                break
+    canon.save(update_fields=["dedup_key", "mentions", "raw_name", "email", "updated_at"])
+    removed = 0
+    for dup in ents[1:]:
+        dup.delete()
+        removed += 1
+    return removed
+
+
+def merge_entities(batch: ImportBatch, primary_id, other_ids, user) -> int:
+    """Human-driven merge: fold `other_ids` into `primary_id` (same kind). For the
+    cases only a person knows — e.g. a trading name and its registered company, or
+    OCR variants the fuzzy pass didn't catch. Requires customers.manage."""
+    if not user.has_perm_code("customers.manage"):
+        raise CommitError("You don't have permission to merge entities.")
+    primary = StagedEntity.objects.filter(batch=batch, pk=primary_id).first()
+    if primary is None:
+        raise CommitError("Couldn't find the entity to merge into.")
+    merged = 0
+    for oid in other_ids:
+        if str(oid) == str(primary_id):
+            continue
+        other = StagedEntity.objects.filter(batch=batch, pk=oid, kind=primary.kind).first()
+        if other is None:
+            continue
+        primary.mentions = (primary.mentions or 1) + (other.mentions or 1)
+        if not primary.email and other.email:
+            primary.email = other.email
+        other.delete()
+        merged += 1
+    if merged:
+        primary.save(update_fields=["mentions", "email", "updated_at"])
+    return merged
 
 
 # ── entity extraction (deterministic first pass) ──────────────────────────────
