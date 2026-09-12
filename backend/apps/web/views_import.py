@@ -83,9 +83,12 @@ def import_batch(request, pk):
     done = [e for e in entities if e.review_status != StagedEntity.Review.PENDING]
     jobs = list(batch.jobs.exclude(status=HistoricalJob.Status.DISMISSED)
                 .order_by("status", "-confidence"))
+    pending_customers = sum(1 for e in pending if e.kind == StagedEntity.Kind.CUSTOMER)
+    pending_suppliers = sum(1 for e in pending if e.kind == StagedEntity.Kind.SUPPLIER)
     return render(request, "web/import_batch.html", {
         "batch": batch, "summary": summary, "documents": documents,
-        "pending": pending, "done": done, "jobs": jobs})
+        "pending": pending, "done": done, "jobs": jobs,
+        "pending_customers": pending_customers, "pending_suppliers": pending_suppliers})
 
 
 @login_required
@@ -98,6 +101,36 @@ def import_consolidate(request, pk):
     removed = imp.consolidate_batch(batch)
     messages.success(request, f"Merged {removed} duplicate mention{'s' if removed != 1 else ''} — "
                               "each customer, supplier and person now appears once.")
+    return redirect("web:import_batch", pk=pk)
+
+
+@login_required
+@require_POST
+def import_commit_all(request, pk):
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    batch = get_object_or_404(ImportBatch.objects.all(), pk=pk)
+    from apps.knowledge.models import StagedEntity
+    kind = (request.POST.get("kind") or "").strip()
+    valid = {StagedEntity.Kind.CUSTOMER, StagedEntity.Kind.SUPPLIER}
+    if kind not in valid:
+        messages.error(request, "Choose customers or suppliers to add.")
+        return redirect("web:import_batch", pk=pk)
+    try:
+        r = imp.commit_all(batch, request.user, kind=kind)
+        label = "customers" if kind == StagedEntity.Kind.CUSTOMER else "suppliers"
+        parts = []
+        if r["created"]:
+            parts.append(f"{r['created']} created")
+        if r["linked"]:
+            parts.append(f"{r['linked']} linked to existing")
+        msg = f"Added {', '.join(parts) or '0'} {label} to your CRM."
+        if r["failed"]:
+            msg += f" ({r['failed']} need a completed company setup — check the review list.)"
+        messages.success(request, msg)
+    except imp.CommitError as exc:
+        messages.error(request, str(exc))
     return redirect("web:import_batch", pk=pk)
 
 

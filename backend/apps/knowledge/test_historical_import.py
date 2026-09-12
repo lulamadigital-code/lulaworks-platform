@@ -109,6 +109,21 @@ class ImportPipelineTests(TestCase):
             self.assertTrue(r2["ok"])
             self.assertEqual(Supplier.objects.count(), 1)   # new supplier created
 
+    def test_commit_all_adds_customers_to_crm(self):
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            for nm in ["Sibanye Stillwater", "Anglo American", "Exxaro"]:
+                StagedEntity.objects.create(batch=batch, company=self.company,
+                    kind=StagedEntity.Kind.CUSTOMER, raw_name=nm,
+                    verdict=StagedEntity.Verdict.NEW, created_by=self.mgr)
+            before = Customer.objects.count()
+            r = imp.commit_all(batch, self.mgr, kind=StagedEntity.Kind.CUSTOMER)
+            self.assertEqual(r["created"], 3)
+            self.assertEqual(Customer.objects.count(), before + 3)   # now in the CRM
+            # All staged customers are resolved (none left pending).
+            self.assertFalse(batch.entities.filter(kind=StagedEntity.Kind.CUSTOMER,
+                review_status=StagedEntity.Review.PENDING).exists())
+
     def test_commit_requires_permission(self):
         with tenant_scope(self.company.id):
             batch = imp.create_batch(self.mgr, label="History")
@@ -319,6 +334,35 @@ class DedupAndCleaningTests(TestCase):
         self.assertEqual(n, 1)
         self.assertEqual(len(custs), 1)
         self.assertEqual(custs[0].mentions, 7)       # 5 + 2
+
+    def test_reject_removes_from_queue(self):
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            e = StagedEntity.objects.create(batch=batch, company=self.company,
+                kind=StagedEntity.Kind.CUSTOMER, raw_name="Junk Co",
+                verdict=StagedEntity.Verdict.NEW, created_by=self.mgr)
+            imp.commit_entity(e, self.mgr, decision="reject")
+            # Gone from the live queue (soft-deleted).
+            self.assertFalse(batch.entities.filter(pk=e.pk).exists())
+
+    def test_consolidate_strips_owner_email(self):
+        # info@acmecivils.co.za is the company's own domain → must not survive as
+        # a customer contact.
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            StagedEntity.objects.create(batch=batch, company=self.company,
+                kind=StagedEntity.Kind.CONTACT, raw_name="Owner",
+                email="admin@acmecivils.co.za", verdict=StagedEntity.Verdict.NEW,
+                created_by=self.mgr)
+            StagedEntity.objects.create(batch=batch, company=self.company,
+                kind=StagedEntity.Kind.CONTACT, raw_name="Real Client",
+                email="john@kumba.co.za", verdict=StagedEntity.Verdict.NEW,
+                created_by=self.mgr)
+            imp.consolidate_batch(batch)
+            emails = set(batch.entities.filter(kind=StagedEntity.Kind.CONTACT)
+                         .values_list("email", flat=True))
+        self.assertIn("john@kumba.co.za", emails)
+        self.assertNotIn("admin@acmecivils.co.za", emails)
 
     def test_consolidate_existing_duplicates(self):
         # Stage duplicates directly (simulating the pre-fix data), then consolidate.

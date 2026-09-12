@@ -294,6 +294,14 @@ def consolidate_batch(batch: ImportBatch) -> int:
     from collections import defaultdict
 
     removed = 0
+    # First, drop internal/company-owner emails that slipped through as contacts —
+    # the owner's own address must never appear as a customer contact.
+    internal_emails, internal_domains = _internal_identity(batch.company)
+    for e in StagedEntity.objects.filter(batch=batch, kind=StagedEntity.Kind.CONTACT):
+        if e.email and _is_internal_email(e.email, internal_emails, internal_domains):
+            e.delete()
+            removed += 1
+
     by_kind: dict = defaultdict(list)
     for e in StagedEntity.objects.filter(batch=batch):
         by_kind[e.kind].append(e)
@@ -353,6 +361,31 @@ def _collapse_cluster(ents: list, kind) -> int:
         dup.delete()
         removed += 1
     return removed
+
+
+def commit_all(batch: ImportBatch, user, *, kind) -> dict:
+    """Approve every pending entity of one kind in one action: matched rows link
+    to the existing record, the rest are created in the ERP. Customers/suppliers
+    only — contacts need a parent customer, so they're confirmed after. This is
+    the bulk 'add these to my CRM' step. Requires customers.manage."""
+    if not user.has_perm_code("customers.manage"):
+        raise CommitError("You don't have permission to add these to your CRM.")
+    if kind == StagedEntity.Kind.CONTACT:
+        raise CommitError("Create the customers first, then add contacts to them.")
+    created = linked = failed = 0
+    pending = list(StagedEntity.objects.filter(
+        batch=batch, kind=kind, review_status=StagedEntity.Review.PENDING))
+    for e in pending:
+        try:
+            decision = "link" if (e.verdict == StagedEntity.Verdict.MATCHED and e.match_id) else "create"
+            commit_entity(e, user, decision=decision)
+            if decision == "link":
+                linked += 1
+            else:
+                created += 1
+        except CommitError:
+            failed += 1
+    return {"created": created, "linked": linked, "failed": failed}
 
 
 def merge_entities(batch: ImportBatch, primary_id, other_ids, user) -> int:
@@ -535,9 +568,8 @@ def commit_entity(staged: StagedEntity, user, *, decision, customer_id=None) -> 
         raise CommitError("You don't have permission to import company knowledge.")
 
     if decision == "reject":
-        staged.review_status = StagedEntity.Review.REJECTED
-        staged.save(update_fields=["review_status", "updated_at"])
-        return {"ok": True, "review_status": staged.review_status}
+        staged.delete()   # remove it from the queue entirely (soft-delete, recoverable)
+        return {"ok": True, "review_status": StagedEntity.Review.REJECTED}
 
     if decision == "link":
         if not staged.match_id:
@@ -627,19 +659,24 @@ def _create_record(staged: StagedEntity, user, *, customer_id=None):
     from apps.customers.models import Customer, CustomerContact
     from apps.procurement.models import Supplier
 
+    company = staged.company
     if staged.kind == StagedEntity.Kind.SUPPLIER:
-        s = Supplier.objects.create(name=staged.raw_name, email=staged.email,
-                                    phone=staged.phone, created_by=user)
+        # (company, name) is unique — reuse an existing supplier of that name.
+        s, created = Supplier.objects.get_or_create(
+            company=company, name=staged.raw_name,
+            defaults={"email": staged.email, "phone": staged.phone,
+                      "created_by": user, "updated_by": user})
         return s.pk
     if staged.kind == StagedEntity.Kind.CONTACT:
         if not customer_id:
             raise CommitError("A contact must be attached to a customer — "
                               "choose the customer to create this person under.")
         c = CustomerContact.objects.create(
-            customer_id=customer_id, full_name=staged.raw_name,
-            email=staged.email, mobile=staged.phone, created_by=user)
+            company=company, customer_id=customer_id, full_name=staged.raw_name,
+            email=staged.email, mobile=staged.phone, created_by=user, updated_by=user)
         return c.pk
-    # default: customer
-    cust = Customer.objects.create(name=staged.raw_name, email=staged.email,
-                                   telephone=staged.phone, created_by=user)
+    # default: customer — via the service so the customer code is generated.
+    from apps.customers.services import create_customer
+    cust = create_customer(company, user, name=staged.raw_name,
+                           email=staged.email, telephone=staged.phone)
     return cust.pk

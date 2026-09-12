@@ -57,12 +57,24 @@
 <div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;gap:12px;flex-wrap:wrap;">
   <h2 style="font-size:15px;margin:0;">Review — {{ pending|length }} to confirm
     {% if summary.auto_matched %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {{ summary.auto_matched }} auto-matched</span>{% endif %}</h2>
-  <div style="display:flex;gap:8px;">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    {% if pending_customers %}
+    <form method="post" action="{% url 'web:import_commit_all' batch.pk %}" style="margin:0;">{% csrf_token %}
+      <input type="hidden" name="kind" value="customer">
+      <button class="btn" type="submit" style="padding:6px 12px;font-size:12.5px;">Add {{ pending_customers }} customers to CRM</button>
+    </form>
+    {% endif %}
+    {% if pending_suppliers %}
+    <form method="post" action="{% url 'web:import_commit_all' batch.pk %}" style="margin:0;">{% csrf_token %}
+      <input type="hidden" name="kind" value="supplier">
+      <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;">Add {{ pending_suppliers }} suppliers</button>
+    </form>
+    {% endif %}
     <button class="btn ghost" type="submit" form="mergeform" style="padding:6px 12px;font-size:12.5px;"
       title="Tick two or more rows that are the same real company/person, then merge">Merge selected</button>
     <form method="post" action="{% url 'web:import_consolidate' batch.pk %}" style="margin:0;">{% csrf_token %}
       <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;"
-        title="Auto-merge obvious duplicates across documents">Auto-merge duplicates</button>
+        title="Auto-merge obvious duplicates across documents">Auto-merge</button>
     </form>
   </div>
 </div>
@@ -102,7 +114,7 @@
         </form>
         <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" style="display:inline;">{% csrf_token %}
           <input type="hidden" name="decision" value="reject">
-          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;" title="Ignore this one">Skip</button>
+          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;color:#c0392b;" title="Reject & remove from the list">Reject</button>
         </form>
       </td>
     </tr>
