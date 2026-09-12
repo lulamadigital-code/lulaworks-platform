@@ -235,6 +235,40 @@ class ImportArchitectureTests(TestCase):
         self.assertIn("procurement@kumba.co.za", emails)       # external kept
         self.assertNotIn("admin@acmecivils.co.za", emails)     # internal excluded
 
+    def test_prepared_by_is_internal_not_a_contact(self):
+        # The brief's critical rule: "Prepared by" is an internal employee, never
+        # a customer contact — even with no known company domain.
+        from apps.knowledge.historical_import import _extract_entities
+        text = ("Quotation\n"
+                "Prepared by: Ronny Max ronny@mycontracting.co.za\n"
+                "Customer: XYZ Mining\n"
+                "Contact person: John Mokoena john@xyzmining.co.za\n")
+        with tenant_scope(self.company.id):
+            ents = _extract_entities(text, doc_type="quotation", company=self.company,
+                                     user=self.mgr, use_ai=False)
+        emails = {e["email"] for e in ents}
+        names = {e["raw_name"] for e in ents}
+        self.assertNotIn("ronny@mycontracting.co.za", emails)   # internal excluded
+        self.assertIn("john@xyzmining.co.za", emails)           # customer contact kept
+        self.assertIn("XYZ Mining", names)                      # customer captured
+        # And the customer contact is a CONTACT, the company a CUSTOMER.
+        by_email = {e["email"]: e["kind"] for e in ents}
+        self.assertEqual(by_email["john@xyzmining.co.za"], "contact")
+
+    def test_direction_supplier_doc_bill_to_is_internal(self):
+        # On a SUPPLIER's invoice, "Bill To: <us>" is internal, and the issuer is
+        # the supplier — don't create a customer from our own name.
+        from apps.knowledge.historical_import import _extract_entities
+        text = ("SUPPLIER INVOICE\n"
+                "Supplier: Hydraulics SA\n"
+                "Bill To: Acme Civils\n")
+        with tenant_scope(self.company.id):
+            ents = _extract_entities(text, doc_type="supplier_invoice",
+                                     company=self.company, user=self.mgr, use_ai=False)
+        kinds = {e["raw_name"]: e["kind"] for e in ents}
+        self.assertEqual(kinds.get("Hydraulics SA"), "supplier")
+        self.assertNotIn("Acme Civils", kinds)   # "bill to us" suppressed
+
     def test_reprocess_with_no_text_preserves_entities(self):
         # Regression: a retry where the file can't be read must NOT soft-delete
         # the entities already extracted (the prod data-loss bug).

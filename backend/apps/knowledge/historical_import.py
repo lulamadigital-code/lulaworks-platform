@@ -30,10 +30,28 @@ _TEXT_CAP = 20000          # store at most this many chars of extracted text
 _EMAIL = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
 _REF = re.compile(r"(?:reg(?:istration)?\.?\s*(?:no\.?|number)?|vat\s*(?:no\.?|number)?)"
                   r"\s*[:\-]?\s*([0-9][0-9/ \-]{5,})", re.I)
-_COMPANY_LABELS = {
-    StagedEntity.Kind.CUSTOMER: r"(?:customer|client|bill\s*to|sold\s*to|ship\s*to)",
-    StagedEntity.Kind.SUPPLIER: r"(?:supplier|vendor|seller|from)",
-}
+# Label dictionary → semantic role. Order matters: INTERNAL wins first so
+# "Prepared by: Ronny <ronny@us.com>" is never read as a customer contact.
+_LABEL_ROLES: list[tuple[str, str]] = [
+    (r"prepared\s*by|compiled\s*by|issued\s*by|drawn\s*up\s*by|quotation\s*prepared\s*by|"
+     r"invoice\s*prepared\s*by|sales\s*rep\w*|account\s*manager|estimator|our\s*ref|"
+     r"from\s*us|authorised\s*by|signed\s*by", "internal"),
+    (r"supplier|vendor|seller|quoted\s*by|supplied\s*by", "supplier"),
+    (r"customer|client|bill\s*to|billed\s*to|sold\s*to|ship\s*to|account\s*name|"
+     r"buyer|purchaser|ordered\s*by|requested\s*by", "customer"),
+    (r"contact\s*person|contact|attention|attn|for\s*attention|project\s*manager|"
+     r"site\s*contact|procurement\s*contact|accounts\s*contact", "contact"),
+]
+_LABEL_RE = [(re.compile(rf"(?im)^\s*(?:{pat})\s*[:\-]\s*(.+)$"), role)
+             for pat, role in _LABEL_ROLES]
+
+# Document direction: on a document WE issue (our quote/invoice/delivery), a
+# "from/quoted by" company is US (internal); on a SUPPLIER's document, a
+# "bill to/customer" is US (internal). Used to suppress mis-rolled entities.
+_OUR_DOCS = {ImportedDocument.DocType.QUOTATION, ImportedDocument.DocType.INVOICE,
+             ImportedDocument.DocType.DELIVERY_NOTE}
+_SUPPLIER_DOCS = {ImportedDocument.DocType.SUPPLIER_QUOTE,
+                  ImportedDocument.DocType.SUPPLIER_INVOICE}
 _DOMAIN = re.compile(r"@([A-Za-z0-9.\-]+)")
 # Generic mail hosts that must never count as a company's "internal domain" —
 # a member using gmail doesn't make every gmail address internal.
@@ -114,7 +132,8 @@ def process_document(doc: ImportedDocument) -> ImportedDocument:
             # We have content — safe to (re)stage idempotently: clear THIS doc's
             # prior entities, then re-extract.
             doc.entities.all().delete()
-            for cand in _extract_entities(text, company=doc.company, user=doc.created_by, use_ai=True):
+            for cand in _extract_entities(text, doc_type=doc.doc_type, company=doc.company,
+                                          user=doc.created_by, use_ai=True):
                 _stage(doc.batch, doc, cand)
             # High-confidence matches auto-link to existing records (historical
             # customers/suppliers connect without a click); NEW/uncertain wait in
@@ -415,11 +434,36 @@ def merge_entities(batch: ImportBatch, primary_id, other_ids, user) -> int:
 
 
 # ── entity extraction (deterministic first pass) ──────────────────────────────
-def _extract_entities(text: str, *, company=None, user=None, use_ai=False) -> list[dict]:
+def _role_of_line(line: str):
+    """(role, value) for a labelled line, else (None, None). Role is one of
+    internal / supplier / customer / contact."""
+    for rx, role in _LABEL_RE:
+        m = rx.match(line)
+        if m:
+            return role, m.group(1).strip()
+    return None, None
+
+
+def _split_value(value: str) -> tuple[str, str]:
+    """Split a labelled value into (name, email) — name is what remains once the
+    email and any phone-like run are removed."""
+    m = _EMAIL.search(value)
+    email = m.group(0) if m else ""
+    name = value.replace(email, " ") if email else value
+    name = re.sub(r"[+()]?\d[\d\s\-]{6,}\d", " ", name)   # drop a phone-ish run
+    name = re.sub(r"\s{2,}", " ", name).strip(" \t:-|,.")
+    return name, email
+
+
+def _extract_entities(text: str, *, doc_type=None, company=None, user=None, use_ai=False) -> list[dict]:
     if not text:
         return []
     found: list[dict] = []
     seen: set[tuple] = set()
+    internal_emails, internal_domains = _internal_identity(company)
+    # Internal names/emails gathered from INTERNAL-labelled lines (prepared by…),
+    # so they're excluded as contacts even without a known company domain.
+    internal_seen_emails: set[str] = set()
 
     def add(kind, raw_name, *, email="", phone="", reference=""):
         name = (raw_name or "").strip(" \t:-|,.")
@@ -435,32 +479,52 @@ def _extract_entities(text: str, *, company=None, user=None, use_ai=False) -> li
     ref_m = _REF.search(text)
     reference = re.sub(r"\s", "", ref_m.group(1)) if ref_m else ""
 
-    for kind, label in _COMPANY_LABELS.items():
-        for m in re.finditer(rf"(?im)^\s*{label}\s*[:\-]\s*(.+)$", text):
-            name = m.group(1).split("  ")[0]
-            add(kind, name, reference=reference if kind == StagedEntity.Kind.CUSTOMER else "")
+    # Pass 1 — labelled lines carry a semantic role (this is the direction-aware
+    # part: "Prepared by" = internal, "Bill To/Customer" = customer, etc.).
+    for line in text.splitlines():
+        role, value = _role_of_line(line)
+        if not role or not value:
+            continue
+        name, email = _split_value(value)
+        # Document direction: the counterparty on our/supplier docs can be US.
+        if role == "supplier" and doc_type in _OUR_DOCS:
+            role = "internal"               # "from/quoted by" on our own doc = us
+        elif role == "customer" and doc_type in _SUPPLIER_DOCS:
+            role = "internal"               # "bill to" on a supplier's doc = us
+        if role == "internal":
+            if email:
+                internal_seen_emails.add(email.strip().lower())
+            continue                         # never stage internal people/companies
+        if role == "supplier":
+            add(StagedEntity.Kind.SUPPLIER, name, email=email)
+        elif role == "customer":
+            add(StagedEntity.Kind.CUSTOMER, name, email=email, reference=reference)
+        elif role == "contact":
+            low = email.strip().lower()
+            if email and (low in internal_seen_emails
+                          or _is_internal_email(email, internal_emails, internal_domains)):
+                continue
+            add(StagedEntity.Kind.CONTACT, name or email.split("@")[0], email=email)
 
-    internal_emails, internal_domains = _internal_identity(company)
+    # Pass 2 — unlabelled emails become contacts only if clearly external.
     for m in _EMAIL.finditer(text):
         email = m.group(0)
-        # THE critical fix: an internal/company-owner email is never a customer
-        # contact. Only external people become contacts.
-        if _is_internal_email(email, internal_emails, internal_domains):
+        low = email.strip().lower()
+        if low in internal_seen_emails or _is_internal_email(email, internal_emails, internal_domains):
             continue
-        local = email.split("@")[0]
-        guessed = re.sub(r"[._\-]+", " ", local).title()
+        guessed = re.sub(r"[._\-]+", " ", email.split("@")[0]).title()
         add(StagedEntity.Kind.CONTACT, guessed, email=email)
 
-    # AI enrichment — only ADDS what the regex missed; dedup via `add`/`seen`.
-    # Internal emails are filtered here too, so a model that returns them can't
-    # slip an owner/employee in as a customer contact.
+    # AI enrichment — AI returns a kind/role already; internal emails still filtered.
     if use_ai and company is not None and user is not None:
         from .document_intelligence import ai_extract_entities
         for e in ai_extract_entities(text, company=company, user=user):
-            if (e.get("kind") == StagedEntity.Kind.CONTACT
-                    and _is_internal_email(e.get("email", ""), internal_emails, internal_domains)):
+            em = e.get("email", "")
+            if (e.get("kind") == StagedEntity.Kind.CONTACT and em
+                    and (em.strip().lower() in internal_seen_emails
+                         or _is_internal_email(em, internal_emails, internal_domains))):
                 continue
-            add(e["kind"], e["raw_name"], email=e.get("email", ""),
+            add(e["kind"], e["raw_name"], email=em,
                 phone=e.get("phone", ""), reference=e.get("reference", ""))
 
     return found
