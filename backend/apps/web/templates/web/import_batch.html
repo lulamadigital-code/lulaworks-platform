@@ -109,10 +109,26 @@
           <button class="btn" type="submit" style="padding:5px 11px;font-size:12.5px;">Link</button>
         </form>
         {% endif %}
+        {% if e.kind == 'contact' %}
+          {% if customers %}
+          <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" class="js-commit" style="display:inline-flex;gap:6px;align-items:center;">{% csrf_token %}
+            <input type="hidden" name="decision" value="create">
+            <select name="customer_id" required title="Which customer is this person at?"
+                    style="padding:5px 8px;font-size:12.5px;border:1px solid var(--line);border-radius:7px;max-width:180px;">
+              <option value="">Under customer…</option>
+              {% for c in customers %}<option value="{{ c.id }}" {% if c.id|stringformat:'s' == e.suggested_customer_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+            </select>
+            <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">Create</button>
+          </form>
+          {% else %}
+          <span class="muted" style="font-size:12px;">Approve a customer first</span>
+          {% endif %}
+        {% else %}
         <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" class="js-commit" style="display:inline;">{% csrf_token %}
           <input type="hidden" name="decision" value="create">
           <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">Create new</button>
         </form>
+        {% endif %}
         <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" class="js-commit" style="display:inline;">{% csrf_token %}
           <input type="hidden" name="decision" value="reject">
           <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;color:#c0392b;" title="Reject & remove from the list">Reject</button>
@@ -274,6 +290,9 @@
     var f = ev.target;
     if (!f.classList || !f.classList.contains('js-commit')) return;
     ev.preventDefault();
+    // A contact needs a customer chosen before it can be created.
+    var sel = f.querySelector('select[name="customer_id"]');
+    if (sel && !sel.value) { toast('Choose the customer this person belongs to first.', true); sel.focus(); return; }
     var row = f.closest('tr');
     var btns = f.querySelectorAll('button'); btns.forEach(function (b) { b.disabled = true; });
     fetch(f.action, {

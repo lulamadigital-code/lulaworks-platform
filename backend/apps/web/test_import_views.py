@@ -226,6 +226,52 @@ class ZipUploadTests(TestCase):
             self.assertEqual(names, {"po1.txt", "invoice2.txt"})   # junk + __MACOSX skipped
 
 
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+class ContactAttachTests(TestCase):
+    def test_contact_created_under_chosen_customer(self):
+        from apps.customers.models import CustomerContact
+        from apps.knowledge.models import ImportBatch, StagedEntity
+        company = Company.objects.create(name="C")
+        mgr = _user(company, ["customers.manage"], "m@c.co")
+        self.client.force_login(mgr)
+        with tenant_scope(company.id):
+            cust = Customer.objects.create(company=company, name="ABC Mining (Pty) Ltd")
+            batch = ImportBatch.objects.create(company=company, label="H", created_by=mgr)
+            contact = StagedEntity.objects.create(batch=batch, company=company,
+                kind=StagedEntity.Kind.CONTACT, raw_name="Thabo Nkosi",
+                email="thabo@abcmining.co.za", verdict=StagedEntity.Verdict.NEW,
+                created_by=mgr)
+        # The review page offers the customer picker for this contact.
+        page = self.client.get(f"/import/{batch.pk}/")
+        self.assertContains(page, 'name="customer_id"')
+        self.assertContains(page, "ABC Mining (Pty) Ltd")
+        # Creating under the chosen customer makes a CustomerContact on it.
+        r = self.client.post(f"/import/{batch.pk}/entity/{contact.pk}/commit/",
+                             {"decision": "create", "customer_id": str(cust.pk)},
+                             HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.json()["ok"])
+        with tenant_scope(company.id):
+            self.assertTrue(CustomerContact.objects.filter(
+                customer=cust, full_name="Thabo Nkosi").exists())
+
+    def test_contact_without_customer_is_rejected(self):
+        from apps.knowledge.models import ImportBatch, StagedEntity
+        company = Company.objects.create(name="C")
+        mgr = _user(company, ["customers.manage"], "m@c.co")
+        self.client.force_login(mgr)
+        with tenant_scope(company.id):
+            batch = ImportBatch.objects.create(company=company, label="H", created_by=mgr)
+            contact = StagedEntity.objects.create(batch=batch, company=company,
+                kind=StagedEntity.Kind.CONTACT, raw_name="Thabo Nkosi",
+                verdict=StagedEntity.Verdict.NEW, created_by=mgr)
+        r = self.client.post(f"/import/{batch.pk}/entity/{contact.pk}/commit/",
+                             {"decision": "create"},      # no customer_id
+                             HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertFalse(r.json()["ok"])
+        self.assertIn("attached to a customer", r.json()["error"])
+
+
 @override_settings(CELERY_TASK_ALWAYS_EAGER=True, MEDIA_ROOT=_tempfile.mkdtemp())
 class StorageQuotaTests(TestCase):
     def test_upload_blocked_when_over_quota(self):

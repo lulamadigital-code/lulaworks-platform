@@ -269,9 +269,24 @@ def import_batch(request, pk):
                 .order_by("status", "-confidence"))
     pending_customers = sum(1 for e in pending if e.kind == StagedEntity.Kind.CUSTOMER)
     pending_suppliers = sum(1 for e in pending if e.kind == StagedEntity.Kind.SUPPLIER)
+
+    # A contact (person) must be created under a customer. Offer the existing CRM
+    # customers to choose from, and pre-select the customer discovered in the same
+    # document as the contact so the common case is one click.
+    from apps.customers.models import Customer
+    customers = list(Customer.objects.order_by("name").values("id", "name"))
+    doc_customer = {}                                  # document_id -> resolved customer id
+    for e in entities:
+        if e.kind == StagedEntity.Kind.CUSTOMER and e.document_id:
+            cid = e.resolved_id or e.match_id
+            if cid:
+                doc_customer.setdefault(e.document_id, str(cid))
+    for e in pending:
+        if e.kind == StagedEntity.Kind.CONTACT:
+            e.suggested_customer_id = doc_customer.get(e.document_id, "")
     return render(request, "web/import_batch.html", {
         "batch": batch, "summary": summary, "documents": documents,
-        "duplicate_count": duplicate_count,
+        "duplicate_count": duplicate_count, "customers": customers,
         "pending": pending, "done": done, "jobs": jobs,
         "pending_customers": pending_customers, "pending_suppliers": pending_suppliers})
 
