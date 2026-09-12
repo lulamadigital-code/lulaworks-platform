@@ -26,6 +26,48 @@ def _is_ajax(request):
     return request.headers.get("x-requested-with") == "XMLHttpRequest"
 
 
+# Members this big inside a zip are skipped (guards against a single huge/corrupt
+# entry); plenty for a scanned multi-page PDF.
+_MAX_ZIP_MEMBER_BYTES = 60 * 1024 * 1024
+
+
+def _iter_upload_files(files):
+    """Yield (filename, content_bytes) for every document to import.
+
+    A plain file passes through unchanged. A .zip is expanded in-memory: each
+    contained file is yielded as if it had been uploaded individually, so a
+    contractor can drop a whole folder of history as one archive. Directory
+    entries, macOS metadata (__MACOSX, .DS_Store), hidden dotfiles, empty files
+    and nested archives are skipped.
+    """
+    import io
+    import os
+    import zipfile
+
+    for f in files:
+        name = f.name or ""
+        data = f.read()
+        if name.lower().endswith(".zip") and zipfile.is_zipfile(io.BytesIO(data)):
+            with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                for info in zf.infolist():
+                    inner = info.filename
+                    if info.is_dir() or inner.startswith("__MACOSX/"):
+                        continue
+                    base = os.path.basename(inner)
+                    if not base or base.startswith(".") or base.lower().endswith(".zip"):
+                        continue  # dotfiles (.DS_Store…) and nested archives
+                    if info.file_size == 0 or info.file_size > _MAX_ZIP_MEMBER_BYTES:
+                        continue
+                    try:
+                        member = zf.read(info)
+                    except Exception:                        # noqa: BLE001 — skip unreadable member
+                        continue
+                    if member:
+                        yield base, member
+        else:
+            yield name, data
+
+
 def _bulk_done(request, pk, message, *, ok=True, status=200):
     """Return JSON for an AJAX bulk action (the page toasts + refreshes), or fall
     back to a message + redirect for a normal form post."""
@@ -157,13 +199,13 @@ def import_batch(request, pk):
         from apps.knowledge.tasks import process_import_document
         import logging
         queued = dupes = errors = 0
-        for f in files:
+        for name, content in _iter_upload_files(files):
             try:
-                doc = imp.queue_document(batch, f.name, f.read(), request.user)
+                doc = imp.queue_document(batch, name, content, request.user)
             except Exception as exc:                     # noqa: BLE001
                 errors += 1
                 logging.getLogger("apps.knowledge").warning(
-                    "Import upload failed for %s: %s", f.name, exc)
+                    "Import upload failed for %s: %s", name, exc)
                 continue
             if doc.status == ImportedDocument.Status.DUPLICATE:
                 dupes += 1

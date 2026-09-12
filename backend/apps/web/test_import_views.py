@@ -196,6 +196,36 @@ class DocumentPreviewTests(TestCase):
         self.assertContains(r, "/media/")                 # absolute media URL
 
 
+import io
+import tempfile as _tempfile
+import zipfile
+
+
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True, MEDIA_ROOT=_tempfile.mkdtemp())
+class ZipUploadTests(TestCase):
+    def test_zip_is_unpacked_into_documents(self):
+        from apps.knowledge.models import ImportBatch, ImportedDocument
+        company = Company.objects.create(name="C")
+        mgr = _user(company, ["customers.manage"], "m@c.co")
+        self.client.force_login(mgr)
+        with tenant_scope(company.id):
+            batch = ImportBatch.objects.create(company=company, label="H", created_by=mgr)
+        # A zip with two real docs, a nested-folder doc, and junk that must be skipped.
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("po1.txt", _PO)
+            zf.writestr("history/invoice2.txt", b"INVOICE\nCustomer: ABC Mining (Pty) Ltd\n")
+            zf.writestr("__MACOSX/._po1.txt", b"junk")
+            zf.writestr(".DS_Store", b"junk")
+        buf.seek(0)
+        z = SimpleUploadedFile("history.zip", buf.read(), content_type="application/zip")
+        r = self.client.post(f"/import/{batch.pk}/", {"documents": z})
+        self.assertEqual(r.status_code, 302)
+        with tenant_scope(company.id):
+            names = set(ImportedDocument.objects.filter(batch=batch).values_list("filename", flat=True))
+            self.assertEqual(names, {"po1.txt", "invoice2.txt"})   # junk + __MACOSX skipped
+
+
 @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
 class DuplicateDocsTests(TestCase):
     def test_duplicates_hidden_and_removable(self):
