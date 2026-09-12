@@ -14,6 +14,11 @@ from django.db import models
 from apps.core.models import PlatformBaseModel, TenantBaseModel
 
 
+def history_import_upload_path(instance, filename):
+    """Store imported historical documents under the tenant, by date."""
+    return f"history_imports/{instance.company_id}/{filename}"
+
+
 class ProjectDNA(TenantBaseModel):
     # Source of the DNA (the approved quotation/opportunity for now; the Project
     # once created on award).
@@ -200,15 +205,38 @@ class ImportedDocument(TenantBaseModel):
         PRICE_LIST = "price_list", "Price List"
         OTHER = "other", "Other"
 
+    class Status(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        PROCESSING = "processing", "Processing"
+        EXTRACTING = "extracting", "Extracting"
+        MATCHING = "matching", "Matching"
+        COMPLETED = "completed", "Completed"
+        NEEDS_REVIEW = "needs_review", "Needs review"
+        DUPLICATE = "duplicate", "Duplicate"
+        FAILED = "failed", "Failed"
+
     batch = models.ForeignKey(ImportBatch, on_delete=models.CASCADE, related_name="documents")
     job = models.ForeignKey("HistoricalJob", on_delete=models.SET_NULL, null=True,
                             blank=True, related_name="documents")
     filename = models.CharField(max_length=255)
+    file = models.FileField(upload_to=history_import_upload_path, null=True, blank=True)
+    file_hash = models.CharField(max_length=64, blank=True, db_index=True)  # SHA-256 of bytes
+    duplicate_of = models.ForeignKey("self", on_delete=models.SET_NULL, null=True,
+                                     blank=True, related_name="duplicates")
     doc_type = models.CharField(max_length=20, choices=DocType.choices, default=DocType.OTHER)
     doc_type_confidence = models.FloatField(default=0.0)
     text = models.TextField(blank=True)          # extracted plain text (capped on ingest)
     text_chars = models.PositiveIntegerField(default=0)
-    failed = models.BooleanField(default=False)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.QUEUED)
+    failed = models.BooleanField(default=False)  # kept in sync with status==FAILED
+    processing_error = models.TextField(blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["company", "file_hash"]),
+                   models.Index(fields=["batch", "status"])]
 
     def __str__(self):
         return f"{self.filename} ({self.get_doc_type_display()})"

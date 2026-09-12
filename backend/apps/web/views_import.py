@@ -47,21 +47,32 @@ def import_batch(request, pk):
         return redirect("web:dashboard")
     batch = get_object_or_404(ImportBatch.objects.all(), pk=pk)
 
-    # POST = upload one or more documents into this batch.
+    # POST = upload one or more documents. We only hash, de-dupe, store and queue
+    # here — extraction runs in the worker, so the request returns immediately and
+    # can never hit a gateway timeout.
     if request.method == "POST":
         files = request.FILES.getlist("documents")
         if not files:
             messages.error(request, "Choose at least one document to upload.")
             return redirect("web:import_batch", pk=pk)
-        ok = 0
+        from apps.knowledge.models import ImportedDocument
+        from apps.knowledge.tasks import process_import_document
+        queued = dupes = 0
         for f in files:
             try:
-                imp.ingest(batch, f.name, f.read(), request.user)
-                ok += 1
+                doc = imp.queue_document(batch, f.name, f.read(), request.user)
             except Exception:                            # noqa: BLE001
-                pass
-        messages.success(request, f"Processed {ok} document{'s' if ok != 1 else ''}. "
-                                  "Review the matches below.")
+                continue
+            if doc.status == ImportedDocument.Status.DUPLICATE:
+                dupes += 1
+            else:
+                queued += 1
+                process_import_document.delay(str(doc.id))
+        msg = f"{queued} document{'s' if queued != 1 else ''} uploaded — processing in the "
+        msg += "background. You can leave this page and come back."
+        if dupes:
+            msg += f" {dupes} duplicate{'s' if dupes != 1 else ''} skipped."
+        messages.success(request, msg)
         return redirect("web:import_batch", pk=pk)
 
     summary = imp.batch_summary(batch)
@@ -103,6 +114,27 @@ def import_job(request, pk, jid):
         messages.success(request, f"{job.title} — {job.get_status_display().lower()}.")
     except (PermissionError, ValueError) as exc:
         messages.error(request, str(exc))
+    return redirect("web:import_batch", pk=pk)
+
+
+@login_required
+@require_POST
+def import_document_retry(request, pk, did):
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    batch = get_object_or_404(ImportBatch.objects.all(), pk=pk)
+    from apps.knowledge.models import ImportedDocument
+    from apps.knowledge.tasks import process_import_document
+    doc = get_object_or_404(batch.documents, pk=did)
+    if doc.status == ImportedDocument.Status.DUPLICATE:
+        messages.info(request, "That document is a duplicate — nothing to retry.")
+        return redirect("web:import_batch", pk=pk)
+    doc.status = ImportedDocument.Status.QUEUED
+    doc.failed = False
+    doc.save(update_fields=["status", "failed", "updated_at"])
+    process_import_document.delay(str(doc.id))
+    messages.success(request, f"Retrying “{doc.filename}”.")
     return redirect("web:import_batch", pk=pk)
 
 

@@ -1,7 +1,7 @@
 """Bring Your Business History — the console flow renders and enforces its
 guardrail through the web views (upload → review → confirm)."""
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from apps.core.context import tenant_scope
 from apps.customers.models import Customer
@@ -26,6 +26,7 @@ def _user(company, codes, email):
     return u
 
 
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True)
 class ImportViewsTests(TestCase):
     def setUp(self):
         self.company = Company.objects.create(name="Contractor A")

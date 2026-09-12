@@ -13,9 +13,11 @@ is deterministic (labels + emails); a stronger LLM extractor can replace
 """
 from __future__ import annotations
 
+import hashlib
 import re
 
 from django.core.files.base import ContentFile
+from django.utils import timezone
 
 from . import entity_resolution as er
 from .classifier import classify_document
@@ -30,6 +32,15 @@ _COMPANY_LABELS = {
     StagedEntity.Kind.CUSTOMER: r"(?:customer|client|bill\s*to|sold\s*to|ship\s*to)",
     StagedEntity.Kind.SUPPLIER: r"(?:supplier|vendor|seller|from)",
 }
+_DOMAIN = re.compile(r"@([A-Za-z0-9.\-]+)")
+# Generic mail hosts that must never count as a company's "internal domain" —
+# a member using gmail doesn't make every gmail address internal.
+_GENERIC_DOMAINS = {"gmail.com", "yahoo.com", "outlook.com", "hotmail.com",
+                    "icloud.com", "live.com", "webmail.co.za", "mweb.co.za"}
+
+
+def file_sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
 
 
 # ── batch lifecycle ───────────────────────────────────────────────────────────
@@ -38,29 +49,99 @@ def create_batch(user, *, label="") -> ImportBatch:
                                       status=ImportBatch.Status.PROCESSING)
 
 
-def ingest(batch: ImportBatch, filename: str, data: bytes, user) -> ImportedDocument:
-    """Process one document into the batch: extract text, classify, extract &
-    resolve entities, and stage them. Never raises on a bad file — a document we
-    can't read becomes a `failed` row so the batch still completes."""
-    try:
-        text = extract_text_from_upload(ContentFile(data, name=filename)) or ""
-    except Exception:                                # noqa: BLE001
-        text = ""
-    doc_type, confidence = classify_document(filename, text)
-    doc = ImportedDocument.objects.create(
-        batch=batch, filename=filename, doc_type=doc_type,
-        doc_type_confidence=confidence, text=text[:_TEXT_CAP],
-        text_chars=len(text), failed=(text == ""))
-
-    # Deterministic-first, then AI enriches (metered; a document upload is a
-    # deliberate action). With no provider configured this is regex-only.
-    for cand in _extract_entities(text, company=batch.company, user=user, use_ai=True):
-        _stage(batch, doc, cand)
-
+def queue_document(batch: ImportBatch, filename: str, data: bytes, user) -> ImportedDocument:
+    """FAST path — runs inside the HTTP request. Hash, de-duplicate, persist the
+    file and create a QUEUED record. NO extraction here (that's the worker). A
+    byte-identical file already imported for this company becomes a DUPLICATE row
+    pointing at the original instead of being processed again."""
+    digest = file_sha256(data)
+    original = (ImportedDocument.all_objects
+                .filter(company=batch.company, file_hash=digest)
+                .exclude(status=ImportedDocument.Status.DUPLICATE)
+                .exclude(status=ImportedDocument.Status.FAILED)
+                .order_by("created_at").first())
+    doc = ImportedDocument(batch=batch, company=batch.company, filename=filename[:255],
+                           file_hash=digest, created_by=user, updated_by=user)
+    if original is not None:
+        doc.status = ImportedDocument.Status.DUPLICATE
+        doc.duplicate_of = original
+    else:
+        doc.status = ImportedDocument.Status.QUEUED
+        doc.file.save(filename[:120], ContentFile(data), save=False)
+    doc.save()
     batch.document_count = batch.documents.count()
+    batch.save(update_fields=["document_count", "updated_at"])
+    return doc
+
+
+def process_document(doc: ImportedDocument) -> ImportedDocument:
+    """WORKER path — the heavy work, off the request. Extract text → classify →
+    extract & resolve entities → stage. Idempotent: a retry clears this doc's
+    prior staged entities and re-stages, and a DUPLICATE/COMPLETED doc is a no-op.
+    Status + timestamps are updated throughout; failures are caught and recorded,
+    never raised to a user."""
+    if doc.status == ImportedDocument.Status.DUPLICATE:
+        return doc
+    doc.status = ImportedDocument.Status.EXTRACTING
+    doc.attempts = (doc.attempts or 0) + 1
+    doc.started_at = doc.started_at or timezone.now()
+    doc.processing_error = ""
+    doc.save(update_fields=["status", "attempts", "started_at", "processing_error", "updated_at"])
+    try:
+        data = b""
+        if doc.file:
+            try:
+                doc.file.open("rb")          # fresh handle — safe on a re-run
+                data = doc.file.read()
+            except Exception:                # noqa: BLE001
+                data = b""
+            finally:
+                try:
+                    doc.file.close()
+                except Exception:            # noqa: BLE001
+                    pass
+        text = extract_text_from_upload(ContentFile(data, name=doc.filename)) if data else ""
+        text = text or ""
+        doc_type, confidence = classify_document(doc.filename, text)
+        doc.doc_type, doc.doc_type_confidence = doc_type, confidence
+        doc.text, doc.text_chars = text[:_TEXT_CAP], len(text)
+        doc.status = ImportedDocument.Status.MATCHING
+        doc.save(update_fields=["doc_type", "doc_type_confidence", "text", "text_chars",
+                                "status", "updated_at"])
+        # Idempotent re-stage: drop this document's previous entities first.
+        doc.entities.all().delete()
+        for cand in _extract_entities(text, company=doc.company, user=doc.created_by, use_ai=True):
+            _stage(doc.batch, doc, cand)
+        doc.status = ImportedDocument.Status.COMPLETED
+        doc.failed = False
+        doc.completed_at = timezone.now()
+        doc.save(update_fields=["status", "failed", "completed_at", "updated_at"])
+    except Exception as exc:                         # noqa: BLE001
+        doc.status = ImportedDocument.Status.FAILED
+        doc.failed = True
+        doc.processing_error = str(exc)[:2000]
+        doc.save(update_fields=["status", "failed", "processing_error", "updated_at"])
+    _refresh_batch(doc.batch)
+    return doc
+
+
+def _refresh_batch(batch: ImportBatch) -> None:
+    docs = list(batch.documents.all())
+    done = all(d.status in (ImportedDocument.Status.COMPLETED,
+                            ImportedDocument.Status.DUPLICATE,
+                            ImportedDocument.Status.FAILED) for d in docs)
+    batch.document_count = len(docs)
     batch.entity_count = batch.entities.count()
-    batch.status = ImportBatch.Status.REVIEW
+    batch.status = ImportBatch.Status.REVIEW if done else ImportBatch.Status.PROCESSING
     batch.save(update_fields=["document_count", "entity_count", "status", "updated_at"])
+
+
+# Back-compat for tests/callers that want one synchronous call.
+def ingest(batch: ImportBatch, filename: str, data: bytes, user) -> ImportedDocument:
+    """Upload + process in one synchronous call (used by tests and eager mode)."""
+    doc = queue_document(batch, filename, data, user)
+    if doc.status != ImportedDocument.Status.DUPLICATE:
+        process_document(doc)
     return doc
 
 
@@ -110,20 +191,75 @@ def _extract_entities(text: str, *, company=None, user=None, use_ai=False) -> li
             name = m.group(1).split("  ")[0]
             add(kind, name, reference=reference if kind == StagedEntity.Kind.CUSTOMER else "")
 
+    internal_emails, internal_domains = _internal_identity(company)
     for m in _EMAIL.finditer(text):
         email = m.group(0)
+        # THE critical fix: an internal/company-owner email is never a customer
+        # contact. Only external people become contacts.
+        if _is_internal_email(email, internal_emails, internal_domains):
+            continue
         local = email.split("@")[0]
         guessed = re.sub(r"[._\-]+", " ", local).title()
         add(StagedEntity.Kind.CONTACT, guessed, email=email)
 
     # AI enrichment — only ADDS what the regex missed; dedup via `add`/`seen`.
+    # Internal emails are filtered here too, so a model that returns them can't
+    # slip an owner/employee in as a customer contact.
     if use_ai and company is not None and user is not None:
         from .document_intelligence import ai_extract_entities
         for e in ai_extract_entities(text, company=company, user=user):
+            if (e.get("kind") == StagedEntity.Kind.CONTACT
+                    and _is_internal_email(e.get("email", ""), internal_emails, internal_domains)):
+                continue
             add(e["kind"], e["raw_name"], email=e.get("email", ""),
                 phone=e.get("phone", ""), reference=e.get("reference", ""))
 
     return found
+
+
+def _internal_identity(company) -> tuple[set[str], set[str]]:
+    """(internal_emails, internal_domains) for the current company — used to keep
+    the company's own / employees' emails out of the customer-contact list.
+    Internal domain = the company's official domain (from its email/website),
+    never a generic mail host. Internal emails = members' exact addresses."""
+    emails: set[str] = set()
+    domains: set[str] = set()
+    if company is None:
+        return emails, domains
+    for val in (getattr(company, "email", ""), getattr(company, "website", "")):
+        d = _domain_of(val)
+        if d and d not in _GENERIC_DOMAINS:
+            domains.add(d)
+    if getattr(company, "email", ""):
+        emails.add(company.email.strip().lower())
+    try:
+        from apps.identity.models import Membership
+        for e in Membership.objects.filter(company=company).values_list("user__email", flat=True):
+            if e:
+                emails.add(e.strip().lower())
+    except Exception:                                # noqa: BLE001
+        pass
+    return emails, domains
+
+
+def _domain_of(value: str) -> str:
+    v = (value or "").strip().lower()
+    if "@" in v:
+        m = _DOMAIN.search(v)
+        return m.group(1) if m else ""
+    v = re.sub(r"^https?://", "", v).lstrip("/")
+    v = re.sub(r"^www\.", "", v).split("/")[0]
+    return v if "." in v else ""
+
+
+def _is_internal_email(email: str, internal_emails: set[str], internal_domains: set[str]) -> bool:
+    e = (email or "").strip().lower()
+    if not e:
+        return False
+    if e in internal_emails:
+        return True
+    dom = _domain_of(e)
+    return bool(dom and dom in internal_domains)
 
 
 # ── review + commit (the only writes) ─────────────────────────────────────────
@@ -143,11 +279,21 @@ def batch_summary(batch: ImportBatch) -> dict:
     def count(pred):
         return sum(1 for e in ents if pred(e))
 
+    S = ImportedDocument.Status
+    processing_states = {S.QUEUED, S.PROCESSING, S.EXTRACTING, S.MATCHING}
+
+    def dcount(pred):
+        return sum(1 for d in docs if pred(d))
+
     return {
         "batch_id": str(batch.pk),
         "status": batch.status,
         "documents": len(docs),
         "documents_by_type": by_type,
+        "processing": dcount(lambda d: d.status in processing_states),
+        "completed": dcount(lambda d: d.status == S.COMPLETED),
+        "duplicates": dcount(lambda d: d.status == S.DUPLICATE),
+        "doc_failed": dcount(lambda d: d.status == S.FAILED),
         "entities": len(ents),
         "customers": count(lambda e: e.kind == StagedEntity.Kind.CUSTOMER),
         "suppliers": count(lambda e: e.kind == StagedEntity.Kind.SUPPLIER),

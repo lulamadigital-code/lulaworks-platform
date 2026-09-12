@@ -1,9 +1,10 @@
 """Historical Business Import — the "Bring Your Business History" pipeline.
 Locks the guardrail: documents are classified and entities resolved, but
 NOTHING enters the ERP until a person confirms."""
+import tempfile
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from apps.core.context import tenant_scope
 from apps.customers.models import Customer, CustomerContact
@@ -159,3 +160,58 @@ class ImportPipelineTests(TestCase):
             imp.commit_entity(contact, self.mgr, decision="create",
                               customer_id=str(self.existing.id))
             self.assertEqual(CustomerContact.objects.count(), 1)
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class ImportArchitectureTests(TestCase):
+    """The async/dedup/internal-email architecture fixes."""
+
+    def setUp(self):
+        self.company = Company.objects.create(name="Acme Civils", email="info@acmecivils.co.za")
+        self.mgr = _user(self.company, ["customers.manage"], "mgr@acmecivils.co.za")
+
+    def test_duplicate_detection_by_hash(self):
+        data = b"QUOTATION\nQuote No: Q-1\nCustomer: ABC Mining\n"
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            d1 = imp.queue_document(batch, "quote.pdf", data, self.mgr)
+            # Same bytes, different name → duplicate of the first.
+            d2 = imp.queue_document(batch, "RENAMED_quote.pdf", data, self.mgr)
+        self.assertEqual(d1.status, ImportedDocument.Status.QUEUED)
+        self.assertEqual(d2.status, ImportedDocument.Status.DUPLICATE)
+        self.assertEqual(d2.duplicate_of_id, d1.id)
+        self.assertEqual(d1.file_hash, d2.file_hash)
+
+    def test_queue_then_process_status_flow(self):
+        data = b"PURCHASE ORDER\nPO Number: PO-9\nCustomer: ABC Mining\nContact: joe@abcmining.co.za\n"
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            doc = imp.queue_document(batch, "po.txt", data, self.mgr)
+            self.assertEqual(doc.status, ImportedDocument.Status.QUEUED)
+            self.assertEqual(doc.entities.count(), 0)      # nothing staged yet
+            imp.process_document(doc)
+            doc.refresh_from_db()
+            self.assertEqual(doc.status, ImportedDocument.Status.COMPLETED)
+            self.assertIsNotNone(doc.completed_at)
+            self.assertTrue(doc.entities.exists())
+
+    def test_internal_email_not_a_contact(self):
+        # info@acmecivils.co.za = internal domain; mgr@acmecivils.co.za = member.
+        data = (b"QUOTATION\nPrepared by: admin@acmecivils.co.za\n"
+                b"Customer contact: procurement@kumba.co.za\n")
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            doc = imp.ingest(batch, "q.txt", data, self.mgr)
+            emails = set(doc.entities.filter(kind=StagedEntity.Kind.CONTACT)
+                         .values_list("email", flat=True))
+        self.assertIn("procurement@kumba.co.za", emails)       # external kept
+        self.assertNotIn("admin@acmecivils.co.za", emails)     # internal excluded
+
+    def test_reprocess_is_idempotent(self):
+        data = b"INVOICE\nInvoice No: INV-1\nCustomer: ABC Mining\nContact: joe@abcmining.co.za\n"
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            doc = imp.ingest(batch, "inv.txt", data, self.mgr)
+            n1 = doc.entities.count()
+            imp.process_document(doc)                          # run again
+            self.assertEqual(doc.entities.count(), n1)         # no duplication

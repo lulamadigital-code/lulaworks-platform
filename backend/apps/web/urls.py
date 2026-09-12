@@ -105,6 +105,8 @@ urlpatterns = [
     path("import/<uuid:pk>/", views_import.import_batch, name="import_batch"),
     path("import/<uuid:pk>/entity/<uuid:eid>/commit/", views_import.import_commit,
          name="import_commit"),
+    path("import/<uuid:pk>/doc/<uuid:did>/retry/", views_import.import_document_retry,
+         name="import_document_retry"),
     path("import/<uuid:pk>/reconstruct/", views_import.import_reconstruct,
          name="import_reconstruct"),
     path("import/<uuid:pk>/job/<uuid:jid>/", views_import.import_job, name="import_job"),
