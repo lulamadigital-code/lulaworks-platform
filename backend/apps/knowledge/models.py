@@ -225,6 +225,7 @@ class ImportedDocument(TenantBaseModel):
                                      blank=True, related_name="duplicates")
     doc_type = models.CharField(max_length=20, choices=DocType.choices, default=DocType.OTHER)
     doc_type_confidence = models.FloatField(default=0.0)
+    document_date = models.DateField(null=True, blank=True)   # the date printed ON the document
     text = models.TextField(blank=True)          # extracted plain text (capped on ingest)
     text_chars = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.QUEUED)

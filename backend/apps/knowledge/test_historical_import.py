@@ -439,3 +439,27 @@ class FileStorageGuaranteeTests(TestCase):
             with patch("django.core.files.storage.FileSystemStorage.exists", return_value=False):
                 with self.assertRaises(RuntimeError):
                     imp.queue_document(batch, "po.pdf", b"bytes", self.mgr)
+
+
+class DocumentDateTests(TestCase):
+    def test_extracts_various_formats(self):
+        from datetime import date
+        from apps.knowledge.historical_import import extract_document_date as ex
+        self.assertEqual(ex("Quotation\nDate: 2023-05-12"), date(2023, 5, 12))
+        self.assertEqual(ex("Invoice Date: 19/02/2024"), date(2024, 2, 19))  # SA D/M/Y
+        self.assertEqual(ex("dated 12 August 2024"), date(2024, 8, 12))
+        self.assertIsNone(ex("no date here"))
+        self.assertIsNone(ex("VAT/Reg 2011/123456/07"))     # not a date
+
+    def test_document_date_set_on_process(self):
+        company = Company.objects.create(name="C2")
+        mgr = _user(company, ["customers.manage"], "m2@c.co")
+        import tempfile
+        with override_settings(MEDIA_ROOT=tempfile.mkdtemp()):
+            with tenant_scope(company.id):
+                batch = imp.create_batch(mgr, label="H")
+                doc = imp.ingest(batch, "q.txt",
+                                 b"QUOTATION\nDate: 2023-05-12\nCustomer: ABC Mining\n", mgr)
+                doc.refresh_from_db()
+        from datetime import date
+        self.assertEqual(doc.document_date, date(2023, 5, 12))

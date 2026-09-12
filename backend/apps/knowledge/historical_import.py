@@ -63,6 +63,70 @@ def file_sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+# ── document-date extraction ──────────────────────────────────────────────────
+import datetime as _dt  # noqa: E402
+
+_MONTHS = {m.lower(): i for i, m in enumerate(
+    ["", "january", "february", "march", "april", "may", "june", "july",
+     "august", "september", "october", "november", "december"]) if m}
+_MONTHS.update({m[:3]: i for m, i in list(_MONTHS.items())})
+_DATE_LABEL = re.compile(
+    r"(?:date|dated|issued(?:\s*on)?|invoice\s*date|quotation\s*date|quote\s*date|"
+    r"po\s*date|order\s*date)\s*[:\-]?\s*([0-9A-Za-z ,/.\-]{6,22})", re.I)
+_ISO = re.compile(r"\b(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})\b")
+_DMY = re.compile(r"\b(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})\b")
+_TXT1 = re.compile(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})\s+(\d{4})\b")
+_TXT2 = re.compile(r"\b([A-Za-z]{3,9})\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})\b")
+
+
+def _valid_date(y, m, d):
+    try:
+        dt = _dt.date(int(y), int(m), int(d))
+    except (ValueError, TypeError):
+        return None
+    # Guard against garbage: plausible business dates only.
+    if 1990 <= dt.year <= _dt.date.today().year + 1:
+        return dt
+    return None
+
+
+def _parse_date_token(tok: str):
+    tok = (tok or "").strip()
+    m = _ISO.search(tok)
+    if m:
+        return _valid_date(m.group(1), m.group(2), m.group(3))
+    m = _TXT1.search(tok)
+    if m and m.group(2).lower() in _MONTHS:
+        return _valid_date(m.group(3), _MONTHS[m.group(2).lower()], m.group(1))
+    m = _TXT2.search(tok)
+    if m and m.group(1).lower() in _MONTHS:
+        return _valid_date(m.group(3), _MONTHS[m.group(1).lower()], m.group(2))
+    m = _DMY.search(tok)
+    if m:
+        y = m.group(3)
+        y = ("20" + y) if len(y) == 2 else y           # 23 → 2023
+        return _valid_date(y, m.group(2), m.group(1))   # SA order: day/month/year
+    return None
+
+
+def extract_document_date(text: str):
+    """The date printed on the document. Prefer a date next to a 'date' label;
+    otherwise the first plausible date in the body. Returns a date or None —
+    never a guess beyond what the text shows."""
+    if not text:
+        return None
+    for m in _DATE_LABEL.finditer(text):
+        d = _parse_date_token(m.group(1))
+        if d:
+            return d
+    for rx in (_ISO, _TXT1, _TXT2, _DMY):
+        for m in rx.finditer(text):
+            d = _parse_date_token(m.group(0))
+            if d:
+                return d
+    return None
+
+
 # ── batch lifecycle ───────────────────────────────────────────────────────────
 def create_batch(user, *, label="") -> ImportBatch:
     return ImportBatch.objects.create(label=label, created_by=user,
@@ -140,9 +204,10 @@ def process_document(doc: ImportedDocument) -> ImportedDocument:
         doc_type, confidence = classify_document(doc.filename, text)
         doc.doc_type, doc.doc_type_confidence = doc_type, confidence
         doc.text, doc.text_chars = text[:_TEXT_CAP], len(text)
+        doc.document_date = extract_document_date(text)
         doc.status = ImportedDocument.Status.MATCHING
         doc.save(update_fields=["doc_type", "doc_type_confidence", "text", "text_chars",
-                                "status", "updated_at"])
+                                "document_date", "status", "updated_at"])
         if text.strip():
             # We have content — safe to (re)stage idempotently: clear THIS doc's
             # prior entities, then re-extract.
@@ -753,7 +818,9 @@ def _capture_supplier_prices(staged: StagedEntity, user) -> int:
     items = _extract_priced_lines(doc.text, company=staged.company, user=user, use_ai=True)
     if not items:
         return 0
-    return record_prices(staged.company, supplier, items, user=user)
+    # Use the document's own date so price history reflects when it actually happened.
+    return record_prices(staged.company, supplier, items, user=user,
+                         date=getattr(doc, "document_date", None))
 
 
 # A line with a clear trailing money amount: optional "qty unit", a description

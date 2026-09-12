@@ -63,7 +63,8 @@ def import_documents(request):
         docs = docs.filter(Q(filename__icontains=q) | Q(text__icontains=q))
     if dtype:
         docs = docs.filter(doc_type=dtype)
-    docs = list(docs.order_by("-created_at")[:500])
+    from django.db.models import F
+    docs = list(docs.order_by(F("document_date").desc(nulls_last=True), "-created_at")[:500])
     # Group by document type so quotations, POs, invoices etc. are separated.
     order = [c[0] for c in ImportedDocument.DocType.choices]
     labels = dict(ImportedDocument.DocType.choices)

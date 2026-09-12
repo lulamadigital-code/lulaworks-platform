@@ -6,7 +6,8 @@
     <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_documents' %}">← Historical documents</a></p>
     <h1 style="word-break:break-all;">{{ doc.filename }}</h1>
     <p class="sub" style="margin:0;">
-      {{ doc.get_doc_type_display }}{% if doc.doc_type_confidence %} · {{ doc.doc_type_confidence }} confidence{% endif %}
+      {{ doc.get_doc_type_display }}{% if doc.document_date %} · dated {{ doc.document_date|date:"j M Y" }}{% endif %}
+      {% if doc.doc_type_confidence %} · {{ doc.doc_type_confidence }} confidence{% endif %}
       · {{ doc.get_status_display }}{% if doc.batch %} · import “{{ doc.batch.label|default:'Untitled' }}”{% endif %}</p>
   </div>
   {% if doc.file %}<a class="btn ghost" href="{{ doc.file.url }}" target="_blank" rel="noopener">Open original ↗</a>{% endif %}

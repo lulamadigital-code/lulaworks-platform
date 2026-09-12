@@ -26,10 +26,11 @@
   <span class="muted" style="font-weight:400;font-size:12.5px;">· {{ g.docs|length }}</span></h2>
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>File</th><th>Status</th><th>Import</th><th>Date</th></tr>
+    <tr><th>File</th><th>Document date</th><th>Status</th><th>Import</th></tr>
     {% for d in g.docs %}
     <tr onclick="location.href='{% url 'web:import_document' d.pk %}'" style="cursor:pointer;">
       <td><strong>{{ d.filename }}</strong></td>
+      <td class="muted">{% if d.document_date %}{{ d.document_date|date:"j M Y" }}{% else %}<span title="No date found in the document">—</span>{% endif %}</td>
       <td>
         {% if d.status == 'completed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Completed</span>
         {% elif d.status == 'needs_review' %}<span class="chip info">Needs review</span>
@@ -38,7 +39,6 @@
         {% else %}<span class="chip">{{ d.get_status_display }}</span>{% endif %}
       </td>
       <td class="muted">{{ d.batch.label|default:"—" }}</td>
-      <td class="muted">{{ d.created_at|date:"j M Y" }}</td>
     </tr>
     {% endfor %}
   </table>
