@@ -3384,7 +3384,27 @@ def customer_detail(request, pk):
         "next_activity": next_activity,
         "timeline": customer_timeline(customer),
         "can_manage": request.user.has_perm_code("projects.create"),
+        # Historical-data provenance: was this customer reconstructed from an
+        # imported document? Show a badge + a link to the source documents.
+        "history_docs": _customer_history_docs(customer),
     })
+
+
+def _customer_history_docs(customer):
+    """Imported documents whose extracted customer resolved to this record —
+    the provenance behind a 'Historical data' badge. Empty if none."""
+    try:
+        from apps.knowledge.models import ImportedDocument, StagedEntity
+        ids = set(StagedEntity.all_objects.filter(
+            company=customer.company, kind=StagedEntity.Kind.CUSTOMER,
+            resolved_id=str(customer.pk)).values_list("document_id", flat=True))
+        ids.discard(None)
+        if not ids:
+            return []
+        return list(ImportedDocument.all_objects.filter(id__in=ids)
+                    .only("id", "filename", "doc_type")[:20])
+    except Exception:                                # noqa: BLE001
+        return []
 
 
 #: The customer fields the edit form may set — a whitelist, so a stray POST key

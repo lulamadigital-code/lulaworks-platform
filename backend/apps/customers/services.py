@@ -1194,3 +1194,45 @@ def set_contact_status(contact, user, *, status):
     contact.updated_by = user
     contact.save(update_fields=["status", "updated_by", "updated_at"])
     return contact
+
+
+def customer_dossier(customer, *, money=False) -> dict:
+    """Everything Lulaworks knows about a customer, for LulaAI's "tell me about
+    <customer>" answer — identity, volumes, contacts, first/last activity, and
+    (only with finance access) the historical value. Reads the live ERP, so it
+    reflects both imported history and current work."""
+    from apps.projects.models import Project
+    from apps.quotes.models import Quotation
+
+    ov = customer_overview(customer)
+    quotes = list(Quotation.objects.filter(customer=customer).order_by("created_at")
+                  .only("created_at"))
+    since = quotes[0].created_at.date().isoformat() if quotes else (
+        customer.created_at.date().isoformat() if getattr(customer, "created_at", None) else None)
+    last_dates = []
+    if quotes:
+        last_dates.append(quotes[-1].created_at)
+    jobs = list(Project.objects.filter(customer=customer).order_by("-created_at")[:1])
+    if jobs and getattr(jobs[0], "created_at", None):
+        last_dates.append(jobs[0].created_at)
+    last_activity = max(last_dates).date().isoformat() if last_dates else None
+
+    contacts = [
+        {"name": c.full_name, "role": c.job_title or "", "email": c.email}
+        for c in customer.contacts.all().order_by("-is_primary", "full_name")[:6]
+    ]
+    data = {
+        "name": getattr(customer, "display_name", "") or customer.name,
+        "status": customer.get_status_display() if hasattr(customer, "get_status_display") else "",
+        "since": since,
+        "last_activity": last_activity,
+        "quotations": ov["quotations"],
+        "jobs": ov["projects"],
+        "open_jobs": ov["open_projects"],
+        "invoices": ov["invoices"],
+        "contacts": contacts,
+        "source": f"Customer · {getattr(customer, 'display_name', '') or customer.name}",
+    }
+    if money:
+        data["outstanding_value"] = str(ov["outstanding_value"])
+    return data

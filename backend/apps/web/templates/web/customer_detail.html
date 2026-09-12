@@ -5,10 +5,16 @@
 
 <div class="pagehead">
   <div>
-    <h1 style="margin:0 0 4px;">{{ customer.display_name }}</h1>
+    <h1 style="margin:0 0 4px;">{{ customer.display_name }}
+      {% if history_docs %}<span class="chip info" title="Reconstructed from imported history"
+        style="font-size:11px;vertical-align:middle;">Historical data</span>{% endif %}</h1>
     <p class="sub" style="margin:0;">{{ customer.code }}
       {% if customer.industry %} · {{ customer.industry }}{% endif %}
       {% if customer.city %} · {{ customer.city }}{% endif %}</p>
+    {% if history_docs %}
+    <p class="sub" style="margin:4px 0 0;font-size:12px;">From {{ history_docs|length }} imported document{{ history_docs|length|pluralize }}:
+      {% for d in history_docs|slice:":5" %}<a href="{% url 'web:import_document' d.id %}">{{ d.filename }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% if history_docs|length > 5 %} …{% endif %}</p>
+    {% endif %}
   </div>
   <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;">
     {% if customer.status == 'active' %}<span class="chip ok">Active</span>

@@ -359,3 +359,21 @@ def _predictions(user, *, limit=20):
     from apps.ai_platform.predictions import predictions
     return {"predictions": predictions(user.active_company, user, limit=limit),
             "source": "Prediction engine"}
+
+
+@register("customer_dossier", required_perm="customers.manage",
+          description="Everything Lulaworks knows about a customer: since when, "
+                      "jobs/quotes/POs/invoices, contacts, last activity (and value "
+                      "with finance access) — for 'tell me about <customer>'")
+def _customer_dossier(user, *, customer_name="", customer_id=""):
+    from apps.customers.models import Customer
+    from apps.customers.services import customer_dossier
+    cust = None
+    if customer_id:
+        cust = Customer.objects.filter(pk=customer_id).first()
+    elif customer_name:
+        cust = (Customer.objects.filter(name__icontains=customer_name).first()
+                or Customer.objects.filter(trading_name__icontains=customer_name).first())
+    if cust is None:
+        return {"found": False, "source": "Customers"}
+    return {"found": True, **customer_dossier(cust, money=_can_money(user))}
