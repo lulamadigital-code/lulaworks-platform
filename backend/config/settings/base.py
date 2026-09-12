@@ -371,6 +371,12 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"   # absolute — nginx serves /media/ → /app/media/ (prod)
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Business-history imports post many files in one request; Django's default cap
+# is 100 files (TooManyFilesSent) and 2.5 MB of form fields. Lift both so a bulk
+# history upload of a few hundred documents goes through in a single POST.
+DATA_UPLOAD_MAX_NUMBER_FILES = config("DATA_UPLOAD_MAX_NUMBER_FILES", default=2000, cast=int)
+DATA_UPLOAD_MAX_MEMORY_SIZE = config("DATA_UPLOAD_MAX_MEMORY_SIZE", default=26214400, cast=int)  # 25 MB of non-file fields
+
 # Container-first: WhiteNoise for static; media → S3 in production (DATA_MODEL §10).
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
