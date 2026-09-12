@@ -31,7 +31,7 @@
   <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">▣</div><div class="n">{{ o.suppliers }}</div><div class="l">Suppliers</div></div>
   <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">☺</div><div class="n">{{ o.contacts }}</div><div class="l">Contacts</div></div>
   <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">⚒</div><div class="n">{{ o.historical_jobs }}</div><div class="l">Historical jobs</div></div>
-  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">₵</div><div class="n">{{ o.prices }}</div><div class="l">Prices</div></div>
+  <a class="tile" href="{% url 'web:price_history' %}" style="text-decoration:none;color:inherit;"><div class="ic" style="background:#eef0f5;color:var(--muted);">₵</div><div class="n">{{ o.prices }}</div><div class="l">Prices &amp; items</div></a>
   {% endwith %}
 </div>
 {% endif %}

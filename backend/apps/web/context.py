@@ -89,6 +89,7 @@ _SECTIONS = {
     "estimate_approve": "estimates", "estimate_revise": "estimates",
     "procurement": "procurement", "procurement_prices": "procurement",
     "procurement_clients": "procurement", "procurement_client_delete": "procurement",
+    "price_history": "procurement",
     "suppliers": "procurement", "supplier_detail": "procurement",
     "purchase_orders": "procurement", "po_detail": "procurement",
     "po_approve": "procurement", "po_receive": "procurement",

@@ -2877,6 +2877,31 @@ def procurement_client_delete(request, pk):
 
 
 @login_required
+def price_history(request):
+    """Items & Price History — search an item to see what you've paid over time:
+    lowest / average / latest, the trend, a per-supplier breakdown and every
+    recorded price point. No query → browse the items with recorded prices."""
+    if not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You don't have access to price history.")
+        return redirect("web:dashboard")
+    from django.db.models import Count, Max, Min
+
+    from apps.procurement.models import SupplierPrice
+
+    q = (request.GET.get("q") or "").strip()
+    intel = items = None
+    if q:
+        from apps.procurement.services import price_intelligence
+        intel = price_intelligence(request.user.active_company, q)
+    else:
+        items = list(SupplierPrice.objects.values("item_key", "description")
+                     .annotate(n=Count("id"), lo=Min("unit_price"), hi=Max("unit_price"),
+                               last=Max("date"))
+                     .order_by("-n")[:200])
+    return render(request, "web/price_history.html", {"q": q, "intel": intel, "items": items})
+
+
+@login_required
 def procurement_prices(request):
     """Price history — the append-only ledger of everything we've paid."""
     from apps.procurement.models import SupplierPrice

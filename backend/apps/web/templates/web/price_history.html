@@ -1,0 +1,87 @@
+{% extends "web/base.html" %}
+{% block title %}Items & Price History{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>Items &amp; price history</h1>
+    <p class="sub" style="margin:0;">What you've paid over time — search an item to see the
+      lowest, average and latest price, the trend, and which suppliers quoted it.</p>
+  </div>
+</div>
+
+<form method="get" action="{% url 'web:price_history' %}" style="display:flex;gap:8px;margin-bottom:18px;max-width:520px;">
+  <input type="search" name="q" value="{{ q }}" placeholder="e.g. hydraulic pipe"
+    style="flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg,#f7f8fa);color:var(--ink);">
+  <button class="btn" type="submit">Search</button>
+  {% if q %}<a class="btn ghost" href="{% url 'web:price_history' %}">Clear</a>{% endif %}
+</form>
+
+{% if intel %}
+  {% if intel.found %}
+  <h2 style="font-size:16px;margin:0 0 4px;">{{ intel.item }}</h2>
+  <p class="muted" style="margin:0 0 14px;font-size:12.5px;">{{ intel.point_count }} recorded price{{ intel.point_count|pluralize }}
+    {% if intel.source %}· {{ intel.source }}{% endif %}</p>
+
+  <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
+    <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">↓</div><div class="n">{{ intel.min_price }}</div><div class="l">Lowest</div></div>
+    <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">≈</div><div class="n">{{ intel.avg_price }}</div><div class="l">Average</div></div>
+    <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">•</div><div class="n">{{ intel.last_price }}</div><div class="l">Latest</div></div>
+    <div class="tile">
+      <div class="ic" style="background:{% if intel.trend == 'up' %}#fdecea;color:#c0392b{% elif intel.trend == 'down' %}var(--green-t);color:#0a8f57{% else %}#eef0f5;color:var(--muted){% endif %};">
+        {% if intel.trend == 'up' %}↗{% elif intel.trend == 'down' %}↘{% else %}→{% endif %}</div>
+      <div class="n">{% if intel.change_pct is not None %}{{ intel.change_pct }}%{% else %}—{% endif %}</div><div class="l">Trend</div></div>
+  </div>
+
+  <h2 style="font-size:15px;margin:0 0 10px;">By supplier</h2>
+  <div class="card" style="padding:0;overflow-x:auto;margin-bottom:22px;">
+    <table>
+      <tr><th>Supplier</th><th class="right">Latest</th><th class="right">Lowest</th><th class="right">Times</th><th>Last seen</th></tr>
+      {% for s in intel.suppliers %}
+      <tr>
+        <td><strong>{{ s.supplier }}</strong>{% if s.supplier == intel.cheapest_supplier %} <span class="chip" style="background:var(--green-t);color:#0a8f57;">cheapest</span>{% endif %}</td>
+        <td style="text-align:right;">{{ s.last_price }}</td>
+        <td style="text-align:right;" class="muted">{{ s.min_price }}</td>
+        <td style="text-align:right;" class="muted">{{ s.count }}</td>
+        <td class="muted">{{ s.last_date|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <h2 style="font-size:15px;margin:0 0 10px;">Every recorded price</h2>
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <tr><th>Date</th><th>Supplier</th><th class="right">Price</th><th>Unit</th></tr>
+      {% for p in intel.points %}
+      <tr><td class="muted">{{ p.date|default:"—" }}</td><td>{{ p.supplier }}</td>
+        <td style="text-align:right;"><strong>{{ p.price }}</strong></td><td class="muted">{{ p.unit }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+  <div class="card"><p class="muted" style="margin:0;">No recorded prices for “{{ q }}”.
+    Import supplier invoices/quotes on <a href="{% url 'web:import_centre' %}">Business history</a>,
+    or capture a supplier quote, to build price history.</p></div>
+  {% endif %}
+{% else %}
+  {# Browse mode — items with recorded prices. #}
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table>
+      <tr><th>Item</th><th class="right">Prices</th><th class="right">Lowest</th><th class="right">Highest</th><th>Last</th></tr>
+      {% for it in items %}
+      <tr onclick="location.href='{% url 'web:price_history' %}?q={{ it.description|urlencode }}'" style="cursor:pointer;">
+        <td><strong>{{ it.description }}</strong></td>
+        <td style="text-align:right;">{{ it.n }}</td>
+        <td style="text-align:right;" class="muted">{{ it.lo }}</td>
+        <td style="text-align:right;" class="muted">{{ it.hi }}</td>
+        <td class="muted">{{ it.last|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" style="padding:22px;color:var(--muted);">
+        No price history yet. Import supplier invoices/quotes on
+        <a href="{% url 'web:import_centre' %}">Business history</a> to build it.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+{% endif %}
+{% endblock %}
