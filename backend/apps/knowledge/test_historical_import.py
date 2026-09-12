@@ -220,6 +220,21 @@ class ImportArchitectureTests(TestCase):
         self.assertIn("procurement@kumba.co.za", emails)       # external kept
         self.assertNotIn("admin@acmecivils.co.za", emails)     # internal excluded
 
+    def test_reprocess_with_no_text_preserves_entities(self):
+        # Regression: a retry where the file can't be read must NOT soft-delete
+        # the entities already extracted (the prod data-loss bug).
+        data = b"QUOTATION\nCustomer: ABC Mining\nContact: joe@abcmining.co.za\n"
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            doc = imp.ingest(batch, "q.txt", data, self.mgr)
+            n1 = doc.entities.count()
+            self.assertGreater(n1, 0)
+            doc.file.delete(save=True)          # simulate the file going missing
+            imp.process_document(doc)
+            doc.refresh_from_db()
+            self.assertEqual(doc.entities.count(), n1)   # entities kept, not wiped
+            self.assertEqual(doc.status, ImportedDocument.Status.COMPLETED)
+
     def test_reprocess_is_idempotent(self):
         data = b"INVOICE\nInvoice No: INV-1\nCustomer: ABC Mining\nContact: joe@abcmining.co.za\n"
         with tenant_scope(self.company.id):

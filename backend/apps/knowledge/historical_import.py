@@ -109,19 +109,33 @@ def process_document(doc: ImportedDocument) -> ImportedDocument:
         doc.status = ImportedDocument.Status.MATCHING
         doc.save(update_fields=["doc_type", "doc_type_confidence", "text", "text_chars",
                                 "status", "updated_at"])
-        # Idempotent re-stage: drop this document's previous entities first.
-        doc.entities.all().delete()
-        for cand in _extract_entities(text, company=doc.company, user=doc.created_by, use_ai=True):
-            _stage(doc.batch, doc, cand)
-        # High-confidence matches auto-link to existing records (so historical
-        # customers/suppliers connect without a manual click); NEW/uncertain ones
-        # wait in the review queue → the doc is COMPLETED only if nothing is pending.
-        pending = _auto_apply(doc, doc.created_by)
-        doc.status = (ImportedDocument.Status.NEEDS_REVIEW if pending
-                      else ImportedDocument.Status.COMPLETED)
-        doc.failed = False
-        doc.completed_at = timezone.now()
-        doc.save(update_fields=["status", "failed", "completed_at", "updated_at"])
+        if text.strip():
+            # We have content — safe to (re)stage idempotently: clear THIS doc's
+            # prior entities, then re-extract.
+            doc.entities.all().delete()
+            for cand in _extract_entities(text, company=doc.company, user=doc.created_by, use_ai=True):
+                _stage(doc.batch, doc, cand)
+            # High-confidence matches auto-link to existing records (historical
+            # customers/suppliers connect without a click); NEW/uncertain wait in
+            # the queue → COMPLETED only if nothing is pending, else NEEDS_REVIEW.
+            pending = _auto_apply(doc, doc.created_by)
+            doc.status = (ImportedDocument.Status.NEEDS_REVIEW if pending
+                          else ImportedDocument.Status.COMPLETED)
+            doc.failed = False
+            doc.completed_at = timezone.now()
+        elif doc.entities.exists():
+            # No text extracted this run (e.g. unreadable file on a retry) but we
+            # already have entities — NEVER destroy good data; keep what we had.
+            doc.status = ImportedDocument.Status.COMPLETED
+            doc.failed = False
+            doc.completed_at = timezone.now()
+        else:
+            # No text and nothing extracted — a genuine failure the user can retry.
+            doc.status = ImportedDocument.Status.FAILED
+            doc.failed = True
+            doc.processing_error = "No readable text could be extracted from this document."
+        doc.save(update_fields=["status", "failed", "completed_at", "processing_error",
+                                "updated_at"])
     except Exception as exc:                         # noqa: BLE001
         doc.status = ImportedDocument.Status.FAILED
         doc.failed = True
