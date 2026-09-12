@@ -154,3 +154,23 @@ class DocumentsExplorerTests(TestCase):
         self.assertEqual(detail.status_code, 200)
         self.assertContains(detail, "ABC Mining")       # extracted entity shown
         self.assertContains(detail, "Extracted text")
+
+
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+class RelationshipsViewTests(TestCase):
+    def test_relationships_renders(self):
+        from apps.knowledge.models import ImportBatch, ImportedDocument, HistoricalJob
+        company = Company.objects.create(name="C")
+        mgr = _user(company, ["customers.manage"], "m@c.co")
+        self.client.force_login(mgr)
+        with tenant_scope(company.id):
+            batch = ImportBatch.objects.create(company=company, label="H", created_by=mgr)
+            job = HistoricalJob.objects.create(company=company, batch=batch,
+                title="Job QT-1", customer_name="ABC Mining", reference="qt1",
+                confidence=0.8, created_by=mgr)
+            ImportedDocument.objects.create(batch=batch, company=company, job=job,
+                filename="q.pdf", doc_type=ImportedDocument.DocType.QUOTATION, created_by=mgr)
+        r = self.client.get("/import/relationships/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "ABC Mining")
+        self.assertContains(r, "q.pdf")

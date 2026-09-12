@@ -83,6 +83,22 @@ def import_document(request, pk):
 
 
 @login_required
+def import_relationships(request):
+    """Relationships — the reconstructed business graph: each historical job and
+    the customer + documents that make it up (AI OS §12/§5)."""
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    jobs = list(HistoricalJob.objects.exclude(status=HistoricalJob.Status.DISMISSED)
+                .order_by("status", "-confidence")[:200])
+    graph = []
+    for j in jobs:
+        docs = list(j.documents.all().order_by("doc_type")[:20])
+        graph.append({"job": j, "documents": docs})
+    return render(request, "web/import_relationships.html", {"graph": graph})
+
+
+@login_required
 def import_customers_discovered(request):
     """Customers found across all imported history — click through to the real
     Lulaworks customer record once resolved."""

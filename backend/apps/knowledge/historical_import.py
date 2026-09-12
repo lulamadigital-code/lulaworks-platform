@@ -122,6 +122,10 @@ def process_document(doc: ImportedDocument) -> ImportedDocument:
                     pass
         text = extract_text_from_upload(ContentFile(data, name=doc.filename)) if data else ""
         text = text or ""
+        # If the file is gone (e.g. a reprocess after storage loss) but we already
+        # captured its text, fall back to that rather than losing everything.
+        if not text.strip() and doc.text:
+            text = doc.text
         doc_type, confidence = classify_document(doc.filename, text)
         doc.doc_type, doc.doc_type_confidence = doc_type, confidence
         doc.text, doc.text_chars = text[:_TEXT_CAP], len(text)

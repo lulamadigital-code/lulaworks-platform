@@ -105,6 +105,7 @@ urlpatterns = [
          name="import_customers_discovered"),
     path("import/documents/", views_import.import_documents, name="import_documents"),
     path("import/documents/<uuid:pk>/", views_import.import_document, name="import_document"),
+    path("import/relationships/", views_import.import_relationships, name="import_relationships"),
     path("import/start/", views_import.import_start, name="import_start"),
     path("import/<uuid:pk>/", views_import.import_batch, name="import_batch"),
     path("import/<uuid:pk>/entity/<uuid:eid>/commit/", views_import.import_commit,

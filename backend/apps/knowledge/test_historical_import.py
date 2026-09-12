@@ -281,8 +281,10 @@ class ImportArchitectureTests(TestCase):
             doc.file.delete(save=True)          # simulate the file going missing
             imp.process_document(doc)
             doc.refresh_from_db()
-            self.assertEqual(doc.entities.count(), n1)   # entities kept, not wiped
-            self.assertEqual(doc.status, ImportedDocument.Status.COMPLETED)
+            # Entities are not wiped — either kept, or re-staged from the cached text.
+            self.assertEqual(doc.entities.count(), n1)
+            self.assertIn(doc.status, [ImportedDocument.Status.COMPLETED,
+                                       ImportedDocument.Status.NEEDS_REVIEW])
 
     def test_reprocess_is_idempotent(self):
         data = b"INVOICE\nInvoice No: INV-1\nCustomer: ABC Mining\nContact: joe@abcmining.co.za\n"
