@@ -68,7 +68,13 @@
       <td class="muted">{{ c.city|default:"" }}{% if c.city and c.province %}, {% endif %}{{ c.province|default:"" }}{% if not c.city and not c.province %}—{% endif %}</td>
       <td class="muted">{{ c.telephone|default:"—" }}</td>
       <td style="white-space:nowrap;">
-        <a class="btn ghost" href="{% url 'web:customer_detail' c.id %}" style="padding:3px 10px;">Open →</a></td>
+        <a class="btn ghost" href="{% url 'web:customer_detail' c.id %}" style="padding:3px 10px;">Open →</a>
+        {% if can_manage %}
+        <form method="post" action="{% url 'web:procurement_client_delete' c.id %}" style="display:inline;margin-left:6px;"
+              onsubmit="return confirm('Remove “{{ c.display_name|escapejs }}” from your clients? This can be restored by support if needed.');">{% csrf_token %}
+          <button class="btn ghost" type="submit" style="padding:3px 10px;color:#c0392b;">Delete</button>
+        </form>
+        {% endif %}</td>
     </tr>
     {% empty %}
     <tr><td colspan="5" class="muted" style="padding:18px;">

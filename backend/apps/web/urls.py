@@ -343,6 +343,8 @@ urlpatterns = [
     # Procurement
     path("procurement/", views.procurement_dashboard, name="procurement"),
     path("procurement/clients/", views.procurement_clients, name="procurement_clients"),
+    path("procurement/clients/<uuid:pk>/delete/", views.procurement_client_delete,
+         name="procurement_client_delete"),
     path("procurement/prices/", views.procurement_prices, name="procurement_prices"),
     path("procurement/suppliers/", views.suppliers_list, name="suppliers"),
     path("procurement/suppliers/new/", views.supplier_create, name="supplier_create"),

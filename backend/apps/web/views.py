@@ -2859,6 +2859,24 @@ def procurement_clients(request):
 
 
 @login_required
+@require_POST
+def procurement_client_delete(request, pk):
+    """Remove a client from the master list. Soft-delete (recoverable) — related
+    quotes/jobs keep their reference but the client drops off the list."""
+    from apps.customers.models import Customer
+
+    if not (request.user.has_perm_code("customers.manage")
+            or request.user.has_perm_code("projects.create")):
+        messages.error(request, "You don't have permission to delete clients.")
+        return redirect("web:procurement_clients")
+    client = get_object_or_404(Customer.objects.all(), pk=pk)
+    name = client.display_name
+    client.delete()   # soft-delete on TenantBaseModel
+    messages.success(request, f"“{name}” removed from your clients.")
+    return redirect("web:procurement_clients")
+
+
+@login_required
 def procurement_prices(request):
     """Price history — the append-only ledger of everything we've paid."""
     from apps.procurement.models import SupplierPrice
