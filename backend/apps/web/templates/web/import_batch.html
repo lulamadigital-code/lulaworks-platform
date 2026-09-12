@@ -195,7 +195,16 @@
 
 {# Documents processed. #}
 {% if documents %}
-<h2 style="font-size:15px;margin:24px 0 10px;">Documents ({{ documents|length }})</h2>
+<div style="display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px;gap:12px;flex-wrap:wrap;">
+  <h2 style="font-size:15px;margin:0;">Documents ({{ documents|length }})
+    {% if duplicate_count %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {{ duplicate_count }} duplicate{{ duplicate_count|pluralize }} hidden</span>{% endif %}</h2>
+  {% if duplicate_count %}
+  <form method="post" action="{% url 'web:import_remove_duplicates' batch.pk %}" style="margin:0;"
+        onsubmit="return confirm('Remove {{ duplicate_count }} duplicate document{{ duplicate_count|pluralize }}? The originals are kept.');">{% csrf_token %}
+    <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;">Remove {{ duplicate_count }} duplicate{{ duplicate_count|pluralize }}</button>
+  </form>
+  {% endif %}
+</div>
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
     <tr><th>File</th><th>Status</th><th>Detected type</th><th class="right"></th></tr>

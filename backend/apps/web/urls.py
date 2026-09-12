@@ -112,6 +112,8 @@ urlpatterns = [
          name="import_commit"),
     path("import/<uuid:pk>/doc/<uuid:did>/retry/", views_import.import_document_retry,
          name="import_document_retry"),
+    path("import/<uuid:pk>/remove-duplicates/", views_import.import_remove_duplicates,
+         name="import_remove_duplicates"),
     path("import/<uuid:pk>/reconstruct/", views_import.import_reconstruct,
          name="import_reconstruct"),
     path("import/<uuid:pk>/consolidate/", views_import.import_consolidate,

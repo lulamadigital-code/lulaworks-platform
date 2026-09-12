@@ -14,7 +14,8 @@ from django.views.decorators.http import require_POST
 
 from apps.knowledge import historical_import as imp
 from apps.knowledge import job_reconstruction as jr
-from apps.knowledge.models import HistoricalJob, ImportBatch, StagedEntity
+from apps.knowledge.models import (HistoricalJob, ImportBatch, ImportedDocument,
+                                    StagedEntity)
 
 
 def _can(user):
@@ -153,7 +154,6 @@ def import_batch(request, pk):
         if not files:
             messages.error(request, "Choose at least one document to upload.")
             return redirect("web:import_batch", pk=pk)
-        from apps.knowledge.models import ImportedDocument
         from apps.knowledge.tasks import process_import_document
         import logging
         queued = dupes = errors = 0
@@ -185,7 +185,9 @@ def import_batch(request, pk):
         return redirect("web:import_batch", pk=pk)
 
     summary = imp.batch_summary(batch)
-    documents = list(batch.documents.all().order_by("-created_at"))
+    all_docs = list(batch.documents.all().order_by("-document_date", "-created_at"))
+    documents = [d for d in all_docs if d.status != ImportedDocument.Status.DUPLICATE]
+    duplicate_count = sum(1 for d in all_docs if d.status == ImportedDocument.Status.DUPLICATE)
     entities = list(batch.entities.all().order_by("review_status", "kind", "-confidence"))
     # Split into what needs a human vs. what's settled, so the queue is obvious.
     pending = [e for e in entities if e.review_status == StagedEntity.Review.PENDING]
@@ -196,6 +198,7 @@ def import_batch(request, pk):
     pending_suppliers = sum(1 for e in pending if e.kind == StagedEntity.Kind.SUPPLIER)
     return render(request, "web/import_batch.html", {
         "batch": batch, "summary": summary, "documents": documents,
+        "duplicate_count": duplicate_count,
         "pending": pending, "done": done, "jobs": jobs,
         "pending_customers": pending_customers, "pending_suppliers": pending_suppliers})
 
@@ -290,6 +293,22 @@ def import_job(request, pk, jid):
         messages.success(request, f"{job.title} — {job.get_status_display().lower()}.")
     except (PermissionError, ValueError) as exc:
         messages.error(request, str(exc))
+    return redirect("web:import_batch", pk=pk)
+
+
+@login_required
+@require_POST
+def import_remove_duplicates(request, pk):
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    batch = get_object_or_404(ImportBatch.objects.all(), pk=pk)
+    dupes = list(batch.documents.filter(status=ImportedDocument.Status.DUPLICATE))
+    for d in dupes:
+        d.delete()   # soft-delete — removes it from the list (recoverable)
+    batch.document_count = batch.documents.count()
+    batch.save(update_fields=["document_count", "updated_at"])
+    messages.success(request, f"Removed {len(dupes)} duplicate document{'s' if len(dupes) != 1 else ''}.")
     return redirect("web:import_batch", pk=pk)
 
 

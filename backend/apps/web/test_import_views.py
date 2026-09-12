@@ -194,3 +194,26 @@ class DocumentPreviewTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "<iframe")                 # inline preview
         self.assertContains(r, "/media/")                 # absolute media URL
+
+
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+class DuplicateDocsTests(TestCase):
+    def test_duplicates_hidden_and_removable(self):
+        from apps.knowledge.models import ImportBatch, ImportedDocument
+        company = Company.objects.create(name="C")
+        mgr = _user(company, ["customers.manage"], "m@c.co")
+        self.client.force_login(mgr)
+        with tenant_scope(company.id):
+            batch = ImportBatch.objects.create(company=company, label="H", created_by=mgr)
+            orig = ImportedDocument.objects.create(batch=batch, company=company,
+                filename="po.pdf", status=ImportedDocument.Status.COMPLETED, created_by=mgr)
+            dup = ImportedDocument.objects.create(batch=batch, company=company,
+                filename="po.pdf", status=ImportedDocument.Status.DUPLICATE,
+                duplicate_of=orig, created_by=mgr)
+        page = self.client.get(f"/import/{batch.pk}/")
+        self.assertContains(page, "1 duplicate")              # count shown
+        # Remove duplicates → the dup is gone, the original stays.
+        self.client.post(f"/import/{batch.pk}/remove-duplicates/")
+        with tenant_scope(company.id):
+            self.assertFalse(ImportedDocument.objects.filter(pk=dup.pk).exists())
+            self.assertTrue(ImportedDocument.objects.filter(pk=orig.pk).exists())
