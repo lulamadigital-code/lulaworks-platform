@@ -415,3 +415,27 @@ class DedupAndCleaningTests(TestCase):
         self.assertEqual(len(custs), 1)
         self.assertEqual(custs[0].raw_name, "Western Platinum (Pty) Ltd")
         self.assertEqual(custs[0].mentions, 3)
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class FileStorageGuaranteeTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Acme")
+        self.mgr = _user(self.company, ["customers.manage"], "mgr@a.co")
+
+    def test_queue_document_stores_file_on_disk(self):
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            doc = imp.queue_document(batch, "po.pdf", b"%PDF-1.4 real bytes", self.mgr)
+            doc.refresh_from_db()
+        self.assertTrue(doc.file and doc.file.name)                 # name persisted
+        self.assertTrue(doc.file.storage.exists(doc.file.name))     # actually on storage
+
+    def test_unstorable_file_raises_not_silent(self):
+        # If storage can't keep the file, queue_document must raise (no file-less row).
+        from unittest.mock import patch
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            with patch("django.core.files.storage.FileSystemStorage.exists", return_value=False):
+                with self.assertRaises(RuntimeError):
+                    imp.queue_document(batch, "po.pdf", b"bytes", self.mgr)

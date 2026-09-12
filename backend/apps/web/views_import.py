@@ -155,22 +155,33 @@ def import_batch(request, pk):
             return redirect("web:import_batch", pk=pk)
         from apps.knowledge.models import ImportedDocument
         from apps.knowledge.tasks import process_import_document
-        queued = dupes = 0
+        import logging
+        queued = dupes = errors = 0
         for f in files:
             try:
                 doc = imp.queue_document(batch, f.name, f.read(), request.user)
-            except Exception:                            # noqa: BLE001
+            except Exception as exc:                     # noqa: BLE001
+                errors += 1
+                logging.getLogger("apps.knowledge").warning(
+                    "Import upload failed for %s: %s", f.name, exc)
                 continue
             if doc.status == ImportedDocument.Status.DUPLICATE:
                 dupes += 1
             else:
                 queued += 1
                 process_import_document.delay(str(doc.id))
-        msg = f"{queued} document{'s' if queued != 1 else ''} uploaded — processing in the "
-        msg += "background. You can leave this page and come back."
-        if dupes:
-            msg += f" {dupes} duplicate{'s' if dupes != 1 else ''} skipped."
-        messages.success(request, msg)
+        if queued:
+            msg = f"{queued} document{'s' if queued != 1 else ''} uploaded — processing in "
+            msg += "the background. You can leave this page and come back."
+            if dupes:
+                msg += f" {dupes} duplicate{'s' if dupes != 1 else ''} skipped."
+            messages.success(request, msg)
+        if errors:
+            messages.error(request, f"{errors} file{'s' if errors != 1 else ''} could not be "
+                                    "stored and were not imported — please try again.")
+        elif not queued and dupes:
+            messages.info(request, f"{dupes} duplicate{'s' if dupes != 1 else ''} skipped — "
+                                   "already imported.")
         return redirect("web:import_batch", pk=pk)
 
     summary = imp.batch_summary(batch)

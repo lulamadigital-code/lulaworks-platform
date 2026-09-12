@@ -85,10 +85,21 @@ def queue_document(batch: ImportBatch, filename: str, data: bytes, user) -> Impo
     if original is not None:
         doc.status = ImportedDocument.Status.DUPLICATE
         doc.duplicate_of = original
+        doc.save()
     else:
         doc.status = ImportedDocument.Status.QUEUED
+        # Persist the original file and HARD-VERIFY it landed on storage before we
+        # accept the document — we never want a silent file-less record again.
         doc.file.save(filename[:120], ContentFile(data), save=False)
-    doc.save()
+        if not (doc.file and doc.file.name and doc.file.storage.exists(doc.file.name)):
+            raise RuntimeError(
+                "Could not store the uploaded file — check MEDIA_ROOT is a writable, "
+                "shared volume for web and worker.")
+        doc.save()
+        # Defence in depth: confirm the name persisted to the row.
+        doc.refresh_from_db(fields=["file"])
+        if not doc.file:
+            raise RuntimeError("Uploaded file did not persist on the document record.")
     batch.document_count = batch.documents.count()
     batch.save(update_fields=["document_count", "updated_at"])
     return doc
