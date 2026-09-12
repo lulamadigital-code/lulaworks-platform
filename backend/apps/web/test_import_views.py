@@ -174,3 +174,23 @@ class RelationshipsViewTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, "ABC Mining")
         self.assertContains(r, "q.pdf")
+
+
+import tempfile
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True, MEDIA_ROOT=tempfile.mkdtemp())
+class DocumentPreviewTests(TestCase):
+    def test_pdf_document_previews_inline(self):
+        from django.core.files.base import ContentFile
+        from apps.knowledge.models import ImportBatch, ImportedDocument
+        company = Company.objects.create(name="C")
+        mgr = _user(company, ["customers.manage"], "m@c.co")
+        self.client.force_login(mgr)
+        with tenant_scope(company.id):
+            batch = ImportBatch.objects.create(company=company, label="H", created_by=mgr)
+            doc = ImportedDocument.objects.create(batch=batch, company=company,
+                filename="abc_quote.pdf", status=ImportedDocument.Status.COMPLETED, created_by=mgr)
+            doc.file.save("abc_quote.pdf", ContentFile(b"%PDF-1.4 fake"), save=True)
+        r = self.client.get(f"/import/documents/{doc.pk}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "<iframe")                 # inline preview
+        self.assertContains(r, "/media/")                 # absolute media URL

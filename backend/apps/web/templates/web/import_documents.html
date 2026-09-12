@@ -21,13 +21,15 @@
   {% if q or dtype %}<a class="btn ghost" href="{% url 'web:import_documents' %}">Clear</a>{% endif %}
 </form>
 
+{% for g in groups %}
+<h2 style="font-size:15px;margin:18px 0 8px;">{{ g.label }}
+  <span class="muted" style="font-weight:400;font-size:12.5px;">· {{ g.docs|length }}</span></h2>
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>File</th><th>Type</th><th>Status</th><th>Import</th><th>Date</th></tr>
-    {% for d in documents %}
+    <tr><th>File</th><th>Status</th><th>Import</th><th>Date</th></tr>
+    {% for d in g.docs %}
     <tr onclick="location.href='{% url 'web:import_document' d.pk %}'" style="cursor:pointer;">
       <td><strong>{{ d.filename }}</strong></td>
-      <td>{{ d.get_doc_type_display }}</td>
       <td>
         {% if d.status == 'completed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Completed</span>
         {% elif d.status == 'needs_review' %}<span class="chip info">Needs review</span>
@@ -38,10 +40,11 @@
       <td class="muted">{{ d.batch.label|default:"—" }}</td>
       <td class="muted">{{ d.created_at|date:"j M Y" }}</td>
     </tr>
-    {% empty %}
-    <tr><td colspan="5" style="padding:22px;color:var(--muted);">
-      {% if q or dtype %}No documents match.{% else %}No documents imported yet.{% endif %}</td></tr>
     {% endfor %}
   </table>
 </div>
+{% empty %}
+<div class="card"><p class="muted" style="margin:0;">
+  {% if q or dtype %}No documents match.{% else %}No documents imported yet.{% endif %}</p></div>
+{% endfor %}
 {% endblock %}

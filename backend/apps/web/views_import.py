@@ -63,9 +63,17 @@ def import_documents(request):
         docs = docs.filter(Q(filename__icontains=q) | Q(text__icontains=q))
     if dtype:
         docs = docs.filter(doc_type=dtype)
-    docs = docs.order_by("-created_at")[:300]
+    docs = list(docs.order_by("-created_at")[:500])
+    # Group by document type so quotations, POs, invoices etc. are separated.
+    order = [c[0] for c in ImportedDocument.DocType.choices]
+    labels = dict(ImportedDocument.DocType.choices)
+    buckets: dict = {}
+    for d in docs:
+        buckets.setdefault(d.doc_type, []).append(d)
+    groups = [{"type": t, "label": labels.get(t, t), "docs": buckets[t]}
+              for t in order if t in buckets]
     return render(request, "web/import_documents.html", {
-        "documents": docs, "q": q, "dtype": dtype,
+        "groups": groups, "total": len(docs), "q": q, "dtype": dtype,
         "types": ImportedDocument.DocType.choices})
 
 
@@ -79,7 +87,18 @@ def import_document(request, pk):
     from apps.knowledge.models import ImportedDocument
     doc = get_object_or_404(ImportedDocument.objects.select_related("batch"), pk=pk)
     entities = list(doc.entities.all().order_by("kind", "-confidence"))
-    return render(request, "web/import_document.html", {"doc": doc, "entities": entities})
+    # Decide how to preview the original file (if we kept it).
+    file_kind = ""
+    if doc.file and doc.file.name:
+        name = doc.file.name.lower()
+        if name.endswith(".pdf"):
+            file_kind = "pdf"
+        elif name.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp")):
+            file_kind = "image"
+        else:
+            file_kind = "other"
+    return render(request, "web/import_document.html",
+                  {"doc": doc, "entities": entities, "file_kind": file_kind})
 
 
 @login_required

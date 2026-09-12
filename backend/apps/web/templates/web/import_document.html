@@ -12,6 +12,30 @@
   {% if doc.file %}<a class="btn ghost" href="{{ doc.file.url }}" target="_blank" rel="noopener">Open original ↗</a>{% endif %}
 </div>
 
+{# Original document preview. #}
+<h2 style="font-size:15px;margin:0 0 10px;">Document</h2>
+{% if file_kind == 'pdf' %}
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">
+  <iframe src="{{ doc.file.url }}" title="{{ doc.filename }}" loading="lazy"
+          style="width:100%;height:620px;border:0;display:block;"></iframe>
+</div>
+{% elif file_kind == 'image' %}
+<div class="card" style="margin-bottom:20px;text-align:center;">
+  <img src="{{ doc.file.url }}" alt="{{ doc.filename }}" style="max-width:100%;border-radius:8px;">
+</div>
+{% elif file_kind == 'other' %}
+<div class="card" style="margin-bottom:20px;">
+  <p class="muted" style="margin:0;">This file type can't be previewed here.
+    <a href="{{ doc.file.url }}" target="_blank" rel="noopener">Download {{ doc.filename }} ↗</a></p>
+</div>
+{% else %}
+<div class="card" style="margin-bottom:20px;">
+  <p class="muted" style="margin:0;">The original file isn't stored for this document
+    {% if doc.status == 'duplicate' %}(it's a duplicate of another){% else %}— the extracted text is shown below{% endif %}.
+    Re-upload it to keep a previewable copy.</p>
+</div>
+{% endif %}
+
 {% if doc.status == 'failed' and doc.processing_error %}
 <div class="card" style="margin-bottom:18px;background:#fdecea;border-color:#f5c6cb;">
   <strong style="color:#c0392b;">Processing failed</strong>

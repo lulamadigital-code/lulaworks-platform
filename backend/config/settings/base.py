@@ -368,7 +368,7 @@ PAYSTACK_PUBLIC_KEY = config("PAYSTACK_PUBLIC_KEY", default="")
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"   # absolute — nginx serves /media/ → /app/media/ (prod)
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Container-first: WhiteNoise for static; media → S3 in production (DATA_MODEL §10).
