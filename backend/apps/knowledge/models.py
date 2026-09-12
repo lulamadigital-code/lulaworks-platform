@@ -271,6 +271,8 @@ class StagedEntity(TenantBaseModel):
     email = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=64, blank=True)
     reference = models.CharField(max_length=64, blank=True)   # reg/VAT if seen
+    dedup_key = models.CharField(max_length=255, blank=True, db_index=True)  # one row per real entity
+    mentions = models.PositiveIntegerField(default=1)         # how many docs referenced it
     verdict = models.CharField(max_length=12, choices=Verdict.choices)
     confidence = models.FloatField(default=0.0)
     match_id = models.CharField(max_length=64, blank=True)    # candidate ERP id
@@ -280,7 +282,15 @@ class StagedEntity(TenantBaseModel):
     resolved_id = models.CharField(max_length=64, blank=True) # ERP id after commit
 
     class Meta:
-        indexes = [models.Index(fields=["batch", "kind", "verdict"])]
+        indexes = [models.Index(fields=["batch", "kind", "verdict"]),
+                   models.Index(fields=["batch", "kind", "dedup_key"])]
+        constraints = [
+            # One staged entity per real thing in a batch (de-dup across documents).
+            models.UniqueConstraint(
+                fields=["batch", "kind", "dedup_key"],
+                condition=models.Q(is_deleted=False) & ~models.Q(dedup_key=""),
+                name="uniq_staged_entity_per_batch"),
+        ]
 
     def __str__(self):
         return f"{self.raw_name} [{self.kind}/{self.verdict}]"

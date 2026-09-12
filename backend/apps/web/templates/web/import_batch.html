@@ -54,8 +54,14 @@
 </div>
 
 {# The review queue — the human decision. #}
-<h2 style="font-size:15px;margin:22px 0 10px;">Review — {{ pending|length }} to confirm
-  {% if summary.auto_matched %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {{ summary.auto_matched }} auto-matched</span>{% endif %}</h2>
+<div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;gap:12px;flex-wrap:wrap;">
+  <h2 style="font-size:15px;margin:0;">Review — {{ pending|length }} to confirm
+    {% if summary.auto_matched %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {{ summary.auto_matched }} auto-matched</span>{% endif %}</h2>
+  <form method="post" action="{% url 'web:import_consolidate' batch.pk %}" style="margin:0;">{% csrf_token %}
+    <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;"
+      title="Merge the same customer/person seen across many documents into one row">Merge duplicates</button>
+  </form>
+</div>
 {% if pending %}
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>

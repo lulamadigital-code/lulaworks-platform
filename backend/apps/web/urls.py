@@ -109,6 +109,8 @@ urlpatterns = [
          name="import_document_retry"),
     path("import/<uuid:pk>/reconstruct/", views_import.import_reconstruct,
          name="import_reconstruct"),
+    path("import/<uuid:pk>/consolidate/", views_import.import_consolidate,
+         name="import_consolidate"),
     path("import/<uuid:pk>/job/<uuid:jid>/", views_import.import_job, name="import_job"),
 
     # AI command centre.

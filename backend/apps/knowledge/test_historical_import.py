@@ -228,3 +228,62 @@ class ImportArchitectureTests(TestCase):
             n1 = doc.entities.count()
             imp.process_document(doc)                          # run again
             self.assertEqual(doc.entities.count(), n1)         # no duplication
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class DedupAndCleaningTests(TestCase):
+    """Cross-document de-dup + name cleaning — the same customer/contact seen in
+    many documents collapses to one reviewable row."""
+
+    def setUp(self):
+        self.company = Company.objects.create(name="Acme Civils", email="info@acmecivils.co.za")
+        self.mgr = _user(self.company, ["customers.manage"], "mgr@acmecivils.co.za")
+
+    def test_same_customer_across_docs_is_one_row(self):
+        d1 = b"QUOTATION\nCustomer: Western Platinum (Pty) Ltd QUOTATION\n"
+        d2 = b"TAX INVOICE\nCustomer: Western Platinum(Pty)Ltd TAX INVOICE\n"
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            imp.ingest(batch, "q.txt", d1, self.mgr)
+            imp.ingest(batch, "i.txt", d2, self.mgr)
+            custs = list(batch.entities.filter(kind=StagedEntity.Kind.CUSTOMER))
+        # Two docs, two name variants, same customer → ONE staged row.
+        self.assertEqual(len(custs), 1)
+        self.assertEqual(custs[0].raw_name, "Western Platinum (Pty) Ltd")  # cleaned
+        self.assertEqual(custs[0].mentions, 2)                              # evidence count
+
+    def test_same_contact_email_dedupes_prefers_real_name(self):
+        # Doc 1: only the email (regex guesses "Luckymacheke89"). Doc 2: the AI
+        # extractor supplies the real name for the same email. Dedup by email
+        # collapses them to one, preferring the real name.
+        d1 = b"QUOTATION\nCustomer: Kumba\nContact: luckymacheke89@gmail.com\n"
+        d2 = b"INVOICE\nCustomer: Kumba\ncontact person on site\n"
+        ai = [{"kind": "contact", "raw_name": "Lucky Macheke",
+               "email": "luckymacheke89@gmail.com", "phone": "", "reference": ""}]
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            imp.ingest(batch, "q.txt", d1, self.mgr)
+            with patch("apps.knowledge.document_intelligence.ai_extract_entities",
+                       return_value=ai):
+                imp.ingest(batch, "i.txt", d2, self.mgr)
+            contacts = list(batch.entities.filter(kind=StagedEntity.Kind.CONTACT,
+                                                  email="luckymacheke89@gmail.com"))
+        self.assertEqual(len(contacts), 1)            # one person, not two
+        self.assertEqual(contacts[0].raw_name, "Lucky Macheke")  # real name preferred
+        self.assertEqual(contacts[0].mentions, 2)
+
+    def test_consolidate_existing_duplicates(self):
+        # Stage duplicates directly (simulating the pre-fix data), then consolidate.
+        with tenant_scope(self.company.id):
+            batch = imp.create_batch(self.mgr, label="H")
+            for nm in ["Western Platinum(Pty)Ltd QUOTATION", "Western Platinum (Pty) Ltd",
+                       "Western Platinum(Pty)Ltd TAX INVOICE"]:
+                StagedEntity.objects.create(batch=batch, company=self.company,
+                    kind=StagedEntity.Kind.CUSTOMER, raw_name=nm,
+                    verdict=StagedEntity.Verdict.NEW, created_by=self.mgr)
+            removed = imp.consolidate_batch(batch)
+            custs = list(batch.entities.filter(kind=StagedEntity.Kind.CUSTOMER))
+        self.assertEqual(removed, 2)
+        self.assertEqual(len(custs), 1)
+        self.assertEqual(custs[0].raw_name, "Western Platinum (Pty) Ltd")
+        self.assertEqual(custs[0].mentions, 3)

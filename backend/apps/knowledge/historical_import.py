@@ -17,6 +17,7 @@ import hashlib
 import re
 
 from django.core.files.base import ContentFile
+from django.db import IntegrityError
 from django.utils import timezone
 
 from . import entity_resolution as er
@@ -175,24 +176,118 @@ def ingest(batch: ImportBatch, filename: str, data: bytes, user) -> ImportedDocu
     return doc
 
 
-def _stage(batch, doc, cand: dict) -> StagedEntity:
-    kind = cand["kind"]
+# Trailing document-type words that pollute an extracted organisation name, e.g.
+# "Western Platinum (Pty) Ltd QUOTATION" → "Western Platinum (Pty) Ltd".
+_DOCTYPE_TAIL = re.compile(
+    r"\s*\b(tax\s*invoice|invoice|quotation|quote|statement|delivery\s*note|"
+    r"dispatch\s*note|waybill|purchase\s*order|credit\s*note|order|rfq|"
+    r"bill\s*to|sold\s*to|ship\s*to)\b.*$", re.I)
+
+
+def _clean_company_name(name: str) -> str:
+    n = (name or "").strip(" \t:-|,.")
+    n = _DOCTYPE_TAIL.sub("", n).strip(" \t:-|,.")
+    n = re.sub(r"(?<=[A-Za-z0-9])\(", " (", n)              # "Platinum(Pty)" → "Platinum (Pty)"
+    n = re.sub(r"\(\s*pty\s*\)\s*ltd", "(Pty) Ltd", n, flags=re.I)
+    n = re.sub(r"\s{2,}", " ", n)
+    return n.strip()
+
+
+def _dedup_key(kind, name, email) -> str:
+    """A stable key so the same real entity collapses to one staged row across
+    every document. Contacts key on email (the strongest identity) then name;
+    companies on their cleaned, normalised name."""
     if kind == StagedEntity.Kind.CONTACT:
-        res = er.resolve_contact(cand["raw_name"], email=cand.get("email", ""),
-                                 phone=cand.get("phone", ""))
+        e = er.normalise_email(email)
+        return f"e:{e}" if e else f"n:{er.normalise_name(name)}"
+    return f"n:{er.normalise_name(_clean_company_name(name))}"
+
+
+def _better_name(new: str, old: str) -> bool:
+    """Prefer a human name over an email-local guess: one with a space and mixed
+    case beats 'luckymacheke89'."""
+    return (" " in new.strip()) and (" " not in (old or "").strip())
+
+
+def _stage(batch, doc, cand: dict) -> StagedEntity | None:
+    kind = cand["kind"]
+    name = _clean_company_name(cand["raw_name"]) if kind != StagedEntity.Kind.CONTACT \
+        else cand["raw_name"].strip()
+    if not name or len(name) < 2:
+        return None
+    email = cand.get("email", "")
+    key = _dedup_key(kind, name, email)
+
+    # De-dup across documents in this batch: one row per real entity, counting mentions.
+    existing = StagedEntity.objects.filter(batch=batch, kind=kind, dedup_key=key).first()
+    if existing is not None:
+        fields = ["mentions", "updated_at"]
+        existing.mentions = (existing.mentions or 1) + 1
+        if _better_name(name, existing.raw_name):
+            existing.raw_name = name[:255]; fields.append("raw_name")
+        if not existing.email and email:
+            existing.email = email[:255]; fields.append("email")
+        existing.save(update_fields=fields)
+        return existing
+
+    if kind == StagedEntity.Kind.CONTACT:
+        res = er.resolve_contact(name, email=email, phone=cand.get("phone", ""))
     else:
         res = er.resolve_company(
-            cand["raw_name"],
-            kind="supplier" if kind == StagedEntity.Kind.SUPPLIER else "customer",
-            email=cand.get("email", ""), phone=cand.get("phone", ""),
-            reg_no=cand.get("reference", ""))
+            name, kind="supplier" if kind == StagedEntity.Kind.SUPPLIER else "customer",
+            email=email, phone=cand.get("phone", ""), reg_no=cand.get("reference", ""))
     best = res.best
-    return StagedEntity.objects.create(
-        batch=batch, document=doc, kind=kind, raw_name=cand["raw_name"][:255],
-        email=cand.get("email", "")[:255], phone=cand.get("phone", "")[:64],
-        reference=cand.get("reference", "")[:64],
-        verdict=res.verdict, confidence=(best.score if best else 0.0),
-        match_id=(best.id if best else ""), match_label=(best.label if best else ""))
+    try:
+        return StagedEntity.objects.create(
+            batch=batch, document=doc, kind=kind, raw_name=name[:255],
+            email=email[:255], phone=cand.get("phone", "")[:64],
+            reference=cand.get("reference", "")[:64], dedup_key=key, mentions=1,
+            verdict=res.verdict, confidence=(best.score if best else 0.0),
+            match_id=(best.id if best else ""), match_label=(best.label if best else ""))
+    except IntegrityError:
+        # A concurrent worker staged the same entity first — just count the mention.
+        existing = StagedEntity.objects.filter(batch=batch, kind=kind, dedup_key=key).first()
+        if existing is not None:
+            existing.mentions = (existing.mentions or 1) + 1
+            existing.save(update_fields=["mentions", "updated_at"])
+        return existing
+
+
+def consolidate_batch(batch: ImportBatch) -> int:
+    """Merge already-staged duplicates in a batch into one row per real entity
+    (cleaning names, summing mentions, keeping the best name / any resolved match).
+    Lets an existing noisy batch be cleaned up without re-uploading. Returns the
+    number of duplicate rows removed."""
+    from collections import defaultdict
+
+    groups: dict = defaultdict(list)
+    for e in StagedEntity.objects.filter(batch=batch):
+        name = e.raw_name if e.kind == StagedEntity.Kind.CONTACT else _clean_company_name(e.raw_name)
+        groups[(e.kind, _dedup_key(e.kind, name, e.email))].append(e)
+
+    removed = 0
+    for (kind, key), ents in groups.items():
+        # Canonical = an already-committed row if any, else the best-named one.
+        ents.sort(key=lambda x: (x.review_status == StagedEntity.Review.PENDING,
+                                 0 if " " in x.raw_name.strip() else 1,
+                                 -len(x.raw_name)))
+        canon = ents[0]
+        canon.dedup_key = key
+        canon.mentions = len(ents)
+        if kind != StagedEntity.Kind.CONTACT:
+            canon.raw_name = (_clean_company_name(canon.raw_name) or canon.raw_name)[:255]
+        if not canon.email:
+            for e in ents:
+                if e.email:
+                    canon.email = e.email
+                    break
+        canon.save(update_fields=["dedup_key", "mentions", "raw_name", "email", "updated_at"])
+        for dup in ents[1:]:
+            dup.delete()
+            removed += 1
+    batch.entity_count = batch.entities.count()
+    batch.save(update_fields=["entity_count", "updated_at"])
+    return removed
 
 
 # ── entity extraction (deterministic first pass) ──────────────────────────────

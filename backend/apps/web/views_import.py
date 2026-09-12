@@ -90,6 +90,19 @@ def import_batch(request, pk):
 
 @login_required
 @require_POST
+def import_consolidate(request, pk):
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    batch = get_object_or_404(ImportBatch.objects.all(), pk=pk)
+    removed = imp.consolidate_batch(batch)
+    messages.success(request, f"Merged {removed} duplicate mention{'s' if removed != 1 else ''} — "
+                              "each customer, supplier and person now appears once.")
+    return redirect("web:import_batch", pk=pk)
+
+
+@login_required
+@require_POST
 def import_reconstruct(request, pk):
     if not _can(request.user):
         messages.error(request, "You don't have permission to import business history.")
