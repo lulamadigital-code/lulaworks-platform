@@ -13,6 +13,30 @@
   </form>
 </div>
 
+{# Overview — what Lulaworks learned across all imports. #}
+{% if overview.documents %}
+<div class="grid" style="grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:12px;">
+  {% with o=overview %}
+  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">▤</div><div class="n">{{ o.documents }}</div><div class="l">Documents</div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div><div class="n">{{ o.processed }}</div><div class="l">Processed</div></div>
+  <div class="tile"><div class="ic" style="background:#fbe9d6;color:#9a6a12;">◷</div><div class="n">{{ o.pending_review }}</div><div class="l">To review</div></div>
+  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">⧉</div><div class="n">{{ o.duplicates }}</div><div class="l">Duplicates</div></div>
+  <div class="tile"><div class="ic" style="background:{% if o.failed %}#fdecea;color:#c0392b{% else %}#eef0f5;color:var(--muted){% endif %};">⚠</div><div class="n">{{ o.failed }}</div><div class="l">Failed</div></div>
+  {% endwith %}
+</div>
+<div class="grid" style="grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px;">
+  {% with o=overview %}
+  <a class="tile" href="{% url 'web:import_customers_discovered' %}" style="text-decoration:none;color:inherit;">
+    <div class="ic" style="background:#eef0f5;color:var(--muted);">◎</div><div class="n">{{ o.customers }}</div><div class="l">Customers{% if o.customers_added %} · {{ o.customers_added }} in CRM{% endif %}</div></a>
+  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">▣</div><div class="n">{{ o.suppliers }}</div><div class="l">Suppliers</div></div>
+  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">☺</div><div class="n">{{ o.contacts }}</div><div class="l">Contacts</div></div>
+  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">⚒</div><div class="n">{{ o.historical_jobs }}</div><div class="l">Historical jobs</div></div>
+  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">₵</div><div class="n">{{ o.prices }}</div><div class="l">Prices</div></div>
+  {% endwith %}
+</div>
+{% endif %}
+
+<h2 style="font-size:15px;margin:0 0 10px;">Imports</h2>
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
     <tr><th>Import</th><th>Status</th><th class="right">Documents</th><th class="right">Entities found</th><th>Started</th></tr>

@@ -101,6 +101,8 @@ urlpatterns = [
 
     # Bring Your Business History — historical import.
     path("import/", views_import.import_centre, name="import_centre"),
+    path("import/customers/", views_import.import_customers_discovered,
+         name="import_customers_discovered"),
     path("import/start/", views_import.import_start, name="import_start"),
     path("import/<uuid:pk>/", views_import.import_batch, name="import_batch"),
     path("import/<uuid:pk>/entity/<uuid:eid>/commit/", views_import.import_commit,

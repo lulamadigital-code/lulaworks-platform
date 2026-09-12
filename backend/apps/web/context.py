@@ -105,6 +105,7 @@ _SECTIONS = {
     "commercial": "commercial", "invoice_payment": "commercial",
     "lulaai": "lulaai",
     "import_centre": "import_centre", "import_batch": "import_centre",
+    "import_customers_discovered": "import_centre",
     "import_upload": "import_centre", "import_commit": "import_centre",
     "import_reconstruct": "import_centre", "import_job": "import_centre",
     "import_document_retry": "import_centre", "import_consolidate": "import_centre",

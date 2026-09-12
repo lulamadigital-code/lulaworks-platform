@@ -37,12 +37,25 @@ def _bulk_done(request, pk, message, *, ok=True, status=200):
 
 @login_required
 def import_centre(request):
-    """List import batches + start a new one."""
+    """Business History Overview — what Lulaworks learned, plus the batch list."""
     if not _can(request.user):
         messages.error(request, "You don't have permission to import business history.")
         return redirect("web:dashboard")
     batches = list(ImportBatch.objects.all().order_by("-created_at")[:50])
-    return render(request, "web/import_centre.html", {"batches": batches})
+    overview = imp.history_overview(request.user.active_company)
+    return render(request, "web/import_centre.html",
+                  {"batches": batches, "overview": overview})
+
+
+@login_required
+def import_customers_discovered(request):
+    """Customers found across all imported history — click through to the real
+    Lulaworks customer record once resolved."""
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    customers = imp.discovered_customers(request.user.active_company)
+    return render(request, "web/import_customers.html", {"customers": customers})
 
 
 @login_required

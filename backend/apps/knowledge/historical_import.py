@@ -24,7 +24,7 @@ from django.utils import timezone
 from . import entity_resolution as er
 from .classifier import classify_document
 from .document_intelligence import extract_text_from_upload
-from .models import ImportBatch, ImportedDocument, StagedEntity
+from .models import HistoricalJob, ImportBatch, ImportedDocument, StagedEntity
 
 _TEXT_CAP = 20000          # store at most this many chars of extracted text
 _EMAIL = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
@@ -380,6 +380,67 @@ def _collapse_cluster(ents: list, kind) -> int:
         dup.delete()
         removed += 1
     return removed
+
+
+def history_overview(company) -> dict:
+    """What Lulaworks has learned from imported history, aggregated across every
+    batch — the Business History Overview dashboard. Tenant-scoped; caller holds
+    tenant context."""
+    S = ImportedDocument.Status
+    docs = list(ImportedDocument.objects.all())
+    ents = list(StagedEntity.objects.all())
+
+    def dc(pred):
+        return sum(1 for d in docs if pred(d))
+
+    def ec(kind, committed=None):
+        out = [e for e in ents if e.kind == kind]
+        if committed is True:
+            out = [e for e in out if e.review_status in
+                   (StagedEntity.Review.LINKED, StagedEntity.Review.CREATED)]
+        return len(out)
+
+    jobs = HistoricalJob.objects.all()
+    prices = 0
+    try:
+        from apps.procurement.models import SupplierPrice
+        prices = SupplierPrice.objects.count()
+    except Exception:                                # noqa: BLE001
+        pass
+
+    K = StagedEntity.Kind
+    return {
+        "documents": len(docs),
+        "processed": dc(lambda d: d.status in (S.COMPLETED, S.NEEDS_REVIEW)),
+        "needs_review": dc(lambda d: d.status == S.NEEDS_REVIEW),
+        "duplicates": dc(lambda d: d.status == S.DUPLICATE),
+        "failed": dc(lambda d: d.status == S.FAILED),
+        "customers": ec(K.CUSTOMER), "customers_added": ec(K.CUSTOMER, committed=True),
+        "suppliers": ec(K.SUPPLIER), "suppliers_added": ec(K.SUPPLIER, committed=True),
+        "contacts": ec(K.CONTACT), "contacts_added": ec(K.CONTACT, committed=True),
+        "historical_jobs": jobs.count(),
+        "jobs_confirmed": jobs.filter(status=HistoricalJob.Status.CONFIRMED).count(),
+        "prices": prices,
+        "pending_review": sum(1 for e in ents
+                              if e.review_status == StagedEntity.Review.PENDING),
+    }
+
+
+def discovered_customers(company, *, limit=300) -> list[dict]:
+    """Customers found across history — one row per real customer, with evidence
+    (mentions), confidence, and a link to the live customer record once resolved."""
+    rows = []
+    for e in (StagedEntity.objects.filter(kind=StagedEntity.Kind.CUSTOMER)
+              .order_by("-mentions", "raw_name")[:limit]):
+        rows.append({
+            "id": str(e.pk), "name": e.raw_name, "mentions": e.mentions,
+            "verdict": e.verdict, "review_status": e.review_status,
+            "confidence": round(e.confidence, 2) if e.confidence else None,
+            "resolved_id": e.resolved_id or e.match_id or "",
+            "in_crm": e.review_status in (StagedEntity.Review.LINKED,
+                                          StagedEntity.Review.CREATED),
+        })
+    return rows
 
 
 def commit_all(batch: ImportBatch, user, *, kind) -> dict:

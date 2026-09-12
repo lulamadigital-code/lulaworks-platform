@@ -102,3 +102,26 @@ class ImportViewsTests(TestCase):
     def test_viewer_blocked(self):
         self.client.force_login(self.viewer)
         self.assertEqual(self.client.get("/import/").status_code, 302)  # redirected away
+
+
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+class HistoryWorkspaceTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Contractor A")
+        self.mgr = _user(self.company, ["customers.manage"], "mgr@a.co")
+
+    def test_overview_and_customers_discovered_render(self):
+        from apps.knowledge.models import ImportBatch, StagedEntity
+        self.client.force_login(self.mgr)
+        with tenant_scope(self.company.id):
+            batch = ImportBatch.objects.create(company=self.company, label="H", created_by=self.mgr)
+            StagedEntity.objects.create(batch=batch, company=self.company,
+                kind=StagedEntity.Kind.CUSTOMER, raw_name="ABC Mining", mentions=12,
+                verdict=StagedEntity.Verdict.NEW, created_by=self.mgr)
+        centre = self.client.get("/import/")
+        self.assertEqual(centre.status_code, 200)
+        self.assertContains(centre, "Customers")
+        disc = self.client.get("/import/customers/")
+        self.assertEqual(disc.status_code, 200)
+        self.assertContains(disc, "ABC Mining")
+        self.assertContains(disc, "12")        # mentions
