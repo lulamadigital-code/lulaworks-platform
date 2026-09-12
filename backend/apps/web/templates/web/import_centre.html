@@ -17,7 +17,7 @@
 {% if overview.documents %}
 <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:12px;">
   {% with o=overview %}
-  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">▤</div><div class="n">{{ o.documents }}</div><div class="l">Documents</div></div>
+  <a class="tile" href="{% url 'web:import_documents' %}" style="text-decoration:none;color:inherit;"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">▤</div><div class="n">{{ o.documents }}</div><div class="l">Documents</div></a>
   <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div><div class="n">{{ o.processed }}</div><div class="l">Processed</div></div>
   <div class="tile"><div class="ic" style="background:#fbe9d6;color:#9a6a12;">◷</div><div class="n">{{ o.pending_review }}</div><div class="l">To review</div></div>
   <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">⧉</div><div class="n">{{ o.duplicates }}</div><div class="l">Duplicates</div></div>

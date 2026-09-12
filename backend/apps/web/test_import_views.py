@@ -125,3 +125,32 @@ class HistoryWorkspaceTests(TestCase):
         self.assertEqual(disc.status_code, 200)
         self.assertContains(disc, "ABC Mining")
         self.assertContains(disc, "12")        # mentions
+
+
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True)
+class DocumentsExplorerTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Contractor A")
+        self.mgr = _user(self.company, ["customers.manage"], "mgr@a.co")
+
+    def test_explorer_and_detail(self):
+        from apps.knowledge.models import ImportBatch, ImportedDocument, StagedEntity
+        self.client.force_login(self.mgr)
+        with tenant_scope(self.company.id):
+            batch = ImportBatch.objects.create(company=self.company, label="H", created_by=self.mgr)
+            doc = ImportedDocument.objects.create(batch=batch, company=self.company,
+                filename="abc_quote.pdf", doc_type=ImportedDocument.DocType.QUOTATION,
+                status=ImportedDocument.Status.COMPLETED, text="Customer: ABC Mining",
+                text_chars=20, created_by=self.mgr)
+            StagedEntity.objects.create(batch=batch, company=self.company, document=doc,
+                kind=StagedEntity.Kind.CUSTOMER, raw_name="ABC Mining",
+                verdict=StagedEntity.Verdict.NEW, created_by=self.mgr)
+        lst = self.client.get("/import/documents/")
+        self.assertEqual(lst.status_code, 200)
+        self.assertContains(lst, "abc_quote.pdf")
+        # Type filter
+        self.assertContains(self.client.get("/import/documents/?type=quotation"), "abc_quote.pdf")
+        detail = self.client.get(f"/import/documents/{doc.pk}/")
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, "ABC Mining")       # extracted entity shown
+        self.assertContains(detail, "Extracted text")

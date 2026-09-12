@@ -1,0 +1,47 @@
+{% extends "web/base.html" %}
+{% block title %}Historical Documents{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_centre' %}">← Business history</a></p>
+    <h1>Historical documents</h1>
+    <p class="sub" style="margin:0;">Every document you've imported. Search the text, filter by type,
+      and open one to see what Lulaworks understood from it.</p>
+  </div>
+</div>
+
+<form method="get" action="{% url 'web:import_documents' %}" style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search filename or content…"
+    style="flex:1;min-width:240px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg,#f7f8fa);color:var(--ink);">
+  <select name="type" style="padding:9px 12px;border:1px solid var(--line);border-radius:9px;">
+    <option value="">All types</option>
+    {% for val, label in types %}<option value="{{ val }}" {% if val == dtype %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <button class="btn" type="submit">Search</button>
+  {% if q or dtype %}<a class="btn ghost" href="{% url 'web:import_documents' %}">Clear</a>{% endif %}
+</form>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>File</th><th>Type</th><th>Status</th><th>Import</th><th>Date</th></tr>
+    {% for d in documents %}
+    <tr onclick="location.href='{% url 'web:import_document' d.pk %}'" style="cursor:pointer;">
+      <td><strong>{{ d.filename }}</strong></td>
+      <td>{{ d.get_doc_type_display }}</td>
+      <td>
+        {% if d.status == 'completed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Completed</span>
+        {% elif d.status == 'needs_review' %}<span class="chip info">Needs review</span>
+        {% elif d.status == 'duplicate' %}<span class="chip">Duplicate</span>
+        {% elif d.status == 'failed' %}<span class="chip warn" style="background:#fdecea;color:#c0392b;">Failed</span>
+        {% else %}<span class="chip">{{ d.get_status_display }}</span>{% endif %}
+      </td>
+      <td class="muted">{{ d.batch.label|default:"—" }}</td>
+      <td class="muted">{{ d.created_at|date:"j M Y" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" style="padding:22px;color:var(--muted);">
+      {% if q or dtype %}No documents match.{% else %}No documents imported yet.{% endif %}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

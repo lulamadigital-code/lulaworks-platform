@@ -48,6 +48,41 @@ def import_centre(request):
 
 
 @login_required
+def import_documents(request):
+    """Documents explorer — every imported document across all batches, with
+    search + a type filter. Click through to see what was extracted."""
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    from apps.knowledge.models import ImportedDocument
+    q = (request.GET.get("q") or "").strip()
+    dtype = (request.GET.get("type") or "").strip()
+    docs = ImportedDocument.objects.select_related("batch").all()
+    if q:
+        from django.db.models import Q
+        docs = docs.filter(Q(filename__icontains=q) | Q(text__icontains=q))
+    if dtype:
+        docs = docs.filter(doc_type=dtype)
+    docs = docs.order_by("-created_at")[:300]
+    return render(request, "web/import_documents.html", {
+        "documents": docs, "q": q, "dtype": dtype,
+        "types": ImportedDocument.DocType.choices})
+
+
+@login_required
+def import_document(request, pk):
+    """One imported document — its classification, status, and the entities
+    Lulaworks extracted from it (the evidence)."""
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    from apps.knowledge.models import ImportedDocument
+    doc = get_object_or_404(ImportedDocument.objects.select_related("batch"), pk=pk)
+    entities = list(doc.entities.all().order_by("kind", "-confidence"))
+    return render(request, "web/import_document.html", {"doc": doc, "entities": entities})
+
+
+@login_required
 def import_customers_discovered(request):
     """Customers found across all imported history — click through to the real
     Lulaworks customer record once resolved."""

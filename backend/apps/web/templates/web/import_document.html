@@ -1,0 +1,54 @@
+{% extends "web/base.html" %}
+{% block title %}{{ doc.filename }}{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_documents' %}">← Historical documents</a></p>
+    <h1 style="word-break:break-all;">{{ doc.filename }}</h1>
+    <p class="sub" style="margin:0;">
+      {{ doc.get_doc_type_display }}{% if doc.doc_type_confidence %} · {{ doc.doc_type_confidence }} confidence{% endif %}
+      · {{ doc.get_status_display }}{% if doc.batch %} · import “{{ doc.batch.label|default:'Untitled' }}”{% endif %}</p>
+  </div>
+  {% if doc.file %}<a class="btn ghost" href="{{ doc.file.url }}" target="_blank" rel="noopener">Open original ↗</a>{% endif %}
+</div>
+
+{% if doc.status == 'failed' and doc.processing_error %}
+<div class="card" style="margin-bottom:18px;background:#fdecea;border-color:#f5c6cb;">
+  <strong style="color:#c0392b;">Processing failed</strong>
+  <p class="muted" style="margin:6px 0 0;">{{ doc.processing_error }}</p>
+</div>
+{% endif %}
+
+{# Extracted entities — the evidence. #}
+<h2 style="font-size:15px;margin:0 0 10px;">Extracted from this document</h2>
+{% if entities %}
+<div class="card" style="padding:0;overflow-x:auto;margin-bottom:20px;">
+  <table>
+    <tr><th>Kind</th><th>Name</th><th>Email</th><th>Match / status</th></tr>
+    {% for e in entities %}
+    <tr>
+      <td><span class="chip">{{ e.get_kind_display }}</span></td>
+      <td><strong>{{ e.raw_name }}</strong>{% if e.mentions > 1 %}<span class="muted" style="font-size:11.5px;"> · {{ e.mentions }} docs</span>{% endif %}</td>
+      <td class="muted">{{ e.email|default:"—" }}</td>
+      <td>
+        {% if e.review_status == 'linked' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Linked</span>
+        {% elif e.review_status == 'created' %}<span class="chip info">Created</span>
+        {% elif e.review_status == 'rejected' %}<span class="chip">Rejected</span>
+        {% elif e.match_label %}<span class="muted">≈ {{ e.match_label }}</span>
+        {% else %}<span class="chip">{{ e.get_verdict_display }}</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<div class="card" style="margin-bottom:20px;"><p class="muted" style="margin:0;">
+  No entities were extracted from this document{% if doc.status == 'duplicate' %} (it's a duplicate of another){% endif %}.</p></div>
+{% endif %}
+
+{# Extracted text preview. #}
+{% if doc.text %}
+<h2 style="font-size:15px;margin:0 0 10px;">Extracted text <span class="muted" style="font-weight:400;font-size:12.5px;">· {{ doc.text_chars }} characters</span></h2>
+<div class="card"><pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-size:12.5px;color:var(--ink);max-height:420px;overflow:auto;">{{ doc.text }}</pre></div>
+{% endif %}
+{% endblock %}
