@@ -21,6 +21,20 @@ def _can(user):
     return user.has_perm_code("customers.manage")
 
 
+def _is_ajax(request):
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+
+def _bulk_done(request, pk, message, *, ok=True, status=200):
+    """Return JSON for an AJAX bulk action (the page toasts + refreshes), or fall
+    back to a message + redirect for a normal form post."""
+    if _is_ajax(request):
+        body = {"ok": ok, "message": message} if ok else {"ok": False, "error": message}
+        return JsonResponse(body, status=status)
+    (messages.success if ok else messages.error)(request, message)
+    return redirect("web:import_batch", pk=pk)
+
+
 @login_required
 def import_centre(request):
     """List import batches + start a new one."""
@@ -100,9 +114,9 @@ def import_consolidate(request, pk):
         return redirect("web:dashboard")
     batch = get_object_or_404(ImportBatch.objects.all(), pk=pk)
     removed = imp.consolidate_batch(batch)
-    messages.success(request, f"Merged {removed} duplicate mention{'s' if removed != 1 else ''} — "
-                              "each customer, supplier and person now appears once.")
-    return redirect("web:import_batch", pk=pk)
+    return _bulk_done(request, pk,
+                      f"Merged {removed} duplicate mention{'s' if removed != 1 else ''} — "
+                      "each customer, supplier and person now appears once.")
 
 
 @login_required
@@ -116,23 +130,21 @@ def import_commit_all(request, pk):
     kind = (request.POST.get("kind") or "").strip()
     valid = {StagedEntity.Kind.CUSTOMER, StagedEntity.Kind.SUPPLIER}
     if kind not in valid:
-        messages.error(request, "Choose customers or suppliers to add.")
-        return redirect("web:import_batch", pk=pk)
+        return _bulk_done(request, pk, "Choose customers or suppliers to add.", ok=False, status=400)
     try:
         r = imp.commit_all(batch, request.user, kind=kind)
-        label = "customers" if kind == StagedEntity.Kind.CUSTOMER else "suppliers"
-        parts = []
-        if r["created"]:
-            parts.append(f"{r['created']} created")
-        if r["linked"]:
-            parts.append(f"{r['linked']} linked to existing")
-        msg = f"Added {', '.join(parts) or '0'} {label} to your CRM."
-        if r["failed"]:
-            msg += f" ({r['failed']} need a completed company setup — check the review list.)"
-        messages.success(request, msg)
     except imp.CommitError as exc:
-        messages.error(request, str(exc))
-    return redirect("web:import_batch", pk=pk)
+        return _bulk_done(request, pk, str(exc), ok=False, status=400)
+    label = "customers" if kind == StagedEntity.Kind.CUSTOMER else "suppliers"
+    parts = []
+    if r["created"]:
+        parts.append(f"{r['created']} created")
+    if r["linked"]:
+        parts.append(f"{r['linked']} linked to existing")
+    msg = f"Added {', '.join(parts) or '0'} {label} to your CRM."
+    if r["failed"]:
+        msg += f" ({r['failed']} need a completed company setup — check the review list.)"
+    return _bulk_done(request, pk, msg)
 
 
 @login_required
@@ -144,21 +156,18 @@ def import_merge(request, pk):
     batch = get_object_or_404(ImportBatch.objects.all(), pk=pk)
     ids = request.POST.getlist("entity_ids")
     if len(ids) < 2:
-        messages.error(request, "Pick at least two rows to merge.")
-        return redirect("web:import_batch", pk=pk)
+        return _bulk_done(request, pk, "Pick at least two rows to merge.", ok=False, status=400)
     # Primary = the one with the most mentions (most evidence) so its name wins.
     from apps.knowledge.models import StagedEntity
     chosen = list(StagedEntity.objects.filter(batch=batch, pk__in=ids).order_by("-mentions"))
     if len(chosen) < 2:
-        messages.error(request, "Those rows could not be merged.")
-        return redirect("web:import_batch", pk=pk)
+        return _bulk_done(request, pk, "Those rows could not be merged.", ok=False, status=400)
     primary = chosen[0]
     try:
         n = imp.merge_entities(batch, primary.pk, [e.pk for e in chosen[1:]], request.user)
-        messages.success(request, f"Merged {n} row{'s' if n != 1 else ''} into “{primary.raw_name}”.")
     except imp.CommitError as exc:
-        messages.error(request, str(exc))
-    return redirect("web:import_batch", pk=pk)
+        return _bulk_done(request, pk, str(exc), ok=False, status=400)
+    return _bulk_done(request, pk, f"Merged {n} row{'s' if n != 1 else ''} into “{primary.raw_name}”.")
 
 
 @login_required

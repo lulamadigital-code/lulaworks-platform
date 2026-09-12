@@ -59,27 +59,27 @@
     {% if summary.auto_matched %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {{ summary.auto_matched }} auto-matched</span>{% endif %}</h2>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
     {% if pending_customers %}
-    <form method="post" action="{% url 'web:import_commit_all' batch.pk %}" style="margin:0;">{% csrf_token %}
+    <form method="post" action="{% url 'web:import_commit_all' batch.pk %}" class="js-bulk" style="margin:0;">{% csrf_token %}
       <input type="hidden" name="kind" value="customer">
       <button class="btn" type="submit" style="padding:6px 12px;font-size:12.5px;">Add {{ pending_customers }} customers to CRM</button>
     </form>
     {% endif %}
     {% if pending_suppliers %}
-    <form method="post" action="{% url 'web:import_commit_all' batch.pk %}" style="margin:0;">{% csrf_token %}
+    <form method="post" action="{% url 'web:import_commit_all' batch.pk %}" class="js-bulk" style="margin:0;">{% csrf_token %}
       <input type="hidden" name="kind" value="supplier">
       <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;">Add {{ pending_suppliers }} suppliers</button>
     </form>
     {% endif %}
     <button class="btn ghost" type="submit" form="mergeform" style="padding:6px 12px;font-size:12.5px;"
       title="Tick two or more rows that are the same real company/person, then merge">Merge selected</button>
-    <form method="post" action="{% url 'web:import_consolidate' batch.pk %}" style="margin:0;">{% csrf_token %}
+    <form method="post" action="{% url 'web:import_consolidate' batch.pk %}" class="js-bulk" style="margin:0;">{% csrf_token %}
       <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;"
         title="Auto-merge obvious duplicates across documents">Auto-merge</button>
     </form>
   </div>
 </div>
 {# Merge form lives outside the table; checkboxes associate via the form= attribute. #}
-<form id="mergeform" method="post" action="{% url 'web:import_merge' batch.pk %}">{% csrf_token %}</form>
+<form id="mergeform" class="js-bulk" method="post" action="{% url 'web:import_merge' batch.pk %}">{% csrf_token %}</form>
 {% if pending %}
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
@@ -239,6 +239,26 @@
     t.style.display = 'block';
     clearTimeout(t._h); t._h = setTimeout(function () { t.style.display = 'none'; }, 2600);
   }
+  // Bulk actions (add to CRM / merge / auto-merge) — submit via AJAX, toast the
+  // result, then refresh to reflect the many-row change.
+  document.addEventListener('submit', function (ev) {
+    var f = ev.target;
+    if (!f.classList || !f.classList.contains('js-bulk')) return;
+    ev.preventDefault();
+    fetch(f.action, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: new FormData(f),
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (res.ok && res.d.ok) {
+          toast(res.d.message || 'Done');
+          setTimeout(function () { location.reload(); }, 700);
+        } else {
+          toast((res.d && res.d.error) || 'Could not complete that action.', true);
+        }
+      }).catch(function () { toast('Network error — please try again.', true); });
+  });
   // Approve / Link / Reject a single row without reloading the whole page.
   document.addEventListener('submit', function (ev) {
     var f = ev.target;

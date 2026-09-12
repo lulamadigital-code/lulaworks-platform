@@ -83,6 +83,22 @@ class ImportViewsTests(TestCase):
         with tenant_scope(self.company.id):
             self.assertFalse(batch.entities.filter(pk=e.pk).exists())   # rejected = gone
 
+    def test_bulk_commit_all_via_ajax_returns_json(self):
+        self.client.force_login(self.mgr)
+        with tenant_scope(self.company.id):
+            batch = ImportBatch.objects.create(company=self.company, label="H",
+                                               created_by=self.mgr)
+            StagedEntity.objects.create(batch=batch, company=self.company,
+                kind=StagedEntity.Kind.CUSTOMER, raw_name="Kumba",
+                verdict=StagedEntity.Verdict.NEW, created_by=self.mgr)
+        r = self.client.post(f"/import/{batch.pk}/commit-all/", {"kind": "customer"},
+                             HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "application/json")
+        self.assertTrue(r.json()["ok"])
+        with tenant_scope(self.company.id):
+            self.assertTrue(Customer.objects.filter(name="Kumba").exists())  # in CRM now
+
     def test_viewer_blocked(self):
         self.client.force_login(self.viewer)
         self.assertEqual(self.client.get("/import/").status_code, 302)  # redirected away
