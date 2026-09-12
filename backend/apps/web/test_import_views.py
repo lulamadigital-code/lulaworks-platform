@@ -66,6 +66,23 @@ class ImportViewsTests(TestCase):
             self.assertEqual(cust.review_status, StagedEntity.Review.LINKED)
             self.assertEqual(Customer.objects.count(), 1)
 
+    def test_commit_via_ajax_returns_json(self):
+        self.client.force_login(self.mgr)
+        with tenant_scope(self.company.id):
+            batch = ImportBatch.objects.create(company=self.company, label="H",
+                                               created_by=self.mgr)
+            e = StagedEntity.objects.create(batch=batch, company=self.company,
+                kind=StagedEntity.Kind.CUSTOMER, raw_name="Reject Me",
+                verdict=StagedEntity.Verdict.NEW, created_by=self.mgr)
+        r = self.client.post(f"/import/{batch.pk}/entity/{e.pk}/commit/",
+                             {"decision": "reject"},
+                             HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "application/json")
+        self.assertTrue(r.json()["ok"])
+        with tenant_scope(self.company.id):
+            self.assertFalse(batch.entities.filter(pk=e.pk).exists())   # rejected = gone
+
     def test_viewer_blocked(self):
         self.client.force_login(self.viewer)
         self.assertEqual(self.client.get("/import/").status_code, 302)  # redirected away

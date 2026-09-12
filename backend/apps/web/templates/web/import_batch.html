@@ -55,7 +55,7 @@
 
 {# The review queue — the human decision. #}
 <div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;gap:12px;flex-wrap:wrap;">
-  <h2 style="font-size:15px;margin:0;">Review — {{ pending|length }} to confirm
+  <h2 style="font-size:15px;margin:0;">Review — <span id="pending-count">{{ pending|length }}</span> to confirm
     {% if summary.auto_matched %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {{ summary.auto_matched }} auto-matched</span>{% endif %}</h2>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
     {% if pending_customers %}
@@ -103,16 +103,16 @@
       </td>
       <td style="text-align:right;white-space:nowrap;">
         {% if e.match_id %}
-        <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" style="display:inline;">{% csrf_token %}
+        <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" class="js-commit" style="display:inline;">{% csrf_token %}
           <input type="hidden" name="decision" value="link">
           <button class="btn" type="submit" style="padding:5px 11px;font-size:12.5px;">Link</button>
         </form>
         {% endif %}
-        <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" style="display:inline;">{% csrf_token %}
+        <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" class="js-commit" style="display:inline;">{% csrf_token %}
           <input type="hidden" name="decision" value="create">
           <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">Create new</button>
         </form>
-        <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" style="display:inline;">{% csrf_token %}
+        <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" class="js-commit" style="display:inline;">{% csrf_token %}
           <input type="hidden" name="decision" value="reject">
           <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;color:#c0392b;" title="Reject & remove from the list">Reject</button>
         </form>
@@ -224,4 +224,50 @@
   </table>
 </div>
 {% endif %}
+
+<div id="toast" role="status" aria-live="polite"
+     style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:60;display:none;
+            background:var(--ink,#292f4c);color:#fff;padding:10px 16px;border-radius:10px;
+            font-size:13px;box-shadow:0 8px 30px rgba(41,47,76,.25);"></div>
+<script>
+(function () {
+  function toast(msg, bad) {
+    var t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.style.background = bad ? '#c0392b' : (getComputedStyle(document.documentElement).getPropertyValue('--ink') || '#292f4c');
+    t.style.display = 'block';
+    clearTimeout(t._h); t._h = setTimeout(function () { t.style.display = 'none'; }, 2600);
+  }
+  // Approve / Link / Reject a single row without reloading the whole page.
+  document.addEventListener('submit', function (ev) {
+    var f = ev.target;
+    if (!f.classList || !f.classList.contains('js-commit')) return;
+    ev.preventDefault();
+    var row = f.closest('tr');
+    var btns = f.querySelectorAll('button'); btns.forEach(function (b) { b.disabled = true; });
+    fetch(f.action, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: new FormData(f),
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (res.ok && res.d.ok) {
+          toast(res.d.message || 'Done');
+          if (row) { row.style.transition = 'opacity .25s'; row.style.opacity = '0';
+                     setTimeout(function () { row.remove(); }, 250); }
+          var c = document.getElementById('pending-count');
+          if (c) { var n = Math.max(0, (parseInt(c.textContent, 10) || 1) - 1); c.textContent = n;
+                   if (n === 0) setTimeout(function () { location.reload(); }, 400); }
+        } else {
+          toast((res.d && res.d.error) || 'Could not complete that action.', true);
+          btns.forEach(function (b) { b.disabled = false; });
+        }
+      }).catch(function () {
+        toast('Network error — please try again.', true);
+        btns.forEach(function (b) { b.disabled = false; });
+      });
+  });
+})();
+</script>
 {% endblock %}

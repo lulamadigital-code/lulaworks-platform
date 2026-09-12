@@ -8,6 +8,7 @@ where the guardrails live.
 """
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -213,17 +214,27 @@ def import_document_retry(request, pk, did):
 @login_required
 @require_POST
 def import_commit(request, pk, eid):
+    ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     if not _can(request.user):
+        if ajax:
+            return JsonResponse({"ok": False, "error": "Permission denied."}, status=403)
         messages.error(request, "You don't have permission to import business history.")
         return redirect("web:dashboard")
     batch = get_object_or_404(ImportBatch.objects.all(), pk=pk)
     staged = get_object_or_404(batch.entities, pk=eid)
     decision = (request.POST.get("decision") or "").strip()
     customer_id = request.POST.get("customer_id") or None
+    verb = {"link": "Linked", "create": "Created", "reject": "Rejected"}.get(decision, "Updated")
     try:
         imp.commit_entity(staged, request.user, decision=decision, customer_id=customer_id)
-        verb = {"link": "Linked", "create": "Created", "reject": "Skipped"}.get(decision, "Updated")
-        messages.success(request, f"{verb} {staged.raw_name}.")
     except imp.CommitError as exc:
+        if ajax:
+            return JsonResponse({"ok": False, "error": str(exc)}, status=400)
         messages.error(request, str(exc))
+        return redirect("web:import_batch", pk=pk)
+    if ajax:
+        # The row leaves the pending queue on any decision — tell the page to drop it.
+        return JsonResponse({"ok": True, "removed": True,
+                             "message": f"{verb} {staged.raw_name}."})
+    messages.success(request, f"{verb} {staged.raw_name}.")
     return redirect("web:import_batch", pk=pk)
