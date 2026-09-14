@@ -224,7 +224,7 @@
       <tr><th>Bank</th><th>Account name</th><th>Number</th><th>Branch</th><th>Currency</th><th>Default</th><th></th></tr>
       {% for a in bank_accounts %}
       <tr>
-        <td><strong>{{ a.bank_name }}</strong>{% if a.label %}<br><span class="muted" style="font-size:12px;">{{ a.label }}</span>{% endif %}</td>
+        <td><strong>{{ a.bank_name }}</strong>{% if a.needs_review %} <span class="chip warn" title="We couldn't match this to a known bank — please re-add it from the picker" style="font-size:11px;">Review</span>{% endif %}{% if a.label %}<br><span class="muted" style="font-size:12px;">{{ a.label }}</span>{% endif %}</td>
         <td class="muted">{{ a.account_name }}</td><td class="muted">{{ a.masked_number }}</td>
         <td class="muted">{{ a.branch_code|default:"—" }}</td><td class="muted">{{ a.currency }}</td>
         <td>{% if can_edit %}

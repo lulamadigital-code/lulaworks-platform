@@ -375,6 +375,9 @@ class CompanyBankAccount(PlatformBaseModel):
     currency = models.CharField(max_length=8, default="ZAR")
     is_default = models.BooleanField(default=False)
     label = models.CharField(max_length=60, blank=True)   # "Operational", "Payroll"
+    # Set when a legacy bank_name couldn't be matched to the reference directory
+    # during data normalization — a human should confirm/pick the bank.
+    needs_review = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-is_default", "bank_name"]
