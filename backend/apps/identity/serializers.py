@@ -32,15 +32,32 @@ class CompanySerializer(serializers.ModelSerializer):
         model = Company
         fields = [
             "id", "name", "trading_name", "registration_no", "vat_no", "industry",
-            "company_size", "country", "province", "city", "timezone", "currency",
+            "company_size", "country", "country_code", "province", "city",
+            "timezone", "currency",
             "brand_primary", "brand_secondary",
             "subscription_status", "ai_credit_balance",
             "storage_quota_bytes", "storage_used_bytes", "max_users",
         ]
+        # `country` (name) and `currency` are derived from country_code — the one
+        # source of truth — so clients set the code and never type the currency.
         read_only_fields = [
-            "id", "subscription_status", "ai_credit_balance",
+            "id", "country", "currency", "subscription_status", "ai_credit_balance",
             "storage_quota_bytes", "storage_used_bytes", "max_users",
         ]
+
+    def update(self, instance, validated_data):
+        code = validated_data.pop("country_code", None)
+        if code is not None:
+            from apps.reference.services import CountryService, CurrencyService
+            resolved = CountryService.resolve(code)
+            instance.country_code = resolved or ""
+            country = CountryService.get(resolved) if resolved else None
+            if country:
+                instance.country = country.name
+                cur = CurrencyService.for_country(resolved)
+                if cur:
+                    instance.currency = cur.code
+        return super().update(instance, validated_data)
 
 
 class MembershipSerializer(serializers.ModelSerializer):

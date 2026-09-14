@@ -7,6 +7,9 @@ import '../widgets/lula_ui.dart';
 /// Company profile editor — the admin/owner surface for company.manage. Reads
 /// /company/ and PATCHes the editable fields. The backend rejects the write with
 /// 403 if the user lacks company.manage (we only route here when they have it).
+///
+/// Country is the source of truth: picking it (from the shared reference list,
+/// SA first) drives the currency, which the backend derives — mirroring web.
 class CompanySettingsScreen extends StatefulWidget {
   const CompanySettingsScreen({super.key, required this.api});
   final ApiClient api;
@@ -22,11 +25,13 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     ('registration_no', 'Registration number', false),
     ('vat_no', 'VAT number', false),
     ('city', 'City', false),
-    ('province', 'Province', false),
-    ('country', 'Country', false),
+    ('province', 'Province / State', false),
   ];
 
   final _c = <String, TextEditingController>{};
+  List<Map<String, dynamic>> _countries = const [];
+  String? _countryCode;
+  String _currency = '';
   bool _loading = true;
   bool _saving = false;
   String? _error;
@@ -43,6 +48,18 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
       for (final f in _fields) {
         _c[f.$1] = TextEditingController(text: '${c[f.$1] ?? ''}');
       }
+      _currency = '${c['currency'] ?? ''}';
+      try {
+        final rows = (await widget.api.get('/reference/countries/') as List)
+            .map((e) => (e as Map).cast<String, dynamic>())
+            .toList();
+        _countries = rows;
+        final code = '${c['country_code'] ?? ''}';
+        if (rows.any((r) => r['code'] == code)) _countryCode = code;
+      } catch (_) {
+        // Reference list unavailable — the picker just shows no options; the
+        // other fields still save.
+      }
     } catch (e) {
       _error = '$e';
     }
@@ -57,6 +74,15 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     super.dispose();
   }
 
+  void _onCountry(String? code) {
+    setState(() {
+      _countryCode = code;
+      final hit = _countries.firstWhere((r) => r['code'] == code,
+          orElse: () => const {});
+      _currency = '${hit['currency'] ?? _currency}';
+    });
+  }
+
   Future<void> _save() async {
     setState(() {
       _saving = true;
@@ -64,6 +90,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     });
     final body = <String, dynamic>{
       for (final f in _fields) f.$1: _c[f.$1]!.text.trim(),
+      if (_countryCode != null) 'country_code': _countryCode,
     };
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -97,6 +124,29 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
                     controller: _c[f.$1]!,
                     label: f.$2,
                     required: f.$3,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (_countries.isNotEmpty) ...[
+                  LulaDropdown<String>(
+                    label: 'Country',
+                    value: _countryCode,
+                    onChanged: _onCountry,
+                    items: [
+                      for (final r in _countries)
+                        DropdownMenuItem(
+                          value: '${r['code']}',
+                          child: Text('${r['flag'] ?? ''} ${r['name'] ?? ''}',
+                              overflow: TextOverflow.ellipsis),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _currency.isEmpty
+                        ? 'Currency is set automatically from your country.'
+                        : 'Currency: $_currency — set automatically from your country.',
+                    style: const TextStyle(color: kMuted, fontSize: 12.5),
                   ),
                   const SizedBox(height: 16),
                 ],

@@ -82,6 +82,22 @@ class IdentityAPITests(APITestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data["name"], "Lulama")
 
+    def test_patch_country_code_derives_currency(self):
+        # Mobile parity: setting the country (source of truth) derives the currency.
+        from django.core.management import call_command
+        call_command("seed_reference")
+        manage = Permission.objects.create(codename="company.manage",
+                                           module="identity", label="Manage")
+        self.admin_role.permissions.add(manage)
+        self.auth(self.admin)
+        resp = self.client.patch("/api/v1/company/", {"country_code": "GB"})
+        self.assertEqual(resp.status_code, 200)
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.country_code, "GB")
+        self.assertEqual(self.company.currency, "GBP")     # derived, not typed
+        self.assertIn("United Kingdom", self.company.country)
+        self.assertEqual(resp.data["currency"], "GBP")     # response reflects it
+
     def test_roles_include_platform_templates(self):
         self.auth(self.admin)
         resp = self.client.get("/api/v1/roles/")
