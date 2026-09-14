@@ -1097,6 +1097,28 @@ def _banking_view(company) -> dict:
     }
 
 
+def _address_view(company) -> dict:
+    """Country-aware address fields + labels (from AddressFieldRule) with the
+    company's current values, plus the postal label/hint. Falls back to a neutral
+    structure when the country has no rule seeded."""
+    from apps.reference.services import AddressValidationService, CountryService
+    code = company.country_code or CountryService.resolve(company.country) or "ZA"
+    rule = AddressValidationService.rule(code)
+    raw = rule.fields if rule else [
+        {"key": "street_address", "label": "Street address", "required": True},
+        {"key": "suburb", "label": "Suburb", "required": False},
+        {"key": "city", "label": "City", "required": True},
+        {"key": "province", "label": "Province / State", "required": False}]
+    fields = [{"key": f["key"], "label": f["label"], "required": f.get("required", False),
+               "value": getattr(company, f["key"], "")} for f in raw]
+    return {
+        "fields": fields,
+        "postal_label": rule.postal_label if rule else "Postal code",
+        "postal_hint": rule.postal_hint if rule else "",
+        "postal_value": company.postal_code,
+    }
+
+
 def _statutory_schema(country: str) -> dict:
     """Country-aware statutory registrations. Statutory IDs differ by country —
     South Africa (and unset) uses the typed SA columns already on the model
@@ -1189,6 +1211,7 @@ def company_profile(request):
         "settings": CompanySettings.objects.get(company=company),
         "bank_accounts": company.bank_accounts.all(),
         "banking": _banking_view(company),
+        "address_rule": _address_view(company),
         "countries": CountryService.list_for_picker(),
         "currency_label": CurrencyService.label(_cur) or company.currency,
         "contacts": company.contacts.all(),
@@ -1336,8 +1359,17 @@ def _save_profile_section(request, company, section):
     for field in _LIST_FIELDS.get(section, []):
         raw = request.POST.get(field, "")
         setattr(company, field, [v.strip() for v in raw.split(",") if v.strip()])
+    if section == "address":
+        # Country-aware structure + postal-format validation (format-valid only —
+        # never claims the address physically exists; verification is a future step).
+        from apps.reference.services import AddressValidationService
+        data = {"street_address": company.street_address, "suburb": company.suburb,
+                "city": company.city, "province": company.province,
+                "postal_code": company.postal_code}
+        for res in AddressValidationService.validate(company.country_code or "ZA", data):
+            errors.append(res.message)
     if errors:
-        return errors           # invalid phone → nothing saved; user fixes & resubmits
+        return errors           # invalid input → nothing saved; user fixes & resubmits
     company.save()
     return []
 

@@ -159,12 +159,18 @@
   </div>
   <div id="form-address" style="display:none;">
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="address">
-      <label>Street address</label><input type="text" name="street_address" value="{{ company.street_address }}">
+      {# Fields + labels follow the selected country (US → State/ZIP, GB → County/Postcode, …). Save to re-apply after changing country. #}
+      {% for f in address_rule.fields %}{% if forloop.first %}
+      <label>{{ f.label }}{% if f.required %} <span style="color:var(--red);">*</span>{% endif %}</label>
+      <input type="text" name="{{ f.key }}" value="{{ f.value }}">
+      {% endif %}{% endfor %}
       <div class="two">
-        <div><label>Suburb</label><input type="text" name="suburb" value="{{ company.suburb }}"></div>
-        <div><label>City</label><input type="text" name="city" value="{{ company.city }}"></div>
-        <div><label>Province / State</label><input type="text" name="province" value="{{ company.province }}"></div>
-        <div><label>Postal code</label><input type="text" name="postal_code" value="{{ company.postal_code }}"></div>
+        {% for f in address_rule.fields %}{% if not forloop.first %}
+        <div><label>{{ f.label }}{% if f.required %} <span style="color:var(--red);">*</span>{% endif %}</label>
+          <input type="text" name="{{ f.key }}" value="{{ f.value }}"></div>
+        {% endif %}{% endfor %}
+        <div><label>{{ address_rule.postal_label }}</label>
+          <input type="text" name="postal_code" value="{{ address_rule.postal_value }}"{% if address_rule.postal_hint %} title="{{ address_rule.postal_hint }}"{% endif %}></div>
         <div><label>Country</label>
           <select name="country_code" id="country-select"
                   style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg,#f7f8fa);color:var(--ink);">
@@ -174,7 +180,8 @@
         </div>
       </div>
       <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Currency
-        <strong style="color:var(--ink);">{{ currency_label }}</strong> — set automatically from your company country.</p>
+        <strong style="color:var(--ink);">{{ currency_label }}</strong> — set automatically from your company country.
+        We check the address format for your country; we don't verify that it physically exists.</p>
       <div class="secbtns"><button class="btn" type="submit">Save address</button>
         <button class="btn ghost" type="button" data-cancel="address">Cancel</button></div>
     </form>

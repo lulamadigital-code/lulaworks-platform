@@ -91,6 +91,51 @@ class PhoneWidgetTests(TestCase):
         self.assertEqual(c.phone, "+27821234567")
 
 
+class AddressValidationWebTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def _mgr(self, country_code):
+        company = Company.objects.create(name="Acme", country_code=country_code, currency="ZAR")
+        get_profile(company)
+        CompanySettings.objects.get_or_create(company=company)
+        mgr = _user(company, ["company.manage"], f"m-{country_code}@a.co")
+        self.client.force_login(mgr)
+        return company
+
+    def test_sa_valid_address_saved(self):
+        company = self._mgr("ZA")
+        r = self.client.post("/company/", {
+            "section": "address", "country_code": "ZA", "street_address": "1 Main",
+            "city": "Secunda", "province": "Mpumalanga", "postal_code": "2302"})
+        self.assertEqual(r.status_code, 302)
+        company.refresh_from_db()
+        self.assertEqual(company.postal_code, "2302")
+
+    def test_sa_bad_postal_rejected(self):
+        company = self._mgr("ZA")
+        self.client.post("/company/", {
+            "section": "address", "country_code": "ZA", "street_address": "1 Main",
+            "city": "Secunda", "province": "Mpumalanga", "postal_code": "12"})
+        company.refresh_from_db()
+        self.assertEqual(company.postal_code, "")      # invalid → nothing saved
+
+    def test_us_country_aware_labels(self):
+        self._mgr("US")
+        page = self.client.get("/company/")
+        self.assertContains(page, "ZIP code")           # not "Postal code"
+        self.assertContains(page, "State")
+
+    def test_us_bad_zip_rejected(self):
+        company = self._mgr("US")
+        self.client.post("/company/", {
+            "section": "address", "country_code": "US", "street_address": "1 Main",
+            "city": "NYC", "province": "NY", "postal_code": "notazip"})
+        company.refresh_from_db()
+        self.assertEqual(company.postal_code, "")
+
+
 class BankingValidationWebTests(TestCase):
     @classmethod
     def setUpTestData(cls):

@@ -188,6 +188,15 @@ class AddressValidationService:
     def rule(country_code: str) -> AddressFieldRule | None:
         return AddressFieldRule.objects.filter(country_id=(country_code or "").upper()).first()
 
+    @staticmethod
+    def verify(country_code: str, data: dict) -> dict:
+        """Real address VERIFICATION (does this address physically exist?) needs an
+        external geocoding/postal provider and is not wired yet. This honest stub
+        always reports unverified so no caller ever implies an address was
+        confirmed — only its FORMAT is checked by `validate()`."""
+        return {"verified": False, "provider": None,
+                "note": "Format checked only — not verified against a postal database."}
+
     @classmethod
     def validate(cls, country_code: str, data: dict) -> list[ValidationResult]:
         errs: list[ValidationResult] = []
