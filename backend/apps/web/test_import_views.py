@@ -306,6 +306,44 @@ class StorageQuotaTests(TestCase):
             self.assertEqual(company.storage_used_bytes, len(_PO))   # usage tracked
 
 
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True, MEDIA_ROOT=_tempfile.mkdtemp())
+class StorageReclaimTests(TestCase):
+    def _doc_with_file(self, company, mgr, size=500):
+        from django.core.files.base import ContentFile
+        from apps.knowledge.models import ImportBatch, ImportedDocument
+        with tenant_scope(company.id):
+            batch = ImportBatch.objects.create(company=company, label="H", created_by=mgr)
+            doc = ImportedDocument.objects.create(batch=batch, company=company,
+                filename="po.pdf", status=ImportedDocument.Status.COMPLETED, created_by=mgr)
+            doc.file.save("po.pdf", ContentFile(b"x" * size), save=True)
+        company.storage_used_bytes = size   # as if register_upload had run
+        company.save(update_fields=["storage_used_bytes"])
+        return doc
+
+    def test_hard_delete_reclaims_bytes_and_removes_file(self):
+        company = Company.objects.create(name="C", storage_quota_bytes=10_000_000)
+        mgr = _user(company, ["customers.manage"], "m@c.co")
+        doc = self._doc_with_file(company, mgr, size=500)
+        name, storage = doc.file.name, doc.file.storage
+        self.assertTrue(storage.exists(name))
+        with tenant_scope(company.id):
+            doc.delete(hard=True)
+        self.assertFalse(storage.exists(name))          # file gone from disk
+        company.refresh_from_db()
+        self.assertEqual(company.storage_used_bytes, 0)  # bytes reclaimed
+
+    def test_soft_delete_keeps_file_and_bytes(self):
+        company = Company.objects.create(name="C", storage_quota_bytes=10_000_000)
+        mgr = _user(company, ["customers.manage"], "m@c.co")
+        doc = self._doc_with_file(company, mgr, size=500)
+        name, storage = doc.file.name, doc.file.storage
+        with tenant_scope(company.id):
+            doc.delete()                                 # soft delete (recoverable)
+        self.assertTrue(storage.exists(name))            # file kept
+        company.refresh_from_db()
+        self.assertEqual(company.storage_used_bytes, 500)  # usage unchanged
+
+
 @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
 class DuplicateDocsTests(TestCase):
     def test_duplicates_hidden_and_removable(self):

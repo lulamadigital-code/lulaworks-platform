@@ -31,3 +31,13 @@ def register_upload(company, size_bytes: int) -> None:
     with system_scope():
         company.storage_used_bytes = company.storage_used_bytes + size_bytes
         company.save(update_fields=["storage_used_bytes"])
+
+
+def release_storage(company, size_bytes: int) -> None:
+    """Decrement the cached storage usage when a stored file is permanently removed
+    (hard delete). Clamped at zero so the counter can never go negative."""
+    if size_bytes <= 0:
+        return
+    with system_scope():
+        company.storage_used_bytes = max(0, (company.storage_used_bytes or 0) - size_bytes)
+        company.save(update_fields=["storage_used_bytes"])
