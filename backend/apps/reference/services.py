@@ -113,6 +113,9 @@ _COUNTRY_DOCUMENTS = {
     "NZ": ["Certificate of Incorporation", "IRD / GST registration",
            "NZBN confirmation", "Insurance certificate (if applicable)",
            "Bank confirmation"],
+    "FR": ["Extrait Kbis (company registration)", "Attestation TVA (VAT)",
+           "Attestation URSSAF", "Assurance décennale (if construction)",
+           "RIB (bank details)"],
 }
 _DEFAULT_DOCUMENTS = ["Company registration document", "Tax registration document",
                       "Bank confirmation"]

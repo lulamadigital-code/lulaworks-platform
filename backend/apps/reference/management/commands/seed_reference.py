@@ -99,6 +99,14 @@ BANKS = {
         ("Commerzbank", "Commerzbank", "", "COBADEFF", [], True),
         ("Sparkasse", "Sparkasse", "", "", [], False),
     ],
+    "FR": [
+        ("BNP Paribas", "BNP Paribas", "", "BNPAFRPP", [], True),
+        ("Crédit Agricole", "Crédit Agricole", "", "AGRIFRPP", [], True),
+        ("Société Générale", "SocGen", "", "SOGEFRPP", [], True),
+        ("Groupe BPCE (Banque Populaire)", "BPCE", "", "CCBPFRPP", [], True),
+        ("Crédit Mutuel", "Crédit Mutuel", "", "CMCIFRPP", [], False),
+        ("La Banque Postale", "Banque Postale", "", "PSSTFRPP", [], False),
+    ],
     "AE": [
         ("Emirates NBD", "ENBD", "", "EBILAEAD", [], True),
         ("First Abu Dhabi Bank (FAB)", "FAB", "", "NBADAEAA", [], True),
@@ -199,6 +207,10 @@ ADDRESS_RULES = {
                             ("city", "Town / City", True), ("province", "Region", False)),
                postal_label="Postcode", postal_regex=r"\d{4}",
                postal_hint="Enter a valid 4-digit NZ postcode."),
+    "FR": dict(fields=_ADDR(("street_address", "Adresse (line 1)", True), ("suburb", "Adresse (line 2)", False),
+                            ("city", "Ville / Commune", True)),
+               postal_label="Code postal", postal_regex=r"\d{5}",
+               postal_hint="Enter a valid 5-digit French postal code."),
 }
 
 
@@ -261,6 +273,14 @@ STATUTORY_RULES = {
         _S("ird", "IRD number", "Inland Revenue", validator=r"\d{2,3}[- ]?\d{3}[- ]?\d{3}",
            placeholder="012-345-678"),
         _S("gst", "GST number", "Inland Revenue"),
+    ],
+    "FR": [
+        _S("siren", "SIREN", "INSEE", validator=r"\d{9}", placeholder="552100554"),
+        _S("siret", "SIRET (establishment)", "INSEE", validator=r"\d{14}",
+           placeholder="55210055400024"),
+        _S("tva", "TVA intracommunautaire (VAT)", "DGFiP", placeholder="FR40552100554"),
+        _S("rcs", "RCS registration", "Greffe du tribunal de commerce"),
+        _S("ape", "Code APE / NAF", "INSEE", placeholder="4120A"),
     ],
 }
 

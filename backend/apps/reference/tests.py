@@ -293,6 +293,44 @@ class NewZealandConfigTests(TestCase):
         self.assertNotIn("cipc", docs)
 
 
+class FranceConfigTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def test_currency_banking_sepa(self):
+        from apps.reference.services import (BankDirectoryService,
+                                             BankingValidationService,
+                                             CurrencyService)
+        self.assertEqual(CurrencyService.for_country("FR").code, "EUR")
+        self.assertTrue(any("BNP" in b.name for b in BankDirectoryService.for_country("FR")))
+        keys = [f["key"] for f in BankingValidationService.rule("FR").fields]
+        self.assertIn("iban", keys)                # SEPA / IBAN
+
+    def test_statutory_is_french(self):
+        from apps.reference.services import StatutoryService
+        keys = {f["key"] for f in StatutoryService.rules("FR")}
+        self.assertIn("siren", keys)
+        self.assertIn("siret", keys)
+        self.assertNotIn("bbbee_level", keys)
+        self.assertNotIn("nzbn", keys)             # not NZ's either
+
+    def test_siren_validation(self):
+        from apps.reference.services import StatutoryService
+        self.assertEqual(StatutoryService.validate("FR", {"siren": "552100554"}), [])
+        self.assertTrue(any(e.field == "siren"
+                            for e in StatutoryService.validate("FR", {"siren": "12"})))
+
+    def test_postal_and_docs(self):
+        from apps.reference.services import (AddressValidationService,
+                                             recommended_documents)
+        self.assertIsNone(AddressValidationService.validate_postal_code("FR", "75008"))
+        self.assertIsNotNone(AddressValidationService.validate_postal_code("FR", "75"))
+        docs = " ".join(recommended_documents("FR")).lower()
+        self.assertIn("kbis", docs)
+        self.assertNotIn("cipc", docs)
+
+
 class EmailTests(TestCase):
     def test_normalise(self):
         self.assertEqual(EmailValidationService.normalize("  John@Example.COM "), "john@example.com")
