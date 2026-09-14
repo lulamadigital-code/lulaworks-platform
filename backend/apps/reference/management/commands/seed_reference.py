@@ -173,6 +173,53 @@ ADDRESS_RULES = {
 }
 
 
+# ── Statutory registration rules (SA maps to typed columns; others → JSON) ────
+# (key, label, authority, required, field_type, column, validator, placeholder, help)
+_S = lambda key, label, authority="", required=False, field_type="text", column="", \
+    validator="", placeholder="", help="": dict(
+        key=key, label=label, authority=authority, required=required,
+        field_type=field_type, column=column, validator=validator,
+        placeholder=placeholder, help_text=help)
+
+STATUTORY_RULES = {
+    "ZA": [
+        _S("income_tax_no", "Income tax number", "SARS", column="income_tax_no"),
+        _S("paye_no", "PAYE number", "SARS", column="paye_no"),
+        _S("uif_no", "UIF number", "Dept. of Labour", column="uif_no"),
+        _S("coida_no", "COIDA number", "Compensation Fund", column="coida_no",
+           help="Workmen's compensation registration."),
+        _S("coida_expiry", "COIDA letter expiry", field_type="date", column="coida_expiry"),
+        _S("csd_supplier_no", "CSD supplier number", "National Treasury", column="csd_supplier_no"),
+        _S("cidb_grading", "CIDB grading", "CIDB", column="cidb_grading", placeholder="3CE"),
+        _S("bbbee_level", "B-BBEE level", column="bbbee_level", placeholder="Level 1",
+           help="Optional — not every company has a rating."),
+        _S("bbbee_expiry", "B-BBEE expiry", field_type="date", column="bbbee_expiry"),
+    ],
+    "US": [
+        _S("ein", "EIN (Employer ID Number)", "IRS", validator=r"\d{2}-?\d{7}",
+           placeholder="12-3456789"),
+        _S("state_inc", "State of incorporation", placeholder="Delaware"),
+        _S("state_reg", "State registration no."),
+        _S("sales_tax", "Sales-tax permit no."),
+    ],
+    "GB": [
+        _S("company_no", "Company number (Companies House)", "Companies House",
+           validator=r"[A-Za-z0-9]{8}", placeholder="12345678"),
+        _S("utr", "UTR (tax reference)", "HMRC", validator=r"\d{10}"),
+        _S("paye_ref", "PAYE reference", "HMRC", placeholder="123/AB456"),
+    ],
+    "AU": [
+        _S("abn", "ABN (Australian Business Number)", "ATO", placeholder="12 345 678 901"),
+        _S("acn", "ACN (Company Number)", "ASIC"),
+        _S("tfn", "Tax File Number", "ATO"),
+    ],
+    "CA": [
+        _S("bn", "Business Number", "CRA", placeholder="123456789"),
+        _S("gst", "GST/HST number", "CRA"),
+    ],
+}
+
+
 class Command(BaseCommand):
     help = "Seed / refresh international reference data (countries, currencies, banks, rules)."
 
@@ -180,7 +227,10 @@ class Command(BaseCommand):
         import pycountry
         import phonenumbers
         from apps.reference.models import (AddressFieldRule, Bank, BankingFieldRule,
-                                           Country, CountryCurrency, Currency)
+                                           Country, CountryCurrency,
+                                           CountryDocumentRule, Currency,
+                                           StatutoryRegistrationRule)
+        from apps.reference.services import _COUNTRY_DOCUMENTS, _DEFAULT_DOCUMENTS
 
         # 1) Currencies — every code we reference, named from pycountry.
         ccy_codes = set(CURRENCY_SYMBOLS) | set(COUNTRY_CCY.values())
@@ -233,6 +283,33 @@ class Command(BaseCommand):
             if Country.objects.filter(code=code).exists():
                 AddressFieldRule.objects.update_or_create(country_id=code, defaults=rule)
 
+        # 5) Statutory registration rules
+        n_stat = 0
+        for code, rules in STATUTORY_RULES.items():
+            if not Country.objects.filter(code=code).exists():
+                continue
+            for i, r in enumerate(rules):
+                StatutoryRegistrationRule.objects.update_or_create(
+                    country_id=code, key=r["key"],
+                    defaults={**{k: v for k, v in r.items() if k != "key"},
+                              "sort_priority": i})
+                n_stat += 1
+
+        # 6) Country document rules (from the curated names; expiry heuristic)
+        n_docs = 0
+        _EXP = ("clearance", "insurance", "certificate", "b-bbee", "licence", "license", "permit")
+        for code, names in _COUNTRY_DOCUMENTS.items():
+            if not Country.objects.filter(code=code).exists():
+                continue
+            for i, name in enumerate(names):
+                key = name.lower().split("(")[0].strip().replace(" ", "_").replace("/", "_")[:48]
+                CountryDocumentRule.objects.update_or_create(
+                    country_id=code, key=key,
+                    defaults={"name": name, "sort_priority": i,
+                              "has_expiry": any(w in name.lower() for w in _EXP)})
+                n_docs += 1
+
         self.stdout.write(self.style.SUCCESS(
             f"Reference seeded: {len(cur_objs)} currencies, {n_countries} countries, "
-            f"{n_banks} banks, {len(BANKING_RULES)} banking rules, {len(ADDRESS_RULES)} address rules."))
+            f"{n_banks} banks, {len(BANKING_RULES)} banking rules, {len(ADDRESS_RULES)} address rules, "
+            f"{n_stat} statutory rules, {n_docs} document rules."))

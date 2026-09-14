@@ -129,3 +129,66 @@ class AddressFieldRule(models.Model):
 
     def __str__(self):
         return f"Address rule · {self.country_id}"
+
+
+class StatutoryRegistrationRule(models.Model):
+    """One statutory / regulatory registration a company in a country may hold
+    (SA CIPC/CIDB/B-BBEE, US EIN, UK Companies House number, …). Data-driven so a
+    new jurisdiction is added by seeding rows, not editing a form.
+
+    `column` names a real `CompanyCompliance` field to store into (SA keeps its
+    typed columns, so PDF/expiry/completeness keep working); blank = store the
+    value in `CompanyCompliance.other_registrations` JSON under `key`.
+    `field_type` = text|date. `validator` = optional regex (format-only, never
+    claims official verification)."""
+
+    class FieldType(models.TextChoices):
+        TEXT = "text", "Text"
+        DATE = "date", "Date"
+
+    country = models.ForeignKey(Country, on_delete=models.CASCADE,
+                                related_name="statutory_rules")
+    key = models.CharField(max_length=48)
+    label = models.CharField(max_length=96)
+    help_text = models.CharField(max_length=200, blank=True)
+    authority = models.CharField(max_length=96, blank=True)     # CIPC, IRS, Companies House…
+    required = models.BooleanField(default=False)               # B-BBEE etc. never mandatory
+    field_type = models.CharField(max_length=8, choices=FieldType.choices,
+                                  default=FieldType.TEXT)
+    column = models.CharField(max_length=48, blank=True)        # CompanyCompliance column, or ""→JSON
+    validator = models.CharField(max_length=200, blank=True)    # optional regex
+    placeholder = models.CharField(max_length=64, blank=True)
+    sort_priority = models.IntegerField(default=100)
+
+    class Meta:
+        ordering = ["country", "sort_priority", "key"]
+        constraints = [
+            models.UniqueConstraint(fields=["country", "key"], name="uniq_statutory_country_key"),
+        ]
+
+    def __str__(self):
+        return f"{self.country_id} · {self.key}"
+
+
+class CountryDocumentRule(models.Model):
+    """A supporting document a company in a country is typically expected to hold.
+    Drives the 'recommended documents' list per country — no hardcoded per-country
+    strings in templates."""
+    country = models.ForeignKey(Country, on_delete=models.CASCADE,
+                                related_name="document_rules")
+    key = models.CharField(max_length=48)
+    name = models.CharField(max_length=120)
+    description = models.CharField(max_length=200, blank=True)
+    authority = models.CharField(max_length=96, blank=True)
+    required = models.BooleanField(default=False)
+    has_expiry = models.BooleanField(default=False)
+    sort_priority = models.IntegerField(default=100)
+
+    class Meta:
+        ordering = ["country", "sort_priority", "key"]
+        constraints = [
+            models.UniqueConstraint(fields=["country", "key"], name="uniq_document_country_key"),
+        ]
+
+    def __str__(self):
+        return f"{self.country_id} · {self.key}"

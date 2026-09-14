@@ -206,7 +206,7 @@
       <div class="two" style="margin-top:12px;">
         <div><label>Postal address</label><input type="text" name="postal_address" value="{{ company.postal_address }}"></div>
         <div><label>City</label><input type="text" name="postal_city" value="{{ company.postal_city }}"></div>
-        <div><label>Postal code</label><input type="text" name="postal_code_postal" value="{{ company.postal_code_postal }}"></div>
+        <div><label>{{ address_rule.postal_label }}</label><input type="text" name="postal_code_postal" value="{{ company.postal_code_postal }}"{% if address_rule.postal_hint %} title="{{ address_rule.postal_hint }}"{% endif %}></div>
         <div><label>Country</label><input type="text" name="postal_country" value="{{ company.postal_country }}"></div>
       </div>
       <div class="secbtns"><button class="btn" type="submit">Save postal address</button>
@@ -325,49 +325,12 @@
 <div class="card">
   <div class="sec-head"><strong>Statutory registrations</strong>
     {% if can_edit %}<button type="button" class="btn ghost" data-edit="compliance">✎ Edit</button>{% endif %}</div>
-  {% if statutory.is_sa %}
-  <div id="view-compliance">
-    <table class="kv">
-      <tr><td class="muted">VAT registered</td><td>{% if compliance.vat_registered %}Yes{% else %}No{% endif %}</td></tr>
-      <tr><td class="muted">Income tax no.</td><td>{{ compliance.income_tax_no|default:"—" }}</td></tr>
-      <tr><td class="muted">PAYE</td><td>{{ compliance.paye_no|default:"—" }}</td></tr>
-      <tr><td class="muted">UIF</td><td>{{ compliance.uif_no|default:"—" }}</td></tr>
-      <tr><td class="muted">COIDA</td><td>{{ compliance.coida_no|default:"—" }}{% if compliance.coida_expiry %} · exp {{ compliance.coida_expiry|date:"d M Y" }}{% endif %}</td></tr>
-      <tr><td class="muted">B-BBEE</td><td>{{ compliance.bbbee_level|default:"—" }}{% if compliance.bbbee_expiry %} · exp {{ compliance.bbbee_expiry|date:"d M Y" }}{% endif %}</td></tr>
-      <tr><td class="muted">CSD supplier</td><td>{{ compliance.csd_supplier_no|default:"—" }}</td></tr>
-      <tr><td class="muted">CIDB grading</td><td>{{ compliance.cidb_grading|default:"—" }}</td></tr>
-      <tr><td class="muted">ISO</td><td>{{ compliance.iso_certifications|join:", "|default:"—" }}</td></tr>
-    </table>
-  </div>
-  <div id="form-compliance" style="display:none;">
-    <form method="post">{% csrf_token %}<input type="hidden" name="section" value="compliance">
-      <label class="inline"><input type="checkbox" name="vat_registered" value="1" {% if compliance.vat_registered %}checked{% endif %}> VAT registered</label>
-      <div class="two" style="margin-top:12px;">
-        <div><label>Income tax number</label><input type="text" name="income_tax_no" value="{{ compliance.income_tax_no }}"></div>
-        <div><label>PAYE number</label><input type="text" name="paye_no" value="{{ compliance.paye_no }}"></div>
-        <div><label>UIF number</label><input type="text" name="uif_no" value="{{ compliance.uif_no }}"></div>
-        <div><label>COIDA registration</label><input type="text" name="coida_no" value="{{ compliance.coida_no }}"></div>
-        <div><label>COIDA expiry</label><input type="date" name="coida_expiry" value="{{ compliance.coida_expiry|date:'Y-m-d' }}"></div>
-        <div><label>B-BBEE level</label><input type="text" name="bbbee_level" value="{{ compliance.bbbee_level }}" placeholder="Level 1"></div>
-        <div><label>B-BBEE expiry</label><input type="date" name="bbbee_expiry" value="{{ compliance.bbbee_expiry|date:'Y-m-d' }}"></div>
-        <div><label>CSD supplier number</label><input type="text" name="csd_supplier_no" value="{{ compliance.csd_supplier_no }}"></div>
-        <div><label>CIDB grading</label><input type="text" name="cidb_grading" value="{{ compliance.cidb_grading }}" placeholder="3CE"></div>
-      </div>
-      <label>ISO certifications (comma separated)</label>
-      <input type="text" name="iso_certifications" value="{{ compliance.iso_certifications|join:', ' }}" placeholder="ISO 9001, ISO 45001">
-      <label>Industry certifications (comma separated)</label>
-      <input type="text" name="industry_certifications" value="{{ compliance.industry_certifications|join:', ' }}">
-      <div class="secbtns"><button class="btn" type="submit">Save statutory details</button>
-        <button class="btn ghost" type="button" data-cancel="compliance">Cancel</button></div>
-    </form>
-  </div>
-  {% else %}
-  {# Non-SA: the statutory registrations relevant to the company's country. #}
+  {# Statutory registrations are driven by the company country's rules. #}
   <div id="view-compliance">
     <table class="kv">
       <tr><td class="muted">VAT / GST registered</td><td>{% if compliance.vat_registered %}Yes{% else %}No{% endif %}</td></tr>
-      {% for r in statutory.rows %}
-      <tr><td class="muted">{{ r.label }}</td><td>{{ r.value|default:"—" }}</td></tr>
+      {% for r in statutory_rules %}
+      <tr><td class="muted">{{ r.label }}</td><td>{{ r.value|default:"—" }}{% if r.authority and r.value %} <span class="muted" style="font-size:11.5px;">· {{ r.authority }}</span>{% endif %}</td></tr>
       {% endfor %}
       <tr><td class="muted">ISO</td><td>{{ compliance.iso_certifications|join:", "|default:"—" }}</td></tr>
     </table>
@@ -376,8 +339,9 @@
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="compliance">
       <label class="inline"><input type="checkbox" name="vat_registered" value="1" {% if compliance.vat_registered %}checked{% endif %}> VAT / GST registered</label>
       <div class="two" style="margin-top:12px;">
-        {% for r in statutory.rows %}
-        <div><label>{{ r.label }}</label><input type="text" name="reg__{{ r.key }}" value="{{ r.value }}" placeholder="{{ r.placeholder }}"></div>
+        {% for r in statutory_rules %}
+        <div><label>{{ r.label }}{% if not r.required %} <span class="muted" style="font-weight:400;">(optional)</span>{% endif %}</label>
+          <input type="{% if r.field_type == 'date' %}date{% else %}text{% endif %}" name="stat__{{ r.key }}" value="{{ r.value }}" placeholder="{{ r.placeholder }}"{% if r.help_text %} title="{{ r.help_text }}"{% endif %}></div>
         {% endfor %}
       </div>
       <label>ISO certifications (comma separated)</label>
@@ -388,7 +352,6 @@
         <button class="btn ghost" type="button" data-cancel="compliance">Cancel</button></div>
     </form>
   </div>
-  {% endif %}
 </div>
 
 {# Supporting documents (table + toggle upload) #}
@@ -401,7 +364,7 @@
       {% for d in documents %}
       <tr>
         <td><a href="{{ d.file.url }}">{{ d.name }}</a></td><td class="muted">{{ d.doc_type|default:"—" }}</td>
-        <td>{% if d.expires_on %}{% if d.is_expired %}<span class="chip bad">expired {{ d.expires_on|date:"d M Y" }}</span>{% else %}<span class="muted">{{ d.expires_on|date:"d M Y" }}</span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td>{% if d.expires_on %}<span class="chip {{ d.expiry_tone }}">{{ d.expiry_state }}</span> <span class="muted" style="font-size:11.5px;">{{ d.expires_on|date:"d M Y" }}</span>{% else %}<span class="muted">No expiry</span>{% endif %}</td>
         <td class="right">{% if can_edit %}<form method="post" action="{% url 'web:company_document' %}" data-confirm="Remove {{ d.name|escapejs }}?">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="document" value="{{ d.id }}"><button class="btn ghost" type="submit">Remove</button></form>{% endif %}</td>
       </tr>
       {% empty %}<tr><td colspan="4" class="muted" style="padding:18px;">No documents uploaded yet.{% if recommended_documents %}<br>Recommended for your country: {{ recommended_documents|join:", " }}.{% endif %}</td></tr>{% endfor %}

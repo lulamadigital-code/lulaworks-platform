@@ -1128,6 +1128,46 @@ def _address_view(company) -> dict:
     }
 
 
+def _statutory_view(company) -> list:
+    """The company's statutory registrations as rule-driven rows with current
+    values — SA values come from the typed CompanyCompliance columns, others from
+    the other_registrations JSON. Dates rendered ISO for the date input."""
+    from apps.reference.services import CountryService, StatutoryService
+    code = company.country_code or CountryService.resolve(company.country) or "ZA"
+    comp = company.compliance
+    other = comp.other_registrations or {}
+    rows = []
+    for r in StatutoryService.rules(code):
+        if r["column"]:
+            val = getattr(comp, r["column"], "")
+            if r["field_type"] == "date" and val:
+                val = val.isoformat()
+        else:
+            val = other.get(r["key"], "")
+        rows.append({**r, "value": val or ""})
+    return rows
+
+
+def _documents_with_state(company):
+    """Company documents annotated with an expiry state chip (Valid / Expiring
+    soon ≤30d / Expired / No expiry)."""
+    from django.utils import timezone
+    today = timezone.localdate()
+    out = []
+    for d in company.documents.all():
+        if not d.expires_on:
+            state, tone = "No expiry", "muted"
+        elif d.expires_on < today:
+            state, tone = "Expired", "bad"
+        elif (d.expires_on - today).days <= 30:
+            state, tone = "Expiring soon", "warn"
+        else:
+            state, tone = "Valid", "ok"
+        d.expiry_state, d.expiry_tone = state, tone
+        out.append(d)
+    return out
+
+
 def _statutory_schema(country: str) -> dict:
     """Country-aware statutory registrations. Statutory IDs differ by country —
     South Africa (and unset) uses the typed SA columns already on the model
@@ -1187,8 +1227,12 @@ def company_profile(request):
             else:
                 messages.success(request, "Company profile updated.")
         elif section == "compliance":
-            _save_compliance(request, company)
-            messages.success(request, "Statutory details updated.")
+            errs = _save_compliance(request, company)
+            if errs:
+                for e in errs:
+                    messages.error(request, e)
+            else:
+                messages.success(request, "Statutory details updated.")
         elif section == "branding":
             _save_branding(request, company)
             messages.success(request, "Branding updated.")
@@ -1202,21 +1246,14 @@ def company_profile(request):
             messages.error(request, "Unknown section.")
         return redirect("web:company_profile")
 
-    statutory = _statutory_schema(company.country)
-    if not statutory["is_sa"]:
-        stored = company.compliance.other_registrations or {}
-        statutory["rows"] = [
-            {"key": k, "label": lbl, "placeholder": ph, "value": stored.get(k, "")}
-            for (k, lbl, ph) in statutory["fields"]]
-
     from apps.administration.models import CompanySettings
     from apps.reference.services import (CountryService, CurrencyService,
-                                         recommended_documents)
+                                         DocumentRulesService)
     _cur = CurrencyService.for_country(company.country_code) if company.country_code else None
     return render(request, "web/company.html", {
         "company": company,
         "compliance": company.compliance,
-        "statutory": statutory,
+        "statutory_rules": _statutory_view(company),
         "branding": company.branding,
         "settings": CompanySettings.objects.get(company=company),
         "bank_accounts": company.bank_accounts.all(),
@@ -1224,9 +1261,9 @@ def company_profile(request):
         "address_rule": _address_view(company),
         "countries": CountryService.list_for_picker(),
         "currency_label": CurrencyService.label(_cur) or company.currency,
-        "recommended_documents": recommended_documents(company.country_code),
+        "recommended_documents": [d["name"] for d in DocumentRulesService.recommended(company.country_code)],
         "contacts": company.contacts.all(),
-        "documents": company.documents.all(),
+        "documents": _documents_with_state(company),
         "score": completeness(company),
         "default_bank": default_bank_account(company),
         "expiring": company.compliance.expiring(),
@@ -1379,6 +1416,13 @@ def _save_profile_section(request, company, section):
                 "postal_code": company.postal_code}
         for res in AddressValidationService.validate(company.country_code or "ZA", data):
             errors.append(res.message)
+    if section == "postal" and not company.postal_same_as_physical:
+        # Postal address uses the SAME country-aware postal-code engine as physical.
+        from apps.reference.services import AddressValidationService
+        res = AddressValidationService.validate_postal_code(
+            company.country_code or "ZA", company.postal_code_postal)
+        if res:
+            errors.append(res.message)
     if errors:
         return errors           # invalid input → nothing saved; user fixes & resubmits
     company.save()
@@ -1386,26 +1430,32 @@ def _save_profile_section(request, company, section):
 
 
 def _save_compliance(request, company):
+    """Rule-driven statutory save. Returns a list of error messages (empty =
+    saved). SA rules write their typed CompanyCompliance columns (so PDF/expiry/
+    completeness keep working); others go to the other_registrations JSON."""
+    from apps.reference.services import CountryService, StatutoryService
     c = company.compliance
     c.vat_registered = bool(request.POST.get("vat_registered"))
-    # Universal for every country.
     for field in ("iso_certifications", "industry_certifications"):
         raw = request.POST.get(field, "")
         setattr(c, field, [v.strip() for v in raw.split(",") if v.strip()])
-    schema = _statutory_schema(company.country)
-    if schema["is_sa"]:
-        for field in ("income_tax_no", "paye_no", "uif_no", "coida_no",
-                      "bbbee_level", "csd_supplier_no", "cidb_grading"):
-            setattr(c, field, request.POST.get(field, "").strip())
-        for field in ("coida_expiry", "bbbee_expiry"):
-            setattr(c, field, _parse_iso_date(request.POST.get(field)))
-    else:
-        # Other countries: save their jurisdiction's registrations into the JSON
-        # store, keyed by the schema field keys.
-        c.other_registrations = {
-            k: request.POST.get(f"reg__{k}", "").strip()
-            for (k, _lbl, _ph) in schema["fields"]}
+    code = company.country_code or CountryService.resolve(company.country) or "ZA"
+    rules = StatutoryService.rules(code)
+    data = {r["key"]: (request.POST.get(f"stat__{r['key']}", "") or "").strip() for r in rules}
+    errors = StatutoryService.validate(code, data)
+    if errors:
+        return [e.message for e in errors]        # invalid → nothing saved
+    other = c.other_registrations or {}
+    for r in rules:
+        val = data[r["key"]]
+        if r["column"]:
+            setattr(c, r["column"],
+                    _parse_iso_date(val) if r["field_type"] == "date" else val)
+        else:
+            other[r["key"]] = val
+    c.other_registrations = other
     c.save()
+    return []
 
 
 def _clean_hex_colour(raw):

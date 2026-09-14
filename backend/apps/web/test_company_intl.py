@@ -136,6 +136,86 @@ class AddressValidationWebTests(TestCase):
         self.assertEqual(company.postal_code, "")
 
 
+class StatutoryEngineWebTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def _mgr(self, country_code):
+        company = Company.objects.create(name="Acme", country_code=country_code, currency="ZAR")
+        get_profile(company)
+        CompanySettings.objects.get_or_create(company=company)
+        mgr = _user(company, ["company.manage"], f"m-{country_code}@a.co")
+        self.client.force_login(mgr)
+        return company
+
+    def test_sa_statutory_writes_typed_columns(self):
+        company = self._mgr("ZA")
+        self.client.post("/company/", {
+            "section": "compliance", "vat_registered": "1",
+            "stat__bbbee_level": "Level 2", "stat__coida_no": "CO-123",
+            "stat__cidb_grading": "3CE"})
+        company.compliance.refresh_from_db()
+        self.assertEqual(company.compliance.bbbee_level, "Level 2")   # typed column
+        self.assertEqual(company.compliance.coida_no, "CO-123")
+        self.assertTrue(company.compliance.vat_registered)
+
+    def test_us_statutory_writes_json_no_cipc(self):
+        company = self._mgr("US")
+        page = self.client.get("/company/")
+        self.assertNotContains(page, "CIDB")
+        self.assertNotContains(page, "B-BBEE")
+        self.assertContains(page, "EIN")
+        self.client.post("/company/", {"section": "compliance", "stat__ein": "12-3456789"})
+        company.compliance.refresh_from_db()
+        self.assertEqual(company.compliance.other_registrations.get("ein"), "12-3456789")
+
+    def test_us_bad_ein_rejected(self):
+        company = self._mgr("US")
+        self.client.post("/company/", {"section": "compliance", "stat__ein": "bad"})
+        company.compliance.refresh_from_db()
+        self.assertNotEqual(company.compliance.other_registrations.get("ein"), "bad")
+
+
+class PostalAddressWebTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def _mgr(self, country_code="ZA"):
+        company = Company.objects.create(name="Acme", country_code=country_code, currency="ZAR")
+        get_profile(company)
+        CompanySettings.objects.get_or_create(company=company)
+        mgr = _user(company, ["company.manage"], f"mp-{country_code}@a.co")
+        self.client.force_login(mgr)
+        return company
+
+    def test_bad_postal_code_rejected(self):
+        company = self._mgr("ZA")
+        self.client.post("/company/", {
+            "section": "postal", "postal_address": "PO Box 1", "postal_city": "Secunda",
+            "postal_code_postal": "12"})     # invalid SA postal
+        company.refresh_from_db()
+        self.assertEqual(company.postal_code_postal, "")
+
+    def test_valid_postal_saved(self):
+        company = self._mgr("ZA")
+        self.client.post("/company/", {
+            "section": "postal", "postal_address": "PO Box 1", "postal_city": "Secunda",
+            "postal_code_postal": "2302"})
+        company.refresh_from_db()
+        self.assertEqual(company.postal_code_postal, "2302")
+
+    def test_same_as_physical_skips_validation(self):
+        company = self._mgr("ZA")
+        r = self.client.post("/company/", {
+            "section": "postal", "postal_same_as_physical": "1",
+            "postal_code_postal": "12"})     # invalid, but skipped
+        self.assertEqual(r.status_code, 302)
+        company.refresh_from_db()
+        self.assertTrue(company.postal_same_as_physical)
+
+
 class BankingValidationWebTests(TestCase):
     @classmethod
     def setUpTestData(cls):

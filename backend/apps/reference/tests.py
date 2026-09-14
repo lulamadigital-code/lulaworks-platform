@@ -133,6 +133,58 @@ class AddressTests(TestCase):
         self.assertEqual(errs, [])
 
 
+class StatutoryEngineTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def test_country_specific_rules(self):
+        from apps.reference.services import StatutoryService
+        za = {r["key"] for r in StatutoryService.rules("ZA")}
+        us = {r["key"] for r in StatutoryService.rules("US")}
+        gb = {r["key"] for r in StatutoryService.rules("GB")}
+        self.assertIn("bbbee_level", za)
+        self.assertIn("cidb_grading", za)
+        self.assertIn("ein", us)
+        self.assertNotIn("bbbee_level", us)      # no B-BBEE for the US
+        self.assertNotIn("cidb_grading", us)     # no CIDB for the US
+        self.assertIn("company_no", gb)
+        self.assertNotIn("bbbee_level", gb)
+
+    def test_sa_rules_map_to_typed_columns(self):
+        from apps.reference.services import StatutoryService
+        by_key = {r["key"]: r for r in StatutoryService.rules("ZA")}
+        self.assertEqual(by_key["bbbee_level"]["column"], "bbbee_level")
+        self.assertEqual(by_key["coida_expiry"]["field_type"], "date")
+
+    def test_bbbee_not_required(self):
+        from apps.reference.services import StatutoryService
+        by_key = {r["key"]: r for r in StatutoryService.rules("ZA")}
+        self.assertFalse(by_key["bbbee_level"]["required"])
+
+    def test_ein_format_validation(self):
+        from apps.reference.services import StatutoryService
+        errs = StatutoryService.validate("US", {"ein": "not-an-ein"})
+        self.assertTrue(any(e.field == "ein" for e in errs))
+        self.assertEqual(StatutoryService.validate("US", {"ein": "12-3456789"}), [])
+
+
+class DocumentRulesTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def test_recommendations_country_specific(self):
+        from apps.reference.services import recommended_documents
+        za = " ".join(recommended_documents("ZA")).lower()
+        us = " ".join(recommended_documents("US")).lower()
+        self.assertIn("cipc", za)
+        self.assertIn("b-bbee", za)
+        self.assertNotIn("cipc", us)             # no SA docs for the US
+        self.assertNotIn("b-bbee", us)
+        self.assertIn("ein", us)
+
+
 class EmailTests(TestCase):
     def test_normalise(self):
         self.assertEqual(EmailValidationService.normalize("  John@Example.COM "), "john@example.com")

@@ -112,8 +112,67 @@ _DEFAULT_DOCUMENTS = ["Company registration document", "Tax registration documen
                       "Bank confirmation"]
 
 
+class DocumentRulesService:
+    @staticmethod
+    def recommended(country_code: str) -> list:
+        """Recommended supporting documents for a country (DB-driven; falls back
+        to the curated dict when rules aren't seeded, e.g. in isolated tests)."""
+        from .models import CountryDocumentRule
+        code = (country_code or "").upper() or "ZA"
+        rows = list(CountryDocumentRule.objects.filter(country_id=code))
+        if rows:
+            return [{"key": r.key, "name": r.name, "description": r.description,
+                     "required": r.required, "has_expiry": r.has_expiry} for r in rows]
+        names = _COUNTRY_DOCUMENTS.get(code, _DEFAULT_DOCUMENTS)
+        return [{"key": "", "name": n, "description": "", "required": False,
+                 "has_expiry": False} for n in names]
+
+
 def recommended_documents(country_code: str) -> list:
-    return _COUNTRY_DOCUMENTS.get((country_code or "").upper(), _DEFAULT_DOCUMENTS)
+    """Back-compat: just the document names for the country."""
+    return [d["name"] for d in DocumentRulesService.recommended(country_code)]
+
+
+# Generic statutory fallback for countries without seeded rules.
+_GENERIC_STATUTORY = [
+    {"key": "reg_no", "label": "Business / company registration no."},
+    {"key": "tax_id", "label": "Tax ID / TIN"},
+    {"key": "vat_no", "label": "VAT / GST number"},
+    {"key": "employer_no", "label": "Employer registration no."},
+]
+
+
+class StatutoryService:
+    @staticmethod
+    def rules(country_code: str) -> list:
+        """Ordered statutory rules for a country as plain dicts. Falls back to a
+        generic set when the country has no seeded rules."""
+        from .models import StatutoryRegistrationRule
+        code = (country_code or "").upper() or "ZA"
+        rows = list(StatutoryRegistrationRule.objects.filter(country_id=code))
+        if not rows:
+            return [{"key": g["key"], "label": g["label"], "help_text": "",
+                     "authority": "", "required": False, "field_type": "text",
+                     "column": "", "validator": "", "placeholder": ""}
+                    for g in _GENERIC_STATUTORY]
+        return [{"key": r.key, "label": r.label, "help_text": r.help_text,
+                 "authority": r.authority, "required": r.required,
+                 "field_type": r.field_type, "column": r.column,
+                 "validator": r.validator, "placeholder": r.placeholder} for r in rows]
+
+    @staticmethod
+    def validate(country_code: str, data: dict) -> list:
+        errs = []
+        for r in StatutoryService.rules(country_code):
+            val = (data.get(r["key"]) or "").strip()
+            if r["required"] and not val:
+                errs.append(ValidationResult.error(r["key"], "REQUIRED",
+                                                   f"{r['label']} is required."))
+            elif val and r["validator"]:
+                if not re.fullmatch(r["validator"], val, re.IGNORECASE):
+                    errs.append(ValidationResult.error(
+                        r["key"], "INVALID_FORMAT", f"Enter a valid {r['label']}."))
+        return errs
 
 
 # ── Bank directory ───────────────────────────────────────────────────────────
@@ -221,6 +280,19 @@ class AddressValidationService:
         confirmed — only its FORMAT is checked by `validate()`."""
         return {"verified": False, "provider": None,
                 "note": "Format checked only — not verified against a postal database."}
+
+    @classmethod
+    def validate_postal_code(cls, country_code: str, postal: str) -> ValidationResult | None:
+        """Country-aware postal-code format check — the SAME rule used for the
+        physical address, so postal and physical validate identically."""
+        postal = (postal or "").strip()
+        rule = cls.rule(country_code)
+        if rule and rule.postal_regex and postal:
+            if not re.fullmatch(rule.postal_regex, postal, re.IGNORECASE):
+                return ValidationResult.error(
+                    "postal_code", "INVALID_POSTAL",
+                    rule.postal_hint or f"Enter a valid {rule.postal_label.lower()}.")
+        return None
 
     @classmethod
     def validate(cls, country_code: str, data: dict) -> list[ValidationResult]:
