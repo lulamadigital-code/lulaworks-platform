@@ -235,10 +235,10 @@
     <form method="post" action="{% url 'web:company_bank' %}">{% csrf_token %}
       <div class="two">
         <div><label>Bank name</label>
-        {% if banking.is_south_africa %}
-          <input type="text" name="bank_name" id="bank-name" list="sa-banks" required autocomplete="off"
+          <input type="text" name="bank_name" id="bank-name" list="bank-list" required autocomplete="off"
                  placeholder="Select or type your bank" oninput="onBankPick(this.value)">
-          <datalist id="sa-banks">
+          {# South African banks first (universal branch codes auto-fill), then major international banks. Any bank can also be typed in. #}
+          <datalist id="bank-list">
             <option value="Absa Bank"></option>
             <option value="African Bank"></option>
             <option value="Bank Zero"></option>
@@ -252,15 +252,40 @@
             <option value="Standard Bank"></option>
             <option value="TymeBank"></option>
             <option value="Ubank"></option>
+            <option value="Access Bank"></option>
+            <option value="ANZ"></option>
+            <option value="Bank of America"></option>
+            <option value="Barclays"></option>
+            <option value="BNP Paribas"></option>
+            <option value="Citibank"></option>
+            <option value="Commonwealth Bank"></option>
+            <option value="Deutsche Bank"></option>
+            <option value="Ecobank"></option>
+            <option value="Equity Bank"></option>
+            <option value="First Bank of Nigeria"></option>
+            <option value="Guaranty Trust Bank (GTBank)"></option>
+            <option value="HDFC Bank"></option>
+            <option value="HSBC"></option>
+            <option value="ICICI Bank"></option>
+            <option value="JPMorgan Chase"></option>
+            <option value="KCB Bank"></option>
+            <option value="Lloyds Bank"></option>
+            <option value="NatWest"></option>
+            <option value="Royal Bank of Canada (RBC)"></option>
+            <option value="Santander"></option>
+            <option value="Stanbic Bank"></option>
+            <option value="Standard Chartered"></option>
+            <option value="State Bank of India (SBI)"></option>
+            <option value="TD Bank"></option>
+            <option value="Wells Fargo"></option>
+            <option value="Westpac"></option>
+            <option value="Zenith Bank"></option>
           </datalist>
-        {% else %}
-          <input type="text" name="bank_name" required placeholder="Your bank's name">
-        {% endif %}
         </div>
         <div><label>Account name</label><input type="text" name="account_name" placeholder="Account holder name"></div>
         <div><label>Account number</label><input type="text" name="account_number" required></div>
-        <div><label>{{ banking.branch_label }}</label><input type="text" name="branch_code" id="branch-code"{% if banking.is_south_africa %} placeholder="Auto-filled from your bank"{% endif %}></div>
-        <div><label>Branch name</label><input type="text" name="branch_name" id="branch-name"{% if banking.is_south_africa %} placeholder="Auto-filled from your bank"{% endif %}></div>
+        <div><label>{{ banking.branch_label }}</label><input type="text" name="branch_code" id="branch-code"></div>
+        <div><label>Branch name</label><input type="text" name="branch_name" id="branch-name"></div>
         <div><label>Account type</label><select name="account_type"><option value="cheque">Cheque / Current</option><option value="savings">Savings</option><option value="transmission">Transmission</option><option value="foreign">Foreign currency</option></select></div>
         <div><label>Currency</label><input type="text" name="currency" value="{{ company.currency }}"></div>
         {% if banking.show_swift %}
