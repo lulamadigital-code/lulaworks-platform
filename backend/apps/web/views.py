@@ -1061,9 +1061,15 @@ def _banking_hints(country: str) -> dict:
     label, hint = table.get(
         c, ("Branch / routing code",
             "Your bank's branch, sort, routing, BSB or IFSC code — whatever local transfers use."))
+    is_za = c in ("", "south africa", "za", "rsa")
     return {
         "branch_label": label,
         "branch_hint": hint,
+        # SA routes on a universal branch code, so we offer a bank picker that
+        # fills the code; SWIFT/BIC is not used for local SA transfers, so it's
+        # hidden there and shown only where international routing needs it.
+        "is_south_africa": is_za,
+        "show_swift": not is_za,
         "swift_hint": "Only for international / foreign-currency payments — "
                       "not needed for local transfers.",
     }

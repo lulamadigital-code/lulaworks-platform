@@ -234,16 +234,66 @@
   <div id="form-bank" style="{% if bank_accounts %}display:none;{% endif %}border-top:1px solid var(--line);margin-top:14px;padding-top:16px;">
     <form method="post" action="{% url 'web:company_bank' %}">{% csrf_token %}
       <div class="two">
-        <div><label>Bank name</label><input type="text" name="bank_name" required></div>
+        <div><label>Bank name</label>
+        {% if banking.is_south_africa %}
+          <input type="text" name="bank_name" id="bank-name" list="sa-banks" required autocomplete="off"
+                 placeholder="Select or type your bank" oninput="onBankPick(this.value)">
+          <datalist id="sa-banks">
+            <option value="Absa Bank"></option>
+            <option value="African Bank"></option>
+            <option value="Bank Zero"></option>
+            <option value="Bidvest Bank"></option>
+            <option value="Capitec Bank"></option>
+            <option value="Discovery Bank"></option>
+            <option value="First National Bank (FNB)"></option>
+            <option value="Investec Bank"></option>
+            <option value="Nedbank"></option>
+            <option value="Sasfin Bank"></option>
+            <option value="Standard Bank"></option>
+            <option value="TymeBank"></option>
+            <option value="Ubank"></option>
+          </datalist>
+        {% else %}
+          <input type="text" name="bank_name" required placeholder="Your bank's name">
+        {% endif %}
+        </div>
         <div><label>Account name</label><input type="text" name="account_name" placeholder="Account holder name"></div>
         <div><label>Account number</label><input type="text" name="account_number" required></div>
-        <div><label>{{ banking.branch_label }}</label><input type="text" name="branch_code"></div>
-        <div><label>Branch name</label><input type="text" name="branch_name"></div>
+        <div><label>{{ banking.branch_label }}</label><input type="text" name="branch_code" id="branch-code"{% if banking.is_south_africa %} placeholder="Auto-filled from your bank"{% endif %}></div>
+        <div><label>Branch name</label><input type="text" name="branch_name" id="branch-name"{% if banking.is_south_africa %} placeholder="Auto-filled from your bank"{% endif %}></div>
         <div><label>Account type</label><select name="account_type"><option value="cheque">Cheque / Current</option><option value="savings">Savings</option><option value="transmission">Transmission</option><option value="foreign">Foreign currency</option></select></div>
         <div><label>Currency</label><input type="text" name="currency" value="{{ company.currency }}"></div>
-        <div><label>SWIFT / BIC code <span class="muted" style="font-weight:400;">(optional)</span></label><input type="text" name="swift_code"></div>
-        <div><label>Label</label><input type="text" name="label" placeholder="Operational"></div>
+        {% if banking.show_swift %}
+        <div><label>SWIFT / BIC code <span class="muted" style="font-weight:400;">(optional)</span></label>
+          <input type="text" name="swift_code" title="{{ banking.swift_hint }}" placeholder="For international payments"></div>
+        {% endif %}
       </div>
+      <script>
+        // South African banks route on a single universal branch code — picking the
+        // bank fills the code + branch so the user rarely types them. A custom bank
+        // (typed, not in the list) leaves the fields for manual entry.
+        var SA_BANKS = {
+          "absa bank": ["632005", "Universal"],
+          "african bank": ["430000", "Universal"],
+          "bank zero": ["888000", "Universal"],
+          "bidvest bank": ["462005", "Universal"],
+          "capitec bank": ["470010", "Universal"],
+          "discovery bank": ["679000", "Universal"],
+          "first national bank (fnb)": ["250655", "Universal"],
+          "investec bank": ["580105", "Universal"],
+          "nedbank": ["198765", "Universal"],
+          "sasfin bank": ["683000", "Universal"],
+          "standard bank": ["051001", "Universal"],
+          "tymebank": ["678910", "Universal"],
+          "ubank": ["431010", "Universal"]
+        };
+        function onBankPick(val) {
+          var hit = SA_BANKS[(val || "").trim().toLowerCase()];
+          if (!hit) return;                      // custom bank — leave fields to the user
+          document.getElementById("branch-code").value = hit[0];
+          document.getElementById("branch-name").value = hit[1];
+        }
+      </script>
       <div class="secbtns"><button class="btn" type="submit">Add bank account</button>
         <button class="btn ghost" type="button" data-cancel="bank">Cancel</button></div>
     </form>
