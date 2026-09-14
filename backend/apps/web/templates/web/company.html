@@ -235,7 +235,7 @@
     <form method="post" action="{% url 'web:company_bank' %}">{% csrf_token %}
       <div class="two">
         <div><label>Bank name</label><input type="text" name="bank_name" required></div>
-        <div><label>Account name</label><input type="text" name="account_name" placeholder="{{ company.name }}"></div>
+        <div><label>Account name</label><input type="text" name="account_name" placeholder="Account holder name"></div>
         <div><label>Account number</label><input type="text" name="account_number" required></div>
         <div><label>{{ banking.branch_label }}</label><input type="text" name="branch_code"></div>
         <div><label>Branch name</label><input type="text" name="branch_name"></div>
