@@ -165,8 +165,16 @@
         <div><label>City</label><input type="text" name="city" value="{{ company.city }}"></div>
         <div><label>Province / State</label><input type="text" name="province" value="{{ company.province }}"></div>
         <div><label>Postal code</label><input type="text" name="postal_code" value="{{ company.postal_code }}"></div>
-        <div><label>Country</label><input type="text" name="country" value="{{ company.country }}"></div>
+        <div><label>Country</label>
+          <select name="country_code" id="country-select"
+                  style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg,#f7f8fa);color:var(--ink);">
+            <option value="">Select a country…</option>
+            {% for c in countries %}<option value="{{ c.code }}" {% if c.code == company.country_code %}selected{% endif %}>{{ c.flag_emoji }} {{ c.name }}</option>{% endfor %}
+          </select>
+        </div>
       </div>
+      <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Currency
+        <strong style="color:var(--ink);">{{ currency_label }}</strong> — set automatically from your company country.</p>
       <div class="secbtns"><button class="btn" type="submit">Save address</button>
         <button class="btn ghost" type="button" data-cancel="address">Cancel</button></div>
     </form>
@@ -235,88 +243,31 @@
     <form method="post" action="{% url 'web:company_bank' %}">{% csrf_token %}
       <div class="two">
         <div><label>Bank name</label>
+          {# Country-aware bank directory (SA banks first). Any bank can also be typed. #}
           <input type="text" name="bank_name" id="bank-name" list="bank-list" required autocomplete="off"
                  placeholder="Select or type your bank" oninput="onBankPick(this.value)">
-          {# South African banks first (universal branch codes auto-fill), then major international banks. Any bank can also be typed in. #}
           <datalist id="bank-list">
-            <option value="Absa Bank"></option>
-            <option value="African Bank"></option>
-            <option value="Bank Zero"></option>
-            <option value="Bidvest Bank"></option>
-            <option value="Capitec Bank"></option>
-            <option value="Discovery Bank"></option>
-            <option value="First National Bank (FNB)"></option>
-            <option value="Investec Bank"></option>
-            <option value="Nedbank"></option>
-            <option value="Sasfin Bank"></option>
-            <option value="Standard Bank"></option>
-            <option value="TymeBank"></option>
-            <option value="Ubank"></option>
-            <option value="Access Bank"></option>
-            <option value="ANZ"></option>
-            <option value="Bank of America"></option>
-            <option value="Barclays"></option>
-            <option value="BNP Paribas"></option>
-            <option value="Citibank"></option>
-            <option value="Commonwealth Bank"></option>
-            <option value="Deutsche Bank"></option>
-            <option value="Ecobank"></option>
-            <option value="Equity Bank"></option>
-            <option value="First Bank of Nigeria"></option>
-            <option value="Guaranty Trust Bank (GTBank)"></option>
-            <option value="HDFC Bank"></option>
-            <option value="HSBC"></option>
-            <option value="ICICI Bank"></option>
-            <option value="JPMorgan Chase"></option>
-            <option value="KCB Bank"></option>
-            <option value="Lloyds Bank"></option>
-            <option value="NatWest"></option>
-            <option value="Royal Bank of Canada (RBC)"></option>
-            <option value="Santander"></option>
-            <option value="Stanbic Bank"></option>
-            <option value="Standard Chartered"></option>
-            <option value="State Bank of India (SBI)"></option>
-            <option value="TD Bank"></option>
-            <option value="Wells Fargo"></option>
-            <option value="Westpac"></option>
-            <option value="Zenith Bank"></option>
+            {% for b in banking.banks %}<option value="{{ b.name }}"></option>{% endfor %}
           </datalist>
         </div>
         <div><label>Account name</label><input type="text" name="account_name" placeholder="Account holder name"></div>
-        <div><label>Account number</label><input type="text" name="account_number" required></div>
-        <div><label>{{ banking.branch_label }}</label><input type="text" name="branch_code" id="branch-code"></div>
-        <div><label>Branch name</label><input type="text" name="branch_name" id="branch-name"></div>
+        {# Fields are driven by the selected country's banking rule. #}
+        {% for f in banking.fields %}
+        <div><label>{{ f.label }}{% if not f.required %} <span class="muted" style="font-weight:400;">(optional)</span>{% endif %}</label>
+          <input type="text" name="{{ f.key }}"{% if f.required %} required{% endif %}{% if f.key == 'branch_code' %} id="branch-code" placeholder="Auto-filled when you pick your bank"{% endif %}{% if f.hint %} title="{{ f.hint }}"{% endif %}></div>
+        {% endfor %}
+        <div><label>Branch name <span class="muted" style="font-weight:400;">(optional)</span></label><input type="text" name="branch_name" id="branch-name"></div>
         <div><label>Account type</label><select name="account_type"><option value="cheque">Cheque / Current</option><option value="savings">Savings</option><option value="transmission">Transmission</option><option value="foreign">Foreign currency</option></select></div>
-        <div><label>Currency</label><input type="text" name="currency" value="{{ company.currency }}"></div>
-        {% if banking.show_swift %}
-        <div><label>SWIFT / BIC code <span class="muted" style="font-weight:400;">(optional)</span></label>
-          <input type="text" name="swift_code" title="{{ banking.swift_hint }}" placeholder="For international payments"></div>
-        {% endif %}
+        <div><label>Account currency</label><input type="text" name="currency" value="{{ company.currency }}"></div>
       </div>
       <script>
-        // South African banks route on a single universal branch code — picking the
-        // bank fills the code + branch so the user rarely types them. A custom bank
-        // (typed, not in the list) leaves the fields for manual entry.
-        var SA_BANKS = {
-          "absa bank": ["632005", "Universal"],
-          "african bank": ["430000", "Universal"],
-          "bank zero": ["888000", "Universal"],
-          "bidvest bank": ["462005", "Universal"],
-          "capitec bank": ["470010", "Universal"],
-          "discovery bank": ["679000", "Universal"],
-          "first national bank (fnb)": ["250655", "Universal"],
-          "investec bank": ["580105", "Universal"],
-          "nedbank": ["198765", "Universal"],
-          "sasfin bank": ["683000", "Universal"],
-          "standard bank": ["051001", "Universal"],
-          "tymebank": ["678910", "Universal"],
-          "ubank": ["431010", "Universal"]
-        };
+        // Picking a bank with a known branch code (SA universal codes) fills the
+        // branch field from the seeded directory. A custom/typed bank leaves it blank.
+        var BANK_CODES = { {% for b in banking.banks %}{% if b.code %}"{{ b.name|lower }}": "{{ b.code }}",{% endif %}{% endfor %} };
         function onBankPick(val) {
-          var hit = SA_BANKS[(val || "").trim().toLowerCase()];
-          if (!hit) return;                      // custom bank — leave fields to the user
-          document.getElementById("branch-code").value = hit[0];
-          document.getElementById("branch-name").value = hit[1];
+          var code = BANK_CODES[(val || "").trim().toLowerCase()];
+          var el = document.getElementById("branch-code");
+          if (code && el) el.value = code;
         }
       </script>
       <div class="secbtns"><button class="btn" type="submit">Add bank account</button>
@@ -561,7 +512,10 @@
   <div id="form-defaults" style="display:none;">
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="defaults">
       <div class="two">
-        <div><label>Currency</label><input type="text" name="currency" value="{{ company.currency }}"></div>
+        <div><label>Currency</label>
+          <input type="text" value="{{ currency_label }}" disabled title="Set automatically from your company country"
+                 style="background:#f0f1f4;color:var(--muted);">
+          <span class="muted" style="font-size:11.5px;">From company country — change it on the Address section.</span></div>
         <div><label>Time zone</label><input type="text" name="timezone" value="{{ company.timezone }}"></div>
         <div><label>Date format</label><input type="text" name="date_format" value="{{ settings.date_format }}"></div>
         <div><label>Number format</label><input type="text" name="number_format" value="{{ settings.number_format }}"></div>

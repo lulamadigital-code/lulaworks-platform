@@ -51,3 +51,8 @@ sentry-sdk==2.18.0
 # SMS / WhatsApp via Twilio (lazy-imported in apps.notifications.sms; only used
 # when SMS_PROVIDER=twilio + TWILIO_* creds are set). Opt-in, per-message billed.
 twilio==9.11.0
+# International reference data + validation (apps.reference): pycountry = ISO 3166
+# country + ISO 4217 currency data; phonenumbers = Google libphonenumber port for
+# E.164 phone validation/formatting. Both pure-Python (no system libs).
+pycountry==26.2.16
+phonenumbers==9.0.39

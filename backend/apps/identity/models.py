@@ -42,7 +42,10 @@ class Company(PlatformBaseModel):
     vat_no = models.CharField(max_length=32, blank=True)
     industry = models.CharField(max_length=64, blank=True)
     company_size = models.CharField(max_length=32, blank=True)
-    country = models.CharField(max_length=64, blank=True)  # neutral: set per company
+    country = models.CharField(max_length=64, blank=True)  # display name (kept in sync from country_code)
+    # ISO 3166-1 alpha-2 — the SOURCE OF TRUTH that drives currency, banking and
+    # validation. `country` (name above) is derived from this for display.
+    country_code = models.CharField(max_length=2, blank=True)
     province = models.CharField(max_length=64, blank=True)
     city = models.CharField(max_length=64, blank=True)
     # Locale defaults derive from platform config (not a hard-coded country), so
@@ -355,11 +358,17 @@ class CompanyBankAccount(PlatformBaseModel):
 
     company = models.ForeignKey(Company, on_delete=models.CASCADE,
                                 related_name="bank_accounts")
+    # Reference-directory bank (nullable: a custom/unlisted bank keeps just the
+    # denormalised `bank_name`). Foundation for future payment integrations.
+    bank = models.ForeignKey("reference.Bank", on_delete=models.SET_NULL,
+                             null=True, blank=True, related_name="+")
     bank_name = models.CharField(max_length=120)
     account_name = models.CharField(max_length=160)
     account_number = models.CharField(max_length=40)
     branch_name = models.CharField(max_length=120, blank=True)
     branch_code = models.CharField(max_length=20, blank=True)
+    routing_number = models.CharField(max_length=20, blank=True)   # US ABA
+    iban = models.CharField(max_length=34, blank=True)             # EU/UK international
     account_type = models.CharField(max_length=16, choices=AccountType.choices,
                                     default=AccountType.CHEQUE)
     swift_code = models.CharField(max_length=16, blank=True)

@@ -1006,7 +1006,7 @@ _PROFILE_SECTIONS = {
                  "vat_no", "company_type", "industry", "year_established"],
     "contact": ["email", "phone", "phone_secondary", "mobile", "whatsapp",
                 "emergency_phone", "website", "facebook", "linkedin", "twitter"],
-    "address": ["country", "province", "city", "suburb", "street_address",
+    "address": ["country_code", "province", "city", "suburb", "street_address",
                 "postal_code"],
     "postal": ["postal_same_as_physical", "postal_address", "postal_city",
                "postal_code_postal", "postal_country"],
@@ -1072,6 +1072,28 @@ def _banking_hints(country: str) -> dict:
         "show_swift": not is_za,
         "swift_hint": "Only for international / foreign-currency payments — "
                       "not needed for local transfers.",
+    }
+
+
+def _banking_view(company) -> dict:
+    """Rule-driven banking context for the company's country (falls back to ZA):
+    which fields to render + how to label them, plus the country's bank list for
+    the picker + SA universal-code auto-fill."""
+    from apps.reference.services import (BankDirectoryService,
+                                         BankingValidationService, CountryService)
+    code = company.country_code or CountryService.resolve(company.country) or "ZA"
+    rule = BankingValidationService.rule(code)
+    fields = rule.fields if rule else [
+        {"key": "account_number", "label": "Account number", "required": True, "validator": "account_number"},
+        {"key": "branch_code", "label": "Branch code", "required": False, "validator": "branch_code"}]
+    banks = BankDirectoryService.for_country(code)
+    return {
+        "country_code": code,
+        "is_south_africa": code == "ZA",
+        "branch_label": rule.branch_label if rule else "Branch code",
+        "show_swift": rule.show_swift if rule else True,
+        "fields": fields,
+        "banks": [{"name": b.name, "code": b.bank_code, "swift": b.swift_bic} for b in banks],
     }
 
 
@@ -1153,6 +1175,8 @@ def company_profile(request):
             for (k, lbl, ph) in statutory["fields"]]
 
     from apps.administration.models import CompanySettings
+    from apps.reference.services import CountryService, CurrencyService
+    _cur = CurrencyService.for_country(company.country_code) if company.country_code else None
     return render(request, "web/company.html", {
         "company": company,
         "compliance": company.compliance,
@@ -1160,7 +1184,9 @@ def company_profile(request):
         "branding": company.branding,
         "settings": CompanySettings.objects.get(company=company),
         "bank_accounts": company.bank_accounts.all(),
-        "banking": _banking_hints(company.country),
+        "banking": _banking_view(company),
+        "countries": CountryService.list_for_picker(),
+        "currency_label": CurrencyService.label(_cur) or company.currency,
         "contacts": company.contacts.all(),
         "documents": company.documents.all(),
         "score": completeness(company),
@@ -1255,6 +1281,18 @@ def _save_profile_section(request, company, section):
         value = request.POST.get(field, "").strip()
         if field == "postal_same_as_physical":
             setattr(company, field, bool(request.POST.get(field)))
+        elif field == "country_code":
+            # Country is the source of truth: store the ISO code, resolve the
+            # display name, and derive the currency (no free-text currency).
+            from apps.reference.services import CountryService, CurrencyService
+            code = CountryService.resolve(value)
+            company.country_code = code or ""
+            c = CountryService.get(code) if code else None
+            if c:
+                company.country = c.name
+                cur = CurrencyService.for_country(code)
+                if cur:
+                    company.currency = cur.code
         elif field in _INT_FIELDS:
             setattr(company, field, int(value) if value.isdigit() else None)
         else:
@@ -1482,20 +1520,33 @@ def company_bank(request):
 
     action = request.POST.get("action", "add")
     if action == "add":
-        if not request.POST.get("bank_name") or not request.POST.get("account_number"):
-            messages.error(request, "Bank name and account number are required.")
+        from apps.reference.services import (BankDirectoryService,
+                                             BankingValidationService, CountryService)
+        code = company.country_code or CountryService.resolve(company.country) or "ZA"
+        post = {k: (request.POST.get(k, "") or "").strip() for k in (
+            "bank_name", "account_name", "account_number", "branch_name",
+            "branch_code", "routing_number", "iban", "swift_code", "account_type", "currency")}
+        # Country-aware backend validation (authoritative). SWIFT is checked too.
+        errors = BankingValidationService.validate(code, post)
+        if not post["bank_name"]:
+            messages.error(request, "Choose or enter your bank.")
+        elif errors:
+            messages.error(request, errors[0].message)
         else:
+            bank = BankDirectoryService.match(code, post["bank_name"])
             add_bank_account(
                 company,
-                bank_name=request.POST["bank_name"].strip(),
-                account_name=request.POST.get("account_name", "").strip() or company.name,
-                account_number=request.POST["account_number"].strip(),
-                branch_name=request.POST.get("branch_name", "").strip(),
-                branch_code=request.POST.get("branch_code", "").strip(),
-                account_type=request.POST.get("account_type", "cheque"),
-                swift_code=request.POST.get("swift_code", "").strip(),
-                currency=request.POST.get("currency", "").strip() or company.currency,
-                label=request.POST.get("label", "").strip(),
+                bank=bank,
+                bank_name=post["bank_name"],
+                account_name=post["account_name"] or company.name,
+                account_number=post["account_number"],
+                branch_name=post["branch_name"],
+                branch_code=post["branch_code"],
+                routing_number=post["routing_number"],
+                iban=post["iban"].replace(" ", "").upper(),
+                account_type=post["account_type"] or "cheque",
+                swift_code=post["swift_code"].replace(" ", "").upper(),
+                currency=post["currency"] or company.currency,
             )
             messages.success(request, "Bank account added.")
     else:

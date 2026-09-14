@@ -38,6 +38,8 @@ urlpatterns = [
     path("api/v1/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/v1/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/v1/auth/logout/", TokenBlacklistView.as_view(), name="token_blacklist"),
+    # International reference data (countries / currencies / banks / rules)
+    path("api/v1/", include("apps.reference.urls")),
     # Identity / company management
     path("api/v1/", include("apps.identity.urls")),
     # Quotations (the pre-award lifecycle root)
