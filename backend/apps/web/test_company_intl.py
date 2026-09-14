@@ -216,6 +216,63 @@ class PostalAddressWebTests(TestCase):
         self.assertTrue(company.postal_same_as_physical)
 
 
+class ProfileFieldValidationTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Acme", country_code="ZA", currency="ZAR")
+        get_profile(self.company)
+        CompanySettings.objects.get_or_create(company=self.company)
+        self.mgr = _user(self.company, ["company.manage"], "m@a.co")
+        self.client.force_login(self.mgr)
+
+    def _identity(self, **extra):
+        data = {"section": "identity", "name": "Acme"}
+        data.update(extra)
+        return self.client.post("/company/", data)
+
+    def test_name_required(self):
+        self._identity(name="")
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.name, "Acme")          # empty rejected, unchanged
+
+    def test_name_whitespace_collapsed(self):
+        self._identity(name="Acme    Holdings")
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.name, "Acme Holdings")
+
+    def test_legit_punctuation_preserved(self):
+        self._identity(name="A&B (Pty) Ltd, t/a A-B's")
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.name, "A&B (Pty) Ltd, t/a A-B's")
+
+    def test_overlong_name_rejected_not_500(self):
+        r = self._identity(name="x" * 300)
+        self.assertEqual(r.status_code, 302)                 # friendly redirect, not a 500
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.name, "Acme")
+
+    def test_control_chars_stripped(self):
+        self._identity(name="Acme\x00\x07 Ltd")
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.name, "Acme Ltd")
+
+    def test_website_normalised(self):
+        self.client.post("/company/", {"section": "contact", "email": "a@acme.co",
+                                       "website": "example.com"})
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.website, "https://example.com")
+
+    def test_website_invalid_rejected(self):
+        self.client.post("/company/", {"section": "contact", "email": "a@acme.co",
+                                       "website": "hello"})
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.website, "")           # not a URL → rejected
+
+    def test_bad_company_email_rejected(self):
+        self.client.post("/company/", {"section": "contact", "email": "not-an-email"})
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.email, "")
+
+
 class BankingValidationWebTests(TestCase):
     @classmethod
     def setUpTestData(cls):

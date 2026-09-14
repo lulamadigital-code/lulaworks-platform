@@ -1019,6 +1019,31 @@ _LIST_FIELDS = {"business": ["services_offered", "specialisations",
                              "operating_countries"]}
 _INT_FIELDS = {"year_established", "employee_count", "vehicle_count", "site_count"}
 
+#: Per-field validation for text inputs: (kind, max_length, required, collapse_ws).
+#: kind ∈ text | url | textarea. Missing fields fall through to a plain strip.
+#: Punctuation is allowed (business names have & - ' . , ( )); output safety is
+#: Django's auto-escaping, not character rejection.
+_FIELD_RULES = {
+    "name": ("text", 255, True, True),
+    "trading_name": ("text", 255, False, True),
+    "registration_no": ("text", 64, False, False),
+    "tax_reference_no": ("text", 64, False, False),
+    "vat_no": ("text", 32, False, False),
+    "industry": ("text", 64, False, True),
+    "website": ("url", 255, False, False),
+    "facebook": ("text", 255, False, False),
+    "linkedin": ("text", 255, False, False),
+    "twitter": ("text", 255, False, False),
+    "street_address": ("text", 255, False, True),
+    "suburb": ("text", 120, False, True),
+    "city": ("text", 64, False, True),
+    "province": ("text", 64, False, True),
+    "postal_address": ("text", 255, False, True),
+    "postal_city": ("text", 120, False, True),
+    "postal_country": ("text", 64, False, True),
+    "description": ("textarea", 5000, False, False),
+}
+
 
 @login_required
 def settings_home(request):
@@ -1314,8 +1339,8 @@ def _validate_company_section(request, section):
                     "reply to on quotations and invoices.")
         if _bad_email(p.get("email")):
             return "Enter a valid company email address."
-        if _bad_url(p.get("website")):
-            return "Enter a valid website URL (including https://)."
+        # Website is validated + normalised (bare domains accepted) in the save
+        # path via clean_url — a single source of truth, no strict pre-gate here.
     elif section == "business":
         for f in ("employee_count", "vehicle_count", "site_count"):
             v = p.get(f, "").strip()
@@ -1400,9 +1425,31 @@ def _save_profile_section(request, company, section):
                 cur = CurrencyService.for_country(code)
                 if cur:
                     company.currency = cur.code
+        elif field == "email":
+            from apps.core.validation import InputError, clean_email
+            try:
+                value = clean_email(value, required=True)
+            except InputError as exc:
+                errors.append(str(exc))
+                continue
+            setattr(company, field, value)
         elif field in _INT_FIELDS:
             setattr(company, field, int(value) if value.isdigit() else None)
         else:
+            rule = _FIELD_RULES.get(field)
+            if rule:
+                from apps.core.validation import InputError, clean_str, clean_url
+                kind, mx, req, collapse = rule
+                label = field.replace("_", " ").capitalize()
+                try:
+                    if kind == "url":
+                        value = clean_url(value, field=label, max_length=mx)
+                    else:
+                        value = clean_str(value, field=label, max_length=mx,
+                                          required=req, collapse_ws=collapse)
+                except InputError as exc:
+                    errors.append(str(exc))
+                    continue
             setattr(company, field, value)
     for field in _LIST_FIELDS.get(section, []):
         raw = request.POST.get(field, "")
@@ -1532,10 +1579,20 @@ def _save_commercial(request, company):
     """Standard terms & conditions per document type — configured once, then
     auto-inserted into every quotation, invoice and delivery note."""
     from apps.administration.models import CompanySettings
+    from apps.core.validation import InputError, clean_str
     settings_row = CompanySettings.objects.get(company=company)
     for field in ("quotation_terms", "invoice_terms", "delivery_terms"):
         if field in request.POST:
-            setattr(settings_row, field, request.POST.get(field, "").strip())
+            try:
+                # Free-text terms: strip control chars + cap length (rendered
+                # auto-escaped, so punctuation/formatting is preserved safely).
+                value = clean_str(request.POST.get(field, ""),
+                                  field=field.replace("_", " ").capitalize(),
+                                  max_length=10000)
+            except InputError as exc:
+                messages.error(request, str(exc))
+                continue
+            setattr(settings_row, field, value)
     settings_row.save(update_fields=["quotation_terms", "invoice_terms",
                                      "delivery_terms", "updated_at"])
 
