@@ -1153,6 +1153,21 @@ def _address_view(company) -> dict:
     }
 
 
+def _postal_view(company) -> dict:
+    """Country-aware postal label/hint for the postal address, resolved from its
+    own country (falls back to the company country). Lets the postal form validate
+    exactly like the physical one."""
+    from apps.reference.services import AddressValidationService, CountryService
+    code = (CountryService.resolve(company.postal_country)
+            or company.country_code or "ZA")
+    rule = AddressValidationService.rule(code)
+    return {
+        "country_code": code,
+        "postal_label": rule.postal_label if rule else "Postal code",
+        "postal_hint": rule.postal_hint if rule else "",
+    }
+
+
 def _statutory_view(company) -> list:
     """The company's statutory registrations as rule-driven rows with current
     values — SA values come from the typed CompanyCompliance columns, others from
@@ -1284,6 +1299,7 @@ def company_profile(request):
         "bank_accounts": company.bank_accounts.all(),
         "banking": _banking_view(company),
         "address_rule": _address_view(company),
+        "postal_rule": _postal_view(company),
         "countries": CountryService.list_for_picker(),
         "currency_label": CurrencyService.label(_cur) or company.currency,
         "recommended_documents": [d["name"] for d in DocumentRulesService.recommended(company.country_code)],
@@ -1464,10 +1480,18 @@ def _save_profile_section(request, company, section):
         for res in AddressValidationService.validate(company.country_code or "ZA", data):
             errors.append(res.message)
     if section == "postal" and not company.postal_same_as_physical:
-        # Postal address uses the SAME country-aware postal-code engine as physical.
-        from apps.reference.services import AddressValidationService
-        res = AddressValidationService.validate_postal_code(
-            company.country_code or "ZA", company.postal_code_postal)
+        # Postal address is validated exactly like the physical one: required
+        # street / city / country, plus the SAME country-aware postal-code engine.
+        from apps.reference.services import AddressValidationService, CountryService
+        code = (CountryService.resolve(company.postal_country)
+                or company.country_code or "ZA")
+        if not (company.postal_address or "").strip():
+            errors.append("Postal street address is required.")
+        if not (company.postal_city or "").strip():
+            errors.append("Postal city is required.")
+        if not (company.postal_country or "").strip():
+            errors.append("Postal country is required.")
+        res = AddressValidationService.validate_postal_code(code, company.postal_code_postal)
         if res:
             errors.append(res.message)
     if errors:

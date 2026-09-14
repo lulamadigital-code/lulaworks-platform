@@ -194,7 +194,7 @@ class PostalAddressWebTests(TestCase):
         company = self._mgr("ZA")
         self.client.post("/company/", {
             "section": "postal", "postal_address": "PO Box 1", "postal_city": "Secunda",
-            "postal_code_postal": "12"})     # invalid SA postal
+            "postal_country": "South Africa", "postal_code_postal": "12"})   # invalid SA postal
         company.refresh_from_db()
         self.assertEqual(company.postal_code_postal, "")
 
@@ -202,9 +202,28 @@ class PostalAddressWebTests(TestCase):
         company = self._mgr("ZA")
         self.client.post("/company/", {
             "section": "postal", "postal_address": "PO Box 1", "postal_city": "Secunda",
-            "postal_code_postal": "2302"})
+            "postal_country": "South Africa", "postal_code_postal": "2302"})
         company.refresh_from_db()
         self.assertEqual(company.postal_code_postal, "2302")
+        self.assertEqual(company.postal_country, "South Africa")
+
+    def test_required_fields_enforced(self):
+        # Like the physical address: country + city are required.
+        company = self._mgr("ZA")
+        self.client.post("/company/", {
+            "section": "postal", "postal_address": "PO Box 1",
+            "postal_code_postal": "2302"})        # no city, no country
+        company.refresh_from_db()
+        self.assertEqual(company.postal_city, "")     # nothing saved — required missing
+
+    def test_postal_country_validates_its_own_rules(self):
+        # A postal address in the UK validates against UK postcode rules, not SA's.
+        company = self._mgr("ZA")
+        self.client.post("/company/", {
+            "section": "postal", "postal_address": "1 High St", "postal_city": "London",
+            "postal_country": "United Kingdom", "postal_code_postal": "SW1A 1AA"})
+        company.refresh_from_db()
+        self.assertEqual(company.postal_code_postal, "SW1A 1AA")
 
     def test_same_as_physical_skips_validation(self):
         company = self._mgr("ZA")

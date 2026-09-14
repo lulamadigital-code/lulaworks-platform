@@ -205,10 +205,15 @@
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="postal">
       <label class="inline"><input type="checkbox" name="postal_same_as_physical" value="1" {% if company.postal_same_as_physical %}checked{% endif %}> Same as physical address</label>
       <div class="two" style="margin-top:12px;">
-        <div><label>Postal address</label><input type="text" name="postal_address" value="{{ company.postal_address }}"></div>
-        <div><label>City</label><input type="text" name="postal_city" value="{{ company.postal_city }}"></div>
-        <div><label>{{ address_rule.postal_label }}</label><input type="text" name="postal_code_postal" value="{{ company.postal_code_postal }}"{% if address_rule.postal_hint %} title="{{ address_rule.postal_hint }}"{% endif %}></div>
-        <div><label>Country</label><input type="text" name="postal_country" value="{{ company.postal_country }}"></div>
+        <div><label>Postal address <span style="color:var(--red);">*</span></label><input type="text" name="postal_address" value="{{ company.postal_address }}"></div>
+        <div><label>City <span style="color:var(--red);">*</span></label><input type="text" name="postal_city" value="{{ company.postal_city }}"></div>
+        <div><label>{{ postal_rule.postal_label }}</label><input type="text" name="postal_code_postal" value="{{ company.postal_code_postal }}"{% if postal_rule.postal_hint %} title="{{ postal_rule.postal_hint }}"{% endif %}></div>
+        <div><label>Country <span style="color:var(--red);">*</span></label>
+          <select name="postal_country" style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg,#f7f8fa);color:var(--ink);">
+            <option value="">Select a country…</option>
+            {% for c in countries %}<option value="{{ c.name }}" {% if c.name == company.postal_country %}selected{% endif %}>{{ c.flag_emoji }} {{ c.name }}</option>{% endfor %}
+          </select>
+        </div>
       </div>
       <div class="secbtns"><button class="btn" type="submit">Save postal address</button>
         <button class="btn ghost" type="button" data-cancel="postal">Cancel</button></div>
