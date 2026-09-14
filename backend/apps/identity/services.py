@@ -148,10 +148,41 @@ def set_password(user, raw_password) -> User:
     return user
 
 
-def selectable_roles():
+def _role_permset(role) -> set:
+    if role is None:
+        return set()
+    return set(role.permissions.values_list("codename", flat=True))
+
+
+def _actor_permset(actor) -> set | None:
+    """The permission codenames the actor effectively holds in their active
+    company. None means "unbounded" (a platform superuser) — can assign any role."""
+    if getattr(actor, "is_superuser", False):
+        return None
+    membership = actor.active_membership() if actor else None
+    return _role_permset(membership.role if membership else None)
+
+
+def can_assign_role(actor, role) -> bool:
+    """No privilege escalation: an actor may only grant a role whose permissions
+    are a subset of their own. A superuser (unbounded) may assign anything. This
+    stops a manager from minting an owner/administrator above their own level."""
+    if role is None:
+        return False
+    actor_perms = _actor_permset(actor)
+    if actor_perms is None:
+        return True
+    return _role_permset(role) <= actor_perms
+
+
+def selectable_roles(actor=None):
     """Role templates a manager can assign. Roles are platform-level templates
-    shared by every company (see seed_platform)."""
-    return Role.objects.all().order_by("name")
+    shared by every company (see seed_platform). When `actor` is given, the list
+    is limited to roles the actor is actually allowed to assign (no escalation)."""
+    roles = Role.objects.all().order_by("name")
+    if actor is None:
+        return roles
+    return [r for r in roles if can_assign_role(actor, r)]
 
 
 # ── What a person actually works on ───────────────────────────────────────────
@@ -251,10 +282,12 @@ def invite_member(company, actor, *, email, role, first_name="", last_name="",
     note instead of an activation link (they already have a password).
     """
     from .models import AccountToken
+    from apps.core.validation import InputError, clean_email
 
-    email = (email or "").strip().lower()
-    if not email:
-        raise MemberError("An email address is required.")
+    try:
+        email = clean_email(email, required=True)      # normalise + validate format
+    except InputError as exc:
+        raise MemberError(str(exc))
 
     user = User.objects.filter(email__iexact=email).first()
     is_new = user is None

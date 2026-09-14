@@ -57,7 +57,7 @@
       </div>
       <div>
         <label>Mobile</label>
-        <input type="text" name="mobile" placeholder="+27 …">
+        {% include "web/_phone_field.html" with name="mobile" value="" default_cc=company_country|default:"ZA" countries=countries %}
       </div>
     </div>
     <button class="btn" type="submit" style="margin-top:16px;">Add member</button>

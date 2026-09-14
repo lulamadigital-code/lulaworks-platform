@@ -1685,10 +1685,13 @@ def people(request):
         name = ((m.role.name if m.role else "") or "").strip().lower()
         return 0 if name in ("company owner", "owner") else 1
     members = sorted(company_members(company), key=_owner_first)
+    from apps.reference.services import CountryService
     return render(request, "web/people.html", {
         "members": members,
         "active_count": sum(1 for m in members if m.status == "active"),
-        "roles": selectable_roles(),
+        "roles": selectable_roles(request.user),
+        "countries": CountryService.list_for_picker(),
+        "company_country": company.country_code,
         "can_manage": request.user.has_perm_code("users.invite"),
         # Surfaced once, immediately after creation — never stored or re-shown.
         "new_password": request.session.pop("new_member_password", None),
@@ -1708,6 +1711,18 @@ def people_add(request):
         messages.error(request, "Choose a role for the new member.")
         return redirect("web:people")
 
+    # No privilege escalation: you can't grant a role above your own level.
+    from apps.identity.services import can_assign_role, invite_member
+    if not can_assign_role(request.user, role):
+        messages.error(request, "You can't assign a role with more access than your own.")
+        return redirect("web:people")
+
+    # Member mobile → validated + normalised to E.164 (Phase 2 phone widget).
+    mobile, mobile_err = _read_phone(request, "mobile", request.user.active_company.country_code or "ZA")
+    if mobile_err:
+        messages.error(request, mobile_err)
+        return redirect("web:people")
+
     # Subscription seat limit — a User consumes a licence (Employees never do).
     from apps.billing.services import can_add_user
     seat = can_add_user(request.user.active_company)
@@ -1715,7 +1730,6 @@ def people_add(request):
         messages.error(request, seat.reason)
         return redirect("web:billing")
 
-    from apps.identity.services import invite_member
     try:
         membership, token = invite_member(
             request.user.active_company, request.user,
@@ -1723,7 +1737,7 @@ def people_add(request):
             first_name=request.POST.get("first_name", ""),
             last_name=request.POST.get("last_name", ""),
             job_title=request.POST.get("job_title", ""),
-            mobile=request.POST.get("mobile", ""),
+            mobile=mobile,
             role=role,
         )
     except MemberError as exc:
@@ -1752,8 +1766,11 @@ def people_role(request, pk):
     membership = get_object_or_404(
         Membership.objects.filter(company=request.user.active_company), pk=pk)
     role = Role.objects.filter(pk=request.POST.get("role")).first()
+    from apps.identity.services import can_assign_role
     if role is None:
         messages.error(request, "Unknown role.")
+    elif not can_assign_role(request.user, role):
+        messages.error(request, "You can't assign a role with more access than your own.")
     else:
         set_member_role(membership, role)
         messages.success(request, f"{membership.user.email} is now {role.name}.")
@@ -1794,7 +1811,7 @@ def person_detail(request, pk):
         "membership": membership,
         "person": membership.user,
         "work": work,
-        "roles": selectable_roles(),
+        "roles": selectable_roles(request.user),
         "can_manage": request.user.has_perm_code("users.invite"),
         "is_me": membership.user_id == request.user.id,
     })
