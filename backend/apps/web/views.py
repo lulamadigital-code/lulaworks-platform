@@ -1075,6 +1075,15 @@ def _banking_hints(country: str) -> dict:
     }
 
 
+def _company_currency_code(company) -> str:
+    """The company's currency, resolved on the backend from its country (never
+    typed by the user). Falls back to the stored currency."""
+    from apps.reference.services import CountryService, CurrencyService
+    code = company.country_code or CountryService.resolve(company.country)
+    cur = CurrencyService.for_country(code) if code else None
+    return cur.code if cur else (company.currency or "ZAR")
+
+
 def _banking_view(company) -> dict:
     """Rule-driven banking context for the company's country (falls back to ZA):
     which fields to render + how to label them, plus the country's bank list for
@@ -1201,7 +1210,8 @@ def company_profile(request):
             for (k, lbl, ph) in statutory["fields"]]
 
     from apps.administration.models import CompanySettings
-    from apps.reference.services import CountryService, CurrencyService
+    from apps.reference.services import (CountryService, CurrencyService,
+                                         recommended_documents)
     _cur = CurrencyService.for_country(company.country_code) if company.country_code else None
     return render(request, "web/company.html", {
         "company": company,
@@ -1214,6 +1224,7 @@ def company_profile(request):
         "address_rule": _address_view(company),
         "countries": CountryService.list_for_picker(),
         "currency_label": CurrencyService.label(_cur) or company.currency,
+        "recommended_documents": recommended_documents(company.country_code),
         "contacts": company.contacts.all(),
         "documents": company.documents.all(),
         "score": completeness(company),
@@ -1595,8 +1606,8 @@ def company_bank(request):
                                              BankingValidationService, CountryService)
         code = company.country_code or CountryService.resolve(company.country) or "ZA"
         post = {k: (request.POST.get(k, "") or "").strip() for k in (
-            "bank_name", "account_name", "account_number", "branch_name",
-            "branch_code", "routing_number", "iban", "swift_code", "account_type", "currency")}
+            "bank_name", "account_name", "account_number",
+            "branch_code", "routing_number", "iban", "swift_code", "account_type")}
         # Country-aware backend validation (authoritative). SWIFT is checked too.
         errors = BankingValidationService.validate(code, post)
         if not post["bank_name"]:
@@ -1611,13 +1622,14 @@ def company_bank(request):
                 bank_name=post["bank_name"],
                 account_name=post["account_name"] or company.name,
                 account_number=post["account_number"],
-                branch_name=post["branch_name"],
                 branch_code=post["branch_code"],
                 routing_number=post["routing_number"],
                 iban=post["iban"].replace(" ", "").upper(),
                 account_type=post["account_type"] or "cheque",
                 swift_code=post["swift_code"].replace(" ", "").upper(),
-                currency=post["currency"] or company.currency,
+                # Currency is resolved on the backend from the company country,
+                # never typed on the banking form.
+                currency=_company_currency_code(company),
             )
             messages.success(request, "Bank account added.")
     else:

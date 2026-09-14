@@ -204,8 +204,8 @@
     }
   </style>
   {% if ga4_id %}
-  {# Google Analytics 4 with Consent Mode v2 — analytics_storage starts DENIED
-     and is only granted once the visitor accepts the cookie banner. #}
+  {% comment %}Google Analytics 4 with Consent Mode v2 — analytics_storage starts DENIED
+     and is only granted once the visitor accepts the cookie banner.{% endcomment %}
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}

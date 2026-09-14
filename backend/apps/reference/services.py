@@ -91,6 +91,31 @@ class CurrencyService:
         return f"{currency.name} ({currency.code})"
 
 
+# ── Supporting documents (country-aware recommendations) ─────────────────────
+# Which documents a company is typically expected to hold, by country. Extend by
+# adding a country key — the UI reads this, never a hardcoded per-country string.
+_COUNTRY_DOCUMENTS = {
+    "ZA": ["Company registration (CIPC) certificate", "Tax clearance / compliance",
+           "VAT certificate (if registered)", "B-BBEE affidavit or certificate (if applicable)",
+           "Bank confirmation letter"],
+    "US": ["State registration / incorporation documents", "EIN confirmation (IRS)",
+           "Sales-tax permit (if applicable)", "Certificate of good standing",
+           "Bank verification letter"],
+    "GB": ["Companies House registration", "VAT registration certificate (if registered)",
+           "Business licence (if applicable)", "Insurance certificate", "Bank confirmation"],
+    "AU": ["ASIC / ABN registration", "GST registration (if applicable)",
+           "Workers' compensation certificate", "Bank confirmation"],
+    "CA": ["Incorporation / registration documents", "Business number (CRA)",
+           "GST/HST registration (if applicable)", "Bank confirmation"],
+}
+_DEFAULT_DOCUMENTS = ["Company registration document", "Tax registration document",
+                      "Bank confirmation"]
+
+
+def recommended_documents(country_code: str) -> list:
+    return _COUNTRY_DOCUMENTS.get((country_code or "").upper(), _DEFAULT_DOCUMENTS)
+
+
 # ── Bank directory ───────────────────────────────────────────────────────────
 class BankDirectoryService:
     @staticmethod

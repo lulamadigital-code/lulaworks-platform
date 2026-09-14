@@ -263,9 +263,7 @@
         <div><label>{{ f.label }}{% if not f.required %} <span class="muted" style="font-weight:400;">(optional)</span>{% endif %}</label>
           <input type="text" name="{{ f.key }}"{% if f.required %} required{% endif %}{% if f.key == 'branch_code' %} id="branch-code" placeholder="Auto-filled when you pick your bank"{% endif %}{% if f.hint %} title="{{ f.hint }}"{% endif %}></div>
         {% endfor %}
-        <div><label>Branch name <span class="muted" style="font-weight:400;">(optional)</span></label><input type="text" name="branch_name" id="branch-name"></div>
         <div><label>Account type</label><select name="account_type"><option value="cheque">Cheque / Current</option><option value="savings">Savings</option><option value="transmission">Transmission</option><option value="foreign">Foreign currency</option></select></div>
-        <div><label>Account currency</label><input type="text" name="currency" value="{{ company.currency }}"></div>
       </div>
       <script>
         // Picking a bank with a known branch code (SA universal codes) fills the
@@ -406,7 +404,7 @@
         <td>{% if d.expires_on %}{% if d.is_expired %}<span class="chip bad">expired {{ d.expires_on|date:"d M Y" }}</span>{% else %}<span class="muted">{{ d.expires_on|date:"d M Y" }}</span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
         <td class="right">{% if can_edit %}<form method="post" action="{% url 'web:company_document' %}" data-confirm="Remove {{ d.name|escapejs }}?">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="document" value="{{ d.id }}"><button class="btn ghost" type="submit">Remove</button></form>{% endif %}</td>
       </tr>
-      {% empty %}<tr><td colspan="4" class="muted" style="padding:18px;">No documents yet — CIPC certificate, tax clearance, B-BBEE affidavit.</td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="4" class="muted" style="padding:18px;">No documents uploaded yet.{% if recommended_documents %}<br>Recommended for your country: {{ recommended_documents|join:", " }}.{% endif %}</td></tr>{% endfor %}
     </table>
   </div>
   {% if can_edit %}

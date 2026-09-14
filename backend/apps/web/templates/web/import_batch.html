@@ -9,8 +9,8 @@
   </div>
 </div>
 
-{# Still-processing banner — documents run in the background, so the page can be
-   left and refreshed. Auto-refreshes while anything is processing. #}
+{% comment %}Still-processing banner — documents run in the background, so the page can be
+   left and refreshed. Auto-refreshes while anything is processing.{% endcomment %}
 {% if summary.processing %}
 <div class="card" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;background:var(--primary-t);border-color:var(--primary);">
   <div class="spinner" style="width:18px;height:18px;border:2px solid var(--primary);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>

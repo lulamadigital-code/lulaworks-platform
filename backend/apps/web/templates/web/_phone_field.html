@@ -1,8 +1,4 @@
 {% load phone_tags %}
-{# Reusable phone input: country-code picker (before the number) + national number.
-   The number field posts `name` (national); the picker posts `name`__cc (region).
-   The view combines + validates + stores E.164.
-   Params: name, value (stored E.164), default_cc (alpha-2), countries, placeholder. #}
 {% with region=value|phone_region:default_cc %}
 <div style="display:flex;gap:6px;">
   <select name="{{ name }}__cc" aria-label="Country code"
