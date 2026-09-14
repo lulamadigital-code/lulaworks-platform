@@ -104,6 +104,13 @@ BANKS = {
         ("First Abu Dhabi Bank (FAB)", "FAB", "", "NBADAEAA", [], True),
         ("Abu Dhabi Commercial Bank", "ADCB", "", "ADCBAEAA", [], False),
     ],
+    "NZ": [
+        ("ANZ Bank New Zealand", "ANZ", "", "ANZBNZ22", [], True),
+        ("ASB Bank", "ASB", "", "ASBBNZ2A", [], True),
+        ("Bank of New Zealand (BNZ)", "BNZ", "", "BKNZNZ22", ["BNZ"], True),
+        ("Westpac New Zealand", "Westpac", "", "WPACNZ2W", [], True),
+        ("Kiwibank", "Kiwibank", "", "KIWINZ22", [], False),
+    ],
 }
 
 # ── Banking field rules (which fields + how they validate) ────────────────────
@@ -147,6 +154,14 @@ BANKING_RULES = {
                        _F("branch_code", "Bank branch code", True, "branch_code"),
                        _F("swift_code", "SWIFT/BIC", False, "swift_bic",
                           "For international payments.")]),
+    # NZ account numbers embed the bank + branch (BB-bbbb-AAAAAAA-SS), so there's
+    # no separate branch field — the full number is captured in one field.
+    "NZ": dict(branch_label="Account number", show_swift=True,
+               branch_hint="The full NZ account number includes the bank and branch.",
+               fields=[_F("account_number", "Account number", True, "account_number",
+                          "e.g. 12-3456-7890123-00"),
+                       _F("swift_code", "SWIFT/BIC", False, "swift_bic",
+                          "For international payments.")]),
 }
 # SEPA members share an IBAN-based rule.
 _SEPA_RULE = dict(branch_label="IBAN", show_swift=True,
@@ -180,6 +195,10 @@ ADDRESS_RULES = {
                             ("city", "Town / City", True), ("province", "County", True)),
                postal_label="Postal code", postal_regex=r"\d{5}",
                postal_hint="Enter a valid 5-digit Kenyan postal code."),
+    "NZ": dict(fields=_ADDR(("street_address", "Street address", True), ("suburb", "Suburb", False),
+                            ("city", "Town / City", True), ("province", "Region", False)),
+               postal_label="Postcode", postal_regex=r"\d{4}",
+               postal_hint="Enter a valid 4-digit NZ postcode."),
 }
 
 
@@ -234,6 +253,14 @@ STATUTORY_RULES = {
         _S("vat_no", "VAT registration number", "KRA"),
         _S("nssf_no", "NSSF number", "NSSF"),
         _S("nhif_no", "NHIF number", "NHIF"),
+    ],
+    "NZ": [
+        _S("nzbn", "NZBN (NZ Business Number)", "MBIE", validator=r"\d{13}",
+           placeholder="9429000000000"),
+        _S("company_no", "Company number", "Companies Office"),
+        _S("ird", "IRD number", "Inland Revenue", validator=r"\d{2,3}[- ]?\d{3}[- ]?\d{3}",
+           placeholder="012-345-678"),
+        _S("gst", "GST number", "Inland Revenue"),
     ],
 }
 

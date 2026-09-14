@@ -110,6 +110,9 @@ _COUNTRY_DOCUMENTS = {
     "KE": ["Certificate of Incorporation", "KRA PIN certificate",
            "Tax Compliance Certificate", "CR12 (company officers)",
            "Business permit / licence (if applicable)", "Bank confirmation letter"],
+    "NZ": ["Certificate of Incorporation", "IRD / GST registration",
+           "NZBN confirmation", "Insurance certificate (if applicable)",
+           "Bank confirmation"],
 }
 _DEFAULT_DOCUMENTS = ["Company registration document", "Tax registration document",
                       "Bank confirmation"]

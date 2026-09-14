@@ -257,6 +257,42 @@ class KenyaConfigTests(TestCase):
         self.assertNotIn("cipc", docs)            # no SA docs
 
 
+class NewZealandConfigTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def test_currency_is_nzd_and_banks(self):
+        from apps.reference.services import BankDirectoryService, CurrencyService
+        self.assertEqual(CurrencyService.for_country("NZ").code, "NZD")   # NZD, not AUD
+        names = [b.name for b in BankDirectoryService.for_country("NZ")]
+        self.assertTrue(any("Kiwibank" in n for n in names))
+        self.assertTrue(any("BNZ" in n or "Bank of New Zealand" in n for n in names))
+
+    def test_statutory_is_nz(self):
+        from apps.reference.services import StatutoryService
+        keys = {f["key"] for f in StatutoryService.rules("NZ")}
+        self.assertIn("nzbn", keys)
+        self.assertIn("ird", keys)
+        self.assertNotIn("bbbee_level", keys)
+        self.assertNotIn("kra_pin", keys)          # not Kenya's either
+
+    def test_ird_validation(self):
+        from apps.reference.services import StatutoryService
+        self.assertEqual(StatutoryService.validate("NZ", {"ird": "012-345-678"}), [])
+        self.assertTrue(any(e.field == "ird"
+                            for e in StatutoryService.validate("NZ", {"ird": "xx"})))
+
+    def test_postcode_and_docs(self):
+        from apps.reference.services import (AddressValidationService,
+                                             recommended_documents)
+        self.assertIsNone(AddressValidationService.validate_postal_code("NZ", "6011"))
+        self.assertIsNotNone(AddressValidationService.validate_postal_code("NZ", "60"))
+        docs = " ".join(recommended_documents("NZ")).lower()
+        self.assertIn("nzbn", docs)
+        self.assertNotIn("cipc", docs)
+
+
 class EmailTests(TestCase):
     def test_normalise(self):
         self.assertEqual(EmailValidationService.normalize("  John@Example.COM "), "john@example.com")
