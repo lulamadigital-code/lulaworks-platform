@@ -1,0 +1,15 @@
+{% load phone_tags %}
+{# Reusable phone input: country-code picker (before the number) + national number.
+   The number field posts `name` (national); the picker posts `name`__cc (region).
+   The view combines + validates + stores E.164.
+   Params: name, value (stored E.164), default_cc (alpha-2), countries, placeholder. #}
+{% with region=value|phone_region:default_cc %}
+<div style="display:flex;gap:6px;">
+  <select name="{{ name }}__cc" aria-label="Country code"
+          style="max-width:118px;padding:9px 8px;border:1px solid var(--line);border-radius:9px;background:var(--bg,#f7f8fa);color:var(--ink);">
+    {% for c in countries %}{% if c.calling_code %}<option value="{{ c.code }}" {% if c.code == region %}selected{% endif %}>{{ c.flag_emoji }} {{ c.calling_code }}</option>{% endif %}{% endfor %}
+  </select>
+  <input type="tel" name="{{ name }}" value="{{ value|phone_national:default_cc }}"
+         placeholder="{{ placeholder|default:'Phone number' }}" style="flex:1;min-width:120px;">
+</div>
+{% endwith %}

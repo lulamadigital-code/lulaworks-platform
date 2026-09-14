@@ -4,8 +4,8 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from apps.administration.models import CompanySettings
-from apps.identity.models import (Company, CompanyBankAccount, Membership,
-                                  Permission, Role, User)
+from apps.identity.models import (Company, CompanyBankAccount, CompanyContact,
+                                  Membership, Permission, Role, User)
 from apps.identity.profile import get_profile
 
 
@@ -46,6 +46,49 @@ class CompanyCountryCurrencyTests(TestCase):
         self.assertContains(page, 'name="country_code"')
         self.assertContains(page, "South Africa")
         self.assertContains(page, "ZAR")           # currency shown as info
+
+
+class PhoneWidgetTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def setUp(self):
+        self.company = Company.objects.create(name="Acme", country_code="ZA", currency="ZAR")
+        get_profile(self.company)
+        CompanySettings.objects.get_or_create(company=self.company)
+        self.mgr = _user(self.company, ["company.manage"], "m@a.co")
+        self.client.force_login(self.mgr)
+
+    def test_contact_phone_stored_as_e164(self):
+        r = self.client.post("/company/", {
+            "section": "contact", "email": "a@acme.co",
+            "phone": "0821234567", "phone__cc": "ZA"})
+        self.assertEqual(r.status_code, 302)
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.phone, "+27821234567")
+
+    def test_country_code_picker_applies(self):
+        # A UK number entered with the GB country code normalises to +44.
+        self.client.post("/company/", {
+            "section": "contact", "email": "a@acme.co",
+            "mobile": "020 7946 0958", "mobile__cc": "GB"})
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.mobile, "+442079460958")
+
+    def test_invalid_phone_rejected_nothing_saved(self):
+        self.client.post("/company/", {
+            "section": "contact", "email": "a@acme.co",
+            "phone": "12", "phone__cc": "ZA"})
+        self.company.refresh_from_db()
+        self.assertEqual(self.company.phone, "")      # invalid → not saved
+
+    def test_member_phone_normalised(self):
+        self.client.post("/company/contacts/", {
+            "action": "add", "full_name": "Thabo", "email": "t@acme.co",
+            "phone": "0821234567", "phone__cc": "ZA"})
+        c = CompanyContact.objects.get(company=self.company, full_name="Thabo")
+        self.assertEqual(c.phone, "+27821234567")
 
 
 class BankingValidationWebTests(TestCase):

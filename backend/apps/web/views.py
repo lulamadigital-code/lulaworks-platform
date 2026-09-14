@@ -1149,8 +1149,12 @@ def company_profile(request):
             messages.error(request, error)
             return redirect("web:company_profile")
         if section in _PROFILE_SECTIONS:
-            _save_profile_section(request, company, section)
-            messages.success(request, "Company profile updated.")
+            errs = _save_profile_section(request, company, section)
+            if errs:
+                for e in errs:
+                    messages.error(request, e)
+            else:
+                messages.success(request, "Company profile updated.")
         elif section == "compliance":
             _save_compliance(request, company)
             messages.success(request, "Statutory details updated.")
@@ -1274,8 +1278,40 @@ def _parse_iso_date(value):
         return None
 
 
+#: Phone fields rendered with the country-code widget → stored normalised to E.164.
+_PHONE_FIELDS = {"phone", "phone_secondary", "mobile", "emergency_phone", "whatsapp"}
+
+
+def _read_phone(request, name, default_region):
+    """Combine the widget's country-code + national number into a validated E.164
+    value. Returns (value, error): ('' , None) when blank, (None, msg) when the
+    number is invalid, (e164, None) when valid. Type-unknown numbers still pass —
+    a valid business landline is never rejected for lacking a mobile type."""
+    national = (request.POST.get(name, "") or "").strip()
+    if not national:
+        return "", None
+    region = (request.POST.get(name + "__cc", "") or "").strip() or default_region
+    from apps.reference.services import PhoneValidationService
+    res = PhoneValidationService.validate(national, region)
+    if not res.valid:
+        label = name.replace("_", " ").title()
+        return None, f"{label}: {res.message}"
+    return res.e164, None
+
+
 def _save_profile_section(request, company, section):
+    """Save one profile section. Returns a list of error messages (empty = saved);
+    when non-empty nothing is persisted so the user can fix and resubmit."""
+    errors = []
+    default_region = company.country_code or "ZA"
     for field in _PROFILE_SECTIONS[section]:
+        if field in _PHONE_FIELDS:
+            e164, err = _read_phone(request, field, default_region)
+            if err:
+                errors.append(err)
+            else:
+                setattr(company, field, e164)
+            continue
         if field not in request.POST and field != "postal_same_as_physical":
             continue
         value = request.POST.get(field, "").strip()
@@ -1300,7 +1336,10 @@ def _save_profile_section(request, company, section):
     for field in _LIST_FIELDS.get(section, []):
         raw = request.POST.get(field, "")
         setattr(company, field, [v.strip() for v in raw.split(",") if v.strip()])
+    if errors:
+        return errors           # invalid phone → nothing saved; user fixes & resubmits
     company.save()
+    return []
 
 
 def _save_compliance(request, company):
@@ -1572,18 +1611,23 @@ def company_contact(request):
 
     action = request.POST.get("action", "add")
     if action == "add":
+        region = company.country_code or "ZA"
+        phone, phone_err = _read_phone(request, "phone", region)
+        mobile, mobile_err = _read_phone(request, "mobile", region)
         if not request.POST.get("full_name", "").strip():
             messages.error(request, "A name is required.")
         elif _bad_email(request.POST.get("email")):
             messages.error(request, "Enter a valid email address for the contact.")
+        elif phone_err or mobile_err:
+            messages.error(request, phone_err or mobile_err)
         else:
             add_contact(
                 company,
                 full_name=request.POST["full_name"].strip(),
                 job_title=request.POST.get("job_title", "").strip(),
                 email=request.POST.get("email", "").strip(),
-                phone=request.POST.get("phone", "").strip(),
-                mobile=request.POST.get("mobile", "").strip(),
+                phone=phone,
+                mobile=mobile,
                 extension=request.POST.get("extension", "").strip(),
                 preferred_method=request.POST.get("preferred_method", "email"),
             )

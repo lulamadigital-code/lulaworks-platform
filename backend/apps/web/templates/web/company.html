@@ -130,11 +130,11 @@
         <div><label>Primary email <span style="color:var(--red);">*</span></label>
           <input type="email" name="email" value="{{ company.email }}" required placeholder="accounts@yourcompany.co.za">
           <p class="muted" style="font-size:11.5px;margin:4px 0 0;">Required — the address customers reply to on your documents.</p></div>
-        <div><label>Primary phone</label><input type="text" name="phone" value="{{ company.phone }}"></div>
-        <div><label>Secondary phone</label><input type="text" name="phone_secondary" value="{{ company.phone_secondary }}"></div>
-        <div><label>Mobile</label><input type="text" name="mobile" value="{{ company.mobile }}"></div>
-        <div><label>WhatsApp</label><input type="text" name="whatsapp" value="{{ company.whatsapp }}"></div>
-        <div><label>Emergency / after-hours</label><input type="text" name="emergency_phone" value="{{ company.emergency_phone }}"></div>
+        <div><label>Primary phone</label>{% include "web/_phone_field.html" with name="phone" value=company.phone default_cc=company.country_code|default:"ZA" countries=countries %}</div>
+        <div><label>Secondary phone</label>{% include "web/_phone_field.html" with name="phone_secondary" value=company.phone_secondary default_cc=company.country_code|default:"ZA" countries=countries %}</div>
+        <div><label>Mobile</label>{% include "web/_phone_field.html" with name="mobile" value=company.mobile default_cc=company.country_code|default:"ZA" countries=countries %}</div>
+        <div><label>WhatsApp</label>{% include "web/_phone_field.html" with name="whatsapp" value=company.whatsapp default_cc=company.country_code|default:"ZA" countries=countries %}</div>
+        <div><label>Emergency / after-hours</label>{% include "web/_phone_field.html" with name="emergency_phone" value=company.emergency_phone default_cc=company.country_code|default:"ZA" countries=countries %}</div>
         <div><label>Website</label><input type="url" name="website" value="{{ company.website }}"></div>
         <div><label>LinkedIn</label><input type="text" name="linkedin" value="{{ company.linkedin }}"></div>
         <div><label>Facebook</label><input type="text" name="facebook" value="{{ company.facebook }}"></div>
@@ -304,8 +304,8 @@
         <div><label>Full name</label><input type="text" name="full_name" required></div>
         <div><label>Job title</label><input type="text" name="job_title" placeholder="Finance Manager"></div>
         <div><label>Email</label><input type="email" name="email"></div>
-        <div><label>Phone</label><input type="text" name="phone"></div>
-        <div><label>Mobile</label><input type="text" name="mobile"></div>
+        <div><label>Phone</label>{% include "web/_phone_field.html" with name="phone" value="" default_cc=company.country_code|default:"ZA" countries=countries %}</div>
+        <div><label>Mobile</label>{% include "web/_phone_field.html" with name="mobile" value="" default_cc=company.country_code|default:"ZA" countries=countries %}</div>
         <div><label>Extension</label><input type="text" name="extension"></div>
         <div><label>Preferred contact method</label><select name="preferred_method"><option value="email">Email</option><option value="phone">Phone</option><option value="mobile">Mobile</option><option value="whatsapp">WhatsApp</option></select></div>
       </div>
