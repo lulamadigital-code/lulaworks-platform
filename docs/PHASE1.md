@@ -1,4 +1,4 @@
-# LulaWorks Platform — Phase 1 (Platform Foundation)
+# Lulaworks Platform — Phase 1 (Platform Foundation)
 
 Status: **in progress.** Fresh production build (`lulaworks-platform`), container-first, per the Master Implementation Directive. Companion: `docs/DEPLOYMENT.md`; architecture source-of-truth in the prototype repo's `docs/` (Modules 1–13).
 

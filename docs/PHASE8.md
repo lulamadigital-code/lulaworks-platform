@@ -1,4 +1,4 @@
-# LulaWorks Platform — Phase 8 (AI Orchestration — Lulama)
+# Lulaworks Platform — Phase 8 (AI Orchestration — Lulama)
 
 Status: **complete** — the final phase. Companion to PHASE1–7. Architecture source: prototype `docs/AI_PLATFORM.md` (Module 11).
 

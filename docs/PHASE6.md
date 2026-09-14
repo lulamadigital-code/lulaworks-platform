@@ -1,8 +1,8 @@
-# LulaWorks Platform — Phase 6 (Project Execution & Operations)
+# Lulaworks Platform — Phase 6 (Project Execution & Operations)
 
 Status: **complete.** Companion to PHASE1–5. Architecture source: prototype `docs/PROJECT_EXECUTION.md` (Module 9).
 
-The operational core. Everything on site (people, equipment, materials, progress, actuals) lives in LulaWorks. **The insight that sets the architecture:** a task isn't "done/not-done" — its *readiness* is **computed from real-world dependencies** (predecessors, materials, compliance), exactly as Module 8 computes project readiness. Execution hangs off the `projects.Project` aggregate root created on award.
+The operational core. Everything on site (people, equipment, materials, progress, actuals) lives in Lulaworks. **The insight that sets the architecture:** a task isn't "done/not-done" — its *readiness* is **computed from real-world dependencies** (predecessors, materials, compliance), exactly as Module 8 computes project readiness. Execution hangs off the `projects.Project` aggregate root created on award.
 
 ## App: `execution`
 | Model | Role |

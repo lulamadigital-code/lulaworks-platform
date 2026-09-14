@@ -1,5 +1,5 @@
 #!/bin/sh
-# LulaWorks — restore a PostgreSQL backup produced by backup.sh.
+# Lulaworks — restore a PostgreSQL backup produced by backup.sh.
 #
 # Usage (from the host):
 #   docker compose -f docker-compose.prod.yml run --rm \

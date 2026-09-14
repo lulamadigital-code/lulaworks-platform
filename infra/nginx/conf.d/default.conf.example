@@ -1,4 +1,4 @@
-# LulaWorks — HTTP-only server block (bootstrap a fresh droplet before TLS).
+# Lulaworks — HTTP-only server block (bootstrap a fresh droplet before TLS).
 #
 # TEMPLATE: nginx only loads *.conf, so this .example is NOT active. On a fresh
 # droplet with no certificate yet, copy it to default.conf to serve over HTTP:

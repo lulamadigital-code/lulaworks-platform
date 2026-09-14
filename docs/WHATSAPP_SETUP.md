@@ -1,17 +1,17 @@
 # WhatsApp Marketing — Setup Guide
 
-LulaWorks sends WhatsApp campaigns through the **Meta WhatsApp Cloud API**. The
+Lulaworks sends WhatsApp campaigns through the **Meta WhatsApp Cloud API**. The
 golden rule of the design: **every company sends from its own WhatsApp number** —
-there is no shared LulaWorks number. So setup has two distinct parts:
+there is no shared Lulaworks number. So setup has two distinct parts:
 
-1. **Platform setup** — done **once** by the LulaWorks admin. Registers one Meta
+1. **Platform setup** — done **once** by the Lulaworks admin. Registers one Meta
    "Tech Provider" app so companies can connect with one click (Embedded Signup).
 2. **Per-company setup** — done by **each company owner**. Connects their own
    WhatsApp Business number and gets their message templates approved.
 
 ---
 
-## Part 1 — Platform setup (LulaWorks admin, once)
+## Part 1 — Platform setup (Lulaworks admin, once)
 
 You are creating a **Meta developer App**, not a phone number.
 
@@ -30,7 +30,7 @@ You are creating a **Meta developer App**, not a phone number.
   - `whatsapp_business_messaging`
 - Copy the **Configuration ID** — this is `WHATSAPP_CONFIG_ID`.
 
-### 4. Allow the LulaWorks domain
+### 4. Allow the Lulaworks domain
 - Facebook Login → **Settings**: add `https://www.lulaworks.com/` to **Valid OAuth
   Redirect URIs** and the app domain to **Allowed Domains**.
 
@@ -46,7 +46,7 @@ WHATSAPP_WEBHOOK_VERIFY_TOKEN=<any secret string you choose>
 WHATSAPP_API_VERSION=v21.0
 ```
 
-> If these are **not** set, LulaWorks quietly falls back to **manual** connection
+> If these are **not** set, Lulaworks quietly falls back to **manual** connection
 > (a company pastes their phone-number-id + token). Setting them turns on the
 > one-click **"Connect with Facebook"** button.
 
@@ -70,14 +70,14 @@ That's it for the platform. You never handle any tenant's number or token.
 
 ## Part 2 — Per-company setup (each company owner)
 
-In LulaWorks: **Marketing → WhatsApp**. (Needs the *company admin* /
+In Lulaworks: **Marketing → WhatsApp**. (Needs the *company admin* /
 `company.manage` permission.)
 
 ### Option A — Connect with Facebook (recommended, ~2 minutes)
 1. Click **Connect with Facebook**.
 2. Log in to **your own** Meta/Facebook account in the popup.
 3. Select or create your **WhatsApp Business Account** and **phone number**.
-4. Finish — LulaWorks stores the connection and shows **Connected**.
+4. Finish — Lulaworks stores the connection and shows **Connected**.
 
 ### Option B — Manual
 Under *"Enter connection details manually"*, paste your **Phone number ID** and a
@@ -101,7 +101,7 @@ Under *"Enter connection details manually"*, paste your **Phone number ID** and 
 
 - **Templates vs free text.** A *first* message to a contact **must** use an
   approved template. Free text only works inside a **24-hour** window after the
-  contact messages you. LulaWorks sends the template when `wa_template_name` is
+  contact messages you. Lulaworks sends the template when `wa_template_name` is
   set; otherwise it sends `content` as text (only useful for replies/testing).
 - **Opt-in.** WhatsApp requires the contact to have opted in to hear from *your*
   business. Only message people who agreed.

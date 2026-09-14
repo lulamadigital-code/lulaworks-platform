@@ -1,4 +1,4 @@
-# LulaWorks Platform — Phase 2 (RFQ Intelligence)
+# Lulaworks Platform — Phase 2 (RFQ Intelligence)
 
 Status: **complete.** Companion to `docs/PHASE1.md`. Architecture source: prototype `docs/RFQ_INTELLIGENCE.md`, `docs/AI_PLATFORM.md`, `docs/ARCHITECTURE.md §7`.
 

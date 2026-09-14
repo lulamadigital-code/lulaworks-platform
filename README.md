@@ -1,4 +1,4 @@
-# LulaWorks Platform
+# Lulaworks Platform
 
 AI-powered Contractor Operating System — production build.
 

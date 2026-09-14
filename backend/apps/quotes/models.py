@@ -619,7 +619,7 @@ class CustomerPurchaseOrder(TenantBaseModel):
 
 
 class CustomerPurchaseOrderLine(TenantBaseModel):
-    """One line read off the customer's PO — kept so LulaWorks can compare what
+    """One line read off the customer's PO — kept so Lulaworks can compare what
     the customer actually ordered against what was quoted (quantity variance)."""
 
     purchase_order = models.ForeignKey(CustomerPurchaseOrder, on_delete=models.CASCADE,

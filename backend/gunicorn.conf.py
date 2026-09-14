@@ -1,4 +1,4 @@
-"""Gunicorn production configuration for the LulaWorks web container.
+"""Gunicorn production configuration for the Lulaworks web container.
 
 Every value is env-overridable so the same image tunes itself to the host it
 lands on (a small DigitalOcean droplet today, a larger AWS task tomorrow)

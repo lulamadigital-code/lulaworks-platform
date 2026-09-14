@@ -1,4 +1,4 @@
-# LulaWorks Platform — Phase 7 (Finance, Commercial & Payments)
+# Lulaworks Platform — Phase 7 (Finance, Commercial & Payments)
 
 Status: **complete.** Companion to PHASE1–6. Architecture source: prototype `docs/FINANCE.md` (Module 10).
 

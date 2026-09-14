@@ -1,6 +1,6 @@
-# LulaWorks — Deployment & Infrastructure
+# Lulaworks — Deployment & Infrastructure
 
-Production infrastructure for the LulaWorks platform. Phase 1 targets a single
+Production infrastructure for the Lulaworks platform. Phase 1 targets a single
 **DigitalOcean** droplet with Docker Compose; Phase 2 lifts the *same images* to
 **AWS** with only configuration changes. This document is the operator's source
 of truth — you should be able to deploy, back up, and recover without reading

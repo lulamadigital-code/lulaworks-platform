@@ -1,4 +1,4 @@
-// Lightweight view models mirroring the LulaWorks API payloads. Only the fields
+// Lightweight view models mirroring the Lulaworks API payloads. Only the fields
 // the client renders are modelled; money fields may be absent (Golden Rule).
 
 List<Map<String, dynamic>> pageResults(dynamic body) {

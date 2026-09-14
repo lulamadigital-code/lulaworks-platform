@@ -1,4 +1,4 @@
-# LulaWorks API — container image (shared by API, Celery worker, Celery beat).
+# Lulaworks API — container image (shared by API, Celery worker, Celery beat).
 # One image, many commands (12-factor): compose/ECS run different commands off it.
 #
 # Multi-stage: a throwaway "builder" compiles all Python deps into an isolated

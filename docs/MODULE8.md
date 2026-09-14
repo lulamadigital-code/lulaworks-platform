@@ -1,6 +1,6 @@
 # Module 8 — Work Management Engine
 
-The operational heart of LulaWorks. **Everything is Work.** Work enters through
+The operational heart of Lulaworks. **Everything is Work.** Work enters through
 many doors, but every piece of it flows through one engine — one hierarchy, one
 lifecycle, one team model, one dependency model, one comment/file/notification
 surface. A two-person electrical shop and a mine shutdown use the same primitives.

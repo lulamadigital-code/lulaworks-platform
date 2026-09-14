@@ -1,4 +1,4 @@
-# LulaWorks — local development stack (container-first).
+# Lulaworks — local development stack (container-first).
 #
 # App services (api, worker, beat) all run from the SAME image with different
 # commands. Postgres and Redis run as containers here for DEV convenience only;

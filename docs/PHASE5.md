@@ -1,4 +1,4 @@
-# LulaWorks Platform — Phase 5 (Compliance Intelligence — the signature module)
+# Lulaworks Platform — Phase 5 (Compliance Intelligence — the signature module)
 
 Status: **complete.** Companion to PHASE1–4. Architecture source: prototype `docs/COMPLIANCE.md` (Module 8).
 

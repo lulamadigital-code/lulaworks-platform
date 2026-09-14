@@ -1,4 +1,4 @@
-# LulaWorks Platform — Phase 3 (Procurement Intelligence)
+# Lulaworks Platform — Phase 3 (Procurement Intelligence)
 
 Status: **complete.** Companion to PHASE1/PHASE2. Architecture source: prototype `docs/PROCUREMENT.md` (Module 6).
 

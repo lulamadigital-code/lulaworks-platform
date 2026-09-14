@@ -1,4 +1,4 @@
-# LulaWorks — HTTPS server block (enable AFTER a certificate exists).
+# Lulaworks — HTTPS server block (enable AFTER a certificate exists).
 #
 # Activation:
 #   1. Point your domain's A record at the droplet.

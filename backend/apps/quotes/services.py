@@ -120,7 +120,7 @@ def suggest_quotations_for_po(company, *, po_number="", client_name="", value=No
 
 def po_variance(po) -> dict | None:
     """Compare a matched customer PO against the quotation it confirms, so
-    LulaWorks understands the commercial relationship rather than just storing
+    Lulaworks understands the commercial relationship rather than just storing
     documents. A PO may legitimately be raised for the net total OR the
     tax-inclusive invoice total, so we measure against whichever is nearer;
     anything beyond the match tolerance is a real variance worth flagging.

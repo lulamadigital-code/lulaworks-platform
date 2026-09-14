@@ -1,8 +1,8 @@
-# LulaWorks Platform — Phase 4 (Estimating & Quotation Intelligence)
+# Lulaworks Platform — Phase 4 (Estimating & Quotation Intelligence)
 
 Status: **complete.** Companion to PHASE1/2/3. Architecture source: prototype `docs/ESTIMATING.md` (Module 7).
 
-Generalises the flat quote into a **structured cost estimate** and adds the **Pricing-Intelligence learning loop** — the estimating moat. LulaWorks prepares the cost build-up; the estimator reviews, adjusts, approves. Nothing auto-approves.
+Generalises the flat quote into a **structured cost estimate** and adds the **Pricing-Intelligence learning loop** — the estimating moat. Lulaworks prepares the cost build-up; the estimator reviews, adjusts, approves. Nothing auto-approves.
 
 ## ⚠️ The internal/external split (Financial Golden Rule at the document boundary)
 | | `Estimate` (this app) | `Quotation` (quotes app) |
@@ -26,7 +26,7 @@ Generalises the flat quote into a **structured cost estimate** and adds the **Pr
 - **Risk scoring** (`recompute_risk`) — 0–100 from thin margin, low-confidence lines, long-lead items, unpriced lines; produces human-readable flags.
 - **Approval gate** (`approval_required`) — margin/discount thresholds (reads `CompanySettings.approval_rules`, else defaults: margin < 15% or discount > 10% → needs `estimating.approve`).
 - **Version control** (`create_revision`) — deep-copies to a new version, marks the prior **SUPERSEDED**; history is permanent, never overwritten. Same number across revisions (`unique (company, number, version)`).
-- **Pricing-Intelligence loop** (`capture_actuals` → `labour_calibration` / `calibration_advice`) — estimate → actuals → variance → advice that calibrates the next estimate ("this work type historically exceeded labour estimate by 20% — consider adjusting"). **This is what makes LulaWorks estimate better the longer a tenant uses it.**
+- **Pricing-Intelligence loop** (`capture_actuals` → `labour_calibration` / `calibration_advice`) — estimate → actuals → variance → advice that calibrates the next estimate ("this work type historically exceeded labour estimate by 20% — consider adjusting"). **This is what makes Lulaworks estimate better the longer a tenant uses it.**
 
 ## API
 `/api/v1/estimates/` (CRUD, `estimating.manage`) plus actions:

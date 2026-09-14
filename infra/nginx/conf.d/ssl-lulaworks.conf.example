@@ -1,4 +1,4 @@
-# LulaWorks — production HTTPS for lulaworks.com.
+# Lulaworks — production HTTPS for lulaworks.com.
 #
 # Canonical host is www.lulaworks.com; the bare domain and app.lulaworks.com
 # redirect to it. Enable ONLY after the certificate exists (see docs/DEPLOYMENT).

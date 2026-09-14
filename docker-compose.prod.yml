@@ -1,4 +1,4 @@
-# LulaWorks — PRODUCTION stack (single-node Docker Compose).
+# Lulaworks — PRODUCTION stack (single-node Docker Compose).
 #
 # Target: a DigitalOcean droplet in Phase 1. The SAME images run on AWS in
 # Phase 2 — there you drop the `db` and `redis` services and point DB_HOST /

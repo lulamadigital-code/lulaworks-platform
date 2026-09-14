@@ -1,6 +1,6 @@
 """Company setup — PROGRESSIVE REQUIREMENTS / CONTEXTUAL VALIDATION.
 
-Owners are NEVER locked out of LulaWorks. A missing company setting blocks only
+Owners are NEVER locked out of Lulaworks. A missing company setting blocks only
 the specific business action that genuinely depends on it (issuing an invoice,
 generating a document PDF, sending a document) — never navigation, never the
 whole account. This module is the SINGLE SOURCE OF TRUTH shared by the web

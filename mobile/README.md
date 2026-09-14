@@ -1,6 +1,6 @@
-# LulaWorks — Mobile Client (Flutter)
+# Lulaworks — Mobile Client (Flutter)
 
-A cross-platform (Android / iOS / web) client for the LulaWorks Contractor
+A cross-platform (Android / iOS / web) client for the Lulaworks Contractor
 Operating System. It talks to the Django REST API over JWT and surfaces the core
 operating loop: sign in → projects → the **compliance readiness gate** → **Lulama**,
 the AI Operations Director.

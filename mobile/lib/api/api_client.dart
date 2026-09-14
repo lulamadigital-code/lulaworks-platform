@@ -32,7 +32,7 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
-/// Thin JSON-over-HTTP client for the LulaWorks API.
+/// Thin JSON-over-HTTP client for the Lulaworks API.
 ///
 /// Handles JWT bearer auth, one-shot access-token refresh on 401, persistence of
 /// the token pair + backend origin, and parsing of the standard error envelope.

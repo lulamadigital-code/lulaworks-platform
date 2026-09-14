@@ -94,7 +94,7 @@ MIDDLEWARE = [
     # can use anything (manager web only; the JWT API is untouched).
     "apps.web.middleware.ForcePasswordChangeMiddleware",
     # Company setup is a PROGRESSIVE REQUIREMENT now (apps.identity.company_setup),
-    # not a full-screen lock — owners enter LulaWorks immediately; only specific
+    # not a full-screen lock — owners enter Lulaworks immediately; only specific
     # actions (issuing an invoice / generating a PDF) check their requirements.
     # (The old CompanySetupMiddleware lock is retired and no longer wired in.)
     # Ambient tenant resolution — sets TenantContext from the JWT (DATA_MODEL §1).

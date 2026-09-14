@@ -79,7 +79,7 @@ class CompanySetupMiddleware:
     """DEPRECATED — retired 2026-09-03. This used to full-screen-LOCK a new
     company owner onto the Company Profile page until every essential field was
     filled in. That's the wrong model: owners must be able to enter and explore
-    LulaWorks immediately. Company setup is now a PROGRESSIVE REQUIREMENT — a
+    Lulaworks immediately. Company setup is now a PROGRESSIVE REQUIREMENT — a
     missing setting blocks only the specific action that needs it (issuing an
     invoice, generating a PDF), via apps.identity.company_setup. This class is a
     no-op kept only so an old MIDDLEWARE entry can't break; it is no longer

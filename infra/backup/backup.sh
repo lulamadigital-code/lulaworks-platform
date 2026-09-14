@@ -1,5 +1,5 @@
 #!/bin/sh
-# LulaWorks — nightly PostgreSQL backup.
+# Lulaworks — nightly PostgreSQL backup.
 #
 # Runs inside the `backup` container (postgres:16-alpine, so pg_dump matches the
 # server version). Dumps the whole database, gzips it to the backups volume, and

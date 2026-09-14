@@ -1,4 +1,4 @@
-# LulaWorks — Manager Web (Django + HTMX)
+# Lulaworks — Manager Web (Django + HTMX)
 
 Status: **built & verified.** The office/manager surface of the platform.
 
