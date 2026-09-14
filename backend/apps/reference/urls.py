@@ -12,5 +12,9 @@ urlpatterns = [
          name="reference_banking_rules"),
     path("reference/countries/<str:code>/address-rules/", v.AddressRules.as_view(),
          name="reference_address_rules"),
+    path("reference/countries/<str:code>/statutory-rules/", v.StatutoryRules.as_view(),
+         name="reference_statutory_rules"),
+    path("reference/countries/<str:code>/documents/", v.DocumentRules.as_view(),
+         name="reference_document_rules"),
     path("reference/banks/search/", v.BankSearch.as_view(), name="reference_bank_search"),
 ]

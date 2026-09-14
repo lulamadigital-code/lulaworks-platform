@@ -185,6 +185,36 @@ class DocumentRulesTests(TestCase):
         self.assertIn("ein", us)
 
 
+class ReferenceApiTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def setUp(self):
+        from apps.identity.models import Company, User
+        company = Company.objects.create(name="Acme", country_code="ZA")
+        self.user = User.objects.create_user("api@a.co", "x", active_company=company)
+        self.client.force_login(self.user)
+
+    def test_statutory_rules_endpoint(self):
+        r = self.client.get("/api/v1/reference/countries/US/statutory-rules/")
+        self.assertEqual(r.status_code, 200)
+        keys = {f["key"] for f in r.json()["fields"]}
+        self.assertIn("ein", keys)
+        self.assertNotIn("bbbee_level", keys)
+
+    def test_documents_endpoint(self):
+        r = self.client.get("/api/v1/reference/countries/ZA/documents/")
+        self.assertEqual(r.status_code, 200)
+        names = " ".join(d["name"] for d in r.json()["documents"]).lower()
+        self.assertIn("cipc", names)
+
+    def test_requires_auth(self):
+        self.client.logout()
+        r = self.client.get("/api/v1/reference/countries/ZA/statutory-rules/")
+        self.assertIn(r.status_code, (401, 403))
+
+
 class EmailTests(TestCase):
     def test_normalise(self):
         self.assertEqual(EmailValidationService.normalize("  John@Example.COM "), "john@example.com")

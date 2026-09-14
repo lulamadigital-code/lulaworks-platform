@@ -15,7 +15,9 @@ class NormalizeCompanyDataTests(TestCase):
         call_command("normalize_company_data", verbosity=0)
 
     def test_currency_text_normalised_to_iso(self):
-        c = Company.objects.create(name="Acme", country_code="ZA", currency="South African Rand")
+        # Legacy currency stored as a name/word (currency is varchar(8), so real
+        # legacy values are short like "Rand"/"R"/"ZAR").
+        c = Company.objects.create(name="Acme", country_code="ZA", currency="Rand")
         self._run()
         c.refresh_from_db()
         self.assertEqual(c.currency, "ZAR")

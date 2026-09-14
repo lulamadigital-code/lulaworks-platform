@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend-dev",
+      "runtimeExecutable": "/Users/apple/Documents/pythonProjects/env/bin/python",
+      "runtimeArgs": ["manage.py", "runserver", "127.0.0.1:8010"],
+      "port": 8010,
+      "cwd": "backend",
+      "env": { "DJANGO_SETTINGS_MODULE": "config.settings.dev" }
+    }
+  ]
+}

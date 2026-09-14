@@ -3,15 +3,25 @@ banks / rules for the web pickers now and Flutter later — the frontend never
 keeps its own copy. Cached briefly; data changes only on a re-seed."""
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import Bank, Country
 from .services import (AddressValidationService, BankDirectoryService,
-                       BankingValidationService, CurrencyService)
+                       BankingValidationService, CurrencyService,
+                       DocumentRulesService, StatutoryService)
 
 _CACHE = 60 * 15
+
+
+class _RefView(APIView):
+    """Base for the read-only reference endpoints. Accepts BOTH the web session
+    (so the company page's live country-change fetches work) and JWT (mobile)."""
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
 
 
 def _country_dict(c: Country) -> dict:
@@ -26,16 +36,14 @@ def _bank_dict(b: Bank) -> dict:
 
 
 @method_decorator(cache_page(_CACHE), name="get")
-class CountryList(APIView):
-    permission_classes = [IsAuthenticated]
+class CountryList(_RefView):
 
     def get(self, request):
         rows = Country.objects.filter(active=True)
         return Response([_country_dict(c) for c in rows])
 
 
-class CountryCurrencyView(APIView):
-    permission_classes = [IsAuthenticated]
+class CountryCurrencyView(_RefView):
 
     def get(self, request, code):
         cur = CurrencyService.for_country(code)
@@ -45,8 +53,7 @@ class CountryCurrencyView(APIView):
                          "label": CurrencyService.label(cur)})
 
 
-class CountryBanks(APIView):
-    permission_classes = [IsAuthenticated]
+class CountryBanks(_RefView):
 
     def get(self, request, code):
         q = request.query_params.get("q")
@@ -54,8 +61,7 @@ class CountryBanks(APIView):
         return Response([_bank_dict(b) for b in rows])
 
 
-class BankSearch(APIView):
-    permission_classes = [IsAuthenticated]
+class BankSearch(_RefView):
 
     def get(self, request):
         code = request.query_params.get("country", "")
@@ -64,8 +70,7 @@ class BankSearch(APIView):
         return Response([_bank_dict(b) for b in rows])
 
 
-class BankingRules(APIView):
-    permission_classes = [IsAuthenticated]
+class BankingRules(_RefView):
 
     def get(self, request, code):
         rule = BankingValidationService.rule(code)
@@ -76,8 +81,7 @@ class BankingRules(APIView):
                          "fields": rule.fields})
 
 
-class AddressRules(APIView):
-    permission_classes = [IsAuthenticated]
+class AddressRules(_RefView):
 
     def get(self, request, code):
         rule = AddressValidationService.rule(code)
@@ -85,3 +89,16 @@ class AddressRules(APIView):
             return Response({"country": code.upper(), "fields": [], "postal_label": "Postal code"})
         return Response({"country": code.upper(), "fields": rule.fields,
                          "postal_label": rule.postal_label, "postal_hint": rule.postal_hint})
+
+
+class StatutoryRules(_RefView):
+
+    def get(self, request, code):
+        return Response({"country": code.upper(), "fields": StatutoryService.rules(code)})
+
+
+class DocumentRules(_RefView):
+
+    def get(self, request, code):
+        return Response({"country": code.upper(),
+                         "documents": DocumentRulesService.recommended(code)})

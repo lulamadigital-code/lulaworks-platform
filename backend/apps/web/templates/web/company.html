@@ -169,7 +169,7 @@
         <div><label>{{ f.label }}{% if f.required %} <span style="color:var(--red);">*</span>{% endif %}</label>
           <input type="text" name="{{ f.key }}" value="{{ f.value }}"></div>
         {% endif %}{% endfor %}
-        <div><label>{{ address_rule.postal_label }}</label>
+        <div><label id="phys-postal-label">{{ address_rule.postal_label }}</label>
           <input type="text" name="postal_code" value="{{ address_rule.postal_value }}"{% if address_rule.postal_hint %} title="{{ address_rule.postal_hint }}"{% endif %}></div>
         <div><label>Country</label>
           <select name="country_code" id="country-select"
@@ -179,8 +179,9 @@
           </select>
         </div>
       </div>
+      <div id="country-change-note" class="chip warn" hidden style="margin:10px 0 0;display:block;padding:8px 12px;font-size:12px;line-height:1.5;"></div>
       <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Currency
-        <strong style="color:var(--ink);">{{ currency_label }}</strong> — set automatically from your company country.
+        <strong id="currency-display" style="color:var(--ink);">{{ currency_label }}</strong> — set automatically from your company country.
         We check the address format for your country; we don't verify that it physically exists.</p>
       <div class="secbtns"><button class="btn" type="submit">Save address</button>
         <button class="btn ghost" type="button" data-cancel="address">Cancel</button></div>
@@ -259,18 +260,20 @@
         </div>
         <div><label>Account name</label><input type="text" name="account_name" placeholder="Account holder name"></div>
         {# Fields are driven by the selected country's banking rule. #}
+        <span id="banking-fields" style="display:contents;">
         {% for f in banking.fields %}
         <div><label>{{ f.label }}{% if not f.required %} <span class="muted" style="font-weight:400;">(optional)</span>{% endif %}</label>
           <input type="text" name="{{ f.key }}"{% if f.required %} required{% endif %}{% if f.key == 'branch_code' %} id="branch-code" placeholder="Auto-filled when you pick your bank"{% endif %}{% if f.hint %} title="{{ f.hint }}"{% endif %}></div>
         {% endfor %}
+        </span>
         <div><label>Account type</label><select name="account_type"><option value="cheque">Cheque / Current</option><option value="savings">Savings</option><option value="transmission">Transmission</option><option value="foreign">Foreign currency</option></select></div>
       </div>
       <script>
         // Picking a bank with a known branch code (SA universal codes) fills the
         // branch field from the seeded directory. A custom/typed bank leaves it blank.
-        var BANK_CODES = { {% for b in banking.banks %}{% if b.code %}"{{ b.name|lower }}": "{{ b.code }}",{% endif %}{% endfor %} };
+        window.BANK_CODES = { {% for b in banking.banks %}{% if b.code %}"{{ b.name|lower }}": "{{ b.code }}",{% endif %}{% endfor %} };
         function onBankPick(val) {
-          var code = BANK_CODES[(val || "").trim().toLowerCase()];
+          var code = window.BANK_CODES[(val || "").trim().toLowerCase()];
           var el = document.getElementById("branch-code");
           if (code && el) el.value = code;
         }
@@ -338,7 +341,7 @@
   <div id="form-compliance" style="display:none;">
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="compliance">
       <label class="inline"><input type="checkbox" name="vat_registered" value="1" {% if compliance.vat_registered %}checked{% endif %}> VAT / GST registered</label>
-      <div class="two" style="margin-top:12px;">
+      <div class="two" style="margin-top:12px;" id="statutory-fields">
         {% for r in statutory_rules %}
         <div><label>{{ r.label }}{% if not r.required %} <span class="muted" style="font-weight:400;">(optional)</span>{% endif %}</label>
           <input type="{% if r.field_type == 'date' %}date{% else %}text{% endif %}" name="stat__{{ r.key }}" value="{{ r.value }}" placeholder="{{ r.placeholder }}"{% if r.help_text %} title="{{ r.help_text }}"{% endif %}></div>
@@ -581,6 +584,85 @@
   });
   document.querySelectorAll('[data-cancel]').forEach(function (b) {
     b.addEventListener('click', function () { show(b.getAttribute('data-cancel'), false); });
+  });
+})();
+</script>
+
+<script>
+/* Live country-change: when the Country picker changes, re-render the currency,
+   address labels, banking fields + bank list, and statutory fields from the
+   country's rules — without a page reload. Phone country codes are left alone
+   (a number can belong to any country). Nothing is saved until the user submits,
+   and existing data is never deleted. */
+(function () {
+  var sel = document.getElementById('country-select');
+  if (!sel) return;
+  var API = '/api/v1/reference/countries/';
+  var initial = sel.value;
+  function getJSON(url) {
+    return fetch(url, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+  }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function optLabel(f, req) {
+    return esc(f) + (req ? '' : ' <span class="muted" style="font-weight:400;">(optional)</span>');
+  }
+  function banner(name) {
+    var el = document.getElementById('country-change-note');
+    if (!el) return;
+    if (sel.value === initial) { el.hidden = true; return; }
+    el.innerHTML = 'Changing country to <strong>' + esc(name) + '</strong>. Its currency, ' +
+      'banking, address, statutory and document rules will apply when you save. ' +
+      'Your existing information is kept — nothing is deleted automatically.';
+    el.hidden = false;
+  }
+  function setCurrency(label) {
+    var el = document.getElementById('currency-display');
+    if (el && label) el.textContent = label;
+  }
+  function setPostalLabel(label) {
+    var el = document.getElementById('phys-postal-label');
+    if (el && label) el.textContent = label;
+  }
+  function renderBanking(rule) {
+    var box = document.getElementById('banking-fields');
+    if (!box || !rule || !rule.fields) return;
+    box.innerHTML = rule.fields.map(function (f) {
+      var isBranch = f.key === 'branch_code';
+      return '<div><label>' + optLabel(f.label, f.required) + '</label>' +
+        '<input type="text" name="' + esc(f.key) + '"' + (f.required ? ' required' : '') +
+        (isBranch ? ' id="branch-code" placeholder="Auto-filled when you pick your bank"' : '') +
+        (f.hint ? ' title="' + esc(f.hint) + '"' : '') + '></div>';
+    }).join('');
+  }
+  function renderBanks(banks) {
+    var list = document.getElementById('bank-list');
+    if (!list || !banks) return;
+    list.innerHTML = banks.map(function (b) { return '<option value="' + esc(b.name) + '"></option>'; }).join('');
+    var map = {};
+    banks.forEach(function (b) { if (b.bank_code) map[(b.name || '').toLowerCase()] = b.bank_code; });
+    window.BANK_CODES = map;
+  }
+  function renderStatutory(data) {
+    var box = document.getElementById('statutory-fields');
+    if (!box || !data || !data.fields) return;
+    box.innerHTML = data.fields.map(function (r) {
+      var type = r.field_type === 'date' ? 'date' : 'text';
+      return '<div><label>' + optLabel(r.label, r.required) + '</label>' +
+        '<input type="' + type + '" name="stat__' + esc(r.key) + '" placeholder="' +
+        esc(r.placeholder || '') + '"' + (r.help_text ? ' title="' + esc(r.help_text) + '"' : '') + '></div>';
+    }).join('');
+  }
+  sel.addEventListener('change', function () {
+    var code = sel.value;
+    var name = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text.trim() : '';
+    banner(name);
+    if (!code) return;
+    getJSON(API + code + '/currency/').then(function (d) { if (d) setCurrency(d.label || d.currency); });
+    getJSON(API + code + '/address-rules/').then(function (d) { if (d) setPostalLabel(d.postal_label); });
+    getJSON(API + code + '/banking-rules/').then(renderBanking);
+    getJSON(API + code + '/banks/').then(renderBanks);
+    getJSON(API + code + '/statutory-rules/').then(renderStatutory);
   });
 })();
 </script>
