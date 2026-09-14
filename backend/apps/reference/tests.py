@@ -215,6 +215,48 @@ class ReferenceApiTests(TestCase):
         self.assertIn(r.status_code, (401, 403))
 
 
+class KenyaConfigTests(TestCase):
+    """Kenya is a first-class country configuration — added purely as seed data,
+    no engine code changes. Proves 'add a country once' end to end."""
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def test_currency_and_banks(self):
+        from apps.reference.services import BankDirectoryService, CurrencyService
+        self.assertEqual(CurrencyService.for_country("KE").code, "KES")
+        names = [b.name for b in BankDirectoryService.for_country("KE")]
+        self.assertIn("Equity Bank", names)
+        self.assertIn("KCB Bank", names)
+
+    def test_statutory_is_kenyan_not_generic(self):
+        from apps.reference.services import StatutoryService
+        keys = {f["key"] for f in StatutoryService.rules("KE")}
+        self.assertIn("kra_pin", keys)
+        self.assertIn("nssf_no", keys)
+        self.assertNotIn("bbbee_level", keys)     # no SA fields
+        self.assertNotIn("ein", keys)             # no US fields
+
+    def test_kra_pin_validation(self):
+        from apps.reference.services import StatutoryService
+        self.assertEqual(StatutoryService.validate("KE", {"kra_pin": "A012345678Z"}), [])
+        self.assertTrue(any(e.field == "kra_pin"
+                            for e in StatutoryService.validate("KE", {"kra_pin": "nope"})))
+
+    def test_address_and_postal(self):
+        from apps.reference.services import AddressValidationService
+        rule = AddressValidationService.rule("KE")
+        self.assertIn("County", [f["label"] for f in rule.fields])
+        self.assertIsNotNone(AddressValidationService.validate_postal_code("KE", "1"))   # bad
+        self.assertIsNone(AddressValidationService.validate_postal_code("KE", "00100"))  # good
+
+    def test_documents_are_kenyan(self):
+        from apps.reference.services import recommended_documents
+        docs = " ".join(recommended_documents("KE")).lower()
+        self.assertIn("kra pin", docs)
+        self.assertNotIn("cipc", docs)            # no SA docs
+
+
 class EmailTests(TestCase):
     def test_normalise(self):
         self.assertEqual(EmailValidationService.normalize("  John@Example.COM "), "john@example.com")

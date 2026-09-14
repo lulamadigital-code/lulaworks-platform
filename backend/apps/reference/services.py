@@ -107,6 +107,9 @@ _COUNTRY_DOCUMENTS = {
            "Workers' compensation certificate", "Bank confirmation"],
     "CA": ["Incorporation / registration documents", "Business number (CRA)",
            "GST/HST registration (if applicable)", "Bank confirmation"],
+    "KE": ["Certificate of Incorporation", "KRA PIN certificate",
+           "Tax Compliance Certificate", "CR12 (company officers)",
+           "Business permit / licence (if applicable)", "Bank confirmation letter"],
 }
 _DEFAULT_DOCUMENTS = ["Company registration document", "Tax registration document",
                       "Bank confirmation"]

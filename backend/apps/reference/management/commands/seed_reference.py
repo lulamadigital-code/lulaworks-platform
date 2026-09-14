@@ -141,6 +141,12 @@ BANKING_RULES = {
                fields=[_F("account_number", "Account number", True, "account_number"),
                        _F("branch_code", "IFSC code", True, "ifsc"),
                        _F("swift_code", "SWIFT/BIC", False, "swift_bic")]),
+    "KE": dict(branch_label="Bank branch code", show_swift=True,
+               branch_hint="Your bank's branch code.",
+               fields=[_F("account_number", "Account number", True, "account_number"),
+                       _F("branch_code", "Bank branch code", True, "branch_code"),
+                       _F("swift_code", "SWIFT/BIC", False, "swift_bic",
+                          "For international payments.")]),
 }
 # SEPA members share an IBAN-based rule.
 _SEPA_RULE = dict(branch_label="IBAN", show_swift=True,
@@ -170,6 +176,10 @@ ADDRESS_RULES = {
                             ("province", "Province", True)),
                postal_label="Postal code", postal_regex=r"[A-Za-z]\d[A-Za-z]\s*\d[A-Za-z]\d",
                postal_hint="Enter a valid Canadian postal code (A1A 1A1)."),
+    "KE": dict(fields=_ADDR(("street_address", "Street / building", True), ("suburb", "Estate / area", False),
+                            ("city", "Town / City", True), ("province", "County", True)),
+               postal_label="Postal code", postal_regex=r"\d{5}",
+               postal_hint="Enter a valid 5-digit Kenyan postal code."),
 }
 
 
@@ -216,6 +226,14 @@ STATUTORY_RULES = {
     "CA": [
         _S("bn", "Business Number", "CRA", placeholder="123456789"),
         _S("gst", "GST/HST number", "CRA"),
+    ],
+    "KE": [
+        _S("reg_no", "Company registration number", "Registrar of Companies"),
+        _S("kra_pin", "KRA PIN", "KRA", validator=r"[A-Za-z]\d{9}[A-Za-z]",
+           placeholder="A012345678Z", help="Personal/company tax PIN."),
+        _S("vat_no", "VAT registration number", "KRA"),
+        _S("nssf_no", "NSSF number", "NSSF"),
+        _S("nhif_no", "NHIF number", "NHIF"),
     ],
 }
 
