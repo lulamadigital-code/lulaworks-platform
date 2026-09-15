@@ -17,4 +17,10 @@ urlpatterns = [
     path("reference/countries/<str:code>/documents/", v.DocumentRules.as_view(),
          name="reference_document_rules"),
     path("reference/banks/search/", v.BankSearch.as_view(), name="reference_bank_search"),
+    path("reference/languages/", v.LanguageList.as_view(), name="reference_languages"),
+    path("reference/locales/", v.LocaleList.as_view(), name="reference_locales"),
+    path("reference/countries/<str:code>/languages/", v.CountryLanguages.as_view(),
+         name="reference_country_languages"),
+    path("reference/countries/<str:code>/locales/", v.CountryLocales.as_view(),
+         name="reference_country_locales"),
 ]

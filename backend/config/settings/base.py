@@ -114,6 +114,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.web.context.nav_flags",
+                "apps.web.context.localization",
             ],
         },
     },
@@ -340,10 +341,18 @@ CSRF_TRUSTED_ORIGINS = [
 # i18n is switched on and the language list is here so more can be added without
 # re-architecting. Dates/numbers are stored ISO/UTC and displayed locale-aware.
 LANGUAGE_CODE = config("LANGUAGE_CODE", default="en")
+# Activated languages. The authoritative catalogue is reference.Language (seeded);
+# this list lets Django's i18n machinery activate/translate them. Country↔language
+# lives in reference.CountryLanguage — never hardcoded per country.
 LANGUAGES = [
-    ("en", "English"),
-    # Future: ("fr", "Français"), ("es", "Español"), ("pt", "Português"), …
+    ("en", "English"), ("fr", "Français"), ("es", "Español"), ("pt", "Português"),
+    ("de", "Deutsch"), ("it", "Italiano"), ("nl", "Nederlands"), ("ar", "العربية"),
+    ("sw", "Kiswahili"), ("am", "አማርኛ"), ("rw", "Ikinyarwanda"), ("ln", "Lingála"),
+    ("zu", "isiZulu"), ("xh", "isiXhosa"), ("af", "Afrikaans"), ("st", "Sesotho"),
+    ("tn", "Setswana"), ("nso", "Sepedi"), ("hi", "हिन्दी"), ("zh", "中文"),
+    ("ja", "日本語"), ("id", "Bahasa Indonesia"),
 ]
+LOCALE_PATHS = [BASE_DIR / "locale"]
 # Default platform timezone; per-company timezone lives on Company.timezone.
 TIME_ZONE = config("TIME_ZONE", default="UTC")
 USE_I18N = True

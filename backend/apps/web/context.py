@@ -185,3 +185,22 @@ def nav_flags(request):
             "attention_critical": attention_critical,
             "idle_timeout": getattr(_s, "SESSION_IDLE_TIMEOUT", 0),
             "ga4_id": getattr(_s, "GA4_MEASUREMENT_ID", "")}
+
+
+def localization(request):
+    """Effective language + text direction for the current request, resolved once
+    (reference.LanguageResolutionService) and exposed to every template so the base
+    layout can set `<html lang dir>` — RTL-ready, no separate app. Never touches
+    currency, permissions or data."""
+    try:
+        from apps.reference.services import LanguageResolutionService as R
+        user = getattr(request, "user", None)
+        authed = bool(user and getattr(user, "is_authenticated", False))
+        company = getattr(user, "active_company", None) if authed else None
+        lang, locale = R.resolve(request=request, user=user if authed else None,
+                                 company=company)
+        return {"LANGUAGE_CODE_EFFECTIVE": lang,
+                "LANGUAGE_DIR": R.direction_for(lang),
+                "LOCALE_EFFECTIVE": locale or ""}
+    except Exception:  # noqa: BLE001 — localization must never break a page
+        return {"LANGUAGE_CODE_EFFECTIVE": "en", "LANGUAGE_DIR": "ltr", "LOCALE_EFFECTIVE": ""}

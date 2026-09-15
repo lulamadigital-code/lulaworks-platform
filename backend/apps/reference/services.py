@@ -234,6 +234,144 @@ class StatutoryService:
         return errs
 
 
+# ── Localization: language / locale / resolution ─────────────────────────────
+SYSTEM_FALLBACK_LANGUAGE = "en"
+
+
+def _primary(code: str) -> str:
+    """The primary language subtag: 'en-ZA' → 'en'."""
+    return (code or "").strip().lower().split("-")[0]
+
+
+class LanguageService:
+    @staticmethod
+    def all_active():
+        from .models import Language
+        return list(Language.objects.filter(active=True))
+
+    @staticmethod
+    def get(code):
+        from .models import Language
+        return Language.objects.filter(code=_primary(code)).first()
+
+    @staticmethod
+    def is_valid(code) -> bool:
+        lang = LanguageService.get(code)
+        return bool(lang and lang.active)
+
+    @staticmethod
+    def for_country(country_code):
+        """Active languages used in a country, default first."""
+        from .models import CountryLanguage
+        rows = (CountryLanguage.objects
+                .filter(country_id=(country_code or "").upper())
+                .select_related("language"))
+        return [r.language for r in rows if r.language.active]
+
+    @staticmethod
+    def default_for_country(country_code):
+        from .models import CountryLanguage
+        cl = (CountryLanguage.objects
+              .filter(country_id=(country_code or "").upper(), is_default=True)
+              .select_related("language").first())
+        return cl.language if cl else None
+
+    @staticmethod
+    def direction(code) -> str:
+        lang = LanguageService.get(code)
+        return lang.direction if lang else "ltr"
+
+
+class LocaleService:
+    @staticmethod
+    def for_language(code):
+        from .models import Locale
+        return list(Locale.objects.filter(language_id=_primary(code), active=True))
+
+    @staticmethod
+    def get(code):
+        from .models import Locale
+        return Locale.objects.filter(code=code, active=True).first()
+
+    @staticmethod
+    def default_for(language_code, country_code=None):
+        from .models import Locale
+        lang = _primary(language_code)
+        if country_code:
+            loc = Locale.objects.filter(language_id=lang, region=(country_code or "").upper(),
+                                        active=True).first()
+            if loc:
+                return loc
+        return Locale.objects.filter(language_id=lang, active=True).first()
+
+
+class LanguageResolutionService:
+    """The ONE place effective language + locale are decided. Precedence (UI):
+    explicit request/session → user preference → company default → country default
+    → system fallback. Documents use resolve_document (document_language → customer
+    → company → country → fallback). Never touches currency/permissions/data."""
+
+    @staticmethod
+    def _company_language_candidates(company):
+        out = []
+        if company is None:
+            return out
+        out.append(getattr(company, "default_language", "") or "")
+        if not getattr(company, "default_language", ""):
+            try:
+                from apps.administration.models import CompanySettings
+                cs = CompanySettings.objects.filter(company=company).first()
+                if cs:
+                    out.append(cs.language)
+            except Exception:                    # noqa: BLE001
+                pass
+        return out
+
+    @classmethod
+    def _resolve(cls, candidates, country_code):
+        for c in candidates:
+            if c and LanguageService.is_valid(c):
+                lang = LanguageService.get(c).code
+                loc = LocaleService.default_for(lang, country_code)
+                return lang, (loc.code if loc else None)
+        return SYSTEM_FALLBACK_LANGUAGE, None
+
+    @classmethod
+    def resolve(cls, *, request=None, user=None, company=None):
+        cc = getattr(company, "country_code", "") if company else ""
+        candidates = []
+        if request is not None:
+            sess = getattr(request, "session", None)
+            if sess is not None:
+                candidates.append(sess.get("preferred_language"))
+            getp = getattr(request, "GET", None)
+            if getp is not None:
+                candidates.append(getp.get("lang"))
+        if user is not None:
+            candidates.append(getattr(user, "preferred_language", "") or "")
+        candidates += cls._company_language_candidates(company)
+        d = LanguageService.default_for_country(cc) if cc else None
+        if d:
+            candidates.append(d.code)
+        return cls._resolve(candidates, cc)
+
+    @classmethod
+    def resolve_document(cls, *, document_language=None, customer=None, company=None):
+        cc = getattr(company, "country_code", "") if company else ""
+        candidates = [document_language]
+        if customer is not None:
+            candidates.append(getattr(customer, "preferred_language", "") or "")
+        candidates += cls._company_language_candidates(company)
+        d = LanguageService.default_for_country(cc) if cc else None
+        if d:
+            candidates.append(d.code)
+        return cls._resolve(candidates, cc)
+
+    @staticmethod
+    def direction_for(language_code) -> str:
+        return LanguageService.direction(language_code)
+
+
 # ── Bank directory ───────────────────────────────────────────────────────────
 class BankDirectoryService:
     @staticmethod

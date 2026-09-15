@@ -12,7 +12,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from .models import Bank, Country
 from .services import (AddressValidationService, BankDirectoryService,
                        BankingValidationService, CurrencyService,
-                       DocumentRulesService, StatutoryService)
+                       DocumentRulesService, LanguageService, LocaleService,
+                       StatutoryService)
 
 _CACHE = 60 * 15
 
@@ -102,3 +103,47 @@ class DocumentRules(_RefView):
     def get(self, request, code):
         return Response({"country": code.upper(),
                          "documents": DocumentRulesService.recommended(code)})
+
+
+def _lang_dict(l):
+    return {"code": l.code, "name": l.name, "native_name": l.native_name,
+            "direction": l.direction}
+
+
+@method_decorator(cache_page(_CACHE), name="get")
+class LanguageList(_RefView):
+    def get(self, request):
+        return Response([_lang_dict(l) for l in LanguageService.all_active()])
+
+
+@method_decorator(cache_page(_CACHE), name="get")
+class LocaleList(_RefView):
+    def get(self, request):
+        from .models import Locale
+        rows = Locale.objects.filter(active=True).select_related("language")
+        return Response([{"code": lo.code, "language": lo.language_id,
+                          "region": lo.region, "date_format": lo.date_format}
+                         for lo in rows])
+
+
+class CountryLanguages(_RefView):
+    def get(self, request, code):
+        langs = LanguageService.for_country(code)
+        default = LanguageService.default_for_country(code)
+        return Response({"country": code.upper(),
+                         "default": default.code if default else None,
+                         "languages": [_lang_dict(l) for l in langs]})
+
+
+class CountryLocales(_RefView):
+    def get(self, request, code):
+        langs = LanguageService.for_country(code)
+        out = []
+        for l in langs:
+            out += LocaleService.for_language(l.code)
+        seen, rows = set(), []
+        for lo in out:
+            if lo.code not in seen:
+                seen.add(lo.code)
+                rows.append({"code": lo.code, "language": lo.language_id, "region": lo.region})
+        return Response({"country": code.upper(), "locales": rows})

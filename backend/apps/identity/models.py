@@ -46,6 +46,11 @@ class Company(PlatformBaseModel):
     # ISO 3166-1 alpha-2 — the SOURCE OF TRUTH that drives currency, banking and
     # validation. `country` (name above) is derived from this for display.
     country_code = models.CharField(max_length=2, blank=True)
+    # Company default language/locale — SUGGESTED from country on create, but never
+    # silently overwritten when the country changes. Language stays separate from
+    # country/currency. Resolver prefers this over CompanySettings.language.
+    default_language = models.CharField(max_length=8, blank=True)
+    default_locale = models.CharField(max_length=12, blank=True)
     province = models.CharField(max_length=64, blank=True)
     city = models.CharField(max_length=64, blank=True)
     # Locale defaults derive from platform config (not a hard-coded country), so
@@ -162,6 +167,10 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
     status = models.CharField(max_length=16, default="active")
     mfa_enabled = models.BooleanField(default=False)
+    # Localization: a user's own language/locale (blank = resolve from company /
+    # country). Language ≠ company, ≠ country — see reference.LanguageResolutionService.
+    preferred_language = models.CharField(max_length=8, blank=True)
+    preferred_locale = models.CharField(max_length=12, blank=True)
 
     # The company the user is currently operating in (multi-company: switch +
     # reissue token). Drives ambient tenant context (DATA_MODEL §1/§5).
@@ -420,6 +429,9 @@ class CompanyContact(PlatformBaseModel):
     extension = models.CharField(max_length=12, blank=True)
     preferred_method = models.CharField(max_length=10, choices=Method.choices,
                                         default=Method.EMAIL)
+    # A contact's own language — a French company can have an English-speaking
+    # contact who should receive documents/emails in English.
+    preferred_language = models.CharField(max_length=8, blank=True)
     # The contact printed on outgoing documents when no other is specified.
     is_primary = models.BooleanField(default=False)
 

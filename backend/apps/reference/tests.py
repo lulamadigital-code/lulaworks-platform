@@ -399,6 +399,95 @@ class GlobalCoverageTests(TestCase):
         self.assertIn("Africa audited: 54 of 54", report)
 
 
+class LocalizationTests(TestCase):
+    """One global localization engine on top of country intelligence: country ≠
+    language, central resolution precedence, RTL, fallback."""
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def test_languages_and_direction(self):
+        from apps.reference.services import LanguageService as L
+        self.assertEqual(L.direction("ar"), "rtl")
+        self.assertEqual(L.direction("en"), "ltr")
+        codes = {l.code for l in L.all_active()}
+        self.assertTrue({"en", "fr", "ar", "sw", "zu", "pt", "es"} <= codes)
+
+    def test_country_has_many_languages(self):
+        from apps.reference.services import LanguageService as L
+        za = [l.code for l in L.for_country("ZA")]
+        self.assertEqual(za[0], "en")                       # default first
+        self.assertTrue({"zu", "xh", "af"} <= set(za))
+        self.assertEqual([l.code for l in L.for_country("KE")], ["en", "sw"])
+        self.assertEqual([l.code for l in L.for_country("CA")], ["en", "fr"])
+        self.assertEqual([l.code for l in L.for_country("MA")], ["ar", "fr"])
+        self.assertEqual(L.default_for_country("BR").code, "pt")
+
+    def test_resolution_precedence(self):
+        from apps.identity.models import Company, User
+        from apps.reference.services import LanguageResolutionService as R
+        c = Company(name="X", country_code="ZA", default_language="")
+        # country default
+        self.assertEqual(R.resolve(company=c)[0], "en")
+        # company default overrides country
+        c.default_language = "af"
+        self.assertEqual(R.resolve(company=c)[0], "af")
+        # user preference overrides company
+        u = User(email="u@x.co", preferred_language="zu")
+        self.assertEqual(R.resolve(user=u, company=c)[0], "zu")
+        # system fallback with no context
+        self.assertEqual(R.resolve()[0], "en")
+
+    def test_document_resolution_uses_customer(self):
+        from apps.identity.models import Company
+        from apps.reference.services import LanguageResolutionService as R
+        c = Company(name="Y", country_code="MA", default_language="")   # Morocco → ar
+        self.assertEqual(R.resolve(company=c)[0], "ar")
+        cust = type("C", (), {"preferred_language": "fr"})()
+        self.assertEqual(R.resolve_document(customer=cust, company=c)[0], "fr")
+
+    def test_locale_is_not_language(self):
+        from apps.reference.services import LocaleService as Lo
+        self.assertEqual(Lo.default_for("en", "ZA").code, "en-ZA")
+        self.assertEqual(Lo.default_for("en", "US").code, "en-US")
+        self.assertEqual(Lo.default_for("pt", "BR").code, "pt-BR")
+
+    def test_invalid_language_falls_back(self):
+        from apps.identity.models import Company
+        from apps.reference.services import LanguageResolutionService as R, LanguageService as L
+        self.assertFalse(L.is_valid("xx"))
+        c = Company(name="Z", country_code="ZA", default_language="xx")  # invalid
+        self.assertEqual(R.resolve(company=c)[0], "en")     # skips invalid → country default
+
+    def test_language_never_changes_currency(self):
+        from apps.reference.services import CurrencyService as C
+        self.assertEqual(C.for_country("AU").code, "AUD")   # unaffected by any language
+
+
+class LocalizationApiTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def setUp(self):
+        from apps.identity.models import Company, User
+        company = Company.objects.create(name="Acme", country_code="ZA")
+        self.user = User.objects.create_user("api@a.co", "x", active_company=company)
+        self.client.force_login(self.user)
+
+    def test_languages_endpoint_has_rtl_flag(self):
+        r = self.client.get("/api/v1/reference/languages/")
+        self.assertEqual(r.status_code, 200)
+        ar = next(x for x in r.json() if x["code"] == "ar")
+        self.assertEqual(ar["direction"], "rtl")
+
+    def test_country_languages_endpoint(self):
+        r = self.client.get("/api/v1/reference/countries/ZA/languages/")
+        self.assertEqual(r.json()["default"], "en")
+        codes = {l["code"] for l in r.json()["languages"]}
+        self.assertTrue({"en", "zu", "af"} <= codes)
+
+
 class EmailTests(TestCase):
     def test_normalise(self):
         self.assertEqual(EmailValidationService.normalize("  John@Example.COM "), "john@example.com")

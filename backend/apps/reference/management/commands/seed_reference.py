@@ -811,6 +811,86 @@ STATUTORY_RULES = {
 }
 
 
+# ── Languages (code, name, native_name, direction, priority) ──────────────────
+LANGUAGES = [
+    ("en", "English", "English", "ltr", 0),
+    ("fr", "French", "Français", "ltr", 10),
+    ("es", "Spanish", "Español", "ltr", 20),
+    ("pt", "Portuguese", "Português", "ltr", 20),
+    ("de", "German", "Deutsch", "ltr", 20),
+    ("it", "Italian", "Italiano", "ltr", 25),
+    ("nl", "Dutch", "Nederlands", "ltr", 25),
+    ("ar", "Arabic", "العربية", "rtl", 30),
+    ("sw", "Swahili", "Kiswahili", "ltr", 40),
+    ("am", "Amharic", "አማርኛ", "ltr", 40),
+    ("rw", "Kinyarwanda", "Ikinyarwanda", "ltr", 40),
+    ("ln", "Lingala", "Lingála", "ltr", 45),
+    ("zu", "isiZulu", "isiZulu", "ltr", 50),
+    ("xh", "isiXhosa", "isiXhosa", "ltr", 50),
+    ("af", "Afrikaans", "Afrikaans", "ltr", 50),
+    ("st", "Sesotho", "Sesotho", "ltr", 50),
+    ("tn", "Setswana", "Setswana", "ltr", 50),
+    ("nso", "Sepedi", "Sepedi", "ltr", 50),
+    ("hi", "Hindi", "हिन्दी", "ltr", 35),
+    ("zh", "Chinese", "中文", "ltr", 35),
+    ("ja", "Japanese", "日本語", "ltr", 35),
+    ("id", "Indonesian", "Bahasa Indonesia", "ltr", 35),
+]
+
+# ── Locales (code, language, region, date_format, decimal, group) ─────────────
+LOCALES = [
+    ("en-ZA", "en", "ZA", "d/m/Y", ".", " "), ("en-US", "en", "US", "m/d/Y", ".", ","),
+    ("en-GB", "en", "GB", "d/m/Y", ".", ","), ("en-KE", "en", "KE", "d/m/Y", ".", ","),
+    ("en-NG", "en", "NG", "d/m/Y", ".", ","), ("en-AU", "en", "AU", "d/m/Y", ".", ","),
+    ("fr-FR", "fr", "FR", "d/m/Y", ",", " "), ("fr-CA", "fr", "CA", "Y-m-d", ",", " "),
+    ("fr-MA", "fr", "MA", "d/m/Y", ",", " "),
+    ("pt-BR", "pt", "BR", "d/m/Y", ",", "."), ("pt-PT", "pt", "PT", "d/m/Y", ",", " "),
+    ("pt-MZ", "pt", "MZ", "d/m/Y", ",", " "),
+    ("es-MX", "es", "MX", "d/m/Y", ".", ","), ("es-ES", "es", "ES", "d/m/Y", ",", "."),
+    ("es-AR", "es", "AR", "d/m/Y", ",", "."), ("es-CO", "es", "CO", "d/m/Y", ",", "."),
+    ("de-DE", "de", "DE", "d.m.Y", ",", "."), ("de-CH", "de", "CH", "d.m.Y", ".", "'"),
+    ("ar-MA", "ar", "MA", "d/m/Y", ".", ","), ("ar-EG", "ar", "EG", "d/m/Y", ".", ","),
+    ("ar-SA", "ar", "SA", "d/m/Y", ".", ","), ("ar-AE", "ar", "AE", "d/m/Y", ".", ","),
+    ("sw-KE", "sw", "KE", "d/m/Y", ".", ","), ("sw-TZ", "sw", "TZ", "d/m/Y", ".", ","),
+    ("nl-NL", "nl", "NL", "d-m-Y", ",", "."), ("it-IT", "it", "IT", "d/m/Y", ",", "."),
+    ("am-ET", "am", "ET", "d/m/Y", ".", ","), ("rw-RW", "rw", "RW", "d/m/Y", ".", ","),
+    ("hi-IN", "hi", "IN", "d/m/Y", ".", ","), ("zh-CN", "zh", "CN", "Y-m-d", ".", ","),
+    ("ja-JP", "ja", "JP", "Y/m/d", ".", ","), ("id-ID", "id", "ID", "d/m/Y", ",", "."),
+]
+
+# ── Country → languages (first = default). Country and language are separate. ──
+COUNTRY_LANGUAGES = {
+    # Africa
+    "ZA": ["en", "zu", "xh", "af", "st", "tn", "nso"], "KE": ["en", "sw"],
+    "TZ": ["sw", "en"], "UG": ["en", "sw"], "NG": ["en"], "GH": ["en"],
+    "EG": ["ar", "en"], "MA": ["ar", "fr"], "DZ": ["ar", "fr"], "TN": ["ar", "fr"],
+    "LY": ["ar", "en"], "SD": ["ar", "en"], "MR": ["ar", "fr"],
+    "RW": ["rw", "en", "fr"], "ET": ["am", "en"], "MZ": ["pt", "en"], "AO": ["pt", "en"],
+    "CV": ["pt"], "ST": ["pt"], "GW": ["pt"],
+    "SN": ["fr"], "CI": ["fr"], "CM": ["fr", "en"], "CD": ["fr", "ln"], "CG": ["fr"],
+    "GA": ["fr"], "BJ": ["fr"], "BF": ["fr"], "ML": ["fr"], "NE": ["fr"], "TG": ["fr"],
+    "GN": ["fr"], "TD": ["fr", "ar"], "CF": ["fr"], "DJ": ["fr", "ar"], "KM": ["ar", "fr"],
+    "MG": ["fr", "en"], "MU": ["en", "fr"], "SC": ["en", "fr"], "BI": ["fr", "en"],
+    "ZM": ["en"], "ZW": ["en"], "BW": ["en"], "NA": ["en", "af"], "MW": ["en"],
+    "LS": ["en", "st"], "SZ": ["en"], "SL": ["en"], "LR": ["en"], "GM": ["en"],
+    "SS": ["en"], "SO": ["ar", "en"], "ER": ["ar", "en"], "GQ": ["es", "fr"],
+    # Americas
+    "US": ["en", "es"], "CA": ["en", "fr"], "MX": ["es"], "BR": ["pt", "en"],
+    "AR": ["es"], "CL": ["es"], "CO": ["es"], "PE": ["es"], "EC": ["es"], "UY": ["es"],
+    "PY": ["es"], "BO": ["es"], "VE": ["es"], "GT": ["es"], "HN": ["es"], "SV": ["es"],
+    "NI": ["es"], "CR": ["es"], "PA": ["es"], "DO": ["es"], "CU": ["es"], "HT": ["fr"],
+    "JM": ["en"], "TT": ["en"], "BB": ["en"], "BS": ["en"], "GY": ["en"], "SR": ["nl"],
+    # Europe
+    "GB": ["en"], "FR": ["fr", "en"], "DE": ["de", "en"], "NL": ["nl", "en"],
+    "ES": ["es"], "IT": ["it"], "IE": ["en"], "CH": ["de", "fr", "it"], "PT": ["pt"],
+    "BE": ["nl", "fr"], "AT": ["de"], "LU": ["fr", "de"],
+    # Asia / Gulf / Oceania
+    "IN": ["en", "hi"], "JP": ["ja", "en"], "CN": ["zh", "en"], "SG": ["en", "zh"],
+    "ID": ["id", "en"], "AE": ["ar", "en"], "SA": ["ar", "en"], "QA": ["ar", "en"],
+    "AU": ["en"], "NZ": ["en"],
+}
+
+
 class Command(BaseCommand):
     help = "Seed / refresh international reference data (countries, currencies, banks, rules)."
 
@@ -819,7 +899,8 @@ class Command(BaseCommand):
         import phonenumbers
         from apps.reference.models import (AddressFieldRule, Bank, BankingFieldRule,
                                            Country, CountryCurrency,
-                                           CountryDocumentRule, Currency,
+                                           CountryDocumentRule, CountryLanguage,
+                                           Currency, Language, Locale,
                                            StatutoryRegistrationRule)
         from apps.reference.services import _COUNTRY_DOCUMENTS, _DEFAULT_DOCUMENTS
 
@@ -900,7 +981,30 @@ class Command(BaseCommand):
                               "has_expiry": any(w in name.lower() for w in _EXP)})
                 n_docs += 1
 
+        # 7) Languages, locales, country→language
+        for code, name, native, direction, prio in LANGUAGES:
+            Language.objects.update_or_create(code=code, defaults=dict(
+                name=name, native_name=native, direction=direction,
+                sort_priority=prio, active=True))
+        for code, lang, region, df, dec, grp in LOCALES:
+            if Language.objects.filter(code=lang).exists():
+                Locale.objects.update_or_create(code=code, defaults=dict(
+                    language_id=lang, region=region, date_format=df,
+                    number_decimal=dec, number_group=grp, active=True))
+        n_cl = 0
+        for country_code, langs in COUNTRY_LANGUAGES.items():
+            if not Country.objects.filter(code=country_code).exists():
+                continue
+            for i, lang in enumerate(langs):
+                if not Language.objects.filter(code=lang).exists():
+                    continue
+                CountryLanguage.objects.update_or_create(
+                    country_id=country_code, language_id=lang,
+                    defaults=dict(is_default=(i == 0), sort_priority=i))
+                n_cl += 1
+
         self.stdout.write(self.style.SUCCESS(
             f"Reference seeded: {len(cur_objs)} currencies, {n_countries} countries, "
             f"{n_banks} banks, {len(BANKING_RULES)} banking rules, {len(ADDRESS_RULES)} address rules, "
-            f"{n_stat} statutory rules, {n_docs} document rules."))
+            f"{n_stat} statutory rules, {n_docs} document rules, {len(LANGUAGES)} languages, "
+            f"{len(LOCALES)} locales, {n_cl} country-languages."))

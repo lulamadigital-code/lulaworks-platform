@@ -170,6 +170,68 @@ class StatutoryRegistrationRule(models.Model):
         return f"{self.country_id} · {self.key}"
 
 
+class Language(models.Model):
+    """A language Lulaworks can localize into — reference data, so new languages
+    are activated by adding a row, never by code. `code` is the ISO 639-1 / BCP-47
+    primary subtag. Country and language are SEPARATE concepts."""
+
+    class Direction(models.TextChoices):
+        LTR = "ltr", "Left-to-right"
+        RTL = "rtl", "Right-to-left"
+
+    code = models.CharField(max_length=8, primary_key=True)        # en, fr, ar, sw, zu
+    name = models.CharField(max_length=64)                         # English name
+    native_name = models.CharField(max_length=64)                 # endonym, e.g. isiZulu
+    direction = models.CharField(max_length=3, choices=Direction.choices,
+                                 default=Direction.LTR)
+    active = models.BooleanField(default=True)
+    sort_priority = models.IntegerField(default=100)
+
+    class Meta:
+        ordering = ["sort_priority", "name"]
+
+    def __str__(self):
+        return f"{self.code} — {self.name}"
+
+
+class Locale(models.Model):
+    """A language + region, driving regional FORMATTING (dates, numbers). Distinct
+    from Language: en-ZA, en-US and en-GB share a language but format differently."""
+    code = models.CharField(max_length=12, primary_key=True)       # en-ZA, fr-CA, pt-BR
+    language = models.ForeignKey(Language, on_delete=models.CASCADE, related_name="locales")
+    region = models.CharField(max_length=2, blank=True)            # country alpha-2
+    date_format = models.CharField(max_length=32, default="d/m/Y")  # Django date format
+    number_decimal = models.CharField(max_length=1, default=".")
+    number_group = models.CharField(max_length=1, default=",")
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["code"]
+
+    def __str__(self):
+        return self.code
+
+
+class CountryLanguage(models.Model):
+    """Which languages are used in a country, and which is the default. A country
+    has MANY languages; a language spans MANY countries. This is the only place
+    country and language meet — never in forms or business logic."""
+    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="languages")
+    language = models.ForeignKey(Language, on_delete=models.CASCADE, related_name="countries")
+    is_default = models.BooleanField(default=False)
+    sort_priority = models.IntegerField(default=100)
+
+    class Meta:
+        ordering = ["country", "-is_default", "sort_priority"]
+        constraints = [
+            models.UniqueConstraint(fields=["country", "language"],
+                                    name="uniq_country_language"),
+        ]
+
+    def __str__(self):
+        return f"{self.country_id} · {self.language_id}{' (default)' if self.is_default else ''}"
+
+
 class CountryDocumentRule(models.Model):
     """A supporting document a company in a country is typically expected to hold.
     Drives the 'recommended documents' list per country — no hardcoded per-country
