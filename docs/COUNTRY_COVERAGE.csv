@@ -15,14 +15,14 @@ Congo,CG,XAF,+242,generic,generic,generic,0,generic,generic,generic,REGIONAL,"ba
 "Congo, The Democratic Republic of the",CD,CDF,+243,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Côte d'Ivoire,CI,XOF,+225,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Djibouti,DJ,DJF,+253,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-Egypt,EG,EGP,+20,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Egypt,EG,EGP,+20,yes,yes,yes,5,VAT/GST,yes,yes,FIRST_CLASS,
 Equatorial Guinea,GQ,XAF,+240,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Eritrea,ER,ERN,+291,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Eswatini,SZ,SZL,+268,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-Ethiopia,ET,ETB,+251,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Ethiopia,ET,ETB,+251,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 Gabon,GA,XAF,+241,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Gambia,GM,GMD,+220,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-Ghana,GH,GHS,+233,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Ghana,GH,GHS,+233,yes,yes,yes,5,VAT/GST,yes,yes,FIRST_CLASS,
 Guinea,GN,GNF,+224,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Guinea-Bissau,GW,XOF,+245,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Kenya,KE,KES,+254,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
@@ -34,12 +34,12 @@ Malawi,MW,MWK,+265,generic,generic,generic,0,generic,generic,generic,REGIONAL,"b
 Mali,ML,XOF,+223,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Mauritania,MR,MRU,+222,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Mauritius,MU,MUR,+230,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-Morocco,MA,MAD,+212,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Morocco,MA,MAD,+212,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 Mozambique,MZ,MZN,+258,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Namibia,NA,NAD,+264,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Niger,NE,XOF,+227,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Nigeria,NG,NGN,+234,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
-Rwanda,RW,RWF,+250,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Rwanda,RW,RWF,+250,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 Sao Tome and Principe,ST,STN,+239,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Senegal,SN,XOF,+221,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Seychelles,SC,SCR,+248,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
@@ -47,10 +47,10 @@ Sierra Leone,SL,SLE,+232,generic,generic,generic,0,generic,generic,generic,REGIO
 Somalia,SO,SOS,+252,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 South Sudan,SS,SSP,+211,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Sudan,SD,SDG,+249,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-Tanzania,TZ,TZS,+255,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Tanzania,TZ,TZS,+255,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 Togo,TG,XOF,+228,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Tunisia,TN,TND,+216,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-Uganda,UG,UGX,+256,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Uganda,UG,UGX,+256,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 Zambia,ZM,ZMW,+260,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Zimbabwe,ZW,ZWG,+263,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Argentina,AR,ARS,+54,yes,yes,yes,5,VAT/GST,yes,yes,FIRST_CLASS,

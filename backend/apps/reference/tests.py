@@ -338,7 +338,8 @@ class GlobalCoverageTests(TestCase):
     FIRST_CLASS = {"AU", "BR", "CA", "CH", "DE", "ES", "FR", "GB", "IE", "IN", "IT",
                    "KE", "NG", "NL", "NZ", "US", "ZA",
                    "MX", "AR", "CL", "CO", "PE",
-                   "JP", "CN", "SG", "AE", "ID", "SA"}
+                   "JP", "CN", "SG", "AE", "ID", "SA",
+                   "GH", "EG", "MA", "TZ", "UG", "RW", "ET"}
 
     @classmethod
     def setUpTestData(cls):
