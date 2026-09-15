@@ -124,6 +124,13 @@ _COUNTRY_DOCUMENTS = {
            "Bank confirmation"],
     "DE": ["Handelsregisterauszug", "USt-IdNr certificate",
            "Gewerbeanmeldung (business registration)", "Bank confirmation"],
+    "NL": ["KVK uittreksel (extract)", "BTW registration", "Bank confirmation"],
+    "ES": ["Escritura de constitución", "NIF / CIF certificate",
+           "Registro Mercantil extract", "Bank confirmation"],
+    "IT": ["Visura camerale", "Certificato Partita IVA", "Bank confirmation"],
+    "IE": ["Certificate of Incorporation (CRO)", "VAT registration",
+           "Tax clearance certificate", "Bank confirmation"],
+    "CH": ["Handelsregisterauszug", "UID / VAT registration", "Bank confirmation"],
 }
 _DEFAULT_DOCUMENTS = ["Company registration document", "Tax registration document",
                       "Bank confirmation"]

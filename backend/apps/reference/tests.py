@@ -335,7 +335,8 @@ class GlobalCoverageTests(TestCase):
     """The engine must handle every ISO country — never 'unsupported' — with all
     of Africa covered and major markets first-class."""
     UNINHABITED = {"AQ", "BV", "GS", "HM", "IO", "TF", "UM"}   # no economy/currency
-    FIRST_CLASS = {"AU", "BR", "CA", "DE", "FR", "GB", "IN", "KE", "NG", "NZ", "US", "ZA"}
+    FIRST_CLASS = {"AU", "BR", "CA", "CH", "DE", "ES", "FR", "GB", "IE", "IN", "IT",
+                   "KE", "NG", "NL", "NZ", "US", "ZA"}
 
     @classmethod
     def setUpTestData(cls):
@@ -377,6 +378,15 @@ class GlobalCoverageTests(TestCase):
         keys = {f["key"] for f in StatutoryService.rules("FJ")}   # Fiji: baseline
         self.assertIn("reg_no", keys)                            # generic fallback
         self.assertTrue(DocumentRulesService.recommended("FJ"))
+
+    def test_eurozone_all_have_sepa_iban_banking(self):
+        # Every eurozone member gets correct IBAN/SEPA banking out of the box.
+        from apps.reference.management.commands.seed_reference import _EUROZONE
+        from apps.reference.services import BankingValidationService
+        for code in _EUROZONE:
+            rule = BankingValidationService.rule(code)
+            self.assertIsNotNone(rule, code)
+            self.assertIn("iban", [f["key"] for f in rule.fields], code)
 
     def test_audit_runs_and_only_uninhabited_incomplete(self):
         from io import StringIO

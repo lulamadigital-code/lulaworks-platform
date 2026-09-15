@@ -171,6 +171,34 @@ BANKS = {
         ("Crédit Mutuel", "Crédit Mutuel", "", "CMCIFRPP", [], False),
         ("La Banque Postale", "Banque Postale", "", "PSSTFRPP", [], False),
     ],
+    "NL": [
+        ("ING", "ING", "", "INGBNL2A", [], True),
+        ("Rabobank", "Rabobank", "", "RABONL2U", [], True),
+        ("ABN AMRO", "ABN AMRO", "", "ABNANL2A", [], True),
+        ("de Volksbank (SNS)", "SNS", "", "SNSBNL2A", [], False),
+    ],
+    "ES": [
+        ("Banco Santander", "Santander", "", "BSCHESMM", [], True),
+        ("BBVA", "BBVA", "", "BBVAESMM", [], True),
+        ("CaixaBank", "CaixaBank", "", "CAIXESBB", [], True),
+        ("Banco Sabadell", "Sabadell", "", "BSABESBB", [], False),
+    ],
+    "IT": [
+        ("Intesa Sanpaolo", "Intesa", "", "BCITITMM", [], True),
+        ("UniCredit", "UniCredit", "", "UNCRITMM", [], True),
+        ("Banco BPM", "Banco BPM", "", "BAPPIT21", [], False),
+    ],
+    "IE": [
+        ("Allied Irish Banks (AIB)", "AIB", "", "AIBKIE2D", ["AIB"], True),
+        ("Bank of Ireland", "BOI", "", "BOFIIE2D", [], True),
+        ("Permanent TSB", "PTSB", "", "IPBSIE2D", [], False),
+    ],
+    "CH": [
+        ("UBS", "UBS", "", "UBSWCHZH80A", [], True),
+        ("PostFinance", "PostFinance", "", "POFICHBE", [], True),
+        ("Raiffeisen Switzerland", "Raiffeisen", "", "RAIFCH22", [], True),
+        ("Zürcher Kantonalbank", "ZKB", "", "ZKBKCHZZ80A", [], False),
+    ],
     "AE": [
         ("Emirates NBD", "ENBD", "", "EBILAEAD", [], True),
         ("First Abu Dhabi Bank (FAB)", "FAB", "", "NBADAEAA", [], True),
@@ -246,6 +274,11 @@ BANKING_RULES = {
                fields=[_F("branch_code", "Agência (branch)", True, "branch_code"),
                        _F("account_number", "Conta (account)", True, "account_number"),
                        _F("swift_code", "SWIFT/BIC", False, "swift_bic")]),
+    # Switzerland uses IBAN (not in the eurozone, so set explicitly).
+    "CH": dict(branch_label="IBAN", show_swift=True,
+               branch_hint="Swiss IBAN routes the payment.",
+               fields=[_F("iban", "IBAN", True, "iban", "CH.. 21 characters."),
+                       _F("swift_code", "BIC/SWIFT", False, "swift_bic")]),
 }
 # SEPA members share an IBAN-based rule.
 _SEPA_RULE = dict(branch_label="IBAN", show_swift=True,
@@ -303,6 +336,25 @@ ADDRESS_RULES = {
                             ("city", "Stadt (city)", True)),
                postal_label="PLZ", postal_regex=r"\d{5}",
                postal_hint="Enter a valid 5-digit PLZ."),
+    "NL": dict(fields=_ADDR(("street_address", "Straat (street)", True), ("city", "Plaats (city)", True),
+                            ("province", "Provincie", False)),
+               postal_label="Postcode", postal_regex=r"\d{4}\s?[A-Za-z]{2}",
+               postal_hint="Enter a valid Dutch postcode (1234 AB)."),
+    "ES": dict(fields=_ADDR(("street_address", "Calle (street)", True), ("city", "Ciudad (city)", True),
+                            ("province", "Provincia", True)),
+               postal_label="Código postal", postal_regex=r"\d{5}",
+               postal_hint="Enter a valid 5-digit código postal."),
+    "IT": dict(fields=_ADDR(("street_address", "Via (street)", True), ("city", "Città (city)", True),
+                            ("province", "Provincia", True)),
+               postal_label="CAP", postal_regex=r"\d{5}",
+               postal_hint="Enter a valid 5-digit CAP."),
+    "IE": dict(fields=_ADDR(("street_address", "Address line 1", True), ("suburb", "Address line 2", False),
+                            ("city", "Town / City", True), ("province", "County", False)),
+               postal_label="Eircode", postal_regex=r"[A-Za-z]\d{2}\s?[A-Za-z0-9]{4}",
+               postal_hint="Enter a valid Eircode (D02 AF30)."),
+    "CH": dict(fields=_ADDR(("street_address", "Strasse (street)", True), ("city", "Ort (city)", True)),
+               postal_label="PLZ", postal_regex=r"\d{4}",
+               postal_hint="Enter a valid 4-digit PLZ."),
 }
 
 
@@ -398,6 +450,29 @@ STATUTORY_RULES = {
         _S("ust_id", "USt-IdNr (VAT)", "BZSt", validator=r"[A-Za-z]{2}\d{9}",
            placeholder="DE123456789"),
         _S("steuernummer", "Steuernummer (tax no.)", "Finanzamt"),
+    ],
+    "NL": [
+        _S("kvk", "KVK number", "Kamer van Koophandel", validator=r"\d{8}",
+           placeholder="12345678"),
+        _S("btw", "BTW-nummer (VAT)", "Belastingdienst", placeholder="NL123456789B01"),
+    ],
+    "ES": [
+        _S("nif", "NIF / CIF", "Agencia Tributaria", placeholder="B12345678"),
+        _S("vat_no", "NIF-IVA (VAT)", "Agencia Tributaria", placeholder="ESB12345678"),
+    ],
+    "IT": [
+        _S("piva", "Partita IVA", "Agenzia delle Entrate", validator=r"\d{11}",
+           placeholder="12345678901"),
+        _S("cf", "Codice Fiscale", "Agenzia delle Entrate"),
+        _S("rea", "REA number", "Registro Imprese"),
+    ],
+    "IE": [
+        _S("cro", "CRO number", "Companies Registration Office", placeholder="123456"),
+        _S("vat_no", "VAT number", "Revenue", placeholder="IE1234567X"),
+    ],
+    "CH": [
+        _S("uid", "UID (CHE)", "Federal Statistical Office", placeholder="CHE-123.456.789"),
+        _S("vat_no", "MWST / VAT number", "ESTV", placeholder="CHE-123.456.789 MWST"),
     ],
 }
 
