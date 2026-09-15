@@ -1,4 +1,5 @@
 {% extends "web/base.html" %}
+{% load i18n %}
 {% block title %}{{ doc.number }}{% endblock %}
 {% block content %}
 <p class="sub"><a href="{% url 'web:quotation_detail' quote.id %}">← {{ quote.number }}</a></p>
@@ -9,7 +10,7 @@
   {% elif doc.status == 'approved' %}sb-approved{% else %}sb-draft{% endif %}">
   <div>
     <span class="sb-label">{{ doc.get_status_display }}</span>
-    {% if doc.is_finalized %}<span class="sb-note">Read-only — the commercial record</span>{% endif %}
+    {% if doc.is_finalized %}<span class="sb-note">{% trans "Read-only — the commercial record" %}</span>{% endif %}
   </div>
   <span class="sb-rev">{{ doc.get_kind_display }}</span>
 </div>
@@ -18,7 +19,7 @@
   <div>
     <h1 style="margin:0 0 4px;">{{ doc.number }}</h1>
     <p class="sub" style="margin:0;">{{ doc.get_kind_display }} ·
-      from <a href="{% url 'web:quotation_detail' quote.id %}">{{ quote.number }}</a>
+      {% trans "from" %} <a href="{% url 'web:quotation_detail' quote.id %}">{{ quote.number }}</a>
       {% if quote.customer %} · {{ quote.customer.display_name }}{% endif %}
       {% if doc.purchase_order %} · PO {{ doc.purchase_order.po_number }}{% endif %}</p>
   </div>
@@ -29,88 +30,86 @@
   {% if can_approve %}
   <form method="post" action="{% url 'web:commercial_document_transition' doc.id %}">
     {% csrf_token %}<input type="hidden" name="status" value="approved">
-    <button class="btn" type="submit">Approve</button></form>
+    <button class="btn" type="submit">{% trans "Approve" %}</button></form>
   {% endif %}
   {% if can_download %}
-  <a class="btn ghost" href="{% url 'web:commercial_document_pdf' doc.id %}">Download PDF</a>
-  <a class="btn ghost" href="{% url 'web:commercial_document_excel' doc.id %}">Export Excel</a>
+  <a class="btn ghost" href="{% url 'web:commercial_document_pdf' doc.id %}">{% trans "Download PDF" %}</a>
+  <a class="btn ghost" href="{% url 'web:commercial_document_excel' doc.id %}">{% trans "Export Excel" %}</a>
   {% endif %}
   {% comment %}Related documents for this job — view them if they exist, raise them
   if they don't. A quotation always backs an invoice, so it's always "view".{% endcomment %}
-  <a class="btn ghost" href="{% url 'web:quotation_detail' quote.id %}">View quotation</a>
+  <a class="btn ghost" href="{% url 'web:quotation_detail' quote.id %}">{% trans "View quotation" %}</a>
 
   {% if is_invoice %}
     {% if existing_delivery %}
-    <a class="btn ghost" href="{% url 'web:commercial_document_detail' existing_delivery.id %}">View delivery note</a>
+    <a class="btn ghost" href="{% url 'web:commercial_document_detail' existing_delivery.id %}">{% trans "View delivery note" %}</a>
     {% elif can_generate_docs %}
     <form method="post" action="{% url 'web:quotation_create_delivery' quote.id %}">{% csrf_token %}
-      <button class="btn" type="submit" data-busy-text="Creating…">Create delivery note</button></form>
+      <button class="btn" type="submit" data-busy-text="{% trans 'Creating…' %}">{% trans "Create delivery note" %}</button></form>
     {% endif %}
   {% else %}
     {% if existing_invoice %}
-    <a class="btn ghost" href="{% url 'web:commercial_document_detail' existing_invoice.id %}">View tax invoice</a>
+    <a class="btn ghost" href="{% url 'web:commercial_document_detail' existing_invoice.id %}">{% trans "View tax invoice" %}</a>
     {% elif can_generate_docs %}
     <form method="post" action="{% url 'web:quotation_create_invoice' quote.id %}">{% csrf_token %}
-      <button class="btn" type="submit" data-busy-text="Creating…">Create tax invoice</button></form>
+      <button class="btn" type="submit" data-busy-text="{% trans 'Creating…' %}">{% trans "Create tax invoice" %}</button></form>
     {% endif %}
   {% endif %}
 
   {% if purchase_orders %}
-  <a class="btn ghost" href="#po">View purchase order</a>
+  <a class="btn ghost" href="#po">{% trans "View purchase order" %}</a>
   {% elif po_active and can_generate_docs %}
-  <a class="btn ghost" href="#po">Upload purchase order</a>
+  <a class="btn ghost" href="#po">{% trans "Upload purchase order" %}</a>
   {% endif %}
 
   {% if is_invoice and can_view_money %}
-  <a class="btn ghost" href="#payments">{% if doc.outstanding > 0 %}Record payment{% else %}Payments{% endif %}</a>
+  <a class="btn ghost" href="#payments">{% if doc.outstanding > 0 %}{% trans "Record payment" %}{% else %}{% trans "Payments" %}{% endif %}</a>
   {% endif %}
 </div>
 
 {# ── Timeline ─────────────────────────────────────────────────────────────── #}
-<h2>{{ doc.get_kind_display }} timeline</h2>
+<h2>{% blocktrans with kind=doc.get_kind_display %}{{ kind }} timeline{% endblocktrans %}</h2>
 <div class="card ctl">
   {% for step in timeline %}
   <div class="ctl-row {% if step.done %}done{% endif %}">
     <span class="ctl-dot"></span><span class="ctl-label">{{ step.label }}</span>
-    <span class="ctl-meta">{% if step.current %}current{% elif step.done %}✓{% else %}<span class="muted">pending</span>{% endif %}</span>
+    <span class="ctl-meta">{% if step.current %}{% trans "current" %}{% elif step.done %}✓{% else %}<span class="muted">{% trans "pending" %}</span>{% endif %}</span>
   </div>
   {% endfor %}
 </div>
 
 {# ── PDF preview ──────────────────────────────────────────────────────────── #}
-<h2>{{ doc.get_kind_display }} preview</h2>
+<h2>{% blocktrans with kind=doc.get_kind_display %}{{ kind }} preview{% endblocktrans %}</h2>
 <div class="card" style="padding:0;overflow:hidden;">
-  <iframe title="{{ doc.get_kind_display }} PDF preview" class="pdfframe"
+  <iframe title="{% blocktrans with kind=doc.get_kind_display %}{{ kind }} PDF preview{% endblocktrans %}" class="pdfframe"
           src="{% url 'web:commercial_document_pdf' doc.id %}?inline=1"></iframe>
 </div>
-<p class="muted" style="font-size:12.5px;margin-top:6px;">Generated from
-  <a href="{% url 'web:quotation_detail' quote.id %}">{{ quote.number }}</a> — the
-  customer, items{% if is_invoice %}, prices and VAT{% else %} and quantities{% endif %}
-  come from the quotation, nothing re-entered.</p>
+<p class="muted" style="font-size:12.5px;margin-top:6px;">{% trans "Generated from" %}
+  <a href="{% url 'web:quotation_detail' quote.id %}">{{ quote.number }}</a> — {% if is_invoice %}{% trans "the customer, items, prices and VAT come from the quotation, nothing re-entered." %}{% else %}{% trans "the customer, items and quantities come from the quotation, nothing re-entered." %}{% endif %}</p>
 
 {# ── Email this document to the customer, with the PDF attached ────────────── #}
 {% if can_send %}
-<h2>Send to customer</h2>
+<h2>{% trans "Send to customer" %}</h2>
 <div class="card">
   <form method="post" action="{% url 'web:commercial_document_send' doc.id %}">{% csrf_token %}
     <div class="two">
-      <div><label>To</label><input type="email" name="to" value="{{ email_to }}"
+      <div><label>{% trans "To" %}</label><input type="email" name="to" value="{{ email_to }}"
              placeholder="customer@example.com" required></div>
     </div>
-    <label style="margin-top:10px;">Message (optional)</label>
-    <textarea name="message" rows="3" placeholder="Add a short note…"></textarea>
-    <div style="margin-top:12px;"><button class="btn primary" type="submit">Email {{ doc.get_kind_display|lower }} (PDF attached)</button></div>
+    <label style="margin-top:10px;">{% trans "Message (optional)" %}</label>
+    <textarea name="message" rows="3" placeholder="{% trans 'Add a short note…' %}"></textarea>
+    <div style="margin-top:12px;"><button class="btn primary" type="submit">{% blocktrans with kind=doc.get_kind_display|lower %}Email {{ kind }} (PDF attached){% endblocktrans %}</button></div>
   </form>
 </div>
 {% endif %}
 {% if email_history %}
 <div class="card" style="margin-top:10px;padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Sent to</th><th>When</th><th>Status</th></tr>
+    <tr><th>{% trans "Sent to" %}</th><th>{% trans "When" %}</th><th>{% trans "Status" %}</th></tr>
     {% for e in email_history %}
     <tr><td>{{ e.to_email }}</td><td class="muted">{{ e.created_at|date:"d M Y H:i" }}</td>
-      <td>{% if e.status == 'sent' %}<span class="chip ok">Sent</span>
-        {% elif e.status == 'failed' %}<span class="chip bad">Failed</span>
+      <td>{% if e.status == 'sent' %}<span class="chip ok">{% trans "Sent" %}</span>
+        {% elif e.status == 'failed' %}<span class="chip bad">{% trans "Failed" %}</span>
         {% else %}<span class="chip">{{ e.get_status_display }}</span>{% endif %}</td></tr>
     {% endfor %}
   </table>
@@ -119,39 +118,39 @@
 
 {# ── Payments (invoices only) ─────────────────────────────────────────────── #}
 {% if is_invoice %}
-<h2 id="payments">Payments</h2>
+<h2 id="payments">{% trans "Payments" %}</h2>
 <div class="two-col" style="display:grid;grid-template-columns:2fr 1fr;gap:14px;align-items:start;">
   <div class="card" style="padding:0;overflow-x:auto;">
     <table>
-      <tr><th>Date</th><th>Reference</th><th class="num">Amount</th></tr>
+      <tr><th>{% trans "Date" %}</th><th>{% trans "Reference" %}</th><th class="num">{% trans "Amount" %}</th></tr>
       {% for p in doc.payments.all %}
       <tr><td>{{ p.date }}</td><td class="muted">{{ p.reference|default:"—" }}</td>
         <td class="num">R{{ p.amount|floatformat:2 }}</td></tr>
       {% empty %}
-      <tr><td colspan="3" class="muted">No payments recorded yet.</td></tr>
+      <tr><td colspan="3" class="muted">{% trans "No payments recorded yet." %}</td></tr>
       {% endfor %}
       <tr style="border-top:2px solid var(--line);">
-        <td colspan="2" class="muted">Invoice total</td>
+        <td colspan="2" class="muted">{% trans "Invoice total" %}</td>
         <td class="num">R{{ doc.invoice_amount|floatformat:2 }}</td></tr>
-      <tr><td colspan="2" class="muted">Paid</td>
+      <tr><td colspan="2" class="muted">{% trans "Paid" %}</td>
         <td class="num">R{{ doc.amount_paid|floatformat:2 }}</td></tr>
-      <tr><td colspan="2"><strong>Outstanding</strong></td>
+      <tr><td colspan="2"><strong>{% trans "Outstanding" %}</strong></td>
         <td class="num"><strong>R{{ doc.outstanding|floatformat:2 }}</strong></td></tr>
     </table>
   </div>
   <div class="card">
-    {% if doc.payment_state == 'paid' %}<span class="chip ok">Paid in full</span>
-    {% elif doc.payment_state == 'part' %}<span class="chip warn">Part-paid</span>
-    {% else %}<span class="chip">Unpaid</span>{% endif %}
+    {% if doc.payment_state == 'paid' %}<span class="chip ok">{% trans "Paid in full" %}</span>
+    {% elif doc.payment_state == 'part' %}<span class="chip warn">{% trans "Part-paid" %}</span>
+    {% else %}<span class="chip">{% trans "Unpaid" %}</span>{% endif %}
     {% if can_view_money %}
     <form method="post" action="{% url 'web:commercial_document_payment' doc.id %}" style="margin-top:12px;">{% csrf_token %}
-      <label>Record a payment</label>
-      <input type="number" name="amount" step="0.01" min="0" placeholder="Amount (R)" required>
-      <label style="margin-top:8px;">Date</label>
+      <label>{% trans "Record a payment" %}</label>
+      <input type="number" name="amount" step="0.01" min="0" placeholder="{% trans 'Amount (R)' %}" required>
+      <label style="margin-top:8px;">{% trans "Date" %}</label>
       <input type="date" name="date" value="{{ today }}">
-      <label style="margin-top:8px;">Reference (POP)</label>
-      <input type="text" name="reference" placeholder="EFT ref / POP">
-      <button class="btn primary" type="submit" data-busy-text="Recording…" style="margin-top:10px;width:100%;">Record payment</button>
+      <label style="margin-top:8px;">{% trans "Reference (POP)" %}</label>
+      <input type="text" name="reference" placeholder="{% trans 'EFT ref / POP' %}">
+      <button class="btn primary" type="submit" data-busy-text="{% trans 'Recording…' %}" style="margin-top:10px;width:100%;">{% trans "Record payment" %}</button>
     </form>
     {% endif %}
   </div>
@@ -159,32 +158,29 @@
 {% endif %}
 
 {# ── Purchase order ───────────────────────────────────────────────────────── #}
-<h2 id="po">Purchase order</h2>
+<h2 id="po">{% trans "Purchase order" %}</h2>
 {% if purchase_orders %}
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>PO number</th><th>Date</th><th class="num">Value</th><th></th></tr>
+    <tr><th>{% trans "PO number" %}</th><th>{% trans "Date" %}</th><th class="num">{% trans "Value" %}</th><th></th></tr>
     {% for po in purchase_orders %}
     <tr>
       <td><strong>{{ po.po_number|default:"—" }}</strong></td>
       <td class="muted">{{ po.po_date|default:"—" }}</td>
       <td class="num">{% if po.value %}R{{ po.value|floatformat:2 }}{% else %}—{% endif %}</td>
-      <td style="text-align:right;">{% if po.document %}<a class="btn ghost" href="{{ po.document.url }}">Open</a>{% endif %}</td>
+      <td style="text-align:right;">{% if po.document %}<a class="btn ghost" href="{{ po.document.url }}">{% trans "Open" %}</a>{% endif %}</td>
     </tr>
     {% endfor %}
   </table>
 </div>
-<p class="muted" style="font-size:12.5px;margin-top:6px;">Manage purchase orders on the
-  <a href="{% url 'web:quotation_detail' quote.id %}#po-upload">quotation</a>.</p>
+<p class="muted" style="font-size:12.5px;margin-top:6px;">{% url 'web:quotation_detail' quote.id as quote_url %}{% blocktrans %}Manage purchase orders on the <a href="{{ quote_url }}#po-upload">quotation</a>.{% endblocktrans %}</p>
 {% elif po_active and can_generate_docs %}
 <div class="card">
-  <strong>Attach a purchase order</strong>
-  <p class="muted" style="margin:6px 0 12px;font-size:12.5px;">Attach the customer's PO
-    document — its number, date, value and payment terms are read straight off it, so
-    there is nothing to type.</p>
+  <strong>{% trans "Attach a purchase order" %}</strong>
+  <p class="muted" style="margin:6px 0 12px;font-size:12.5px;">{% trans "Attach the customer's PO document — its number, date, value and payment terms are read straight off it, so there is nothing to type." %}</p>
   <form method="post" action="{% url 'web:quotation_po' quote.id %}"
         enctype="multipart/form-data" style="margin:0;">{% csrf_token %}
-    <label class="btn" style="margin:0;cursor:pointer;">Choose PO document
+    <label class="btn" style="margin:0;cursor:pointer;">{% trans "Choose PO document" %}
       <input type="file" name="document" onchange="this.form.submit()"
              accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.eml,.zip"
              style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">
@@ -192,7 +188,7 @@
   </form>
 </div>
 {% else %}
-<p class="muted">No purchase order attached.</p>
+<p class="muted">{% trans "No purchase order attached." %}</p>
 {% endif %}
 
 <style>

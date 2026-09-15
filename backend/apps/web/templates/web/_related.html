@@ -1,7 +1,8 @@
 {# Cross-module Related Records panel. Pass `related` = related_records(obj). #}
+{% load i18n %}
 {% if related %}
 <div class="card" style="margin-top:16px;">
-  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px;">Related records</div>
+  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px;">{% trans "Related records" %}</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
     {% for sec in related %}
     <div>
