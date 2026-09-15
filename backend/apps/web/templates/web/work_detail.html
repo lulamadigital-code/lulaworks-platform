@@ -1,59 +1,59 @@
 {% extends "web/base.html" %}
+{% load i18n %}
 {% block title %}{{ task.name }}{% endblock %}
 {% block content %}
-<p class="sub"><a href="{% url 'web:work' %}">← Jobs</a></p>
+<p class="sub"><a href="{% url 'web:work' %}">{% trans "← Jobs" %}</a></p>
 
 <div class="pagehead">
   <div>
     <h1 style="margin:0 0 6px;">{{ task.name }}</h1>
     <p class="sub" style="margin:0;">
       {% if task.project %}<a href="{% url 'web:project_detail' task.project.id %}">{{ task.project.number }}</a>
-      {% else %}Standalone job{% endif %}
+      {% else %}{% trans "Standalone job" %}{% endif %}
       · {{ task.get_origin_display }}
       {% if task.client_name %} · {{ task.client_name }}{% endif %}
       {% if task.site %} · {{ task.site }}{% endif %}
     </p>
   </div>
   <div class="row" style="gap:8px;">
-    <a class="btn" href="{% url 'web:work_operations' task.id %}">Operations</a>
+    <a class="btn" href="{% url 'web:work_operations' task.id %}">{% trans "Operations" %}</a>
     {% include "web/_statuschip.html" with s=task %}
     <span class="chip {% if task.priority == 'critical' %}bad{% elif task.priority == 'high' %}warn{% endif %}">{{ task.get_priority_display }}</span>
-    {% if task.risk_level != 'low' %}<span class="chip warn">Risk: {{ task.get_risk_level_display }}</span>{% endif %}
-    {% if is_overdue %}<span class="chip bad">Overdue</span>{% endif %}
+    {% if task.risk_level != 'low' %}<span class="chip warn">{% blocktrans with level=task.get_risk_level_display %}Risk: {{ level }}{% endblocktrans %}</span>{% endif %}
+    {% if is_overdue %}<span class="chip bad">{% trans "Overdue" %}</span>{% endif %}
   </div>
 </div>
 
 {# ── The job's own dashboard ───────────────────────────────────────── #}
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">%</div>
-    <div class="n">{{ progress_pct }}%</div><div class="l">Progress</div></div>
+    <div class="n">{{ progress_pct }}%</div><div class="l">{% trans "Progress" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">☑</div>
-    <div class="n">{{ checklist_done }}/{{ checklist_total }}</div><div class="l">Checklist</div></div>
+    <div class="n">{{ checklist_done }}/{{ checklist_total }}</div><div class="l">{% trans "Checklist" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">⧉</div>
-    <div class="n">{{ subtasks_done }}/{{ subtasks_total }}</div><div class="l">Subtasks</div></div>
+    <div class="n">{{ subtasks_done }}/{{ subtasks_total }}</div><div class="l">{% trans "Subtasks" %}</div></div>
   <div class="tile"><div class="ic" style="background:{% if blockers %}var(--red-t);color:#c22a41{% else %}var(--green-t);color:#0a8f57{% endif %};">
       {% if blockers %}!{% else %}✓{% endif %}</div>
-    <div class="n">{{ blockers|length }}</div><div class="l">Blockers</div></div>
+    <div class="n">{{ blockers|length }}</div><div class="l">{% trans "Blockers" %}</div></div>
 </div>
 
 {% if blockers %}
 <div class="card" style="border-color:var(--red-t);">
-  <h2 style="margin:0 0 10px;color:#c22a41;">Why this is blocked</h2>
+  <h2 style="margin:0 0 10px;color:#c22a41;">{% trans "Why this is blocked" %}</h2>
   <ul style="margin:0;padding-left:20px;">
     {% for b in blockers %}<li>{{ b }}</li>{% endfor %}
   </ul>
-  <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Blockers are computed
-    from real dependencies — clear the cause and this clears itself.</p>
+  <p class="muted" style="margin:10px 0 0;font-size:12.5px;">{% trans "Blockers are computed from real dependencies — clear the cause and this clears itself." %}</p>
 </div>
 {% endif %}
 
 {% if can_manage %}
 <div class="card">
-  <h2 style="margin:0 0 12px;">Move it along</h2>
+  <h2 style="margin:0 0 12px;">{% trans "Move it along" %}</h2>
   <div class="row" style="flex-wrap:wrap;gap:8px;">
     {% if computed_status == 'ready' and task.status != 'in_progress' %}
     <form method="post" action="{% url 'web:work_start' task.id %}">{% csrf_token %}
-      <button class="btn" type="submit">▶ Start job</button></form>
+      <button class="btn" type="submit">▶ {% trans "Start job" %}</button></form>
     {% endif %}
     {% for s in next_statuses %}
     <form method="post" action="{% url 'web:work_transition' task.id %}">{% csrf_token %}
@@ -62,8 +62,8 @@
     {% endfor %}
     {% if task.is_open %}
     <form method="post" action="{% url 'web:work_complete' task.id %}" class="row" style="gap:8px;">{% csrf_token %}
-      <input type="number" step="0.25" name="actual_hours" placeholder="Actual hrs" style="width:120px;">
-      <button class="btn" type="submit">✓ Complete</button></form>
+      <input type="number" step="0.25" name="actual_hours" placeholder="{% trans 'Actual hrs' %}" style="width:120px;">
+      <button class="btn" type="submit">✓ {% trans "Complete" %}</button></form>
     {% endif %}
   </div>
 </div>
@@ -73,11 +73,11 @@
   <div>
     {# ── Field chat (realtime with the people on the job) ─────────────────── #}
     {% if can_chat %}
-    <h2>Field chat</h2>
+    <h2>{% trans "Field chat" %}</h2>
     <div class="card" style="padding:0; display:flex; flex-direction:column; height:360px;">
       <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line,#e6e9ef);">
-        <span class="chip" id="fcdot">connecting…</span>
-        <span class="muted" style="font-size:12px;">Messages sync live with the field.</span>
+        <span class="chip" id="fcdot">{% trans "connecting…" %}</span>
+        <span class="muted" style="font-size:12px;">{% trans "Messages sync live with the field." %}</span>
       </div>
       <div id="fclog" style="flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;">
         {% for m in chat_messages %}
@@ -92,16 +92,16 @@
             </div>
           {% endif %}
         {% empty %}
-          <p class="muted" id="fcempty" style="margin:0;">No messages yet — say hello to the field.</p>
+          <p class="muted" id="fcempty" style="margin:0;">{% trans "No messages yet — say hello to the field." %}</p>
         {% endfor %}
       </div>
       <form id="fcform" style="display:flex;gap:8px;align-items:center;padding:10px;border-top:1px solid var(--line,#e6e9ef);">
         {% csrf_token %}
         <input id="fcfile" type="file" accept="image/*" style="display:none;" />
-        <button type="button" id="fcattach" class="btn ghost" title="Attach a photo" style="padding:6px 10px;">📎</button>
+        <button type="button" id="fcattach" class="btn ghost" title="{% trans 'Attach a photo' %}" style="padding:6px 10px;">📎</button>
         <span id="fcfilename" class="muted" style="font-size:12px;"></span>
-        <input id="fcinput" type="text" autocomplete="off" placeholder="Message the field…" style="flex:1;" />
-        <button class="btn" type="submit">Send</button>
+        <input id="fcinput" type="text" autocomplete="off" placeholder="{% trans 'Message the field…' %}" style="flex:1;" />
+        <button class="btn" type="submit">{% trans "Send" %}</button>
       </form>
     </div>
     <style>
@@ -117,6 +117,9 @@
       var log=document.getElementById('fclog'),form=document.getElementById('fcform'),
           input=document.getElementById('fcinput'),dot=document.getElementById('fcdot');
       if(!log||!form) return;
+      var I18N={live:"{% trans 'live' %}",reconnecting:"{% trans 'reconnecting…' %}",
+                newReport:"{% trans 'New report:' %}",offsite:"{% trans 'off-site' %}",
+                submitted:"{% trans 'Submitted' %}"};
       var me="{{ request.user.id }}",
           sendUrl="{% url 'web:work_chat_send' task.id %}",
           msgsUrl="{% url 'web:work_chat_messages' task.id %}",
@@ -150,22 +153,22 @@
         var e0=document.getElementById('fcempty'); if(e0)e0.remove();
         var who=r.employee_name?(' · '+esc(r.employee_name)):'';
         var el=document.createElement('div'); el.className='fc-sys';
-        el.innerHTML='📋 New report: <a href="/reports/'+esc(r.id)+'/">'+esc(r.title||'')+'</a> · '+esc(r.kind_display||r.kind||'')+who;
+        el.innerHTML='📋 '+I18N.newReport+' <a href="/reports/'+esc(r.id)+'/">'+esc(r.title||'')+'</a> · '+esc(r.kind_display||r.kind||'')+who;
         log.appendChild(el); toBottom();
         // Prepend a row to the Field reports panel.
         var feed=document.getElementById('reportsfeed');
         if(feed && !feed.querySelector('[data-rid="'+r.id+'"]')){
           var fre=document.getElementById('frempty'); if(fre)fre.remove();
           var badge=r.status==='approved'?'ok':(r.status==='returned'?'warn':'info');
-          var off=r.location_flagged?'<span class="chip bad">off-site</span>':'';
+          var off=r.location_flagged?'<span class="chip bad">'+I18N.offsite+'</span>':'';
           var a=document.createElement('a'); a.className='workrow';
           a.setAttribute('data-rid', r.id); a.href='/reports/'+r.id+'/';
           a.innerHTML='<span class="wr-main"><strong>'+esc(r.title||'')+'</strong>'
             +'<span class="muted">'+esc(r.kind_display||r.kind||'')+who+'</span></span>'
-            +off+'<span class="chip '+badge+'">'+esc(r.status_display||r.status||'Submitted')+'</span>';
+            +off+'<span class="chip '+badge+'">'+esc(r.status_display||r.status||I18N.submitted)+'</span>';
           feed.insertBefore(a, feed.firstChild);
           var live=document.getElementById('frlive');
-          if(live){live.className='chip ok';live.textContent='live';}
+          if(live){live.className='chip ok';live.textContent=I18N.live;}
         }
       }
       toBottom();
@@ -179,8 +182,8 @@
       var proto=location.protocol==='https:'?'wss':'ws',ws;
       function connect(){
         ws=new WebSocket(proto+'://'+location.host+'/ws/task-chat/{{ task.id }}/');
-        ws.onopen=function(){dot.textContent='live';dot.className='chip ok';};
-        ws.onclose=function(){dot.textContent='reconnecting…';dot.className='chip warn';setTimeout(connect,4000);};
+        ws.onopen=function(){dot.textContent=I18N.live;dot.className='chip ok';};
+        ws.onclose=function(){dot.textContent=I18N.reconnecting;dot.className='chip warn';setTimeout(connect,4000);};
         ws.onerror=function(){try{ws.close();}catch(e){}};
         ws.onmessage=function(e){try{var d=JSON.parse(e.data);
           if(d.type==='message'&&d.message)add(d.message);
@@ -209,27 +212,25 @@
     {% if not checklist_total %}
     <div class="card ai-panel">
       <div class="row" style="gap:10px;">
-        <strong>No breakdown yet</strong>
+        <strong>{% trans "No breakdown yet" %}</strong>
         <span class="sp"></span>
-        <a class="btn ghost" href="{% url 'web:work_decompose' task.id %}">Break it down with LulaAI</a>
+        <a class="btn ghost" href="{% url 'web:work_decompose' task.id %}">{% trans "Break it down with LulaAI" %}</a>
       </div>
-      <p class="muted" style="margin:10px 0 0;font-size:13px;">LulaAI drafts the
-        checklist, estimate and risks from jobs like this one you have already
-        finished. It proposes — you tick what is right before anything is created.</p>
+      <p class="muted" style="margin:10px 0 0;font-size:13px;">{% trans "LulaAI drafts the checklist, estimate and risks from jobs like this one you have already finished. It proposes — you tick what is right before anything is created." %}</p>
     </div>
     {% endif %}
 
-    <h2>Subtasks &amp; checklist</h2>
+    <h2>{% trans "Subtasks & checklist" %}</h2>
     <div class="card">
       {% for st in subtasks %}
       <div class="subtask">
         <strong>{% if st.is_done %}✓ {% endif %}{{ st.name }}</strong>
         {% if st.assignee %}<span class="chip">{{ st.assignee }}</span>{% endif %}
-        {% if st.due_date %}<span class="muted" style="font-size:12.5px;">due {{ st.due_date|date:"d M" }}</span>{% endif %}
+        {% if st.due_date %}<span class="muted" style="font-size:12.5px;">{% blocktrans with date=st.due_date|date:"d M" %}due {{ date }}{% endblocktrans %}</span>{% endif %}
         {% for c in st.checklist_items.all %}
         <form method="post" action="{% url 'web:work_checklist_toggle' task.id c.id %}" class="checkrow">
           {% csrf_token %}
-          <button type="submit" class="tick {% if c.is_done %}on{% endif %}" title="Toggle">
+          <button type="submit" class="tick {% if c.is_done %}on{% endif %}" title="{% trans 'Toggle' %}">
             {% if c.is_done %}✓{% endif %}</button>
           <span class="{% if c.is_done %}done{% endif %}">{{ c.label }}</span>
           {% if c.done_by %}<span class="muted" style="font-size:11.5px;">{{ c.done_by }}</span>{% endif %}
@@ -241,7 +242,7 @@
       {% for c in loose_checklist %}
       <form method="post" action="{% url 'web:work_checklist_toggle' task.id c.id %}" class="checkrow">
         {% csrf_token %}
-        <button type="submit" class="tick {% if c.is_done %}on{% endif %}" title="Toggle">
+        <button type="submit" class="tick {% if c.is_done %}on{% endif %}" title="{% trans 'Toggle' %}">
           {% if c.is_done %}✓{% endif %}</button>
         <span class="{% if c.is_done %}done{% endif %}">{{ c.label }}</span>
         {% if c.done_by %}<span class="muted" style="font-size:11.5px;">{{ c.done_by }}</span>{% endif %}
@@ -249,36 +250,36 @@
       {% endfor %}
 
       {% if not subtasks and not loose_checklist %}
-      <p class="muted" style="margin:0 0 14px;">No breakdown yet — add a subtask or a checklist item.</p>
+      <p class="muted" style="margin:0 0 14px;">{% trans "No breakdown yet — add a subtask or a checklist item." %}</p>
       {% endif %}
 
       {% if can_manage %}
       <div class="addrow">
         <form method="post" action="{% url 'web:work_checklist_add' task.id %}" class="row" style="gap:8px;">
           {% csrf_token %}
-          <input type="text" name="label" placeholder="Add checklist item" style="flex:1;">
-          <button class="btn ghost" type="submit">+ Item</button>
+          <input type="text" name="label" placeholder="{% trans 'Add checklist item' %}" style="flex:1;">
+          <button class="btn ghost" type="submit">{% trans "+ Item" %}</button>
         </form>
         <form method="post" action="{% url 'web:work_subtask_add' task.id %}" class="row" style="gap:8px;margin-top:8px;">
           {% csrf_token %}
-          <input type="text" name="name" placeholder="Add subtask" style="flex:1;">
-          <button class="btn ghost" type="submit">+ Subtask</button>
+          <input type="text" name="name" placeholder="{% trans 'Add subtask' %}" style="flex:1;">
+          <button class="btn ghost" type="submit">{% trans "+ Subtask" %}</button>
         </form>
         <p style="margin:12px 0 0;font-size:12.5px;">
-          <a href="{% url 'web:work_decompose' task.id %}">Ask LulaAI for more steps →</a></p>
+          <a href="{% url 'web:work_decompose' task.id %}">{% trans "Ask LulaAI for more steps →" %}</a></p>
       </div>
       {% endif %}
     </div>
 
     {# ── Conversation ────────────────────────────────────────────────────── #}
-    <h2>Conversation</h2>
+    <h2>{% trans "Conversation" %}</h2>
     <div class="card">
       {% for c in comments %}
       <div class="comment">
         <div class="row" style="gap:8px;">
           <strong>{{ c.author|default:"—" }}</strong>
           <span class="muted" style="font-size:12px;">{{ c.created_at|date:"d M Y H:i" }}</span>
-          {% if not c.is_internal %}<span class="chip info">Customer-visible</span>{% endif %}
+          {% if not c.is_internal %}<span class="chip info">{% trans "Customer-visible" %}</span>{% endif %}
         </div>
         <p style="margin:6px 0 0;white-space:pre-wrap;">{{ c.body }}</p>
         {% for r in c.replies.all %}
@@ -289,15 +290,15 @@
         </div>
         {% endfor %}
       </div>
-      {% empty %}<p class="muted" style="margin:0 0 14px;">No comments yet.</p>{% endfor %}
+      {% empty %}<p class="muted" style="margin:0 0 14px;">{% trans "No comments yet." %}</p>{% endfor %}
 
       <form method="post" action="{% url 'web:work_comment_add' task.id %}" enctype="multipart/form-data">
         {% csrf_token %}
-        <textarea name="body" rows="3" placeholder="Add a comment…"></textarea>
+        <textarea name="body" rows="3" placeholder="{% trans 'Add a comment…' %}"></textarea>
         <div class="row" style="margin-top:10px;gap:12px;">
           <input type="file" name="files" multiple style="flex:1;">
-          <label class="inline"><input type="checkbox" name="customer_visible" value="1"> Customer-visible</label>
-          <button class="btn" type="submit">Comment</button>
+          <label class="inline"><input type="checkbox" name="customer_visible" value="1"> {% trans "Customer-visible" %}</label>
+          <button class="btn" type="submit">{% trans "Comment" %}</button>
         </div>
       </form>
     </div>
@@ -306,26 +307,26 @@
   <div>
     {% if can_view_money and financials %}
     {# ── Budget & spend (field money captured on this task) ───────────────── #}
-    <h2>Budget &amp; spend</h2>
+    <h2>{% trans "Budget & spend" %}</h2>
     <div class="card">
-      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">Allocated</span>
+      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">{% trans "Allocated" %}</span>
         <span style="flex:1;">R {{ financials.allocated|floatformat:2 }}</span></div>
-      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">Spent</span>
+      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">{% trans "Spent" %}</span>
         <span style="flex:1;">R {{ financials.spent|floatformat:2 }}</span></div>
-      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">Remaining</span>
-        <span style="flex:1;"><span class="chip {% if financials.over_budget %}bad{% else %}ok{% endif %}">R {{ financials.remaining|floatformat:2 }}{% if financials.over_budget %} · over budget{% endif %}</span></span></div>
+      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">{% trans "Remaining" %}</span>
+        <span style="flex:1;"><span class="chip {% if financials.over_budget %}bad{% else %}ok{% endif %}">R {{ financials.remaining|floatformat:2 }}{% if financials.over_budget %} · {% trans "over budget" %}{% endif %}</span></span></div>
       {% if financials.allocations %}
       <div style="height:1px;background:rgba(128,128,128,.18);margin:8px 0;"></div>
       {% for a in financials.allocations %}
       <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">{{ a.get_kind_display }}</span>
         <span style="flex:1;">R {{ a.amount_spent|floatformat:2 }} / R {{ a.amount_allocated|floatformat:2 }}
-          {% if a.is_over_budget %}<span class="chip bad">over</span>{% endif %}</span></div>
+          {% if a.is_over_budget %}<span class="chip bad">{% trans "over" %}</span>{% endif %}</span></div>
       {% endfor %}
       {% endif %}
     </div>
 
     {# ── Receipts (fuel / material / expense with evidence) ───────────────── #}
-    <h2>Receipts</h2>
+    <h2>{% trans "Receipts" %}</h2>
     <div class="card" style="padding:0;">
       {% for r in receipts %}
       <div class="workrow" style="align-items:flex-start;">
@@ -339,19 +340,19 @@
             {% if r.vehicle %} · {{ r.vehicle }}{% endif %}
           </span>
           {% for a in r.attachments.all %}
-          <a href="{{ a.file.url }}" target="_blank" rel="noopener" class="chip info" style="margin-top:4px;display:inline-block;">📎 {{ a.original_name|default:"receipt" }}</a>
+          <a href="{{ a.file.url }}" target="_blank" rel="noopener" class="chip info" style="margin-top:4px;display:inline-block;">📎 {% if a.original_name %}{{ a.original_name }}{% else %}{% trans "receipt" %}{% endif %}</a>
           {% endfor %}
         </span>
         <span class="chip {% if r.status == 'approved' %}ok{% elif r.status == 'returned' %}warn{% else %}info{% endif %}">{{ r.get_status_display }}</span>
       </div>
       {% empty %}
-      <p class="muted" style="padding:16px;">No receipts captured yet — fuel, material and expense receipts appear here.</p>
+      <p class="muted" style="padding:16px;">{% trans "No receipts captured yet — fuel, material and expense receipts appear here." %}</p>
       {% endfor %}
     </div>
     {% endif %}
 
     {# ── Field reports (live) ────────────────────────────────────────────── #}
-    <h2>Field reports <span class="chip" id="frlive" style="font-size:11px;">live</span></h2>
+    <h2>{% trans "Field reports" %} <span class="chip" id="frlive" style="font-size:11px;">{% trans "live" %}</span></h2>
     <div class="card" style="padding:0;">
       <div id="reportsfeed">
         {% for r in field_reports %}
@@ -362,25 +363,25 @@
               {% if r.employee %}{{ r.employee.get_full_name|default:r.employee.email }}{% else %}—{% endif %}
               · {{ r.reported_at|date:"d M H:i" }}</span>
           </span>
-          {% if r.location_flagged %}<span class="chip bad">off-site</span>{% endif %}
+          {% if r.location_flagged %}<span class="chip bad">{% trans "off-site" %}</span>{% endif %}
           <span class="chip {% if r.status == 'approved' %}ok{% elif r.status == 'returned' %}warn{% else %}info{% endif %}">{{ r.get_status_display }}</span>
         </a>
         {% empty %}
-        <p class="muted" id="frempty" style="padding:16px;">No field reports yet — they appear here the moment the field files one.</p>
+        <p class="muted" id="frempty" style="padding:16px;">{% trans "No field reports yet — they appear here the moment the field files one." %}</p>
         {% endfor %}
       </div>
     </div>
 
     {# ── Team ────────────────────────────────────────────────────────────── #}
-    <h2>Team</h2>
+    <h2>{% trans "Team" %}</h2>
     <div class="card">
-      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">Owner</span>
+      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">{% trans "Owner" %}</span>
         <span style="flex:1;">{% for u in team.owner %}<span class="chip purple">{{ u }}</span> {% empty %}<span class="muted">—</span>{% endfor %}</span></div>
-      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">Execution</span>
+      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">{% trans "Execution" %}</span>
         <span style="flex:1;">{% for u in team.executor %}<span class="chip info">{{ u }}</span> {% empty %}<span class="muted">—</span>{% endfor %}</span></div>
-      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">Approvers</span>
+      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">{% trans "Approvers" %}</span>
         <span style="flex:1;">{% for u in team.approver %}<span class="chip ok">{{ u }}</span> {% empty %}<span class="muted">—</span>{% endfor %}</span></div>
-      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">Watchers</span>
+      <div class="teamrow"><span class="muted" style="width:110px;font-size:12.5px;">{% trans "Watchers" %}</span>
         <span style="flex:1;">{% for u in team.watcher %}<span class="chip">{{ u }}</span> {% empty %}<span class="muted">—</span>{% endfor %}</span></div>
 
       {% if can_manage %}
@@ -392,24 +393,24 @@
         <select name="role" style="width:120px;">
           {% for value, label in roles %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
         </select>
-        <button class="btn ghost" type="submit">Add</button>
+        <button class="btn ghost" type="submit">{% trans "Add" %}</button>
       </form>
       {% endif %}
     </div>
 
     {# ── Detail ──────────────────────────────────────────────────────────── #}
-    <h2>Detail</h2>
+    <h2>{% trans "Detail" %}</h2>
     <div class="card">
       <table class="kv">
-        <tr><td class="muted">Origin</td><td>{{ task.get_origin_display }}</td></tr>
-        <tr><td class="muted">Workspace</td><td>{{ task.workspace|default:"—" }}</td></tr>
-        {% if task.phase %}<tr><td class="muted">Phase</td><td>{{ task.phase.name }}</td></tr>{% endif %}
-        <tr><td class="muted">Department</td><td>{{ task.department|default:"—" }}</td></tr>
-        <tr><td class="muted">Due</td><td>{% if task.due_date %}{{ task.due_date|date:"d M Y" }}{% else %}—{% endif %}</td></tr>
-        <tr><td class="muted">Estimated</td><td>{{ task.estimated_hours }}h</td></tr>
-        <tr><td class="muted">Actual</td><td>{{ task.actual_hours }}h</td></tr>
-        <tr><td class="muted">Started</td><td>{% if task.started_at %}{{ task.started_at|date:"d M Y H:i" }}{% else %}—{% endif %}</td></tr>
-        <tr><td class="muted">Billable</td><td>{% if task.is_billable %}Yes{% else %}No{% endif %}</td></tr>
+        <tr><td class="muted">{% trans "Origin" %}</td><td>{{ task.get_origin_display }}</td></tr>
+        <tr><td class="muted">{% trans "Workspace" %}</td><td>{{ task.workspace|default:"—" }}</td></tr>
+        {% if task.phase %}<tr><td class="muted">{% trans "Phase" %}</td><td>{{ task.phase.name }}</td></tr>{% endif %}
+        <tr><td class="muted">{% trans "Department" %}</td><td>{{ task.department|default:"—" }}</td></tr>
+        <tr><td class="muted">{% trans "Due" %}</td><td>{% if task.due_date %}{{ task.due_date|date:"d M Y" }}{% else %}—{% endif %}</td></tr>
+        <tr><td class="muted">{% trans "Estimated" %}</td><td>{{ task.estimated_hours }}h</td></tr>
+        <tr><td class="muted">{% trans "Actual" %}</td><td>{{ task.actual_hours }}h</td></tr>
+        <tr><td class="muted">{% trans "Started" %}</td><td>{% if task.started_at %}{{ task.started_at|date:"d M Y H:i" }}{% else %}—{% endif %}</td></tr>
+        <tr><td class="muted">{% trans "Billable" %}</td><td>{% if task.is_billable %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</td></tr>
       </table>
       {% if task.labels %}
       <div style="margin-top:12px;">
@@ -422,7 +423,7 @@
     </div>
 
     {# ── Dependencies ────────────────────────────────────────────────────── #}
-    <h2>Dependencies</h2>
+    <h2>{% trans "Dependencies" %}</h2>
     <div class="card">
       {% for d in dependencies %}
       <div class="deprow">
@@ -430,10 +431,10 @@
         <a href="{% url 'web:work_detail' d.from_task.id %}">{{ d.from_task.name }}</a>
         {% include "web/_statuschip.html" with s=d.from_task %}
       </div>
-      {% empty %}<p class="muted" style="margin:0;">Nothing is holding this up.</p>{% endfor %}
+      {% empty %}<p class="muted" style="margin:0;">{% trans "Nothing is holding this up." %}</p>{% endfor %}
 
       {% if dependents %}
-      <p class="muted" style="margin:14px 0 6px;font-size:12.5px;">This job unblocks:</p>
+      <p class="muted" style="margin:14px 0 6px;font-size:12.5px;">{% trans "This job unblocks:" %}</p>
       {% for d in dependents %}
       <div class="deprow"><a href="{% url 'web:work_detail' d.to_task.id %}">{{ d.to_task.name }}</a></div>
       {% endfor %}
@@ -442,21 +443,21 @@
       {% if can_manage %}
       <form method="post" action="{% url 'web:work_link' task.id %}" style="margin-top:14px;">
         {% csrf_token %}
-        <label>Wait for</label>
+        <label>{% trans "Wait for" %}</label>
         <select name="from_task">
           {% for t in sibling_tasks %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
         </select>
-        <label>Kind</label>
+        <label>{% trans "Kind" %}</label>
         <select name="kind">
           {% for value, label in dep_kinds %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
         </select>
-        <button class="btn ghost" type="submit" style="margin-top:10px;">Add dependency</button>
+        <button class="btn ghost" type="submit" style="margin-top:10px;">{% trans "Add dependency" %}</button>
       </form>
       {% endif %}
     </div>
 
     {# ── Files ───────────────────────────────────────────────────────────── #}
-    <h2>Files</h2>
+    <h2>{% trans "Files" %}</h2>
     <div class="card">
       {% for a in attachments %}
       <div class="filerow">
@@ -464,27 +465,26 @@
         <span class="muted" style="font-size:12px;">v{{ a.version }} · {{ a.size_bytes|filesizeformat }}
           · {{ a.created_at|date:"d M Y" }}</span>
       </div>
-      {% empty %}<p class="muted" style="margin:0 0 12px;">No files yet.</p>{% endfor %}
+      {% empty %}<p class="muted" style="margin:0 0 12px;">{% trans "No files yet." %}</p>{% endfor %}
       {% if can_manage %}
       <form method="post" action="{% url 'web:work_file_add' task.id %}" enctype="multipart/form-data"
             class="row" style="gap:8px;">
         {% csrf_token %}
         <input type="file" name="files" multiple style="flex:1;">
-        <button class="btn ghost" type="submit">Upload</button>
+        <button class="btn ghost" type="submit">{% trans "Upload" %}</button>
       </form>
       {% endif %}
     </div>
 
     {% if compliance %}
-    <h2>Compliance</h2>
+    <h2>{% trans "Compliance" %}</h2>
     <div class="card">
-      <div class="row"><span class="muted" style="flex:1;">Project gate</span>
+      <div class="row"><span class="muted" style="flex:1;">{% trans "Project gate" %}</span>
         <span class="chip {% if compliance.gate_status == 'not_ready' %}bad{% else %}ok{% endif %}">
           {{ compliance.overall }}%</span></div>
       {% if compliance.blocking %}
       <p class="muted" style="margin:10px 0 0;font-size:12.5px;">
-        {{ compliance.blocking|length }} item(s) blocking —
-        <a href="{% url 'web:project_detail' task.project.id %}">review →</a></p>
+        {% url 'web:project_detail' task.project.id as proj_url %}{% blocktrans with n=compliance.blocking|length %}{{ n }} item(s) blocking — <a href="{{ proj_url }}">review →</a>{% endblocktrans %}</p>
       {% endif %}
     </div>
     {% endif %}

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 13:58+0000\n"
+"POT-Creation-Date: 2026-09-15 14:03+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -216,6 +216,7 @@ msgid "In execution"
 msgstr "En exécution"
 
 #: apps/projects/models.py:23 apps/web/templates/web/projects.html:24
+#: apps/web/templates/web/work_detail.html:66
 msgid "Complete"
 msgstr "Terminé"
 
@@ -1353,10 +1354,12 @@ msgid "VAT / GST registered"
 msgstr "Assujetti à la TVA / TPS"
 
 #: apps/web/templates/web/company.html:332
+#: apps/web/templates/web/work_detail.html:413
 msgid "Yes"
 msgstr "Oui"
 
 #: apps/web/templates/web/company.html:332
+#: apps/web/templates/web/work_detail.html:413
 msgid "No"
 msgstr "Non"
 
@@ -1710,6 +1713,7 @@ msgid "Task-generation"
 msgstr "Génération de tâches"
 
 #: apps/web/templates/web/company.html:535
+#: apps/web/templates/web/work_detail.html:480
 msgid "Compliance"
 msgstr "Conformité"
 
@@ -1831,7 +1835,6 @@ msgid "From %(n)s imported documents:"
 msgstr "À partir de %(n)s documents importés :"
 
 #: apps/web/templates/web/customer_detail.html:26
-#| msgid "+ Add person"
 msgid "+ Add a person"
 msgstr "+ Ajouter une personne"
 
@@ -1845,7 +1848,6 @@ msgid "Open opportunities"
 msgstr "Opportunités ouvertes"
 
 #: apps/web/templates/web/customer_detail.html:37
-#| msgid "Open pipeline value"
 msgid "Pipeline value"
 msgstr "Valeur du pipeline"
 
@@ -1855,7 +1857,6 @@ msgid "Open jobs"
 msgstr "travaux"
 
 #: apps/web/templates/web/customer_detail.html:46
-#| msgid "%(kind)s timeline"
 msgid "Relationship timeline"
 msgstr "Chronologie de la relation"
 
@@ -1863,7 +1864,9 @@ msgstr "Chronologie de la relation"
 msgid ""
 "No history yet — quotations, jobs, invoices, opportunities and CRM "
 "activities will appear here as they happen."
-msgstr "Aucun historique pour le moment — les devis, tâches, factures, opportunités et activités CRM apparaîtront ici au fur et à mesure."
+msgstr ""
+"Aucun historique pour le moment — les devis, tâches, factures, opportunités "
+"et activités CRM apparaîtront ici au fur et à mesure."
 
 #: apps/web/templates/web/customer_detail.html:77
 msgid "Opportunities"
@@ -1871,7 +1874,6 @@ msgstr "Opportunités"
 
 #: apps/web/templates/web/customer_detail.html:79
 #, python-format
-#| msgid "%(n)s open"
 msgid "%(n)s open worth %(v)s"
 msgstr "%(n)s ouvertes valant %(v)s"
 
@@ -1884,28 +1886,24 @@ msgid "Stage"
 msgstr "Étape"
 
 #: apps/web/templates/web/customer_detail.html:82
-#| msgid "Traceability"
 msgid "Probability"
 msgstr "Probabilité"
 
 #: apps/web/templates/web/customer_detail.html:92
-#| msgid "No quotations yet."
 msgid "No opportunities yet."
 msgstr "Aucune opportunité pour le moment."
 
 #: apps/web/templates/web/customer_detail.html:97
-#| msgid "Next →"
 msgid "Next:"
 msgstr "Suivant :"
 
 #: apps/web/templates/web/customer_detail.html:98
+#: apps/web/templates/web/work_detail.html:229
 #, python-format
-#| msgid "No due date (%(n)s)"
 msgid "due %(date)s"
 msgstr "échéance %(date)s"
 
 #: apps/web/templates/web/customer_detail.html:99
-#| msgid "Activities"
 msgid "all activities"
 msgstr "toutes les activités"
 
@@ -1914,7 +1912,6 @@ msgid "New opportunity title"
 msgstr "Titre de la nouvelle opportunité"
 
 #: apps/web/templates/web/customer_detail.html:107
-#| msgid "Estimator review"
 msgid "Estimated value"
 msgstr "Valeur estimée"
 
@@ -1923,17 +1920,14 @@ msgid "Open opportunity"
 msgstr "Ouvrir l'opportunité"
 
 #: apps/web/templates/web/customer_detail.html:115
-#| msgid "Detailed"
 msgid "Details"
 msgstr "Détails"
 
 #: apps/web/templates/web/customer_detail.html:118
-#| msgid "Our vendor number with them"
 msgid "Our vendor no. with them"
 msgstr "Notre n° de fournisseur chez eux"
 
 #: apps/web/templates/web/customer_detail.html:120
-#| msgid "Trading name"
 msgid "Trading as"
 msgstr "Nom commercial"
 
@@ -1942,7 +1936,6 @@ msgid "VAT no."
 msgstr "N° de TVA"
 
 #: apps/web/templates/web/customer_detail.html:123
-#| msgid "Tax invoice"
 msgid "Tax no."
 msgstr "N° fiscal"
 
@@ -1952,12 +1945,10 @@ msgstr "Ville / Province"
 
 #: apps/web/templates/web/customer_detail.html:127
 #: apps/web/templates/web/customer_detail.html:235
-#| msgid "Main telephone"
 msgid "Telephone"
 msgstr "Téléphone"
 
 #: apps/web/templates/web/customer_detail.html:129
-#| msgid "Payments"
 msgid "Payment terms"
 msgstr "Conditions de paiement"
 
@@ -1968,7 +1959,6 @@ msgid "%(d)s days"
 msgstr "%(d)s jours"
 
 #: apps/web/templates/web/customer_detail.html:130
-#| msgid "Vendor no."
 msgid "Vendor portal"
 msgstr "Portail fournisseur"
 
@@ -1988,10 +1978,11 @@ msgstr "personne"
 msgid ""
 "An unassigned “approves invoices” is why a payment sits unactioned for a "
 "month."
-msgstr "Un « approuve les factures » non attribué explique qu'un paiement reste sans suite pendant un mois."
+msgstr ""
+"Un « approuve les factures » non attribué explique qu'un paiement reste sans "
+"suite pendant un mois."
 
 #: apps/web/templates/web/customer_detail.html:150
-#| msgid "Who is carrying what"
 msgid "Who gets what"
 msgstr "Qui reçoit quoi"
 
@@ -2003,15 +1994,15 @@ msgstr "CC"
 msgid ""
 "Resolved from what each person may do, not their job title. Nothing is sent "
 "automatically."
-msgstr "Déterminé d'après ce que chaque personne peut faire, pas son intitulé de poste. Rien n'est envoyé automatiquement."
+msgstr ""
+"Déterminé d'après ce que chaque personne peut faire, pas son intitulé de "
+"poste. Rien n'est envoyé automatiquement."
 
 #: apps/web/templates/web/customer_detail.html:179
-#| msgid "Departments"
 msgid "Departments & people"
 msgstr "Services et personnes"
 
 #: apps/web/templates/web/customer_detail.html:181
-#| msgid "Manage templates →"
 msgid "Manage contacts →"
 msgstr "Gérer les contacts →"
 
@@ -2021,7 +2012,6 @@ msgid "Title"
 msgstr "Titre"
 
 #: apps/web/templates/web/customer_detail.html:191
-#| msgid "Response style"
 msgid "Responsibilities"
 msgstr "Responsabilités"
 
@@ -2033,20 +2023,20 @@ msgstr "Joignabilité"
 msgid ""
 "No contacts filed under a department yet — add people below and Lulaworks "
 "can start routing documents."
-msgstr "Aucun contact classé dans un service pour le moment — ajoutez des personnes ci-dessous et Lulaworks pourra commencer à acheminer les documents."
+msgstr ""
+"Aucun contact classé dans un service pour le moment — ajoutez des personnes "
+"ci-dessous et Lulaworks pourra commencer à acheminer les documents."
 
 #: apps/web/templates/web/customer_detail.html:209
-#| msgid "Departments"
 msgid "Not in a department"
 msgstr "Sans service"
 
 #: apps/web/templates/web/customer_detail.html:222
-#| msgid "+ Add person"
 msgid "Add a person"
 msgstr "Ajouter une personne"
 
 #: apps/web/templates/web/customer_detail.html:229
-#| msgid "Departments"
+#: apps/web/templates/web/work_detail.html:408
 msgid "Department"
 msgstr "Service"
 
@@ -2060,14 +2050,14 @@ msgstr "Rôles (comment on les appelle)"
 
 #: apps/web/templates/web/customer_detail.html:252
 msgid "Responsibilities (what they may do — this drives routing)"
-msgstr "Responsabilités (ce qu'ils peuvent faire — cela détermine l'acheminement)"
+msgstr ""
+"Responsabilités (ce qu'ils peuvent faire — cela détermine l'acheminement)"
 
 #: apps/web/templates/web/customer_detail.html:260
 msgid "Primary contact for this customer"
 msgstr "Contact principal pour ce client"
 
 #: apps/web/templates/web/customer_detail.html:261
-#| msgid "+ Add account"
 msgid "Add contact"
 msgstr "Ajouter le contact"
 
@@ -2076,12 +2066,10 @@ msgid "Branches & sites"
 msgstr "Succursales et sites"
 
 #: apps/web/templates/web/customer_detail.html:281
-#| msgid "Manage templates →"
 msgid "Manage sites →"
 msgstr "Gérer les sites →"
 
 #: apps/web/templates/web/customer_detail.html:285
-#| msgid "Branch"
 msgid "Branches"
 msgstr "Succursales"
 
@@ -2099,7 +2087,6 @@ msgid "No sites."
 msgstr "Aucun site."
 
 #: apps/web/templates/web/customer_detail.html:308
-#| msgid "With the customer"
 msgid "Jobs for this customer"
 msgstr "Tâches pour ce client"
 
@@ -2112,7 +2099,6 @@ msgstr "Devis"
 
 #: apps/web/templates/web/customer_detail.html:317
 #: apps/web/templates/web/customer_detail.html:328
-#| msgid "No invoices yet."
 msgid "None yet."
 msgstr "Aucun pour le moment."
 
@@ -2122,17 +2108,14 @@ msgid "Departments"
 msgstr "Services"
 
 #: apps/web/templates/web/customer_detail.html:339
-#| msgid "Departments"
 msgid "Department name"
 msgstr "Nom du service"
 
 #: apps/web/templates/web/customer_detail.html:340
-#| msgid "Departments"
 msgid "Department email"
 msgstr "E-mail du service"
 
 #: apps/web/templates/web/customer_detail.html:341
-#| msgid "Departments"
 msgid "Add department"
 msgstr "Ajouter un service"
 
@@ -2791,6 +2774,7 @@ msgid "Budget"
 msgstr "Budget"
 
 #: apps/web/templates/web/project_detail.html:50
+#: apps/web/templates/web/work_detail.html:411
 msgid "Actual"
 msgstr "Réel"
 
@@ -2808,6 +2792,7 @@ msgstr "+ Ajouter une tâche"
 
 #: apps/web/templates/web/project_detail.html:75
 #: apps/web/templates/web/project_detail.html:82
+#: apps/web/templates/web/work_detail.html:19
 msgid "Operations"
 msgstr "Opérations"
 
@@ -2852,10 +2837,12 @@ msgid "Materials & procurement"
 msgstr "Matériaux et approvisionnement"
 
 #: apps/web/templates/web/project_detail.html:125
+#: apps/web/templates/web/work_detail.html:312
 msgid "Allocated"
 msgstr "Alloué"
 
 #: apps/web/templates/web/project_detail.html:126
+#: apps/web/templates/web/work_detail.html:314
 msgid "Spent"
 msgstr "Dépensé"
 
@@ -3376,6 +3363,7 @@ msgid "Mine"
 msgstr "Les miennes"
 
 #: apps/web/templates/web/work.html:78 apps/web/templates/web/work.html:138
+#: apps/web/templates/web/work_detail.html:23
 msgid "Overdue"
 msgstr "En retard"
 
@@ -3392,10 +3380,12 @@ msgid "Job"
 msgstr "Tâche"
 
 #: apps/web/templates/web/work.html:110
+#: apps/web/templates/web/work_detail.html:405
 msgid "Origin"
 msgstr "Origine"
 
 #: apps/web/templates/web/work.html:110
+#: apps/web/templates/web/work_detail.html:378
 msgid "Owner"
 msgstr "Responsable"
 
@@ -3404,10 +3394,12 @@ msgid "Priority"
 msgstr "Priorité"
 
 #: apps/web/templates/web/work.html:111
+#: apps/web/templates/web/work_detail.html:409
 msgid "Due"
 msgstr "Échéance"
 
 #: apps/web/templates/web/work.html:111
+#: apps/web/templates/web/work_detail.html:30
 msgid "Progress"
 msgstr "Progression"
 
@@ -3446,6 +3438,330 @@ msgstr "Tâches ouvertes non affectées (%(n)s)"
 #: apps/web/templates/web/work.html:178
 msgid "Needs an owner"
 msgstr "Besoin d'un responsable"
+
+#: apps/web/templates/web/work_detail.html:5
+#| msgid "Jobs"
+msgid "← Jobs"
+msgstr "← Tâches"
+
+#: apps/web/templates/web/work_detail.html:12
+#| msgid "Standalone"
+msgid "Standalone job"
+msgstr "Tâche autonome"
+
+#: apps/web/templates/web/work_detail.html:22
+#, python-format
+msgid "Risk: %(level)s"
+msgstr "Risque : %(level)s"
+
+#: apps/web/templates/web/work_detail.html:32
+#| msgid "Compliance checklist"
+msgid "Checklist"
+msgstr "Liste de contrôle"
+
+#: apps/web/templates/web/work_detail.html:34
+#| msgid "Jobs & tasks"
+msgid "Subtasks"
+msgstr "Sous-tâches"
+
+#: apps/web/templates/web/work_detail.html:37
+#| msgid "Blocked"
+msgid "Blockers"
+msgstr "Obstacles"
+
+#: apps/web/templates/web/work_detail.html:42
+msgid "Why this is blocked"
+msgstr "Pourquoi c'est bloqué"
+
+#: apps/web/templates/web/work_detail.html:46
+msgid ""
+"Blockers are computed from real dependencies — clear the cause and this "
+"clears itself."
+msgstr "Les obstacles sont calculés à partir de dépendances réelles — supprimez la cause et cela se résout tout seul."
+
+#: apps/web/templates/web/work_detail.html:52
+msgid "Move it along"
+msgstr "Faire avancer"
+
+#: apps/web/templates/web/work_detail.html:56
+#| msgid "Start Job"
+msgid "Start job"
+msgstr "Démarrer la tâche"
+
+#: apps/web/templates/web/work_detail.html:65
+#| msgid "Actual cost"
+msgid "Actual hrs"
+msgstr "Heures réelles"
+
+#: apps/web/templates/web/work_detail.html:76
+msgid "Field chat"
+msgstr "Discussion terrain"
+
+#: apps/web/templates/web/work_detail.html:79
+#| msgid "Creating…"
+msgid "connecting…"
+msgstr "connexion…"
+
+#: apps/web/templates/web/work_detail.html:80
+msgid "Messages sync live with the field."
+msgstr "Les messages se synchronisent en direct avec le terrain."
+
+#: apps/web/templates/web/work_detail.html:95
+msgid "No messages yet — say hello to the field."
+msgstr "Aucun message pour le moment — dites bonjour au terrain."
+
+#: apps/web/templates/web/work_detail.html:101
+#| msgid "Attach a purchase order"
+msgid "Attach a photo"
+msgstr "Joindre une photo"
+
+#: apps/web/templates/web/work_detail.html:103
+msgid "Message the field…"
+msgstr "Envoyer un message au terrain…"
+
+#: apps/web/templates/web/work_detail.html:104
+msgid "Send"
+msgstr "Envoyer"
+
+#: apps/web/templates/web/work_detail.html:120
+#: apps/web/templates/web/work_detail.html:355
+msgid "live"
+msgstr "en direct"
+
+#: apps/web/templates/web/work_detail.html:120
+#| msgid "Creating…"
+msgid "reconnecting…"
+msgstr "reconnexion…"
+
+#: apps/web/templates/web/work_detail.html:121
+msgid "New report:"
+msgstr "Nouveau rapport :"
+
+#: apps/web/templates/web/work_detail.html:121
+#: apps/web/templates/web/work_detail.html:366
+msgid "off-site"
+msgstr "hors site"
+
+#: apps/web/templates/web/work_detail.html:122
+msgid "Submitted"
+msgstr "Soumis"
+
+#: apps/web/templates/web/work_detail.html:215
+msgid "No breakdown yet"
+msgstr "Pas encore de décomposition"
+
+#: apps/web/templates/web/work_detail.html:217
+msgid "Break it down with LulaAI"
+msgstr "Décomposer avec LulaAI"
+
+#: apps/web/templates/web/work_detail.html:219
+msgid ""
+"LulaAI drafts the checklist, estimate and risks from jobs like this one you "
+"have already finished. It proposes — you tick what is right before anything "
+"is created."
+msgstr "LulaAI ébauche la liste de contrôle, l'estimation et les risques à partir de tâches comme celle-ci que vous avez déjà terminées. Il propose — vous cochez ce qui convient avant que quoi que ce soit ne soit créé."
+
+#: apps/web/templates/web/work_detail.html:223
+msgid "Subtasks & checklist"
+msgstr "Sous-tâches et liste de contrôle"
+
+#: apps/web/templates/web/work_detail.html:233
+#: apps/web/templates/web/work_detail.html:245
+msgid "Toggle"
+msgstr "Basculer"
+
+#: apps/web/templates/web/work_detail.html:253
+msgid "No breakdown yet — add a subtask or a checklist item."
+msgstr "Pas encore de décomposition — ajoutez une sous-tâche ou un élément de liste."
+
+#: apps/web/templates/web/work_detail.html:260
+msgid "Add checklist item"
+msgstr "Ajouter un élément de liste"
+
+#: apps/web/templates/web/work_detail.html:261
+#| msgid "Item"
+msgid "+ Item"
+msgstr "+ Élément"
+
+#: apps/web/templates/web/work_detail.html:265
+msgid "Add subtask"
+msgstr "Ajouter une sous-tâche"
+
+#: apps/web/templates/web/work_detail.html:266
+msgid "+ Subtask"
+msgstr "+ Sous-tâche"
+
+#: apps/web/templates/web/work_detail.html:269
+msgid "Ask LulaAI for more steps →"
+msgstr "Demander plus d'étapes à LulaAI →"
+
+#: apps/web/templates/web/work_detail.html:275
+#| msgid "Cost-estimation"
+msgid "Conversation"
+msgstr "Conversation"
+
+#: apps/web/templates/web/work_detail.html:282
+#: apps/web/templates/web/work_detail.html:300
+#| msgid "Customers"
+msgid "Customer-visible"
+msgstr "Visible par le client"
+
+#: apps/web/templates/web/work_detail.html:293
+#| msgid "No customers yet."
+msgid "No comments yet."
+msgstr "Aucun commentaire pour le moment."
+
+#: apps/web/templates/web/work_detail.html:297
+#| msgid "Add a short note…"
+msgid "Add a comment…"
+msgstr "Ajouter un commentaire…"
+
+#: apps/web/templates/web/work_detail.html:301
+#| msgid "Document"
+msgid "Comment"
+msgstr "Commenter"
+
+#: apps/web/templates/web/work_detail.html:310
+#| msgid "Budget"
+msgid "Budget & spend"
+msgstr "Budget et dépenses"
+
+#: apps/web/templates/web/work_detail.html:316
+msgid "Remaining"
+msgstr "Restant"
+
+#: apps/web/templates/web/work_detail.html:317
+msgid "over budget"
+msgstr "dépassement de budget"
+
+#: apps/web/templates/web/work_detail.html:323
+msgid "over"
+msgstr "dépassé"
+
+#: apps/web/templates/web/work_detail.html:329
+msgid "Receipts"
+msgstr "Reçus"
+
+#: apps/web/templates/web/work_detail.html:343
+#| msgid "received"
+msgid "receipt"
+msgstr "reçu"
+
+#: apps/web/templates/web/work_detail.html:349
+msgid ""
+"No receipts captured yet — fuel, material and expense receipts appear here."
+msgstr "Aucun reçu saisi pour le moment — les reçus de carburant, matériaux et frais apparaissent ici."
+
+#: apps/web/templates/web/work_detail.html:355
+#| msgid "Related records"
+msgid "Field reports"
+msgstr "Rapports de terrain"
+
+#: apps/web/templates/web/work_detail.html:370
+msgid "No field reports yet — they appear here the moment the field files one."
+msgstr "Aucun rapport de terrain pour le moment — ils apparaissent ici dès que le terrain en dépose un."
+
+#: apps/web/templates/web/work_detail.html:376
+msgid "Team"
+msgstr "Équipe"
+
+#: apps/web/templates/web/work_detail.html:380
+#| msgid "In execution"
+msgid "Execution"
+msgstr "Exécution"
+
+#: apps/web/templates/web/work_detail.html:382
+#| msgid "Approve"
+msgid "Approvers"
+msgstr "Approbateurs"
+
+#: apps/web/templates/web/work_detail.html:384
+msgid "Watchers"
+msgstr "Observateurs"
+
+#: apps/web/templates/web/work_detail.html:396
+#| msgid "Awarded"
+msgid "Add"
+msgstr "Ajouter"
+
+#: apps/web/templates/web/work_detail.html:402
+#| msgid "Details"
+msgid "Detail"
+msgstr "Détail"
+
+#: apps/web/templates/web/work_detail.html:406
+msgid "Workspace"
+msgstr "Espace de travail"
+
+#: apps/web/templates/web/work_detail.html:407
+msgid "Phase"
+msgstr "Phase"
+
+#: apps/web/templates/web/work_detail.html:410
+#| msgid "Estimated value"
+msgid "Estimated"
+msgstr "Estimé"
+
+#: apps/web/templates/web/work_detail.html:412
+#| msgid "Start Job"
+msgid "Started"
+msgstr "Démarré"
+
+#: apps/web/templates/web/work_detail.html:413
+#| msgid "Table"
+msgid "Billable"
+msgstr "Facturable"
+
+#: apps/web/templates/web/work_detail.html:426
+msgid "Dependencies"
+msgstr "Dépendances"
+
+#: apps/web/templates/web/work_detail.html:434
+msgid "Nothing is holding this up."
+msgstr "Rien ne bloque cela."
+
+#: apps/web/templates/web/work_detail.html:437
+msgid "This job unblocks:"
+msgstr "Cette tâche débloque :"
+
+#: apps/web/templates/web/work_detail.html:446
+#| msgid "Date format"
+msgid "Wait for"
+msgstr "Attendre"
+
+#: apps/web/templates/web/work_detail.html:450
+msgid "Kind"
+msgstr "Type"
+
+#: apps/web/templates/web/work_detail.html:454
+#| msgid "Add department"
+msgid "Add dependency"
+msgstr "Ajouter une dépendance"
+
+#: apps/web/templates/web/work_detail.html:460
+#| msgid "File"
+msgid "Files"
+msgstr "Fichiers"
+
+#: apps/web/templates/web/work_detail.html:468
+#| msgid "No invoices yet."
+msgid "No files yet."
+msgstr "Aucun fichier pour le moment."
+
+#: apps/web/templates/web/work_detail.html:474
+#| msgid "+ Upload"
+msgid "Upload"
+msgstr "Téléverser"
+
+#: apps/web/templates/web/work_detail.html:482
+#| msgid "Project health"
+msgid "Project gate"
+msgstr "Contrôle du projet"
+
+#: apps/web/templates/web/work_detail.html:487
+#, python-format
+msgid "%(n)s item(s) blocking — <a href=\"%(proj_url)s\">review →</a>"
+msgstr "%(n)s élément(s) bloquant(s) — <a href=\"%(proj_url)s\">examiner →</a>"
 
 #: apps/web/translation_strings.py:10
 msgid "Intelligence"
