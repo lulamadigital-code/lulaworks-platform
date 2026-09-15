@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 11:36+0000\n"
+"POT-Creation-Date: 2026-09-15 11:41+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,7 +22,8 @@ msgstr ""
 msgid "Prospect"
 msgstr "عميل محتمل"
 
-#: apps/customers/models.py:30 apps/web/templates/web/customers.html:41
+#: apps/customers/models.py:30 apps/web/templates/web/billing.html:22
+#: apps/web/templates/web/customers.html:41
 #: apps/web/templates/web/people.html:102
 msgid "Active"
 msgstr "نشط"
@@ -57,7 +58,6 @@ msgid "Accepted"
 msgstr "مقبولة"
 
 #: apps/execution/models.py:108
-#| msgid "Progress"
 msgid "In progress"
 msgstr "قيد التنفيذ"
 
@@ -66,7 +66,6 @@ msgid "Paused"
 msgstr "متوقفة مؤقتًا"
 
 #: apps/execution/models.py:110
-#| msgid "Marketing"
 msgid "Waiting"
 msgstr "في الانتظار"
 
@@ -91,6 +90,7 @@ msgid "Closed"
 msgstr "مغلقة"
 
 #: apps/execution/models.py:116 apps/projects/models.py:24
+#: apps/web/templates/web/billing.html:24
 #: apps/web/templates/web/projects.html:25
 msgid "Cancelled"
 msgstr "مُلغى"
@@ -120,7 +120,6 @@ msgid "RFQ / Tender"
 msgstr "طلب عرض سعر / مناقصة"
 
 #: apps/execution/models.py:154
-#| msgid "Total jobs"
 msgid "Manual job"
 msgstr "مهمة يدوية"
 
@@ -130,7 +129,6 @@ msgid "Project"
 msgstr "المشروع"
 
 #: apps/execution/models.py:156
-#| msgid "Customers"
 msgid "Customer request"
 msgstr "طلب عميل"
 
@@ -186,7 +184,6 @@ msgid "Estimator review"
 msgstr "مراجعة المُقدِّر"
 
 #: apps/quotes/models.py:64
-#| msgid "Awaiting approval"
 msgid "Manager approval"
 msgstr "موافقة المدير"
 
@@ -199,7 +196,6 @@ msgid "Approved (internal)"
 msgstr "معتمد (داخليًا)"
 
 #: apps/quotes/models.py:67
-#| msgid "Add a customer"
 msgid "Issued to customer"
 msgstr "صادر إلى العميل"
 
@@ -212,7 +208,6 @@ msgid "Revision requested"
 msgstr "مطلوب مراجعة"
 
 #: apps/quotes/models.py:71
-#| msgid "%(n)s awarded"
 msgid "Awarded"
 msgstr "مُرسى"
 
@@ -225,7 +220,6 @@ msgid "Lost"
 msgstr "خاسر"
 
 #: apps/quotes/models.py:74
-#| msgid "expired"
 msgid "Expired"
 msgstr "منتهي الصلاحية"
 
@@ -240,6 +234,207 @@ msgstr "تنبيه"
 #: apps/web/templates/web/base.html:404
 msgid "Sign out"
 msgstr "تسجيل الخروج"
+
+#: apps/web/templates/web/billing.html:3
+#| msgid "Billing & plan"
+msgid "Billing"
+msgstr "الفوترة"
+
+#: apps/web/templates/web/billing.html:5
+#| msgid "Billing & plan"
+msgid "Billing & subscription"
+msgstr "الفوترة والاشتراك"
+
+#: apps/web/templates/web/billing.html:6
+msgid "Your Lulaworks plan, AI credits, storage and billing history."
+msgstr "خطتك في Lulaworks، ورصيد الذكاء الاصطناعي، والتخزين، وسجل الفوترة."
+
+#: apps/web/templates/web/billing.html:10
+msgid "You're over your plan's limits."
+msgstr "لقد تجاوزت حدود خطتك."
+
+#: apps/web/templates/web/billing.html:11
+msgid ""
+"Your data is safe and fully accessible — but you can't add new users until "
+"you're back within the limit or on a bigger plan."
+msgstr "بياناتك آمنة ويمكن الوصول إليها بالكامل — لكن لا يمكنك إضافة مستخدمين جدد حتى تعود ضمن الحد أو تنتقل إلى خطة أكبر."
+
+#: apps/web/templates/web/billing.html:20
+msgid "No plan"
+msgstr "لا توجد خطة"
+
+#: apps/web/templates/web/billing.html:21
+msgid "Free trial"
+msgstr "تجربة مجانية"
+
+#: apps/web/templates/web/billing.html:23
+msgid "Suspended"
+msgstr "موقوف"
+
+#: apps/web/templates/web/billing.html:26
+#, python-format
+msgid "%(cycle)s billing"
+msgstr "فوترة %(cycle)s"
+
+#: apps/web/templates/web/billing.html:29
+#, python-format
+msgid ""
+"%(n)s days left in your trial. Choose a plan below to keep everything after "
+"it ends — your data stays intact."
+msgstr "تبقّى %(n)s يومًا في تجربتك. اختر خطة أدناه للاحتفاظ بكل شيء بعد انتهائها — تبقى بياناتك سليمة."
+
+#: apps/web/templates/web/billing.html:32
+#| msgid "Access"
+msgid "Access ends"
+msgstr "ينتهي الوصول"
+
+#: apps/web/templates/web/billing.html:32
+msgid "Next billing date"
+msgstr "تاريخ الفوترة التالي"
+
+#: apps/web/templates/web/billing.html:37
+msgid "Cancellation scheduled — your data will be preserved."
+msgstr "تم جدولة الإلغاء — سيتم الحفاظ على بياناتك."
+
+#: apps/web/templates/web/billing.html:43
+msgid "Cancel at the end of the current period? Your data is kept."
+msgstr "الإلغاء في نهاية الفترة الحالية؟ يتم الاحتفاظ ببياناتك."
+
+#: apps/web/templates/web/billing.html:45
+msgid "Cancel subscription"
+msgstr "إلغاء الاشتراك"
+
+#: apps/web/templates/web/billing.html:55
+msgid "AI credits left"
+msgstr "رصيد الذكاء الاصطناعي المتبقي"
+
+#: apps/web/templates/web/billing.html:55
+#, python-format
+#| msgid "%(n)s open"
+msgid "/ %(n)s mo"
+msgstr "/ %(n)s شهريًا"
+
+#: apps/web/templates/web/billing.html:59
+msgid "Storage"
+msgstr "التخزين"
+
+#: apps/web/templates/web/billing.html:63
+msgid "Users (licensed)"
+msgstr "المستخدمون (مرخّصون)"
+
+#: apps/web/templates/web/billing.html:67
+msgid "Employees (unlimited)"
+msgstr "الموظفون (غير محدود)"
+
+#: apps/web/templates/web/billing.html:72
+#, python-format
+msgid "⚠ Storage is %(pct)s%% full — free up space or upgrade for more."
+msgstr "⚠ التخزين ممتلئ بنسبة %(pct)s%% — أفرغ مساحة أو قم بالترقية للمزيد."
+
+#: apps/web/templates/web/billing.html:78
+msgid "You're out of AI credits."
+msgstr "نفد رصيد الذكاء الاصطناعي لديك."
+
+#: apps/web/templates/web/billing.html:79
+msgid ""
+"Non-AI features keep working. Buy a credit pack below or upgrade your plan "
+"to resume AI document extraction and suggestions."
+msgstr "تستمر الميزات غير المعتمدة على الذكاء الاصطناعي في العمل. اشترِ حزمة رصيد أدناه أو قم بترقية خطتك لاستئناف استخراج المستندات واقتراحات الذكاء الاصطناعي."
+
+#: apps/web/templates/web/billing.html:84
+msgid "Buy AI credits"
+msgstr "شراء رصيد الذكاء الاصطناعي"
+
+#: apps/web/templates/web/billing.html:89
+msgid "credits"
+msgstr "رصيد"
+
+#: apps/web/templates/web/billing.html:94
+msgid "Buy pack"
+msgstr "شراء الحزمة"
+
+#: apps/web/templates/web/billing.html:103
+#| msgid "Planning"
+msgid "Plans"
+msgstr "الخطط"
+
+#: apps/web/templates/web/billing.html:106
+msgid "Monthly"
+msgstr "شهري"
+
+#: apps/web/templates/web/billing.html:107
+msgid "Annual"
+msgstr "سنوي"
+
+#: apps/web/templates/web/billing.html:107
+msgid "· save ~2 months"
+msgstr "· وفّر ~شهرين"
+
+#: apps/web/templates/web/billing.html:114
+msgid "Most popular"
+msgstr "الأكثر شيوعًا"
+
+#: apps/web/templates/web/billing.html:117
+msgid "/yr"
+msgstr "/سنة"
+
+#: apps/web/templates/web/billing.html:118
+msgid "/mo"
+msgstr "/شهر"
+
+#: apps/web/templates/web/billing.html:121
+#, python-format
+msgid "Save %(sym)s%(amt)s a year"
+msgstr "وفّر %(sym)s%(amt)s سنويًا"
+
+#: apps/web/templates/web/billing.html:127
+msgid "Current plan"
+msgstr "الخطة الحالية"
+
+#: apps/web/templates/web/billing.html:134
+#, python-format
+msgid "Choose %(name)s"
+msgstr "اختر %(name)s"
+
+#: apps/web/templates/web/billing.html:135
+msgid "Upgrade"
+msgstr "ترقية"
+
+#: apps/web/templates/web/billing.html:136
+msgid "Downgrade"
+msgstr "تخفيض"
+
+#: apps/web/templates/web/billing.html:137
+msgid "Select"
+msgstr "اختيار"
+
+#: apps/web/templates/web/billing.html:146
+#| msgid "Email history"
+msgid "Billing history"
+msgstr "سجل الفوترة"
+
+#: apps/web/templates/web/billing.html:149
+#: apps/web/templates/web/invoices.html:57
+msgid "Date"
+msgstr "التاريخ"
+
+#: apps/web/templates/web/billing.html:149
+msgid "Item"
+msgstr "البند"
+
+#: apps/web/templates/web/billing.html:149
+msgid "Credits"
+msgstr "الرصيد"
+
+#: apps/web/templates/web/billing.html:149
+#: apps/web/templates/web/invoices.html:90
+msgid "Amount"
+msgstr "المبلغ"
+
+#: apps/web/templates/web/billing.html:158
+#| msgid "No invoices yet."
+msgid "No billing activity yet."
+msgstr "لا يوجد نشاط فوترة بعد."
 
 #: apps/web/templates/web/crm/_tabs.html:7
 msgid "Overview"
@@ -616,10 +811,6 @@ msgstr "فواتيرك"
 msgid "Invoice"
 msgstr "فاتورة"
 
-#: apps/web/templates/web/invoices.html:57
-msgid "Date"
-msgstr "التاريخ"
-
 #: apps/web/templates/web/invoices.html:58
 msgid "Payment"
 msgstr "الدفع"
@@ -657,10 +848,6 @@ msgstr ""
 #: apps/web/templates/web/quotations.html:67
 msgid "Quotation"
 msgstr "عرض السعر"
-
-#: apps/web/templates/web/invoices.html:90
-msgid "Amount"
-msgstr "المبلغ"
 
 #: apps/web/templates/web/invoices.html:100
 msgid "Creating…"

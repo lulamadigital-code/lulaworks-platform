@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 11:36+0000\n"
+"POT-Creation-Date: 2026-09-15 11:41+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,7 +21,8 @@ msgstr ""
 msgid "Prospect"
 msgstr "Prospect"
 
-#: apps/customers/models.py:30 apps/web/templates/web/customers.html:41
+#: apps/customers/models.py:30 apps/web/templates/web/billing.html:22
+#: apps/web/templates/web/customers.html:41
 #: apps/web/templates/web/people.html:102
 msgid "Active"
 msgstr "Actif"
@@ -56,7 +57,6 @@ msgid "Accepted"
 msgstr "Acceptée"
 
 #: apps/execution/models.py:108
-#| msgid "Progress"
 msgid "In progress"
 msgstr "En cours"
 
@@ -65,7 +65,6 @@ msgid "Paused"
 msgstr "En pause"
 
 #: apps/execution/models.py:110
-#| msgid "Marketing"
 msgid "Waiting"
 msgstr "En attente"
 
@@ -90,6 +89,7 @@ msgid "Closed"
 msgstr "Clôturée"
 
 #: apps/execution/models.py:116 apps/projects/models.py:24
+#: apps/web/templates/web/billing.html:24
 #: apps/web/templates/web/projects.html:25
 msgid "Cancelled"
 msgstr "Annulé"
@@ -119,7 +119,6 @@ msgid "RFQ / Tender"
 msgstr "Demande de devis / Appel d'offres"
 
 #: apps/execution/models.py:154
-#| msgid "Total jobs"
 msgid "Manual job"
 msgstr "Tâche manuelle"
 
@@ -129,7 +128,6 @@ msgid "Project"
 msgstr "Projet"
 
 #: apps/execution/models.py:156
-#| msgid "Customers"
 msgid "Customer request"
 msgstr "Demande client"
 
@@ -185,7 +183,6 @@ msgid "Estimator review"
 msgstr "Revue de l'estimateur"
 
 #: apps/quotes/models.py:64
-#| msgid "Awaiting approval"
 msgid "Manager approval"
 msgstr "Approbation du responsable"
 
@@ -198,7 +195,6 @@ msgid "Approved (internal)"
 msgstr "Approuvé (interne)"
 
 #: apps/quotes/models.py:67
-#| msgid "Add a customer"
 msgid "Issued to customer"
 msgstr "Émis au client"
 
@@ -211,7 +207,6 @@ msgid "Revision requested"
 msgstr "Révision demandée"
 
 #: apps/quotes/models.py:71
-#| msgid "%(n)s awarded"
 msgid "Awarded"
 msgstr "Attribué"
 
@@ -224,7 +219,6 @@ msgid "Lost"
 msgstr "Perdu"
 
 #: apps/quotes/models.py:74
-#| msgid "expired"
 msgid "Expired"
 msgstr "Expiré"
 
@@ -239,6 +233,207 @@ msgstr "Attention"
 #: apps/web/templates/web/base.html:404
 msgid "Sign out"
 msgstr "Se déconnecter"
+
+#: apps/web/templates/web/billing.html:3
+#| msgid "Billing & plan"
+msgid "Billing"
+msgstr "Facturation"
+
+#: apps/web/templates/web/billing.html:5
+#| msgid "Billing & plan"
+msgid "Billing & subscription"
+msgstr "Facturation et abonnement"
+
+#: apps/web/templates/web/billing.html:6
+msgid "Your Lulaworks plan, AI credits, storage and billing history."
+msgstr "Votre forfait Lulaworks, vos crédits IA, votre stockage et votre historique de facturation."
+
+#: apps/web/templates/web/billing.html:10
+msgid "You're over your plan's limits."
+msgstr "Vous avez dépassé les limites de votre forfait."
+
+#: apps/web/templates/web/billing.html:11
+msgid ""
+"Your data is safe and fully accessible — but you can't add new users until "
+"you're back within the limit or on a bigger plan."
+msgstr "Vos données sont en sécurité et entièrement accessibles — mais vous ne pouvez pas ajouter de nouveaux utilisateurs tant que vous n'êtes pas revenu dans la limite ou passé à un forfait supérieur."
+
+#: apps/web/templates/web/billing.html:20
+msgid "No plan"
+msgstr "Aucun forfait"
+
+#: apps/web/templates/web/billing.html:21
+msgid "Free trial"
+msgstr "Essai gratuit"
+
+#: apps/web/templates/web/billing.html:23
+msgid "Suspended"
+msgstr "Suspendu"
+
+#: apps/web/templates/web/billing.html:26
+#, python-format
+msgid "%(cycle)s billing"
+msgstr "Facturation %(cycle)s"
+
+#: apps/web/templates/web/billing.html:29
+#, python-format
+msgid ""
+"%(n)s days left in your trial. Choose a plan below to keep everything after "
+"it ends — your data stays intact."
+msgstr "Il vous reste %(n)s jours d'essai. Choisissez un forfait ci-dessous pour tout conserver à la fin — vos données restent intactes."
+
+#: apps/web/templates/web/billing.html:32
+#| msgid "Access"
+msgid "Access ends"
+msgstr "Fin d'accès"
+
+#: apps/web/templates/web/billing.html:32
+msgid "Next billing date"
+msgstr "Prochaine date de facturation"
+
+#: apps/web/templates/web/billing.html:37
+msgid "Cancellation scheduled — your data will be preserved."
+msgstr "Annulation planifiée — vos données seront conservées."
+
+#: apps/web/templates/web/billing.html:43
+msgid "Cancel at the end of the current period? Your data is kept."
+msgstr "Annuler à la fin de la période en cours ? Vos données sont conservées."
+
+#: apps/web/templates/web/billing.html:45
+msgid "Cancel subscription"
+msgstr "Annuler l'abonnement"
+
+#: apps/web/templates/web/billing.html:55
+msgid "AI credits left"
+msgstr "Crédits IA restants"
+
+#: apps/web/templates/web/billing.html:55
+#, python-format
+#| msgid "%(n)s open"
+msgid "/ %(n)s mo"
+msgstr "/ %(n)s mois"
+
+#: apps/web/templates/web/billing.html:59
+msgid "Storage"
+msgstr "Stockage"
+
+#: apps/web/templates/web/billing.html:63
+msgid "Users (licensed)"
+msgstr "Utilisateurs (sous licence)"
+
+#: apps/web/templates/web/billing.html:67
+msgid "Employees (unlimited)"
+msgstr "Employés (illimité)"
+
+#: apps/web/templates/web/billing.html:72
+#, python-format
+msgid "⚠ Storage is %(pct)s%% full — free up space or upgrade for more."
+msgstr "⚠ Le stockage est plein à %(pct)s%% — libérez de l'espace ou passez à un forfait supérieur."
+
+#: apps/web/templates/web/billing.html:78
+msgid "You're out of AI credits."
+msgstr "Vous n'avez plus de crédits IA."
+
+#: apps/web/templates/web/billing.html:79
+msgid ""
+"Non-AI features keep working. Buy a credit pack below or upgrade your plan "
+"to resume AI document extraction and suggestions."
+msgstr "Les fonctionnalités non-IA continuent de fonctionner. Achetez un pack de crédits ci-dessous ou passez à un forfait supérieur pour reprendre l'extraction et les suggestions de documents par IA."
+
+#: apps/web/templates/web/billing.html:84
+msgid "Buy AI credits"
+msgstr "Acheter des crédits IA"
+
+#: apps/web/templates/web/billing.html:89
+msgid "credits"
+msgstr "crédits"
+
+#: apps/web/templates/web/billing.html:94
+msgid "Buy pack"
+msgstr "Acheter le pack"
+
+#: apps/web/templates/web/billing.html:103
+#| msgid "Planning"
+msgid "Plans"
+msgstr "Forfaits"
+
+#: apps/web/templates/web/billing.html:106
+msgid "Monthly"
+msgstr "Mensuel"
+
+#: apps/web/templates/web/billing.html:107
+msgid "Annual"
+msgstr "Annuel"
+
+#: apps/web/templates/web/billing.html:107
+msgid "· save ~2 months"
+msgstr "· économisez ~2 mois"
+
+#: apps/web/templates/web/billing.html:114
+msgid "Most popular"
+msgstr "Le plus populaire"
+
+#: apps/web/templates/web/billing.html:117
+msgid "/yr"
+msgstr "/an"
+
+#: apps/web/templates/web/billing.html:118
+msgid "/mo"
+msgstr "/mois"
+
+#: apps/web/templates/web/billing.html:121
+#, python-format
+msgid "Save %(sym)s%(amt)s a year"
+msgstr "Économisez %(sym)s%(amt)s par an"
+
+#: apps/web/templates/web/billing.html:127
+msgid "Current plan"
+msgstr "Forfait actuel"
+
+#: apps/web/templates/web/billing.html:134
+#, python-format
+msgid "Choose %(name)s"
+msgstr "Choisir %(name)s"
+
+#: apps/web/templates/web/billing.html:135
+msgid "Upgrade"
+msgstr "Mettre à niveau"
+
+#: apps/web/templates/web/billing.html:136
+msgid "Downgrade"
+msgstr "Rétrograder"
+
+#: apps/web/templates/web/billing.html:137
+msgid "Select"
+msgstr "Sélectionner"
+
+#: apps/web/templates/web/billing.html:146
+#| msgid "Email history"
+msgid "Billing history"
+msgstr "Historique de facturation"
+
+#: apps/web/templates/web/billing.html:149
+#: apps/web/templates/web/invoices.html:57
+msgid "Date"
+msgstr "Date"
+
+#: apps/web/templates/web/billing.html:149
+msgid "Item"
+msgstr "Article"
+
+#: apps/web/templates/web/billing.html:149
+msgid "Credits"
+msgstr "Crédits"
+
+#: apps/web/templates/web/billing.html:149
+#: apps/web/templates/web/invoices.html:90
+msgid "Amount"
+msgstr "Montant"
+
+#: apps/web/templates/web/billing.html:158
+#| msgid "No invoices yet."
+msgid "No billing activity yet."
+msgstr "Aucune activité de facturation pour le moment."
 
 #: apps/web/templates/web/crm/_tabs.html:7
 msgid "Overview"
@@ -624,10 +819,6 @@ msgstr "Vos factures"
 msgid "Invoice"
 msgstr "Facture"
 
-#: apps/web/templates/web/invoices.html:57
-msgid "Date"
-msgstr "Date"
-
 #: apps/web/templates/web/invoices.html:58
 msgid "Payment"
 msgstr "Paiement"
@@ -666,10 +857,6 @@ msgstr ""
 #: apps/web/templates/web/quotations.html:67
 msgid "Quotation"
 msgstr "Devis"
-
-#: apps/web/templates/web/invoices.html:90
-msgid "Amount"
-msgstr "Montant"
 
 #: apps/web/templates/web/invoices.html:100
 msgid "Creating…"

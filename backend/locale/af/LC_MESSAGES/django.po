@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 11:36+0000\n"
+"POT-Creation-Date: 2026-09-15 11:41+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,7 +21,8 @@ msgstr ""
 msgid "Prospect"
 msgstr "Voornemende kliënt"
 
-#: apps/customers/models.py:30 apps/web/templates/web/customers.html:41
+#: apps/customers/models.py:30 apps/web/templates/web/billing.html:22
+#: apps/web/templates/web/customers.html:41
 #: apps/web/templates/web/people.html:102
 msgid "Active"
 msgstr "Aktief"
@@ -56,7 +57,6 @@ msgid "Accepted"
 msgstr "Aanvaar"
 
 #: apps/execution/models.py:108
-#| msgid "Progress"
 msgid "In progress"
 msgstr "Aan die gang"
 
@@ -65,7 +65,6 @@ msgid "Paused"
 msgstr "Onderbreek"
 
 #: apps/execution/models.py:110
-#| msgid "Marketing"
 msgid "Waiting"
 msgstr "Wag"
 
@@ -90,6 +89,7 @@ msgid "Closed"
 msgstr "Gesluit"
 
 #: apps/execution/models.py:116 apps/projects/models.py:24
+#: apps/web/templates/web/billing.html:24
 #: apps/web/templates/web/projects.html:25
 msgid "Cancelled"
 msgstr "Gekanselleer"
@@ -119,7 +119,6 @@ msgid "RFQ / Tender"
 msgstr "RFQ / Tender"
 
 #: apps/execution/models.py:154
-#| msgid "Total jobs"
 msgid "Manual job"
 msgstr "Handmatige werk"
 
@@ -129,7 +128,6 @@ msgid "Project"
 msgstr "Projek"
 
 #: apps/execution/models.py:156
-#| msgid "Customers"
 msgid "Customer request"
 msgstr "Kliëntversoek"
 
@@ -185,7 +183,6 @@ msgid "Estimator review"
 msgstr "Beramer-hersiening"
 
 #: apps/quotes/models.py:64
-#| msgid "Awaiting approval"
 msgid "Manager approval"
 msgstr "Bestuurdergoedkeuring"
 
@@ -198,7 +195,6 @@ msgid "Approved (internal)"
 msgstr "Goedgekeur (intern)"
 
 #: apps/quotes/models.py:67
-#| msgid "Add a customer"
 msgid "Issued to customer"
 msgstr "Aan kliënt uitgereik"
 
@@ -211,7 +207,6 @@ msgid "Revision requested"
 msgstr "Hersiening versoek"
 
 #: apps/quotes/models.py:71
-#| msgid "%(n)s awarded"
 msgid "Awarded"
 msgstr "Toegeken"
 
@@ -224,7 +219,6 @@ msgid "Lost"
 msgstr "Verloor"
 
 #: apps/quotes/models.py:74
-#| msgid "expired"
 msgid "Expired"
 msgstr "Verval"
 
@@ -239,6 +233,207 @@ msgstr "Aandag"
 #: apps/web/templates/web/base.html:404
 msgid "Sign out"
 msgstr "Meld af"
+
+#: apps/web/templates/web/billing.html:3
+#| msgid "Billing & plan"
+msgid "Billing"
+msgstr "Fakturering"
+
+#: apps/web/templates/web/billing.html:5
+#| msgid "Billing & plan"
+msgid "Billing & subscription"
+msgstr "Fakturering en intekening"
+
+#: apps/web/templates/web/billing.html:6
+msgid "Your Lulaworks plan, AI credits, storage and billing history."
+msgstr "Jou Lulaworks-plan, KI-krediete, berging en faktureringsgeskiedenis."
+
+#: apps/web/templates/web/billing.html:10
+msgid "You're over your plan's limits."
+msgstr "Jy is oor jou plan se perke."
+
+#: apps/web/templates/web/billing.html:11
+msgid ""
+"Your data is safe and fully accessible — but you can't add new users until "
+"you're back within the limit or on a bigger plan."
+msgstr "Jou data is veilig en heeltemal toeganklik — maar jy kan nie nuwe gebruikers byvoeg totdat jy terug binne die perk is of op 'n groter plan is nie."
+
+#: apps/web/templates/web/billing.html:20
+msgid "No plan"
+msgstr "Geen plan nie"
+
+#: apps/web/templates/web/billing.html:21
+msgid "Free trial"
+msgstr "Gratis proeftydperk"
+
+#: apps/web/templates/web/billing.html:23
+msgid "Suspended"
+msgstr "Opgeskort"
+
+#: apps/web/templates/web/billing.html:26
+#, python-format
+msgid "%(cycle)s billing"
+msgstr "%(cycle)s fakturering"
+
+#: apps/web/templates/web/billing.html:29
+#, python-format
+msgid ""
+"%(n)s days left in your trial. Choose a plan below to keep everything after "
+"it ends — your data stays intact."
+msgstr "%(n)s dae oor in jou proeftydperk. Kies 'n plan hieronder om alles te behou nadat dit eindig — jou data bly ongeskonde."
+
+#: apps/web/templates/web/billing.html:32
+#| msgid "Access"
+msgid "Access ends"
+msgstr "Toegang eindig"
+
+#: apps/web/templates/web/billing.html:32
+msgid "Next billing date"
+msgstr "Volgende faktureringsdatum"
+
+#: apps/web/templates/web/billing.html:37
+msgid "Cancellation scheduled — your data will be preserved."
+msgstr "Kansellasie geskeduleer — jou data sal bewaar word."
+
+#: apps/web/templates/web/billing.html:43
+msgid "Cancel at the end of the current period? Your data is kept."
+msgstr "Kanselleer aan die einde van die huidige tydperk? Jou data word behou."
+
+#: apps/web/templates/web/billing.html:45
+msgid "Cancel subscription"
+msgstr "Kanselleer intekening"
+
+#: apps/web/templates/web/billing.html:55
+msgid "AI credits left"
+msgstr "KI-krediete oor"
+
+#: apps/web/templates/web/billing.html:55
+#, python-format
+#| msgid "%(n)s open"
+msgid "/ %(n)s mo"
+msgstr "/ %(n)s md"
+
+#: apps/web/templates/web/billing.html:59
+msgid "Storage"
+msgstr "Berging"
+
+#: apps/web/templates/web/billing.html:63
+msgid "Users (licensed)"
+msgstr "Gebruikers (gelisensieer)"
+
+#: apps/web/templates/web/billing.html:67
+msgid "Employees (unlimited)"
+msgstr "Werknemers (onbeperk)"
+
+#: apps/web/templates/web/billing.html:72
+#, python-format
+msgid "⚠ Storage is %(pct)s%% full — free up space or upgrade for more."
+msgstr "⚠ Berging is %(pct)s%% vol — maak spasie vry of gradeer op vir meer."
+
+#: apps/web/templates/web/billing.html:78
+msgid "You're out of AI credits."
+msgstr "Jy het nie meer KI-krediete nie."
+
+#: apps/web/templates/web/billing.html:79
+msgid ""
+"Non-AI features keep working. Buy a credit pack below or upgrade your plan "
+"to resume AI document extraction and suggestions."
+msgstr "Nie-KI-kenmerke werk steeds. Koop 'n kredietpak hieronder of gradeer jou plan op om KI-dokumentonttrekking en -voorstelle te hervat."
+
+#: apps/web/templates/web/billing.html:84
+msgid "Buy AI credits"
+msgstr "Koop KI-krediete"
+
+#: apps/web/templates/web/billing.html:89
+msgid "credits"
+msgstr "krediete"
+
+#: apps/web/templates/web/billing.html:94
+msgid "Buy pack"
+msgstr "Koop pak"
+
+#: apps/web/templates/web/billing.html:103
+#| msgid "Planning"
+msgid "Plans"
+msgstr "Planne"
+
+#: apps/web/templates/web/billing.html:106
+msgid "Monthly"
+msgstr "Maandeliks"
+
+#: apps/web/templates/web/billing.html:107
+msgid "Annual"
+msgstr "Jaarliks"
+
+#: apps/web/templates/web/billing.html:107
+msgid "· save ~2 months"
+msgstr "· bespaar ~2 maande"
+
+#: apps/web/templates/web/billing.html:114
+msgid "Most popular"
+msgstr "Gewildste"
+
+#: apps/web/templates/web/billing.html:117
+msgid "/yr"
+msgstr "/jr"
+
+#: apps/web/templates/web/billing.html:118
+msgid "/mo"
+msgstr "/md"
+
+#: apps/web/templates/web/billing.html:121
+#, python-format
+msgid "Save %(sym)s%(amt)s a year"
+msgstr "Bespaar %(sym)s%(amt)s per jaar"
+
+#: apps/web/templates/web/billing.html:127
+msgid "Current plan"
+msgstr "Huidige plan"
+
+#: apps/web/templates/web/billing.html:134
+#, python-format
+msgid "Choose %(name)s"
+msgstr "Kies %(name)s"
+
+#: apps/web/templates/web/billing.html:135
+msgid "Upgrade"
+msgstr "Gradeer op"
+
+#: apps/web/templates/web/billing.html:136
+msgid "Downgrade"
+msgstr "Gradeer af"
+
+#: apps/web/templates/web/billing.html:137
+msgid "Select"
+msgstr "Kies"
+
+#: apps/web/templates/web/billing.html:146
+#| msgid "Email history"
+msgid "Billing history"
+msgstr "Faktureringsgeskiedenis"
+
+#: apps/web/templates/web/billing.html:149
+#: apps/web/templates/web/invoices.html:57
+msgid "Date"
+msgstr "Datum"
+
+#: apps/web/templates/web/billing.html:149
+msgid "Item"
+msgstr "Item"
+
+#: apps/web/templates/web/billing.html:149
+msgid "Credits"
+msgstr "Krediete"
+
+#: apps/web/templates/web/billing.html:149
+#: apps/web/templates/web/invoices.html:90
+msgid "Amount"
+msgstr "Bedrag"
+
+#: apps/web/templates/web/billing.html:158
+#| msgid "No invoices yet."
+msgid "No billing activity yet."
+msgstr "Nog geen faktureringsaktiwiteit nie."
 
 #: apps/web/templates/web/crm/_tabs.html:7
 msgid "Overview"
@@ -622,10 +817,6 @@ msgstr "Jou fakture"
 msgid "Invoice"
 msgstr "Faktuur"
 
-#: apps/web/templates/web/invoices.html:57
-msgid "Date"
-msgstr "Datum"
-
 #: apps/web/templates/web/invoices.html:58
 msgid "Payment"
 msgstr "Betaling"
@@ -664,10 +855,6 @@ msgstr ""
 #: apps/web/templates/web/quotations.html:67
 msgid "Quotation"
 msgstr "Kwotasie"
-
-#: apps/web/templates/web/invoices.html:90
-msgid "Amount"
-msgstr "Bedrag"
 
 #: apps/web/templates/web/invoices.html:100
 msgid "Creating…"
