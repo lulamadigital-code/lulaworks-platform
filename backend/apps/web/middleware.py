@@ -173,12 +173,24 @@ class LanguageActivationMiddleware:
             from django.utils import translation
             from apps.reference.services import LanguageResolutionService
             user = getattr(request, "user", None)
-            if user is not None and getattr(user, "is_authenticated", False):
+            authed = user is not None and getattr(user, "is_authenticated", False)
+            if authed:
                 company = getattr(user, "active_company", None)
                 lang, _locale = LanguageResolutionService.resolve(
                     request=request, user=user, company=company)
                 translation.activate(lang)
                 request.LANGUAGE_CODE = lang
+            else:
+                # Anonymous visitor (e.g. the public marketing site): honour an
+                # explicit choice from the language switcher (session / ?lang=).
+                # Otherwise leave LocaleMiddleware's cookie/Accept-Language result.
+                sess = getattr(request, "session", None)
+                explicit = (sess.get("preferred_language") if sess else None) \
+                    or (request.GET.get("lang") if hasattr(request, "GET") else None)
+                if explicit:
+                    lang, _locale = LanguageResolutionService.resolve(request=request)
+                    translation.activate(lang)
+                    request.LANGUAGE_CODE = lang
         except Exception:  # noqa: BLE001 — language must never break a request
             pass
         return self.get_response(request)

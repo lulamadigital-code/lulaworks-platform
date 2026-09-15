@@ -1,0 +1,19 @@
+{% comment %}On-page language switcher — works for signed-in users and anonymous
+marketing visitors alike. Posts to web:set_language, which persists the choice
+(session + cookie + saved preference) and redirects back. Available on every page
+via the `localization` context processor (LANGUAGES_ACTIVE / LANGUAGE_CODE_EFFECTIVE).
+Inherits the surrounding page's form styles; `class` can be passed to tweak it.{% endcomment %}
+{% load i18n %}
+{% if LANGUAGES_ACTIVE %}
+<form method="post" action="{% url 'web:set_language' %}" class="langswitch {{ class }}" style="margin:0;">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <select name="language" onchange="this.form.submit()" aria-label="{% trans 'Language' %}"
+          style="width:auto;min-width:0;padding:7px 26px 7px 10px;font-size:13.5px;cursor:pointer;">
+    {% for l in LANGUAGES_ACTIVE %}
+    <option value="{{ l.code }}" {% if l.code == LANGUAGE_CODE_EFFECTIVE %}selected{% endif %}>🌐 {{ l.native_name }}</option>
+    {% endfor %}
+  </select>
+  <noscript><button type="submit" class="btn ghost">{% trans "Change" %}</button></noscript>
+</form>
+{% endif %}

@@ -122,6 +122,50 @@ from apps.rfq.services import (
 )
 
 
+@require_POST
+def set_language(request):
+    """On-page language switch, for authed users AND anonymous marketing
+    visitors. Persists the choice three ways so every code path agrees:
+    the session (read by our LanguageResolutionService for authed users), the
+    Django language cookie (read by LocaleMiddleware for anonymous visitors),
+    and — when signed in — the user's saved preference. Never changes data,
+    permissions or currency. Redirects back to where the visitor was."""
+    from django.conf import settings
+    from django.utils import translation
+    from django.utils.http import url_has_allowed_host_and_scheme
+    from apps.reference.services import LanguageService
+
+    lang = (request.POST.get("language") or "").strip()
+    next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or "/"
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()},
+        require_https=request.is_secure()):
+        next_url = "/"
+
+    if lang and LanguageService.is_valid(lang):
+        code = LanguageService.get(lang).code
+        try:
+            if hasattr(request, "session"):
+                request.session["preferred_language"] = code
+        except Exception:  # noqa: BLE001
+            pass
+        if getattr(request.user, "is_authenticated", False):
+            try:
+                request.user.preferred_language = code
+                request.user.save(update_fields=["preferred_language"])
+            except Exception:  # noqa: BLE001
+                pass
+        translation.activate(code)
+        resp = redirect(next_url)
+        resp.set_cookie(
+            settings.LANGUAGE_COOKIE_NAME, code,
+            max_age=getattr(settings, "LANGUAGE_COOKIE_AGE", None) or 60 * 60 * 24 * 365,
+            path=getattr(settings, "LANGUAGE_COOKIE_PATH", "/"),
+            samesite=getattr(settings, "LANGUAGE_COOKIE_SAMESITE", "Lax") or "Lax")
+        return resp
+    return redirect(next_url)
+
+
 def _post_login_home(user):
     """Where a user lands after signing in. A platform staff member with no
     tenant company would 500 on the tenant dashboard, so send them to the

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 14:03+0000\n"
+"POT-Creation-Date: 2026-09-15 14:21+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -201,6 +201,136 @@ msgid_plural "Your password must contain at least %(min)d characters."
 msgstr[0] ""
 msgstr[1] ""
 
+#: apps/marketing/templates/marketing/base.html:234
+#: apps/marketing/templates/marketing/base.html:279
+msgid "Features"
+msgstr "Kenmerke"
+
+#: apps/marketing/templates/marketing/base.html:235
+#: apps/marketing/templates/marketing/base.html:280
+msgid "Pricing"
+msgstr "Pryse"
+
+#: apps/marketing/templates/marketing/base.html:236
+#: apps/marketing/templates/marketing/base.html:286
+msgid "Learn"
+msgstr "Leer"
+
+#: apps/marketing/templates/marketing/base.html:237
+#: apps/marketing/templates/marketing/base.html:287
+#| msgid "Free trial"
+msgid "Free tools"
+msgstr "Gratis gereedskap"
+
+#: apps/marketing/templates/marketing/base.html:238
+#: apps/marketing/templates/marketing/base.html:288
+msgid "Templates"
+msgstr "Sjablone"
+
+#: apps/marketing/templates/marketing/base.html:239
+msgid "About"
+msgstr "Oor"
+
+#: apps/marketing/templates/marketing/base.html:240
+#: apps/marketing/templates/marketing/base.html:289
+msgid "FAQ"
+msgstr "Gereelde vrae"
+
+#: apps/marketing/templates/marketing/base.html:241
+#: apps/marketing/templates/marketing/base.html:294
+#| msgid "Contacts"
+msgid "Contact"
+msgstr "Kontak"
+
+#: apps/marketing/templates/marketing/base.html:247
+#| msgid "Dashboard"
+msgid "Go to Dashboard"
+msgstr "Gaan na Kontroleskerm"
+
+#: apps/marketing/templates/marketing/base.html:249
+#: apps/marketing/templates/marketing/base.html:295
+msgid "Log in"
+msgstr "Meld aan"
+
+#: apps/marketing/templates/marketing/base.html:250
+#: apps/marketing/templates/marketing/base.html:282
+#| msgid "Free trial"
+msgid "Start Free Trial"
+msgstr "Begin gratis proeftydperk"
+
+#: apps/marketing/templates/marketing/base.html:273
+msgid ""
+"The Contractor Operating System — from quotation to payment, one intelligent "
+"platform built for contractors worldwide."
+msgstr "Die Kontrakteur-Bedryfstelsel — van kwotasie tot betaling, een intelligente platform gebou vir kontrakteurs wêreldwyd."
+
+#: apps/marketing/templates/marketing/base.html:278
+msgid "Product"
+msgstr "Produk"
+
+#: apps/marketing/templates/marketing/base.html:281
+#| msgid "Book a demo →"
+msgid "Book a Demo"
+msgstr "Bespreek 'n demo"
+
+#: apps/marketing/templates/marketing/base.html:285
+msgid "Resources"
+msgstr "Hulpbronne"
+
+#: apps/marketing/templates/marketing/base.html:292
+#: apps/web/templates/web/company.html:3
+#: apps/web/templates/web/profile.html:122
+#: apps/web/templates/web/settings.html:12
+msgid "Company"
+msgstr "Maatskappy"
+
+#: apps/marketing/templates/marketing/base.html:293
+msgid "About Us"
+msgstr "Oor Ons"
+
+#: apps/marketing/templates/marketing/base.html:298
+msgid "Legal"
+msgstr "Regsaspekte"
+
+#: apps/marketing/templates/marketing/base.html:299
+msgid "Privacy Policy"
+msgstr "Privaatheidsbeleid"
+
+#: apps/marketing/templates/marketing/base.html:300
+#| msgid "Invoice terms & conditions"
+msgid "Terms & Conditions"
+msgstr "Bepalings en Voorwaardes"
+
+#: apps/marketing/templates/marketing/base.html:301
+msgid "Cookie Policy"
+msgstr "Koekiebeleid"
+
+#: apps/marketing/templates/marketing/base.html:306
+#, python-format
+msgid "© %(year)s Lulaworks. All rights reserved."
+msgstr "© %(year)s Lulaworks. Alle regte voorbehou."
+
+#: apps/marketing/templates/marketing/base.html:307
+msgid "Built for contractors worldwide · GDPR-ready"
+msgstr "Gebou vir kontrakteurs wêreldwyd · GDPR-gereed"
+
+#: apps/marketing/templates/marketing/base.html:317
+#, python-format
+msgid ""
+"We use cookies to understand site traffic and improve Lulaworks. See our <a "
+"href=\"%(cookies_url)s\">cookie policy</a>."
+msgstr "Ons gebruik koekies om werfverkeer te verstaan en Lulaworks te verbeter. Sien ons <a href=\"%(cookies_url)s\">koekiebeleid</a>."
+
+#: apps/marketing/templates/marketing/base.html:319
+#| msgid "Pipeline"
+msgid "Decline"
+msgstr "Weier"
+
+#: apps/marketing/templates/marketing/base.html:320
+#| msgid "Accepted"
+msgid "Accept"
+msgstr "Aanvaar"
+
 #: apps/projects/models.py:20 apps/web/templates/web/projects.html:26
 msgid "Pending compliance"
 msgstr "Wag op nakoming"
@@ -264,6 +394,16 @@ msgstr "Verloor"
 msgid "Expired"
 msgstr "Verval"
 
+#: apps/web/templates/web/_language_switcher.html:12
+#: apps/web/templates/web/company.html:491
+#: apps/web/templates/web/profile.html:82
+msgid "Language"
+msgstr "Taal"
+
+#: apps/web/templates/web/_language_switcher.html:18
+msgid "Change"
+msgstr "Verander"
+
 #: apps/web/templates/web/_readiness.html:9
 msgid "Ready (overridden)"
 msgstr "Gereed (oorheers)"
@@ -293,7 +433,13 @@ msgstr "Soek kliënte, take…"
 msgid "Attention"
 msgstr "Aandag"
 
-#: apps/web/templates/web/base.html:404
+#: apps/web/templates/web/base.html:400 apps/web/templates/web/profile.html:3
+#: apps/web/templates/web/profile.html:19
+#: apps/web/templates/web/settings.html:61
+msgid "My profile"
+msgstr "My profiel"
+
+#: apps/web/templates/web/base.html:406
 msgid "Sign out"
 msgstr "Meld af"
 
@@ -783,12 +929,6 @@ msgstr "Kies bestellingdokument"
 #: apps/web/templates/web/commercial_document_detail.html:192
 msgid "No purchase order attached."
 msgstr "Geen bestelling aangeheg nie."
-
-#: apps/web/templates/web/company.html:3
-#: apps/web/templates/web/profile.html:122
-#: apps/web/templates/web/settings.html:12
-msgid "Company"
-msgstr "Maatskappy"
 
 #: apps/web/templates/web/company.html:9
 msgid "Finish setting up your company to start issuing documents"
@@ -1591,11 +1731,6 @@ msgstr "Datumformaat"
 #: apps/web/templates/web/company.html:490
 msgid "Number format"
 msgstr "Getalformaat"
-
-#: apps/web/templates/web/company.html:491
-#: apps/web/templates/web/profile.html:82
-msgid "Language"
-msgstr "Taal"
 
 #: apps/web/templates/web/company.html:492
 #, python-format
@@ -2578,11 +2713,6 @@ msgstr ""
 "Deaktivering verwyder elke toestemming onmiddellik en haal hulle uit alle "
 "toewysingskiesers."
 
-#: apps/web/templates/web/profile.html:3 apps/web/templates/web/profile.html:19
-#: apps/web/templates/web/settings.html:61
-msgid "My profile"
-msgstr "My profiel"
-
 #: apps/web/templates/web/profile.html:20
 msgid ""
 "Your photo and details. Everyone can edit their own profile, whatever their "
@@ -3416,12 +3546,10 @@ msgid "Needs an owner"
 msgstr "Benodig 'n eienaar"
 
 #: apps/web/templates/web/work_detail.html:5
-#| msgid "Jobs"
 msgid "← Jobs"
 msgstr "← Werke"
 
 #: apps/web/templates/web/work_detail.html:12
-#| msgid "Standalone"
 msgid "Standalone job"
 msgstr "Selfstandige werk"
 
@@ -3431,17 +3559,14 @@ msgid "Risk: %(level)s"
 msgstr "Risiko: %(level)s"
 
 #: apps/web/templates/web/work_detail.html:32
-#| msgid "Compliance checklist"
 msgid "Checklist"
 msgstr "Kontrolelys"
 
 #: apps/web/templates/web/work_detail.html:34
-#| msgid "Jobs & tasks"
 msgid "Subtasks"
 msgstr "Subtake"
 
 #: apps/web/templates/web/work_detail.html:37
-#| msgid "Blocked"
 msgid "Blockers"
 msgstr "Blokkeerders"
 
@@ -3453,19 +3578,19 @@ msgstr "Hoekom dit geblokkeer is"
 msgid ""
 "Blockers are computed from real dependencies — clear the cause and this "
 "clears itself."
-msgstr "Blokkeerders word uit werklike afhanklikhede bereken — verwyder die oorsaak en dit los homself op."
+msgstr ""
+"Blokkeerders word uit werklike afhanklikhede bereken — verwyder die oorsaak "
+"en dit los homself op."
 
 #: apps/web/templates/web/work_detail.html:52
 msgid "Move it along"
 msgstr "Beweeg dit aan"
 
 #: apps/web/templates/web/work_detail.html:56
-#| msgid "Start Job"
 msgid "Start job"
 msgstr "Begin werk"
 
 #: apps/web/templates/web/work_detail.html:65
-#| msgid "Actual cost"
 msgid "Actual hrs"
 msgstr "Werklike ure"
 
@@ -3474,7 +3599,6 @@ msgid "Field chat"
 msgstr "Veldklets"
 
 #: apps/web/templates/web/work_detail.html:79
-#| msgid "Creating…"
 msgid "connecting…"
 msgstr "koppel tans…"
 
@@ -3487,7 +3611,6 @@ msgid "No messages yet — say hello to the field."
 msgstr "Nog geen boodskappe nie — groet die veld."
 
 #: apps/web/templates/web/work_detail.html:101
-#| msgid "Attach a purchase order"
 msgid "Attach a photo"
 msgstr "Heg 'n foto aan"
 
@@ -3505,7 +3628,6 @@ msgid "live"
 msgstr "regstreeks"
 
 #: apps/web/templates/web/work_detail.html:120
-#| msgid "Creating…"
 msgid "reconnecting…"
 msgstr "herkoppel tans…"
 
@@ -3535,7 +3657,10 @@ msgid ""
 "LulaAI drafts the checklist, estimate and risks from jobs like this one you "
 "have already finished. It proposes — you tick what is right before anything "
 "is created."
-msgstr "LulaAI stel die kontrolelys, beraming en risiko's op uit werke soos hierdie een wat jy reeds voltooi het. Dit stel voor — jy merk wat reg is voordat enigiets geskep word."
+msgstr ""
+"LulaAI stel die kontrolelys, beraming en risiko's op uit werke soos hierdie "
+"een wat jy reeds voltooi het. Dit stel voor — jy merk wat reg is voordat "
+"enigiets geskep word."
 
 #: apps/web/templates/web/work_detail.html:223
 msgid "Subtasks & checklist"
@@ -3548,14 +3673,14 @@ msgstr "Wissel"
 
 #: apps/web/templates/web/work_detail.html:253
 msgid "No breakdown yet — add a subtask or a checklist item."
-msgstr "Nog geen uiteensetting nie — voeg 'n subtaak of 'n kontrolelys-item by."
+msgstr ""
+"Nog geen uiteensetting nie — voeg 'n subtaak of 'n kontrolelys-item by."
 
 #: apps/web/templates/web/work_detail.html:260
 msgid "Add checklist item"
 msgstr "Voeg kontrolelys-item by"
 
 #: apps/web/templates/web/work_detail.html:261
-#| msgid "Item"
 msgid "+ Item"
 msgstr "+ Item"
 
@@ -3572,33 +3697,27 @@ msgid "Ask LulaAI for more steps →"
 msgstr "Vra LulaAI vir meer stappe →"
 
 #: apps/web/templates/web/work_detail.html:275
-#| msgid "Cost-estimation"
 msgid "Conversation"
 msgstr "Gesprek"
 
 #: apps/web/templates/web/work_detail.html:282
 #: apps/web/templates/web/work_detail.html:300
-#| msgid "Customers"
 msgid "Customer-visible"
 msgstr "Kliënt-sigbaar"
 
 #: apps/web/templates/web/work_detail.html:293
-#| msgid "No customers yet."
 msgid "No comments yet."
 msgstr "Nog geen kommentaar nie."
 
 #: apps/web/templates/web/work_detail.html:297
-#| msgid "Add a short note…"
 msgid "Add a comment…"
 msgstr "Voeg 'n opmerking by…"
 
 #: apps/web/templates/web/work_detail.html:301
-#| msgid "Document"
 msgid "Comment"
 msgstr "Lewer kommentaar"
 
 #: apps/web/templates/web/work_detail.html:310
-#| msgid "Budget"
 msgid "Budget & spend"
 msgstr "Begroting en besteding"
 
@@ -3619,35 +3738,35 @@ msgid "Receipts"
 msgstr "Kwitansies"
 
 #: apps/web/templates/web/work_detail.html:343
-#| msgid "received"
 msgid "receipt"
 msgstr "kwitansie"
 
 #: apps/web/templates/web/work_detail.html:349
 msgid ""
 "No receipts captured yet — fuel, material and expense receipts appear here."
-msgstr "Nog geen kwitansies vasgelê nie — brandstof-, materiaal- en onkostekwitansies verskyn hier."
+msgstr ""
+"Nog geen kwitansies vasgelê nie — brandstof-, materiaal- en "
+"onkostekwitansies verskyn hier."
 
 #: apps/web/templates/web/work_detail.html:355
-#| msgid "Related records"
 msgid "Field reports"
 msgstr "Veldverslae"
 
 #: apps/web/templates/web/work_detail.html:370
 msgid "No field reports yet — they appear here the moment the field files one."
-msgstr "Nog geen veldverslae nie — hulle verskyn hier die oomblik wat die veld een indien."
+msgstr ""
+"Nog geen veldverslae nie — hulle verskyn hier die oomblik wat die veld een "
+"indien."
 
 #: apps/web/templates/web/work_detail.html:376
 msgid "Team"
 msgstr "Span"
 
 #: apps/web/templates/web/work_detail.html:380
-#| msgid "In execution"
 msgid "Execution"
 msgstr "Uitvoering"
 
 #: apps/web/templates/web/work_detail.html:382
-#| msgid "Approve"
 msgid "Approvers"
 msgstr "Goedkeurders"
 
@@ -3656,12 +3775,10 @@ msgid "Watchers"
 msgstr "Waarnemers"
 
 #: apps/web/templates/web/work_detail.html:396
-#| msgid "Awarded"
 msgid "Add"
 msgstr "Voeg by"
 
 #: apps/web/templates/web/work_detail.html:402
-#| msgid "Details"
 msgid "Detail"
 msgstr "Besonderhede"
 
@@ -3674,17 +3791,14 @@ msgid "Phase"
 msgstr "Fase"
 
 #: apps/web/templates/web/work_detail.html:410
-#| msgid "Estimated value"
 msgid "Estimated"
 msgstr "Beraam"
 
 #: apps/web/templates/web/work_detail.html:412
-#| msgid "Start Job"
 msgid "Started"
 msgstr "Begin"
 
 #: apps/web/templates/web/work_detail.html:413
-#| msgid "Table"
 msgid "Billable"
 msgstr "Faktureerbaar"
 
@@ -3701,7 +3815,6 @@ msgid "This job unblocks:"
 msgstr "Hierdie werk ontsluit:"
 
 #: apps/web/templates/web/work_detail.html:446
-#| msgid "Date format"
 msgid "Wait for"
 msgstr "Wag vir"
 
@@ -3710,27 +3823,22 @@ msgid "Kind"
 msgstr "Soort"
 
 #: apps/web/templates/web/work_detail.html:454
-#| msgid "Add department"
 msgid "Add dependency"
 msgstr "Voeg afhanklikheid by"
 
 #: apps/web/templates/web/work_detail.html:460
-#| msgid "File"
 msgid "Files"
 msgstr "Lêers"
 
 #: apps/web/templates/web/work_detail.html:468
-#| msgid "No invoices yet."
 msgid "No files yet."
 msgstr "Nog geen lêers nie."
 
 #: apps/web/templates/web/work_detail.html:474
-#| msgid "+ Upload"
 msgid "Upload"
 msgstr "Laai op"
 
 #: apps/web/templates/web/work_detail.html:482
-#| msgid "Project health"
 msgid "Project gate"
 msgstr "Projekhek"
 

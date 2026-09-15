@@ -396,11 +396,14 @@
     </nav>
     {% endblock %}
     <div class="side-foot">
-      <a class="me" href="{% url 'web:profile' %}" title="My profile">
+      <a class="me" href="{% url 'web:profile' %}" title="{% trans 'My profile' %}">
         {% include "web/_avatar.html" with p=user size=28 %}
         <span>{{ user.get_full_name|default:user.email }}</span>
       </a>
-      <a href="{% url 'web:logout' %}">{% trans "Sign out" %}</a>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
+        {% include "web/_language_switcher.html" %}
+        <a href="{% url 'web:logout' %}">{% trans "Sign out" %}</a>
+      </div>
     </div>
   </aside>
   {% endif %}

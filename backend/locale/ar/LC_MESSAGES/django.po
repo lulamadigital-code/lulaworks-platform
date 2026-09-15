@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 14:03+0000\n"
+"POT-Creation-Date: 2026-09-15 14:21+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -202,6 +202,136 @@ msgid_plural "Your password must contain at least %(min)d characters."
 msgstr[0] ""
 msgstr[1] ""
 
+#: apps/marketing/templates/marketing/base.html:234
+#: apps/marketing/templates/marketing/base.html:279
+msgid "Features"
+msgstr "الميزات"
+
+#: apps/marketing/templates/marketing/base.html:235
+#: apps/marketing/templates/marketing/base.html:280
+msgid "Pricing"
+msgstr "الأسعار"
+
+#: apps/marketing/templates/marketing/base.html:236
+#: apps/marketing/templates/marketing/base.html:286
+msgid "Learn"
+msgstr "تعلّم"
+
+#: apps/marketing/templates/marketing/base.html:237
+#: apps/marketing/templates/marketing/base.html:287
+#| msgid "Free trial"
+msgid "Free tools"
+msgstr "أدوات مجانية"
+
+#: apps/marketing/templates/marketing/base.html:238
+#: apps/marketing/templates/marketing/base.html:288
+msgid "Templates"
+msgstr "القوالب"
+
+#: apps/marketing/templates/marketing/base.html:239
+msgid "About"
+msgstr "حول"
+
+#: apps/marketing/templates/marketing/base.html:240
+#: apps/marketing/templates/marketing/base.html:289
+msgid "FAQ"
+msgstr "الأسئلة الشائعة"
+
+#: apps/marketing/templates/marketing/base.html:241
+#: apps/marketing/templates/marketing/base.html:294
+#| msgid "Contacts"
+msgid "Contact"
+msgstr "اتصل بنا"
+
+#: apps/marketing/templates/marketing/base.html:247
+#| msgid "Dashboard"
+msgid "Go to Dashboard"
+msgstr "الذهاب إلى لوحة التحكم"
+
+#: apps/marketing/templates/marketing/base.html:249
+#: apps/marketing/templates/marketing/base.html:295
+msgid "Log in"
+msgstr "تسجيل الدخول"
+
+#: apps/marketing/templates/marketing/base.html:250
+#: apps/marketing/templates/marketing/base.html:282
+#| msgid "Free trial"
+msgid "Start Free Trial"
+msgstr "ابدأ التجربة المجانية"
+
+#: apps/marketing/templates/marketing/base.html:273
+msgid ""
+"The Contractor Operating System — from quotation to payment, one intelligent "
+"platform built for contractors worldwide."
+msgstr "نظام تشغيل المقاولين — من عرض السعر إلى الدفع، منصة ذكية واحدة مصممة للمقاولين حول العالم."
+
+#: apps/marketing/templates/marketing/base.html:278
+msgid "Product"
+msgstr "المنتج"
+
+#: apps/marketing/templates/marketing/base.html:281
+#| msgid "Book a demo →"
+msgid "Book a Demo"
+msgstr "احجز عرضًا توضيحيًا"
+
+#: apps/marketing/templates/marketing/base.html:285
+msgid "Resources"
+msgstr "الموارد"
+
+#: apps/marketing/templates/marketing/base.html:292
+#: apps/web/templates/web/company.html:3
+#: apps/web/templates/web/profile.html:122
+#: apps/web/templates/web/settings.html:12
+msgid "Company"
+msgstr "الشركة"
+
+#: apps/marketing/templates/marketing/base.html:293
+msgid "About Us"
+msgstr "من نحن"
+
+#: apps/marketing/templates/marketing/base.html:298
+msgid "Legal"
+msgstr "قانوني"
+
+#: apps/marketing/templates/marketing/base.html:299
+msgid "Privacy Policy"
+msgstr "سياسة الخصوصية"
+
+#: apps/marketing/templates/marketing/base.html:300
+#| msgid "Invoice terms & conditions"
+msgid "Terms & Conditions"
+msgstr "الشروط والأحكام"
+
+#: apps/marketing/templates/marketing/base.html:301
+msgid "Cookie Policy"
+msgstr "سياسة ملفات تعريف الارتباط"
+
+#: apps/marketing/templates/marketing/base.html:306
+#, python-format
+msgid "© %(year)s Lulaworks. All rights reserved."
+msgstr "© %(year)s Lulaworks. جميع الحقوق محفوظة."
+
+#: apps/marketing/templates/marketing/base.html:307
+msgid "Built for contractors worldwide · GDPR-ready"
+msgstr "مصمم للمقاولين حول العالم · متوافق مع GDPR"
+
+#: apps/marketing/templates/marketing/base.html:317
+#, python-format
+msgid ""
+"We use cookies to understand site traffic and improve Lulaworks. See our <a "
+"href=\"%(cookies_url)s\">cookie policy</a>."
+msgstr "نستخدم ملفات تعريف الارتباط لفهم حركة مرور الموقع وتحسين Lulaworks. راجع <a href=\"%(cookies_url)s\">سياسة ملفات تعريف الارتباط</a> لدينا."
+
+#: apps/marketing/templates/marketing/base.html:319
+#| msgid "Pipeline"
+msgid "Decline"
+msgstr "رفض"
+
+#: apps/marketing/templates/marketing/base.html:320
+#| msgid "Accepted"
+msgid "Accept"
+msgstr "قبول"
+
 #: apps/projects/models.py:20 apps/web/templates/web/projects.html:26
 msgid "Pending compliance"
 msgstr "في انتظار الامتثال"
@@ -265,6 +395,16 @@ msgstr "خاسر"
 msgid "Expired"
 msgstr "منتهي الصلاحية"
 
+#: apps/web/templates/web/_language_switcher.html:12
+#: apps/web/templates/web/company.html:491
+#: apps/web/templates/web/profile.html:82
+msgid "Language"
+msgstr "اللغة"
+
+#: apps/web/templates/web/_language_switcher.html:18
+msgid "Change"
+msgstr "تغيير"
+
 #: apps/web/templates/web/_readiness.html:9
 msgid "Ready (overridden)"
 msgstr "جاهز (تجاوز)"
@@ -294,7 +434,13 @@ msgstr "ابحث عن العملاء والمهام…"
 msgid "Attention"
 msgstr "تنبيه"
 
-#: apps/web/templates/web/base.html:404
+#: apps/web/templates/web/base.html:400 apps/web/templates/web/profile.html:3
+#: apps/web/templates/web/profile.html:19
+#: apps/web/templates/web/settings.html:61
+msgid "My profile"
+msgstr "ملفي الشخصي"
+
+#: apps/web/templates/web/base.html:406
 msgid "Sign out"
 msgstr "تسجيل الخروج"
 
@@ -783,12 +929,6 @@ msgstr "اختر مستند أمر الشراء"
 #: apps/web/templates/web/commercial_document_detail.html:192
 msgid "No purchase order attached."
 msgstr "لا يوجد أمر شراء مرفق."
-
-#: apps/web/templates/web/company.html:3
-#: apps/web/templates/web/profile.html:122
-#: apps/web/templates/web/settings.html:12
-msgid "Company"
-msgstr "الشركة"
 
 #: apps/web/templates/web/company.html:9
 msgid "Finish setting up your company to start issuing documents"
@@ -1580,11 +1720,6 @@ msgstr "تنسيق التاريخ"
 #: apps/web/templates/web/company.html:490
 msgid "Number format"
 msgstr "تنسيق الأرقام"
-
-#: apps/web/templates/web/company.html:491
-#: apps/web/templates/web/profile.html:82
-msgid "Language"
-msgstr "اللغة"
 
 #: apps/web/templates/web/company.html:492
 #, python-format
@@ -2552,11 +2687,6 @@ msgstr ""
 "وسجلات الوقت والاعتمادات التي أنجزها. التعطيل يزيل كل الأذونات فورًا ويخرجه "
 "من كل أدوات اختيار الإسناد."
 
-#: apps/web/templates/web/profile.html:3 apps/web/templates/web/profile.html:19
-#: apps/web/templates/web/settings.html:61
-msgid "My profile"
-msgstr "ملفي الشخصي"
-
 #: apps/web/templates/web/profile.html:20
 msgid ""
 "Your photo and details. Everyone can edit their own profile, whatever their "
@@ -3373,12 +3503,10 @@ msgid "Needs an owner"
 msgstr "بحاجة إلى مسؤول"
 
 #: apps/web/templates/web/work_detail.html:5
-#| msgid "Jobs"
 msgid "← Jobs"
 msgstr "← المهام"
 
 #: apps/web/templates/web/work_detail.html:12
-#| msgid "Standalone"
 msgid "Standalone job"
 msgstr "مهمة مستقلة"
 
@@ -3388,17 +3516,14 @@ msgid "Risk: %(level)s"
 msgstr "المخاطر: %(level)s"
 
 #: apps/web/templates/web/work_detail.html:32
-#| msgid "Compliance checklist"
 msgid "Checklist"
 msgstr "قائمة التحقق"
 
 #: apps/web/templates/web/work_detail.html:34
-#| msgid "Jobs & tasks"
 msgid "Subtasks"
 msgstr "المهام الفرعية"
 
 #: apps/web/templates/web/work_detail.html:37
-#| msgid "Blocked"
 msgid "Blockers"
 msgstr "العوائق"
 
@@ -3417,12 +3542,10 @@ msgid "Move it along"
 msgstr "ادفعها للأمام"
 
 #: apps/web/templates/web/work_detail.html:56
-#| msgid "Start Job"
 msgid "Start job"
 msgstr "بدء المهمة"
 
 #: apps/web/templates/web/work_detail.html:65
-#| msgid "Actual cost"
 msgid "Actual hrs"
 msgstr "الساعات الفعلية"
 
@@ -3431,7 +3554,6 @@ msgid "Field chat"
 msgstr "محادثة الميدان"
 
 #: apps/web/templates/web/work_detail.html:79
-#| msgid "Creating…"
 msgid "connecting…"
 msgstr "جارٍ الاتصال…"
 
@@ -3444,7 +3566,6 @@ msgid "No messages yet — say hello to the field."
 msgstr "لا توجد رسائل بعد — رحّب بالميدان."
 
 #: apps/web/templates/web/work_detail.html:101
-#| msgid "Attach a purchase order"
 msgid "Attach a photo"
 msgstr "إرفاق صورة"
 
@@ -3462,7 +3583,6 @@ msgid "live"
 msgstr "مباشر"
 
 #: apps/web/templates/web/work_detail.html:120
-#| msgid "Creating…"
 msgid "reconnecting…"
 msgstr "إعادة الاتصال…"
 
@@ -3492,7 +3612,9 @@ msgid ""
 "LulaAI drafts the checklist, estimate and risks from jobs like this one you "
 "have already finished. It proposes — you tick what is right before anything "
 "is created."
-msgstr "يُعدّ LulaAI قائمة التحقق والتقدير والمخاطر من مهام كهذه أنجزتها سابقًا. يقترح — وتختار ما هو صحيح قبل إنشاء أي شيء."
+msgstr ""
+"يُعدّ LulaAI قائمة التحقق والتقدير والمخاطر من مهام كهذه أنجزتها سابقًا. يقترح "
+"— وتختار ما هو صحيح قبل إنشاء أي شيء."
 
 #: apps/web/templates/web/work_detail.html:223
 msgid "Subtasks & checklist"
@@ -3512,7 +3634,6 @@ msgid "Add checklist item"
 msgstr "إضافة عنصر قائمة تحقق"
 
 #: apps/web/templates/web/work_detail.html:261
-#| msgid "Item"
 msgid "+ Item"
 msgstr "+ عنصر"
 
@@ -3529,33 +3650,27 @@ msgid "Ask LulaAI for more steps →"
 msgstr "اطلب من LulaAI مزيدًا من الخطوات →"
 
 #: apps/web/templates/web/work_detail.html:275
-#| msgid "Cost-estimation"
 msgid "Conversation"
 msgstr "المحادثة"
 
 #: apps/web/templates/web/work_detail.html:282
 #: apps/web/templates/web/work_detail.html:300
-#| msgid "Customers"
 msgid "Customer-visible"
 msgstr "مرئي للعميل"
 
 #: apps/web/templates/web/work_detail.html:293
-#| msgid "No customers yet."
 msgid "No comments yet."
 msgstr "لا توجد تعليقات بعد."
 
 #: apps/web/templates/web/work_detail.html:297
-#| msgid "Add a short note…"
 msgid "Add a comment…"
 msgstr "أضف تعليقًا…"
 
 #: apps/web/templates/web/work_detail.html:301
-#| msgid "Document"
 msgid "Comment"
 msgstr "تعليق"
 
 #: apps/web/templates/web/work_detail.html:310
-#| msgid "Budget"
 msgid "Budget & spend"
 msgstr "الميزانية والإنفاق"
 
@@ -3576,7 +3691,6 @@ msgid "Receipts"
 msgstr "الإيصالات"
 
 #: apps/web/templates/web/work_detail.html:343
-#| msgid "received"
 msgid "receipt"
 msgstr "إيصال"
 
@@ -3586,7 +3700,6 @@ msgid ""
 msgstr "لم تُسجَّل أي إيصالات بعد — تظهر هنا إيصالات الوقود والمواد والمصروفات."
 
 #: apps/web/templates/web/work_detail.html:355
-#| msgid "Related records"
 msgid "Field reports"
 msgstr "تقارير الميدان"
 
@@ -3599,12 +3712,10 @@ msgid "Team"
 msgstr "الفريق"
 
 #: apps/web/templates/web/work_detail.html:380
-#| msgid "In execution"
 msgid "Execution"
 msgstr "التنفيذ"
 
 #: apps/web/templates/web/work_detail.html:382
-#| msgid "Approve"
 msgid "Approvers"
 msgstr "المعتمِدون"
 
@@ -3613,12 +3724,10 @@ msgid "Watchers"
 msgstr "المراقبون"
 
 #: apps/web/templates/web/work_detail.html:396
-#| msgid "Awarded"
 msgid "Add"
 msgstr "إضافة"
 
 #: apps/web/templates/web/work_detail.html:402
-#| msgid "Details"
 msgid "Detail"
 msgstr "التفاصيل"
 
@@ -3631,17 +3740,14 @@ msgid "Phase"
 msgstr "المرحلة"
 
 #: apps/web/templates/web/work_detail.html:410
-#| msgid "Estimated value"
 msgid "Estimated"
 msgstr "مُقدَّر"
 
 #: apps/web/templates/web/work_detail.html:412
-#| msgid "Start Job"
 msgid "Started"
 msgstr "بدأ"
 
 #: apps/web/templates/web/work_detail.html:413
-#| msgid "Table"
 msgid "Billable"
 msgstr "قابل للفوترة"
 
@@ -3658,7 +3764,6 @@ msgid "This job unblocks:"
 msgstr "تفتح هذه المهمة:"
 
 #: apps/web/templates/web/work_detail.html:446
-#| msgid "Date format"
 msgid "Wait for"
 msgstr "انتظار"
 
@@ -3667,27 +3772,22 @@ msgid "Kind"
 msgstr "النوع"
 
 #: apps/web/templates/web/work_detail.html:454
-#| msgid "Add department"
 msgid "Add dependency"
 msgstr "إضافة تبعية"
 
 #: apps/web/templates/web/work_detail.html:460
-#| msgid "File"
 msgid "Files"
 msgstr "الملفات"
 
 #: apps/web/templates/web/work_detail.html:468
-#| msgid "No invoices yet."
 msgid "No files yet."
 msgstr "لا توجد ملفات بعد."
 
 #: apps/web/templates/web/work_detail.html:474
-#| msgid "+ Upload"
 msgid "Upload"
 msgstr "رفع"
 
 #: apps/web/templates/web/work_detail.html:482
-#| msgid "Project health"
 msgid "Project gate"
 msgstr "بوابة المشروع"
 

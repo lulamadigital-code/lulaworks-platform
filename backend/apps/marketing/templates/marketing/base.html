@@ -1,5 +1,5 @@
-{% load static %}<!doctype html>
-<html lang="en">
+{% load static i18n %}<!doctype html>
+<html lang="{{ LANGUAGE_CODE_EFFECTIVE|default:'en' }}" dir="{{ LANGUAGE_DIR|default:'ltr' }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -230,22 +230,23 @@
       </a>
       <input type="checkbox" id="mc" class="menu-check">
       <div class="links">
-        <a href="{% url 'marketing:features' %}">Features</a>
-        <a href="{% url 'marketing:pricing' %}">Pricing</a>
-        <a href="{% url 'marketing:learn' %}">Learn</a>
-        <a href="{% url 'marketing:tools' %}">Free tools</a>
-        <a href="{% url 'marketing:templates' %}">Templates</a>
-        <a href="{% url 'marketing:about' %}">About</a>
-        <a href="{% url 'marketing:faq' %}">FAQ</a>
-        <a href="{% url 'marketing:contact' %}">Contact</a>
+        <a href="{% url 'marketing:features' %}">{% trans "Features" %}</a>
+        <a href="{% url 'marketing:pricing' %}">{% trans "Pricing" %}</a>
+        <a href="{% url 'marketing:learn' %}">{% trans "Learn" %}</a>
+        <a href="{% url 'marketing:tools' %}">{% trans "Free tools" %}</a>
+        <a href="{% url 'marketing:templates' %}">{% trans "Templates" %}</a>
+        <a href="{% url 'marketing:about' %}">{% trans "About" %}</a>
+        <a href="{% url 'marketing:faq' %}">{% trans "FAQ" %}</a>
+        <a href="{% url 'marketing:contact' %}">{% trans "Contact" %}</a>
       </div>
       <span class="sp"></span>
       <div class="actions">
+        {% include "web/_language_switcher.html" %}
         {% if request.user.is_authenticated %}
-        <a class="btn" href="{% url 'web:dashboard' %}">Go to Dashboard</a>
+        <a class="btn" href="{% url 'web:dashboard' %}">{% trans "Go to Dashboard" %}</a>
         {% else %}
-        <a class="login" href="{% url 'web:login' %}">Log in</a>
-        <a class="btn" href="{% url 'marketing:trial' %}">Start Free Trial</a>
+        <a class="login" href="{% url 'web:login' %}">{% trans "Log in" %}</a>
+        <a class="btn" href="{% url 'marketing:trial' %}">{% trans "Start Free Trial" %}</a>
         {% endif %}
         <label class="menu-toggle" for="mc" aria-label="Menu">☰</label>
       </div>
@@ -268,41 +269,41 @@
         <div>
           <a class="brand" href="{% url 'marketing:home' %}" aria-label="Lulaworks home">
             <img class="foot-logo" src="{% static 'web/logo.png' %}" alt="Lulaworks"></a>
-          <p class="foot-about">The Contractor Operating System — from quotation to
-            payment, one intelligent platform built for contractors worldwide.</p>
+          <p class="foot-about">{% trans "The Contractor Operating System — from quotation to payment, one intelligent platform built for contractors worldwide." %}</p>
           <p style="margin-top:12px;">
             <a class="foot-mail" href="mailto:support@lulaworks.com">support@lulaworks.com</a></p>
         </div>
         <div>
-          <h4>Product</h4>
-          <a href="{% url 'marketing:features' %}">Features</a>
-          <a href="{% url 'marketing:pricing' %}">Pricing</a>
-          <a href="{% url 'marketing:demo' %}">Book a Demo</a>
-          <a href="{% url 'marketing:trial' %}">Start Free Trial</a>
+          <h4>{% trans "Product" %}</h4>
+          <a href="{% url 'marketing:features' %}">{% trans "Features" %}</a>
+          <a href="{% url 'marketing:pricing' %}">{% trans "Pricing" %}</a>
+          <a href="{% url 'marketing:demo' %}">{% trans "Book a Demo" %}</a>
+          <a href="{% url 'marketing:trial' %}">{% trans "Start Free Trial" %}</a>
         </div>
         <div>
-          <h4>Resources</h4>
-          <a href="{% url 'marketing:learn' %}">Learn</a>
-          <a href="{% url 'marketing:tools' %}">Free tools</a>
-          <a href="{% url 'marketing:templates' %}">Templates</a>
-          <a href="{% url 'marketing:faq' %}">FAQ</a>
+          <h4>{% trans "Resources" %}</h4>
+          <a href="{% url 'marketing:learn' %}">{% trans "Learn" %}</a>
+          <a href="{% url 'marketing:tools' %}">{% trans "Free tools" %}</a>
+          <a href="{% url 'marketing:templates' %}">{% trans "Templates" %}</a>
+          <a href="{% url 'marketing:faq' %}">{% trans "FAQ" %}</a>
         </div>
         <div>
-          <h4>Company</h4>
-          <a href="{% url 'marketing:about' %}">About Us</a>
-          <a href="{% url 'marketing:contact' %}">Contact</a>
-          <a href="{% url 'web:login' %}">Log in</a>
+          <h4>{% trans "Company" %}</h4>
+          <a href="{% url 'marketing:about' %}">{% trans "About Us" %}</a>
+          <a href="{% url 'marketing:contact' %}">{% trans "Contact" %}</a>
+          <a href="{% url 'web:login' %}">{% trans "Log in" %}</a>
         </div>
         <div>
-          <h4>Legal</h4>
-          <a href="{% url 'marketing:privacy' %}">Privacy Policy</a>
-          <a href="{% url 'marketing:terms' %}">Terms &amp; Conditions</a>
-          <a href="{% url 'marketing:cookies' %}">Cookie Policy</a>
+          <h4>{% trans "Legal" %}</h4>
+          <a href="{% url 'marketing:privacy' %}">{% trans "Privacy Policy" %}</a>
+          <a href="{% url 'marketing:terms' %}">{% trans "Terms & Conditions" %}</a>
+          <a href="{% url 'marketing:cookies' %}">{% trans "Cookie Policy" %}</a>
         </div>
       </div>
       <div class="foot-bottom">
-        <span>© {% now "Y" %} Lulaworks. All rights reserved.</span>
-        <span>Built for contractors worldwide · GDPR-ready</span>
+        {% now "Y" as year_now %}
+        <span>{% blocktrans with year=year_now %}© {{ year }} Lulaworks. All rights reserved.{% endblocktrans %}</span>
+        <span>{% trans "Built for contractors worldwide · GDPR-ready" %}</span>
       </div>
     </div>
   </footer>
@@ -312,11 +313,10 @@
        max-width:720px;margin:0 auto;background:#fff;border:1px solid var(--line,#e6e9ef);border-radius:14px;
        box-shadow:0 12px 40px rgba(41,47,76,.16);padding:16px 18px;font-size:13.5px;color:var(--ink,#292f4c);
        display:none;gap:12px;align-items:center;flex-wrap:wrap;">
-    <span style="flex:1;min-width:220px;">We use cookies to understand site traffic and improve Lulaworks.
-      See our <a href="/cookies/">cookie policy</a>.</span>
+    <span style="flex:1;min-width:220px;">{% url 'marketing:cookies' as cookies_url %}{% blocktrans %}We use cookies to understand site traffic and improve Lulaworks. See our <a href="{{ cookies_url }}">cookie policy</a>.{% endblocktrans %}</span>
     <span style="display:flex;gap:8px;">
-      <button id="lw-decline" style="padding:9px 15px;border-radius:9px;border:1px solid var(--line,#e6e9ef);background:#fff;font-weight:700;cursor:pointer;">Decline</button>
-      <button id="lw-accept" style="padding:9px 15px;border-radius:9px;border:0;background:#17a2b8;color:#fff;font-weight:700;cursor:pointer;">Accept</button>
+      <button id="lw-decline" style="padding:9px 15px;border-radius:9px;border:1px solid var(--line,#e6e9ef);background:#fff;font-weight:700;cursor:pointer;">{% trans "Decline" %}</button>
+      <button id="lw-accept" style="padding:9px 15px;border-radius:9px;border:0;background:#17a2b8;color:#fff;font-weight:700;cursor:pointer;">{% trans "Accept" %}</button>
     </span>
   </div>
 

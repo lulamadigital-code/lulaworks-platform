@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 14:03+0000\n"
+"POT-Creation-Date: 2026-09-15 14:21+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -203,6 +203,136 @@ msgid_plural "Your password must contain at least %(min)d characters."
 msgstr[0] ""
 msgstr[1] ""
 
+#: apps/marketing/templates/marketing/base.html:234
+#: apps/marketing/templates/marketing/base.html:279
+msgid "Features"
+msgstr "Fonctionnalités"
+
+#: apps/marketing/templates/marketing/base.html:235
+#: apps/marketing/templates/marketing/base.html:280
+msgid "Pricing"
+msgstr "Tarifs"
+
+#: apps/marketing/templates/marketing/base.html:236
+#: apps/marketing/templates/marketing/base.html:286
+msgid "Learn"
+msgstr "Apprendre"
+
+#: apps/marketing/templates/marketing/base.html:237
+#: apps/marketing/templates/marketing/base.html:287
+#| msgid "Free trial"
+msgid "Free tools"
+msgstr "Outils gratuits"
+
+#: apps/marketing/templates/marketing/base.html:238
+#: apps/marketing/templates/marketing/base.html:288
+msgid "Templates"
+msgstr "Modèles"
+
+#: apps/marketing/templates/marketing/base.html:239
+msgid "About"
+msgstr "À propos"
+
+#: apps/marketing/templates/marketing/base.html:240
+#: apps/marketing/templates/marketing/base.html:289
+msgid "FAQ"
+msgstr "FAQ"
+
+#: apps/marketing/templates/marketing/base.html:241
+#: apps/marketing/templates/marketing/base.html:294
+#| msgid "Contacts"
+msgid "Contact"
+msgstr "Contact"
+
+#: apps/marketing/templates/marketing/base.html:247
+#| msgid "Dashboard"
+msgid "Go to Dashboard"
+msgstr "Aller au tableau de bord"
+
+#: apps/marketing/templates/marketing/base.html:249
+#: apps/marketing/templates/marketing/base.html:295
+msgid "Log in"
+msgstr "Se connecter"
+
+#: apps/marketing/templates/marketing/base.html:250
+#: apps/marketing/templates/marketing/base.html:282
+#| msgid "Free trial"
+msgid "Start Free Trial"
+msgstr "Démarrer l'essai gratuit"
+
+#: apps/marketing/templates/marketing/base.html:273
+msgid ""
+"The Contractor Operating System — from quotation to payment, one intelligent "
+"platform built for contractors worldwide."
+msgstr "Le système d'exploitation pour entrepreneurs — du devis au paiement, une plateforme intelligente conçue pour les entrepreneurs du monde entier."
+
+#: apps/marketing/templates/marketing/base.html:278
+msgid "Product"
+msgstr "Produit"
+
+#: apps/marketing/templates/marketing/base.html:281
+#| msgid "Book a demo →"
+msgid "Book a Demo"
+msgstr "Réserver une démo"
+
+#: apps/marketing/templates/marketing/base.html:285
+msgid "Resources"
+msgstr "Ressources"
+
+#: apps/marketing/templates/marketing/base.html:292
+#: apps/web/templates/web/company.html:3
+#: apps/web/templates/web/profile.html:122
+#: apps/web/templates/web/settings.html:12
+msgid "Company"
+msgstr "Entreprise"
+
+#: apps/marketing/templates/marketing/base.html:293
+msgid "About Us"
+msgstr "À propos de nous"
+
+#: apps/marketing/templates/marketing/base.html:298
+msgid "Legal"
+msgstr "Mentions légales"
+
+#: apps/marketing/templates/marketing/base.html:299
+msgid "Privacy Policy"
+msgstr "Politique de confidentialité"
+
+#: apps/marketing/templates/marketing/base.html:300
+#| msgid "Invoice terms & conditions"
+msgid "Terms & Conditions"
+msgstr "Conditions générales"
+
+#: apps/marketing/templates/marketing/base.html:301
+msgid "Cookie Policy"
+msgstr "Politique relative aux cookies"
+
+#: apps/marketing/templates/marketing/base.html:306
+#, python-format
+msgid "© %(year)s Lulaworks. All rights reserved."
+msgstr "© %(year)s Lulaworks. Tous droits réservés."
+
+#: apps/marketing/templates/marketing/base.html:307
+msgid "Built for contractors worldwide · GDPR-ready"
+msgstr "Conçu pour les entrepreneurs du monde entier · conforme au RGPD"
+
+#: apps/marketing/templates/marketing/base.html:317
+#, python-format
+msgid ""
+"We use cookies to understand site traffic and improve Lulaworks. See our <a "
+"href=\"%(cookies_url)s\">cookie policy</a>."
+msgstr "Nous utilisons des cookies pour comprendre le trafic du site et améliorer Lulaworks. Consultez notre <a href=\"%(cookies_url)s\">politique relative aux cookies</a>."
+
+#: apps/marketing/templates/marketing/base.html:319
+#| msgid "Pipeline"
+msgid "Decline"
+msgstr "Refuser"
+
+#: apps/marketing/templates/marketing/base.html:320
+#| msgid "Accepted"
+msgid "Accept"
+msgstr "Accepter"
+
 #: apps/projects/models.py:20 apps/web/templates/web/projects.html:26
 msgid "Pending compliance"
 msgstr "Conformité en attente"
@@ -266,6 +396,16 @@ msgstr "Perdu"
 msgid "Expired"
 msgstr "Expiré"
 
+#: apps/web/templates/web/_language_switcher.html:12
+#: apps/web/templates/web/company.html:491
+#: apps/web/templates/web/profile.html:82
+msgid "Language"
+msgstr "Langue"
+
+#: apps/web/templates/web/_language_switcher.html:18
+msgid "Change"
+msgstr "Changer"
+
 #: apps/web/templates/web/_readiness.html:9
 msgid "Ready (overridden)"
 msgstr "Prêt (dérogation)"
@@ -295,7 +435,13 @@ msgstr "Rechercher clients, travaux…"
 msgid "Attention"
 msgstr "Attention"
 
-#: apps/web/templates/web/base.html:404
+#: apps/web/templates/web/base.html:400 apps/web/templates/web/profile.html:3
+#: apps/web/templates/web/profile.html:19
+#: apps/web/templates/web/settings.html:61
+msgid "My profile"
+msgstr "Mon profil"
+
+#: apps/web/templates/web/base.html:406
 msgid "Sign out"
 msgstr "Se déconnecter"
 
@@ -794,12 +940,6 @@ msgstr "Choisir le document du bon de commande"
 #: apps/web/templates/web/commercial_document_detail.html:192
 msgid "No purchase order attached."
 msgstr "Aucun bon de commande joint."
-
-#: apps/web/templates/web/company.html:3
-#: apps/web/templates/web/profile.html:122
-#: apps/web/templates/web/settings.html:12
-msgid "Company"
-msgstr "Entreprise"
 
 #: apps/web/templates/web/company.html:9
 msgid "Finish setting up your company to start issuing documents"
@@ -1608,11 +1748,6 @@ msgstr "Format de date"
 #: apps/web/templates/web/company.html:490
 msgid "Number format"
 msgstr "Format des nombres"
-
-#: apps/web/templates/web/company.html:491
-#: apps/web/templates/web/profile.html:82
-msgid "Language"
-msgstr "Langue"
 
 #: apps/web/templates/web/company.html:492
 #, python-format
@@ -2598,11 +2733,6 @@ msgstr ""
 "La désactivation retire immédiatement toutes les autorisations et la retire "
 "de tous les sélecteurs d'affectation."
 
-#: apps/web/templates/web/profile.html:3 apps/web/templates/web/profile.html:19
-#: apps/web/templates/web/settings.html:61
-msgid "My profile"
-msgstr "Mon profil"
-
 #: apps/web/templates/web/profile.html:20
 msgid ""
 "Your photo and details. Everyone can edit their own profile, whatever their "
@@ -3440,12 +3570,10 @@ msgid "Needs an owner"
 msgstr "Besoin d'un responsable"
 
 #: apps/web/templates/web/work_detail.html:5
-#| msgid "Jobs"
 msgid "← Jobs"
 msgstr "← Tâches"
 
 #: apps/web/templates/web/work_detail.html:12
-#| msgid "Standalone"
 msgid "Standalone job"
 msgstr "Tâche autonome"
 
@@ -3455,17 +3583,14 @@ msgid "Risk: %(level)s"
 msgstr "Risque : %(level)s"
 
 #: apps/web/templates/web/work_detail.html:32
-#| msgid "Compliance checklist"
 msgid "Checklist"
 msgstr "Liste de contrôle"
 
 #: apps/web/templates/web/work_detail.html:34
-#| msgid "Jobs & tasks"
 msgid "Subtasks"
 msgstr "Sous-tâches"
 
 #: apps/web/templates/web/work_detail.html:37
-#| msgid "Blocked"
 msgid "Blockers"
 msgstr "Obstacles"
 
@@ -3477,19 +3602,19 @@ msgstr "Pourquoi c'est bloqué"
 msgid ""
 "Blockers are computed from real dependencies — clear the cause and this "
 "clears itself."
-msgstr "Les obstacles sont calculés à partir de dépendances réelles — supprimez la cause et cela se résout tout seul."
+msgstr ""
+"Les obstacles sont calculés à partir de dépendances réelles — supprimez la "
+"cause et cela se résout tout seul."
 
 #: apps/web/templates/web/work_detail.html:52
 msgid "Move it along"
 msgstr "Faire avancer"
 
 #: apps/web/templates/web/work_detail.html:56
-#| msgid "Start Job"
 msgid "Start job"
 msgstr "Démarrer la tâche"
 
 #: apps/web/templates/web/work_detail.html:65
-#| msgid "Actual cost"
 msgid "Actual hrs"
 msgstr "Heures réelles"
 
@@ -3498,7 +3623,6 @@ msgid "Field chat"
 msgstr "Discussion terrain"
 
 #: apps/web/templates/web/work_detail.html:79
-#| msgid "Creating…"
 msgid "connecting…"
 msgstr "connexion…"
 
@@ -3511,7 +3635,6 @@ msgid "No messages yet — say hello to the field."
 msgstr "Aucun message pour le moment — dites bonjour au terrain."
 
 #: apps/web/templates/web/work_detail.html:101
-#| msgid "Attach a purchase order"
 msgid "Attach a photo"
 msgstr "Joindre une photo"
 
@@ -3529,7 +3652,6 @@ msgid "live"
 msgstr "en direct"
 
 #: apps/web/templates/web/work_detail.html:120
-#| msgid "Creating…"
 msgid "reconnecting…"
 msgstr "reconnexion…"
 
@@ -3559,7 +3681,10 @@ msgid ""
 "LulaAI drafts the checklist, estimate and risks from jobs like this one you "
 "have already finished. It proposes — you tick what is right before anything "
 "is created."
-msgstr "LulaAI ébauche la liste de contrôle, l'estimation et les risques à partir de tâches comme celle-ci que vous avez déjà terminées. Il propose — vous cochez ce qui convient avant que quoi que ce soit ne soit créé."
+msgstr ""
+"LulaAI ébauche la liste de contrôle, l'estimation et les risques à partir de "
+"tâches comme celle-ci que vous avez déjà terminées. Il propose — vous cochez "
+"ce qui convient avant que quoi que ce soit ne soit créé."
 
 #: apps/web/templates/web/work_detail.html:223
 msgid "Subtasks & checklist"
@@ -3572,14 +3697,14 @@ msgstr "Basculer"
 
 #: apps/web/templates/web/work_detail.html:253
 msgid "No breakdown yet — add a subtask or a checklist item."
-msgstr "Pas encore de décomposition — ajoutez une sous-tâche ou un élément de liste."
+msgstr ""
+"Pas encore de décomposition — ajoutez une sous-tâche ou un élément de liste."
 
 #: apps/web/templates/web/work_detail.html:260
 msgid "Add checklist item"
 msgstr "Ajouter un élément de liste"
 
 #: apps/web/templates/web/work_detail.html:261
-#| msgid "Item"
 msgid "+ Item"
 msgstr "+ Élément"
 
@@ -3596,33 +3721,27 @@ msgid "Ask LulaAI for more steps →"
 msgstr "Demander plus d'étapes à LulaAI →"
 
 #: apps/web/templates/web/work_detail.html:275
-#| msgid "Cost-estimation"
 msgid "Conversation"
 msgstr "Conversation"
 
 #: apps/web/templates/web/work_detail.html:282
 #: apps/web/templates/web/work_detail.html:300
-#| msgid "Customers"
 msgid "Customer-visible"
 msgstr "Visible par le client"
 
 #: apps/web/templates/web/work_detail.html:293
-#| msgid "No customers yet."
 msgid "No comments yet."
 msgstr "Aucun commentaire pour le moment."
 
 #: apps/web/templates/web/work_detail.html:297
-#| msgid "Add a short note…"
 msgid "Add a comment…"
 msgstr "Ajouter un commentaire…"
 
 #: apps/web/templates/web/work_detail.html:301
-#| msgid "Document"
 msgid "Comment"
 msgstr "Commenter"
 
 #: apps/web/templates/web/work_detail.html:310
-#| msgid "Budget"
 msgid "Budget & spend"
 msgstr "Budget et dépenses"
 
@@ -3643,35 +3762,35 @@ msgid "Receipts"
 msgstr "Reçus"
 
 #: apps/web/templates/web/work_detail.html:343
-#| msgid "received"
 msgid "receipt"
 msgstr "reçu"
 
 #: apps/web/templates/web/work_detail.html:349
 msgid ""
 "No receipts captured yet — fuel, material and expense receipts appear here."
-msgstr "Aucun reçu saisi pour le moment — les reçus de carburant, matériaux et frais apparaissent ici."
+msgstr ""
+"Aucun reçu saisi pour le moment — les reçus de carburant, matériaux et frais "
+"apparaissent ici."
 
 #: apps/web/templates/web/work_detail.html:355
-#| msgid "Related records"
 msgid "Field reports"
 msgstr "Rapports de terrain"
 
 #: apps/web/templates/web/work_detail.html:370
 msgid "No field reports yet — they appear here the moment the field files one."
-msgstr "Aucun rapport de terrain pour le moment — ils apparaissent ici dès que le terrain en dépose un."
+msgstr ""
+"Aucun rapport de terrain pour le moment — ils apparaissent ici dès que le "
+"terrain en dépose un."
 
 #: apps/web/templates/web/work_detail.html:376
 msgid "Team"
 msgstr "Équipe"
 
 #: apps/web/templates/web/work_detail.html:380
-#| msgid "In execution"
 msgid "Execution"
 msgstr "Exécution"
 
 #: apps/web/templates/web/work_detail.html:382
-#| msgid "Approve"
 msgid "Approvers"
 msgstr "Approbateurs"
 
@@ -3680,12 +3799,10 @@ msgid "Watchers"
 msgstr "Observateurs"
 
 #: apps/web/templates/web/work_detail.html:396
-#| msgid "Awarded"
 msgid "Add"
 msgstr "Ajouter"
 
 #: apps/web/templates/web/work_detail.html:402
-#| msgid "Details"
 msgid "Detail"
 msgstr "Détail"
 
@@ -3698,17 +3815,14 @@ msgid "Phase"
 msgstr "Phase"
 
 #: apps/web/templates/web/work_detail.html:410
-#| msgid "Estimated value"
 msgid "Estimated"
 msgstr "Estimé"
 
 #: apps/web/templates/web/work_detail.html:412
-#| msgid "Start Job"
 msgid "Started"
 msgstr "Démarré"
 
 #: apps/web/templates/web/work_detail.html:413
-#| msgid "Table"
 msgid "Billable"
 msgstr "Facturable"
 
@@ -3725,7 +3839,6 @@ msgid "This job unblocks:"
 msgstr "Cette tâche débloque :"
 
 #: apps/web/templates/web/work_detail.html:446
-#| msgid "Date format"
 msgid "Wait for"
 msgstr "Attendre"
 
@@ -3734,27 +3847,22 @@ msgid "Kind"
 msgstr "Type"
 
 #: apps/web/templates/web/work_detail.html:454
-#| msgid "Add department"
 msgid "Add dependency"
 msgstr "Ajouter une dépendance"
 
 #: apps/web/templates/web/work_detail.html:460
-#| msgid "File"
 msgid "Files"
 msgstr "Fichiers"
 
 #: apps/web/templates/web/work_detail.html:468
-#| msgid "No invoices yet."
 msgid "No files yet."
 msgstr "Aucun fichier pour le moment."
 
 #: apps/web/templates/web/work_detail.html:474
-#| msgid "+ Upload"
 msgid "Upload"
 msgstr "Téléverser"
 
 #: apps/web/templates/web/work_detail.html:482
-#| msgid "Project health"
 msgid "Project gate"
 msgstr "Contrôle du projet"
 

@@ -193,14 +193,21 @@ def localization(request):
     layout can set `<html lang dir>` — RTL-ready, no separate app. Never touches
     currency, permissions or data."""
     try:
-        from apps.reference.services import LanguageResolutionService as R
+        from apps.reference.services import (LanguageResolutionService as R,
+                                             LanguageService)
         user = getattr(request, "user", None)
         authed = bool(user and getattr(user, "is_authenticated", False))
         company = getattr(user, "active_company", None) if authed else None
         lang, locale = R.resolve(request=request, user=user if authed else None,
                                  company=company)
+        # The full list of activated languages, for the on-page language switcher
+        # (available on every page, including the public marketing site).
+        langs = [{"code": l.code, "native_name": l.native_name, "name": l.name}
+                 for l in LanguageService.all_active()]
         return {"LANGUAGE_CODE_EFFECTIVE": lang,
                 "LANGUAGE_DIR": R.direction_for(lang),
-                "LOCALE_EFFECTIVE": locale or ""}
+                "LOCALE_EFFECTIVE": locale or "",
+                "LANGUAGES_ACTIVE": langs}
     except Exception:  # noqa: BLE001 — localization must never break a page
-        return {"LANGUAGE_CODE_EFFECTIVE": "en", "LANGUAGE_DIR": "ltr", "LOCALE_EFFECTIVE": ""}
+        return {"LANGUAGE_CODE_EFFECTIVE": "en", "LANGUAGE_DIR": "ltr",
+                "LOCALE_EFFECTIVE": "", "LANGUAGES_ACTIVE": []}

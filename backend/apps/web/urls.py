@@ -23,6 +23,7 @@ app_name = "web"
 
 urlpatterns = [
     path("login/", views.login_view, name="login"),
+    path("set-language/", views.set_language, name="set_language"),
     path("logout/", views.logout_view, name="logout"),
     path("platform/", views_platform.platform_home, name="platform_home"),
     path("platform/tenants.csv", views_platform.platform_tenants_csv, name="platform_tenants_csv"),
