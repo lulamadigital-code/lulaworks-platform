@@ -142,7 +142,7 @@ def set_language(request):
         require_https=request.is_secure()):
         next_url = "/"
 
-    if lang and LanguageService.is_valid(lang):
+    if lang and LanguageService.is_valid(lang) and LanguageService.is_ui_ready(lang):
         code = LanguageService.get(lang).code
         try:
             if hasattr(request, "session"):
@@ -2084,7 +2084,7 @@ def profile(request):
     from apps.reference.services import LanguageService
     return render(request, "web/profile.html", {
         "person": user, "membership": membership, "work": work,
-        "languages": LanguageService.all_active(),
+        "languages": LanguageService.ui_ready(),
     })
 
 

@@ -243,11 +243,77 @@ def _primary(code: str) -> str:
     return (code or "").strip().lower().split("-")[0]
 
 
+#: A language is only OFFERED to users once its catalog is actually translated
+#: past this fraction — so nobody can pick a language that leaves the UI in
+#: English. As catalogs fill, languages appear automatically. Cached per process.
+_UI_READY_MIN_RATIO = 0.10
+_UI_READY_CACHE = None
+
+
+def _scan_ui_ready_codes() -> set:
+    """Language codes whose compiled catalog is translated past the threshold.
+    English (the source) is always ready. Reads the .po catalogs under
+    LOCALE_PATHS once and caches the result."""
+    import os
+    from django.conf import settings
+    ready = {"en"}
+    for base in getattr(settings, "LOCALE_PATHS", []) or []:
+        try:
+            entries = os.listdir(base)
+        except Exception:  # noqa: BLE001
+            continue
+        for code in entries:
+            po = os.path.join(base, code, "LC_MESSAGES", "django.po")
+            if not os.path.isfile(po):
+                continue
+            try:
+                txt = open(po, encoding="utf-8").read()
+            except Exception:  # noqa: BLE001
+                continue
+            total = filled = 0
+            for e in txt.split("\n\n"):
+                midm = re.search(r'(?:^|\n)msgid "((?:[^"\\]|\\.)*)"', e)
+                if not (midm and midm.group(1)):
+                    continue
+                total += 1
+                ms = re.search(r'\nmsgstr "((?:[^"\\]|\\.)*)"((?:\n"(?:[^"\\]|\\.)*")*)', e)
+                if ms:
+                    val = ms.group(1) + "".join(re.findall(r'"((?:[^"\\]|\\.)*)"', ms.group(2)))
+                    if val:
+                        filled += 1
+            if total and (filled / total) >= _UI_READY_MIN_RATIO:
+                ready.add(code)
+                ready.add(code.replace("_", "-").split("-")[0])
+    return ready
+
+
 class LanguageService:
     @staticmethod
     def all_active():
         from .models import Language
         return list(Language.objects.filter(active=True))
+
+    @staticmethod
+    def ui_ready_codes() -> set:
+        """The set of language codes actually translated enough to offer."""
+        global _UI_READY_CACHE
+        if _UI_READY_CACHE is None:
+            _UI_READY_CACHE = _scan_ui_ready_codes()
+        return _UI_READY_CACHE
+
+    @staticmethod
+    def ui_ready():
+        """Active languages whose UI is actually translated — for the switcher
+        and language pickers, so users are never offered a language that does
+        not change the interface."""
+        codes = LanguageService.ui_ready_codes()
+        from .models import Language
+        return [l for l in Language.objects.filter(active=True) if l.code in codes]
+
+    @staticmethod
+    def is_ui_ready(code) -> bool:
+        codes = LanguageService.ui_ready_codes()
+        return bool(code) and (code in codes or _primary(code) in codes)
 
     @staticmethod
     def get(code):

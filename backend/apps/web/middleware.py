@@ -203,7 +203,10 @@ class LanguageActivationMiddleware:
                 elif not cookie_set:
                     from apps.marketing.geo import detect_language
                     code = detect_language(request)
-                    if code and LanguageService.is_valid(code):
+                    # Only auto-switch to a language that is actually translated,
+                    # otherwise leave the visitor on English (never show a
+                    # lang="xx" page whose text is still English).
+                    if code and LanguageService.is_ui_ready(code):
                         translation.activate(code)
                         request.LANGUAGE_CODE = code
         except Exception:  # noqa: BLE001 — language must never break a request

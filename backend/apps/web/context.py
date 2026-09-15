@@ -207,8 +207,10 @@ def localization(request):
         lang = translation.get_language() or _lang or "en"
         # The full list of activated languages, for the on-page language switcher
         # (available on every page, including the public marketing site).
+        # Only offer languages whose UI is actually translated, so a user can
+        # never pick a language that leaves the interface in English.
         langs = [{"code": l.code, "native_name": l.native_name, "name": l.name}
-                 for l in LanguageService.all_active()]
+                 for l in LanguageService.ui_ready()]
         return {"LANGUAGE_CODE_EFFECTIVE": lang,
                 "LANGUAGE_DIR": R.direction_for(lang),
                 "LOCALE_EFFECTIVE": locale or "",
