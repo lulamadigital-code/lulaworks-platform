@@ -1,0 +1,135 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-15 08:02+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
+"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+
+#: apps/identity/validators.py:26
+#, python-format
+msgid "This password is too short. It must contain at least %(min)d character."
+msgid_plural ""
+"This password is too short. It must contain at least %(min)d characters."
+msgstr[0] ""
+msgstr[1] ""
+
+#: apps/identity/validators.py:33
+#, python-format
+msgid "Your password must contain at least %(min)d character."
+msgid_plural "Your password must contain at least %(min)d characters."
+msgstr[0] ""
+msgstr[1] ""
+
+#: apps/web/templates/web/base.html:376
+msgid "Attention"
+msgstr "تنبيه"
+
+#: apps/web/templates/web/base.html:404
+msgid "Sign out"
+msgstr "تسجيل الخروج"
+
+#: apps/web/templates/web/login.html:3 apps/web/templates/web/login.html:20
+msgid "Sign in"
+msgstr "تسجيل الدخول"
+
+#: apps/web/templates/web/login.html:11
+msgid "Manager dashboards"
+msgstr "لوحات تحكم المدير"
+
+#: apps/web/templates/web/login.html:16
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
+#: apps/web/templates/web/login.html:18
+msgid "Password"
+msgstr "كلمة المرور"
+
+#: apps/web/templates/web/login.html:23
+msgid "Forgot your password?"
+msgstr "هل نسيت كلمة المرور؟"
+
+#: apps/web/templates/web/login.html:28
+msgid "New to Lulaworks?"
+msgstr "جديد على Lulaworks؟"
+
+#: apps/web/templates/web/login.html:29
+msgid "Book a demo →"
+msgstr "احجز عرضًا توضيحيًا ←"
+
+#: apps/web/translation_strings.py:10
+msgid "Dashboard"
+msgstr "لوحة التحكم"
+
+#: apps/web/translation_strings.py:10
+msgid "Intelligence"
+msgstr "الذكاء"
+
+#: apps/web/translation_strings.py:10
+msgid "CRM"
+msgstr "إدارة العملاء"
+
+#: apps/web/translation_strings.py:10
+msgid "Marketing"
+msgstr "التسويق"
+
+#: apps/web/translation_strings.py:10
+msgid "Procurement"
+msgstr "المشتريات"
+
+#: apps/web/translation_strings.py:11
+msgid "Projects"
+msgstr "المشاريع"
+
+#: apps/web/translation_strings.py:11
+msgid "Job Card"
+msgstr "بطاقة العمل"
+
+#: apps/web/translation_strings.py:11
+msgid "Quotations"
+msgstr "عروض الأسعار"
+
+#: apps/web/translation_strings.py:11
+msgid "Purchase Orders"
+msgstr "أوامر الشراء"
+
+#: apps/web/translation_strings.py:12
+msgid "Tax Invoice"
+msgstr "فاتورة ضريبية"
+
+#: apps/web/translation_strings.py:12
+msgid "Finance"
+msgstr "المالية"
+
+#: apps/web/translation_strings.py:12
+msgid "People"
+msgstr "الأشخاص"
+
+#: apps/web/translation_strings.py:12
+msgid "Business history"
+msgstr "سجل الأعمال"
+
+#: apps/web/translation_strings.py:13
+msgid "Automations"
+msgstr "الأتمتة"
+
+#: apps/web/translation_strings.py:13
+msgid "Settings"
+msgstr "الإعدادات"
+
+#: apps/web/translation_strings.py:13
+msgid "Help & Support"
+msgstr "المساعدة والدعم"

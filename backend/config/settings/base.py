@@ -82,6 +82,9 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Activate the effective language from our resolution engine — needs
+    # request.user, so it runs after AuthenticationMiddleware.
+    "apps.web.middleware.LanguageActivationMiddleware",
     # Hide Django's built-in admin from everyone who isn't a signed-in superuser
     # (404s the whole /admin/ tree). Must follow AuthenticationMiddleware.
     "apps.web.middleware.AdminAccessMiddleware",

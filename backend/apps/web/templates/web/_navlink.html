@@ -1,4 +1,4 @@
-{% comment %}Sidebar nav link with an inline line-icon + active state.
+{% load i18n %}{% comment %}Sidebar nav link with an inline line-icon + active state.
 Params: url (url name), key (nav_section to match), label, icon (icon id).{% endcomment %}
 <a href="{% url url %}" class="{% if nav_section == key %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -23,6 +23,6 @@ Params: url (url name), key (nav_section to match), label, icon (icon id).{% end
   {% elif icon == 'megaphone' %}<path d="M3 11v2a1 1 0 0 0 1 1h2l4 3V7L6 10H4a1 1 0 0 0-1 1z"/><path d="M10 7l9-4v18l-9-4"/><path d="M7 17v3"/>
   {% endif %}
   </svg>
-  <span>{{ label }}</span>
+  <span>{% trans label %}</span>
   {% if badge %}<span class="navbadge">{{ badge }}</span>{% endif %}
 </a>

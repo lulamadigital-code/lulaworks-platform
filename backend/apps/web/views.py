@@ -2017,7 +2017,14 @@ def profile(request):
         user.first_name = request.POST.get("first_name", "").strip()
         user.last_name = request.POST.get("last_name", "").strip()
         user.mobile = request.POST.get("mobile", "").strip()
-        user.save(update_fields=["first_name", "last_name", "mobile", "avatar"])
+        # Language preference — validated against the reference catalogue; an
+        # unknown/inactive language is ignored (resolver would skip it anyway).
+        from apps.reference.services import LanguageService
+        lang = (request.POST.get("preferred_language", "") or "").strip()
+        if lang == "" or LanguageService.is_valid(lang):
+            user.preferred_language = lang
+        user.save(update_fields=["first_name", "last_name", "mobile", "avatar",
+                                 "preferred_language"])
         messages.success(request, "Profile updated.")
         return redirect("web:profile")
 
@@ -2030,8 +2037,10 @@ def profile(request):
         membership = Membership.objects.filter(
             company=user.active_company, user=user).select_related("role").first()
         work = member_work(user, user.active_company)
+    from apps.reference.services import LanguageService
     return render(request, "web/profile.html", {
         "person": user, "membership": membership, "work": work,
+        "languages": LanguageService.all_active(),
     })
 
 

@@ -1,6 +1,6 @@
 {% extends "web/base.html" %}
-{% load static %}
-{% block title %}Sign in{% endblock %}
+{% load static i18n %}
+{% block title %}{% trans "Sign in" %}{% endblock %}
 {% block content %}
 <div style="max-width:380px; margin:8vh auto;">
   <div style="text-align:center; margin-bottom:20px;">
@@ -8,25 +8,25 @@
       {% if has_logo %}<img src="{% static logo_static %}" class="brand-img" alt="Lulaworks">
       {% else %}{% include "web/_mark.svg" %}<span class="word">lulaworks</span>{% endif %}
     </div>
-    <div class="muted" style="margin-top:6px;">Manager dashboards</div>
+    <div class="muted" style="margin-top:6px;">{% trans "Manager dashboards" %}</div>
   </div>
   <div class="card">
     <form method="post" action="{% url 'web:login' %}">
       {% csrf_token %}
-      <label>Email</label>
+      <label>{% trans "Email" %}</label>
       <input type="email" name="email" autocomplete="username" autofocus required>
-      <label>Password</label>
+      <label>{% trans "Password" %}</label>
       <input type="password" name="password" autocomplete="current-password" required>
-      <button class="btn" style="width:100%; margin-top:20px;" type="submit">Sign in</button>
+      <button class="btn" style="width:100%; margin-top:20px;" type="submit">{% trans "Sign in" %}</button>
     </form>
     <p style="margin-top:14px;text-align:center;font-size:13px;">
-      <a href="{% url 'web:password_reset_request' %}">Forgot your password?</a></p>
+      <a href="{% url 'web:password_reset_request' %}">{% trans "Forgot your password?" %}</a></p>
   </div>
 
   {# New visitors — there's no self-serve signup, so route them to a demo. #}
   <div class="muted" style="text-align:center;margin-top:18px;font-size:13.5px;">
-    New to Lulaworks?
-    <a href="{% url 'marketing:demo' %}" style="font-weight:600;">Book a demo →</a>
+    {% trans "New to Lulaworks?" %}
+    <a href="{% url 'marketing:demo' %}" style="font-weight:600;">{% trans "Book a demo →" %}</a>
   </div>
 
   {# Legal footer #}

@@ -80,6 +80,13 @@ would apply to everyone, since Django registers overrides at parse time.
         <input type="text" value="{{ person.email }}" disabled
                title="Ask an administrator to change your email">
 
+        <label>Language</label>
+        <select name="preferred_language">
+          <option value="">Use company / country default</option>
+          {% for l in languages %}<option value="{{ l.code }}" {% if l.code == person.preferred_language %}selected{% endif %}>{{ l.native_name }} ({{ l.name }})</option>{% endfor %}
+        </select>
+        <span class="muted" style="font-size:11.5px;">The language Lulaworks shows you — independent of your company's country.</span>
+
         <div class="row" style="margin-top:18px;gap:12px;">
           <button class="btn" type="submit">Save profile</button>
           <button class="btn ghost" type="button" id="profile-cancel-btn">Cancel</button>

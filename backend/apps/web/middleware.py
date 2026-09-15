@@ -157,3 +157,28 @@ class AdminAccessMiddleware:
                     "<p>The requested resource was not found on this server.</p>"
                 )
         return self.get_response(request)
+
+
+class LanguageActivationMiddleware:
+    """Activate the effective language (reference.LanguageResolutionService) for
+    the request, so Django's {% trans %} / gettext render in the user's language.
+    Runs after LocaleMiddleware and overrides it with our preference-based
+    resolution for authenticated users. Never touches data/permissions."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        try:
+            from django.utils import translation
+            from apps.reference.services import LanguageResolutionService
+            user = getattr(request, "user", None)
+            if user is not None and getattr(user, "is_authenticated", False):
+                company = getattr(user, "active_company", None)
+                lang, _locale = LanguageResolutionService.resolve(
+                    request=request, user=user, company=company)
+                translation.activate(lang)
+                request.LANGUAGE_CODE = lang
+        except Exception:  # noqa: BLE001 — language must never break a request
+            pass
+        return self.get_response(request)

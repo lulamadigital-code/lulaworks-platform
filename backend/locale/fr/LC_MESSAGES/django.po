@@ -1,0 +1,134 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-15 08:02+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: apps/identity/validators.py:26
+#, python-format
+msgid "This password is too short. It must contain at least %(min)d character."
+msgid_plural ""
+"This password is too short. It must contain at least %(min)d characters."
+msgstr[0] ""
+msgstr[1] ""
+
+#: apps/identity/validators.py:33
+#, python-format
+msgid "Your password must contain at least %(min)d character."
+msgid_plural "Your password must contain at least %(min)d characters."
+msgstr[0] ""
+msgstr[1] ""
+
+#: apps/web/templates/web/base.html:376
+msgid "Attention"
+msgstr "Attention"
+
+#: apps/web/templates/web/base.html:404
+msgid "Sign out"
+msgstr "Se déconnecter"
+
+#: apps/web/templates/web/login.html:3 apps/web/templates/web/login.html:20
+msgid "Sign in"
+msgstr "Se connecter"
+
+#: apps/web/templates/web/login.html:11
+msgid "Manager dashboards"
+msgstr "Tableaux de bord manager"
+
+#: apps/web/templates/web/login.html:16
+msgid "Email"
+msgstr "E-mail"
+
+#: apps/web/templates/web/login.html:18
+msgid "Password"
+msgstr "Mot de passe"
+
+#: apps/web/templates/web/login.html:23
+msgid "Forgot your password?"
+msgstr "Mot de passe oublié ?"
+
+#: apps/web/templates/web/login.html:28
+msgid "New to Lulaworks?"
+msgstr "Nouveau sur Lulaworks ?"
+
+#: apps/web/templates/web/login.html:29
+msgid "Book a demo →"
+msgstr "Réserver une démo →"
+
+#: apps/web/translation_strings.py:10
+msgid "Dashboard"
+msgstr "Tableau de bord"
+
+#: apps/web/translation_strings.py:10
+msgid "Intelligence"
+msgstr "Intelligence"
+
+#: apps/web/translation_strings.py:10
+msgid "CRM"
+msgstr "CRM"
+
+#: apps/web/translation_strings.py:10
+msgid "Marketing"
+msgstr "Marketing"
+
+#: apps/web/translation_strings.py:10
+msgid "Procurement"
+msgstr "Approvisionnement"
+
+#: apps/web/translation_strings.py:11
+msgid "Projects"
+msgstr "Projets"
+
+#: apps/web/translation_strings.py:11
+msgid "Job Card"
+msgstr "Fiche de travail"
+
+#: apps/web/translation_strings.py:11
+msgid "Quotations"
+msgstr "Devis"
+
+#: apps/web/translation_strings.py:11
+msgid "Purchase Orders"
+msgstr "Bons de commande"
+
+#: apps/web/translation_strings.py:12
+msgid "Tax Invoice"
+msgstr "Facture"
+
+#: apps/web/translation_strings.py:12
+msgid "Finance"
+msgstr "Finance"
+
+#: apps/web/translation_strings.py:12
+msgid "People"
+msgstr "Personnes"
+
+#: apps/web/translation_strings.py:12
+msgid "Business history"
+msgstr "Historique de l'entreprise"
+
+#: apps/web/translation_strings.py:13
+msgid "Automations"
+msgstr "Automatisations"
+
+#: apps/web/translation_strings.py:13
+msgid "Settings"
+msgstr "Paramètres"
+
+#: apps/web/translation_strings.py:13
+msgid "Help & Support"
+msgstr "Aide et support"
