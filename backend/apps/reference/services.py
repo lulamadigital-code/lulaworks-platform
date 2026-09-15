@@ -141,6 +141,17 @@ _COUNTRY_DOCUMENTS = {
            "Bank confirmation"],
     "PE": ["Ficha RUC (SUNAT)", "Vigencia de poder", "Partida registral",
            "Bank confirmation"],
+    "JP": ["Certificate of Registered Matters (登記事項証明書)",
+           "Corporate Number notification", "Bank confirmation"],
+    "CN": ["Business License (营业执照)", "Tax registration", "Bank confirmation"],
+    "SG": ["ACRA Business Profile (BizFile)", "GST registration (if applicable)",
+           "Bank confirmation"],
+    "AE": ["Trade License", "TRN / VAT certificate", "Memorandum of Association",
+           "Bank confirmation"],
+    "ID": ["Akta pendirian (deed of establishment)", "NPWP", "NIB (business ID)",
+           "Bank confirmation"],
+    "SA": ["Commercial Registration (CR)", "VAT certificate",
+           "Articles of Association", "Bank confirmation"],
 }
 _DEFAULT_DOCUMENTS = ["Company registration document", "Tax registration document",
                       "Bank confirmation"]

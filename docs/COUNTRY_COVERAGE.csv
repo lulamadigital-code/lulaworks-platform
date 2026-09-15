@@ -63,12 +63,12 @@ France,FR,EUR,+33,yes,yes,yes,6,VAT/GST,yes,yes,FIRST_CLASS,
 Germany,DE,EUR,+49,yes,yes,yes,3,VAT/GST,yes,yes,FIRST_CLASS,
 India,IN,INR,+91,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 Ireland,IE,EUR,+353,yes,yes,yes,3,VAT/GST,yes,yes,FIRST_CLASS,
-Japan,JP,JPY,+81,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Japan,JP,JPY,+81,yes,yes,yes,5,VAT/GST,yes,yes,FIRST_CLASS,
 Mexico,MX,MXN,+52,yes,yes,yes,5,VAT/GST,yes,yes,FIRST_CLASS,
 Netherlands,NL,EUR,+31,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 New Zealand,NZ,NZD,+64,yes,yes,yes,5,VAT/GST,yes,yes,FIRST_CLASS,
-Singapore,SG,SGD,+65,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-United Arab Emirates,AE,AED,+971,generic,generic,generic,3,generic,generic,generic,REGIONAL,"banking-rule, address-rule, statutory-rules, document-rules"
+Singapore,SG,SGD,+65,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
+United Arab Emirates,AE,AED,+971,yes,yes,yes,3,VAT/GST,yes,yes,FIRST_CLASS,
 United Kingdom,GB,GBP,+44,yes,yes,yes,6,VAT/GST,yes,yes,FIRST_CLASS,
 United States,US,USD,+1,yes,yes,yes,6,VAT/GST,yes,yes,FIRST_CLASS,
 Afghanistan,AF,AFN,+93,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
@@ -100,7 +100,7 @@ Brunei Darussalam,BN,BND,+673,generic,generic,generic,0,generic,generic,generic,
 Bulgaria,BG,BGN,+359,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Cambodia,KH,KHR,+855,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Cayman Islands,KY,KYD,+1,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-China,CN,CNY,+86,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+China,CN,CNY,+86,yes,yes,yes,5,VAT/GST,yes,yes,FIRST_CLASS,
 Christmas Island,CX,AUD,+61,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Cocos (Keeling) Islands,CC,AUD,+61,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Cook Islands,CK,NZD,+682,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
@@ -140,7 +140,7 @@ Honduras,HN,HNL,+504,generic,generic,generic,0,generic,generic,generic,GLOBAL_BA
 Hong Kong,HK,HKD,+852,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Hungary,HU,HUF,+36,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Iceland,IS,ISK,+354,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-Indonesia,ID,IDR,+62,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Indonesia,ID,IDR,+62,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 Iran,IR,IRR,+98,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Iraq,IQ,IQD,+964,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Isle of Man,IM,GBP,+44,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
@@ -209,7 +209,7 @@ Saint Pierre and Miquelon,PM,EUR,+508,generic,generic,generic,0,generic,generic,
 Saint Vincent and the Grenadines,VC,XCD,+1,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Samoa,WS,WST,+685,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 San Marino,SM,EUR,+378,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-Saudi Arabia,SA,SAR,+966,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Saudi Arabia,SA,SAR,+966,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 Serbia,RS,RSD,+381,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Sint Maarten (Dutch part),SX,ANG,+1,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Slovakia,SK,EUR,+421,generic,generic,yes,0,generic,generic,generic,REGIONAL,"banks, address-rule, statutory-rules, document-rules"
