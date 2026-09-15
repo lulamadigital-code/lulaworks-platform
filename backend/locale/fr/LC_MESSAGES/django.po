@@ -3,12 +3,11 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 08:02+0000\n"
+"POT-Creation-Date: 2026-09-15 08:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,6 +32,10 @@ msgid_plural "Your password must contain at least %(min)d characters."
 msgstr[0] ""
 msgstr[1] ""
 
+#: apps/web/templates/web/base.html:369
+msgid "Search customers, jobs…"
+msgstr "Rechercher clients, travaux…"
+
 #: apps/web/templates/web/base.html:376
 msgid "Attention"
 msgstr "Attention"
@@ -40,6 +43,138 @@ msgstr "Attention"
 #: apps/web/templates/web/base.html:404
 msgid "Sign out"
 msgstr "Se déconnecter"
+
+#: apps/web/templates/web/dashboard.html:3 apps/web/translation_strings.py:10
+msgid "Dashboard"
+msgstr "Tableau de bord"
+
+#: apps/web/templates/web/dashboard.html:5
+msgid "Operations dashboard"
+msgstr "Tableau de bord des opérations"
+
+#: apps/web/templates/web/dashboard.html:6
+msgid "Your whole business at a glance."
+msgstr "Toute votre entreprise en un coup d'œil."
+
+#: apps/web/templates/web/dashboard.html:12
+msgid "Finish your company setup"
+msgstr "Terminez la configuration de votre entreprise"
+
+#: apps/web/templates/web/dashboard.html:14
+#, python-format
+msgid "%(pct)s%% complete · %(remaining)s items left."
+msgstr "%(pct)s%% terminé · %(remaining)s éléments restants."
+
+#: apps/web/templates/web/dashboard.html:15
+msgid "Complete your details to unlock invoicing & professional documents."
+msgstr "Complétez vos informations pour débloquer la facturation et les documents professionnels."
+
+#: apps/web/templates/web/dashboard.html:28
+msgid "Complete setup"
+msgstr "Terminer la configuration"
+
+#: apps/web/templates/web/dashboard.html:29
+msgid "Remind me later"
+msgstr "Me le rappeler plus tard"
+
+#: apps/web/templates/web/dashboard.html:51 apps/web/translation_strings.py:11
+msgid "Projects"
+msgstr "Projets"
+
+#: apps/web/templates/web/dashboard.html:53
+msgid "Jobs"
+msgstr "Travaux"
+
+#: apps/web/templates/web/dashboard.html:55
+msgid "Ready / in progress"
+msgstr "Prêt / en cours"
+
+#: apps/web/templates/web/dashboard.html:57
+msgid "Blocked on compliance"
+msgstr "Bloqué par la conformité"
+
+#: apps/web/templates/web/dashboard.html:63
+msgid "Revenue"
+msgstr "Chiffre d'affaires"
+
+#: apps/web/templates/web/dashboard.html:65
+msgid "Actual cost"
+msgstr "Coût réel"
+
+#: apps/web/templates/web/dashboard.html:67
+msgid "Portfolio margin"
+msgstr "Marge du portefeuille"
+
+#: apps/web/templates/web/dashboard.html:69
+msgid "Retention held"
+msgstr "Retenue conservée"
+
+#: apps/web/templates/web/dashboard.html:75
+msgid "Jobs by status"
+msgstr "Travaux par statut"
+
+#: apps/web/templates/web/dashboard.html:86
+msgid "jobs"
+msgstr "travaux"
+
+#: apps/web/templates/web/dashboard.html:96
+msgid "No jobs yet — create some from the Jobs tab."
+msgstr "Aucun travail pour l'instant — créez-en depuis l'onglet Travaux."
+
+#: apps/web/templates/web/dashboard.html:100
+msgid "Jobs by origin"
+msgstr "Travaux par origine"
+
+#: apps/web/templates/web/dashboard.html:108
+msgid ""
+"Every job runs through one engine — the only difference is how it started."
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:109
+msgid "No jobs yet."
+msgstr "Aucun travail pour l'instant."
+
+#: apps/web/templates/web/dashboard.html:115
+msgid "Loss-making projects"
+msgstr "Projets déficitaires"
+
+#: apps/web/templates/web/dashboard.html:118
+#, python-format
+msgid "margin %(m)s%%"
+msgstr "marge %(m)s%%"
+
+#: apps/web/templates/web/dashboard.html:124
+msgid "Needs attention · compliance not ready"
+msgstr "Nécessite attention · conformité non prête"
+
+#: apps/web/templates/web/dashboard.html:128
+msgid "Project"
+msgstr "Projet"
+
+#: apps/web/templates/web/dashboard.html:128
+msgid "Client"
+msgstr "Client"
+
+#: apps/web/templates/web/dashboard.html:128
+msgid "Readiness"
+msgstr "Préparation"
+
+#: apps/web/templates/web/dashboard.html:136
+#, python-format
+msgid "%(pct)s%% · %(n)s blocking"
+msgstr "%(pct)s%% · %(n)s bloquant(s)"
+
+#: apps/web/templates/web/dashboard.html:139
+msgid "Review →"
+msgstr "Examiner →"
+
+#: apps/web/templates/web/dashboard.html:145
+msgid "All clear"
+msgstr "Tout est en ordre"
+
+#: apps/web/templates/web/dashboard.html:145
+msgid "Every project is compliance-ready."
+msgstr "Chaque projet est prêt pour la conformité."
 
 #: apps/web/templates/web/login.html:3 apps/web/templates/web/login.html:20
 msgid "Sign in"
@@ -70,10 +205,6 @@ msgid "Book a demo →"
 msgstr "Réserver une démo →"
 
 #: apps/web/translation_strings.py:10
-msgid "Dashboard"
-msgstr "Tableau de bord"
-
-#: apps/web/translation_strings.py:10
 msgid "Intelligence"
 msgstr "Intelligence"
 
@@ -88,10 +219,6 @@ msgstr "Marketing"
 #: apps/web/translation_strings.py:10
 msgid "Procurement"
 msgstr "Approvisionnement"
-
-#: apps/web/translation_strings.py:11
-msgid "Projects"
-msgstr "Projets"
 
 #: apps/web/translation_strings.py:11
 msgid "Job Card"
@@ -132,3 +259,23 @@ msgstr "Paramètres"
 #: apps/web/translation_strings.py:13
 msgid "Help & Support"
 msgstr "Aide et support"
+
+#: apps/web/translation_strings.py:19
+msgid "Business information"
+msgstr "Informations sur l'entreprise"
+
+#: apps/web/translation_strings.py:19
+msgid "Tax / registration"
+msgstr "Fiscalité / immatriculation"
+
+#: apps/web/translation_strings.py:19
+msgid "Banking details"
+msgstr "Coordonnées bancaires"
+
+#: apps/web/translation_strings.py:20
+msgid "Communication"
+msgstr "Communication"
+
+#: apps/web/translation_strings.py:20
+msgid "Documents & branding"
+msgstr "Documents et image de marque"

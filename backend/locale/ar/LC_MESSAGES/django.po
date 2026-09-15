@@ -3,12 +3,11 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 08:02+0000\n"
+"POT-Creation-Date: 2026-09-15 08:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -34,6 +33,10 @@ msgid_plural "Your password must contain at least %(min)d characters."
 msgstr[0] ""
 msgstr[1] ""
 
+#: apps/web/templates/web/base.html:369
+msgid "Search customers, jobs…"
+msgstr "ابحث عن العملاء والمهام…"
+
 #: apps/web/templates/web/base.html:376
 msgid "Attention"
 msgstr "تنبيه"
@@ -41,6 +44,138 @@ msgstr "تنبيه"
 #: apps/web/templates/web/base.html:404
 msgid "Sign out"
 msgstr "تسجيل الخروج"
+
+#: apps/web/templates/web/dashboard.html:3 apps/web/translation_strings.py:10
+msgid "Dashboard"
+msgstr "لوحة التحكم"
+
+#: apps/web/templates/web/dashboard.html:5
+msgid "Operations dashboard"
+msgstr "لوحة تحكم العمليات"
+
+#: apps/web/templates/web/dashboard.html:6
+msgid "Your whole business at a glance."
+msgstr "أعمالك بالكامل في لمحة."
+
+#: apps/web/templates/web/dashboard.html:12
+msgid "Finish your company setup"
+msgstr "أكمل إعداد شركتك"
+
+#: apps/web/templates/web/dashboard.html:14
+#, python-format
+msgid "%(pct)s%% complete · %(remaining)s items left."
+msgstr "%(pct)s%% مكتمل · بقي %(remaining)s عنصر."
+
+#: apps/web/templates/web/dashboard.html:15
+msgid "Complete your details to unlock invoicing & professional documents."
+msgstr "أكمل بياناتك لتفعيل الفوترة والمستندات المهنية."
+
+#: apps/web/templates/web/dashboard.html:28
+msgid "Complete setup"
+msgstr "إكمال الإعداد"
+
+#: apps/web/templates/web/dashboard.html:29
+msgid "Remind me later"
+msgstr "ذكّرني لاحقًا"
+
+#: apps/web/templates/web/dashboard.html:51 apps/web/translation_strings.py:11
+msgid "Projects"
+msgstr "المشاريع"
+
+#: apps/web/templates/web/dashboard.html:53
+msgid "Jobs"
+msgstr "المهام"
+
+#: apps/web/templates/web/dashboard.html:55
+msgid "Ready / in progress"
+msgstr "جاهز / قيد التنفيذ"
+
+#: apps/web/templates/web/dashboard.html:57
+msgid "Blocked on compliance"
+msgstr "متوقف بسبب الامتثال"
+
+#: apps/web/templates/web/dashboard.html:63
+msgid "Revenue"
+msgstr "الإيرادات"
+
+#: apps/web/templates/web/dashboard.html:65
+msgid "Actual cost"
+msgstr "التكلفة الفعلية"
+
+#: apps/web/templates/web/dashboard.html:67
+msgid "Portfolio margin"
+msgstr "هامش المحفظة"
+
+#: apps/web/templates/web/dashboard.html:69
+msgid "Retention held"
+msgstr "المبالغ المحتجزة"
+
+#: apps/web/templates/web/dashboard.html:75
+msgid "Jobs by status"
+msgstr "المهام حسب الحالة"
+
+#: apps/web/templates/web/dashboard.html:86
+msgid "jobs"
+msgstr "مهام"
+
+#: apps/web/templates/web/dashboard.html:96
+msgid "No jobs yet — create some from the Jobs tab."
+msgstr "لا توجد مهام بعد — أنشئ بعضها من تبويب المهام."
+
+#: apps/web/templates/web/dashboard.html:100
+msgid "Jobs by origin"
+msgstr "المهام حسب المصدر"
+
+#: apps/web/templates/web/dashboard.html:108
+msgid ""
+"Every job runs through one engine — the only difference is how it started."
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:109
+msgid "No jobs yet."
+msgstr "لا توجد مهام بعد."
+
+#: apps/web/templates/web/dashboard.html:115
+msgid "Loss-making projects"
+msgstr "المشاريع الخاسرة"
+
+#: apps/web/templates/web/dashboard.html:118
+#, python-format
+msgid "margin %(m)s%%"
+msgstr "هامش %(m)s%%"
+
+#: apps/web/templates/web/dashboard.html:124
+msgid "Needs attention · compliance not ready"
+msgstr "يحتاج انتباه · الامتثال غير جاهز"
+
+#: apps/web/templates/web/dashboard.html:128
+msgid "Project"
+msgstr "المشروع"
+
+#: apps/web/templates/web/dashboard.html:128
+msgid "Client"
+msgstr "العميل"
+
+#: apps/web/templates/web/dashboard.html:128
+msgid "Readiness"
+msgstr "الجاهزية"
+
+#: apps/web/templates/web/dashboard.html:136
+#, python-format
+msgid "%(pct)s%% · %(n)s blocking"
+msgstr "%(pct)s%% · %(n)s معوّق"
+
+#: apps/web/templates/web/dashboard.html:139
+msgid "Review →"
+msgstr "مراجعة ←"
+
+#: apps/web/templates/web/dashboard.html:145
+msgid "All clear"
+msgstr "كل شيء على ما يرام"
+
+#: apps/web/templates/web/dashboard.html:145
+msgid "Every project is compliance-ready."
+msgstr "كل مشروع جاهز للامتثال."
 
 #: apps/web/templates/web/login.html:3 apps/web/templates/web/login.html:20
 msgid "Sign in"
@@ -71,10 +206,6 @@ msgid "Book a demo →"
 msgstr "احجز عرضًا توضيحيًا ←"
 
 #: apps/web/translation_strings.py:10
-msgid "Dashboard"
-msgstr "لوحة التحكم"
-
-#: apps/web/translation_strings.py:10
 msgid "Intelligence"
 msgstr "الذكاء"
 
@@ -89,10 +220,6 @@ msgstr "التسويق"
 #: apps/web/translation_strings.py:10
 msgid "Procurement"
 msgstr "المشتريات"
-
-#: apps/web/translation_strings.py:11
-msgid "Projects"
-msgstr "المشاريع"
 
 #: apps/web/translation_strings.py:11
 msgid "Job Card"
@@ -133,3 +260,23 @@ msgstr "الإعدادات"
 #: apps/web/translation_strings.py:13
 msgid "Help & Support"
 msgstr "المساعدة والدعم"
+
+#: apps/web/translation_strings.py:19
+msgid "Business information"
+msgstr "معلومات الشركة"
+
+#: apps/web/translation_strings.py:19
+msgid "Tax / registration"
+msgstr "الضرائب / التسجيل"
+
+#: apps/web/translation_strings.py:19
+msgid "Banking details"
+msgstr "التفاصيل المصرفية"
+
+#: apps/web/translation_strings.py:20
+msgid "Communication"
+msgstr "التواصل"
+
+#: apps/web/translation_strings.py:20
+msgid "Documents & branding"
+msgstr "المستندات والعلامة التجارية"

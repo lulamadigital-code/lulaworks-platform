@@ -12,3 +12,10 @@ _NAV = [
     _("Tax Invoice"), _("Finance"), _("People"), _("Business history"),
     _("Automations"), _("Settings"), _("Help & Support"),
 ]
+
+# Company-setup section labels (rendered on the dashboard via {% trans sec.label %};
+# defined in apps/identity/company_setup.py).
+_SETUP = [
+    _("Business information"), _("Tax / registration"), _("Banking details"),
+    _("Communication"), _("Documents & branding"),
+]

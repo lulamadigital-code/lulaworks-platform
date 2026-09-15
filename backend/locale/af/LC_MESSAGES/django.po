@@ -3,12 +3,11 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 08:02+0000\n"
+"POT-Creation-Date: 2026-09-15 08:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,6 +32,10 @@ msgid_plural "Your password must contain at least %(min)d characters."
 msgstr[0] ""
 msgstr[1] ""
 
+#: apps/web/templates/web/base.html:369
+msgid "Search customers, jobs…"
+msgstr "Soek kliënte, take…"
+
 #: apps/web/templates/web/base.html:376
 msgid "Attention"
 msgstr "Aandag"
@@ -40,6 +43,138 @@ msgstr "Aandag"
 #: apps/web/templates/web/base.html:404
 msgid "Sign out"
 msgstr "Meld af"
+
+#: apps/web/templates/web/dashboard.html:3 apps/web/translation_strings.py:10
+msgid "Dashboard"
+msgstr "Kontroleskerm"
+
+#: apps/web/templates/web/dashboard.html:5
+msgid "Operations dashboard"
+msgstr "Bedryfskontroleskerm"
+
+#: apps/web/templates/web/dashboard.html:6
+msgid "Your whole business at a glance."
+msgstr "Jou hele besigheid met een oogopslag."
+
+#: apps/web/templates/web/dashboard.html:12
+msgid "Finish your company setup"
+msgstr "Voltooi jou maatskappy-opstelling"
+
+#: apps/web/templates/web/dashboard.html:14
+#, python-format
+msgid "%(pct)s%% complete · %(remaining)s items left."
+msgstr "%(pct)s%% voltooi · %(remaining)s items oor."
+
+#: apps/web/templates/web/dashboard.html:15
+msgid "Complete your details to unlock invoicing & professional documents."
+msgstr "Voltooi jou besonderhede om fakturering en professionele dokumente te ontsluit."
+
+#: apps/web/templates/web/dashboard.html:28
+msgid "Complete setup"
+msgstr "Voltooi opstelling"
+
+#: apps/web/templates/web/dashboard.html:29
+msgid "Remind me later"
+msgstr "Herinner my later"
+
+#: apps/web/templates/web/dashboard.html:51 apps/web/translation_strings.py:11
+msgid "Projects"
+msgstr "Projekte"
+
+#: apps/web/templates/web/dashboard.html:53
+msgid "Jobs"
+msgstr "Take"
+
+#: apps/web/templates/web/dashboard.html:55
+msgid "Ready / in progress"
+msgstr "Gereed / aan die gang"
+
+#: apps/web/templates/web/dashboard.html:57
+msgid "Blocked on compliance"
+msgstr "Geblokkeer op nakoming"
+
+#: apps/web/templates/web/dashboard.html:63
+msgid "Revenue"
+msgstr "Inkomste"
+
+#: apps/web/templates/web/dashboard.html:65
+msgid "Actual cost"
+msgstr "Werklike koste"
+
+#: apps/web/templates/web/dashboard.html:67
+msgid "Portfolio margin"
+msgstr "Portefeulje-marge"
+
+#: apps/web/templates/web/dashboard.html:69
+msgid "Retention held"
+msgstr "Retensie gehou"
+
+#: apps/web/templates/web/dashboard.html:75
+msgid "Jobs by status"
+msgstr "Take volgens status"
+
+#: apps/web/templates/web/dashboard.html:86
+msgid "jobs"
+msgstr "take"
+
+#: apps/web/templates/web/dashboard.html:96
+msgid "No jobs yet — create some from the Jobs tab."
+msgstr "Nog geen take nie — skep van die Take-oortjie af."
+
+#: apps/web/templates/web/dashboard.html:100
+msgid "Jobs by origin"
+msgstr "Take volgens oorsprong"
+
+#: apps/web/templates/web/dashboard.html:108
+msgid ""
+"Every job runs through one engine — the only difference is how it started."
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:109
+msgid "No jobs yet."
+msgstr "Nog geen take nie."
+
+#: apps/web/templates/web/dashboard.html:115
+msgid "Loss-making projects"
+msgstr "Verliesmakende projekte"
+
+#: apps/web/templates/web/dashboard.html:118
+#, python-format
+msgid "margin %(m)s%%"
+msgstr "marge %(m)s%%"
+
+#: apps/web/templates/web/dashboard.html:124
+msgid "Needs attention · compliance not ready"
+msgstr "Benodig aandag · nakoming nie gereed nie"
+
+#: apps/web/templates/web/dashboard.html:128
+msgid "Project"
+msgstr "Projek"
+
+#: apps/web/templates/web/dashboard.html:128
+msgid "Client"
+msgstr "Kliënt"
+
+#: apps/web/templates/web/dashboard.html:128
+msgid "Readiness"
+msgstr "Gereedheid"
+
+#: apps/web/templates/web/dashboard.html:136
+#, python-format
+msgid "%(pct)s%% · %(n)s blocking"
+msgstr "%(pct)s%% · %(n)s blokkerend"
+
+#: apps/web/templates/web/dashboard.html:139
+msgid "Review →"
+msgstr "Hersien →"
+
+#: apps/web/templates/web/dashboard.html:145
+msgid "All clear"
+msgstr "Alles reg"
+
+#: apps/web/templates/web/dashboard.html:145
+msgid "Every project is compliance-ready."
+msgstr "Elke projek is nakoming-gereed."
 
 #: apps/web/templates/web/login.html:3 apps/web/templates/web/login.html:20
 msgid "Sign in"
@@ -70,10 +205,6 @@ msgid "Book a demo →"
 msgstr "Bespreek 'n demo →"
 
 #: apps/web/translation_strings.py:10
-msgid "Dashboard"
-msgstr "Kontroleskerm"
-
-#: apps/web/translation_strings.py:10
 msgid "Intelligence"
 msgstr "Intelligensie"
 
@@ -88,10 +219,6 @@ msgstr "Bemarking"
 #: apps/web/translation_strings.py:10
 msgid "Procurement"
 msgstr "Verkryging"
-
-#: apps/web/translation_strings.py:11
-msgid "Projects"
-msgstr "Projekte"
 
 #: apps/web/translation_strings.py:11
 msgid "Job Card"
@@ -132,3 +259,23 @@ msgstr "Instellings"
 #: apps/web/translation_strings.py:13
 msgid "Help & Support"
 msgstr "Hulp en ondersteuning"
+
+#: apps/web/translation_strings.py:19
+msgid "Business information"
+msgstr "Besigheidsinligting"
+
+#: apps/web/translation_strings.py:19
+msgid "Tax / registration"
+msgstr "Belasting / registrasie"
+
+#: apps/web/translation_strings.py:19
+msgid "Banking details"
+msgstr "Bankbesonderhede"
+
+#: apps/web/translation_strings.py:20
+msgid "Communication"
+msgstr "Kommunikasie"
+
+#: apps/web/translation_strings.py:20
+msgid "Documents & branding"
+msgstr "Dokumente en handelsmerk"
