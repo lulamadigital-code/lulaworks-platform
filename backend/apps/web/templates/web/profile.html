@@ -1,5 +1,6 @@
 {% extends "web/base.html" %}
-{% block title %}My profile{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "My profile" %}{% endblock %}
 
 {% comment %}A platform superuser with no tenant company gets the platform
 sidebar here, so their whole experience (console -> profile) stays consistent
@@ -15,11 +16,10 @@ would apply to everyone, since Django registers overrides at parse time.
 
 <div class="pagehead">
   <div>
-    <h1>My profile</h1>
-    <p class="sub" style="margin:0;">Your photo and details. Everyone can edit their
-      own profile, whatever their role.</p>
+    <h1>{% trans "My profile" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "Your photo and details. Everyone can edit their own profile, whatever their role." %}</p>
   </div>
-  <a class="btn ghost" href="{% url 'web:change_password' %}">Change password</a>
+  <a class="btn ghost" href="{% url 'web:change_password' %}">{% trans "Change password" %}</a>
 </div>
 
 <div class="two-col">
@@ -32,16 +32,16 @@ would apply to everyone, since Django registers overrides at parse time.
           <div>
             <div style="font-weight:800;font-size:20px;letter-spacing:-.01em;">
               {{ person.get_full_name|default:person.email }}</div>
-            <div class="muted">{% if membership %}{{ membership.job_title|default:membership.role.name|default:"Team member" }}{% elif person.is_superuser %}Platform administrator{% else %}Team member{% endif %}</div>
+            <div class="muted">{% if membership %}{% if membership.job_title %}{{ membership.job_title }}{% elif membership.role %}{{ membership.role.name }}{% else %}{% trans "Team member" %}{% endif %}{% elif person.is_superuser %}{% trans "Platform administrator" %}{% else %}{% trans "Team member" %}{% endif %}</div>
           </div>
         </div>
-        <button type="button" class="btn ghost" id="profile-edit-btn">✎ Edit profile</button>
+        <button type="button" class="btn ghost" id="profile-edit-btn">✎ {% trans "Edit profile" %}</button>
       </div>
       <table class="kv" style="margin-top:16px;">
-        <tr><td class="muted">First name</td><td>{{ person.first_name|default:"—" }}</td></tr>
-        <tr><td class="muted">Last name</td><td>{{ person.last_name|default:"—" }}</td></tr>
-        <tr><td class="muted">Mobile</td><td>{{ person.mobile|default:"—" }}</td></tr>
-        <tr><td class="muted">Email</td><td>{{ person.email }}</td></tr>
+        <tr><td class="muted">{% trans "First name" %}</td><td>{{ person.first_name|default:"—" }}</td></tr>
+        <tr><td class="muted">{% trans "Last name" %}</td><td>{{ person.last_name|default:"—" }}</td></tr>
+        <tr><td class="muted">{% trans "Mobile" %}</td><td>{{ person.mobile|default:"—" }}</td></tr>
+        <tr><td class="muted">{% trans "Email" %}</td><td>{{ person.email }}</td></tr>
       </table>
     </div>
 
@@ -53,46 +53,45 @@ would apply to everyone, since Django registers overrides at parse time.
         <div class="avatar-edit">
           {% include "web/_avatar.html" with p=person size=96 %}
           <div style="flex:1;min-width:200px;">
-            <label style="margin-top:0;">Profile photo</label>
+            <label style="margin-top:0;">{% trans "Profile photo" %}</label>
             <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif">
             <p class="muted" style="margin:8px 0 0;font-size:12.5px;">
-              JPEG, PNG, WebP or GIF, up to 5&nbsp;MB. Your photo appears on every
-              job you are assigned to, so the crew can see who is who.
+              {% trans "JPEG, PNG, WebP or GIF, up to 5 MB. Your photo appears on every job you are assigned to, so the crew can see who is who." %}
             </p>
           </div>
         </div>
 
         <div class="two" style="margin-top:8px;">
           <div>
-            <label>First name</label>
+            <label>{% trans "First name" %}</label>
             <input type="text" name="first_name" id="pf-first" value="{{ person.first_name }}">
           </div>
           <div>
-            <label>Last name</label>
+            <label>{% trans "Last name" %}</label>
             <input type="text" name="last_name" value="{{ person.last_name }}">
           </div>
         </div>
 
-        <label>Mobile</label>
+        <label>{% trans "Mobile" %}</label>
         <input type="text" name="mobile" value="{{ person.mobile }}" placeholder="+27 …">
 
-        <label>Email (your sign-in)</label>
+        <label>{% trans "Email (your sign-in)" %}</label>
         <input type="text" value="{{ person.email }}" disabled
-               title="Ask an administrator to change your email">
+               title="{% trans 'Ask an administrator to change your email' %}">
 
-        <label>Language</label>
+        <label>{% trans "Language" %}</label>
         <select name="preferred_language">
-          <option value="">Use company / country default</option>
+          <option value="">{% trans "Use company / country default" %}</option>
           {% for l in languages %}<option value="{{ l.code }}" {% if l.code == person.preferred_language %}selected{% endif %}>{{ l.native_name }} ({{ l.name }})</option>{% endfor %}
         </select>
-        <span class="muted" style="font-size:11.5px;">The language Lulaworks shows you — independent of your company's country.</span>
+        <span class="muted" style="font-size:11.5px;">{% trans "The language Lulaworks shows you — independent of your company's country." %}</span>
 
         <div class="row" style="margin-top:18px;gap:12px;">
-          <button class="btn" type="submit">Save profile</button>
-          <button class="btn ghost" type="button" id="profile-cancel-btn">Cancel</button>
+          <button class="btn" type="submit">{% trans "Save profile" %}</button>
+          <button class="btn ghost" type="button" id="profile-cancel-btn">{% trans "Cancel" %}</button>
           {% if person.avatar %}
           <button class="btn ghost" type="submit" name="remove_avatar" value="1"
-                  data-confirm="Remove your profile photo?">Remove photo</button>
+                  data-confirm="{% trans 'Remove your profile photo?' %}">{% trans "Remove photo" %}</button>
           {% endif %}
         </div>
       </form>
@@ -116,41 +115,39 @@ would apply to everyone, since Django registers overrides at parse time.
   </div>
 
   <div>
-    <h2 style="margin-top:0;">Where you stand</h2>
+    <h2 style="margin-top:0;">{% trans "Where you stand" %}</h2>
     <div class="card">
       {% if membership %}
       <table class="kv">
-        <tr><td class="muted">Company</td><td>{{ person.active_company.name }}</td></tr>
-        <tr><td class="muted">Role</td><td>{{ membership.role.name|default:"—" }}</td></tr>
-        <tr><td class="muted">Job title</td><td>{{ membership.job_title|default:"—" }}</td></tr>
-        <tr><td class="muted">Open jobs</td><td>{{ work.open_count }}</td></tr>
-        <tr><td class="muted">Completed</td><td>{{ work.past_count }}</td></tr>
+        <tr><td class="muted">{% trans "Company" %}</td><td>{{ person.active_company.name }}</td></tr>
+        <tr><td class="muted">{% trans "Role" %}</td><td>{{ membership.role.name|default:"—" }}</td></tr>
+        <tr><td class="muted">{% trans "Job title" %}</td><td>{{ membership.job_title|default:"—" }}</td></tr>
+        <tr><td class="muted">{% trans "Open jobs" %}</td><td>{{ work.open_count }}</td></tr>
+        <tr><td class="muted">{% trans "Completed" %}</td><td>{{ work.past_count }}</td></tr>
       </table>
       <p class="muted" style="margin:12px 0 0;font-size:12.5px;">
-        Your role is set by an administrator — it decides what you can see and do.
+        {% trans "Your role is set by an administrator — it decides what you can see and do." %}
       </p>
       {% else %}
       <table class="kv">
-        <tr><td class="muted">Access</td><td>{% if person.is_superuser %}Platform administrator{% else %}No company linked{% endif %}</td></tr>
-        <tr><td class="muted">Email</td><td>{{ person.email }}</td></tr>
+        <tr><td class="muted">{% trans "Access" %}</td><td>{% if person.is_superuser %}{% trans "Platform administrator" %}{% else %}{% trans "No company linked" %}{% endif %}</td></tr>
+        <tr><td class="muted">{% trans "Email" %}</td><td>{{ person.email }}</td></tr>
       </table>
       <p class="muted" style="margin:12px 0 0;font-size:12.5px;">
-        {% if person.is_superuser %}You manage the whole platform from the
-        <a href="{% url 'web:platform_home' %}">Console</a>.{% else %}
-        Your account isn't linked to a company yet.{% endif %}
+        {% if person.is_superuser %}{% url 'web:platform_home' as console_url %}{% blocktrans %}You manage the whole platform from the <a href="{{ console_url }}">Console</a>.{% endblocktrans %}{% else %}{% trans "Your account isn't linked to a company yet." %}{% endif %}
       </p>
       {% endif %}
     </div>
 
     {% if work.current %}
-    <h2>Your open jobs</h2>
+    <h2>{% trans "Your open jobs" %}</h2>
     <div class="card" style="padding:0;">
       {% for entry in work.current %}
       <a class="workrow" href="{% url 'web:work_detail' entry.task.id %}">
         <span class="prio {{ entry.task.priority }}"></span>
         <span class="wr-main">
           <strong>{{ entry.task.name }}</strong>
-          <span class="muted">as {{ entry.roles|join:" &amp; " }}</span>
+          <span class="muted">{% blocktrans with roles=entry.roles|join:" &amp; " %}as {{ roles }}{% endblocktrans %}</span>
         </span>
         {% include "web/_statuschip.html" with s=entry.task %}
       </a>

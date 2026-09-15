@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 10:58+0000\n"
+"POT-Creation-Date: 2026-09-15 11:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -185,7 +185,8 @@ msgstr "تسجيل الدخول"
 msgid "Manager dashboards"
 msgstr "لوحات تحكم المدير"
 
-#: apps/web/templates/web/login.html:16
+#: apps/web/templates/web/login.html:16 apps/web/templates/web/profile.html:44
+#: apps/web/templates/web/profile.html:134
 msgid "Email"
 msgstr "البريد الإلكتروني"
 
@@ -246,6 +247,7 @@ msgid "Email (their sign-in)"
 msgstr "البريد الإلكتروني (تسجيل دخولهم)"
 
 #: apps/web/templates/web/people.html:38 apps/web/templates/web/people.html:73
+#: apps/web/templates/web/profile.html:123
 msgid "Role"
 msgstr "الدور"
 
@@ -253,19 +255,23 @@ msgstr "الدور"
 msgid "Choose a role…"
 msgstr "اختر دورًا…"
 
-#: apps/web/templates/web/people.html:45
+#: apps/web/templates/web/people.html:45 apps/web/templates/web/profile.html:41
+#: apps/web/templates/web/profile.html:66
 msgid "First name"
 msgstr "الاسم الأول"
 
-#: apps/web/templates/web/people.html:49
+#: apps/web/templates/web/people.html:49 apps/web/templates/web/profile.html:42
+#: apps/web/templates/web/profile.html:70
 msgid "Last name"
 msgstr "اسم العائلة"
 
 #: apps/web/templates/web/people.html:53 apps/web/templates/web/people.html:73
+#: apps/web/templates/web/profile.html:124
 msgid "Job title"
 msgstr "المسمى الوظيفي"
 
-#: apps/web/templates/web/people.html:57
+#: apps/web/templates/web/people.html:57 apps/web/templates/web/profile.html:43
+#: apps/web/templates/web/profile.html:75
 msgid "Mobile"
 msgstr "الجوال"
 
@@ -331,6 +337,245 @@ msgid ""
 "pickers."
 msgstr ""
 
+#: apps/web/templates/web/profile.html:3 apps/web/templates/web/profile.html:19
+#: apps/web/templates/web/settings.html:61
+msgid "My profile"
+msgstr "ملفي الشخصي"
+
+#: apps/web/templates/web/profile.html:20
+msgid ""
+"Your photo and details. Everyone can edit their own profile, whatever their "
+"role."
+msgstr ""
+
+#: apps/web/templates/web/profile.html:22
+msgid "Change password"
+msgstr "لم يحدد كلمة مرور بعد"
+
+#: apps/web/templates/web/profile.html:35
+msgid "Team member"
+msgstr "إضافة عضو"
+
+#: apps/web/templates/web/profile.html:35
+#: apps/web/templates/web/profile.html:133
+msgid "Platform administrator"
+msgstr "مسؤول المنصة"
+
+#: apps/web/templates/web/profile.html:38
+msgid "Edit profile"
+msgstr "تعديل الملف الشخصي"
+
+#: apps/web/templates/web/profile.html:56
+msgid "Profile photo"
+msgstr "صورة الملف الشخصي"
+
+#: apps/web/templates/web/profile.html:59
+msgid ""
+"JPEG, PNG, WebP or GIF, up to 5 MB. Your photo appears on every job you are "
+"assigned to, so the crew can see who is who."
+msgstr ""
+
+#: apps/web/templates/web/profile.html:78
+msgid "Email (your sign-in)"
+msgstr "البريد الإلكتروني (تسجيل دخولهم)"
+
+#: apps/web/templates/web/profile.html:80
+msgid "Ask an administrator to change your email"
+msgstr "اطلب من المسؤول تغيير بريدك الإلكتروني"
+
+#: apps/web/templates/web/profile.html:82
+msgid "Language"
+msgstr "اللغة"
+
+#: apps/web/templates/web/profile.html:84
+msgid "Use company / country default"
+msgstr "استخدام الإعداد الافتراضي للشركة / البلد"
+
+#: apps/web/templates/web/profile.html:87
+msgid ""
+"The language Lulaworks shows you — independent of your company's country."
+msgstr ""
+
+#: apps/web/templates/web/profile.html:90
+msgid "Save profile"
+msgstr "حفظ الملف الشخصي"
+
+#: apps/web/templates/web/profile.html:91
+msgid "Cancel"
+msgstr "المالية"
+
+#: apps/web/templates/web/profile.html:94
+msgid "Remove your profile photo?"
+msgstr "إزالة صورة ملفك الشخصي؟"
+
+#: apps/web/templates/web/profile.html:94
+msgid "Remove photo"
+msgstr "إزالة الصورة"
+
+#: apps/web/templates/web/profile.html:118
+msgid "Where you stand"
+msgstr "وضعك الحالي"
+
+#: apps/web/templates/web/profile.html:122
+#: apps/web/templates/web/settings.html:12
+msgid "Company"
+msgstr "الشركة"
+
+#: apps/web/templates/web/profile.html:125
+msgid "Open jobs"
+msgstr "مهام"
+
+#: apps/web/templates/web/profile.html:126
+msgid "Completed"
+msgstr "إكمال الإعداد"
+
+#: apps/web/templates/web/profile.html:129
+msgid ""
+"Your role is set by an administrator — it decides what you can see and do."
+msgstr ""
+
+#: apps/web/templates/web/profile.html:133
+msgid "Access"
+msgstr "الوصول"
+
+#: apps/web/templates/web/profile.html:133
+msgid "No company linked"
+msgstr "لا توجد شركة مرتبطة"
+
+#: apps/web/templates/web/profile.html:137
+#, python-format
+msgid ""
+"You manage the whole platform from the <a href=\"%(console_url)s\">Console</"
+"a>."
+msgstr ""
+
+#: apps/web/templates/web/profile.html:137
+msgid "Your account isn't linked to a company yet."
+msgstr "حسابك غير مرتبط بأي شركة بعد."
+
+#: apps/web/templates/web/profile.html:143
+msgid "Your open jobs"
+msgstr "مهامك المفتوحة"
+
+#: apps/web/templates/web/profile.html:150
+#, python-format
+msgid "as %(roles)s"
+msgstr "بصفتك %(roles)s"
+
+#: apps/web/templates/web/settings.html:3
+#: apps/web/templates/web/settings.html:7 apps/web/translation_strings.py:13
+msgid "Settings"
+msgstr "الإعدادات"
+
+#: apps/web/templates/web/settings.html:8
+msgid ""
+"Everything that configures Lulaworks for your business — set it once here "
+"and every screen and document reads from it."
+msgstr "كل ما يهيّئ Lulaworks لأعمالك — اضبطه مرة واحدة هنا وتقرأ منه كل شاشة ومستند."
+
+#: apps/web/templates/web/settings.html:15
+msgid "Company profile"
+msgstr "ملف الشركة"
+
+#: apps/web/templates/web/settings.html:16
+msgid "Name, registration, address, branding & logo — read by every document."
+msgstr "الاسم والتسجيل والعنوان والعلامة التجارية والشعار — تقرأها كل مستند."
+
+#: apps/web/templates/web/settings.html:18
+msgid "Business hours"
+msgstr "ساعات العمل"
+
+#: apps/web/templates/web/settings.html:19
+msgid "Operating days and times."
+msgstr "أيام وساعات العمل."
+
+#: apps/web/templates/web/settings.html:21
+msgid "Banking"
+msgstr "التفاصيل المصرفية"
+
+#: apps/web/templates/web/settings.html:22
+msgid "Bank accounts shown on invoices for payment."
+msgstr "الحسابات المصرفية الظاهرة على الفواتير للدفع."
+
+#: apps/web/templates/web/settings.html:24
+msgid "Tax"
+msgstr "الضرائب"
+
+#: apps/web/templates/web/settings.html:25
+msgid "VAT number, tax settings and jurisdictions."
+msgstr "رقم ضريبة القيمة المضافة وإعدادات الضرائب والولايات القضائية."
+
+#: apps/web/templates/web/settings.html:28
+msgid "Documents"
+msgstr "المستندات"
+
+#: apps/web/templates/web/settings.html:31
+msgid "Document templates"
+msgstr "قوالب المستندات"
+
+#: apps/web/templates/web/settings.html:32
+msgid ""
+"Design your quotation, invoice & delivery-note look — pick, customise or "
+"import."
+msgstr "صمّم مظهر عروض الأسعار والفواتير ومذكرات التسليم — اختَر أو خصّص أو استورد."
+
+#: apps/web/templates/web/settings.html:35
+msgid "Communication & AI"
+msgstr "التواصل والذكاء الاصطناعي"
+
+#: apps/web/templates/web/settings.html:38
+msgid "LulaAI settings"
+msgstr "إعدادات LulaAI"
+
+#: apps/web/templates/web/settings.html:39
+msgid "AI provider status, model, health and usage."
+msgstr "حالة مزوّد الذكاء الاصطناعي والنموذج والصحة والاستخدام."
+
+#: apps/web/templates/web/settings.html:41
+msgid "Email history"
+msgstr "سجل البريد الإلكتروني"
+
+#: apps/web/templates/web/settings.html:42
+msgid "Every email sent, delivery status and resend."
+msgstr "كل بريد إلكتروني مُرسَل وحالة التسليم وإعادة الإرسال."
+
+#: apps/web/templates/web/settings.html:45 apps/web/translation_strings.py:10
+msgid "Procurement"
+msgstr "المشتريات"
+
+#: apps/web/templates/web/settings.html:48
+msgid "Purchase request settings"
+msgstr "إعدادات طلبات الشراء"
+
+#: apps/web/templates/web/settings.html:49
+msgid ""
+"Whether purchases need approval, and the value threshold that triggers it."
+msgstr "ما إذا كانت المشتريات تتطلب موافقة، وحد القيمة الذي يُفعّلها."
+
+#: apps/web/templates/web/settings.html:52
+msgid "Account"
+msgstr "الحساب"
+
+#: apps/web/templates/web/settings.html:55
+msgid "People & roles"
+msgstr "الأشخاص والأدوار"
+
+#: apps/web/templates/web/settings.html:56
+msgid "Team members, invites and permissions."
+msgstr "أعضاء الفريق والدعوات والأذونات."
+
+#: apps/web/templates/web/settings.html:58
+msgid "Billing & plan"
+msgstr "الفوترة والخطة"
+
+#: apps/web/templates/web/settings.html:59
+msgid "Subscription, AI credits and invoices."
+msgstr "الاشتراك ورصيد الذكاء الاصطناعي والفواتير."
+
+#: apps/web/templates/web/settings.html:62
+msgid "Your own name, avatar and password."
+msgstr "اسمك وصورتك الرمزية وكلمة مرورك."
+
 #: apps/web/translation_strings.py:10
 msgid "Intelligence"
 msgstr "الذكاء"
@@ -342,10 +587,6 @@ msgstr "إدارة العملاء"
 #: apps/web/translation_strings.py:10
 msgid "Marketing"
 msgstr "التسويق"
-
-#: apps/web/translation_strings.py:10
-msgid "Procurement"
-msgstr "المشتريات"
 
 #: apps/web/translation_strings.py:11
 msgid "Job Card"
@@ -374,10 +615,6 @@ msgstr "سجل الأعمال"
 #: apps/web/translation_strings.py:13
 msgid "Automations"
 msgstr "الأتمتة"
-
-#: apps/web/translation_strings.py:13
-msgid "Settings"
-msgstr "الإعدادات"
 
 #: apps/web/translation_strings.py:13
 msgid "Help & Support"
