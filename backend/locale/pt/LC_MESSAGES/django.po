@@ -202,22 +202,22 @@ msgstr[1] ""
 
 #: apps/marketing/templates/marketing/about.html:6
 msgid "About us"
-msgstr ""
+msgstr "Sobre nós"
 
 #: apps/marketing/templates/marketing/about.html:7
 msgid "We build software for the people who build things"
-msgstr ""
+msgstr "Criamos software para quem constrói"
 
 #: apps/marketing/templates/marketing/about.html:8
 msgid ""
 "Lulaworks is a modern operations platform built for contractors, engineering "
 "firms, mining contractors, maintenance teams, industrial service providers "
 "and construction businesses — anywhere in the world."
-msgstr ""
+msgstr "O Lulaworks é uma plataforma de operações moderna criada para empreiteiros, empresas de engenharia, empreiteiros mineiros, equipas de manutenção, prestadores de serviços industriais e empresas de construção — em qualquer parte do mundo."
 
 #: apps/marketing/templates/marketing/about.html:10
 msgid "Why we built Lulaworks"
-msgstr ""
+msgstr "Porque criámos o Lulaworks"
 
 #: apps/marketing/templates/marketing/about.html:11
 msgid ""
@@ -227,18 +227,18 @@ msgid ""
 "another, the site photos on a phone, and the invoice in a third system "
 "entirely. Information falls through the cracks, margins leak, and no one "
 "ever has the full picture of a job in one place."
-msgstr ""
+msgstr "A empreitada já é difícil sem a parte administrativa. A maioria dos empreiteiros gere o negócio entre folhas de cálculo, grupos de WhatsApp, cadeias de e-mail e algumas aplicações desconexas. Um orçamento está num lugar, a ordem de compra noutro, as fotos da obra num telemóvel e a fatura num terceiro sistema. A informação perde-se, as margens escapam e ninguém tem a visão completa de um trabalho num só lugar."
 
 #: apps/marketing/templates/marketing/about.html:12
 msgid ""
 "We built Lulaworks to fix exactly that — to take a contractor from the first "
 "customer enquiry all the way to the final payment on one intelligent "
 "platform, with AI doing the tedious data entry along the way."
-msgstr ""
+msgstr "Criámos o Lulaworks para resolver exatamente isso — levar um empreiteiro do primeiro contacto do cliente até ao pagamento final numa única plataforma inteligente, com a IA a tratar da introdução de dados tediosa pelo caminho."
 
 #: apps/marketing/templates/marketing/about.html:14
 msgid "Our mission"
-msgstr ""
+msgstr "A nossa missão"
 
 #: apps/marketing/templates/marketing/about.html:15
 msgid ""
@@ -246,43 +246,43 @@ msgid ""
 "operation — the kind of operating system that used to be reserved for large "
 "enterprises: connected, intelligent, and simple enough to actually use on a "
 "busy site."
-msgstr ""
+msgstr "Dar a cada empreiteiro — de uma equipa de duas pessoas a uma operação de cinquenta — o tipo de sistema operativo que antes era reservado às grandes empresas: ligado, inteligente e simples o suficiente para ser mesmo usado numa obra movimentada."
 
 #: apps/marketing/templates/marketing/about.html:17
 msgid "Our vision"
-msgstr ""
+msgstr "A nossa visão"
 
 #: apps/marketing/templates/marketing/about.html:18
 msgid ""
 "A world where running a contracting business is about doing great work, not "
 "fighting paperwork — where quoting, buying, delivering and getting paid all "
 "flow together, and the numbers are always clear."
-msgstr ""
+msgstr "Um mundo em que gerir um negócio de empreitada é fazer um ótimo trabalho, não combater papelada — onde orçamentar, comprar, entregar e receber fluem em conjunto, e os números são sempre claros."
 
 #: apps/marketing/templates/marketing/about.html:20
 msgid "Built around real problems"
-msgstr ""
+msgstr "Concebido em torno de problemas reais"
 
 #: apps/marketing/templates/marketing/about.html:22
 msgid "Quote faster and win more work, without re-typing the same details."
-msgstr ""
+msgstr "Orçamente mais depressa e ganhe mais trabalho, sem voltar a digitar os mesmos detalhes."
 
 #: apps/marketing/templates/marketing/about.html:23
 msgid "Know the true cost and profit of every job as it happens."
-msgstr ""
+msgstr "Saiba o custo e o lucro reais de cada trabalho em tempo real."
 
 #: apps/marketing/templates/marketing/about.html:24
 msgid ""
 "Buy materials at the best price, with a supplier history that builds itself."
-msgstr ""
+msgstr "Compre materiais ao melhor preço, com um histórico de fornecedores que se constrói sozinho."
 
 #: apps/marketing/templates/marketing/about.html:25
 msgid "Keep the field team accountable with GPS-stamped check-ins."
-msgstr ""
+msgstr "Responsabilize a equipa de campo com registos marcados por GPS."
 
 #: apps/marketing/templates/marketing/about.html:26
 msgid "Get paid on time with clean, compliant invoices and clear tracking."
-msgstr ""
+msgstr "Receba a tempo com faturas organizadas, conformes e acompanhamento claro."
 
 #: apps/marketing/templates/marketing/about.html:30
 #: apps/marketing/templates/marketing/base.html:250
@@ -293,73 +293,73 @@ msgstr ""
 #: apps/marketing/templates/marketing/home.html:110
 #: apps/marketing/templates/marketing/pricing.html:35
 msgid "Start Free Trial"
-msgstr ""
+msgstr "Iniciar teste gratuito"
 
 #: apps/marketing/templates/marketing/about.html:31
 msgid "Talk to us"
-msgstr ""
+msgstr "Fale connosco"
 
 #: apps/marketing/templates/marketing/base.html:234
 #: apps/marketing/templates/marketing/base.html:279
 #: apps/marketing/templates/marketing/features.html:6
 msgid "Features"
-msgstr ""
+msgstr "Funcionalidades"
 
 #: apps/marketing/templates/marketing/base.html:235
 #: apps/marketing/templates/marketing/base.html:280
 #: apps/marketing/templates/marketing/faq.html:13
 #: apps/marketing/templates/marketing/pricing.html:6
 msgid "Pricing"
-msgstr ""
+msgstr "Preços"
 
 #: apps/marketing/templates/marketing/base.html:236
 #: apps/marketing/templates/marketing/base.html:286
 msgid "Learn"
-msgstr ""
+msgstr "Aprender"
 
 #: apps/marketing/templates/marketing/base.html:237
 #: apps/marketing/templates/marketing/base.html:287
 msgid "Free tools"
-msgstr ""
+msgstr "Ferramentas gratuitas"
 
 #: apps/marketing/templates/marketing/base.html:238
 #: apps/marketing/templates/marketing/base.html:288
 msgid "Templates"
-msgstr ""
+msgstr "Modelos"
 
 #: apps/marketing/templates/marketing/base.html:239
 msgid "About"
-msgstr ""
+msgstr "Sobre"
 
 #: apps/marketing/templates/marketing/base.html:240
 #: apps/marketing/templates/marketing/base.html:289
 #: apps/marketing/templates/marketing/faq.html:6
 msgid "FAQ"
-msgstr ""
+msgstr "Perguntas frequentes"
 
 #: apps/marketing/templates/marketing/base.html:241
 #: apps/marketing/templates/marketing/base.html:294
 msgid "Contact"
-msgstr ""
+msgstr "Contacto"
 
 #: apps/marketing/templates/marketing/base.html:247
 msgid "Go to Dashboard"
-msgstr ""
+msgstr "Ir para o painel"
 
 #: apps/marketing/templates/marketing/base.html:249
 #: apps/marketing/templates/marketing/base.html:295
 msgid "Log in"
-msgstr ""
+msgstr "Entrar"
 
 #: apps/marketing/templates/marketing/base.html:273
 msgid ""
 "The Contractor Operating System — from quotation to payment, one intelligent "
 "platform built for contractors worldwide."
-msgstr ""
+msgstr "O sistema operativo para empreiteiros — do orçamento ao pagamento, uma plataforma inteligente criada para empreiteiros em todo o mundo."
 
 #: apps/marketing/templates/marketing/base.html:278
 msgid "Product"
-msgstr ""
+msgstr "Produto"
 
 #: apps/marketing/templates/marketing/base.html:281
 #: apps/marketing/templates/marketing/features.html:11
@@ -368,11 +368,11 @@ msgstr ""
 #: apps/marketing/templates/marketing/home.html:111
 #: apps/marketing/templates/marketing/pricing.html:43
 msgid "Book a Demo"
-msgstr ""
+msgstr "Agendar uma demonstração"
 
 #: apps/marketing/templates/marketing/base.html:285
 msgid "Resources"
-msgstr ""
+msgstr "Recursos"
 
 #: apps/marketing/templates/marketing/base.html:292
 #: apps/marketing/templates/marketing/contact.html:27
@@ -380,130 +380,130 @@ msgstr ""
 #: apps/web/templates/web/profile.html:122
 #: apps/web/templates/web/settings.html:12
 msgid "Company"
-msgstr ""
+msgstr "Empresa"
 
 #: apps/marketing/templates/marketing/base.html:293
 msgid "About Us"
-msgstr ""
+msgstr "Sobre nós"
 
 #: apps/marketing/templates/marketing/base.html:298
 msgid "Legal"
-msgstr ""
+msgstr "Jurídico"
 
 #: apps/marketing/templates/marketing/base.html:299
 msgid "Privacy Policy"
-msgstr ""
+msgstr "Política de privacidade"
 
 #: apps/marketing/templates/marketing/base.html:300
 msgid "Terms & Conditions"
-msgstr ""
+msgstr "Termos e condições"
 
 #: apps/marketing/templates/marketing/base.html:301
 msgid "Cookie Policy"
-msgstr ""
+msgstr "Política de cookies"
 
 #: apps/marketing/templates/marketing/base.html:306
 #, python-format
 msgid "© %(year)s Lulaworks. All rights reserved."
-msgstr ""
+msgstr "© %(year)s Lulaworks. Todos os direitos reservados."
 
 #: apps/marketing/templates/marketing/base.html:307
 msgid "Built for contractors worldwide · GDPR-ready"
-msgstr ""
+msgstr "Criado para empreiteiros em todo o mundo · compatível com o RGPD"
 
 #: apps/marketing/templates/marketing/base.html:317
 #, python-format
 msgid ""
 "We use cookies to understand site traffic and improve Lulaworks. See our <a "
 "href=\"%(cookies_url)s\">cookie policy</a>."
-msgstr ""
+msgstr "Utilizamos cookies para compreender o tráfego do site e melhorar o Lulaworks. Consulte a nossa <a href=\"%(cookies_url)s\">política de cookies</a>."
 
 #: apps/marketing/templates/marketing/base.html:319
 msgid "Decline"
-msgstr ""
+msgstr "Recusar"
 
 #: apps/marketing/templates/marketing/base.html:320
 msgid "Accept"
-msgstr ""
+msgstr "Aceitar"
 
 #: apps/marketing/templates/marketing/contact.html:8
 #: apps/marketing/templates/marketing/faq.html:49
 msgid "Contact us"
-msgstr ""
+msgstr "Contacte-nos"
 
 #: apps/marketing/templates/marketing/contact.html:9
 msgid "We'd love to hear from you"
-msgstr ""
+msgstr "Adoraríamos ouvir a sua opinião"
 
 #: apps/marketing/templates/marketing/contact.html:10
 msgid ""
 "Questions about Lulaworks, pricing or getting started? Send us a message and "
 "the right person will get back to you."
-msgstr ""
+msgstr "Perguntas sobre o Lulaworks, preços ou como começar? Envie-nos uma mensagem e a pessoa certa responder-lhe-á."
 
 #: apps/marketing/templates/marketing/contact.html:12
 msgid "Sales:"
-msgstr ""
+msgstr "Vendas:"
 
 #: apps/marketing/templates/marketing/contact.html:13
 msgid "Support:"
-msgstr ""
+msgstr "Suporte:"
 
 #: apps/marketing/templates/marketing/contact.html:14
 msgid "Business hours:"
-msgstr ""
+msgstr "Horário de funcionamento:"
 
 #: apps/marketing/templates/marketing/contact.html:14
 msgid "Mon–Fri, 08:00–17:00 (local time)"
-msgstr ""
+msgstr "Seg–Sex, 08:00–17:00 (hora local)"
 
 #: apps/marketing/templates/marketing/contact.html:15
 msgid "Where we work:"
-msgstr ""
+msgstr "Onde trabalhamos:"
 
 #: apps/marketing/templates/marketing/contact.html:15
 msgid "Online, serving contractors worldwide"
-msgstr ""
+msgstr "Online, ao serviço de empreiteiros em todo o mundo"
 
 #: apps/marketing/templates/marketing/contact.html:16
 msgid "Follow us: LinkedIn · Facebook · X · Instagram"
-msgstr ""
+msgstr "Siga-nos: LinkedIn · Facebook · X · Instagram"
 
 #: apps/marketing/templates/marketing/contact.html:20
 msgid "Send a message"
-msgstr ""
+msgstr "Enviar uma mensagem"
 
 #: apps/marketing/templates/marketing/contact.html:24
 msgid "Name *"
-msgstr ""
+msgstr "Nome *"
 
 #: apps/marketing/templates/marketing/contact.html:25
 msgid "Email *"
-msgstr ""
+msgstr "E-mail *"
 
 #: apps/marketing/templates/marketing/contact.html:28
 msgid "Subject"
-msgstr ""
+msgstr "Assunto"
 
 #: apps/marketing/templates/marketing/contact.html:29
 msgid "Message *"
-msgstr ""
+msgstr "Mensagem *"
 
 #: apps/marketing/templates/marketing/contact.html:30
 msgid "Send message"
-msgstr ""
+msgstr "Enviar mensagem"
 
 #: apps/marketing/templates/marketing/faq.html:6
 msgid "Frequently asked questions"
-msgstr ""
+msgstr "Perguntas frequentes"
 
 #: apps/marketing/templates/marketing/faq.html:8
 msgid "General"
-msgstr ""
+msgstr "Geral"
 
 #: apps/marketing/templates/marketing/faq.html:9
 msgid "What is Lulaworks?"
-msgstr ""
+msgstr "O que é o Lulaworks?"
 
 #: apps/marketing/templates/marketing/faq.html:9
 msgid ""
@@ -511,32 +511,32 @@ msgid ""
 "tasks, procurement, suppliers, delivery notes, invoices and payments — with "
 "AI that handles the tedious data entry. It replaces the spreadsheets, "
 "WhatsApp threads and disconnected tools most contractors juggle."
-msgstr ""
+msgstr "O Lulaworks é uma plataforma tudo-em-um para empreiteiros — orçamentos, trabalhos, tarefas, compras, fornecedores, guias de remessa, faturas e pagamentos — com IA que trata da introdução de dados tediosa. Substitui as folhas de cálculo, as conversas de WhatsApp e as ferramentas desconexas que a maioria dos empreiteiros gere."
 
 #: apps/marketing/templates/marketing/faq.html:10
 msgid "Who is Lulaworks for?"
-msgstr ""
+msgstr "A quem se destina o Lulaworks?"
 
 #: apps/marketing/templates/marketing/faq.html:10
 msgid ""
 "Contractors, engineering firms, mining contractors, maintenance teams, "
 "industrial service providers and construction businesses — from a two-person "
 "office to a fifty-person operation."
-msgstr ""
+msgstr "Empreiteiros, empresas de engenharia, empreiteiros mineiros, equipas de manutenção, prestadores de serviços industriais e empresas de construção — de um escritório de duas pessoas a uma operação de cinquenta."
 
 #: apps/marketing/templates/marketing/faq.html:11
 msgid "Do I need to install anything?"
-msgstr ""
+msgstr "Preciso de instalar alguma coisa?"
 
 #: apps/marketing/templates/marketing/faq.html:11
 msgid ""
 "No. Lulaworks runs in your browser and on mobile. There's nothing to install "
 "and updates happen automatically."
-msgstr ""
+msgstr "Não. O Lulaworks funciona no seu navegador e no telemóvel. Não há nada para instalar e as atualizações acontecem automaticamente."
 
 #: apps/marketing/templates/marketing/faq.html:14
 msgid "How much does Lulaworks cost?"
-msgstr ""
+msgstr "Quanto custa o Lulaworks?"
 
 #: apps/marketing/templates/marketing/faq.html:14
 #, python-format
@@ -544,11 +544,11 @@ msgid ""
 "Three plans: Starter (R299/month), Professional (R1,299/month) and Business "
 "(R3,999/month). Annual billing saves roughly two months. See the <a "
 "href=\"%(pricing_url)s\">pricing page</a> for full details."
-msgstr ""
+msgstr "Três planos: Starter (299 R/mês), Professional (1299 R/mês) e Business (3999 R/mês). A faturação anual poupa cerca de dois meses. Consulte a <a href=\"%(pricing_url)s\">página de preços</a> para todos os detalhes."
 
 #: apps/marketing/templates/marketing/faq.html:15
 msgid "What's the difference between users and employees?"
-msgstr ""
+msgstr "Qual é a diferença entre utilizadores e funcionários?"
 
 #: apps/marketing/templates/marketing/faq.html:15
 msgid ""
@@ -557,69 +557,69 @@ msgid ""
 "strong> is a worker you manage in the system (technicians, drivers, welders, "
 "operators). Employees are unlimited on every plan — we never charge for the "
 "size of your crew."
-msgstr ""
+msgstr "Um <strong>utilizador</strong> é alguém que inicia sessão (proprietário, administrador, gestor de projeto, compras, contabilidade) e consome uma licença. Um <strong>funcionário</strong> é um trabalhador que gere no sistema (técnicos, motoristas, soldadores, operadores). Os funcionários são ilimitados em todos os planos — nunca cobramos pelo tamanho da sua equipa."
 
 #: apps/marketing/templates/marketing/faq.html:16
 msgid "Can I change plans later?"
-msgstr ""
+msgstr "Posso mudar de plano mais tarde?"
 
 #: apps/marketing/templates/marketing/faq.html:16
 msgid ""
 "Yes. Upgrade any time and the new limits apply immediately. Downgrades keep "
 "all your data — you simply can't add users beyond the smaller plan's limit "
 "until you're within it."
-msgstr ""
+msgstr "Sim. Faça a atualização a qualquer momento e os novos limites aplicam-se de imediato. As reduções de plano mantêm todos os seus dados — apenas não pode adicionar utilizadores acima do limite do plano menor até estar dentro dele."
 
 #: apps/marketing/templates/marketing/faq.html:18 apps/marketing/views.py:130
 msgid "Security"
-msgstr ""
+msgstr "Segurança"
 
 #: apps/marketing/templates/marketing/faq.html:19
 msgid "Is my data secure?"
-msgstr ""
+msgstr "Os meus dados estão seguros?"
 
 #: apps/marketing/templates/marketing/faq.html:19
 msgid ""
 "Yes. Lulaworks uses role-based access control, full audit logging and strict "
 "tenant isolation, so your company's data is only ever visible to your "
 "company. Data is encrypted in transit."
-msgstr ""
+msgstr "Sim. O Lulaworks utiliza controlo de acesso por função, registo de auditoria completo e isolamento rigoroso de inquilinos, pelo que os dados da sua empresa só são visíveis para a sua empresa. Os dados são encriptados em trânsito."
 
 #: apps/marketing/templates/marketing/faq.html:20
 msgid "Who can see my company's information?"
-msgstr ""
+msgstr "Quem pode ver as informações da minha empresa?"
 
 #: apps/marketing/templates/marketing/faq.html:20
 msgid ""
 "Only the users you invite, according to the roles you assign them. No other "
 "company on the platform can access your data."
-msgstr ""
+msgstr "Apenas os utilizadores que convidar, de acordo com as funções que lhes atribuir. Nenhuma outra empresa na plataforma pode aceder aos seus dados."
 
 #: apps/marketing/templates/marketing/faq.html:22
 msgid "AI"
-msgstr ""
+msgstr "IA"
 
 #: apps/marketing/templates/marketing/faq.html:23
 msgid "What does the AI actually do?"
-msgstr ""
+msgstr "O que faz realmente a IA?"
 
 #: apps/marketing/templates/marketing/faq.html:23
 msgid ""
 "It reads documents for you — RFQs, purchase orders, supplier invoices and "
 "scopes of work — and fills in the details, and it can suggest quotations "
 "based on your own history. Each AI operation uses one AI credit."
-msgstr ""
+msgstr "Lê documentos por si — pedidos de cotação, ordens de compra, faturas de fornecedores e âmbitos de trabalho — e preenche os detalhes, e pode sugerir orçamentos com base no seu próprio histórico. Cada operação de IA utiliza um crédito de IA."
 
 #: apps/marketing/templates/marketing/faq.html:24
 msgid "What happens if I run out of AI credits?"
-msgstr ""
+msgstr "O que acontece se ficar sem créditos de IA?"
 
 #: apps/marketing/templates/marketing/faq.html:24
 msgid ""
 "All non-AI features keep working normally. You can buy an AI credit pack or "
 "upgrade your plan to resume AI operations. Your remaining credits are always "
 "shown on your dashboard."
-msgstr ""
+msgstr "Todas as funcionalidades sem IA continuam a funcionar normalmente. Pode comprar um pacote de créditos de IA ou atualizar o seu plano para retomar as operações de IA. Os créditos restantes são sempre apresentados no seu painel."
 
 #: apps/marketing/templates/marketing/faq.html:26
 #: apps/web/templates/web/billing.html:3
@@ -628,24 +628,24 @@ msgstr ""
 
 #: apps/marketing/templates/marketing/faq.html:27
 msgid "How does billing work?"
-msgstr ""
+msgstr "Como funciona a faturação?"
 
 #: apps/marketing/templates/marketing/faq.html:27
 msgid ""
 "You're billed monthly or annually for your chosen plan. AI credits reset "
 "each billing cycle. You can buy additional credit packs at any time, and "
 "they're added to your balance immediately."
-msgstr ""
+msgstr "É faturado mensal ou anualmente pelo plano escolhido. Os créditos de IA são renovados em cada ciclo de faturação. Pode comprar pacotes de créditos adicionais a qualquer momento, e são adicionados ao seu saldo de imediato."
 
 #: apps/marketing/templates/marketing/faq.html:28
 msgid "Do you offer annual billing?"
-msgstr ""
+msgstr "Oferecem faturação anual?"
 
 #: apps/marketing/templates/marketing/faq.html:28
 msgid ""
 "Yes — annual billing is available on every plan and saves you roughly two "
 "months compared to paying monthly."
-msgstr ""
+msgstr "Sim — a faturação anual está disponível em todos os planos e poupa-lhe cerca de dois meses em comparação com o pagamento mensal."
 
 #: apps/marketing/templates/marketing/faq.html:30
 msgid "Support"
@@ -653,86 +653,86 @@ msgstr ""
 
 #: apps/marketing/templates/marketing/faq.html:31
 msgid "What support is included?"
-msgstr ""
+msgstr "Que suporte está incluído?"
 
 #: apps/marketing/templates/marketing/faq.html:31
 msgid ""
 "Starter includes email support, Professional includes priority support, and "
 "Business includes highest-priority support. You can always reach us at "
 "support@lulaworks.com."
-msgstr ""
+msgstr "O Starter inclui suporte por e-mail, o Professional inclui suporte prioritário e o Business inclui suporte de máxima prioridade. Pode sempre contactar-nos em support@lulaworks.com."
 
 #: apps/marketing/templates/marketing/faq.html:33
 msgid "Data"
-msgstr ""
+msgstr "Dados"
 
 #: apps/marketing/templates/marketing/faq.html:34
 msgid "Who owns the data I put into Lulaworks?"
-msgstr ""
+msgstr "A quem pertencem os dados que coloco no Lulaworks?"
 
 #: apps/marketing/templates/marketing/faq.html:34
 #, python-format
 msgid ""
 "You do. Your data is yours — we process it to provide the service and never "
 "sell it. See our <a href=\"%(privacy_url)s\">Privacy Policy</a>."
-msgstr ""
+msgstr "A si. Os seus dados são seus — processamo-los para prestar o serviço e nunca os vendemos. Consulte a nossa <a href=\"%(privacy_url)s\">Política de privacidade</a>."
 
 #: apps/marketing/templates/marketing/faq.html:35
 msgid "Can I export my data?"
-msgstr ""
+msgstr "Posso exportar os meus dados?"
 
 #: apps/marketing/templates/marketing/faq.html:35
 msgid ""
 "Yes. Quotations, invoices and delivery notes export as PDF, and data exports "
 "as Excel."
-msgstr ""
+msgstr "Sim. Orçamentos, faturas e guias de remessa são exportados em PDF, e os dados são exportados em Excel."
 
 #: apps/marketing/templates/marketing/faq.html:37
 msgid "Trial"
-msgstr ""
+msgstr "Teste"
 
 #: apps/marketing/templates/marketing/faq.html:38
 msgid "How does the free trial work?"
-msgstr ""
+msgstr "Como funciona o teste gratuito?"
 
 #: apps/marketing/templates/marketing/faq.html:38
 msgid ""
 "Every new company gets a 30-day free trial with Professional features, 2 "
 "users, unlimited employees, 100 AI credits and 2 GB of storage. No credit "
 "card is required to start."
-msgstr ""
+msgstr "Cada nova empresa recebe um teste gratuito de 30 dias com as funcionalidades Professional, 2 utilizadores, funcionários ilimitados, 100 créditos de IA e 2 GB de armazenamento. Não é necessário cartão de crédito para começar."
 
 #: apps/marketing/templates/marketing/faq.html:39
 msgid "What happens when the trial ends?"
-msgstr ""
+msgstr "O que acontece quando o teste termina?"
 
 #: apps/marketing/templates/marketing/faq.html:39
 msgid ""
 "You choose a paid plan to continue. All the data you created during the "
 "trial stays intact when you upgrade."
-msgstr ""
+msgstr "Escolhe um plano pago para continuar. Todos os dados que criou durante o teste permanecem intactos quando faz a atualização."
 
 #: apps/marketing/templates/marketing/faq.html:41
 msgid "Cancellation"
-msgstr ""
+msgstr "Cancelamento"
 
 #: apps/marketing/templates/marketing/faq.html:42
 msgid "Can I cancel any time?"
-msgstr ""
+msgstr "Posso cancelar a qualquer momento?"
 
 #: apps/marketing/templates/marketing/faq.html:42
 msgid ""
 "Yes. You can cancel from your billing page. Access continues until the end "
 "of your current billing period, and your data is preserved."
-msgstr ""
+msgstr "Sim. Pode cancelar a partir da sua página de faturação. O acesso continua até ao fim do período de faturação atual, e os seus dados são preservados."
 
 #: apps/marketing/templates/marketing/faq.html:44
 msgid "Migration"
-msgstr ""
+msgstr "Migração"
 
 #: apps/marketing/templates/marketing/faq.html:45
 msgid "Can you help me move my existing data across?"
-msgstr ""
+msgstr "Podem ajudar-me a migrar os meus dados existentes?"
 
 #: apps/marketing/templates/marketing/faq.html:45
 #, python-format
@@ -740,79 +740,79 @@ msgid ""
 "Yes. You can import historical quotations and supplier invoices to seed your "
 "history, and our team can help you get set up — <a "
 "href=\"%(contact_url)s\">get in touch</a>."
-msgstr ""
+msgstr "Sim. Pode importar orçamentos e faturas de fornecedores antigos para iniciar o seu histórico, e a nossa equipa pode ajudá-lo a configurar tudo — <a href=\"%(contact_url)s\">entre em contacto</a>."
 
 #: apps/marketing/templates/marketing/faq.html:48
 msgid "Still have a question?"
-msgstr ""
+msgstr "Ainda tem uma pergunta?"
 
 #: apps/marketing/templates/marketing/features.html:7
 msgid "Everything a contractor needs, in one platform"
-msgstr ""
+msgstr "Tudo o que um empreiteiro precisa, numa só plataforma"
 
 #: apps/marketing/templates/marketing/features.html:8
 msgid ""
 "From the first customer enquiry to the final payment — plus the AI, mobile "
 "and reporting tools that make it effortless."
-msgstr ""
+msgstr "Do primeiro contacto do cliente ao pagamento final — mais as ferramentas de IA, móveis e de relatórios que tornam tudo simples."
 
 #: apps/marketing/templates/marketing/features.html:35
 msgid "See it on your own jobs"
-msgstr ""
+msgstr "Veja nos seus próprios trabalhos"
 
 #: apps/marketing/templates/marketing/features.html:36
 msgid "Start a free trial or book a live demo with our team."
-msgstr ""
+msgstr "Inicie um teste gratuito ou agende uma demonstração ao vivo com a nossa equipa."
 
 #: apps/marketing/templates/marketing/home.html:8
 msgid "The Contractor Operating System"
-msgstr ""
+msgstr "O sistema operativo para empreiteiros"
 
 #: apps/marketing/templates/marketing/home.html:9
 msgid "From Quotation to Payment."
-msgstr ""
+msgstr "Do orçamento ao pagamento."
 
 #: apps/marketing/templates/marketing/home.html:9
 msgid "One Platform. Powered by AI."
-msgstr ""
+msgstr "Uma plataforma. Impulsionada por IA."
 
 #: apps/marketing/templates/marketing/home.html:10
 msgid ""
 "Lulaworks helps contractors manage quotations, jobs, procurement, teams, "
 "deliveries, invoices and payments from one intelligent platform."
-msgstr ""
+msgstr "O Lulaworks ajuda os empreiteiros a gerir orçamentos, trabalhos, compras, equipas, entregas, faturas e pagamentos a partir de uma única plataforma inteligente."
 
 #: apps/marketing/templates/marketing/home.html:16
 msgid "AI Powered"
-msgstr ""
+msgstr "Com IA"
 
 #: apps/marketing/templates/marketing/home.html:17
 msgid "Cloud Based"
-msgstr ""
+msgstr "Na nuvem"
 
 #: apps/marketing/templates/marketing/home.html:18
 msgid "Mobile Friendly"
-msgstr ""
+msgstr "Compatível com telemóvel"
 
 #: apps/marketing/templates/marketing/home.html:19
 msgid "Secure"
-msgstr ""
+msgstr "Seguro"
 
 #: apps/marketing/templates/marketing/home.html:20
 msgid "Built for Contractors"
-msgstr ""
+msgstr "Feito para empreiteiros"
 
 #: apps/marketing/templates/marketing/home.html:24
 msgid "Lulaworks dashboard preview"
-msgstr ""
+msgstr "Pré-visualização do painel Lulaworks"
 
 #: apps/marketing/templates/marketing/home.html:27
 msgid "Open quotations"
-msgstr ""
+msgstr "Orçamentos em aberto"
 
 #: apps/marketing/templates/marketing/home.html:28
 msgid "Active jobs"
-msgstr ""
+msgstr "Trabalhos ativos"
 
 #: apps/marketing/templates/marketing/home.html:29
 #: apps/web/templates/web/commercial_document_detail.html:138
@@ -827,23 +827,23 @@ msgstr ""
 #: apps/marketing/views.py:100 apps/web/templates/web/settings.html:45
 #: apps/web/translation_strings.py:10
 msgid "Procurement"
-msgstr ""
+msgstr "Compras"
 
 #: apps/marketing/templates/marketing/home.html:33
 msgid "On site now"
-msgstr ""
+msgstr "No local agora"
 
 #: apps/marketing/templates/marketing/home.html:34
 msgid "AI credits"
-msgstr ""
+msgstr "Créditos de IA"
 
 #: apps/marketing/templates/marketing/home.html:44
 msgid "Why Lulaworks"
-msgstr ""
+msgstr "Porquê o Lulaworks"
 
 #: apps/marketing/templates/marketing/home.html:45
 msgid "Stop juggling spreadsheets, WhatsApp and disconnected tools"
-msgstr ""
+msgstr "Deixe de gerir folhas de cálculo, WhatsApp e ferramentas desconexas"
 
 #: apps/marketing/templates/marketing/home.html:46
 msgid ""
@@ -851,32 +851,32 @@ msgid ""
 "a PO in email, site photos on WhatsApp, invoices in another app. Things "
 "slip, margins leak, and nobody has the full picture. Lulaworks brings the "
 "whole job into one place, from the first quotation to the final payment."
-msgstr ""
+msgstr "A maioria dos empreiteiros gere o negócio em vários lugares — um orçamento no Excel, uma ordem de compra no e-mail, fotos da obra no WhatsApp, faturas noutra aplicação. As coisas escapam, as margens perdem-se e ninguém tem a visão completa. O Lulaworks reúne todo o trabalho num só lugar, do primeiro orçamento ao pagamento final."
 
 #: apps/marketing/templates/marketing/home.html:54
 msgid "Everything in one place"
-msgstr ""
+msgstr "Tudo num só lugar"
 
 #: apps/marketing/templates/marketing/home.html:55
 msgid "One platform for the whole operation"
-msgstr ""
+msgstr "Uma plataforma para toda a operação"
 
 #: apps/marketing/templates/marketing/home.html:63
 msgid "Explore all features →"
-msgstr ""
+msgstr "Explorar todas as funcionalidades →"
 
 #: apps/marketing/templates/marketing/home.html:71
 msgid "How it works"
-msgstr ""
+msgstr "Como funciona"
 
 #: apps/marketing/templates/marketing/home.html:72
 msgid "The whole job, end to end"
-msgstr ""
+msgstr "Todo o trabalho, de ponta a ponta"
 
 #: apps/marketing/templates/marketing/home.html:73
 msgid ""
 "Every step flows into the next — no re-typing, no lost paperwork, no gaps."
-msgstr ""
+msgstr "Cada etapa flui para a seguinte — sem voltar a digitar, sem papelada perdida, sem lacunas."
 
 #: apps/marketing/templates/marketing/home.html:75
 #: apps/web/templates/web/customers.html:28
@@ -884,7 +884,7 @@ msgstr ""
 #: apps/web/templates/web/invoices.html:90
 #: apps/web/templates/web/quotations.html:67
 msgid "Customer"
-msgstr ""
+msgstr "Cliente"
 
 #: apps/marketing/templates/marketing/home.html:76
 #: apps/web/templates/web/customer_detail.html:313
@@ -892,305 +892,305 @@ msgstr ""
 #: apps/web/templates/web/project_detail.html:94
 #: apps/web/templates/web/quotations.html:67
 msgid "Quotation"
-msgstr ""
+msgstr "Orçamento"
 
 #: apps/marketing/templates/marketing/home.html:77
 msgid "Purchase Order"
-msgstr ""
+msgstr "Ordem de compra"
 
 #: apps/marketing/templates/marketing/home.html:78
 #: apps/web/templates/web/work.html:110
 msgid "Job"
-msgstr ""
+msgstr "Trabalho"
 
 #: apps/marketing/templates/marketing/home.html:79 apps/marketing/views.py:97
 msgid "Tasks"
-msgstr ""
+msgstr "Tarefas"
 
 #: apps/marketing/templates/marketing/home.html:81
 msgid "Delivery"
-msgstr ""
+msgstr "Entrega"
 
 #: apps/marketing/templates/marketing/home.html:82
 #: apps/web/templates/web/invoices.html:57
 msgid "Invoice"
-msgstr ""
+msgstr "Fatura"
 
 #: apps/marketing/templates/marketing/home.html:83
 #: apps/web/templates/web/invoices.html:58
 msgid "Payment"
-msgstr ""
+msgstr "Pagamento"
 
 #: apps/marketing/templates/marketing/home.html:91
 msgid "Trusted by contractors"
-msgstr ""
+msgstr "Escolhido por empreiteiros"
 
 #: apps/marketing/templates/marketing/home.html:92
 msgid "Built for the way you actually work"
-msgstr ""
+msgstr "Feito para a forma como realmente trabalha"
 
 #: apps/marketing/templates/marketing/home.html:107
 msgid "Ready to transform your contracting business?"
-msgstr ""
+msgstr "Pronto para transformar o seu negócio de empreitada?"
 
 #: apps/marketing/templates/marketing/home.html:108
 msgid "Start your 30-day free trial today. No credit card required."
-msgstr ""
+msgstr "Comece hoje o seu teste gratuito de 30 dias. Sem cartão de crédito."
 
 #: apps/marketing/templates/marketing/pricing.html:7
 msgid "Simple, transparent pricing"
-msgstr ""
+msgstr "Preços simples e transparentes"
 
 #: apps/marketing/templates/marketing/pricing.html:8
 msgid ""
 "Pay for the users and AI you need. <strong>Employees are always unlimited</"
 "strong> — we never charge you for the size of your crew."
-msgstr ""
+msgstr "Pague pelos utilizadores e IA de que precisa. <strong>Os funcionários são sempre ilimitados</strong> — nunca cobramos pelo tamanho da sua equipa."
 
 #: apps/marketing/templates/marketing/pricing.html:12
 #: apps/web/templates/web/billing.html:106
 msgid "Monthly"
-msgstr ""
+msgstr "Mensal"
 
 #: apps/marketing/templates/marketing/pricing.html:13
 #: apps/web/templates/web/billing.html:107
 msgid "Annual"
-msgstr ""
+msgstr "Anual"
 
 #: apps/marketing/templates/marketing/pricing.html:13
 #: apps/web/templates/web/billing.html:107
 msgid "· save ~2 months"
-msgstr ""
+msgstr "· poupe ~2 meses"
 
 #: apps/marketing/templates/marketing/pricing.html:19
 msgid "MOST POPULAR"
-msgstr ""
+msgstr "MAIS POPULAR"
 
 #: apps/marketing/templates/marketing/pricing.html:22
 #: apps/web/templates/web/billing.html:117
 msgid "/yr"
-msgstr ""
+msgstr "/ano"
 
 #: apps/marketing/templates/marketing/pricing.html:23
 #: apps/web/templates/web/billing.html:118
 msgid "/mo"
-msgstr ""
+msgstr "/mês"
 
 #: apps/marketing/templates/marketing/pricing.html:26
 #: apps/web/templates/web/billing.html:121
 #, python-format
 msgid "Save %(sym)s%(amt)s a year"
-msgstr ""
+msgstr "Poupe %(sym)s%(amt)s por ano"
 
 #: apps/marketing/templates/marketing/pricing.html:29
 #, python-format
 msgid "%(n)s users"
-msgstr ""
+msgstr "%(n)s utilizadores"
 
 #: apps/marketing/templates/marketing/pricing.html:30
 msgid "Unlimited employees"
-msgstr ""
+msgstr "Funcionários ilimitados"
 
 #: apps/marketing/templates/marketing/pricing.html:31
 #, python-format
 msgid "%(c)s AI credits / month"
-msgstr ""
+msgstr "%(c)s créditos de IA / mês"
 
 #: apps/marketing/templates/marketing/pricing.html:32
 #, python-format
 msgid "%(s)s storage"
-msgstr ""
+msgstr "%(s)s de armazenamento"
 
 #: apps/marketing/templates/marketing/pricing.html:41
 #, python-format
 msgid ""
 "Prices shown in %(currency)s, based on your location. All plans include a 30-"
 "day free trial — no credit card required."
-msgstr ""
+msgstr "Preços apresentados em %(currency)s, com base na sua localização. Todos os planos incluem um teste gratuito de 30 dias — sem cartão de crédito."
 
 #: apps/marketing/views.py:44 apps/marketing/views.py:88
 msgid "Quotation Management"
-msgstr ""
+msgstr "Gestão de orçamentos"
 
 #: apps/marketing/views.py:44
 msgid "Build accurate quotes fast and turn them into jobs in one click."
-msgstr ""
+msgstr "Crie orçamentos precisos rapidamente e transforme-os em trabalhos com um clique."
 
 #: apps/marketing/views.py:45
 msgid "Job Management"
-msgstr ""
+msgstr "Gestão de trabalhos"
 
 #: apps/marketing/views.py:45
 msgid "Every job in one view — scope, team, progress, money and paperwork."
-msgstr ""
+msgstr "Cada trabalho numa única vista — âmbito, equipa, progresso, dinheiro e papelada."
 
 #: apps/marketing/views.py:46
 msgid "Task Management"
-msgstr ""
+msgstr "Gestão de tarefas"
 
 #: apps/marketing/views.py:46
 msgid "Break jobs into tasks with checklists, owners and live progress."
-msgstr ""
+msgstr "Divida os trabalhos em tarefas com listas de verificação, responsáveis e progresso em tempo real."
 
 #: apps/marketing/views.py:47
 msgid "Raise requests, compare supplier prices and issue purchase orders."
-msgstr ""
+msgstr "Crie pedidos, compare preços de fornecedores e emita ordens de compra."
 
 #: apps/marketing/views.py:48
 msgid "Supplier Intelligence"
-msgstr ""
+msgstr "Inteligência de fornecedores"
 
 #: apps/marketing/views.py:48
 msgid "Every receipt teaches the system who sells what, and for how much."
-msgstr ""
+msgstr "Cada recibo ensina o sistema quem vende o quê, e por quanto."
 
 #: apps/marketing/views.py:49
 msgid "Document Management"
-msgstr ""
+msgstr "Gestão de documentos"
 
 #: apps/marketing/views.py:49
 msgid "POs, invoices, delivery notes and safety files, all in one place."
-msgstr ""
+msgstr "Ordens de compra, faturas, guias de remessa e ficheiros de segurança, tudo num só lugar."
 
 #: apps/marketing/views.py:50
 msgid "AI Document Extraction"
-msgstr ""
+msgstr "Extração de documentos por IA"
 
 #: apps/marketing/views.py:50
 msgid "Drop in an RFQ, PO or invoice — AI reads it and fills the details."
-msgstr ""
+msgstr "Carregue um pedido de cotação, ordem de compra ou fatura — a IA lê-o e preenche os detalhes."
 
 #: apps/marketing/views.py:51 apps/marketing/views.py:115
 msgid "Delivery Notes"
-msgstr ""
+msgstr "Guias de remessa"
 
 #: apps/marketing/views.py:51
 msgid "Generate branded delivery notes straight from the job."
-msgstr ""
+msgstr "Gere guias de remessa com a sua marca diretamente a partir do trabalho."
 
 #: apps/marketing/views.py:52
 msgid "Tax Invoices"
-msgstr ""
+msgstr "Faturas fiscais"
 
 #: apps/marketing/views.py:52
 msgid "Compliant tax invoices and progress claims, with payments tracked."
-msgstr ""
+msgstr "Faturas fiscais conformes e autos de medição, com pagamentos acompanhados."
 
 #: apps/marketing/views.py:53
 msgid "GPS & Time Tracking"
-msgstr ""
+msgstr "GPS e registo de tempo"
 
 #: apps/marketing/views.py:53
 msgid "Field check-ins are GPS-stamped so you know who was where, when."
-msgstr ""
+msgstr "Os registos no terreno têm marca de GPS para saber quem esteve onde e quando."
 
 #: apps/marketing/views.py:54
 msgid "Employee Management"
-msgstr ""
+msgstr "Gestão de funcionários"
 
 #: apps/marketing/views.py:54
 msgid "Unlimited employees — technicians, drivers, operators — on every plan."
-msgstr ""
+msgstr "Funcionários ilimitados — técnicos, motoristas, operadores — em todos os planos."
 
 #: apps/marketing/views.py:55
 msgid "Reporting & Analytics"
-msgstr ""
+msgstr "Relatórios e análises"
 
 #: apps/marketing/views.py:55
 msgid "See profitability, cash flow and job health as the work happens."
-msgstr ""
+msgstr "Veja a rentabilidade, o fluxo de caixa e a saúde dos trabalhos em tempo real."
 
 #: apps/marketing/views.py:59
 msgid ""
 "We quote in minutes now, and I can finally see which jobs actually make "
 "money."
-msgstr ""
+msgstr "Agora orçamentamos em minutos e finalmente vejo que trabalhos realmente dão lucro."
 
 #: apps/marketing/views.py:60
 msgid "Managing Director, mechanical contractor"
-msgstr ""
+msgstr "Diretor-geral, empreiteiro mecânico"
 
 #: apps/marketing/views.py:61
 msgid ""
 "The mobile check-ins ended the arguments about who was on site. It just "
 "works."
-msgstr ""
+msgstr "Os registos móveis acabaram com as discussões sobre quem estava no local. Simplesmente funciona."
 
 #: apps/marketing/views.py:62
 msgid "Operations Manager, maintenance company"
-msgstr ""
+msgstr "Gestor de operações, empresa de manutenção"
 
 #: apps/marketing/views.py:63
 msgid ""
 "Uploading a mine's PO and having it fill in the job automatically saves us "
 "hours."
-msgstr ""
+msgstr "Carregar a ordem de compra de uma mina e vê-la preencher o trabalho automaticamente poupa-nos horas."
 
 #: apps/marketing/views.py:64
 msgid "Owner, industrial services"
-msgstr ""
+msgstr "Proprietário, serviços industriais"
 
 #: apps/marketing/views.py:82
 msgid "Company Management"
-msgstr ""
+msgstr "Gestão da empresa"
 
 #: apps/marketing/views.py:82
 msgid "Your business identity, entered once and reused everywhere."
-msgstr ""
+msgstr "A identidade do seu negócio, introduzida uma vez e reutilizada em todo o lado."
 
 #: apps/marketing/views.py:83
 msgid "Company profile, VAT & registration numbers, banking and branding"
-msgstr ""
+msgstr "Perfil da empresa, números de IVA e de registo, dados bancários e marca"
 
 #: apps/marketing/views.py:84
 msgid "Flows onto every quotation, invoice and delivery note automatically"
-msgstr ""
+msgstr "Aparece automaticamente em cada orçamento, fatura e guia de remessa"
 
 #: apps/marketing/views.py:85
 msgid "Customer Management"
-msgstr ""
+msgstr "Gestão de clientes"
 
 #: apps/marketing/views.py:85
 msgid "Every client organisation, department and contact in one place."
-msgstr ""
+msgstr "Cada organização cliente, departamento e contacto num só lugar."
 
 #: apps/marketing/views.py:86
 msgid "Contacts, sites and a full communication timeline"
-msgstr ""
+msgstr "Contactos, locais e um histórico completo de comunicação"
 
 #: apps/marketing/views.py:87
 msgid "Documents routed to the right person by responsibility"
-msgstr ""
+msgstr "Documentos encaminhados para a pessoa certa por responsabilidade"
 
 #: apps/marketing/views.py:88
 msgid "Build accurate, professional quotes in minutes."
-msgstr ""
+msgstr "Crie orçamentos precisos e profissionais em minutos."
 
 #: apps/marketing/views.py:89
 msgid "Per-type templates and spreadsheet-style bulk line entry"
-msgstr ""
+msgstr "Modelos por tipo e introdução de linhas em massa ao estilo de folha de cálculo"
 
 #: apps/marketing/views.py:90
 msgid "Branded PDF output; award a quote to open a job in one click"
-msgstr ""
+msgstr "Saída em PDF com a sua marca; adjudique um orçamento para abrir um trabalho com um clique"
 
 #: apps/marketing/views.py:91 apps/web/templates/web/dashboard.html:53
 #: apps/web/templates/web/quotation_detail.html:235
 #: apps/web/templates/web/work.html:3 apps/web/templates/web/work.html:8
 msgid "Jobs"
-msgstr ""
+msgstr "Trabalhos"
 
 #: apps/marketing/views.py:91
 msgid "The operational heart — every job in a single view."
-msgstr ""
+msgstr "O coração operacional — cada trabalho numa única vista."
 
 #: apps/marketing/views.py:92
 msgid "Scope, team, progress, money and paperwork together"
-msgstr ""
+msgstr "Âmbito, equipa, progresso, dinheiro e papelada juntos"
 
 #: apps/marketing/views.py:93
 msgid "Raised from a quotation, a customer PO, or started standalone"
-msgstr ""
+msgstr "Criado a partir de um orçamento, de uma ordem de compra do cliente, ou iniciado de forma autónoma"
 
 #: apps/marketing/views.py:94 apps/web/templates/web/customers.html:29
 #: apps/web/templates/web/dashboard.html:51
@@ -1199,213 +1199,213 @@ msgstr ""
 #: apps/web/templates/web/quotation_detail.html:234
 #: apps/web/translation_strings.py:11
 msgid "Projects"
-msgstr ""
+msgstr "Projetos"
 
 #: apps/marketing/views.py:94
 msgid "Group related jobs under one engagement."
-msgstr ""
+msgstr "Agrupe trabalhos relacionados sob um único compromisso."
 
 #: apps/marketing/views.py:95
 msgid "Roll up commercial documents, budget, actuals and timeline"
-msgstr ""
+msgstr "Consolide documentos comerciais, orçamento, valores reais e cronograma"
 
 #: apps/marketing/views.py:96
 msgid "Readiness gate keeps compliance in check before work starts"
-msgstr ""
+msgstr "O controlo de prontidão garante a conformidade antes do início dos trabalhos"
 
 #: apps/marketing/views.py:97
 msgid "Break work down and track it to completion."
-msgstr ""
+msgstr "Divida o trabalho e acompanhe-o até à conclusão."
 
 #: apps/marketing/views.py:98
 msgid "Checklists, owners, dependencies and live progress"
-msgstr ""
+msgstr "Listas de verificação, responsáveis, dependências e progresso em tempo real"
 
 #: apps/marketing/views.py:99
 msgid "Field reports, GPS and evidence captured against each task"
-msgstr ""
+msgstr "Relatórios de campo, GPS e evidências registados em cada tarefa"
 
 #: apps/marketing/views.py:100
 msgid "Buy the right materials at the right price."
-msgstr ""
+msgstr "Compre os materiais certos ao preço certo."
 
 #: apps/marketing/views.py:101
 msgid "Raise procurement requests and compare supplier prices"
-msgstr ""
+msgstr "Crie pedidos de compra e compare preços de fornecedores"
 
 #: apps/marketing/views.py:102
 msgid "Issue purchase orders and reconcile against receipts"
-msgstr ""
+msgstr "Emita ordens de compra e reconcilie com os recibos"
 
 #: apps/marketing/views.py:103
 msgid "Suppliers"
-msgstr ""
+msgstr "Fornecedores"
 
 #: apps/marketing/views.py:103
 msgid "A supplier database that builds itself."
-msgstr ""
+msgstr "Uma base de dados de fornecedores que se constrói sozinha."
 
 #: apps/marketing/views.py:104
 msgid "Every receipt records who you bought from and what you paid"
-msgstr ""
+msgstr "Cada recibo regista a quem comprou e quanto pagou"
 
 #: apps/marketing/views.py:105
 msgid "Manual entry and old-invoice upload to seed your history"
-msgstr ""
+msgstr "Introdução manual e carregamento de faturas antigas para iniciar o seu histórico"
 
 #: apps/marketing/views.py:106
 msgid "Products"
-msgstr ""
+msgstr "Produtos"
 
 #: apps/marketing/views.py:106
 msgid "Know the real price of everything you buy."
-msgstr ""
+msgstr "Saiba o preço real de tudo o que compra."
 
 #: apps/marketing/views.py:107
 msgid "Price comparison across suppliers, trends and stale-price flags"
-msgstr ""
+msgstr "Comparação de preços entre fornecedores, tendências e alertas de preços desatualizados"
 
 #: apps/marketing/views.py:108
 msgid "Product aliases so the same item is never counted twice"
-msgstr ""
+msgstr "Nomes alternativos de produtos para que o mesmo artigo nunca seja contado duas vezes"
 
 #: apps/marketing/views.py:109 apps/web/translation_strings.py:11
 msgid "Purchase Orders"
-msgstr ""
+msgstr "Ordens de compra"
 
 #: apps/marketing/views.py:109
 msgid "Turn approved buying into clean paperwork."
-msgstr ""
+msgstr "Transforme as compras aprovadas em papelada organizada."
 
 #: apps/marketing/views.py:110
 msgid "Generate and track POs against jobs and suppliers"
-msgstr ""
+msgstr "Gere e acompanhe ordens de compra por trabalho e fornecedor"
 
 #: apps/marketing/views.py:111
 msgid "Extract incoming customer POs with AI"
-msgstr ""
+msgstr "Extraia ordens de compra recebidas dos clientes com IA"
 
 #: apps/marketing/views.py:112 apps/web/templates/web/invoices.html:3
 #: apps/web/templates/web/invoices.html:8
 #: apps/web/templates/web/invoices.html:16
 msgid "Invoices"
-msgstr ""
+msgstr "Faturas"
 
 #: apps/marketing/views.py:112
 msgid "Get paid, and see it clearly."
-msgstr ""
+msgstr "Receba, e veja tudo com clareza."
 
 #: apps/marketing/views.py:113
 msgid "Compliant tax invoices and progress claims with retention"
-msgstr ""
+msgstr "Faturas fiscais conformes e autos de medição com retenção"
 
 #: apps/marketing/views.py:114
 msgid "Payments and outstanding balances tracked per job"
-msgstr ""
+msgstr "Pagamentos e saldos em dívida acompanhados por trabalho"
 
 #: apps/marketing/views.py:115
 msgid "Prove delivery, on brand."
-msgstr ""
+msgstr "Comprove a entrega, com a sua marca."
 
 #: apps/marketing/views.py:116
 msgid "Generate delivery notes straight from the job"
-msgstr ""
+msgstr "Gere guias de remessa diretamente a partir do trabalho"
 
 #: apps/marketing/views.py:117
 msgid "Quantities and signatures captured for the record"
-msgstr ""
+msgstr "Quantidades e assinaturas registadas para o histórico"
 
 #: apps/marketing/views.py:118
 msgid "Reports & Analytics"
-msgstr ""
+msgstr "Relatórios e análises"
 
 #: apps/marketing/views.py:118
 msgid "Run the business on numbers, not guesswork."
-msgstr ""
+msgstr "Gira o negócio com números, não com suposições."
 
 #: apps/marketing/views.py:119
 msgid "Profitability, cash flow, aging and job health"
-msgstr ""
+msgstr "Rentabilidade, fluxo de caixa, antiguidade e saúde dos trabalhos"
 
 #: apps/marketing/views.py:120
 msgid "Field spend flows into live profitability automatically"
-msgstr ""
+msgstr "As despesas de campo entram automaticamente na rentabilidade em tempo real"
 
 #: apps/marketing/views.py:121
 msgid "Employee App"
-msgstr ""
+msgstr "Aplicação do funcionário"
 
 #: apps/marketing/views.py:121
 msgid "The field team's tool, built mobile-first."
-msgstr ""
+msgstr "A ferramenta da equipa de campo, concebida primeiro para telemóvel."
 
 #: apps/marketing/views.py:122
 msgid "Capture time, materials, fuel and progress from site"
-msgstr ""
+msgstr "Registe tempo, materiais, combustível e progresso a partir do local"
 
 #: apps/marketing/views.py:123
 msgid "Works for technicians, drivers, welders, operators and labourers"
-msgstr ""
+msgstr "Funciona para técnicos, motoristas, soldadores, operadores e trabalhadores"
 
 #: apps/marketing/views.py:124
 msgid "GPS Tracking"
-msgstr ""
+msgstr "Rastreamento por GPS"
 
 #: apps/marketing/views.py:124
 msgid "Know who was on site, and when."
-msgstr ""
+msgstr "Saiba quem esteve no local, e quando."
 
 #: apps/marketing/views.py:125
 msgid "Every field check-in is GPS-stamped and time-stamped"
-msgstr ""
+msgstr "Cada registo no terreno tem marca de GPS e de hora"
 
 #: apps/marketing/views.py:126
 msgid "Distance-from-site flags keep records honest"
-msgstr ""
+msgstr "Os alertas de distância ao local mantêm os registos fiáveis"
 
 #: apps/marketing/views.py:127
 msgid "AI Automation"
-msgstr ""
+msgstr "Automação por IA"
 
 #: apps/marketing/views.py:127
 msgid "Let AI do the data entry."
-msgstr ""
+msgstr "Deixe a IA fazer a introdução de dados."
 
 #: apps/marketing/views.py:128
 msgid "Extract RFQs, purchase orders, supplier invoices and scopes of work"
-msgstr ""
+msgstr "Extraia pedidos de cotação, ordens de compra, faturas de fornecedores e âmbitos de trabalho"
 
 #: apps/marketing/views.py:129
 msgid "AI quotation suggestions grounded in your own history"
-msgstr ""
+msgstr "Sugestões de orçamento por IA baseadas no seu próprio histórico"
 
 #: apps/marketing/views.py:130
 msgid "Enterprise-grade protection for your data."
-msgstr ""
+msgstr "Proteção de nível empresarial para os seus dados."
 
 #: apps/marketing/views.py:131
 msgid "Role-based access control and full audit logging"
-msgstr ""
+msgstr "Controlo de acesso por função e registo de auditoria completo"
 
 #: apps/marketing/views.py:132
 msgid "Tenant isolation so your data is only ever yours"
-msgstr ""
+msgstr "Isolamento de inquilinos para que os seus dados sejam apenas seus"
 
 #: apps/marketing/views.py:133
 msgid "Cloud Platform"
-msgstr ""
+msgstr "Plataforma na nuvem"
 
 #: apps/marketing/views.py:133
 msgid "Always on, everywhere."
-msgstr ""
+msgstr "Sempre disponível, em qualquer lugar."
 
 #: apps/marketing/views.py:134
 msgid "Access from desktop, tablet and mobile"
-msgstr ""
+msgstr "Acesso a partir de computador, tablet e telemóvel"
 
 #: apps/marketing/views.py:135
 msgid "Automatic backups and no software to install"
-msgstr ""
+msgstr "Cópias de segurança automáticas e sem software para instalar"
 
 #: apps/projects/models.py:20 apps/web/templates/web/projects.html:26
 msgid "Pending compliance"
@@ -1474,11 +1474,11 @@ msgstr ""
 #: apps/web/templates/web/company.html:491
 #: apps/web/templates/web/profile.html:82
 msgid "Language"
-msgstr ""
+msgstr "Idioma"
 
 #: apps/web/templates/web/_language_switcher.html:18
 msgid "Change"
-msgstr ""
+msgstr "Mudar"
 
 #: apps/web/templates/web/_readiness.html:9
 msgid "Ready (overridden)"
