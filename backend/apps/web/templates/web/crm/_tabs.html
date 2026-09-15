@@ -1,26 +1,27 @@
 {% comment %}CRM tabs, grouped: the Customer MASTER plus the Sales / Relationships /
 Marketing / Analytics layers over it. Param: active (hub|leads|pipeline|customers|
 activities|reports){% endcomment %}
+{% load i18n %}
 <div class="crm-tabs">
-  <a class="btn {% if active == 'hub' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_hub' %}">Overview</a>
+  <a class="btn {% if active == 'hub' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_hub' %}">{% trans "Overview" %}</a>
 
-  <span class="crm-grp">Sales</span>
-  <a class="btn {% if active == 'leads' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_leads' %}">Leads</a>
-  <a class="btn {% if active == 'pipeline' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_pipeline' %}">Pipeline</a>
-  <a class="btn {% if active == 'activities' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_activities' %}">Activities</a>
-
-  <span class="crm-sep"></span>
-  <span class="crm-grp">Analytics</span>
-  <a class="btn {% if active == 'analytics' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_analytics' %}">Analytics</a>
-  <a class="btn {% if active == 'reports' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_reports' %}">Reports</a>
+  <span class="crm-grp">{% trans "Sales" %}</span>
+  <a class="btn {% if active == 'leads' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_leads' %}">{% trans "Leads" %}</a>
+  <a class="btn {% if active == 'pipeline' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_pipeline' %}">{% trans "Pipeline" %}</a>
+  <a class="btn {% if active == 'activities' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_activities' %}">{% trans "Activities" %}</a>
 
   <span class="crm-sep"></span>
-  <span class="crm-grp">Marketing</span>
-  <a class="btn ghost" href="{% url 'web:marketing' %}">Campaigns &amp; more</a>
+  <span class="crm-grp">{% trans "Analytics" %}</span>
+  <a class="btn {% if active == 'analytics' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_analytics' %}">{% trans "Analytics" %}</a>
+  <a class="btn {% if active == 'reports' %}primary{% else %}ghost{% endif %}" href="{% url 'web:crm_reports' %}">{% trans "Reports" %}</a>
+
+  <span class="crm-sep"></span>
+  <span class="crm-grp">{% trans "Marketing" %}</span>
+  <a class="btn ghost" href="{% url 'web:marketing' %}">{% trans "Campaigns & more" %}</a>
 
   <form method="get" action="{% url 'web:crm_search' %}" style="margin-left:auto;display:flex;gap:6px;">
-    <input type="search" name="q" placeholder="Search CRM…" value="{{ q|default:'' }}" style="min-width:160px;">
-    <button class="btn ghost" type="submit">Search</button>
+    <input type="search" name="q" placeholder="{% trans 'Search CRM…' %}" value="{{ q|default:'' }}" style="min-width:160px;">
+    <button class="btn ghost" type="submit">{% trans "Search" %}</button>
   </form>
 </div>
 <style>

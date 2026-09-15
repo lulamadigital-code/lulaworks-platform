@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 11:07+0000\n"
+"POT-Creation-Date: 2026-09-15 11:21+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -44,6 +44,203 @@ msgstr "Attention"
 msgid "Sign out"
 msgstr "Se déconnecter"
 
+#: apps/web/templates/web/crm/_tabs.html:7
+msgid "Overview"
+msgstr "Vue d'ensemble"
+
+#: apps/web/templates/web/crm/_tabs.html:9
+msgid "Sales"
+msgstr "Ventes"
+
+#: apps/web/templates/web/crm/_tabs.html:10
+msgid "Leads"
+msgstr "Prospects"
+
+#: apps/web/templates/web/crm/_tabs.html:11
+msgid "Pipeline"
+msgstr "Pipeline"
+
+#: apps/web/templates/web/crm/_tabs.html:12
+#| msgid "Active"
+msgid "Activities"
+msgstr "Activités"
+
+#: apps/web/templates/web/crm/_tabs.html:15
+#: apps/web/templates/web/crm/_tabs.html:16
+msgid "Analytics"
+msgstr "Analytique"
+
+#: apps/web/templates/web/crm/_tabs.html:17
+msgid "Reports"
+msgstr "Rapports"
+
+#: apps/web/templates/web/crm/_tabs.html:20 apps/web/translation_strings.py:10
+msgid "Marketing"
+msgstr "Marketing"
+
+#: apps/web/templates/web/crm/_tabs.html:21
+msgid "Campaigns & more"
+msgstr "Campagnes et plus"
+
+#: apps/web/templates/web/crm/_tabs.html:24
+msgid "Search CRM…"
+msgstr "Rechercher dans le CRM…"
+
+#: apps/web/templates/web/crm/_tabs.html:25
+msgid "Search"
+msgstr "Rechercher"
+
+#: apps/web/templates/web/customers.html:3
+#: apps/web/templates/web/customers.html:8
+msgid "Customers"
+msgstr "Clients"
+
+#: apps/web/templates/web/customers.html:9
+msgid ""
+"Client organisations — not names in a text field. Each one holds its own "
+"branches, sites, departments and the people who actually release RFQs, "
+"approve quotations and pay invoices."
+msgstr "Organisations clientes — pas des noms dans un champ de texte. Chacune détient ses propres succursales, sites, services et les personnes qui émettent réellement les demandes de devis, approuvent les devis et paient les factures."
+
+#: apps/web/templates/web/customers.html:16
+#| msgid "Search customers, jobs…"
+msgid "Search customers…"
+msgstr "Rechercher des clients…"
+
+#: apps/web/templates/web/customers.html:18
+#: apps/web/templates/web/quotations.html:51
+#| msgid "Jobs by status"
+msgid "Any status"
+msgstr "Tout statut"
+
+#: apps/web/templates/web/customers.html:23
+#: apps/web/templates/web/quotations.html:62
+msgid "Filter"
+msgstr "Filtrer"
+
+#: apps/web/templates/web/customers.html:28
+#: apps/web/templates/web/quotations.html:67
+msgid "Customer"
+msgstr "Client"
+
+#: apps/web/templates/web/customers.html:28
+msgid "Code"
+msgstr "Code"
+
+#: apps/web/templates/web/customers.html:28
+msgid "Vendor no."
+msgstr "N° de fournisseur"
+
+#: apps/web/templates/web/customers.html:28
+msgid "Contacts"
+msgstr "Contacts"
+
+#: apps/web/templates/web/customers.html:28
+#| msgid "Documents"
+msgid "Departments"
+msgstr "Services"
+
+#: apps/web/templates/web/customers.html:29
+#: apps/web/templates/web/quotations.html:3
+#: apps/web/templates/web/quotations.html:10 apps/web/translation_strings.py:11
+msgid "Quotations"
+msgstr "Devis"
+
+#: apps/web/templates/web/customers.html:29
+#: apps/web/templates/web/dashboard.html:51
+#: apps/web/templates/web/projects.html:3
+#: apps/web/templates/web/projects.html:7 apps/web/translation_strings.py:11
+msgid "Projects"
+msgstr "Projets"
+
+#: apps/web/templates/web/customers.html:29
+msgid "Terms"
+msgstr "Conditions"
+
+#: apps/web/templates/web/customers.html:29
+#: apps/web/templates/web/people.html:73
+#: apps/web/templates/web/projects.html:14
+#: apps/web/templates/web/quotations.html:67
+msgid "Status"
+msgstr "Statut"
+
+#: apps/web/templates/web/customers.html:39
+#, python-format
+#| msgid "%(n)s active"
+msgid "%(n)s open"
+msgstr "%(n)s ouverts"
+
+#: apps/web/templates/web/customers.html:40
+#, python-format
+msgid "%(d)s days"
+msgstr "%(d)s jours"
+
+#: apps/web/templates/web/customers.html:41
+#: apps/web/templates/web/people.html:102
+msgid "Active"
+msgstr "Actif"
+
+#: apps/web/templates/web/customers.html:42
+msgid "Blacklisted"
+msgstr "Sur liste noire"
+
+#: apps/web/templates/web/customers.html:45
+#| msgid "No jobs yet."
+msgid "No customers yet."
+msgstr "Aucun client pour le moment."
+
+#: apps/web/templates/web/customers.html:52
+#| msgid "+ Add person"
+msgid "+ Add customer"
+msgstr "+ Ajouter un client"
+
+#: apps/web/templates/web/customers.html:54
+#| msgid "Add a member"
+msgid "Add a customer"
+msgstr "Ajouter un client"
+
+#: apps/web/templates/web/customers.html:57
+msgid "Registered company name"
+msgstr "Raison sociale"
+
+#: apps/web/templates/web/customers.html:59
+msgid "Industry"
+msgstr "Secteur d'activité"
+
+#: apps/web/templates/web/customers.html:60
+msgid "General email"
+msgstr "E-mail général"
+
+#: apps/web/templates/web/customers.html:61
+msgid "Main telephone"
+msgstr "Téléphone principal"
+
+#: apps/web/templates/web/customers.html:62
+msgid "City"
+msgstr "Ville"
+
+#: apps/web/templates/web/customers.html:63
+msgid "Our vendor number with them"
+msgstr "Notre numéro de fournisseur chez eux"
+
+#: apps/web/templates/web/customers.html:65
+msgid ""
+"The code they use for you in their system. It goes on every quotation and "
+"invoice you send them."
+msgstr "Le code qu'ils utilisent pour vous dans leur système. Il figure sur chaque devis et facture que vous leur envoyez."
+
+#: apps/web/templates/web/customers.html:67
+#| msgid "Add member"
+msgid "Add customer"
+msgstr "Ajouter un client"
+
+#: apps/web/templates/web/customers.html:68
+msgid ""
+"A standard department structure (Engineering, Maintenance, Procurement, "
+"Finance…) is created so you can file contacts immediately. Remove any you "
+"don't need."
+msgstr "Une structure de services standard (Ingénierie, Maintenance, Approvisionnement, Finance…) est créée pour que vous puissiez classer les contacts immédiatement. Supprimez ceux dont vous n'avez pas besoin."
+
 #: apps/web/templates/web/dashboard.html:3 apps/web/translation_strings.py:10
 msgid "Dashboard"
 msgstr "Tableau de bord"
@@ -78,10 +275,6 @@ msgstr "Terminer la configuration"
 #: apps/web/templates/web/dashboard.html:29
 msgid "Remind me later"
 msgstr "Me le rappeler plus tard"
-
-#: apps/web/templates/web/dashboard.html:51 apps/web/translation_strings.py:11
-msgid "Projects"
-msgstr "Projets"
 
 #: apps/web/templates/web/dashboard.html:53
 msgid "Jobs"
@@ -130,7 +323,7 @@ msgstr "Travaux par origine"
 #: apps/web/templates/web/dashboard.html:108
 msgid ""
 "Every job runs through one engine — the only difference is how it started."
-msgstr ""
+msgstr "Chaque tâche passe par un seul moteur — la seule différence est la façon dont elle a commencé."
 
 #: apps/web/templates/web/dashboard.html:109
 msgid "No jobs yet."
@@ -154,6 +347,7 @@ msgid "Project"
 msgstr "Projet"
 
 #: apps/web/templates/web/dashboard.html:128
+#: apps/web/templates/web/projects.html:14
 msgid "Client"
 msgstr "Client"
 
@@ -216,7 +410,7 @@ msgstr "Personnes"
 msgid ""
 "Your company's members. Everyone here is assignable to jobs — active members "
 "fill every team picker."
-msgstr ""
+msgstr "Les membres de votre entreprise. Chacun ici est assignable aux tâches — les membres actifs remplissent chaque sélecteur d'équipe."
 
 #: apps/web/templates/web/people.html:11
 #, python-format
@@ -233,7 +427,7 @@ msgid ""
 "Hand this over now — it will not be shown again and is not stored anywhere "
 "in readable form. They must choose their own password the first time they "
 "sign in; until they do, they cannot reach any other page."
-msgstr ""
+msgstr "Transmettez-le maintenant — il ne sera plus affiché et n'est stocké nulle part sous une forme lisible. Ils doivent choisir leur propre mot de passe lors de leur première connexion ; tant qu'ils ne l'ont pas fait, ils ne peuvent accéder à aucune autre page."
 
 #: apps/web/templates/web/people.html:27
 msgid "+ Add person"
@@ -284,7 +478,7 @@ msgstr "Ajouter le membre"
 msgid ""
 "A temporary password is generated and shown to you once — there is no invite "
 "email yet, so you pass it on yourself."
-msgstr ""
+msgstr "Un mot de passe temporaire est généré et vous est montré une seule fois — il n'y a pas encore d'e-mail d'invitation, vous le transmettez donc vous-même."
 
 #: apps/web/templates/web/people.html:70
 msgid "Members"
@@ -293,10 +487,6 @@ msgstr "Membres"
 #: apps/web/templates/web/people.html:73
 msgid "Person"
 msgstr "Personne"
-
-#: apps/web/templates/web/people.html:73
-msgid "Status"
-msgstr "Statut"
 
 #: apps/web/templates/web/people.html:83
 msgid "has not set a password yet"
@@ -309,10 +499,6 @@ msgstr "Enregistrer"
 #: apps/web/templates/web/people.html:99
 msgid "No role"
 msgstr "Aucun rôle"
-
-#: apps/web/templates/web/people.html:102
-msgid "Active"
-msgstr "Actif"
 
 #: apps/web/templates/web/people.html:103
 msgid "Deactivated"
@@ -336,7 +522,7 @@ msgid ""
 "name on the jobs, timesheets and sign-offs they touched. Deactivating "
 "removes every permission immediately and takes them out of all assignment "
 "pickers."
-msgstr ""
+msgstr "Les membres sont désactivés, jamais supprimés — une personne qui part garde son nom sur les tâches, feuilles de temps et validations qu'elle a touchées. La désactivation retire immédiatement toutes les autorisations et la retire de tous les sélecteurs d'affectation."
 
 #: apps/web/templates/web/profile.html:3 apps/web/templates/web/profile.html:19
 #: apps/web/templates/web/settings.html:61
@@ -347,7 +533,7 @@ msgstr "Mon profil"
 msgid ""
 "Your photo and details. Everyone can edit their own profile, whatever their "
 "role."
-msgstr ""
+msgstr "Votre photo et vos coordonnées. Chacun peut modifier son propre profil, quel que soit son rôle."
 
 #: apps/web/templates/web/profile.html:22
 msgid "Change password"
@@ -374,7 +560,7 @@ msgstr "Photo de profil"
 msgid ""
 "JPEG, PNG, WebP or GIF, up to 5 MB. Your photo appears on every job you are "
 "assigned to, so the crew can see who is who."
-msgstr ""
+msgstr "JPEG, PNG, WebP ou GIF, jusqu'à 5 Mo. Votre photo apparaît sur chaque tâche qui vous est assignée, afin que l'équipe puisse voir qui est qui."
 
 #: apps/web/templates/web/profile.html:78
 msgid "Email (your sign-in)"
@@ -395,7 +581,7 @@ msgstr "Utiliser la valeur par défaut de l'entreprise / du pays"
 #: apps/web/templates/web/profile.html:87
 msgid ""
 "The language Lulaworks shows you — independent of your company's country."
-msgstr ""
+msgstr "La langue dans laquelle Lulaworks vous est présenté — indépendante du pays de votre entreprise."
 
 #: apps/web/templates/web/profile.html:90
 msgid "Save profile"
@@ -433,7 +619,7 @@ msgstr "Terminer la configuration"
 #: apps/web/templates/web/profile.html:129
 msgid ""
 "Your role is set by an administrator — it decides what you can see and do."
-msgstr ""
+msgstr "Votre rôle est défini par un administrateur — il détermine ce que vous pouvez voir et faire."
 
 #: apps/web/templates/web/profile.html:133
 msgid "Access"
@@ -448,7 +634,7 @@ msgstr "Aucune entreprise liée"
 msgid ""
 "You manage the whole platform from the <a href=\"%(console_url)s\">Console</"
 "a>."
-msgstr ""
+msgstr "Vous gérez toute la plateforme depuis la <a href=\"%(console_url)s\">Console</a>."
 
 #: apps/web/templates/web/profile.html:137
 msgid "Your account isn't linked to a company yet."
@@ -463,6 +649,183 @@ msgstr "Vos travaux en cours"
 msgid "as %(roles)s"
 msgstr "en tant que %(roles)s"
 
+#: apps/web/templates/web/projects.html:8
+msgid "A project groups related jobs."
+msgstr "Un projet regroupe des tâches liées."
+
+#: apps/web/templates/web/projects.html:8
+#, python-format
+msgid "%(n)s in total."
+msgstr "%(n)s au total."
+
+#: apps/web/templates/web/projects.html:10
+#| msgid "Project"
+msgid "+ New project"
+msgstr "+ Nouveau projet"
+
+#: apps/web/templates/web/projects.html:14
+#| msgid "Members"
+msgid "Number"
+msgstr "Numéro"
+
+#: apps/web/templates/web/projects.html:14
+msgid "Title"
+msgstr "Titre"
+
+#: apps/web/templates/web/projects.html:14
+#| msgid "Job title"
+msgid "Job type"
+msgstr "Type de tâche"
+
+#: apps/web/templates/web/projects.html:22
+msgid "Ready"
+msgstr "Prêt"
+
+#: apps/web/templates/web/projects.html:23
+msgid "In execution"
+msgstr "En exécution"
+
+#: apps/web/templates/web/projects.html:24
+#| msgid "Completed"
+msgid "Complete"
+msgstr "Terminé"
+
+#: apps/web/templates/web/projects.html:25
+#| msgid "Cancel"
+msgid "Cancelled"
+msgstr "Annulé"
+
+#: apps/web/templates/web/projects.html:26
+#| msgid "Blocked on compliance"
+msgid "Pending compliance"
+msgstr "Conformité en attente"
+
+#: apps/web/templates/web/projects.html:30
+#| msgid "No jobs yet."
+msgid "No projects yet."
+msgstr "Aucun projet pour le moment."
+
+#: apps/web/templates/web/quotations.html:11
+msgid ""
+"The commercial gateway between sales and operations. Every awarded quotation "
+"becomes the contract execution traces back to."
+msgstr "La passerelle commerciale entre les ventes et les opérations. Chaque devis attribué devient le contrat auquel l'exécution se réfère."
+
+#: apps/web/templates/web/quotations.html:13
+#| msgid "Quotations"
+msgid "+ New quotation"
+msgstr "+ Nouveau devis"
+
+#: apps/web/templates/web/quotations.html:18
+#| msgid "Open jobs"
+msgid "Open"
+msgstr "Ouverts"
+
+#: apps/web/templates/web/quotations.html:20
+msgid "With the customer"
+msgstr "Chez le client"
+
+#: apps/web/templates/web/quotations.html:22
+msgid "Awaiting approval"
+msgstr "En attente d'approbation"
+
+#: apps/web/templates/web/quotations.html:25
+msgid "Win rate"
+msgstr "Taux de réussite"
+
+#: apps/web/templates/web/quotations.html:30
+msgid "Open pipeline value"
+msgstr "Valeur du pipeline ouvert"
+
+#: apps/web/templates/web/quotations.html:32
+#, python-format
+msgid "Across %(n)s live quotation(s)"
+msgstr "Sur %(n)s devis en cours"
+
+#: apps/web/templates/web/quotations.html:34
+msgid "Won"
+msgstr "Gagnés"
+
+#: apps/web/templates/web/quotations.html:36
+#, python-format
+#| msgid "%(n)s active"
+msgid "%(n)s awarded"
+msgstr "%(n)s attribués"
+
+#: apps/web/templates/web/quotations.html:43
+#, python-format
+msgid "%(n)s quotation(s) past their validity date"
+msgstr "%(n)s devis ont dépassé leur date de validité"
+
+#: apps/web/templates/web/quotations.html:44
+msgid ""
+"Still showing as open. Follow them up or mark them expired — a stale "
+"pipeline flatters your forecast."
+msgstr "Toujours affichés comme ouverts. Relancez-les ou marquez-les comme expirés — un pipeline obsolète embellit vos prévisions."
+
+#: apps/web/templates/web/quotations.html:49
+#| msgid "Quotations"
+msgid "Quotation number…"
+msgstr "Numéro de devis…"
+
+#: apps/web/templates/web/quotations.html:57
+msgid "Any customer"
+msgstr "Tout client"
+
+#: apps/web/templates/web/quotations.html:67
+#| msgid "Quotations"
+msgid "Quotation"
+msgstr "Devis"
+
+#: apps/web/templates/web/quotations.html:67
+msgid "Type"
+msgstr "Type"
+
+#: apps/web/templates/web/quotations.html:68
+msgid "Value"
+msgstr "Valeur"
+
+#: apps/web/templates/web/quotations.html:68
+msgid "Margin"
+msgstr "Marge"
+
+#: apps/web/templates/web/quotations.html:69
+msgid "Valid until"
+msgstr "Valable jusqu'au"
+
+#: apps/web/templates/web/quotations.html:79
+msgid "Some lines have no cost captured"
+msgstr "Certaines lignes n'ont pas de coût saisi"
+
+#: apps/web/templates/web/quotations.html:83
+msgid "expired"
+msgstr "expiré"
+
+#: apps/web/templates/web/quotations.html:85
+#| msgid "No jobs yet."
+msgid "No quotations yet."
+msgstr "Aucun devis pour le moment."
+
+#: apps/web/templates/web/quotations.html:91
+#| msgid "Quotations"
+msgid "Quotation pages"
+msgstr "Pages de devis"
+
+#: apps/web/templates/web/quotations.html:93
+#: apps/web/templates/web/quotations.html:94
+msgid "← Previous"
+msgstr "← Précédent"
+
+#: apps/web/templates/web/quotations.html:95
+#, python-format
+msgid "Page %(cur)s of %(total)s"
+msgstr "Page %(cur)s sur %(total)s"
+
+#: apps/web/templates/web/quotations.html:97
+#: apps/web/templates/web/quotations.html:98
+msgid "Next →"
+msgstr "Suivant →"
+
 #: apps/web/templates/web/settings.html:3
 #: apps/web/templates/web/settings.html:7 apps/web/translation_strings.py:13
 msgid "Settings"
@@ -472,7 +835,9 @@ msgstr "Paramètres"
 msgid ""
 "Everything that configures Lulaworks for your business — set it once here "
 "and every screen and document reads from it."
-msgstr "Tout ce qui configure Lulaworks pour votre entreprise — réglez-le une fois ici et chaque écran et document s'y réfère."
+msgstr ""
+"Tout ce qui configure Lulaworks pour votre entreprise — réglez-le une fois "
+"ici et chaque écran et document s'y réfère."
 
 #: apps/web/templates/web/settings.html:15
 msgid "Company profile"
@@ -480,7 +845,9 @@ msgstr "Profil de l'entreprise"
 
 #: apps/web/templates/web/settings.html:16
 msgid "Name, registration, address, branding & logo — read by every document."
-msgstr "Nom, immatriculation, adresse, image de marque et logo — lus par chaque document."
+msgstr ""
+"Nom, immatriculation, adresse, image de marque et logo — lus par chaque "
+"document."
 
 #: apps/web/templates/web/settings.html:18
 msgid "Business hours"
@@ -518,7 +885,9 @@ msgstr "Modèles de documents"
 msgid ""
 "Design your quotation, invoice & delivery-note look — pick, customise or "
 "import."
-msgstr "Concevez l'apparence de vos devis, factures et bons de livraison — choisissez, personnalisez ou importez."
+msgstr ""
+"Concevez l'apparence de vos devis, factures et bons de livraison — "
+"choisissez, personnalisez ou importez."
 
 #: apps/web/templates/web/settings.html:35
 msgid "Communication & AI"
@@ -551,7 +920,9 @@ msgstr "Paramètres des demandes d'achat"
 #: apps/web/templates/web/settings.html:49
 msgid ""
 "Whether purchases need approval, and the value threshold that triggers it."
-msgstr "Si les achats nécessitent une approbation, et le seuil de valeur qui la déclenche."
+msgstr ""
+"Si les achats nécessitent une approbation, et le seuil de valeur qui la "
+"déclenche."
 
 #: apps/web/templates/web/settings.html:52
 msgid "Account"
@@ -585,17 +956,9 @@ msgstr "Intelligence"
 msgid "CRM"
 msgstr "CRM"
 
-#: apps/web/translation_strings.py:10
-msgid "Marketing"
-msgstr "Marketing"
-
 #: apps/web/translation_strings.py:11
 msgid "Job Card"
 msgstr "Fiche de travail"
-
-#: apps/web/translation_strings.py:11
-msgid "Quotations"
-msgstr "Devis"
 
 #: apps/web/translation_strings.py:11
 msgid "Purchase Orders"

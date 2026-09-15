@@ -1,16 +1,17 @@
 {% extends "web/base.html" %}
-{% block title %}Projects{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Projects" %}{% endblock %}
 {% block content %}
 <div class="pagehead">
   <div>
-    <h1>Projects</h1>
-    <p class="sub" style="margin:0;">A project groups related jobs. {{ projects|length }} project{{ projects|length|pluralize }}.</p>
+    <h1>{% trans "Projects" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "A project groups related jobs." %} {% blocktrans with n=projects|length %}{{ n }} in total.{% endblocktrans %}</p>
   </div>
-  {% if can_create %}<a class="btn" href="{% url 'web:project_create' %}">+ New project</a>{% endif %}
+  {% if can_create %}<a class="btn" href="{% url 'web:project_create' %}">{% trans "+ New project" %}</a>{% endif %}
 </div>
 <div class="card" style="padding:0;">
   <table>
-    <tr><th>Number</th><th>Title</th><th>Client</th><th>Job type</th><th>Status</th></tr>
+    <tr><th>{% trans "Number" %}</th><th>{% trans "Title" %}</th><th>{% trans "Client" %}</th><th>{% trans "Job type" %}</th><th>{% trans "Status" %}</th></tr>
     {% for p in projects %}
     <tr>
       <td><a href="{% url 'web:project_detail' p.id %}">{{ p.number }}</a></td>
@@ -18,15 +19,15 @@
       <td class="muted">{{ p.client_name }}</td>
       <td class="muted">{{ p.work_type|default:"—" }}</td>
       <td>
-        {% if p.status == 'ready' %}<span class="chip ok">Ready</span>
-        {% elif p.status == 'in_execution' %}<span class="chip ok">In execution</span>
-        {% elif p.status == 'complete' %}<span class="chip">Complete</span>
-        {% elif p.status == 'cancelled' %}<span class="chip bad">Cancelled</span>
-        {% else %}<span class="chip warn">Pending compliance</span>{% endif %}
+        {% if p.status == 'ready' %}<span class="chip ok">{% trans "Ready" %}</span>
+        {% elif p.status == 'in_execution' %}<span class="chip ok">{% trans "In execution" %}</span>
+        {% elif p.status == 'complete' %}<span class="chip">{% trans "Complete" %}</span>
+        {% elif p.status == 'cancelled' %}<span class="chip bad">{% trans "Cancelled" %}</span>
+        {% else %}<span class="chip warn">{% trans "Pending compliance" %}</span>{% endif %}
       </td>
     </tr>
     {% empty %}
-    <tr><td colspan="5" class="muted" style="padding:20px;">No projects yet.</td></tr>
+    <tr><td colspan="5" class="muted" style="padding:20px;">{% trans "No projects yet." %}</td></tr>
     {% endfor %}
   </table>
 </div>

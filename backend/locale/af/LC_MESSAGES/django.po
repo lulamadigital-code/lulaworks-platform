@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 11:07+0000\n"
+"POT-Creation-Date: 2026-09-15 11:21+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -44,6 +44,203 @@ msgstr "Aandag"
 msgid "Sign out"
 msgstr "Meld af"
 
+#: apps/web/templates/web/crm/_tabs.html:7
+msgid "Overview"
+msgstr "Oorsig"
+
+#: apps/web/templates/web/crm/_tabs.html:9
+msgid "Sales"
+msgstr "Verkope"
+
+#: apps/web/templates/web/crm/_tabs.html:10
+msgid "Leads"
+msgstr "Leidrade"
+
+#: apps/web/templates/web/crm/_tabs.html:11
+msgid "Pipeline"
+msgstr "Pyplyn"
+
+#: apps/web/templates/web/crm/_tabs.html:12
+#| msgid "Active"
+msgid "Activities"
+msgstr "Aktiwiteite"
+
+#: apps/web/templates/web/crm/_tabs.html:15
+#: apps/web/templates/web/crm/_tabs.html:16
+msgid "Analytics"
+msgstr "Analise"
+
+#: apps/web/templates/web/crm/_tabs.html:17
+msgid "Reports"
+msgstr "Verslae"
+
+#: apps/web/templates/web/crm/_tabs.html:20 apps/web/translation_strings.py:10
+msgid "Marketing"
+msgstr "Bemarking"
+
+#: apps/web/templates/web/crm/_tabs.html:21
+msgid "Campaigns & more"
+msgstr "Veldtogte en meer"
+
+#: apps/web/templates/web/crm/_tabs.html:24
+msgid "Search CRM…"
+msgstr "Deursoek CRM…"
+
+#: apps/web/templates/web/crm/_tabs.html:25
+msgid "Search"
+msgstr "Soek"
+
+#: apps/web/templates/web/customers.html:3
+#: apps/web/templates/web/customers.html:8
+msgid "Customers"
+msgstr "Kliënte"
+
+#: apps/web/templates/web/customers.html:9
+msgid ""
+"Client organisations — not names in a text field. Each one holds its own "
+"branches, sites, departments and the people who actually release RFQs, "
+"approve quotations and pay invoices."
+msgstr "Kliëntorganisasies — nie name in 'n teksveld nie. Elkeen hou sy eie takke, terreine, afdelings en die mense wat werklik RFQ's vrystel, kwotasies goedkeur en fakture betaal."
+
+#: apps/web/templates/web/customers.html:16
+#| msgid "Search customers, jobs…"
+msgid "Search customers…"
+msgstr "Deursoek kliënte…"
+
+#: apps/web/templates/web/customers.html:18
+#: apps/web/templates/web/quotations.html:51
+#| msgid "Jobs by status"
+msgid "Any status"
+msgstr "Enige status"
+
+#: apps/web/templates/web/customers.html:23
+#: apps/web/templates/web/quotations.html:62
+msgid "Filter"
+msgstr "Filter"
+
+#: apps/web/templates/web/customers.html:28
+#: apps/web/templates/web/quotations.html:67
+msgid "Customer"
+msgstr "Kliënt"
+
+#: apps/web/templates/web/customers.html:28
+msgid "Code"
+msgstr "Kode"
+
+#: apps/web/templates/web/customers.html:28
+msgid "Vendor no."
+msgstr "Verskaffernr."
+
+#: apps/web/templates/web/customers.html:28
+msgid "Contacts"
+msgstr "Kontakte"
+
+#: apps/web/templates/web/customers.html:28
+#| msgid "Documents"
+msgid "Departments"
+msgstr "Afdelings"
+
+#: apps/web/templates/web/customers.html:29
+#: apps/web/templates/web/quotations.html:3
+#: apps/web/templates/web/quotations.html:10 apps/web/translation_strings.py:11
+msgid "Quotations"
+msgstr "Kwotasies"
+
+#: apps/web/templates/web/customers.html:29
+#: apps/web/templates/web/dashboard.html:51
+#: apps/web/templates/web/projects.html:3
+#: apps/web/templates/web/projects.html:7 apps/web/translation_strings.py:11
+msgid "Projects"
+msgstr "Projekte"
+
+#: apps/web/templates/web/customers.html:29
+msgid "Terms"
+msgstr "Voorwaardes"
+
+#: apps/web/templates/web/customers.html:29
+#: apps/web/templates/web/people.html:73
+#: apps/web/templates/web/projects.html:14
+#: apps/web/templates/web/quotations.html:67
+msgid "Status"
+msgstr "Status"
+
+#: apps/web/templates/web/customers.html:39
+#, python-format
+#| msgid "%(n)s active"
+msgid "%(n)s open"
+msgstr "%(n)s oop"
+
+#: apps/web/templates/web/customers.html:40
+#, python-format
+msgid "%(d)s days"
+msgstr "%(d)s dae"
+
+#: apps/web/templates/web/customers.html:41
+#: apps/web/templates/web/people.html:102
+msgid "Active"
+msgstr "Aktief"
+
+#: apps/web/templates/web/customers.html:42
+msgid "Blacklisted"
+msgstr "Op swartlys"
+
+#: apps/web/templates/web/customers.html:45
+#| msgid "No jobs yet."
+msgid "No customers yet."
+msgstr "Nog geen kliënte nie."
+
+#: apps/web/templates/web/customers.html:52
+#| msgid "+ Add person"
+msgid "+ Add customer"
+msgstr "+ Voeg kliënt by"
+
+#: apps/web/templates/web/customers.html:54
+#| msgid "Add a member"
+msgid "Add a customer"
+msgstr "Voeg 'n kliënt by"
+
+#: apps/web/templates/web/customers.html:57
+msgid "Registered company name"
+msgstr "Geregistreerde maatskappynaam"
+
+#: apps/web/templates/web/customers.html:59
+msgid "Industry"
+msgstr "Bedryf"
+
+#: apps/web/templates/web/customers.html:60
+msgid "General email"
+msgstr "Algemene e-pos"
+
+#: apps/web/templates/web/customers.html:61
+msgid "Main telephone"
+msgstr "Hooftelefoon"
+
+#: apps/web/templates/web/customers.html:62
+msgid "City"
+msgstr "Stad"
+
+#: apps/web/templates/web/customers.html:63
+msgid "Our vendor number with them"
+msgstr "Ons verskaffernommer by hulle"
+
+#: apps/web/templates/web/customers.html:65
+msgid ""
+"The code they use for you in their system. It goes on every quotation and "
+"invoice you send them."
+msgstr "Die kode wat hulle vir jou in hul stelsel gebruik. Dit verskyn op elke kwotasie en faktuur wat jy aan hulle stuur."
+
+#: apps/web/templates/web/customers.html:67
+#| msgid "Add member"
+msgid "Add customer"
+msgstr "Voeg kliënt by"
+
+#: apps/web/templates/web/customers.html:68
+msgid ""
+"A standard department structure (Engineering, Maintenance, Procurement, "
+"Finance…) is created so you can file contacts immediately. Remove any you "
+"don't need."
+msgstr "'n Standaard afdelingstruktuur (Ingenieurswese, Instandhouding, Verkryging, Finansies…) word geskep sodat jy kontakte dadelik kan liasseer. Verwyder enige wat jy nie nodig het nie."
+
 #: apps/web/templates/web/dashboard.html:3 apps/web/translation_strings.py:10
 msgid "Dashboard"
 msgstr "Kontroleskerm"
@@ -78,10 +275,6 @@ msgstr "Voltooi opstelling"
 #: apps/web/templates/web/dashboard.html:29
 msgid "Remind me later"
 msgstr "Herinner my later"
-
-#: apps/web/templates/web/dashboard.html:51 apps/web/translation_strings.py:11
-msgid "Projects"
-msgstr "Projekte"
 
 #: apps/web/templates/web/dashboard.html:53
 msgid "Jobs"
@@ -130,7 +323,7 @@ msgstr "Take volgens oorsprong"
 #: apps/web/templates/web/dashboard.html:108
 msgid ""
 "Every job runs through one engine — the only difference is how it started."
-msgstr ""
+msgstr "Elke werk loop deur een enjin — die enigste verskil is hoe dit begin het."
 
 #: apps/web/templates/web/dashboard.html:109
 msgid "No jobs yet."
@@ -154,6 +347,7 @@ msgid "Project"
 msgstr "Projek"
 
 #: apps/web/templates/web/dashboard.html:128
+#: apps/web/templates/web/projects.html:14
 msgid "Client"
 msgstr "Kliënt"
 
@@ -216,7 +410,7 @@ msgstr "Mense"
 msgid ""
 "Your company's members. Everyone here is assignable to jobs — active members "
 "fill every team picker."
-msgstr ""
+msgstr "Jou maatskappy se lede. Almal hier is toewysbaar aan werke — aktiewe lede vul elke spankieser."
 
 #: apps/web/templates/web/people.html:11
 #, python-format
@@ -233,7 +427,7 @@ msgid ""
 "Hand this over now — it will not be shown again and is not stored anywhere "
 "in readable form. They must choose their own password the first time they "
 "sign in; until they do, they cannot reach any other page."
-msgstr ""
+msgstr "Gee dit nou aan — dit sal nie weer gewys word nie en word nêrens in leesbare vorm gestoor nie. Hulle moet hul eie wagwoord kies die eerste keer wat hulle aanmeld; totdat hulle dit doen, kan hulle geen ander bladsy bereik nie."
 
 #: apps/web/templates/web/people.html:27
 msgid "+ Add person"
@@ -284,7 +478,7 @@ msgstr "Voeg lid by"
 msgid ""
 "A temporary password is generated and shown to you once — there is no invite "
 "email yet, so you pass it on yourself."
-msgstr ""
+msgstr "'n Tydelike wagwoord word gegenereer en een keer aan jou gewys — daar is nog geen uitnodiging-e-pos nie, so jy gee dit self aan."
 
 #: apps/web/templates/web/people.html:70
 msgid "Members"
@@ -293,10 +487,6 @@ msgstr "Lede"
 #: apps/web/templates/web/people.html:73
 msgid "Person"
 msgstr "Persoon"
-
-#: apps/web/templates/web/people.html:73
-msgid "Status"
-msgstr "Status"
 
 #: apps/web/templates/web/people.html:83
 msgid "has not set a password yet"
@@ -309,10 +499,6 @@ msgstr "Stoor"
 #: apps/web/templates/web/people.html:99
 msgid "No role"
 msgstr "Geen rol"
-
-#: apps/web/templates/web/people.html:102
-msgid "Active"
-msgstr "Aktief"
 
 #: apps/web/templates/web/people.html:103
 msgid "Deactivated"
@@ -336,7 +522,7 @@ msgid ""
 "name on the jobs, timesheets and sign-offs they touched. Deactivating "
 "removes every permission immediately and takes them out of all assignment "
 "pickers."
-msgstr ""
+msgstr "Lede word gedeaktiveer, nooit uitgevee nie — iemand wat vertrek behou hul naam op die werke, tydstate en goedkeurings wat hulle aangeraak het. Deaktivering verwyder elke toestemming onmiddellik en haal hulle uit alle toewysingskiesers."
 
 #: apps/web/templates/web/profile.html:3 apps/web/templates/web/profile.html:19
 #: apps/web/templates/web/settings.html:61
@@ -347,7 +533,7 @@ msgstr "My profiel"
 msgid ""
 "Your photo and details. Everyone can edit their own profile, whatever their "
 "role."
-msgstr ""
+msgstr "Jou foto en besonderhede. Almal kan hul eie profiel wysig, ongeag hul rol."
 
 #: apps/web/templates/web/profile.html:22
 msgid "Change password"
@@ -374,7 +560,7 @@ msgstr "Profielfoto"
 msgid ""
 "JPEG, PNG, WebP or GIF, up to 5 MB. Your photo appears on every job you are "
 "assigned to, so the crew can see who is who."
-msgstr ""
+msgstr "JPEG, PNG, WebP of GIF, tot 5 MB. Jou foto verskyn op elke werk waaraan jy toegewys is, sodat die span kan sien wie wie is."
 
 #: apps/web/templates/web/profile.html:78
 msgid "Email (your sign-in)"
@@ -395,7 +581,7 @@ msgstr "Gebruik maatskappy- / landverstek"
 #: apps/web/templates/web/profile.html:87
 msgid ""
 "The language Lulaworks shows you — independent of your company's country."
-msgstr ""
+msgstr "Die taal waarin Lulaworks vir jou wys — onafhanklik van jou maatskappy se land."
 
 #: apps/web/templates/web/profile.html:90
 msgid "Save profile"
@@ -433,7 +619,7 @@ msgstr "Voltooi opstelling"
 #: apps/web/templates/web/profile.html:129
 msgid ""
 "Your role is set by an administrator — it decides what you can see and do."
-msgstr ""
+msgstr "Jou rol word deur 'n administrateur gestel — dit bepaal wat jy kan sien en doen."
 
 #: apps/web/templates/web/profile.html:133
 msgid "Access"
@@ -448,7 +634,7 @@ msgstr "Geen maatskappy gekoppel nie"
 msgid ""
 "You manage the whole platform from the <a href=\"%(console_url)s\">Console</"
 "a>."
-msgstr ""
+msgstr "Jy bestuur die hele platform vanaf die <a href=\"%(console_url)s\">Konsole</a>."
 
 #: apps/web/templates/web/profile.html:137
 msgid "Your account isn't linked to a company yet."
@@ -463,6 +649,183 @@ msgstr "Jou oop werke"
 msgid "as %(roles)s"
 msgstr "as %(roles)s"
 
+#: apps/web/templates/web/projects.html:8
+msgid "A project groups related jobs."
+msgstr "'n Projek groepeer verwante werke."
+
+#: apps/web/templates/web/projects.html:8
+#, python-format
+msgid "%(n)s in total."
+msgstr "%(n)s in totaal."
+
+#: apps/web/templates/web/projects.html:10
+#| msgid "Project"
+msgid "+ New project"
+msgstr "+ Nuwe projek"
+
+#: apps/web/templates/web/projects.html:14
+#| msgid "Members"
+msgid "Number"
+msgstr "Nommer"
+
+#: apps/web/templates/web/projects.html:14
+msgid "Title"
+msgstr "Titel"
+
+#: apps/web/templates/web/projects.html:14
+#| msgid "Job title"
+msgid "Job type"
+msgstr "Werktipe"
+
+#: apps/web/templates/web/projects.html:22
+msgid "Ready"
+msgstr "Gereed"
+
+#: apps/web/templates/web/projects.html:23
+msgid "In execution"
+msgstr "In uitvoering"
+
+#: apps/web/templates/web/projects.html:24
+#| msgid "Completed"
+msgid "Complete"
+msgstr "Voltooi"
+
+#: apps/web/templates/web/projects.html:25
+#| msgid "Cancel"
+msgid "Cancelled"
+msgstr "Gekanselleer"
+
+#: apps/web/templates/web/projects.html:26
+#| msgid "Blocked on compliance"
+msgid "Pending compliance"
+msgstr "Wag op nakoming"
+
+#: apps/web/templates/web/projects.html:30
+#| msgid "No jobs yet."
+msgid "No projects yet."
+msgstr "Nog geen projekte nie."
+
+#: apps/web/templates/web/quotations.html:11
+msgid ""
+"The commercial gateway between sales and operations. Every awarded quotation "
+"becomes the contract execution traces back to."
+msgstr "Die kommersiële poort tussen verkope en bedrywighede. Elke toegekende kwotasie word die kontrak waarna uitvoering terugverwys."
+
+#: apps/web/templates/web/quotations.html:13
+#| msgid "Quotations"
+msgid "+ New quotation"
+msgstr "+ Nuwe kwotasie"
+
+#: apps/web/templates/web/quotations.html:18
+#| msgid "Open jobs"
+msgid "Open"
+msgstr "Oop"
+
+#: apps/web/templates/web/quotations.html:20
+msgid "With the customer"
+msgstr "By die kliënt"
+
+#: apps/web/templates/web/quotations.html:22
+msgid "Awaiting approval"
+msgstr "Wag op goedkeuring"
+
+#: apps/web/templates/web/quotations.html:25
+msgid "Win rate"
+msgstr "Wenkoers"
+
+#: apps/web/templates/web/quotations.html:30
+msgid "Open pipeline value"
+msgstr "Oop pyplynwaarde"
+
+#: apps/web/templates/web/quotations.html:32
+#, python-format
+msgid "Across %(n)s live quotation(s)"
+msgstr "Oor %(n)s aktiewe kwotasie(s)"
+
+#: apps/web/templates/web/quotations.html:34
+msgid "Won"
+msgstr "Gewen"
+
+#: apps/web/templates/web/quotations.html:36
+#, python-format
+#| msgid "%(n)s active"
+msgid "%(n)s awarded"
+msgstr "%(n)s toegeken"
+
+#: apps/web/templates/web/quotations.html:43
+#, python-format
+msgid "%(n)s quotation(s) past their validity date"
+msgstr "%(n)s kwotasie(s) verby hul geldigheidsdatum"
+
+#: apps/web/templates/web/quotations.html:44
+msgid ""
+"Still showing as open. Follow them up or mark them expired — a stale "
+"pipeline flatters your forecast."
+msgstr "Wys steeds as oop. Volg hulle op of merk hulle as verval — 'n verouderde pyplyn vlei jou vooruitskatting."
+
+#: apps/web/templates/web/quotations.html:49
+#| msgid "Quotations"
+msgid "Quotation number…"
+msgstr "Kwotasienommer…"
+
+#: apps/web/templates/web/quotations.html:57
+msgid "Any customer"
+msgstr "Enige kliënt"
+
+#: apps/web/templates/web/quotations.html:67
+#| msgid "Quotations"
+msgid "Quotation"
+msgstr "Kwotasie"
+
+#: apps/web/templates/web/quotations.html:67
+msgid "Type"
+msgstr "Tipe"
+
+#: apps/web/templates/web/quotations.html:68
+msgid "Value"
+msgstr "Waarde"
+
+#: apps/web/templates/web/quotations.html:68
+msgid "Margin"
+msgstr "Marge"
+
+#: apps/web/templates/web/quotations.html:69
+msgid "Valid until"
+msgstr "Geldig tot"
+
+#: apps/web/templates/web/quotations.html:79
+msgid "Some lines have no cost captured"
+msgstr "Sommige reëls het geen koste vasgelê nie"
+
+#: apps/web/templates/web/quotations.html:83
+msgid "expired"
+msgstr "verval"
+
+#: apps/web/templates/web/quotations.html:85
+#| msgid "No jobs yet."
+msgid "No quotations yet."
+msgstr "Nog geen kwotasies nie."
+
+#: apps/web/templates/web/quotations.html:91
+#| msgid "Quotations"
+msgid "Quotation pages"
+msgstr "Kwotasiebladsye"
+
+#: apps/web/templates/web/quotations.html:93
+#: apps/web/templates/web/quotations.html:94
+msgid "← Previous"
+msgstr "← Vorige"
+
+#: apps/web/templates/web/quotations.html:95
+#, python-format
+msgid "Page %(cur)s of %(total)s"
+msgstr "Bladsy %(cur)s van %(total)s"
+
+#: apps/web/templates/web/quotations.html:97
+#: apps/web/templates/web/quotations.html:98
+msgid "Next →"
+msgstr "Volgende →"
+
 #: apps/web/templates/web/settings.html:3
 #: apps/web/templates/web/settings.html:7 apps/web/translation_strings.py:13
 msgid "Settings"
@@ -472,7 +835,9 @@ msgstr "Instellings"
 msgid ""
 "Everything that configures Lulaworks for your business — set it once here "
 "and every screen and document reads from it."
-msgstr "Alles wat Lulaworks vir jou besigheid opstel — stel dit een keer hier en elke skerm en dokument lees daaruit."
+msgstr ""
+"Alles wat Lulaworks vir jou besigheid opstel — stel dit een keer hier en "
+"elke skerm en dokument lees daaruit."
 
 #: apps/web/templates/web/settings.html:15
 msgid "Company profile"
@@ -480,7 +845,8 @@ msgstr "Maatskappyprofiel"
 
 #: apps/web/templates/web/settings.html:16
 msgid "Name, registration, address, branding & logo — read by every document."
-msgstr "Naam, registrasie, adres, handelsmerk en logo — deur elke dokument gelees."
+msgstr ""
+"Naam, registrasie, adres, handelsmerk en logo — deur elke dokument gelees."
 
 #: apps/web/templates/web/settings.html:18
 msgid "Business hours"
@@ -518,7 +884,9 @@ msgstr "Dokumentsjablone"
 msgid ""
 "Design your quotation, invoice & delivery-note look — pick, customise or "
 "import."
-msgstr "Ontwerp jou kwotasie-, faktuur- en afleweringsnota-voorkoms — kies, pasmaak of voer in."
+msgstr ""
+"Ontwerp jou kwotasie-, faktuur- en afleweringsnota-voorkoms — kies, pasmaak "
+"of voer in."
 
 #: apps/web/templates/web/settings.html:35
 msgid "Communication & AI"
@@ -585,17 +953,9 @@ msgstr "Intelligensie"
 msgid "CRM"
 msgstr "CRM"
 
-#: apps/web/translation_strings.py:10
-msgid "Marketing"
-msgstr "Bemarking"
-
 #: apps/web/translation_strings.py:11
 msgid "Job Card"
 msgstr "Werkskaart"
-
-#: apps/web/translation_strings.py:11
-msgid "Quotations"
-msgstr "Kwotasies"
 
 #: apps/web/translation_strings.py:11
 msgid "Purchase Orders"

@@ -1,75 +1,72 @@
 {% extends "web/base.html" %}
-{% load education_tags %}
-{% block title %}Quotations{% endblock %}
+{% load education_tags i18n %}
+{% block title %}{% trans "Quotations" %}{% endblock %}
 {% block content %}
 
 {% learn_prompt "quotations" %}
 
 <div class="pagehead">
   <div>
-    <h1>Quotations</h1>
-    <p class="sub" style="margin:0;">The commercial gateway between sales and
-      operations. Every awarded quotation becomes the contract execution traces
-      back to.</p>
+    <h1>{% trans "Quotations" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "The commercial gateway between sales and operations. Every awarded quotation becomes the contract execution traces back to." %}</p>
   </div>
-  {% if can_create %}<a class="btn" href="{% url 'web:quotation_new' %}">+ New quotation</a>{% endif %}
+  {% if can_create %}<a class="btn" href="{% url 'web:quotation_new' %}">{% trans "+ New quotation" %}</a>{% endif %}
 </div>
 
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▤</div>
-    <div class="n">{{ pipeline.open|length }}</div><div class="l">Open</div></div>
+    <div class="n">{{ pipeline.open|length }}</div><div class="l">{% trans "Open" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">⏳</div>
-    <div class="n">{{ pipeline.awaiting_customer|length }}</div><div class="l">With the customer</div></div>
+    <div class="n">{{ pipeline.awaiting_customer|length }}</div><div class="l">{% trans "With the customer" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">✎</div>
-    <div class="n">{{ pipeline.awaiting_approval|length }}</div><div class="l">Awaiting approval</div></div>
+    <div class="n">{{ pipeline.awaiting_approval|length }}</div><div class="l">{% trans "Awaiting approval" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div>
     <div class="n">{% if pipeline.win_rate is None %}—{% else %}{{ pipeline.win_rate }}%{% endif %}</div>
-    <div class="l">Win rate</div></div>
+    <div class="l">{% trans "Win rate" %}</div></div>
 </div>
 
 {% if can_view_money %}
 <div class="two-col">
-  <div><div class="card"><strong>Open pipeline value</strong>
+  <div><div class="card"><strong>{% trans "Open pipeline value" %}</strong>
     <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ pipeline.open_value }}</p>
-    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">Across {{ pipeline.open|length }} live quotation(s)</p>
+    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{% blocktrans with n=pipeline.open|length %}Across {{ n }} live quotation(s){% endblocktrans %}</p>
   </div></div>
-  <div><div class="card"><strong>Won</strong>
+  <div><div class="card"><strong>{% trans "Won" %}</strong>
     <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ pipeline.won_value }}</p>
-    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{{ pipeline.won|length }} awarded</p>
+    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{% blocktrans with n=pipeline.won|length %}{{ n }} awarded{% endblocktrans %}</p>
   </div></div>
 </div>
 {% endif %}
 
 {% if pipeline.expired %}
 <div class="card" style="border-left:4px solid var(--orange);border-radius:0 var(--r) var(--r) 0;">
-  <strong style="color:#b9711a;">{{ pipeline.expired|length }} quotation(s) past their validity date</strong>
-  <p class="muted" style="margin:8px 0 0;font-size:13px;">Still showing as open. Follow
-    them up or mark them expired — a stale pipeline flatters your forecast.</p>
+  <strong style="color:#b9711a;">{% blocktrans with n=pipeline.expired|length %}{{ n }} quotation(s) past their validity date{% endblocktrans %}</strong>
+  <p class="muted" style="margin:8px 0 0;font-size:13px;">{% trans "Still showing as open. Follow them up or mark them expired — a stale pipeline flatters your forecast." %}</p>
 </div>
 {% endif %}
 
 <form method="get" class="filterbar">
-  <input type="search" name="q" value="{{ f.q|default:'' }}" placeholder="Quotation number…" style="flex:2;min-width:150px;">
+  <input type="search" name="q" value="{{ f.q|default:'' }}" placeholder="{% trans 'Quotation number…' %}" style="flex:2;min-width:150px;">
   <select name="status">
-    <option value="">Any status</option>
+    <option value="">{% trans "Any status" %}</option>
     {% for value, label in statuses %}
     <option value="{{ value }}" {% if f.status == value %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select>
   <select name="customer">
-    <option value="">Any customer</option>
+    <option value="">{% trans "Any customer" %}</option>
     {% for c in customers %}
     <option value="{{ c.id }}" {% if f.customer == c.id|stringformat:'s' %}selected{% endif %}>{{ c.display_name }}</option>
     {% endfor %}
   </select>
-  <button class="btn ghost" type="submit">Filter</button>
+  <button class="btn ghost" type="submit">{% trans "Filter" %}</button>
 </form>
 
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Quotation</th><th>Customer</th><th>Type</th><th>Status</th>
-        {% if can_view_money %}<th class="right">Value</th><th class="right">Margin</th>{% endif %}
-        <th>Valid until</th></tr>
+    <tr><th>{% trans "Quotation" %}</th><th>{% trans "Customer" %}</th><th>{% trans "Type" %}</th><th>{% trans "Status" %}</th>
+        {% if can_view_money %}<th class="right">{% trans "Value" %}</th><th class="right">{% trans "Margin" %}</th>{% endif %}
+        <th>{% trans "Valid until" %}</th></tr>
     {% for q in quotations %}
     <tr>
       <td><a href="{% url 'web:quotation_detail' q.id %}"><strong>{{ q.display_number }}</strong></a>
@@ -79,26 +76,26 @@
       <td>{% include "web/_quotechip.html" with q=q %}</td>
       {% if can_view_money %}
       <td class="right">R{{ q.total }}</td>
-      <td class="right">{% if q.margin_pct is None %}<span class="muted" title="Some lines have no cost captured">—</span>
+      <td class="right">{% if q.margin_pct is None %}<span class="muted" title="{% trans 'Some lines have no cost captured' %}">—</span>
         {% else %}{{ q.margin_pct }}%{% endif %}</td>
       {% endif %}
       <td class="muted">{% if q.validity_date %}{{ q.validity_date|date:"d M Y" }}
-        {% if q.is_expired %}<span class="chip bad">expired</span>{% endif %}{% else %}—{% endif %}</td>
+        {% if q.is_expired %}<span class="chip bad">{% trans "expired" %}</span>{% endif %}{% else %}—{% endif %}</td>
     </tr>
-    {% empty %}<tr><td colspan="7" class="muted" style="padding:20px;">No quotations yet.</td></tr>
+    {% empty %}<tr><td colspan="7" class="muted" style="padding:20px;">{% trans "No quotations yet." %}</td></tr>
     {% endfor %}
   </table>
 </div>
 
 {% if quotations.paginator.num_pages > 1 %}
-<nav class="filterbar" aria-label="Quotation pages" style="justify-content:space-between;">
+<nav class="filterbar" aria-label="{% trans 'Quotation pages' %}" style="justify-content:space-between;">
   {% if quotations.has_previous %}
-  <a class="btn ghost" href="?page={{ quotations.previous_page_number }}{% if carried %}&{{ carried }}{% endif %}">← Previous</a>
-  {% else %}<span class="btn ghost" aria-disabled="true" style="opacity:.4;pointer-events:none;">← Previous</span>{% endif %}
-  <span class="muted">Page {{ quotations.number }} of {{ quotations.paginator.num_pages }}</span>
+  <a class="btn ghost" href="?page={{ quotations.previous_page_number }}{% if carried %}&{{ carried }}{% endif %}">{% trans "← Previous" %}</a>
+  {% else %}<span class="btn ghost" aria-disabled="true" style="opacity:.4;pointer-events:none;">{% trans "← Previous" %}</span>{% endif %}
+  <span class="muted">{% blocktrans with cur=quotations.number total=quotations.paginator.num_pages %}Page {{ cur }} of {{ total }}{% endblocktrans %}</span>
   {% if quotations.has_next %}
-  <a class="btn ghost" href="?page={{ quotations.next_page_number }}{% if carried %}&{{ carried }}{% endif %}">Next →</a>
-  {% else %}<span class="btn ghost" aria-disabled="true" style="opacity:.4;pointer-events:none;">Next →</span>{% endif %}
+  <a class="btn ghost" href="?page={{ quotations.next_page_number }}{% if carried %}&{{ carried }}{% endif %}">{% trans "Next →" %}</a>
+  {% else %}<span class="btn ghost" aria-disabled="true" style="opacity:.4;pointer-events:none;">{% trans "Next →" %}</span>{% endif %}
 </nav>
 {% endif %}
 {% endblock %}
