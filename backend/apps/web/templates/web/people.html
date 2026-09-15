@@ -1,79 +1,76 @@
 {% extends "web/base.html" %}
-{% block title %}People{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "People" %}{% endblock %}
 {% block content %}
 
 <div class="pagehead">
   <div>
-    <h1>People</h1>
-    <p class="sub" style="margin:0;">Your company's members. Everyone here is
-      assignable to jobs — active members fill every team picker.</p>
+    <h1>{% trans "People" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "Your company's members. Everyone here is assignable to jobs — active members fill every team picker." %}</p>
   </div>
-  <span class="chip info">{{ active_count }} active</span>
+  <span class="chip info">{% blocktrans with n=active_count %}{{ n }} active{% endblocktrans %}</span>
 </div>
 
 {# Shown exactly once, straight after creation, then dropped from the session. #}
 {% if new_password %}
 <div class="card" style="border-left:4px solid var(--green);border-radius:0 var(--r) var(--r) 0;">
-  <strong>Temporary password for {{ new_email }}</strong>
+  <strong>{% blocktrans with email=new_email %}Temporary password for {{ email }}{% endblocktrans %}</strong>
   <p class="pw">{{ new_password }}</p>
   <p class="muted" style="margin:0;font-size:13px;">
-    Hand this over now — <strong>it will not be shown again</strong> and is not stored
-    anywhere in readable form. They must choose their own password the first time
-    they sign in; until they do, they cannot reach any other page.
+    {% trans "Hand this over now — it will not be shown again and is not stored anywhere in readable form. They must choose their own password the first time they sign in; until they do, they cannot reach any other page." %}
   </p>
 </div>
 {% endif %}
 
 {% if can_manage %}
 <details class="add-collapse">
-  <summary class="btn">+ Add person</summary>
+  <summary class="btn">{% trans "+ Add person" %}</summary>
   <div class="card" style="margin-top:12px;">
-    <h2 style="margin-top:0;">Add a member</h2>
+    <h2 style="margin-top:0;">{% trans "Add a member" %}</h2>
   <form method="post" action="{% url 'web:people_add' %}">
     {% csrf_token %}
     <div class="two">
       <div>
-        <label>Email (their sign-in)</label>
+        <label>{% trans "Email (their sign-in)" %}</label>
         <input type="email" name="email" required placeholder="name@yourcompany.co.za">
       </div>
       <div>
-        <label>Role</label>
+        <label>{% trans "Role" %}</label>
         <select name="role" required>
-          <option value="">Choose a role…</option>
+          <option value="">{% trans "Choose a role…" %}</option>
           {% for r in roles %}<option value="{{ r.id }}">{{ r.name }}</option>{% endfor %}
         </select>
       </div>
       <div>
-        <label>First name</label>
+        <label>{% trans "First name" %}</label>
         <input type="text" name="first_name" placeholder="Thabo">
       </div>
       <div>
-        <label>Last name</label>
+        <label>{% trans "Last name" %}</label>
         <input type="text" name="last_name" placeholder="Mahlangu">
       </div>
       <div>
-        <label>Job title</label>
+        <label>{% trans "Job title" %}</label>
         <input type="text" name="job_title" placeholder="Millwright">
       </div>
       <div>
-        <label>Mobile</label>
+        <label>{% trans "Mobile" %}</label>
         {% include "web/_phone_field.html" with name="mobile" value="" default_cc=company_country|default:"ZA" countries=countries %}
       </div>
     </div>
-    <button class="btn" type="submit" style="margin-top:16px;">Add member</button>
+    <button class="btn" type="submit" style="margin-top:16px;">{% trans "Add member" %}</button>
     <p class="muted" style="margin:12px 0 0;font-size:12.5px;">
-      A temporary password is generated and shown to you once — there is no invite
-      email yet, so you pass it on yourself.
+      {% trans "A temporary password is generated and shown to you once — there is no invite email yet, so you pass it on yourself." %}
     </p>
   </form>
   </div>
 </details>
 {% endif %}
 
-<h2>Members</h2>
+<h2>{% trans "Members" %}</h2>
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Person</th><th>Job title</th><th>Role</th><th>Status</th><th></th></tr>
+    <tr><th>{% trans "Person" %}</th><th>{% trans "Job title" %}</th><th>{% trans "Role" %}</th><th>{% trans "Status" %}</th><th></th></tr>
     {% for m in members %}
     <tr {% if m.status != 'active' %}class="dim"{% endif %}>
       <td>
@@ -83,7 +80,7 @@
             <strong>{{ m.user.get_full_name|default:m.user.email }}</strong>
             {% if m.user.get_full_name %}<br><span class="muted" style="font-size:12.5px;">{{ m.user.email }}</span>{% endif %}
             {% if m.user.must_change_password %}
-            <br><span class="chip warn">has not set a password yet</span>{% endif %}
+            <br><span class="chip warn">{% trans "has not set a password yet" %}</span>{% endif %}
           </span>
         </a>
       </td>
@@ -97,13 +94,13 @@
             <option value="{{ r.id }}" {% if r.id == m.role_id %}selected{% endif %}>{{ r.name }}</option>
             {% endfor %}
           </select>
-          <button class="btn ghost" type="submit">Save</button>
+          <button class="btn ghost" type="submit">{% trans "Save" %}</button>
         </form>
-        {% else %}<span class="chip">{{ m.role.name|default:"No role" }}</span>{% endif %}
+        {% else %}<span class="chip">{% if m.role %}{{ m.role.name }}{% else %}{% trans "No role" %}{% endif %}</span>{% endif %}
       </td>
       <td>
-        {% if m.status == 'active' %}<span class="chip ok">Active</span>
-        {% else %}<span class="chip">Deactivated</span>{% endif %}
+        {% if m.status == 'active' %}<span class="chip ok">{% trans "Active" %}</span>
+        {% else %}<span class="chip">{% trans "Deactivated" %}</span>{% endif %}
       </td>
       <td class="right nowrap">
         {% if can_manage and m.user_id != user.id %}
@@ -112,13 +109,13 @@
           {% csrf_token %}
           {% if m.status == 'active' %}
           <input type="hidden" name="activate" value="">
-          <button class="btn ghost" type="submit">Deactivate</button>
+          <button class="btn ghost" type="submit">{% trans "Deactivate" %}</button>
           {% else %}
           <input type="hidden" name="activate" value="1">
-          <button class="btn ghost" type="submit">Restore</button>
+          <button class="btn ghost" type="submit">{% trans "Restore" %}</button>
           {% endif %}
         </form>
-        {% elif m.user_id == user.id %}<span class="muted" style="font-size:12.5px;">you</span>{% endif %}
+        {% elif m.user_id == user.id %}<span class="muted" style="font-size:12.5px;">{% trans "you" %}</span>{% endif %}
       </td>
     </tr>
     {% endfor %}
@@ -126,8 +123,6 @@
 </div>
 
 <p class="muted" style="font-size:12.5px;">
-  Members are deactivated, never deleted — a person who leaves keeps their name on
-  the jobs, timesheets and sign-offs they touched. Deactivating removes every
-  permission immediately and takes them out of all assignment pickers.
+  {% trans "Members are deactivated, never deleted — a person who leaves keeps their name on the jobs, timesheets and sign-offs they touched. Deactivating removes every permission immediately and takes them out of all assignment pickers." %}
 </p>
 {% endblock %}

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 08:15+0000\n"
+"POT-Creation-Date: 2026-09-15 10:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -67,7 +67,9 @@ msgstr "%(pct)s%% terminé · %(remaining)s éléments restants."
 
 #: apps/web/templates/web/dashboard.html:15
 msgid "Complete your details to unlock invoicing & professional documents."
-msgstr "Complétez vos informations pour débloquer la facturation et les documents professionnels."
+msgstr ""
+"Complétez vos informations pour débloquer la facturation et les documents "
+"professionnels."
 
 #: apps/web/templates/web/dashboard.html:28
 msgid "Complete setup"
@@ -204,6 +206,132 @@ msgstr "Nouveau sur Lulaworks ?"
 msgid "Book a demo →"
 msgstr "Réserver une démo →"
 
+#: apps/web/templates/web/people.html:3 apps/web/templates/web/people.html:8
+#: apps/web/translation_strings.py:12
+msgid "People"
+msgstr "Personnes"
+
+#: apps/web/templates/web/people.html:9
+msgid ""
+"Your company's members. Everyone here is assignable to jobs — active members "
+"fill every team picker."
+msgstr ""
+
+#: apps/web/templates/web/people.html:11
+#, python-format
+msgid "%(n)s active"
+msgstr "%(n)s actifs"
+
+#: apps/web/templates/web/people.html:17
+#, python-format
+msgid "Temporary password for %(email)s"
+msgstr "Mot de passe temporaire pour %(email)s"
+
+#: apps/web/templates/web/people.html:20
+msgid ""
+"Hand this over now — it will not be shown again and is not stored anywhere "
+"in readable form. They must choose their own password the first time they "
+"sign in; until they do, they cannot reach any other page."
+msgstr ""
+
+#: apps/web/templates/web/people.html:27
+msgid "+ Add person"
+msgstr "+ Ajouter une personne"
+
+#: apps/web/templates/web/people.html:29
+msgid "Add a member"
+msgstr "Ajouter un membre"
+
+#: apps/web/templates/web/people.html:34
+msgid "Email (their sign-in)"
+msgstr "E-mail (leur identifiant)"
+
+#: apps/web/templates/web/people.html:38 apps/web/templates/web/people.html:73
+msgid "Role"
+msgstr "Rôle"
+
+#: apps/web/templates/web/people.html:40
+msgid "Choose a role…"
+msgstr "Choisir un rôle…"
+
+#: apps/web/templates/web/people.html:45
+msgid "First name"
+msgstr "Prénom"
+
+#: apps/web/templates/web/people.html:49
+msgid "Last name"
+msgstr "Nom"
+
+#: apps/web/templates/web/people.html:53 apps/web/templates/web/people.html:73
+msgid "Job title"
+msgstr "Poste"
+
+#: apps/web/templates/web/people.html:57
+msgid "Mobile"
+msgstr "Mobile"
+
+#: apps/web/templates/web/people.html:61
+msgid "Add member"
+msgstr "Ajouter le membre"
+
+#: apps/web/templates/web/people.html:63
+msgid ""
+"A temporary password is generated and shown to you once — there is no invite "
+"email yet, so you pass it on yourself."
+msgstr ""
+
+#: apps/web/templates/web/people.html:70
+msgid "Members"
+msgstr "Membres"
+
+#: apps/web/templates/web/people.html:73
+msgid "Person"
+msgstr "Personne"
+
+#: apps/web/templates/web/people.html:73
+msgid "Status"
+msgstr "Statut"
+
+#: apps/web/templates/web/people.html:83
+msgid "has not set a password yet"
+msgstr "n'a pas encore défini de mot de passe"
+
+#: apps/web/templates/web/people.html:97
+msgid "Save"
+msgstr "Enregistrer"
+
+#: apps/web/templates/web/people.html:99
+msgid "No role"
+msgstr "Aucun rôle"
+
+#: apps/web/templates/web/people.html:102
+msgid "Active"
+msgstr "Actif"
+
+#: apps/web/templates/web/people.html:103
+msgid "Deactivated"
+msgstr "Désactivé"
+
+#: apps/web/templates/web/people.html:112
+msgid "Deactivate"
+msgstr "Désactiver"
+
+#: apps/web/templates/web/people.html:115
+msgid "Restore"
+msgstr "Restaurer"
+
+#: apps/web/templates/web/people.html:118
+msgid "you"
+msgstr "vous"
+
+#: apps/web/templates/web/people.html:126
+msgid ""
+"Members are deactivated, never deleted — a person who leaves keeps their "
+"name on the jobs, timesheets and sign-offs they touched. Deactivating "
+"removes every permission immediately and takes them out of all assignment "
+"pickers."
+msgstr ""
+
 #: apps/web/translation_strings.py:10
 msgid "Intelligence"
 msgstr "Intelligence"
@@ -239,10 +367,6 @@ msgstr "Facture"
 #: apps/web/translation_strings.py:12
 msgid "Finance"
 msgstr "Finance"
-
-#: apps/web/translation_strings.py:12
-msgid "People"
-msgstr "Personnes"
 
 #: apps/web/translation_strings.py:12
 msgid "Business history"

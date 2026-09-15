@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 08:15+0000\n"
+"POT-Creation-Date: 2026-09-15 10:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -205,6 +205,132 @@ msgstr "جديد على Lulaworks؟"
 msgid "Book a demo →"
 msgstr "احجز عرضًا توضيحيًا ←"
 
+#: apps/web/templates/web/people.html:3 apps/web/templates/web/people.html:8
+#: apps/web/translation_strings.py:12
+msgid "People"
+msgstr "الأشخاص"
+
+#: apps/web/templates/web/people.html:9
+msgid ""
+"Your company's members. Everyone here is assignable to jobs — active members "
+"fill every team picker."
+msgstr ""
+
+#: apps/web/templates/web/people.html:11
+#, python-format
+msgid "%(n)s active"
+msgstr "%(n)s نشط"
+
+#: apps/web/templates/web/people.html:17
+#, python-format
+msgid "Temporary password for %(email)s"
+msgstr "كلمة مرور مؤقتة لـ %(email)s"
+
+#: apps/web/templates/web/people.html:20
+msgid ""
+"Hand this over now — it will not be shown again and is not stored anywhere "
+"in readable form. They must choose their own password the first time they "
+"sign in; until they do, they cannot reach any other page."
+msgstr ""
+
+#: apps/web/templates/web/people.html:27
+msgid "+ Add person"
+msgstr "+ إضافة شخص"
+
+#: apps/web/templates/web/people.html:29
+msgid "Add a member"
+msgstr "إضافة عضو"
+
+#: apps/web/templates/web/people.html:34
+msgid "Email (their sign-in)"
+msgstr "البريد الإلكتروني (تسجيل دخولهم)"
+
+#: apps/web/templates/web/people.html:38 apps/web/templates/web/people.html:73
+msgid "Role"
+msgstr "الدور"
+
+#: apps/web/templates/web/people.html:40
+msgid "Choose a role…"
+msgstr "اختر دورًا…"
+
+#: apps/web/templates/web/people.html:45
+msgid "First name"
+msgstr "الاسم الأول"
+
+#: apps/web/templates/web/people.html:49
+msgid "Last name"
+msgstr "اسم العائلة"
+
+#: apps/web/templates/web/people.html:53 apps/web/templates/web/people.html:73
+msgid "Job title"
+msgstr "المسمى الوظيفي"
+
+#: apps/web/templates/web/people.html:57
+msgid "Mobile"
+msgstr "الجوال"
+
+#: apps/web/templates/web/people.html:61
+msgid "Add member"
+msgstr "إضافة العضو"
+
+#: apps/web/templates/web/people.html:63
+msgid ""
+"A temporary password is generated and shown to you once — there is no invite "
+"email yet, so you pass it on yourself."
+msgstr ""
+
+#: apps/web/templates/web/people.html:70
+msgid "Members"
+msgstr "الأعضاء"
+
+#: apps/web/templates/web/people.html:73
+msgid "Person"
+msgstr "الشخص"
+
+#: apps/web/templates/web/people.html:73
+msgid "Status"
+msgstr "الحالة"
+
+#: apps/web/templates/web/people.html:83
+msgid "has not set a password yet"
+msgstr "لم يحدد كلمة مرور بعد"
+
+#: apps/web/templates/web/people.html:97
+msgid "Save"
+msgstr "حفظ"
+
+#: apps/web/templates/web/people.html:99
+msgid "No role"
+msgstr "بدون دور"
+
+#: apps/web/templates/web/people.html:102
+msgid "Active"
+msgstr "نشط"
+
+#: apps/web/templates/web/people.html:103
+msgid "Deactivated"
+msgstr "معطّل"
+
+#: apps/web/templates/web/people.html:112
+msgid "Deactivate"
+msgstr "تعطيل"
+
+#: apps/web/templates/web/people.html:115
+msgid "Restore"
+msgstr "استعادة"
+
+#: apps/web/templates/web/people.html:118
+msgid "you"
+msgstr "أنت"
+
+#: apps/web/templates/web/people.html:126
+msgid ""
+"Members are deactivated, never deleted — a person who leaves keeps their "
+"name on the jobs, timesheets and sign-offs they touched. Deactivating "
+"removes every permission immediately and takes them out of all assignment "
+"pickers."
+msgstr ""
+
 #: apps/web/translation_strings.py:10
 msgid "Intelligence"
 msgstr "الذكاء"
@@ -240,10 +366,6 @@ msgstr "فاتورة ضريبية"
 #: apps/web/translation_strings.py:12
 msgid "Finance"
 msgstr "المالية"
-
-#: apps/web/translation_strings.py:12
-msgid "People"
-msgstr "الأشخاص"
 
 #: apps/web/translation_strings.py:12
 msgid "Business history"
