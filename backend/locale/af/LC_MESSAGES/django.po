@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 14:26+0000\n"
+"POT-Creation-Date: 2026-09-15 14:37+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -203,11 +203,13 @@ msgstr[1] ""
 
 #: apps/marketing/templates/marketing/base.html:234
 #: apps/marketing/templates/marketing/base.html:279
+#: apps/marketing/templates/marketing/features.html:6
 msgid "Features"
 msgstr "Kenmerke"
 
 #: apps/marketing/templates/marketing/base.html:235
 #: apps/marketing/templates/marketing/base.html:280
+#: apps/marketing/templates/marketing/pricing.html:6
 msgid "Pricing"
 msgstr "Pryse"
 
@@ -251,8 +253,11 @@ msgstr "Meld aan"
 
 #: apps/marketing/templates/marketing/base.html:250
 #: apps/marketing/templates/marketing/base.html:282
+#: apps/marketing/templates/marketing/features.html:10
+#: apps/marketing/templates/marketing/features.html:38
 #: apps/marketing/templates/marketing/home.html:12
 #: apps/marketing/templates/marketing/home.html:110
+#: apps/marketing/templates/marketing/pricing.html:35
 msgid "Start Free Trial"
 msgstr "Begin gratis proeftydperk"
 
@@ -269,8 +274,11 @@ msgid "Product"
 msgstr "Produk"
 
 #: apps/marketing/templates/marketing/base.html:281
+#: apps/marketing/templates/marketing/features.html:11
+#: apps/marketing/templates/marketing/features.html:39
 #: apps/marketing/templates/marketing/home.html:13
 #: apps/marketing/templates/marketing/home.html:111
+#: apps/marketing/templates/marketing/pricing.html:43
 msgid "Book a Demo"
 msgstr "Bespreek 'n demo"
 
@@ -331,12 +339,30 @@ msgstr "Weier"
 msgid "Accept"
 msgstr "Aanvaar"
 
+#: apps/marketing/templates/marketing/features.html:7
+#| msgid "Everything in one place"
+msgid "Everything a contractor needs, in one platform"
+msgstr "Alles wat 'n kontrakteur nodig het, in een platform"
+
+#: apps/marketing/templates/marketing/features.html:8
+msgid ""
+"From the first customer enquiry to the final payment — plus the AI, mobile "
+"and reporting tools that make it effortless."
+msgstr "Van die eerste kliëntnavraag tot die finale betaling — plus die KI-, mobiele en verslagdoeningsgereedskap wat dit moeiteloos maak."
+
+#: apps/marketing/templates/marketing/features.html:35
+msgid "See it on your own jobs"
+msgstr "Sien dit op jou eie werke"
+
+#: apps/marketing/templates/marketing/features.html:36
+msgid "Start a free trial or book a live demo with our team."
+msgstr "Begin 'n gratis proeftydperk of bespreek 'n lewendige demo met ons span."
+
 #: apps/marketing/templates/marketing/home.html:8
 msgid "The Contractor Operating System"
 msgstr "Die Kontrakteur-Bedryfstelsel"
 
 #: apps/marketing/templates/marketing/home.html:9
-#| msgid "No quotations yet."
 msgid "From Quotation to Payment."
 msgstr "Van kwotasie tot betaling."
 
@@ -348,7 +374,9 @@ msgstr "Een platform. Aangedryf deur KI."
 msgid ""
 "Lulaworks helps contractors manage quotations, jobs, procurement, teams, "
 "deliveries, invoices and payments from one intelligent platform."
-msgstr "Lulaworks help kontrakteurs om kwotasies, werke, verkryging, spanne, aflewerings, fakture en betalings vanaf een intelligente platform te bestuur."
+msgstr ""
+"Lulaworks help kontrakteurs om kwotasies, werke, verkryging, spanne, "
+"aflewerings, fakture en betalings vanaf een intelligente platform te bestuur."
 
 #: apps/marketing/templates/marketing/home.html:16
 msgid "AI Powered"
@@ -367,7 +395,6 @@ msgid "Secure"
 msgstr "Veilig"
 
 #: apps/marketing/templates/marketing/home.html:20
-#| msgid "Built for contractors worldwide · GDPR-ready"
 msgid "Built for Contractors"
 msgstr "Gebou vir kontrakteurs"
 
@@ -376,12 +403,10 @@ msgid "Lulaworks dashboard preview"
 msgstr "Lulaworks-kontroleskerm-voorskou"
 
 #: apps/marketing/templates/marketing/home.html:27
-#| msgid "View quotation"
 msgid "Open quotations"
 msgstr "Oop kwotasies"
 
 #: apps/marketing/templates/marketing/home.html:28
-#| msgid "Active"
 msgid "Active jobs"
 msgstr "Aktiewe werke"
 
@@ -395,7 +420,8 @@ msgstr "Uitstaande"
 
 #: apps/marketing/templates/marketing/home.html:32
 #: apps/marketing/templates/marketing/home.html:80 apps/marketing/views.py:47
-#: apps/web/templates/web/settings.html:45 apps/web/translation_strings.py:10
+#: apps/marketing/views.py:100 apps/web/templates/web/settings.html:45
+#: apps/web/translation_strings.py:10
 msgid "Procurement"
 msgstr "Verkryging"
 
@@ -404,12 +430,10 @@ msgid "On site now"
 msgstr "Nou op terrein"
 
 #: apps/marketing/templates/marketing/home.html:34
-#| msgid "Buy AI credits"
 msgid "AI credits"
 msgstr "KI-krediete"
 
 #: apps/marketing/templates/marketing/home.html:44
-#| msgid "New to Lulaworks?"
 msgid "Why Lulaworks"
 msgstr "Hoekom Lulaworks"
 
@@ -423,14 +447,18 @@ msgid ""
 "a PO in email, site photos on WhatsApp, invoices in another app. Things "
 "slip, margins leak, and nobody has the full picture. Lulaworks brings the "
 "whole job into one place, from the first quotation to the final payment."
-msgstr "Die meeste kontrakteurs bestuur die besigheid oor 'n dosyn plekke — 'n kwotasie in Excel, 'n bestelling in e-pos, terreinfoto's op WhatsApp, fakture in 'n ander toepassing. Dinge glip, marges lek, en niemand het die volle prentjie nie. Lulaworks bring die hele werk op een plek saam, van die eerste kwotasie tot die finale betaling."
+msgstr ""
+"Die meeste kontrakteurs bestuur die besigheid oor 'n dosyn plekke — 'n "
+"kwotasie in Excel, 'n bestelling in e-pos, terreinfoto's op WhatsApp, "
+"fakture in 'n ander toepassing. Dinge glip, marges lek, en niemand het die "
+"volle prentjie nie. Lulaworks bring die hele werk op een plek saam, van die "
+"eerste kwotasie tot die finale betaling."
 
 #: apps/marketing/templates/marketing/home.html:54
 msgid "Everything in one place"
 msgstr "Alles op een plek"
 
 #: apps/marketing/templates/marketing/home.html:55
-#| msgid "Name for the job (optional)"
 msgid "One platform for the whole operation"
 msgstr "Een platform vir die hele bedryf"
 
@@ -439,7 +467,6 @@ msgid "Explore all features →"
 msgstr "Verken alle kenmerke →"
 
 #: apps/marketing/templates/marketing/home.html:71
-#| msgid "New to Lulaworks?"
 msgid "How it works"
 msgstr "Hoe dit werk"
 
@@ -450,7 +477,9 @@ msgstr "Die hele werk, van begin tot end"
 #: apps/marketing/templates/marketing/home.html:73
 msgid ""
 "Every step flows into the next — no re-typing, no lost paperwork, no gaps."
-msgstr "Elke stap vloei in die volgende — geen hertik, geen verlore papierwerk, geen gapings nie."
+msgstr ""
+"Elke stap vloei in die volgende — geen hertik, geen verlore papierwerk, geen "
+"gapings nie."
 
 #: apps/marketing/templates/marketing/home.html:75
 #: apps/web/templates/web/customers.html:28
@@ -469,7 +498,6 @@ msgid "Quotation"
 msgstr "Kwotasie"
 
 #: apps/marketing/templates/marketing/home.html:77
-#| msgid "Purchase Orders"
 msgid "Purchase Order"
 msgstr "Bestelling"
 
@@ -478,13 +506,11 @@ msgstr "Bestelling"
 msgid "Job"
 msgstr "Werk"
 
-#: apps/marketing/templates/marketing/home.html:79
-#| msgid "Subtasks"
+#: apps/marketing/templates/marketing/home.html:79 apps/marketing/views.py:97
 msgid "Tasks"
 msgstr "Take"
 
 #: apps/marketing/templates/marketing/home.html:81
-#| msgid "Delivery note"
 msgid "Delivery"
 msgstr "Aflewering"
 
@@ -512,10 +538,84 @@ msgstr "Gereed om jou kontrakteursbesigheid te transformeer?"
 
 #: apps/marketing/templates/marketing/home.html:108
 msgid "Start your 30-day free trial today. No credit card required."
-msgstr "Begin vandag jou gratis proeftydperk van 30 dae. Geen kredietkaart nodig nie."
+msgstr ""
+"Begin vandag jou gratis proeftydperk van 30 dae. Geen kredietkaart nodig nie."
 
-#: apps/marketing/views.py:44
-#| msgid "Quotation pages"
+#: apps/marketing/templates/marketing/pricing.html:7
+msgid "Simple, transparent pricing"
+msgstr "Eenvoudige, deursigtige pryse"
+
+#: apps/marketing/templates/marketing/pricing.html:8
+msgid ""
+"Pay for the users and AI you need. <strong>Employees are always unlimited</"
+"strong> — we never charge you for the size of your crew."
+msgstr "Betaal vir die gebruikers en KI wat jy nodig het. <strong>Werknemers is altyd onbeperk</strong> — ons hef jou nooit vir die grootte van jou span nie."
+
+#: apps/marketing/templates/marketing/pricing.html:12
+#: apps/web/templates/web/billing.html:106
+msgid "Monthly"
+msgstr "Maandeliks"
+
+#: apps/marketing/templates/marketing/pricing.html:13
+#: apps/web/templates/web/billing.html:107
+msgid "Annual"
+msgstr "Jaarliks"
+
+#: apps/marketing/templates/marketing/pricing.html:13
+#: apps/web/templates/web/billing.html:107
+msgid "· save ~2 months"
+msgstr "· bespaar ~2 maande"
+
+#: apps/marketing/templates/marketing/pricing.html:19
+msgid "MOST POPULAR"
+msgstr "GEWILDSTE"
+
+#: apps/marketing/templates/marketing/pricing.html:22
+#: apps/web/templates/web/billing.html:117
+msgid "/yr"
+msgstr "/jr"
+
+#: apps/marketing/templates/marketing/pricing.html:23
+#: apps/web/templates/web/billing.html:118
+msgid "/mo"
+msgstr "/md"
+
+#: apps/marketing/templates/marketing/pricing.html:26
+#: apps/web/templates/web/billing.html:121
+#, python-format
+msgid "Save %(sym)s%(amt)s a year"
+msgstr "Bespaar %(sym)s%(amt)s per jaar"
+
+#: apps/marketing/templates/marketing/pricing.html:29
+#, python-format
+#| msgid "%(n)s open"
+msgid "%(n)s users"
+msgstr "%(n)s gebruikers"
+
+#: apps/marketing/templates/marketing/pricing.html:30
+msgid "Unlimited employees"
+msgstr "Onbeperkte werknemers"
+
+#: apps/marketing/templates/marketing/pricing.html:31
+#, python-format
+#| msgid "R%(v)s invoiced this month"
+msgid "%(c)s AI credits / month"
+msgstr "%(c)s KI-krediete / maand"
+
+#: apps/marketing/templates/marketing/pricing.html:32
+#, python-format
+#| msgid "Storage"
+msgid "%(s)s storage"
+msgstr "%(s)s berging"
+
+#: apps/marketing/templates/marketing/pricing.html:41
+#, python-format
+msgid ""
+"Prices shown in %(currency)s, based on your location. All plans include a 30-"
+"day free trial — no credit card required."
+msgstr "Pryse in %(currency)s gewys, gebaseer op jou ligging. Alle planne sluit 'n gratis proeftydperk van 30 dae in — geen kredietkaart nodig nie."
+
+#: apps/marketing/views.py:44 apps/marketing/views.py:88
 msgid "Quotation Management"
 msgstr "Kwotasiebestuur"
 
@@ -537,14 +637,14 @@ msgstr "Taakbestuur"
 
 #: apps/marketing/views.py:46
 msgid "Break jobs into tasks with checklists, owners and live progress."
-msgstr "Breek werke op in take met kontrolelyste, eienaars en lewendige vordering."
+msgstr ""
+"Breek werke op in take met kontrolelyste, eienaars en lewendige vordering."
 
 #: apps/marketing/views.py:47
 msgid "Raise requests, compare supplier prices and issue purchase orders."
 msgstr "Skep versoeke, vergelyk verskafferpryse en reik bestellings uit."
 
 #: apps/marketing/views.py:48
-#| msgid "Intelligence"
 msgid "Supplier Intelligence"
 msgstr "Verskaffer-intelligensie"
 
@@ -553,25 +653,25 @@ msgid "Every receipt teaches the system who sells what, and for how much."
 msgstr "Elke kwitansie leer die stelsel wie wat verkoop, en teen hoeveel."
 
 #: apps/marketing/views.py:49
-#| msgid "Document template"
 msgid "Document Management"
 msgstr "Dokumentbestuur"
 
 #: apps/marketing/views.py:49
 msgid "POs, invoices, delivery notes and safety files, all in one place."
-msgstr "Bestellings, fakture, afleweringsnotas en veiligheidslêers, alles op een plek."
+msgstr ""
+"Bestellings, fakture, afleweringsnotas en veiligheidslêers, alles op een "
+"plek."
 
 #: apps/marketing/views.py:50
-#| msgid "Documents & branding"
 msgid "AI Document Extraction"
 msgstr "KI-dokumentonttrekking"
 
 #: apps/marketing/views.py:50
 msgid "Drop in an RFQ, PO or invoice — AI reads it and fills the details."
-msgstr "Los 'n RFQ, bestelling of faktuur — KI lees dit en vul die besonderhede in."
+msgstr ""
+"Los 'n RFQ, bestelling of faktuur — KI lees dit en vul die besonderhede in."
 
-#: apps/marketing/views.py:51
-#| msgid "Delivery note"
+#: apps/marketing/views.py:51 apps/marketing/views.py:115
 msgid "Delivery Notes"
 msgstr "Afleweringsnotas"
 
@@ -580,13 +680,13 @@ msgid "Generate branded delivery notes straight from the job."
 msgstr "Genereer gemerkte afleweringsnotas direk vanaf die werk."
 
 #: apps/marketing/views.py:52
-#| msgid "Tax Invoice"
 msgid "Tax Invoices"
 msgstr "Belastingfakture"
 
 #: apps/marketing/views.py:52
 msgid "Compliant tax invoices and progress claims, with payments tracked."
-msgstr "Voldoenende belastingfakture en vorderingseise, met betalings nagespoor."
+msgstr ""
+"Voldoenende belastingfakture en vorderingseise, met betalings nagespoor."
 
 #: apps/marketing/views.py:53
 msgid "GPS & Time Tracking"
@@ -594,31 +694,34 @@ msgstr "GPS- en tydopsporing"
 
 #: apps/marketing/views.py:53
 msgid "Field check-ins are GPS-stamped so you know who was where, when."
-msgstr "Veld-inteken word met GPS gestempel sodat jy weet wie waar was, wanneer."
+msgstr ""
+"Veld-inteken word met GPS gestempel sodat jy weet wie waar was, wanneer."
 
 #: apps/marketing/views.py:54
-#| msgid "Employees (unlimited)"
 msgid "Employee Management"
 msgstr "Werknemerbestuur"
 
 #: apps/marketing/views.py:54
 msgid "Unlimited employees — technicians, drivers, operators — on every plan."
-msgstr "Onbeperkte werknemers — tegnici, bestuurders, operateurs — op elke plan."
+msgstr ""
+"Onbeperkte werknemers — tegnici, bestuurders, operateurs — op elke plan."
 
 #: apps/marketing/views.py:55
-#| msgid "Analytics"
 msgid "Reporting & Analytics"
 msgstr "Verslagdoening en analise"
 
 #: apps/marketing/views.py:55
 msgid "See profitability, cash flow and job health as the work happens."
-msgstr "Sien winsgewendheid, kontantvloei en werkgesondheid soos die werk gebeur."
+msgstr ""
+"Sien winsgewendheid, kontantvloei en werkgesondheid soos die werk gebeur."
 
 #: apps/marketing/views.py:59
 msgid ""
 "We quote in minutes now, and I can finally see which jobs actually make "
 "money."
-msgstr "Ons kwoteer nou in minute, en ek kan uiteindelik sien watter werke werklik geld maak."
+msgstr ""
+"Ons kwoteer nou in minute, en ek kan uiteindelik sien watter werke werklik "
+"geld maak."
 
 #: apps/marketing/views.py:60
 msgid "Managing Director, mechanical contractor"
@@ -628,7 +731,9 @@ msgstr "Besturende Direkteur, meganiese kontrakteur"
 msgid ""
 "The mobile check-ins ended the arguments about who was on site. It just "
 "works."
-msgstr "Die mobiele inteken het die argumente oor wie op die terrein was, beëindig. Dit werk net."
+msgstr ""
+"Die mobiele inteken het die argumente oor wie op die terrein was, beëindig. "
+"Dit werk net."
 
 #: apps/marketing/views.py:62
 msgid "Operations Manager, maintenance company"
@@ -638,12 +743,310 @@ msgstr "Bedryfsbestuurder, instandhoudingsmaatskappy"
 msgid ""
 "Uploading a mine's PO and having it fill in the job automatically saves us "
 "hours."
-msgstr "Om 'n myn se bestelling op te laai en dit outomaties die werk te laat invul, spaar ons ure."
+msgstr ""
+"Om 'n myn se bestelling op te laai en dit outomaties die werk te laat invul, "
+"spaar ons ure."
 
 #: apps/marketing/views.py:64
-#| msgid "Industries served"
 msgid "Owner, industrial services"
 msgstr "Eienaar, industriële dienste"
+
+#: apps/marketing/views.py:82
+#| msgid "Document Management"
+msgid "Company Management"
+msgstr "Maatskappybestuur"
+
+#: apps/marketing/views.py:82
+msgid "Your business identity, entered once and reused everywhere."
+msgstr "Jou besigheidsidentiteit, een keer ingevoer en oral hergebruik."
+
+#: apps/marketing/views.py:83
+msgid "Company profile, VAT & registration numbers, banking and branding"
+msgstr "Maatskappyprofiel, BTW- en registrasienommers, bankwese en handelsmerk"
+
+#: apps/marketing/views.py:84
+#| msgid ""
+#| "Inserted automatically into every quotation, invoice and delivery note."
+msgid "Flows onto every quotation, invoice and delivery note automatically"
+msgstr "Vloei outomaties na elke kwotasie, faktuur en afleweringsnota"
+
+#: apps/marketing/views.py:85
+#| msgid "Document Management"
+msgid "Customer Management"
+msgstr "Kliëntebestuur"
+
+#: apps/marketing/views.py:85
+msgid "Every client organisation, department and contact in one place."
+msgstr "Elke kliëntorganisasie, afdeling en kontak op een plek."
+
+#: apps/marketing/views.py:86
+msgid "Contacts, sites and a full communication timeline"
+msgstr "Kontakte, terreine en 'n volledige kommunikasietydlyn"
+
+#: apps/marketing/views.py:87
+msgid "Documents routed to the right person by responsibility"
+msgstr "Dokumente na die regte persoon geroeteer volgens verantwoordelikheid"
+
+#: apps/marketing/views.py:88
+msgid "Build accurate, professional quotes in minutes."
+msgstr "Bou akkurate, professionele kwotasies in minute."
+
+#: apps/marketing/views.py:89
+msgid "Per-type templates and spreadsheet-style bulk line entry"
+msgstr "Sjablone per tipe en sigblad-styl grootmaat-inskrywing"
+
+#: apps/marketing/views.py:90
+msgid "Branded PDF output; award a quote to open a job in one click"
+msgstr "Gemerkte PDF-uitset; ken 'n kwotasie toe om 'n werk met een klik oop te maak"
+
+#: apps/marketing/views.py:91 apps/web/templates/web/dashboard.html:53
+#: apps/web/templates/web/quotation_detail.html:235
+#: apps/web/templates/web/work.html:3 apps/web/templates/web/work.html:8
+msgid "Jobs"
+msgstr "Take"
+
+#: apps/marketing/views.py:91
+msgid "The operational heart — every job in a single view."
+msgstr "Die operasionele hart — elke werk in 'n enkele aansig."
+
+#: apps/marketing/views.py:92
+#| msgid "Every job in one view — scope, team, progress, money and paperwork."
+msgid "Scope, team, progress, money and paperwork together"
+msgstr "Omvang, span, vordering, geld en papierwerk saam"
+
+#: apps/marketing/views.py:93
+msgid "Raised from a quotation, a customer PO, or started standalone"
+msgstr "Geskep uit 'n kwotasie, 'n kliëntbestelling, of selfstandig begin"
+
+#: apps/marketing/views.py:94 apps/web/templates/web/customers.html:29
+#: apps/web/templates/web/dashboard.html:51
+#: apps/web/templates/web/projects.html:3
+#: apps/web/templates/web/projects.html:7
+#: apps/web/templates/web/quotation_detail.html:234
+#: apps/web/translation_strings.py:11
+msgid "Projects"
+msgstr "Projekte"
+
+#: apps/marketing/views.py:94
+msgid "Group related jobs under one engagement."
+msgstr "Groepeer verwante werke onder een verbintenis."
+
+#: apps/marketing/views.py:95
+msgid "Roll up commercial documents, budget, actuals and timeline"
+msgstr "Rol kommersiële dokumente, begroting, werklikes en tydlyn op"
+
+#: apps/marketing/views.py:96
+msgid "Readiness gate keeps compliance in check before work starts"
+msgstr "Gereedheidshek hou nakoming in toom voordat werk begin"
+
+#: apps/marketing/views.py:97
+msgid "Break work down and track it to completion."
+msgstr "Breek werk op en volg dit tot voltooiing."
+
+#: apps/marketing/views.py:98
+#| msgid "Break jobs into tasks with checklists, owners and live progress."
+msgid "Checklists, owners, dependencies and live progress"
+msgstr "Kontrolelyste, eienaars, afhanklikhede en lewendige vordering"
+
+#: apps/marketing/views.py:99
+msgid "Field reports, GPS and evidence captured against each task"
+msgstr "Veldverslae, GPS en bewyse vasgelê teen elke taak"
+
+#: apps/marketing/views.py:100
+msgid "Buy the right materials at the right price."
+msgstr "Koop die regte materiaal teen die regte prys."
+
+#: apps/marketing/views.py:101
+#| msgid "Raise requests, compare supplier prices and issue purchase orders."
+msgid "Raise procurement requests and compare supplier prices"
+msgstr "Skep verkrygingsversoeke en vergelyk verskafferpryse"
+
+#: apps/marketing/views.py:102
+msgid "Issue purchase orders and reconcile against receipts"
+msgstr "Reik bestellings uit en versoen teen kwitansies"
+
+#: apps/marketing/views.py:103
+msgid "Suppliers"
+msgstr "Verskaffers"
+
+#: apps/marketing/views.py:103
+msgid "A supplier database that builds itself."
+msgstr "'n Verskafferdatabasis wat homself bou."
+
+#: apps/marketing/views.py:104
+msgid "Every receipt records who you bought from and what you paid"
+msgstr "Elke kwitansie teken aan by wie jy gekoop het en wat jy betaal het"
+
+#: apps/marketing/views.py:105
+msgid "Manual entry and old-invoice upload to seed your history"
+msgstr "Handmatige inskrywing en ou-faktuur-oplaai om jou geskiedenis te saai"
+
+#: apps/marketing/views.py:106
+#| msgid "Product"
+msgid "Products"
+msgstr "Produkte"
+
+#: apps/marketing/views.py:106
+msgid "Know the real price of everything you buy."
+msgstr "Ken die werklike prys van alles wat jy koop."
+
+#: apps/marketing/views.py:107
+msgid "Price comparison across suppliers, trends and stale-price flags"
+msgstr "Prysvergelyking oor verskaffers, tendense en verouderde-prys-vlae"
+
+#: apps/marketing/views.py:108
+msgid "Product aliases so the same item is never counted twice"
+msgstr "Produk-aliasse sodat dieselfde item nooit twee keer getel word nie"
+
+#: apps/marketing/views.py:109 apps/web/translation_strings.py:11
+msgid "Purchase Orders"
+msgstr "Bestellings"
+
+#: apps/marketing/views.py:109
+msgid "Turn approved buying into clean paperwork."
+msgstr "Verander goedgekeurde aankope in netjiese papierwerk."
+
+#: apps/marketing/views.py:110
+msgid "Generate and track POs against jobs and suppliers"
+msgstr "Genereer en volg bestellings teen werke en verskaffers"
+
+#: apps/marketing/views.py:111
+msgid "Extract incoming customer POs with AI"
+msgstr "Onttrek inkomende kliëntbestellings met KI"
+
+#: apps/marketing/views.py:112 apps/web/templates/web/invoices.html:3
+#: apps/web/templates/web/invoices.html:8
+#: apps/web/templates/web/invoices.html:16
+msgid "Invoices"
+msgstr "Fakture"
+
+#: apps/marketing/views.py:112
+msgid "Get paid, and see it clearly."
+msgstr "Word betaal, en sien dit duidelik."
+
+#: apps/marketing/views.py:113
+#| msgid "Compliant tax invoices and progress claims, with payments tracked."
+msgid "Compliant tax invoices and progress claims with retention"
+msgstr "Voldoenende belastingfakture en vorderingseise met retensie"
+
+#: apps/marketing/views.py:114
+msgid "Payments and outstanding balances tracked per job"
+msgstr "Betalings en uitstaande saldo's per werk nagespoor"
+
+#: apps/marketing/views.py:115
+msgid "Prove delivery, on brand."
+msgstr "Bewys aflewering, op handelsmerk."
+
+#: apps/marketing/views.py:116
+#| msgid "Generate branded delivery notes straight from the job."
+msgid "Generate delivery notes straight from the job"
+msgstr "Genereer afleweringsnotas direk vanaf die werk"
+
+#: apps/marketing/views.py:117
+msgid "Quantities and signatures captured for the record"
+msgstr "Hoeveelhede en handtekeninge vasgelê vir die rekord"
+
+#: apps/marketing/views.py:118
+#| msgid "Reporting & Analytics"
+msgid "Reports & Analytics"
+msgstr "Verslae en analise"
+
+#: apps/marketing/views.py:118
+msgid "Run the business on numbers, not guesswork."
+msgstr "Bestuur die besigheid op syfers, nie raaiwerk nie."
+
+#: apps/marketing/views.py:119
+#| msgid "See profitability, cash flow and job health as the work happens."
+msgid "Profitability, cash flow, aging and job health"
+msgstr "Winsgewendheid, kontantvloei, veroudering en werkgesondheid"
+
+#: apps/marketing/views.py:120
+msgid "Field spend flows into live profitability automatically"
+msgstr "Veldbesteding vloei outomaties in lewendige winsgewendheid"
+
+#: apps/marketing/views.py:121
+#| msgid "Employees"
+msgid "Employee App"
+msgstr "Werknemertoep"
+
+#: apps/marketing/views.py:121
+msgid "The field team's tool, built mobile-first."
+msgstr "Die veldspan se gereedskap, mobiel-eerste gebou."
+
+#: apps/marketing/views.py:122
+msgid "Capture time, materials, fuel and progress from site"
+msgstr "Vang tyd, materiaal, brandstof en vordering van die terrein af"
+
+#: apps/marketing/views.py:123
+msgid "Works for technicians, drivers, welders, operators and labourers"
+msgstr "Werk vir tegnici, bestuurders, sweisers, operateurs en arbeiders"
+
+#: apps/marketing/views.py:124
+#| msgid "GPS & Time Tracking"
+msgid "GPS Tracking"
+msgstr "GPS-opsporing"
+
+#: apps/marketing/views.py:124
+msgid "Know who was on site, and when."
+msgstr "Weet wie op die terrein was, en wanneer."
+
+#: apps/marketing/views.py:125
+msgid "Every field check-in is GPS-stamped and time-stamped"
+msgstr "Elke veld-inteken word met GPS en tyd gestempel"
+
+#: apps/marketing/views.py:126
+msgid "Distance-from-site flags keep records honest"
+msgstr "Afstand-van-terrein-vlae hou rekords eerlik"
+
+#: apps/marketing/views.py:127
+#| msgid "Automations"
+msgid "AI Automation"
+msgstr "KI-outomatisering"
+
+#: apps/marketing/views.py:127
+msgid "Let AI do the data entry."
+msgstr "Laat KI die data-invoer doen."
+
+#: apps/marketing/views.py:128
+msgid "Extract RFQs, purchase orders, supplier invoices and scopes of work"
+msgstr "Onttrek RFQ's, bestellings, verskafferfakture en werkomvange"
+
+#: apps/marketing/views.py:129
+msgid "AI quotation suggestions grounded in your own history"
+msgstr "KI-kwotasievoorstelle gegrond op jou eie geskiedenis"
+
+#: apps/marketing/views.py:130
+#| msgid "Secure"
+msgid "Security"
+msgstr "Sekuriteit"
+
+#: apps/marketing/views.py:130
+msgid "Enterprise-grade protection for your data."
+msgstr "Onderneming-vlak beskerming vir jou data."
+
+#: apps/marketing/views.py:131
+msgid "Role-based access control and full audit logging"
+msgstr "Rolgebaseerde toegangsbeheer en volledige ouditlogging"
+
+#: apps/marketing/views.py:132
+msgid "Tenant isolation so your data is only ever yours"
+msgstr "Huurder-isolasie sodat jou data net joune is"
+
+#: apps/marketing/views.py:133
+msgid "Cloud Platform"
+msgstr "Wolkplatform"
+
+#: apps/marketing/views.py:133
+msgid "Always on, everywhere."
+msgstr "Altyd aan, oral."
+
+#: apps/marketing/views.py:134
+msgid "Access from desktop, tablet and mobile"
+msgstr "Toegang vanaf rekenaar, tablet en mobiel"
+
+#: apps/marketing/views.py:135
+msgid "Automatic backups and no software to install"
+msgstr "Outomatiese rugsteun en geen sagteware om te installeer nie"
 
 #: apps/projects/models.py:20 apps/web/templates/web/projects.html:26
 msgid "Pending compliance"
@@ -881,34 +1284,9 @@ msgstr "Koop pak"
 msgid "Plans"
 msgstr "Planne"
 
-#: apps/web/templates/web/billing.html:106
-msgid "Monthly"
-msgstr "Maandeliks"
-
-#: apps/web/templates/web/billing.html:107
-msgid "Annual"
-msgstr "Jaarliks"
-
-#: apps/web/templates/web/billing.html:107
-msgid "· save ~2 months"
-msgstr "· bespaar ~2 maande"
-
 #: apps/web/templates/web/billing.html:114
 msgid "Most popular"
 msgstr "Gewildste"
-
-#: apps/web/templates/web/billing.html:117
-msgid "/yr"
-msgstr "/jr"
-
-#: apps/web/templates/web/billing.html:118
-msgid "/mo"
-msgstr "/md"
-
-#: apps/web/templates/web/billing.html:121
-#, python-format
-msgid "Save %(sym)s%(amt)s a year"
-msgstr "Bespaar %(sym)s%(amt)s per jaar"
 
 #: apps/web/templates/web/billing.html:127
 msgid "Current plan"
@@ -2582,15 +2960,6 @@ msgid "Quotations"
 msgstr "Kwotasies"
 
 #: apps/web/templates/web/customers.html:29
-#: apps/web/templates/web/dashboard.html:51
-#: apps/web/templates/web/projects.html:3
-#: apps/web/templates/web/projects.html:7
-#: apps/web/templates/web/quotation_detail.html:234
-#: apps/web/translation_strings.py:11
-msgid "Projects"
-msgstr "Projekte"
-
-#: apps/web/templates/web/customers.html:29
 msgid "Terms"
 msgstr "Voorwaardes"
 
@@ -2679,12 +3048,6 @@ msgstr "Voltooi opstelling"
 #: apps/web/templates/web/dashboard.html:29
 msgid "Remind me later"
 msgstr "Herinner my later"
-
-#: apps/web/templates/web/dashboard.html:53
-#: apps/web/templates/web/quotation_detail.html:235
-#: apps/web/templates/web/work.html:3 apps/web/templates/web/work.html:8
-msgid "Jobs"
-msgstr "Take"
 
 #: apps/web/templates/web/dashboard.html:55
 msgid "Ready / in progress"
@@ -2777,12 +3140,6 @@ msgstr "Alles reg"
 #: apps/web/templates/web/dashboard.html:145
 msgid "Every project is compliance-ready."
 msgstr "Elke projek is nakoming-gereed."
-
-#: apps/web/templates/web/invoices.html:3
-#: apps/web/templates/web/invoices.html:8
-#: apps/web/templates/web/invoices.html:16
-msgid "Invoices"
-msgstr "Fakture"
 
 #: apps/web/templates/web/invoices.html:9
 msgid ""
@@ -4135,10 +4492,6 @@ msgstr "CRM"
 #: apps/web/translation_strings.py:11
 msgid "Job Card"
 msgstr "Werkskaart"
-
-#: apps/web/translation_strings.py:11
-msgid "Purchase Orders"
-msgstr "Bestellings"
 
 #: apps/web/translation_strings.py:12
 msgid "Tax Invoice"

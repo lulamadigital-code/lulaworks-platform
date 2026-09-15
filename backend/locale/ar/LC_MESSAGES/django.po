@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 14:26+0000\n"
+"POT-Creation-Date: 2026-09-15 14:37+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -204,11 +204,13 @@ msgstr[1] ""
 
 #: apps/marketing/templates/marketing/base.html:234
 #: apps/marketing/templates/marketing/base.html:279
+#: apps/marketing/templates/marketing/features.html:6
 msgid "Features"
 msgstr "الميزات"
 
 #: apps/marketing/templates/marketing/base.html:235
 #: apps/marketing/templates/marketing/base.html:280
+#: apps/marketing/templates/marketing/pricing.html:6
 msgid "Pricing"
 msgstr "الأسعار"
 
@@ -252,8 +254,11 @@ msgstr "تسجيل الدخول"
 
 #: apps/marketing/templates/marketing/base.html:250
 #: apps/marketing/templates/marketing/base.html:282
+#: apps/marketing/templates/marketing/features.html:10
+#: apps/marketing/templates/marketing/features.html:38
 #: apps/marketing/templates/marketing/home.html:12
 #: apps/marketing/templates/marketing/home.html:110
+#: apps/marketing/templates/marketing/pricing.html:35
 msgid "Start Free Trial"
 msgstr "ابدأ التجربة المجانية"
 
@@ -270,8 +275,11 @@ msgid "Product"
 msgstr "المنتج"
 
 #: apps/marketing/templates/marketing/base.html:281
+#: apps/marketing/templates/marketing/features.html:11
+#: apps/marketing/templates/marketing/features.html:39
 #: apps/marketing/templates/marketing/home.html:13
 #: apps/marketing/templates/marketing/home.html:111
+#: apps/marketing/templates/marketing/pricing.html:43
 msgid "Book a Demo"
 msgstr "احجز عرضًا توضيحيًا"
 
@@ -332,12 +340,30 @@ msgstr "رفض"
 msgid "Accept"
 msgstr "قبول"
 
+#: apps/marketing/templates/marketing/features.html:7
+#| msgid "Everything in one place"
+msgid "Everything a contractor needs, in one platform"
+msgstr "كل ما يحتاجه المقاول، في منصة واحدة"
+
+#: apps/marketing/templates/marketing/features.html:8
+msgid ""
+"From the first customer enquiry to the final payment — plus the AI, mobile "
+"and reporting tools that make it effortless."
+msgstr "من أول استفسار للعميل إلى الدفعة الأخيرة — بالإضافة إلى أدوات الذكاء الاصطناعي والجوال والتقارير التي تجعل كل شيء سهلًا."
+
+#: apps/marketing/templates/marketing/features.html:35
+msgid "See it on your own jobs"
+msgstr "شاهده على مهامك الخاصة"
+
+#: apps/marketing/templates/marketing/features.html:36
+msgid "Start a free trial or book a live demo with our team."
+msgstr "ابدأ تجربة مجانية أو احجز عرضًا توضيحيًا مباشرًا مع فريقنا."
+
 #: apps/marketing/templates/marketing/home.html:8
 msgid "The Contractor Operating System"
 msgstr "نظام تشغيل المقاولين"
 
 #: apps/marketing/templates/marketing/home.html:9
-#| msgid "No quotations yet."
 msgid "From Quotation to Payment."
 msgstr "من عرض السعر إلى الدفع."
 
@@ -349,7 +375,9 @@ msgstr "منصة واحدة. مدعومة بالذكاء الاصطناعي."
 msgid ""
 "Lulaworks helps contractors manage quotations, jobs, procurement, teams, "
 "deliveries, invoices and payments from one intelligent platform."
-msgstr "يساعد Lulaworks المقاولين على إدارة عروض الأسعار والمهام والمشتريات والفرق والتسليمات والفواتير والمدفوعات من منصة ذكية واحدة."
+msgstr ""
+"يساعد Lulaworks المقاولين على إدارة عروض الأسعار والمهام والمشتريات والفرق "
+"والتسليمات والفواتير والمدفوعات من منصة ذكية واحدة."
 
 #: apps/marketing/templates/marketing/home.html:16
 msgid "AI Powered"
@@ -368,7 +396,6 @@ msgid "Secure"
 msgstr "آمن"
 
 #: apps/marketing/templates/marketing/home.html:20
-#| msgid "Built for contractors worldwide · GDPR-ready"
 msgid "Built for Contractors"
 msgstr "مصمم للمقاولين"
 
@@ -377,12 +404,10 @@ msgid "Lulaworks dashboard preview"
 msgstr "معاينة لوحة تحكم Lulaworks"
 
 #: apps/marketing/templates/marketing/home.html:27
-#| msgid "View quotation"
 msgid "Open quotations"
 msgstr "عروض الأسعار المفتوحة"
 
 #: apps/marketing/templates/marketing/home.html:28
-#| msgid "Active"
 msgid "Active jobs"
 msgstr "المهام النشطة"
 
@@ -396,7 +421,8 @@ msgstr "المستحق"
 
 #: apps/marketing/templates/marketing/home.html:32
 #: apps/marketing/templates/marketing/home.html:80 apps/marketing/views.py:47
-#: apps/web/templates/web/settings.html:45 apps/web/translation_strings.py:10
+#: apps/marketing/views.py:100 apps/web/templates/web/settings.html:45
+#: apps/web/translation_strings.py:10
 msgid "Procurement"
 msgstr "المشتريات"
 
@@ -405,12 +431,10 @@ msgid "On site now"
 msgstr "في الموقع الآن"
 
 #: apps/marketing/templates/marketing/home.html:34
-#| msgid "Buy AI credits"
 msgid "AI credits"
 msgstr "رصيد الذكاء الاصطناعي"
 
 #: apps/marketing/templates/marketing/home.html:44
-#| msgid "New to Lulaworks?"
 msgid "Why Lulaworks"
 msgstr "لماذا Lulaworks"
 
@@ -424,14 +448,17 @@ msgid ""
 "a PO in email, site photos on WhatsApp, invoices in another app. Things "
 "slip, margins leak, and nobody has the full picture. Lulaworks brings the "
 "whole job into one place, from the first quotation to the final payment."
-msgstr "يدير معظم المقاولين أعمالهم عبر عشرات الأماكن — عرض سعر في Excel، وأمر شراء في البريد الإلكتروني، وصور الموقع على واتساب، وفواتير في تطبيق آخر. تضيع الأمور، وتتسرّب الأرباح، ولا أحد يملك الصورة الكاملة. يجمع Lulaworks المهمة بأكملها في مكان واحد، من أول عرض سعر إلى الدفعة الأخيرة."
+msgstr ""
+"يدير معظم المقاولين أعمالهم عبر عشرات الأماكن — عرض سعر في Excel، وأمر شراء "
+"في البريد الإلكتروني، وصور الموقع على واتساب، وفواتير في تطبيق آخر. تضيع "
+"الأمور، وتتسرّب الأرباح، ولا أحد يملك الصورة الكاملة. يجمع Lulaworks المهمة "
+"بأكملها في مكان واحد، من أول عرض سعر إلى الدفعة الأخيرة."
 
 #: apps/marketing/templates/marketing/home.html:54
 msgid "Everything in one place"
 msgstr "كل شيء في مكان واحد"
 
 #: apps/marketing/templates/marketing/home.html:55
-#| msgid "Name for the job (optional)"
 msgid "One platform for the whole operation"
 msgstr "منصة واحدة لكل العمليات"
 
@@ -440,7 +467,6 @@ msgid "Explore all features →"
 msgstr "استكشف كل الميزات →"
 
 #: apps/marketing/templates/marketing/home.html:71
-#| msgid "New to Lulaworks?"
 msgid "How it works"
 msgstr "كيف يعمل"
 
@@ -451,7 +477,8 @@ msgstr "المهمة بأكملها، من البداية إلى النهاية"
 #: apps/marketing/templates/marketing/home.html:73
 msgid ""
 "Every step flows into the next — no re-typing, no lost paperwork, no gaps."
-msgstr "تتدفق كل خطوة إلى التالية — دون إعادة إدخال، ودون فقدان أوراق، ودون فجوات."
+msgstr ""
+"تتدفق كل خطوة إلى التالية — دون إعادة إدخال، ودون فقدان أوراق، ودون فجوات."
 
 #: apps/marketing/templates/marketing/home.html:75
 #: apps/web/templates/web/customers.html:28
@@ -470,7 +497,6 @@ msgid "Quotation"
 msgstr "عرض السعر"
 
 #: apps/marketing/templates/marketing/home.html:77
-#| msgid "Purchase Orders"
 msgid "Purchase Order"
 msgstr "أمر الشراء"
 
@@ -479,13 +505,11 @@ msgstr "أمر الشراء"
 msgid "Job"
 msgstr "المهمة"
 
-#: apps/marketing/templates/marketing/home.html:79
-#| msgid "Subtasks"
+#: apps/marketing/templates/marketing/home.html:79 apps/marketing/views.py:97
 msgid "Tasks"
 msgstr "المهام"
 
 #: apps/marketing/templates/marketing/home.html:81
-#| msgid "Delivery note"
 msgid "Delivery"
 msgstr "التسليم"
 
@@ -515,8 +539,81 @@ msgstr "هل أنت مستعد لتحويل أعمال المقاولات لدي
 msgid "Start your 30-day free trial today. No credit card required."
 msgstr "ابدأ تجربتك المجانية لمدة 30 يومًا اليوم. دون الحاجة إلى بطاقة ائتمان."
 
-#: apps/marketing/views.py:44
-#| msgid "Quotation pages"
+#: apps/marketing/templates/marketing/pricing.html:7
+msgid "Simple, transparent pricing"
+msgstr "تسعير بسيط وشفاف"
+
+#: apps/marketing/templates/marketing/pricing.html:8
+msgid ""
+"Pay for the users and AI you need. <strong>Employees are always unlimited</"
+"strong> — we never charge you for the size of your crew."
+msgstr "ادفع مقابل المستخدمين والذكاء الاصطناعي الذي تحتاجه. <strong>الموظفون دائمًا بلا حدود</strong> — لا نحاسبك أبدًا على حجم طاقمك."
+
+#: apps/marketing/templates/marketing/pricing.html:12
+#: apps/web/templates/web/billing.html:106
+msgid "Monthly"
+msgstr "شهري"
+
+#: apps/marketing/templates/marketing/pricing.html:13
+#: apps/web/templates/web/billing.html:107
+msgid "Annual"
+msgstr "سنوي"
+
+#: apps/marketing/templates/marketing/pricing.html:13
+#: apps/web/templates/web/billing.html:107
+msgid "· save ~2 months"
+msgstr "· وفّر ~شهرين"
+
+#: apps/marketing/templates/marketing/pricing.html:19
+msgid "MOST POPULAR"
+msgstr "الأكثر شيوعًا"
+
+#: apps/marketing/templates/marketing/pricing.html:22
+#: apps/web/templates/web/billing.html:117
+msgid "/yr"
+msgstr "/سنة"
+
+#: apps/marketing/templates/marketing/pricing.html:23
+#: apps/web/templates/web/billing.html:118
+msgid "/mo"
+msgstr "/شهر"
+
+#: apps/marketing/templates/marketing/pricing.html:26
+#: apps/web/templates/web/billing.html:121
+#, python-format
+msgid "Save %(sym)s%(amt)s a year"
+msgstr "وفّر %(sym)s%(amt)s سنويًا"
+
+#: apps/marketing/templates/marketing/pricing.html:29
+#, python-format
+#| msgid "%(n)s open"
+msgid "%(n)s users"
+msgstr "%(n)s مستخدمين"
+
+#: apps/marketing/templates/marketing/pricing.html:30
+msgid "Unlimited employees"
+msgstr "موظفون بلا حدود"
+
+#: apps/marketing/templates/marketing/pricing.html:31
+#, python-format
+#| msgid "R%(v)s invoiced this month"
+msgid "%(c)s AI credits / month"
+msgstr "%(c)s رصيد ذكاء اصطناعي / شهر"
+
+#: apps/marketing/templates/marketing/pricing.html:32
+#, python-format
+#| msgid "Storage"
+msgid "%(s)s storage"
+msgstr "%(s)s تخزين"
+
+#: apps/marketing/templates/marketing/pricing.html:41
+#, python-format
+msgid ""
+"Prices shown in %(currency)s, based on your location. All plans include a 30-"
+"day free trial — no credit card required."
+msgstr "الأسعار معروضة بـ %(currency)s، بناءً على موقعك. تشمل جميع الخطط تجربة مجانية لمدة 30 يومًا — دون بطاقة ائتمان."
+
+#: apps/marketing/views.py:44 apps/marketing/views.py:88
 msgid "Quotation Management"
 msgstr "إدارة عروض الأسعار"
 
@@ -545,7 +642,6 @@ msgid "Raise requests, compare supplier prices and issue purchase orders."
 msgstr "أنشئ الطلبات وقارن أسعار الموردين وأصدر أوامر الشراء."
 
 #: apps/marketing/views.py:48
-#| msgid "Intelligence"
 msgid "Supplier Intelligence"
 msgstr "ذكاء الموردين"
 
@@ -554,25 +650,25 @@ msgid "Every receipt teaches the system who sells what, and for how much."
 msgstr "كل إيصال يُعلّم النظام من يبيع ماذا وبكم."
 
 #: apps/marketing/views.py:49
-#| msgid "Document template"
 msgid "Document Management"
 msgstr "إدارة المستندات"
 
 #: apps/marketing/views.py:49
 msgid "POs, invoices, delivery notes and safety files, all in one place."
-msgstr "أوامر الشراء والفواتير ومذكرات التسليم وملفات السلامة، كلها في مكان واحد."
+msgstr ""
+"أوامر الشراء والفواتير ومذكرات التسليم وملفات السلامة، كلها في مكان واحد."
 
 #: apps/marketing/views.py:50
-#| msgid "Documents & branding"
 msgid "AI Document Extraction"
 msgstr "استخراج المستندات بالذكاء الاصطناعي"
 
 #: apps/marketing/views.py:50
 msgid "Drop in an RFQ, PO or invoice — AI reads it and fills the details."
-msgstr "أسقِط طلب عرض سعر أو أمر شراء أو فاتورة — يقرأها الذكاء الاصطناعي ويملأ التفاصيل."
+msgstr ""
+"أسقِط طلب عرض سعر أو أمر شراء أو فاتورة — يقرأها الذكاء الاصطناعي ويملأ "
+"التفاصيل."
 
-#: apps/marketing/views.py:51
-#| msgid "Delivery note"
+#: apps/marketing/views.py:51 apps/marketing/views.py:115
 msgid "Delivery Notes"
 msgstr "مذكرات التسليم"
 
@@ -581,7 +677,6 @@ msgid "Generate branded delivery notes straight from the job."
 msgstr "أنشئ مذكرات تسليم تحمل علامتك التجارية مباشرة من المهمة."
 
 #: apps/marketing/views.py:52
-#| msgid "Tax Invoice"
 msgid "Tax Invoices"
 msgstr "الفواتير الضريبية"
 
@@ -598,7 +693,6 @@ msgid "Field check-ins are GPS-stamped so you know who was where, when."
 msgstr "تُختم عمليات تسجيل الوصول الميدانية بـ GPS لتعرف من كان أين ومتى."
 
 #: apps/marketing/views.py:54
-#| msgid "Employees (unlimited)"
 msgid "Employee Management"
 msgstr "إدارة الموظفين"
 
@@ -607,7 +701,6 @@ msgid "Unlimited employees — technicians, drivers, operators — on every plan
 msgstr "موظفون بلا حدود — فنيون وسائقون ومشغّلون — في كل خطة."
 
 #: apps/marketing/views.py:55
-#| msgid "Analytics"
 msgid "Reporting & Analytics"
 msgstr "التقارير والتحليلات"
 
@@ -619,7 +712,9 @@ msgstr "اطّلع على الربحية والتدفق النقدي وصحة ا
 msgid ""
 "We quote in minutes now, and I can finally see which jobs actually make "
 "money."
-msgstr "أصبحنا نُعدّ عروض الأسعار في دقائق الآن، وأخيرًا أستطيع رؤية المهام التي تحقق أرباحًا فعلًا."
+msgstr ""
+"أصبحنا نُعدّ عروض الأسعار في دقائق الآن، وأخيرًا أستطيع رؤية المهام التي تحقق "
+"أرباحًا فعلًا."
 
 #: apps/marketing/views.py:60
 msgid "Managing Director, mechanical contractor"
@@ -629,7 +724,9 @@ msgstr "المدير العام، مقاول ميكانيكي"
 msgid ""
 "The mobile check-ins ended the arguments about who was on site. It just "
 "works."
-msgstr "أنهت عمليات تسجيل الوصول عبر الجوال الجدال حول من كان في الموقع. إنها تعمل ببساطة."
+msgstr ""
+"أنهت عمليات تسجيل الوصول عبر الجوال الجدال حول من كان في الموقع. إنها تعمل "
+"ببساطة."
 
 #: apps/marketing/views.py:62
 msgid "Operations Manager, maintenance company"
@@ -642,9 +739,305 @@ msgid ""
 msgstr "رفع أمر شراء من منجم وتعبئته المهمة تلقائيًا يوفّر علينا ساعات."
 
 #: apps/marketing/views.py:64
-#| msgid "Industries served"
 msgid "Owner, industrial services"
 msgstr "المالك، خدمات صناعية"
+
+#: apps/marketing/views.py:82
+#| msgid "Document Management"
+msgid "Company Management"
+msgstr "إدارة الشركة"
+
+#: apps/marketing/views.py:82
+msgid "Your business identity, entered once and reused everywhere."
+msgstr "هوية عملك، تُدخَل مرة واحدة وتُعاد في كل مكان."
+
+#: apps/marketing/views.py:83
+msgid "Company profile, VAT & registration numbers, banking and branding"
+msgstr "ملف الشركة وأرقام ضريبة القيمة المضافة والتسجيل والبيانات المصرفية والعلامة التجارية"
+
+#: apps/marketing/views.py:84
+#| msgid ""
+#| "Inserted automatically into every quotation, invoice and delivery note."
+msgid "Flows onto every quotation, invoice and delivery note automatically"
+msgstr "تظهر تلقائيًا على كل عرض سعر وفاتورة ومذكرة تسليم"
+
+#: apps/marketing/views.py:85
+#| msgid "Document Management"
+msgid "Customer Management"
+msgstr "إدارة العملاء"
+
+#: apps/marketing/views.py:85
+msgid "Every client organisation, department and contact in one place."
+msgstr "كل مؤسسة عميلة وقسم وجهة اتصال في مكان واحد."
+
+#: apps/marketing/views.py:86
+msgid "Contacts, sites and a full communication timeline"
+msgstr "جهات الاتصال والمواقع وجدول زمني كامل للتواصل"
+
+#: apps/marketing/views.py:87
+msgid "Documents routed to the right person by responsibility"
+msgstr "المستندات موجَّهة إلى الشخص المناسب حسب المسؤولية"
+
+#: apps/marketing/views.py:88
+msgid "Build accurate, professional quotes in minutes."
+msgstr "أنشئ عروض أسعار دقيقة واحترافية في دقائق."
+
+#: apps/marketing/views.py:89
+msgid "Per-type templates and spreadsheet-style bulk line entry"
+msgstr "قوالب حسب النوع وإدخال بنود بالجملة بأسلوب جداول البيانات"
+
+#: apps/marketing/views.py:90
+msgid "Branded PDF output; award a quote to open a job in one click"
+msgstr "إخراج PDF يحمل علامتك التجارية؛ رسِّ عرض سعر لفتح مهمة بنقرة واحدة"
+
+#: apps/marketing/views.py:91 apps/web/templates/web/dashboard.html:53
+#: apps/web/templates/web/quotation_detail.html:235
+#: apps/web/templates/web/work.html:3 apps/web/templates/web/work.html:8
+msgid "Jobs"
+msgstr "المهام"
+
+#: apps/marketing/views.py:91
+msgid "The operational heart — every job in a single view."
+msgstr "القلب التشغيلي — كل مهمة في عرض واحد."
+
+#: apps/marketing/views.py:92
+#| msgid "Every job in one view — scope, team, progress, money and paperwork."
+msgid "Scope, team, progress, money and paperwork together"
+msgstr "النطاق والفريق والتقدم والمال والأوراق معًا"
+
+#: apps/marketing/views.py:93
+msgid "Raised from a quotation, a customer PO, or started standalone"
+msgstr "تُنشأ من عرض سعر أو أمر شراء عميل، أو تبدأ مستقلة"
+
+#: apps/marketing/views.py:94 apps/web/templates/web/customers.html:29
+#: apps/web/templates/web/dashboard.html:51
+#: apps/web/templates/web/projects.html:3
+#: apps/web/templates/web/projects.html:7
+#: apps/web/templates/web/quotation_detail.html:234
+#: apps/web/translation_strings.py:11
+msgid "Projects"
+msgstr "المشاريع"
+
+#: apps/marketing/views.py:94
+msgid "Group related jobs under one engagement."
+msgstr "اجمع المهام المرتبطة ضمن ارتباط واحد."
+
+#: apps/marketing/views.py:95
+msgid "Roll up commercial documents, budget, actuals and timeline"
+msgstr "اجمع المستندات التجارية والميزانية والفعليات والجدول الزمني"
+
+#: apps/marketing/views.py:96
+msgid "Readiness gate keeps compliance in check before work starts"
+msgstr "بوابة الجاهزية تضبط الامتثال قبل بدء العمل"
+
+#: apps/marketing/views.py:97
+msgid "Break work down and track it to completion."
+msgstr "قسّم العمل وتتبّعه حتى الاكتمال."
+
+#: apps/marketing/views.py:98
+#| msgid "Break jobs into tasks with checklists, owners and live progress."
+msgid "Checklists, owners, dependencies and live progress"
+msgstr "قوائم التحقق والمسؤولون والتبعيات والتقدم المباشر"
+
+#: apps/marketing/views.py:99
+msgid "Field reports, GPS and evidence captured against each task"
+msgstr "تقارير ميدانية وGPS وأدلة مُسجَّلة لكل مهمة"
+
+#: apps/marketing/views.py:100
+msgid "Buy the right materials at the right price."
+msgstr "اشترِ المواد المناسبة بالسعر المناسب."
+
+#: apps/marketing/views.py:101
+#| msgid "Raise requests, compare supplier prices and issue purchase orders."
+msgid "Raise procurement requests and compare supplier prices"
+msgstr "أنشئ طلبات شراء وقارن أسعار الموردين"
+
+#: apps/marketing/views.py:102
+msgid "Issue purchase orders and reconcile against receipts"
+msgstr "أصدر أوامر شراء وطابقها مع الإيصالات"
+
+#: apps/marketing/views.py:103
+msgid "Suppliers"
+msgstr "الموردون"
+
+#: apps/marketing/views.py:103
+msgid "A supplier database that builds itself."
+msgstr "قاعدة بيانات موردين تبني نفسها."
+
+#: apps/marketing/views.py:104
+msgid "Every receipt records who you bought from and what you paid"
+msgstr "كل إيصال يسجّل ممّن اشتريت وكم دفعت"
+
+#: apps/marketing/views.py:105
+msgid "Manual entry and old-invoice upload to seed your history"
+msgstr "إدخال يدوي ورفع فواتير قديمة لتأسيس سجلك"
+
+#: apps/marketing/views.py:106
+#| msgid "Product"
+msgid "Products"
+msgstr "المنتجات"
+
+#: apps/marketing/views.py:106
+msgid "Know the real price of everything you buy."
+msgstr "اعرف السعر الحقيقي لكل ما تشتريه."
+
+#: apps/marketing/views.py:107
+msgid "Price comparison across suppliers, trends and stale-price flags"
+msgstr "مقارنة الأسعار بين الموردين والاتجاهات وتنبيهات الأسعار القديمة"
+
+#: apps/marketing/views.py:108
+msgid "Product aliases so the same item is never counted twice"
+msgstr "أسماء بديلة للمنتجات حتى لا يُحسب الصنف نفسه مرتين"
+
+#: apps/marketing/views.py:109 apps/web/translation_strings.py:11
+msgid "Purchase Orders"
+msgstr "أوامر الشراء"
+
+#: apps/marketing/views.py:109
+msgid "Turn approved buying into clean paperwork."
+msgstr "حوّل المشتريات المعتمدة إلى أوراق منظمة."
+
+#: apps/marketing/views.py:110
+msgid "Generate and track POs against jobs and suppliers"
+msgstr "أنشئ وتتبّع أوامر الشراء حسب المهام والموردين"
+
+#: apps/marketing/views.py:111
+msgid "Extract incoming customer POs with AI"
+msgstr "استخرج أوامر شراء العملاء الواردة بالذكاء الاصطناعي"
+
+#: apps/marketing/views.py:112 apps/web/templates/web/invoices.html:3
+#: apps/web/templates/web/invoices.html:8
+#: apps/web/templates/web/invoices.html:16
+msgid "Invoices"
+msgstr "الفواتير"
+
+#: apps/marketing/views.py:112
+msgid "Get paid, and see it clearly."
+msgstr "احصل على أموالك، وشاهد ذلك بوضوح."
+
+#: apps/marketing/views.py:113
+#| msgid "Compliant tax invoices and progress claims, with payments tracked."
+msgid "Compliant tax invoices and progress claims with retention"
+msgstr "فواتير ضريبية متوافقة ومطالبات تقدّم مع احتجاز"
+
+#: apps/marketing/views.py:114
+msgid "Payments and outstanding balances tracked per job"
+msgstr "المدفوعات والأرصدة المستحقة متتبَّعة لكل مهمة"
+
+#: apps/marketing/views.py:115
+msgid "Prove delivery, on brand."
+msgstr "أثبت التسليم، بعلامتك التجارية."
+
+#: apps/marketing/views.py:116
+#| msgid "Generate branded delivery notes straight from the job."
+msgid "Generate delivery notes straight from the job"
+msgstr "أنشئ مذكرات تسليم مباشرة من المهمة"
+
+#: apps/marketing/views.py:117
+msgid "Quantities and signatures captured for the record"
+msgstr "الكميات والتوقيعات مُسجَّلة للسجل"
+
+#: apps/marketing/views.py:118
+#| msgid "Reporting & Analytics"
+msgid "Reports & Analytics"
+msgstr "التقارير والتحليلات"
+
+#: apps/marketing/views.py:118
+msgid "Run the business on numbers, not guesswork."
+msgstr "أدر العمل بالأرقام، لا بالتخمين."
+
+#: apps/marketing/views.py:119
+#| msgid "See profitability, cash flow and job health as the work happens."
+msgid "Profitability, cash flow, aging and job health"
+msgstr "الربحية والتدفق النقدي والتقادم وصحة المهام"
+
+#: apps/marketing/views.py:120
+msgid "Field spend flows into live profitability automatically"
+msgstr "تتدفق نفقات الميدان تلقائيًا إلى الربحية المباشرة"
+
+#: apps/marketing/views.py:121
+#| msgid "Employees"
+msgid "Employee App"
+msgstr "تطبيق الموظف"
+
+#: apps/marketing/views.py:121
+msgid "The field team's tool, built mobile-first."
+msgstr "أداة فريق الميدان، مصممة للجوال أولًا."
+
+#: apps/marketing/views.py:122
+msgid "Capture time, materials, fuel and progress from site"
+msgstr "سجّل الوقت والمواد والوقود والتقدم من الموقع"
+
+#: apps/marketing/views.py:123
+msgid "Works for technicians, drivers, welders, operators and labourers"
+msgstr "يعمل للفنيين والسائقين واللحّامين والمشغّلين والعمال"
+
+#: apps/marketing/views.py:124
+#| msgid "GPS & Time Tracking"
+msgid "GPS Tracking"
+msgstr "تتبّع GPS"
+
+#: apps/marketing/views.py:124
+msgid "Know who was on site, and when."
+msgstr "اعرف من كان في الموقع ومتى."
+
+#: apps/marketing/views.py:125
+msgid "Every field check-in is GPS-stamped and time-stamped"
+msgstr "كل تسجيل وصول ميداني مختوم بـ GPS والوقت"
+
+#: apps/marketing/views.py:126
+msgid "Distance-from-site flags keep records honest"
+msgstr "تنبيهات المسافة عن الموقع تحافظ على صدق السجلات"
+
+#: apps/marketing/views.py:127
+#| msgid "Automations"
+msgid "AI Automation"
+msgstr "الأتمتة بالذكاء الاصطناعي"
+
+#: apps/marketing/views.py:127
+msgid "Let AI do the data entry."
+msgstr "دع الذكاء الاصطناعي يقوم بإدخال البيانات."
+
+#: apps/marketing/views.py:128
+msgid "Extract RFQs, purchase orders, supplier invoices and scopes of work"
+msgstr "استخرج طلبات عروض الأسعار وأوامر الشراء وفواتير الموردين ونطاقات العمل"
+
+#: apps/marketing/views.py:129
+msgid "AI quotation suggestions grounded in your own history"
+msgstr "اقتراحات عروض أسعار بالذكاء الاصطناعي مستندة إلى سجلك الخاص"
+
+#: apps/marketing/views.py:130
+#| msgid "Secure"
+msgid "Security"
+msgstr "الأمان"
+
+#: apps/marketing/views.py:130
+msgid "Enterprise-grade protection for your data."
+msgstr "حماية بمستوى المؤسسات لبياناتك."
+
+#: apps/marketing/views.py:131
+msgid "Role-based access control and full audit logging"
+msgstr "التحكم في الوصول حسب الأدوار وتسجيل تدقيق كامل"
+
+#: apps/marketing/views.py:132
+msgid "Tenant isolation so your data is only ever yours"
+msgstr "عزل المستأجرين حتى تبقى بياناتك ملكك وحدك"
+
+#: apps/marketing/views.py:133
+msgid "Cloud Platform"
+msgstr "منصة سحابية"
+
+#: apps/marketing/views.py:133
+msgid "Always on, everywhere."
+msgstr "متاحة دائمًا، في كل مكان."
+
+#: apps/marketing/views.py:134
+msgid "Access from desktop, tablet and mobile"
+msgstr "وصول من الكمبيوتر المكتبي والجهاز اللوحي والجوال"
+
+#: apps/marketing/views.py:135
+msgid "Automatic backups and no software to install"
+msgstr "نسخ احتياطي تلقائي ولا برامج للتثبيت"
 
 #: apps/projects/models.py:20 apps/web/templates/web/projects.html:26
 msgid "Pending compliance"
@@ -883,34 +1276,9 @@ msgstr "شراء الحزمة"
 msgid "Plans"
 msgstr "الخطط"
 
-#: apps/web/templates/web/billing.html:106
-msgid "Monthly"
-msgstr "شهري"
-
-#: apps/web/templates/web/billing.html:107
-msgid "Annual"
-msgstr "سنوي"
-
-#: apps/web/templates/web/billing.html:107
-msgid "· save ~2 months"
-msgstr "· وفّر ~شهرين"
-
 #: apps/web/templates/web/billing.html:114
 msgid "Most popular"
 msgstr "الأكثر شيوعًا"
-
-#: apps/web/templates/web/billing.html:117
-msgid "/yr"
-msgstr "/سنة"
-
-#: apps/web/templates/web/billing.html:118
-msgid "/mo"
-msgstr "/شهر"
-
-#: apps/web/templates/web/billing.html:121
-#, python-format
-msgid "Save %(sym)s%(amt)s a year"
-msgstr "وفّر %(sym)s%(amt)s سنويًا"
 
 #: apps/web/templates/web/billing.html:127
 msgid "Current plan"
@@ -2565,15 +2933,6 @@ msgid "Quotations"
 msgstr "عروض الأسعار"
 
 #: apps/web/templates/web/customers.html:29
-#: apps/web/templates/web/dashboard.html:51
-#: apps/web/templates/web/projects.html:3
-#: apps/web/templates/web/projects.html:7
-#: apps/web/templates/web/quotation_detail.html:234
-#: apps/web/translation_strings.py:11
-msgid "Projects"
-msgstr "المشاريع"
-
-#: apps/web/templates/web/customers.html:29
 msgid "Terms"
 msgstr "الشروط"
 
@@ -2658,12 +3017,6 @@ msgstr "إكمال الإعداد"
 #: apps/web/templates/web/dashboard.html:29
 msgid "Remind me later"
 msgstr "ذكّرني لاحقًا"
-
-#: apps/web/templates/web/dashboard.html:53
-#: apps/web/templates/web/quotation_detail.html:235
-#: apps/web/templates/web/work.html:3 apps/web/templates/web/work.html:8
-msgid "Jobs"
-msgstr "المهام"
 
 #: apps/web/templates/web/dashboard.html:55
 msgid "Ready / in progress"
@@ -2755,12 +3108,6 @@ msgstr "كل شيء على ما يرام"
 #: apps/web/templates/web/dashboard.html:145
 msgid "Every project is compliance-ready."
 msgstr "كل مشروع جاهز للامتثال."
-
-#: apps/web/templates/web/invoices.html:3
-#: apps/web/templates/web/invoices.html:8
-#: apps/web/templates/web/invoices.html:16
-msgid "Invoices"
-msgstr "الفواتير"
 
 #: apps/web/templates/web/invoices.html:9
 msgid ""
@@ -4084,10 +4431,6 @@ msgstr "إدارة العملاء"
 #: apps/web/translation_strings.py:11
 msgid "Job Card"
 msgstr "بطاقة العمل"
-
-#: apps/web/translation_strings.py:11
-msgid "Purchase Orders"
-msgstr "أوامر الشراء"
 
 #: apps/web/translation_strings.py:12
 msgid "Tax Invoice"

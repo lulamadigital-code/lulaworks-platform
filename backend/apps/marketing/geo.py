@@ -87,6 +87,41 @@ def _country_from_ip(request):
         return None
 
 
+def detect_language(request):
+    """Best-effort UI language for an ANONYMOUS visitor, from their location —
+    a visitor in France sees French, in Morocco Arabic, etc. Maps the detected
+    country to that country's default language via the reference engine
+    (CountryLanguage). Returns a language code, or None if it can't tell.
+
+    This is only a *default*: an explicit choice from the language switcher
+    (session / cookie) always takes precedence in the middleware, and the
+    result is cached per session so the geo lookup runs at most once. Never
+    touches currency, permissions or data."""
+    cached = None
+    try:
+        cached = request.session.get("lang_geo")
+    except Exception:  # noqa: BLE001 — session may be unavailable
+        cached = None
+    if cached:
+        return cached
+    country = _country_from_headers(request) or _country_from_ip(request)
+    if not country:
+        return None
+    code = None
+    try:
+        from apps.reference.services import LanguageService
+        lang = LanguageService.default_for_country(country)
+        code = lang.code if lang else None
+    except Exception:  # noqa: BLE001
+        code = None
+    if code:
+        try:
+            request.session["lang_geo"] = code   # confident → sticky (anon only)
+        except Exception:  # noqa: BLE001
+            pass
+    return code
+
+
 def detect_currency(request) -> str:
     """The currency to show this visitor.
 

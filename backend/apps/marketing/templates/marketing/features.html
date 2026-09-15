@@ -1,14 +1,14 @@
 {% extends "marketing/base.html" %}
+{% load i18n %}
 {% block content %}
 <section class="section tight">
   <div class="wrap center">
-    <span class="eyebrow">Features</span>
-    <h1>Everything a contractor needs, in one platform</h1>
-    <p class="lead">From the first customer enquiry to the final payment — plus the AI, mobile
-      and reporting tools that make it effortless.</p>
+    <span class="eyebrow">{% trans "Features" %}</span>
+    <h1>{% trans "Everything a contractor needs, in one platform" %}</h1>
+    <p class="lead">{% trans "From the first customer enquiry to the final payment — plus the AI, mobile and reporting tools that make it effortless." %}</p>
     <div class="cta-row" style="justify-content:center;margin-top:18px;">
-      <a class="btn" href="{% url 'marketing:trial' %}">Start Free Trial</a>
-      <a class="btn ghost" href="{% url 'marketing:demo' %}">Book a Demo</a>
+      <a class="btn" href="{% url 'marketing:trial' %}">{% trans "Start Free Trial" %}</a>
+      <a class="btn ghost" href="{% url 'marketing:demo' %}">{% trans "Book a Demo" %}</a>
     </div>
   </div>
 </section>
@@ -32,11 +32,11 @@
 
 <section class="section band">
   <div class="wrap center">
-    <h2>See it on your own jobs</h2>
-    <p class="lead">Start a free trial or book a live demo with our team.</p>
+    <h2>{% trans "See it on your own jobs" %}</h2>
+    <p class="lead">{% trans "Start a free trial or book a live demo with our team." %}</p>
     <div class="cta-row" style="justify-content:center;margin-top:18px;">
-      <a class="btn lg white" href="{% url 'marketing:trial' %}">Start Free Trial</a>
-      <a class="btn lg ghost" href="{% url 'marketing:demo' %}" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.5);">Book a Demo</a>
+      <a class="btn lg white" href="{% url 'marketing:trial' %}">{% trans "Start Free Trial" %}</a>
+      <a class="btn lg ghost" href="{% url 'marketing:demo' %}" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.5);">{% trans "Book a Demo" %}</a>
     </div>
   </div>
 </section>

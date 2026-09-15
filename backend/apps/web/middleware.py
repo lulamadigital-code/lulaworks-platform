@@ -181,16 +181,31 @@ class LanguageActivationMiddleware:
                 translation.activate(lang)
                 request.LANGUAGE_CODE = lang
             else:
-                # Anonymous visitor (e.g. the public marketing site): honour an
-                # explicit choice from the language switcher (session / ?lang=).
-                # Otherwise leave LocaleMiddleware's cookie/Accept-Language result.
+                # Anonymous visitor (e.g. the public marketing site).
+                #  1. An explicit choice from the language switcher (session/?lang=)
+                #     always wins.
+                #  2. A prior choice saved in the language cookie is already applied
+                #     by LocaleMiddleware — leave it.
+                #  3. Otherwise auto-detect from the visitor's country (a visitor in
+                #     France sees French) — falling back to LocaleMiddleware's
+                #     Accept-Language result when the location is unknown.
+                from django.conf import settings
+                from apps.reference.services import LanguageService
                 sess = getattr(request, "session", None)
                 explicit = (sess.get("preferred_language") if sess else None) \
                     or (request.GET.get("lang") if hasattr(request, "GET") else None)
+                cookie_set = getattr(settings, "LANGUAGE_COOKIE_NAME", "django_language") \
+                    in getattr(request, "COOKIES", {})
                 if explicit:
                     lang, _locale = LanguageResolutionService.resolve(request=request)
                     translation.activate(lang)
                     request.LANGUAGE_CODE = lang
+                elif not cookie_set:
+                    from apps.marketing.geo import detect_language
+                    code = detect_language(request)
+                    if code and LanguageService.is_valid(code):
+                        translation.activate(code)
+                        request.LANGUAGE_CODE = code
         except Exception:  # noqa: BLE001 — language must never break a request
             pass
         return self.get_response(request)

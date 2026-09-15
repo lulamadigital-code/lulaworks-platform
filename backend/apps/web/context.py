@@ -193,13 +193,18 @@ def localization(request):
     layout can set `<html lang dir>` — RTL-ready, no separate app. Never touches
     currency, permissions or data."""
     try:
+        from django.utils import translation
         from apps.reference.services import (LanguageResolutionService as R,
                                              LanguageService)
         user = getattr(request, "user", None)
         authed = bool(user and getattr(user, "is_authenticated", False))
         company = getattr(user, "active_company", None) if authed else None
-        lang, locale = R.resolve(request=request, user=user if authed else None,
-                                 company=company)
+        _lang, locale = R.resolve(request=request, user=user if authed else None,
+                                  company=company)
+        # Reflect the language the middleware actually ACTIVATED for this request
+        # (explicit switcher choice, saved cookie, geo-detected country, or the
+        # browser's Accept-Language) so <html lang dir> always matches the page.
+        lang = translation.get_language() or _lang or "en"
         # The full list of activated languages, for the on-page language switcher
         # (available on every page, including the public marketing site).
         langs = [{"code": l.code, "native_name": l.native_name, "name": l.name}
