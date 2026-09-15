@@ -1,44 +1,44 @@
 {% extends "web/base.html" %}
-{% block title %}Invoices{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Invoices" %}{% endblock %}
 {% block content %}
 
 <div class="pagehead">
   <div>
-    <h1>Invoices</h1>
-    <p class="sub" style="margin:0;">Create a customer invoice from scratch, or raise
-      a tax invoice from an approved quotation.</p>
+    <h1>{% trans "Invoices" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "Create a customer invoice from scratch, or raise a tax invoice from an approved quotation." %}</p>
   </div>
-  {% if can_create %}<a class="btn primary" href="{% url 'web:invoice_new' %}">+ New invoice</a>{% endif %}
+  {% if can_create %}<a class="btn primary" href="{% url 'web:invoice_new' %}">{% trans "+ New invoice" %}</a>{% endif %}
 </div>
 
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▤</div>
-    <div class="n">{{ report.count }}</div><div class="l">Invoices</div></div>
+    <div class="n">{{ report.count }}</div><div class="l">{% trans "Invoices" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div>
-    <div class="n">{{ report.approved }}</div><div class="l">Approved</div></div>
+    <div class="n">{{ report.approved }}</div><div class="l">{% trans "Approved" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">✎</div>
-    <div class="n">{{ report.draft }}</div><div class="l">Draft</div></div>
+    <div class="n">{{ report.draft }}</div><div class="l">{% trans "Draft" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">↑</div>
-    <div class="n">{{ report.month_count }}</div><div class="l">This month</div></div>
+    <div class="n">{{ report.month_count }}</div><div class="l">{% trans "This month" %}</div></div>
 </div>
 
 {% if can_view_money %}
 <div class="two-col">
-  <div><div class="card"><strong>Total invoiced</strong>
+  <div><div class="card"><strong>{% trans "Total invoiced" %}</strong>
     <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ report.total_value|floatformat:2 }}</p>
-    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">Across {{ report.count }} invoice(s) · R{{ report.paid_total|floatformat:2 }} paid</p>
+    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{% blocktrans with n=report.count paid=report.paid_total|floatformat:2 %}Across {{ n }} invoice(s) · R{{ paid }} paid{% endblocktrans %}</p>
   </div></div>
-  <div><div class="card"><strong>Outstanding</strong>
+  <div><div class="card"><strong>{% trans "Outstanding" %}</strong>
     <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ report.outstanding_total|floatformat:2 }}</p>
-    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">R{{ report.month_value|floatformat:2 }} invoiced this month</p>
+    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{% blocktrans with v=report.month_value|floatformat:2 %}R{{ v }} invoiced this month{% endblocktrans %}</p>
   </div></div>
 </div>
 
 <div class="card" style="margin-top:0;">
-  <strong>Outstanding by age</strong>
+  <strong>{% trans "Outstanding by age" %}</strong>
   <div style="overflow-x:auto;margin-top:8px;">
   <table>
-    <thead><tr>{% for label, amt in report.aging_rows %}<th class="num">{{ label }}</th>{% endfor %}<th class="num">Total</th></tr></thead>
+    <thead><tr>{% for label, amt in report.aging_rows %}<th class="num">{{ label }}</th>{% endfor %}<th class="num">{% trans "Total" %}</th></tr></thead>
     <tbody><tr>
       {% for label, amt in report.aging_rows %}<td class="num">R{{ amt|floatformat:2 }}</td>{% endfor %}
       <td class="num"><strong>R{{ report.outstanding_total|floatformat:2 }}</strong></td>
@@ -49,13 +49,13 @@
 {% endif %}
 
 <div class="card">
-  <h3 style="margin:0 0 12px;">Your invoices</h3>
+  <h3 style="margin:0 0 12px;">{% trans "Your invoices" %}</h3>
   {% if invoices %}
   <div style="overflow-x:auto;">
   <table>
     <thead>
-      <tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="num">Total</th>
-        <th class="num">Outstanding</th><th>Payment</th></tr>
+      <tr><th>{% trans "Invoice" %}</th><th>{% trans "Customer" %}</th><th>{% trans "Date" %}</th><th class="num">{% trans "Total" %}</th>
+        <th class="num">{% trans "Outstanding" %}</th><th>{% trans "Payment" %}</th></tr>
     </thead>
     <tbody>
       {% for inv in invoices %}
@@ -65,8 +65,8 @@
         <td>{{ inv.created_at|date:"Y-m-d" }}</td>
         <td class="num">R{{ inv.invoice_amount|floatformat:2 }}</td>
         <td class="num">R{{ inv.outstanding|floatformat:2 }}</td>
-        <td>{% if inv.payment_state == 'paid' %}<span class="chip ok">Paid</span>
-          {% elif inv.payment_state == 'part' %}<span class="chip warn">Part-paid</span>
+        <td>{% if inv.payment_state == 'paid' %}<span class="chip ok">{% trans "Paid" %}</span>
+          {% elif inv.payment_state == 'part' %}<span class="chip warn">{% trans "Part-paid" %}</span>
           {% else %}<span class="chip">{{ inv.get_status_display }}</span>{% endif %}</td>
       </tr>
       {% endfor %}
@@ -75,21 +75,19 @@
   </div>
   {% else %}
   <div style="text-align:center;padding:26px 14px;">
-    <p class="muted" style="margin:0;">No invoices yet.</p>
-    {% if can_create %}<a class="btn primary" href="{% url 'web:invoice_new' %}" style="margin-top:10px;">+ Create your first invoice</a>{% endif %}
+    <p class="muted" style="margin:0;">{% trans "No invoices yet." %}</p>
+    {% if can_create %}<a class="btn primary" href="{% url 'web:invoice_new' %}" style="margin-top:10px;">{% trans "+ Create your first invoice" %}</a>{% endif %}
   </div>
   {% endif %}
 </div>
 
 {% if eligible %}
 <div class="card" style="margin-top:14px;">
-  <h3 style="margin:0 0 4px;">Raise a tax invoice from a quotation</h3>
-  <p class="muted" style="margin:0 0 12px;font-size:13px;">
-    These approved quotations are ready to invoice. This creates a tax invoice that
-    carries the quotation's number — figures pulled straight from the quotation.</p>
+  <h3 style="margin:0 0 4px;">{% trans "Raise a tax invoice from a quotation" %}</h3>
+  <p class="muted" style="margin:0 0 12px;font-size:13px;">{% trans "These approved quotations are ready to invoice. This creates a tax invoice that carries the quotation's number — figures pulled straight from the quotation." %}</p>
   <div style="overflow-x:auto;">
   <table>
-    <thead><tr><th>Quotation</th><th>Customer</th><th class="num">Amount</th><th></th></tr></thead>
+    <thead><tr><th>{% trans "Quotation" %}</th><th>{% trans "Customer" %}</th><th class="num">{% trans "Amount" %}</th><th></th></tr></thead>
     <tbody>
       {% for q in eligible %}
       <tr>
@@ -99,7 +97,7 @@
         <td style="text-align:right;">
           {% if can_create %}
           <form method="post" action="{% url 'web:quotation_create_invoice' q.id %}" style="display:inline;">{% csrf_token %}
-            <button class="btn ghost" type="submit" data-busy-text="Creating…">Create tax invoice →</button>
+            <button class="btn ghost" type="submit" data-busy-text="{% trans 'Creating…' %}">{% trans "Create tax invoice →" %}</button>
           </form>{% endif %}
         </td>
       </tr>

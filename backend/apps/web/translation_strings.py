@@ -19,3 +19,8 @@ _SETUP = [
     _("Business information"), _("Tax / registration"), _("Banking details"),
     _("Communication"), _("Documents & branding"),
 ]
+
+# Jobs view-switcher tab labels (passed to web/_viewtab.html as `label`).
+_VIEWTABS = [
+    _("List"), _("Board"), _("Table"), _("Calendar"), _("Workload"),
+]

@@ -1,24 +1,25 @@
 {% extends "web/base.html" %}
-{% block title %}Jobs{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Jobs" %}{% endblock %}
 {% block content %}
 
 <div class="pagehead">
   <div>
-    <h1>Jobs</h1>
-    <p class="sub" style="margin:0;">Every job runs through one engine — the only difference is how it started.</p>
+    <h1>{% trans "Jobs" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "Every job runs through one engine — the only difference is how it started." %}</p>
   </div>
-  {% if can_manage %}<a class="btn" href="{% url 'web:work_new' %}">+ New Job</a>{% endif %}
+  {% if can_manage %}<a class="btn" href="{% url 'web:work_new' %}">{% trans "+ New Job" %}</a>{% endif %}
 </div>
 
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▦</div>
-    <div class="n">{{ report.total }}</div><div class="l">Total jobs</div></div>
+    <div class="n">{{ report.total }}</div><div class="l">{% trans "Total jobs" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">▶</div>
-    <div class="n">{{ report.open }}</div><div class="l">Open</div></div>
+    <div class="n">{{ report.open }}</div><div class="l">{% trans "Open" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--red-t);color:#c22a41;">!</div>
-    <div class="n">{{ report.blocked|length }}</div><div class="l">Blocked</div></div>
+    <div class="n">{{ report.blocked|length }}</div><div class="l">{% trans "Blocked" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div>
-    <div class="n">{{ report.completion_pct }}%</div><div class="l">Completion</div></div>
+    <div class="n">{{ report.completion_pct }}%</div><div class="l">{% trans "Completion" %}</div></div>
 </div>
 
 {# One dataset, five lenses — the view changes presentation, never the data. #}
@@ -32,32 +33,32 @@
 
 <form method="get" class="filterbar">
   <input type="hidden" name="view" value="{{ view }}">
-  <input type="search" name="q" value="{{ f.q|default:'' }}" placeholder="Search jobs…" style="flex:2;min-width:150px;">
+  <input type="search" name="q" value="{{ f.q|default:'' }}" placeholder="{% trans 'Search jobs…' %}" style="flex:2;min-width:150px;">
   <select name="origin">
-    <option value="">All origins</option>
+    <option value="">{% trans "All origins" %}</option>
     {% for value, label in origins %}
     <option value="{{ value }}" {% if f.origin == value %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select>
   <select name="status">
-    <option value="">All statuses</option>
+    <option value="">{% trans "All statuses" %}</option>
     {% for value, label in statuses %}
     <option value="{{ value }}" {% if f.status == value %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select>
   <select name="priority">
-    <option value="">Any priority</option>
+    <option value="">{% trans "Any priority" %}</option>
     {% for value, label in priorities %}
     <option value="{{ value }}" {% if f.priority == value %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select>
   <select name="scope">
-    <option value="">Project + standalone</option>
-    <option value="project" {% if f.scope == 'project' %}selected{% endif %}>Project jobs</option>
-    <option value="standalone" {% if f.scope == 'standalone' %}selected{% endif %}>Standalone</option>
+    <option value="">{% trans "Project + standalone" %}</option>
+    <option value="project" {% if f.scope == 'project' %}selected{% endif %}>{% trans "Project jobs" %}</option>
+    <option value="standalone" {% if f.scope == 'standalone' %}selected{% endif %}>{% trans "Standalone" %}</option>
   </select>
-  <label class="inline"><input type="checkbox" name="mine" value="1" {% if f.mine %}checked{% endif %}> Mine</label>
-  <button class="btn ghost" type="submit">Filter</button>
+  <label class="inline"><input type="checkbox" name="mine" value="1" {% if f.mine %}checked{% endif %}> {% trans "Mine" %}</label>
+  <button class="btn ghost" type="submit">{% trans "Filter" %}</button>
 </form>
 
 {% if view == 'list' %}
@@ -67,18 +68,18 @@
     <span class="prio {{ t.priority }}" title="{{ t.get_priority_display }}"></span>
     <span class="wr-main">
       <strong>{{ t.name }}</strong>
-      <span class="muted">{% if t.project %}{{ t.project.number }}{% else %}Standalone{% endif %}
+      <span class="muted">{% if t.project %}{{ t.project.number }}{% else %}{% trans "Standalone" %}{% endif %}
         · {{ t.get_origin_display }}{% if t.client_name %} · {{ t.client_name }}{% endif %}</span>
     </span>
     <span class="wr-prog">
       <span class="bar-track"><span class="bar-fill" style="width:{{ t.progress_pct }}%;"></span></span>
       <span class="muted" style="font-size:12px;">{{ t.progress_pct }}%</span>
     </span>
-    {% if t.is_overdue %}<span class="chip bad">Overdue</span>{% endif %}
+    {% if t.is_overdue %}<span class="chip bad">{% trans "Overdue" %}</span>{% endif %}
     {% include "web/_statuschip.html" with s=t %}
   </a>
   {% empty %}
-  <p class="muted" style="padding:22px;">No jobs match these filters.</p>
+  <p class="muted" style="padding:22px;">{% trans "No jobs match these filters." %}</p>
   {% endfor %}
 </div>
 
@@ -91,11 +92,11 @@
     {% for t in lane.tasks %}
     <a class="kcard p-{{ t.priority }}" href="{% url 'web:work_detail' t.id %}">
       <strong>{{ t.name }}</strong>
-      <span class="muted">{% if t.project %}{{ t.project.number }}{% else %}Standalone{% endif %}</span>
+      <span class="muted">{% if t.project %}{{ t.project.number }}{% else %}{% trans "Standalone" %}{% endif %}</span>
       <span class="bar-track" style="margin-top:9px;"><span class="bar-fill" style="width:{{ t.progress_pct }}%;"></span></span>
       <span class="kmeta">
         {% if t.due_date %}<span class="chip {% if t.is_overdue %}bad{% endif %}">{{ t.due_date|date:"d M" }}</span>{% endif %}
-        {% if t.blocked_reason %}<span class="chip bad" title="{{ t.blocked_reason }}">blocked</span>{% endif %}
+        {% if t.blocked_reason %}<span class="chip bad" title="{{ t.blocked_reason }}">{% trans "blocked" %}</span>{% endif %}
       </span>
     </a>
     {% empty %}<p class="lane-empty">—</p>{% endfor %}
@@ -106,8 +107,8 @@
 {% elif view == 'table' %}
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Job</th><th>Origin</th><th>Project</th><th>Owner</th><th>Priority</th>
-        <th>Due</th><th>Progress</th><th>Status</th></tr>
+    <tr><th>{% trans "Job" %}</th><th>{% trans "Origin" %}</th><th>{% trans "Project" %}</th><th>{% trans "Owner" %}</th><th>{% trans "Priority" %}</th>
+        <th>{% trans "Due" %}</th><th>{% trans "Progress" %}</th><th>{% trans "Status" %}</th></tr>
     {% for t in tasks %}
     <tr>
       <td><a href="{% url 'web:work_detail' t.id %}"><strong>{{ t.name }}</strong></a></td>
@@ -121,7 +122,7 @@
       </td>
       <td>{% include "web/_statuschip.html" with s=t %}</td>
     </tr>
-    {% empty %}<tr><td colspan="8" class="muted" style="padding:20px;">No jobs match these filters.</td></tr>{% endfor %}
+    {% empty %}<tr><td colspan="8" class="muted" style="padding:20px;">{% trans "No jobs match these filters." %}</td></tr>{% endfor %}
   </table>
 </div>
 
@@ -133,17 +134,17 @@
   <a class="workrow flush" href="{% url 'web:work_detail' t.id %}">
     <span class="prio {{ t.priority }}"></span>
     <span class="wr-main"><strong>{{ t.name }}</strong>
-      <span class="muted">{% if t.project %}{{ t.project.number }}{% else %}Standalone{% endif %}</span></span>
-    {% if t.is_overdue %}<span class="chip bad">Overdue</span>{% endif %}
+      <span class="muted">{% if t.project %}{{ t.project.number }}{% else %}{% trans "Standalone" %}{% endif %}</span></span>
+    {% if t.is_overdue %}<span class="chip bad">{% trans "Overdue" %}</span>{% endif %}
     {% include "web/_statuschip.html" with s=t %}
   </a>
   {% endfor %}
 </div>
 {% empty %}
-<div class="card"><p class="muted" style="margin:0;">Nothing scheduled — no job has a due date yet.</p></div>
+<div class="card"><p class="muted" style="margin:0;">{% trans "Nothing scheduled — no job has a due date yet." %}</p></div>
 {% endfor %}
 {% if undated %}
-<h2>No due date ({{ undated|length }})</h2>
+<h2>{% blocktrans with n=undated|length %}No due date ({{ n }}){% endblocktrans %}</h2>
 <div class="card" style="padding:0;">
   {% for t in undated %}
   <a class="workrow" href="{% url 'web:work_detail' t.id %}">
@@ -157,24 +158,24 @@
 
 {% elif view == 'workload' %}
 <div class="card">
-  <h2 style="margin:0 0 16px;">Who is carrying what</h2>
+  <h2 style="margin:0 0 16px;">{% trans "Who is carrying what" %}</h2>
   {% for r in workload %}
   <div class="barrow">
     <span class="cap">{{ r.user }}</span>
     <div class="track"><div class="fill" style="width:{{ r.pct }}%;background:{% if r.overdue %}var(--red){% else %}var(--primary){% endif %};">{{ r.open }}</div></div>
-    <span class="muted" style="width:120px;font-size:12.5px;">{{ r.hours }}h est.
-      {% if r.overdue %}· <span style="color:var(--red);">{{ r.overdue }} late</span>{% endif %}</span>
+    <span class="muted" style="width:120px;font-size:12.5px;">{% blocktrans with h=r.hours %}{{ h }}h est.{% endblocktrans %}
+      {% if r.overdue %}· <span style="color:var(--red);">{% blocktrans with n=r.overdue %}{{ n }} late{% endblocktrans %}</span>{% endif %}</span>
   </div>
-  {% empty %}<p class="muted" style="margin:0;">Nobody is assigned to open jobs yet.</p>{% endfor %}
+  {% empty %}<p class="muted" style="margin:0;">{% trans "Nobody is assigned to open jobs yet." %}</p>{% endfor %}
 </div>
 {% if unassigned %}
 <div class="card" style="border-color:var(--orange-t);">
-  <h2 style="margin:0 0 10px;color:#b9711a;">Unassigned open jobs ({{ unassigned|length }})</h2>
+  <h2 style="margin:0 0 10px;color:#b9711a;">{% blocktrans with n=unassigned|length %}Unassigned open jobs ({{ n }}){% endblocktrans %}</h2>
   {% for t in unassigned %}
   <a class="workrow flush" href="{% url 'web:work_detail' t.id %}">
     <span class="prio {{ t.priority }}"></span>
     <span class="wr-main"><strong>{{ t.name }}</strong></span>
-    <span class="chip warn">Needs an owner</span>
+    <span class="chip warn">{% trans "Needs an owner" %}</span>
   </a>
   {% endfor %}
 </div>
