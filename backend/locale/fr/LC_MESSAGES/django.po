@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 11:49+0000\n"
+"POT-Creation-Date: 2026-09-15 13:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -146,6 +146,42 @@ msgstr "Panne / intervention d'urgence"
 #: apps/execution/models.py:160
 msgid "Preventative maintenance"
 msgstr "Maintenance préventive"
+
+#: apps/identity/models.py:146
+#| msgid "Business hours"
+msgid "Business address"
+msgstr "Adresse professionnelle"
+
+#: apps/identity/models.py:148
+msgid "A phone number or email"
+msgstr "Un numéro de téléphone ou un e-mail"
+
+#: apps/identity/models.py:150
+#| msgid "Company registration number"
+msgid "Company registration or VAT number"
+msgstr "Numéro d'immatriculation ou de TVA de l'entreprise"
+
+#: apps/identity/models.py:152
+msgid "Banking details (so customers can pay you)"
+msgstr "Coordonnées bancaires (pour que les clients puissent vous payer)"
+
+#: apps/identity/profile.py:214
+msgid "Invoices will go out with no payment details."
+msgstr "Les factures partiront sans coordonnées de paiement."
+
+#: apps/identity/profile.py:217
+msgid ""
+"You are marked VAT-registered but have no VAT number — a tax invoice is not "
+"valid without it."
+msgstr "Vous êtes marqué comme assujetti à la TVA mais n'avez pas de numéro de TVA — une facture fiscale n'est pas valide sans lui."
+
+#: apps/identity/profile.py:220
+msgid "Tenders and vendor onboarding require a registration number."
+msgstr "Les appels d'offres et l'intégration des fournisseurs nécessitent un numéro d'immatriculation."
+
+#: apps/identity/profile.py:222
+msgid "Documents will print without a company address."
+msgstr "Les documents s'imprimeront sans adresse d'entreprise."
 
 #: apps/identity/validators.py:26
 #, python-format
@@ -448,19 +484,26 @@ msgstr "Entreprise"
 
 #: apps/web/templates/web/company.html:9
 msgid "Finish setting up your company to start issuing documents"
-msgstr "Terminez la configuration de votre entreprise pour commencer à émettre des documents"
+msgstr ""
+"Terminez la configuration de votre entreprise pour commencer à émettre des "
+"documents"
 
 #: apps/web/templates/web/company.html:10
 msgid ""
 "Every quotation and invoice you send pulls from here. A few essentials are "
 "still missing:"
-msgstr "Chaque devis et facture que vous envoyez puise ici. Quelques éléments essentiels manquent encore :"
+msgstr ""
+"Chaque devis et facture que vous envoyez puise ici. Quelques éléments "
+"essentiels manquent encore :"
 
 #: apps/web/templates/web/company.html:14
 msgid ""
 "Fill these in below (and add your logo &amp; banking under the tabs). You'll "
 "have full access as soon as they're saved."
-msgstr "Renseignez-les ci-dessous (et ajoutez votre logo et vos coordonnées bancaires dans les onglets). Vous aurez un accès complet dès qu'ils seront enregistrés."
+msgstr ""
+"Renseignez-les ci-dessous (et ajoutez votre logo et vos coordonnées "
+"bancaires dans les onglets). Vous aurez un accès complet dès qu'ils seront "
+"enregistrés."
 
 #: apps/web/templates/web/company.html:21
 #: apps/web/templates/web/settings.html:15
@@ -471,7 +514,9 @@ msgstr "Profil de l'entreprise"
 msgid ""
 "Your identity inside Lulaworks. Entered once here, then read by every "
 "quotation, invoice, purchase order and generated document."
-msgstr "Votre identité dans Lulaworks. Saisie une seule fois ici, puis lue par chaque devis, facture, bon de commande et document généré."
+msgstr ""
+"Votre identité dans Lulaworks. Saisie une seule fois ici, puis lue par "
+"chaque devis, facture, bon de commande et document généré."
 
 #: apps/web/templates/web/company.html:25
 #, python-format
@@ -503,7 +548,10 @@ msgstr "Ajoutez l'e-mail de votre entreprise"
 msgid ""
 "Without it, when a customer replies to a quotation or invoice you send, the "
 "reply won't reach you. Edit <strong>Contact details</strong> below to set it."
-msgstr "Sans lui, lorsqu'un client répond à un devis ou une facture que vous envoyez, la réponse ne vous parviendra pas. Modifiez les <strong>Coordonnées</strong> ci-dessous pour le définir."
+msgstr ""
+"Sans lui, lorsqu'un client répond à un devis ou une facture que vous "
+"envoyez, la réponse ne vous parviendra pas. Modifiez les "
+"<strong>Coordonnées</strong> ci-dessous pour le définir."
 
 #: apps/web/templates/web/company.html:45
 msgid "What is missing actually costs you"
@@ -526,7 +574,9 @@ msgstr "expire"
 msgid ""
 "You can view the company profile but not change it — that needs the company-"
 "manage permission."
-msgstr "Vous pouvez consulter le profil de l'entreprise mais pas le modifier — cela nécessite l'autorisation de gestion de l'entreprise."
+msgstr ""
+"Vous pouvez consulter le profil de l'entreprise mais pas le modifier — cela "
+"nécessite l'autorisation de gestion de l'entreprise."
 
 #: apps/web/templates/web/company.html:65
 msgid "Company identity"
@@ -685,7 +735,8 @@ msgstr "Réseaux sociaux"
 
 #: apps/web/templates/web/company.html:126
 msgid "Required — the address customers reply to on your documents."
-msgstr "Obligatoire — l'adresse à laquelle les clients répondent sur vos documents."
+msgstr ""
+"Obligatoire — l'adresse à laquelle les clients répondent sur vos documents."
 
 #: apps/web/templates/web/company.html:128
 msgid "Secondary phone"
@@ -728,7 +779,10 @@ msgstr "Devise"
 msgid ""
 "— set automatically from your company country. We check the address format "
 "for your country; we don't verify that it physically exists."
-msgstr "— définie automatiquement à partir du pays de votre entreprise. Nous vérifions le format de l'adresse pour votre pays ; nous ne vérifions pas qu'elle existe physiquement."
+msgstr ""
+"— définie automatiquement à partir du pays de votre entreprise. Nous "
+"vérifions le format de l'adresse pour votre pays ; nous ne vérifions pas "
+"qu'elle existe physiquement."
 
 #: apps/web/templates/web/company.html:179
 msgid "Save address"
@@ -796,7 +850,9 @@ msgstr "Par défaut"
 #: apps/web/templates/web/company.html:226
 msgid ""
 "We couldn’t match this to a known bank — please re-add it from the picker"
-msgstr "Nous n'avons pas pu associer cela à une banque connue — veuillez le rajouter depuis le sélecteur"
+msgstr ""
+"Nous n'avons pas pu associer cela à une banque connue — veuillez le rajouter "
+"depuis le sélecteur"
 
 #: apps/web/templates/web/company.html:226
 msgid "Review"
@@ -821,7 +877,9 @@ msgstr "Supprimer"
 msgid ""
 "No bank account yet — invoices will go out with no way for a client to pay "
 "you."
-msgstr "Aucun compte bancaire — les factures partiront sans moyen pour un client de vous payer."
+msgstr ""
+"Aucun compte bancaire — les factures partiront sans moyen pour un client de "
+"vous payer."
 
 #: apps/web/templates/web/company.html:251
 msgid "Bank name"
@@ -923,7 +981,9 @@ msgstr "Supprimer %(n)s ?"
 
 #: apps/web/templates/web/company.html:303
 msgid "No contacts yet. The primary contact is printed on outgoing documents."
-msgstr "Aucun contact pour le moment. Le contact principal est imprimé sur les documents sortants."
+msgstr ""
+"Aucun contact pour le moment. Le contact principal est imprimé sur les "
+"documents sortants."
 
 #: apps/web/templates/web/company.html:310
 msgid "Full name"
@@ -1126,7 +1186,9 @@ msgstr "Logo de l'entreprise"
 #: apps/web/templates/web/company.html:448
 msgid ""
 "Used on documents, and as the fallback wherever a specific asset is not set."
-msgstr "Utilisé sur les documents, et comme solution de repli partout où un élément spécifique n'est pas défini."
+msgstr ""
+"Utilisé sur les documents, et comme solution de repli partout où un élément "
+"spécifique n'est pas défini."
 
 #: apps/web/templates/web/company.html:451
 msgid "Invoice logo"
@@ -1252,7 +1314,8 @@ msgstr "Conditions du bon de livraison"
 
 #: apps/web/templates/web/company.html:512
 msgid "Inserted automatically into every quotation, invoice and delivery note."
-msgstr "Insérées automatiquement dans chaque devis, facture et bon de livraison."
+msgstr ""
+"Insérées automatiquement dans chaque devis, facture et bon de livraison."
 
 #: apps/web/templates/web/company.html:516
 msgid "Quotation terms & conditions"
@@ -1317,7 +1380,9 @@ msgstr "Conformité"
 msgid ""
 "Administrators manage providers, health and usage in <a "
 "href=\"%(ai_url)s\">AI Settings</a>."
-msgstr "Les administrateurs gèrent les fournisseurs, l'état et l'utilisation dans les <a href=\"%(ai_url)s\">Paramètres IA</a>."
+msgstr ""
+"Les administrateurs gèrent les fournisseurs, l'état et l'utilisation dans "
+"les <a href=\"%(ai_url)s\">Paramètres IA</a>."
 
 #: apps/web/templates/web/company.html:543
 msgid "Concise"
@@ -1360,7 +1425,10 @@ msgid ""
 "Its currency, banking, address, statutory and document rules will apply when "
 "you save. Your existing information is kept — nothing is deleted "
 "automatically."
-msgstr "Ses règles de devise, bancaires, d'adresse, légales et de documents s'appliqueront lors de l'enregistrement. Vos informations existantes sont conservées — rien n'est supprimé automatiquement."
+msgstr ""
+"Ses règles de devise, bancaires, d'adresse, légales et de documents "
+"s'appliqueront lors de l'enregistrement. Vos informations existantes sont "
+"conservées — rien n'est supprimé automatiquement."
 
 #: apps/web/templates/web/crm/_tabs.html:7
 msgid "Overview"

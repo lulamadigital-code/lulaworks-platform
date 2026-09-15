@@ -13,6 +13,7 @@ each section so the gap is visible before it costs anything.
 """
 
 from django.db import transaction
+from django.utils.translation import gettext as _
 
 from .models import (
     Company,
@@ -210,15 +211,15 @@ def _blocked_actions(company) -> list[str]:
     profile = get_profile(company)
     blocked = []
     if not company.bank_accounts.exists():
-        blocked.append("Invoices will go out with no payment details.")
+        blocked.append(_("Invoices will go out with no payment details."))
     if profile.compliance.vat_registered and not company.vat_no:
         blocked.append(
-            "You are marked VAT-registered but have no VAT number — a tax "
-            "invoice is not valid without it.")
+            _("You are marked VAT-registered but have no VAT number — a tax "
+              "invoice is not valid without it."))
     if not company.registration_no:
-        blocked.append("Tenders and vendor onboarding require a registration number.")
+        blocked.append(_("Tenders and vendor onboarding require a registration number."))
     if not (company.street_address and company.city):
-        blocked.append("Documents will print without a company address.")
+        blocked.append(_("Documents will print without a company address."))
     return blocked
 
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 11:49+0000\n"
+"POT-Creation-Date: 2026-09-15 13:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -146,6 +146,42 @@ msgstr "Onklaar / nooduitroep"
 #: apps/execution/models.py:160
 msgid "Preventative maintenance"
 msgstr "Voorkomende instandhouding"
+
+#: apps/identity/models.py:146
+#| msgid "Business hours"
+msgid "Business address"
+msgstr "Besigheidsadres"
+
+#: apps/identity/models.py:148
+msgid "A phone number or email"
+msgstr "'n Telefoonnommer of e-pos"
+
+#: apps/identity/models.py:150
+#| msgid "Company registration number"
+msgid "Company registration or VAT number"
+msgstr "Maatskappyregistrasie- of BTW-nommer"
+
+#: apps/identity/models.py:152
+msgid "Banking details (so customers can pay you)"
+msgstr "Bankbesonderhede (sodat kliënte jou kan betaal)"
+
+#: apps/identity/profile.py:214
+msgid "Invoices will go out with no payment details."
+msgstr "Fakture sal uitgaan sonder betaalbesonderhede."
+
+#: apps/identity/profile.py:217
+msgid ""
+"You are marked VAT-registered but have no VAT number — a tax invoice is not "
+"valid without it."
+msgstr "Jy is as BTW-geregistreer gemerk maar het geen BTW-nommer nie — 'n belastingfaktuur is nie geldig daarsonder nie."
+
+#: apps/identity/profile.py:220
+msgid "Tenders and vendor onboarding require a registration number."
+msgstr "Tenders en verskaffer-aanboarding vereis 'n registrasienommer."
+
+#: apps/identity/profile.py:222
+msgid "Documents will print without a company address."
+msgstr "Dokumente sal sonder 'n maatskappyadres druk."
 
 #: apps/identity/validators.py:26
 #, python-format
@@ -448,13 +484,17 @@ msgstr "Voltooi jou maatskappy se opstelling om dokumente uit te reik"
 msgid ""
 "Every quotation and invoice you send pulls from here. A few essentials are "
 "still missing:"
-msgstr "Elke kwotasie en faktuur wat jy stuur trek hiervandaan. 'n Paar noodsaaklikhede ontbreek nog:"
+msgstr ""
+"Elke kwotasie en faktuur wat jy stuur trek hiervandaan. 'n Paar "
+"noodsaaklikhede ontbreek nog:"
 
 #: apps/web/templates/web/company.html:14
 msgid ""
 "Fill these in below (and add your logo &amp; banking under the tabs). You'll "
 "have full access as soon as they're saved."
-msgstr "Vul hulle hieronder in (en voeg jou logo en bankbesonderhede onder die oortjies by). Jy sal volle toegang hê sodra hulle gestoor is."
+msgstr ""
+"Vul hulle hieronder in (en voeg jou logo en bankbesonderhede onder die "
+"oortjies by). Jy sal volle toegang hê sodra hulle gestoor is."
 
 #: apps/web/templates/web/company.html:21
 #: apps/web/templates/web/settings.html:15
@@ -465,7 +505,9 @@ msgstr "Maatskappyprofiel"
 msgid ""
 "Your identity inside Lulaworks. Entered once here, then read by every "
 "quotation, invoice, purchase order and generated document."
-msgstr "Jou identiteit binne Lulaworks. Een keer hier ingevoer, dan deur elke kwotasie, faktuur, bestelling en gegenereerde dokument gelees."
+msgstr ""
+"Jou identiteit binne Lulaworks. Een keer hier ingevoer, dan deur elke "
+"kwotasie, faktuur, bestelling en gegenereerde dokument gelees."
 
 #: apps/web/templates/web/company.html:25
 #, python-format
@@ -497,7 +539,10 @@ msgstr "Voeg jou maatskappy se e-pos by"
 msgid ""
 "Without it, when a customer replies to a quotation or invoice you send, the "
 "reply won't reach you. Edit <strong>Contact details</strong> below to set it."
-msgstr "Sonder dit sal die antwoord jou nie bereik wanneer 'n kliënt op 'n kwotasie of faktuur reageer nie. Wysig <strong>Kontakbesonderhede</strong> hieronder om dit te stel."
+msgstr ""
+"Sonder dit sal die antwoord jou nie bereik wanneer 'n kliënt op 'n kwotasie "
+"of faktuur reageer nie. Wysig <strong>Kontakbesonderhede</strong> hieronder "
+"om dit te stel."
 
 #: apps/web/templates/web/company.html:45
 msgid "What is missing actually costs you"
@@ -520,7 +565,9 @@ msgstr "verval"
 msgid ""
 "You can view the company profile but not change it — that needs the company-"
 "manage permission."
-msgstr "Jy kan die maatskappyprofiel bekyk maar nie verander nie — dit benodig die maatskappy-bestuur-toestemming."
+msgstr ""
+"Jy kan die maatskappyprofiel bekyk maar nie verander nie — dit benodig die "
+"maatskappy-bestuur-toestemming."
 
 #: apps/web/templates/web/company.html:65
 msgid "Company identity"
@@ -722,7 +769,9 @@ msgstr "Geldeenheid"
 msgid ""
 "— set automatically from your company country. We check the address format "
 "for your country; we don't verify that it physically exists."
-msgstr "— outomaties gestel vanaf jou maatskappy se land. Ons kontroleer die adresformaat vir jou land; ons verifieer nie dat dit fisies bestaan nie."
+msgstr ""
+"— outomaties gestel vanaf jou maatskappy se land. Ons kontroleer die "
+"adresformaat vir jou land; ons verifieer nie dat dit fisies bestaan nie."
 
 #: apps/web/templates/web/company.html:179
 msgid "Save address"
@@ -790,7 +839,9 @@ msgstr "Verstek"
 #: apps/web/templates/web/company.html:226
 msgid ""
 "We couldn’t match this to a known bank — please re-add it from the picker"
-msgstr "Ons kon dit nie aan 'n bekende bank koppel nie — voeg dit asseblief weer by vanaf die kieser"
+msgstr ""
+"Ons kon dit nie aan 'n bekende bank koppel nie — voeg dit asseblief weer by "
+"vanaf die kieser"
 
 #: apps/web/templates/web/company.html:226
 msgid "Review"
@@ -815,7 +866,9 @@ msgstr "Verwyder"
 msgid ""
 "No bank account yet — invoices will go out with no way for a client to pay "
 "you."
-msgstr "Nog geen bankrekening nie — fakture sal uitgaan sonder 'n manier vir 'n kliënt om jou te betaal."
+msgstr ""
+"Nog geen bankrekening nie — fakture sal uitgaan sonder 'n manier vir 'n "
+"kliënt om jou te betaal."
 
 #: apps/web/templates/web/company.html:251
 msgid "Bank name"
@@ -917,7 +970,8 @@ msgstr "Verwyder %(n)s?"
 
 #: apps/web/templates/web/company.html:303
 msgid "No contacts yet. The primary contact is printed on outgoing documents."
-msgstr "Nog geen kontakte nie. Die primêre kontak word op uitgaande dokumente gedruk."
+msgstr ""
+"Nog geen kontakte nie. Die primêre kontak word op uitgaande dokumente gedruk."
 
 #: apps/web/templates/web/company.html:310
 msgid "Full name"
@@ -1120,7 +1174,9 @@ msgstr "Maatskappylogo"
 #: apps/web/templates/web/company.html:448
 msgid ""
 "Used on documents, and as the fallback wherever a specific asset is not set."
-msgstr "Gebruik op dokumente, en as die terugval waar 'n spesifieke bate nie gestel is nie."
+msgstr ""
+"Gebruik op dokumente, en as die terugval waar 'n spesifieke bate nie gestel "
+"is nie."
 
 #: apps/web/templates/web/company.html:451
 msgid "Invoice logo"
@@ -1311,7 +1367,9 @@ msgstr "Nakoming"
 msgid ""
 "Administrators manage providers, health and usage in <a "
 "href=\"%(ai_url)s\">AI Settings</a>."
-msgstr "Administrateurs bestuur verskaffers, gesondheid en gebruik in <a href=\"%(ai_url)s\">KI-instellings</a>."
+msgstr ""
+"Administrateurs bestuur verskaffers, gesondheid en gebruik in <a "
+"href=\"%(ai_url)s\">KI-instellings</a>."
 
 #: apps/web/templates/web/company.html:543
 msgid "Concise"
@@ -1354,7 +1412,10 @@ msgid ""
 "Its currency, banking, address, statutory and document rules will apply when "
 "you save. Your existing information is kept — nothing is deleted "
 "automatically."
-msgstr "Sy geldeenheid-, bank-, adres-, statutêre en dokumentreëls sal geld wanneer jy stoor. Jou bestaande inligting word behou — niks word outomaties uitgevee nie."
+msgstr ""
+"Sy geldeenheid-, bank-, adres-, statutêre en dokumentreëls sal geld wanneer "
+"jy stoor. Jou bestaande inligting word behou — niks word outomaties uitgevee "
+"nie."
 
 #: apps/web/templates/web/crm/_tabs.html:7
 msgid "Overview"

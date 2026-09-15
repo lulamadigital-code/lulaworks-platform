@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 11:49+0000\n"
+"POT-Creation-Date: 2026-09-15 13:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -147,6 +147,42 @@ msgstr "عطل / استدعاء طارئ"
 #: apps/execution/models.py:160
 msgid "Preventative maintenance"
 msgstr "صيانة وقائية"
+
+#: apps/identity/models.py:146
+#| msgid "Business hours"
+msgid "Business address"
+msgstr "عنوان العمل"
+
+#: apps/identity/models.py:148
+msgid "A phone number or email"
+msgstr "رقم هاتف أو بريد إلكتروني"
+
+#: apps/identity/models.py:150
+#| msgid "Company registration number"
+msgid "Company registration or VAT number"
+msgstr "رقم تسجيل الشركة أو ضريبة القيمة المضافة"
+
+#: apps/identity/models.py:152
+msgid "Banking details (so customers can pay you)"
+msgstr "التفاصيل المصرفية (حتى يتمكن العملاء من الدفع لك)"
+
+#: apps/identity/profile.py:214
+msgid "Invoices will go out with no payment details."
+msgstr "ستُرسل الفواتير دون تفاصيل الدفع."
+
+#: apps/identity/profile.py:217
+msgid ""
+"You are marked VAT-registered but have no VAT number — a tax invoice is not "
+"valid without it."
+msgstr "أنت مُعلَّم كمسجّل في ضريبة القيمة المضافة لكن ليس لديك رقم ضريبي — الفاتورة الضريبية غير صالحة بدونه."
+
+#: apps/identity/profile.py:220
+msgid "Tenders and vendor onboarding require a registration number."
+msgstr "تتطلب المناقصات وإعداد الموردين رقم تسجيل."
+
+#: apps/identity/profile.py:222
+msgid "Documents will print without a company address."
+msgstr "ستُطبع المستندات دون عنوان الشركة."
 
 #: apps/identity/validators.py:26
 #, python-format
@@ -456,7 +492,9 @@ msgstr "كل عرض سعر وفاتورة ترسلها تعتمد على هذا.
 msgid ""
 "Fill these in below (and add your logo &amp; banking under the tabs). You'll "
 "have full access as soon as they're saved."
-msgstr "املأها أدناه (وأضف شعارك وبياناتك المصرفية ضمن علامات التبويب). ستحصل على وصول كامل بمجرد حفظها."
+msgstr ""
+"املأها أدناه (وأضف شعارك وبياناتك المصرفية ضمن علامات التبويب). ستحصل على "
+"وصول كامل بمجرد حفظها."
 
 #: apps/web/templates/web/company.html:21
 #: apps/web/templates/web/settings.html:15
@@ -467,7 +505,9 @@ msgstr "ملف الشركة"
 msgid ""
 "Your identity inside Lulaworks. Entered once here, then read by every "
 "quotation, invoice, purchase order and generated document."
-msgstr "هويتك داخل Lulaworks. تُدخَل مرة واحدة هنا، ثم تقرأها كل عرض سعر وفاتورة وأمر شراء ومستند مُنشأ."
+msgstr ""
+"هويتك داخل Lulaworks. تُدخَل مرة واحدة هنا، ثم تقرأها كل عرض سعر وفاتورة وأمر "
+"شراء ومستند مُنشأ."
 
 #: apps/web/templates/web/company.html:25
 #, python-format
@@ -499,7 +539,9 @@ msgstr "أضف البريد الإلكتروني لشركتك"
 msgid ""
 "Without it, when a customer replies to a quotation or invoice you send, the "
 "reply won't reach you. Edit <strong>Contact details</strong> below to set it."
-msgstr "بدونه، عندما يرد عميل على عرض سعر أو فاتورة ترسلها، لن يصلك الرد. عدّل <strong>تفاصيل الاتصال</strong> أدناه لضبطه."
+msgstr ""
+"بدونه، عندما يرد عميل على عرض سعر أو فاتورة ترسلها، لن يصلك الرد. عدّل "
+"<strong>تفاصيل الاتصال</strong> أدناه لضبطه."
 
 #: apps/web/templates/web/company.html:45
 msgid "What is missing actually costs you"
@@ -724,7 +766,9 @@ msgstr "العملة"
 msgid ""
 "— set automatically from your company country. We check the address format "
 "for your country; we don't verify that it physically exists."
-msgstr "— تُضبط تلقائيًا من بلد شركتك. نتحقق من تنسيق العنوان لبلدك؛ لكننا لا نتحقق من وجوده فعليًا."
+msgstr ""
+"— تُضبط تلقائيًا من بلد شركتك. نتحقق من تنسيق العنوان لبلدك؛ لكننا لا نتحقق من "
+"وجوده فعليًا."
 
 #: apps/web/templates/web/company.html:179
 msgid "Save address"
@@ -919,7 +963,8 @@ msgstr "إزالة %(n)s؟"
 
 #: apps/web/templates/web/company.html:303
 msgid "No contacts yet. The primary contact is printed on outgoing documents."
-msgstr "لا توجد جهات اتصال بعد. تُطبع جهة الاتصال الرئيسية على المستندات الصادرة."
+msgstr ""
+"لا توجد جهات اتصال بعد. تُطبع جهة الاتصال الرئيسية على المستندات الصادرة."
 
 #: apps/web/templates/web/company.html:310
 msgid "Full name"
@@ -1313,7 +1358,9 @@ msgstr "الامتثال"
 msgid ""
 "Administrators manage providers, health and usage in <a "
 "href=\"%(ai_url)s\">AI Settings</a>."
-msgstr "يدير المسؤولون المزوّدين والحالة والاستخدام في <a href=\"%(ai_url)s\">إعدادات الذكاء الاصطناعي</a>."
+msgstr ""
+"يدير المسؤولون المزوّدين والحالة والاستخدام في <a href=\"%(ai_url)s\">إعدادات "
+"الذكاء الاصطناعي</a>."
 
 #: apps/web/templates/web/company.html:543
 msgid "Concise"
@@ -1356,7 +1403,9 @@ msgid ""
 "Its currency, banking, address, statutory and document rules will apply when "
 "you save. Your existing information is kept — nothing is deleted "
 "automatically."
-msgstr "ستُطبَّق قواعد عملته والبنوك والعنوان والقواعد القانونية والمستندات عند الحفظ. تُحفظ معلوماتك الحالية — لا يُحذف شيء تلقائيًا."
+msgstr ""
+"ستُطبَّق قواعد عملته والبنوك والعنوان والقواعد القانونية والمستندات عند الحفظ. "
+"تُحفظ معلوماتك الحالية — لا يُحذف شيء تلقائيًا."
 
 #: apps/web/templates/web/crm/_tabs.html:7
 msgid "Overview"

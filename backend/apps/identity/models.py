@@ -7,6 +7,7 @@ never `is_admin`.
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
+from django.utils.translation import gettext as _
 
 from apps.core.models import PlatformBaseModel, UUIDModel
 
@@ -142,13 +143,13 @@ class Company(PlatformBaseModel):
         gate and the 'finish setup' banner. (Logo is recommended but never blocks.)"""
         missing = []
         if not (self.street_address and self.city):
-            missing.append("Business address")
+            missing.append(_("Business address"))
         if not (self.phone or self.mobile or self.email):
-            missing.append("A phone number or email")
+            missing.append(_("A phone number or email"))
         if not (self.registration_no or self.vat_no or self.tax_reference_no):
-            missing.append("Company registration or VAT number")
+            missing.append(_("Company registration or VAT number"))
         if not self.bank_accounts.exists():
-            missing.append("Banking details (so customers can pay you)")
+            missing.append(_("Banking details (so customers can pay you)"))
         return missing
 
     @property
