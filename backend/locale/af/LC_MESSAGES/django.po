@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 14:37+0000\n"
+"POT-Creation-Date: 2026-09-15 14:43+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -201,6 +201,109 @@ msgid_plural "Your password must contain at least %(min)d characters."
 msgstr[0] ""
 msgstr[1] ""
 
+#: apps/marketing/templates/marketing/about.html:6
+#| msgid "About Us"
+msgid "About us"
+msgstr "Oor ons"
+
+#: apps/marketing/templates/marketing/about.html:7
+msgid "We build software for the people who build things"
+msgstr "Ons bou sagteware vir die mense wat dinge bou"
+
+#: apps/marketing/templates/marketing/about.html:8
+msgid ""
+"Lulaworks is a modern operations platform built for contractors, engineering "
+"firms, mining contractors, maintenance teams, industrial service providers "
+"and construction businesses — anywhere in the world."
+msgstr "Lulaworks is 'n moderne bedryfsplatform gebou vir kontrakteurs, ingenieursfirmas, mynkontrakteurs, instandhoudingspanne, industriële diensverskaffers en konstruksiebesighede — enige plek ter wêreld."
+
+#: apps/marketing/templates/marketing/about.html:10
+#| msgid "Why Lulaworks"
+msgid "Why we built Lulaworks"
+msgstr "Hoekom ons Lulaworks gebou het"
+
+#: apps/marketing/templates/marketing/about.html:11
+msgid ""
+"Contracting is hard enough without the admin. Most contractors run their "
+"business across spreadsheets, WhatsApp groups, email chains and a few "
+"disconnected apps. A quote lives in one place, the purchase order in "
+"another, the site photos on a phone, and the invoice in a third system "
+"entirely. Information falls through the cracks, margins leak, and no one "
+"ever has the full picture of a job in one place."
+msgstr "Kontraktering is moeilik genoeg sonder die administrasie. Die meeste kontrakteurs bestuur hul besigheid oor sigblaaie, WhatsApp-groepe, e-poskettings en 'n paar ontkoppelde toepassings. 'n Kwotasie is op een plek, die bestelling op 'n ander, die terreinfoto's op 'n foon, en die faktuur in 'n derde stelsel heeltemal. Inligting val deur die krake, marges lek, en niemand het ooit die volle prentjie van 'n werk op een plek nie."
+
+#: apps/marketing/templates/marketing/about.html:12
+msgid ""
+"We built Lulaworks to fix exactly that — to take a contractor from the first "
+"customer enquiry all the way to the final payment on one intelligent "
+"platform, with AI doing the tedious data entry along the way."
+msgstr "Ons het Lulaworks gebou om presies dit reg te stel — om 'n kontrakteur van die eerste kliëntnavraag heelpad tot die finale betaling op een intelligente platform te neem, met KI wat die vervelige data-invoer langs die pad doen."
+
+#: apps/marketing/templates/marketing/about.html:14
+#| msgid "Transmission"
+msgid "Our mission"
+msgstr "Ons missie"
+
+#: apps/marketing/templates/marketing/about.html:15
+msgid ""
+"To give every contractor — from a two-person team to a fifty-person "
+"operation — the kind of operating system that used to be reserved for large "
+"enterprises: connected, intelligent, and simple enough to actually use on a "
+"busy site."
+msgstr "Om elke kontrakteur — van 'n tweemanspan tot 'n vyftig-persoon-bedryf — die soort bedryfstelsel te gee wat vroeër vir groot ondernemings voorbehou was: gekoppel, intelligent, en eenvoudig genoeg om werklik op 'n besige terrein te gebruik."
+
+#: apps/marketing/templates/marketing/about.html:17
+#| msgid "Create revision"
+msgid "Our vision"
+msgstr "Ons visie"
+
+#: apps/marketing/templates/marketing/about.html:18
+msgid ""
+"A world where running a contracting business is about doing great work, not "
+"fighting paperwork — where quoting, buying, delivering and getting paid all "
+"flow together, and the numbers are always clear."
+msgstr "'n Wêreld waar die bestuur van 'n kontrakteursbesigheid gaan oor goeie werk doen, nie papierwerk beveg nie — waar kwoteer, koop, aflewer en betaal word alles saamvloei, en die syfers altyd duidelik is."
+
+#: apps/marketing/templates/marketing/about.html:20
+msgid "Built around real problems"
+msgstr "Gebou rondom werklike probleme"
+
+#: apps/marketing/templates/marketing/about.html:22
+msgid "Quote faster and win more work, without re-typing the same details."
+msgstr "Kwoteer vinniger en wen meer werk, sonder om dieselfde besonderhede oor te tik."
+
+#: apps/marketing/templates/marketing/about.html:23
+msgid "Know the true cost and profit of every job as it happens."
+msgstr "Ken die werklike koste en wins van elke werk soos dit gebeur."
+
+#: apps/marketing/templates/marketing/about.html:24
+msgid ""
+"Buy materials at the best price, with a supplier history that builds itself."
+msgstr "Koop materiaal teen die beste prys, met 'n verskaffergeskiedenis wat homself bou."
+
+#: apps/marketing/templates/marketing/about.html:25
+msgid "Keep the field team accountable with GPS-stamped check-ins."
+msgstr "Hou die veldspan aanspreeklik met GPS-gestempelde intekens."
+
+#: apps/marketing/templates/marketing/about.html:26
+msgid "Get paid on time with clean, compliant invoices and clear tracking."
+msgstr "Word betyds betaal met netjiese, voldoenende fakture en duidelike opsporing."
+
+#: apps/marketing/templates/marketing/about.html:30
+#: apps/marketing/templates/marketing/base.html:250
+#: apps/marketing/templates/marketing/base.html:282
+#: apps/marketing/templates/marketing/features.html:10
+#: apps/marketing/templates/marketing/features.html:38
+#: apps/marketing/templates/marketing/home.html:12
+#: apps/marketing/templates/marketing/home.html:110
+#: apps/marketing/templates/marketing/pricing.html:35
+msgid "Start Free Trial"
+msgstr "Begin gratis proeftydperk"
+
+#: apps/marketing/templates/marketing/about.html:31
+msgid "Talk to us"
+msgstr "Praat met ons"
+
 #: apps/marketing/templates/marketing/base.html:234
 #: apps/marketing/templates/marketing/base.html:279
 #: apps/marketing/templates/marketing/features.html:6
@@ -209,6 +312,7 @@ msgstr "Kenmerke"
 
 #: apps/marketing/templates/marketing/base.html:235
 #: apps/marketing/templates/marketing/base.html:280
+#: apps/marketing/templates/marketing/faq.html:13
 #: apps/marketing/templates/marketing/pricing.html:6
 msgid "Pricing"
 msgstr "Pryse"
@@ -234,6 +338,7 @@ msgstr "Oor"
 
 #: apps/marketing/templates/marketing/base.html:240
 #: apps/marketing/templates/marketing/base.html:289
+#: apps/marketing/templates/marketing/faq.html:6
 msgid "FAQ"
 msgstr "Gereelde vrae"
 
@@ -250,16 +355,6 @@ msgstr "Gaan na Kontroleskerm"
 #: apps/marketing/templates/marketing/base.html:295
 msgid "Log in"
 msgstr "Meld aan"
-
-#: apps/marketing/templates/marketing/base.html:250
-#: apps/marketing/templates/marketing/base.html:282
-#: apps/marketing/templates/marketing/features.html:10
-#: apps/marketing/templates/marketing/features.html:38
-#: apps/marketing/templates/marketing/home.html:12
-#: apps/marketing/templates/marketing/home.html:110
-#: apps/marketing/templates/marketing/pricing.html:35
-msgid "Start Free Trial"
-msgstr "Begin gratis proeftydperk"
 
 #: apps/marketing/templates/marketing/base.html:273
 msgid ""
@@ -287,6 +382,7 @@ msgid "Resources"
 msgstr "Hulpbronne"
 
 #: apps/marketing/templates/marketing/base.html:292
+#: apps/marketing/templates/marketing/contact.html:27
 #: apps/web/templates/web/company.html:3
 #: apps/web/templates/web/profile.html:122
 #: apps/web/templates/web/settings.html:12
@@ -339,8 +435,344 @@ msgstr "Weier"
 msgid "Accept"
 msgstr "Aanvaar"
 
+#: apps/marketing/templates/marketing/contact.html:8
+#: apps/marketing/templates/marketing/faq.html:49
+#| msgid "Contacts"
+msgid "Contact us"
+msgstr "Kontak ons"
+
+#: apps/marketing/templates/marketing/contact.html:9
+msgid "We'd love to hear from you"
+msgstr "Ons wil graag van jou hoor"
+
+#: apps/marketing/templates/marketing/contact.html:10
+msgid ""
+"Questions about Lulaworks, pricing or getting started? Send us a message and "
+"the right person will get back to you."
+msgstr "Vrae oor Lulaworks, pryse of om te begin? Stuur ons 'n boodskap en die regte persoon sal terugkom na jou toe."
+
+#: apps/marketing/templates/marketing/contact.html:12
+#| msgid "Sales"
+msgid "Sales:"
+msgstr "Verkope:"
+
+#: apps/marketing/templates/marketing/contact.html:13
+#| msgid "Help & Support"
+msgid "Support:"
+msgstr "Ondersteuning:"
+
+#: apps/marketing/templates/marketing/contact.html:14
+#| msgid "Business hours"
+msgid "Business hours:"
+msgstr "Besigheidsure:"
+
+#: apps/marketing/templates/marketing/contact.html:14
+msgid "Mon–Fri, 08:00–17:00 (local time)"
+msgstr "Ma–Vr, 08:00–17:00 (plaaslike tyd)"
+
+#: apps/marketing/templates/marketing/contact.html:15
+msgid "Where we work:"
+msgstr "Waar ons werk:"
+
+#: apps/marketing/templates/marketing/contact.html:15
+#| msgid "Built for contractors worldwide · GDPR-ready"
+msgid "Online, serving contractors worldwide"
+msgstr "Aanlyn, ten diens van kontrakteurs wêreldwyd"
+
+#: apps/marketing/templates/marketing/contact.html:16
+msgid "Follow us: LinkedIn · Facebook · X · Instagram"
+msgstr "Volg ons: LinkedIn · Facebook · X · Instagram"
+
+#: apps/marketing/templates/marketing/contact.html:20
+msgid "Send a message"
+msgstr "Stuur 'n boodskap"
+
+#: apps/marketing/templates/marketing/contact.html:24
+#| msgid "Name"
+msgid "Name *"
+msgstr "Naam *"
+
+#: apps/marketing/templates/marketing/contact.html:25
+#| msgid "Email"
+msgid "Email *"
+msgstr "E-pos *"
+
+#: apps/marketing/templates/marketing/contact.html:28
+msgid "Subject"
+msgstr "Onderwerp"
+
+#: apps/marketing/templates/marketing/contact.html:29
+msgid "Message *"
+msgstr "Boodskap *"
+
+#: apps/marketing/templates/marketing/contact.html:30
+msgid "Send message"
+msgstr "Stuur boodskap"
+
+#: apps/marketing/templates/marketing/faq.html:6
+msgid "Frequently asked questions"
+msgstr "Gereelde vrae"
+
+#: apps/marketing/templates/marketing/faq.html:8
+#| msgid "General email"
+msgid "General"
+msgstr "Algemeen"
+
+#: apps/marketing/templates/marketing/faq.html:9
+#| msgid "Why Lulaworks"
+msgid "What is Lulaworks?"
+msgstr "Wat is Lulaworks?"
+
+#: apps/marketing/templates/marketing/faq.html:9
+msgid ""
+"Lulaworks is an all-in-one platform for contractors — quotations, jobs, "
+"tasks, procurement, suppliers, delivery notes, invoices and payments — with "
+"AI that handles the tedious data entry. It replaces the spreadsheets, "
+"WhatsApp threads and disconnected tools most contractors juggle."
+msgstr "Lulaworks is 'n alles-in-een platform vir kontrakteurs — kwotasies, werke, take, verkryging, verskaffers, afleweringsnotas, fakture en betalings — met KI wat die vervelige data-invoer hanteer. Dit vervang die sigblaaie, WhatsApp-drade en ontkoppelde gereedskap waarmee die meeste kontrakteurs goël."
+
+#: apps/marketing/templates/marketing/faq.html:10
+#| msgid "Why Lulaworks"
+msgid "Who is Lulaworks for?"
+msgstr "Vir wie is Lulaworks?"
+
+#: apps/marketing/templates/marketing/faq.html:10
+msgid ""
+"Contractors, engineering firms, mining contractors, maintenance teams, "
+"industrial service providers and construction businesses — from a two-person "
+"office to a fifty-person operation."
+msgstr "Kontrakteurs, ingenieursfirmas, mynkontrakteurs, instandhoudingspanne, industriële diensverskaffers en konstruksiebesighede — van 'n tweeman-kantoor tot 'n vyftig-persoon-bedryf."
+
+#: apps/marketing/templates/marketing/faq.html:11
+msgid "Do I need to install anything?"
+msgstr "Moet ek enigiets installeer?"
+
+#: apps/marketing/templates/marketing/faq.html:11
+msgid ""
+"No. Lulaworks runs in your browser and on mobile. There's nothing to install "
+"and updates happen automatically."
+msgstr "Nee. Lulaworks loop in jou blaaier en op mobiel. Daar is niks om te installeer nie en opdaterings gebeur outomaties."
+
+#: apps/marketing/templates/marketing/faq.html:14
+#| msgid "New to Lulaworks?"
+msgid "How much does Lulaworks cost?"
+msgstr "Hoeveel kos Lulaworks?"
+
+#: apps/marketing/templates/marketing/faq.html:14
+#, python-format
+msgid ""
+"Three plans: Starter (R299/month), Professional (R1,299/month) and Business "
+"(R3,999/month). Annual billing saves roughly two months. See the <a "
+"href=\"%(pricing_url)s\">pricing page</a> for full details."
+msgstr "Drie planne: Starter (R299/maand), Professional (R1,299/maand) en Business (R3,999/maand). Jaarlikse fakturering bespaar ongeveer twee maande. Sien die <a href=\"%(pricing_url)s\">prysbladsy</a> vir volle besonderhede."
+
+#: apps/marketing/templates/marketing/faq.html:15
+msgid "What's the difference between users and employees?"
+msgstr "Wat is die verskil tussen gebruikers en werknemers?"
+
+#: apps/marketing/templates/marketing/faq.html:15
+msgid ""
+"A <strong>user</strong> is someone who logs in (owner, admin, project "
+"manager, procurement, accounts) and consumes a licence. An <strong>employee</"
+"strong> is a worker you manage in the system (technicians, drivers, welders, "
+"operators). Employees are unlimited on every plan — we never charge for the "
+"size of your crew."
+msgstr "'n <strong>gebruiker</strong> is iemand wat aanmeld (eienaar, admin, projekbestuurder, verkryging, rekeninge) en 'n lisensie verbruik. 'n <strong>werknemer</strong> is 'n werker wat jy in die stelsel bestuur (tegnici, bestuurders, sweisers, operateurs). Werknemers is onbeperk op elke plan — ons hef nooit vir die grootte van jou span nie."
+
+#: apps/marketing/templates/marketing/faq.html:16
+msgid "Can I change plans later?"
+msgstr "Kan ek later van plan verander?"
+
+#: apps/marketing/templates/marketing/faq.html:16
+msgid ""
+"Yes. Upgrade any time and the new limits apply immediately. Downgrades keep "
+"all your data — you simply can't add users beyond the smaller plan's limit "
+"until you're within it."
+msgstr "Ja. Gradeer enige tyd op en die nuwe perke geld onmiddellik. Afgraderings behou al jou data — jy kan net nie gebruikers byvoeg bo die kleiner plan se perk totdat jy daarbinne is nie."
+
+#: apps/marketing/templates/marketing/faq.html:18 apps/marketing/views.py:130
+msgid "Security"
+msgstr "Sekuriteit"
+
+#: apps/marketing/templates/marketing/faq.html:19
+msgid "Is my data secure?"
+msgstr "Is my data veilig?"
+
+#: apps/marketing/templates/marketing/faq.html:19
+msgid ""
+"Yes. Lulaworks uses role-based access control, full audit logging and strict "
+"tenant isolation, so your company's data is only ever visible to your "
+"company. Data is encrypted in transit."
+msgstr "Ja. Lulaworks gebruik rolgebaseerde toegangsbeheer, volledige ouditlogging en streng huurder-isolasie, sodat jou maatskappy se data net vir jou maatskappy sigbaar is. Data word tydens vervoer geënkripteer."
+
+#: apps/marketing/templates/marketing/faq.html:20
+msgid "Who can see my company's information?"
+msgstr "Wie kan my maatskappy se inligting sien?"
+
+#: apps/marketing/templates/marketing/faq.html:20
+msgid ""
+"Only the users you invite, according to the roles you assign them. No other "
+"company on the platform can access your data."
+msgstr "Slegs die gebruikers wat jy nooi, volgens die rolle wat jy hulle toeken. Geen ander maatskappy op die platform kan by jou data kom nie."
+
+#: apps/marketing/templates/marketing/faq.html:22
+msgid "AI"
+msgstr "KI"
+
+#: apps/marketing/templates/marketing/faq.html:23
+msgid "What does the AI actually do?"
+msgstr "Wat doen die KI eintlik?"
+
+#: apps/marketing/templates/marketing/faq.html:23
+msgid ""
+"It reads documents for you — RFQs, purchase orders, supplier invoices and "
+"scopes of work — and fills in the details, and it can suggest quotations "
+"based on your own history. Each AI operation uses one AI credit."
+msgstr "Dit lees dokumente vir jou — RFQ's, bestellings, verskafferfakture en werkomvange — en vul die besonderhede in, en dit kan kwotasies voorstel gebaseer op jou eie geskiedenis. Elke KI-bewerking gebruik een KI-krediet."
+
+#: apps/marketing/templates/marketing/faq.html:24
+msgid "What happens if I run out of AI credits?"
+msgstr "Wat gebeur as ek nie meer KI-krediete het nie?"
+
+#: apps/marketing/templates/marketing/faq.html:24
+#| msgid ""
+#| "Non-AI features keep working. Buy a credit pack below or upgrade your "
+#| "plan to resume AI document extraction and suggestions."
+msgid ""
+"All non-AI features keep working normally. You can buy an AI credit pack or "
+"upgrade your plan to resume AI operations. Your remaining credits are always "
+"shown on your dashboard."
+msgstr "Alle nie-KI-kenmerke werk normaal aan. Jy kan 'n KI-kredietpak koop of jou plan opgradeer om KI-bewerkings te hervat. Jou oorblywende krediete word altyd op jou kontroleskerm gewys."
+
+#: apps/marketing/templates/marketing/faq.html:26
+#: apps/web/templates/web/billing.html:3
+msgid "Billing"
+msgstr "Fakturering"
+
+#: apps/marketing/templates/marketing/faq.html:27
+msgid "How does billing work?"
+msgstr "Hoe werk fakturering?"
+
+#: apps/marketing/templates/marketing/faq.html:27
+msgid ""
+"You're billed monthly or annually for your chosen plan. AI credits reset "
+"each billing cycle. You can buy additional credit packs at any time, and "
+"they're added to your balance immediately."
+msgstr "Jy word maandeliks of jaarliks vir jou gekose plan gefaktureer. KI-krediete stel elke faktureringsiklus terug. Jy kan enige tyd bykomende kredietpakke koop, en hulle word onmiddellik by jou saldo gevoeg."
+
+#: apps/marketing/templates/marketing/faq.html:28
+msgid "Do you offer annual billing?"
+msgstr "Bied julle jaarlikse fakturering aan?"
+
+#: apps/marketing/templates/marketing/faq.html:28
+msgid ""
+"Yes — annual billing is available on every plan and saves you roughly two "
+"months compared to paying monthly."
+msgstr "Ja — jaarlikse fakturering is op elke plan beskikbaar en bespaar jou ongeveer twee maande vergeleke met maandelikse betaling."
+
+#: apps/marketing/templates/marketing/faq.html:30
+#| msgid "Help & Support"
+msgid "Support"
+msgstr "Ondersteuning"
+
+#: apps/marketing/templates/marketing/faq.html:31
+msgid "What support is included?"
+msgstr "Watter ondersteuning is ingesluit?"
+
+#: apps/marketing/templates/marketing/faq.html:31
+msgid ""
+"Starter includes email support, Professional includes priority support, and "
+"Business includes highest-priority support. You can always reach us at "
+"support@lulaworks.com."
+msgstr "Starter sluit e-posondersteuning in, Professional sluit prioriteitsondersteuning in, en Business sluit hoogste-prioriteit-ondersteuning in. Jy kan ons altyd by support@lulaworks.com bereik."
+
+#: apps/marketing/templates/marketing/faq.html:33
+msgid "Data"
+msgstr "Data"
+
+#: apps/marketing/templates/marketing/faq.html:34
+msgid "Who owns the data I put into Lulaworks?"
+msgstr "Wie besit die data wat ek in Lulaworks sit?"
+
+#: apps/marketing/templates/marketing/faq.html:34
+#, python-format
+msgid ""
+"You do. Your data is yours — we process it to provide the service and never "
+"sell it. See our <a href=\"%(privacy_url)s\">Privacy Policy</a>."
+msgstr "Jy. Jou data is joune — ons verwerk dit om die diens te lewer en verkoop dit nooit nie. Sien ons <a href=\"%(privacy_url)s\">Privaatheidsbeleid</a>."
+
+#: apps/marketing/templates/marketing/faq.html:35
+msgid "Can I export my data?"
+msgstr "Kan ek my data uitvoer?"
+
+#: apps/marketing/templates/marketing/faq.html:35
+msgid ""
+"Yes. Quotations, invoices and delivery notes export as PDF, and data exports "
+"as Excel."
+msgstr "Ja. Kwotasies, fakture en afleweringsnotas voer as PDF uit, en data voer as Excel uit."
+
+#: apps/marketing/templates/marketing/faq.html:37
+msgid "Trial"
+msgstr "Proeftydperk"
+
+#: apps/marketing/templates/marketing/faq.html:38
+msgid "How does the free trial work?"
+msgstr "Hoe werk die gratis proeftydperk?"
+
+#: apps/marketing/templates/marketing/faq.html:38
+msgid ""
+"Every new company gets a 30-day free trial with Professional features, 2 "
+"users, unlimited employees, 100 AI credits and 2 GB of storage. No credit "
+"card is required to start."
+msgstr "Elke nuwe maatskappy kry 'n gratis proeftydperk van 30 dae met Professional-kenmerke, 2 gebruikers, onbeperkte werknemers, 100 KI-krediete en 2 GB berging. Geen kredietkaart is nodig om te begin nie."
+
+#: apps/marketing/templates/marketing/faq.html:39
+msgid "What happens when the trial ends?"
+msgstr "Wat gebeur wanneer die proeftydperk eindig?"
+
+#: apps/marketing/templates/marketing/faq.html:39
+msgid ""
+"You choose a paid plan to continue. All the data you created during the "
+"trial stays intact when you upgrade."
+msgstr "Jy kies 'n betaalde plan om voort te gaan. Al die data wat jy tydens die proeftydperk geskep het, bly ongeskonde wanneer jy opgradeer."
+
+#: apps/marketing/templates/marketing/faq.html:41
+#| msgid "Cancelled"
+msgid "Cancellation"
+msgstr "Kansellasie"
+
+#: apps/marketing/templates/marketing/faq.html:42
+msgid "Can I cancel any time?"
+msgstr "Kan ek enige tyd kanselleer?"
+
+#: apps/marketing/templates/marketing/faq.html:42
+msgid ""
+"Yes. You can cancel from your billing page. Access continues until the end "
+"of your current billing period, and your data is preserved."
+msgstr "Ja. Jy kan van jou faktureringsbladsy af kanselleer. Toegang duur voort tot die einde van jou huidige faktureringsperiode, en jou data word bewaar."
+
+#: apps/marketing/templates/marketing/faq.html:44
+#| msgid "Operations"
+msgid "Migration"
+msgstr "Migrasie"
+
+#: apps/marketing/templates/marketing/faq.html:45
+msgid "Can you help me move my existing data across?"
+msgstr "Kan julle my help om my bestaande data oor te skuif?"
+
+#: apps/marketing/templates/marketing/faq.html:45
+#, python-format
+msgid ""
+"Yes. You can import historical quotations and supplier invoices to seed your "
+"history, and our team can help you get set up — <a "
+"href=\"%(contact_url)s\">get in touch</a>."
+msgstr "Ja. Jy kan historiese kwotasies en verskafferfakture invoer om jou geskiedenis te saai, en ons span kan jou help om op te stel — <a href=\"%(contact_url)s\">kontak ons</a>."
+
+#: apps/marketing/templates/marketing/faq.html:48
+msgid "Still have a question?"
+msgstr "Het jy nog 'n vraag?"
+
 #: apps/marketing/templates/marketing/features.html:7
-#| msgid "Everything in one place"
 msgid "Everything a contractor needs, in one platform"
 msgstr "Alles wat 'n kontrakteur nodig het, in een platform"
 
@@ -348,7 +780,9 @@ msgstr "Alles wat 'n kontrakteur nodig het, in een platform"
 msgid ""
 "From the first customer enquiry to the final payment — plus the AI, mobile "
 "and reporting tools that make it effortless."
-msgstr "Van die eerste kliëntnavraag tot die finale betaling — plus die KI-, mobiele en verslagdoeningsgereedskap wat dit moeiteloos maak."
+msgstr ""
+"Van die eerste kliëntnavraag tot die finale betaling — plus die KI-, mobiele "
+"en verslagdoeningsgereedskap wat dit moeiteloos maak."
 
 #: apps/marketing/templates/marketing/features.html:35
 msgid "See it on your own jobs"
@@ -356,7 +790,8 @@ msgstr "Sien dit op jou eie werke"
 
 #: apps/marketing/templates/marketing/features.html:36
 msgid "Start a free trial or book a live demo with our team."
-msgstr "Begin 'n gratis proeftydperk of bespreek 'n lewendige demo met ons span."
+msgstr ""
+"Begin 'n gratis proeftydperk of bespreek 'n lewendige demo met ons span."
 
 #: apps/marketing/templates/marketing/home.html:8
 msgid "The Contractor Operating System"
@@ -549,7 +984,9 @@ msgstr "Eenvoudige, deursigtige pryse"
 msgid ""
 "Pay for the users and AI you need. <strong>Employees are always unlimited</"
 "strong> — we never charge you for the size of your crew."
-msgstr "Betaal vir die gebruikers en KI wat jy nodig het. <strong>Werknemers is altyd onbeperk</strong> — ons hef jou nooit vir die grootte van jou span nie."
+msgstr ""
+"Betaal vir die gebruikers en KI wat jy nodig het. <strong>Werknemers is "
+"altyd onbeperk</strong> — ons hef jou nooit vir die grootte van jou span nie."
 
 #: apps/marketing/templates/marketing/pricing.html:12
 #: apps/web/templates/web/billing.html:106
@@ -588,7 +1025,6 @@ msgstr "Bespaar %(sym)s%(amt)s per jaar"
 
 #: apps/marketing/templates/marketing/pricing.html:29
 #, python-format
-#| msgid "%(n)s open"
 msgid "%(n)s users"
 msgstr "%(n)s gebruikers"
 
@@ -598,13 +1034,11 @@ msgstr "Onbeperkte werknemers"
 
 #: apps/marketing/templates/marketing/pricing.html:31
 #, python-format
-#| msgid "R%(v)s invoiced this month"
 msgid "%(c)s AI credits / month"
 msgstr "%(c)s KI-krediete / maand"
 
 #: apps/marketing/templates/marketing/pricing.html:32
 #, python-format
-#| msgid "Storage"
 msgid "%(s)s storage"
 msgstr "%(s)s berging"
 
@@ -613,7 +1047,9 @@ msgstr "%(s)s berging"
 msgid ""
 "Prices shown in %(currency)s, based on your location. All plans include a 30-"
 "day free trial — no credit card required."
-msgstr "Pryse in %(currency)s gewys, gebaseer op jou ligging. Alle planne sluit 'n gratis proeftydperk van 30 dae in — geen kredietkaart nodig nie."
+msgstr ""
+"Pryse in %(currency)s gewys, gebaseer op jou ligging. Alle planne sluit 'n "
+"gratis proeftydperk van 30 dae in — geen kredietkaart nodig nie."
 
 #: apps/marketing/views.py:44 apps/marketing/views.py:88
 msgid "Quotation Management"
@@ -752,7 +1188,6 @@ msgid "Owner, industrial services"
 msgstr "Eienaar, industriële dienste"
 
 #: apps/marketing/views.py:82
-#| msgid "Document Management"
 msgid "Company Management"
 msgstr "Maatskappybestuur"
 
@@ -765,13 +1200,10 @@ msgid "Company profile, VAT & registration numbers, banking and branding"
 msgstr "Maatskappyprofiel, BTW- en registrasienommers, bankwese en handelsmerk"
 
 #: apps/marketing/views.py:84
-#| msgid ""
-#| "Inserted automatically into every quotation, invoice and delivery note."
 msgid "Flows onto every quotation, invoice and delivery note automatically"
 msgstr "Vloei outomaties na elke kwotasie, faktuur en afleweringsnota"
 
 #: apps/marketing/views.py:85
-#| msgid "Document Management"
 msgid "Customer Management"
 msgstr "Kliëntebestuur"
 
@@ -797,7 +1229,8 @@ msgstr "Sjablone per tipe en sigblad-styl grootmaat-inskrywing"
 
 #: apps/marketing/views.py:90
 msgid "Branded PDF output; award a quote to open a job in one click"
-msgstr "Gemerkte PDF-uitset; ken 'n kwotasie toe om 'n werk met een klik oop te maak"
+msgstr ""
+"Gemerkte PDF-uitset; ken 'n kwotasie toe om 'n werk met een klik oop te maak"
 
 #: apps/marketing/views.py:91 apps/web/templates/web/dashboard.html:53
 #: apps/web/templates/web/quotation_detail.html:235
@@ -810,7 +1243,6 @@ msgid "The operational heart — every job in a single view."
 msgstr "Die operasionele hart — elke werk in 'n enkele aansig."
 
 #: apps/marketing/views.py:92
-#| msgid "Every job in one view — scope, team, progress, money and paperwork."
 msgid "Scope, team, progress, money and paperwork together"
 msgstr "Omvang, span, vordering, geld en papierwerk saam"
 
@@ -844,7 +1276,6 @@ msgid "Break work down and track it to completion."
 msgstr "Breek werk op en volg dit tot voltooiing."
 
 #: apps/marketing/views.py:98
-#| msgid "Break jobs into tasks with checklists, owners and live progress."
 msgid "Checklists, owners, dependencies and live progress"
 msgstr "Kontrolelyste, eienaars, afhanklikhede en lewendige vordering"
 
@@ -857,7 +1288,6 @@ msgid "Buy the right materials at the right price."
 msgstr "Koop die regte materiaal teen die regte prys."
 
 #: apps/marketing/views.py:101
-#| msgid "Raise requests, compare supplier prices and issue purchase orders."
 msgid "Raise procurement requests and compare supplier prices"
 msgstr "Skep verkrygingsversoeke en vergelyk verskafferpryse"
 
@@ -882,7 +1312,6 @@ msgid "Manual entry and old-invoice upload to seed your history"
 msgstr "Handmatige inskrywing en ou-faktuur-oplaai om jou geskiedenis te saai"
 
 #: apps/marketing/views.py:106
-#| msgid "Product"
 msgid "Products"
 msgstr "Produkte"
 
@@ -925,7 +1354,6 @@ msgid "Get paid, and see it clearly."
 msgstr "Word betaal, en sien dit duidelik."
 
 #: apps/marketing/views.py:113
-#| msgid "Compliant tax invoices and progress claims, with payments tracked."
 msgid "Compliant tax invoices and progress claims with retention"
 msgstr "Voldoenende belastingfakture en vorderingseise met retensie"
 
@@ -938,7 +1366,6 @@ msgid "Prove delivery, on brand."
 msgstr "Bewys aflewering, op handelsmerk."
 
 #: apps/marketing/views.py:116
-#| msgid "Generate branded delivery notes straight from the job."
 msgid "Generate delivery notes straight from the job"
 msgstr "Genereer afleweringsnotas direk vanaf die werk"
 
@@ -947,7 +1374,6 @@ msgid "Quantities and signatures captured for the record"
 msgstr "Hoeveelhede en handtekeninge vasgelê vir die rekord"
 
 #: apps/marketing/views.py:118
-#| msgid "Reporting & Analytics"
 msgid "Reports & Analytics"
 msgstr "Verslae en analise"
 
@@ -956,7 +1382,6 @@ msgid "Run the business on numbers, not guesswork."
 msgstr "Bestuur die besigheid op syfers, nie raaiwerk nie."
 
 #: apps/marketing/views.py:119
-#| msgid "See profitability, cash flow and job health as the work happens."
 msgid "Profitability, cash flow, aging and job health"
 msgstr "Winsgewendheid, kontantvloei, veroudering en werkgesondheid"
 
@@ -965,7 +1390,6 @@ msgid "Field spend flows into live profitability automatically"
 msgstr "Veldbesteding vloei outomaties in lewendige winsgewendheid"
 
 #: apps/marketing/views.py:121
-#| msgid "Employees"
 msgid "Employee App"
 msgstr "Werknemertoep"
 
@@ -982,7 +1406,6 @@ msgid "Works for technicians, drivers, welders, operators and labourers"
 msgstr "Werk vir tegnici, bestuurders, sweisers, operateurs en arbeiders"
 
 #: apps/marketing/views.py:124
-#| msgid "GPS & Time Tracking"
 msgid "GPS Tracking"
 msgstr "GPS-opsporing"
 
@@ -999,7 +1422,6 @@ msgid "Distance-from-site flags keep records honest"
 msgstr "Afstand-van-terrein-vlae hou rekords eerlik"
 
 #: apps/marketing/views.py:127
-#| msgid "Automations"
 msgid "AI Automation"
 msgstr "KI-outomatisering"
 
@@ -1014,11 +1436,6 @@ msgstr "Onttrek RFQ's, bestellings, verskafferfakture en werkomvange"
 #: apps/marketing/views.py:129
 msgid "AI quotation suggestions grounded in your own history"
 msgstr "KI-kwotasievoorstelle gegrond op jou eie geskiedenis"
-
-#: apps/marketing/views.py:130
-#| msgid "Secure"
-msgid "Security"
-msgstr "Sekuriteit"
 
 #: apps/marketing/views.py:130
 msgid "Enterprise-grade protection for your data."
@@ -1159,10 +1576,6 @@ msgstr "My profiel"
 #: apps/web/templates/web/base.html:406
 msgid "Sign out"
 msgstr "Meld af"
-
-#: apps/web/templates/web/billing.html:3
-msgid "Billing"
-msgstr "Fakturering"
 
 #: apps/web/templates/web/billing.html:5
 msgid "Billing & subscription"
