@@ -62,7 +62,7 @@
     <div class="n">{{ subs_active }}</div><div class="l">Active subscriptions</div>
     <div class="s">{{ subs_trial }} on trial</div></div>
   <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;"><svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-    <div class="n">R{{ mrr|floatformat:0 }}</div><div class="l">MRR (active plans)</div></div>
+    <div class="n">{{ CURRENCY_SYMBOL }}{{ mrr|floatformat:0 }}</div><div class="l">MRR (active plans)</div></div>
   <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9L18 15z"/></svg></div>
     <div class="n">{{ ai_calls_30d }}</div><div class="l">AI calls · 30d</div>
     <div class="s">{{ ai_credits_30d|floatformat:0 }} credits used</div></div>
@@ -111,12 +111,12 @@
 
 <div class="two">
   <div>
-    <h2 style="margin-top:6px;">Revenue <span class="muted" style="font-weight:400;font-size:14px;">· R{{ revenue_total|floatformat:0 }} in 6 months</span></h2>
+    <h2 style="margin-top:6px;">Revenue <span class="muted" style="font-weight:400;font-size:14px;">· {{ CURRENCY_SYMBOL }}{{ revenue_total|floatformat:0 }} in 6 months</span></h2>
     <div class="card">
       {% for r in revenue %}
       <div class="barrow">
         <div class="cap">{{ r.label }}</div>
-        <div class="track"><div class="fill" style="width:{{ r.pct }}%;background:linear-gradient(90deg,#7c3fb8,#a25ddc);">R{{ r.amt|floatformat:0 }}</div></div>
+        <div class="track"><div class="fill" style="width:{{ r.pct }}%;background:linear-gradient(90deg,#7c3fb8,#a25ddc);">{{ CURRENCY_SYMBOL }}{{ r.amt|floatformat:0 }}</div></div>
       </div>
       {% empty %}<p class="muted" style="margin:0;">No billing yet.</p>{% endfor %}
     </div>

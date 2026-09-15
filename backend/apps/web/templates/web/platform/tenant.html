@@ -51,7 +51,7 @@
     <form method="post">{% csrf_token %}<input type="hidden" name="action" value="change_plan">
       <label>Plan</label>
       <select name="plan_code" required>
-        {% for p in plans %}<option value="{{ p.code }}" {% if sub and sub.plan_id == p.id %}selected{% endif %}>{{ p.name }} — R{{ p.price|floatformat:0 }}/mo</option>{% endfor %}
+        {% for p in plans %}<option value="{{ p.code }}" {% if sub and sub.plan_id == p.id %}selected{% endif %}>{{ p.name }} — {{ CURRENCY_SYMBOL }}{{ p.price|floatformat:0 }}/mo</option>{% endfor %}
       </select>
       <div style="margin-top:12px;"><button class="btn" type="submit">Apply plan</button></div>
       <p class="sub" style="font-size:12px;margin:10px 0 0;">Upgrades top up credits immediately; data is always preserved.</p>
@@ -113,7 +113,7 @@
     <tr><th>When</th><th>Event</th><th class="right">Amount</th><th class="right">Credits</th></tr>
     {% for t in history %}
     <tr><td>{{ t.created_at|date:"d M Y" }}</td><td>{{ t.get_kind_display }}{% if t.description %} · {{ t.description }}{% endif %}</td>
-      <td style="text-align:right;">R{{ t.amount|floatformat:0 }}</td>
+      <td style="text-align:right;">{{ CURRENCY_SYMBOL }}{{ t.amount|floatformat:0 }}</td>
       <td style="text-align:right;">{{ t.credits|floatformat:0 }}</td></tr>
     {% empty %}<tr><td colspan="4" style="padding:16px;color:var(--muted);">No billing history yet.</td></tr>{% endfor %}
   </table>

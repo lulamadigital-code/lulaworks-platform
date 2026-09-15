@@ -60,13 +60,13 @@
 {% if can_view_money %}
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">R</div>
-    <div class="n">R{{ commercial.revenue }}</div><div class="l">{% trans "Revenue" %}</div></div>
+    <div class="n">{{ CURRENCY_SYMBOL }}{{ commercial.revenue }}</div><div class="l">{% trans "Revenue" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">R</div>
-    <div class="n">R{{ commercial.cost }}</div><div class="l">{% trans "Actual cost" %}</div></div>
+    <div class="n">{{ CURRENCY_SYMBOL }}{{ commercial.cost }}</div><div class="l">{% trans "Actual cost" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">%</div>
     <div class="n">{{ commercial.margin_pct }}%</div><div class="l">{% trans "Portfolio margin" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">⏳</div>
-    <div class="n">R{{ commercial.outstanding_retention }}</div><div class="l">{% trans "Retention held" %}</div></div>
+    <div class="n">{{ CURRENCY_SYMBOL }}{{ commercial.outstanding_retention }}</div><div class="l">{% trans "Retention held" %}</div></div>
 </div>
 {% endif %}
 

@@ -41,7 +41,7 @@
         <td><strong>{{ c.description }}</strong></td>
         <td class="muted">{{ c.category }}</td>
         {% if can_view_money %}
-        <td class="right muted">{% if c.unit_cost %}R{{ c.unit_cost }}{% else %}—{% endif %}</td>
+        <td class="right muted">{% if c.unit_cost %}{{ CURRENCY_SYMBOL }}{{ c.unit_cost }}{% else %}—{% endif %}</td>
         <td class="right muted">{% if c.markup_pct %}{{ c.markup_pct }}%{% else %}—{% endif %}</td>
         {% endif %}
         <td class="muted" style="font-size:12.5px;">{{ c.source }}</td>

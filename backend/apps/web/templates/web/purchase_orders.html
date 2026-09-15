@@ -17,7 +17,7 @@
         {% elif po.status == 'draft' or po.status == 'pending_approval' %}<span class="chip warn">{{ po.get_status_display }}</span>
         {% else %}<span class="chip">{{ po.get_status_display }}</span>{% endif %}
       </td>
-      {% if can_view_money %}<td class="right">R{{ po.total }}</td>{% endif %}
+      {% if can_view_money %}<td class="right">{{ CURRENCY_SYMBOL }}{{ po.total }}</td>{% endif %}
     </tr>
     {% empty %}<tr><td colspan="4" class="muted" style="padding:20px;">No purchase orders yet.</td></tr>
     {% endfor %}

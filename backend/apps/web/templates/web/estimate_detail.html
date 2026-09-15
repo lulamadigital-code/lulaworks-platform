@@ -29,21 +29,21 @@
 
 {% if can_view_money %}
 <div class="grid">
-  <div class="tile"><div class="n">R{{ estimate.total_cost }}</div><div class="l">Total cost</div></div>
+  <div class="tile"><div class="n">{{ CURRENCY_SYMBOL }}{{ estimate.total_cost }}</div><div class="l">Total cost</div></div>
   <div class="tile"><div class="n">{{ estimate.markup_pct }}%</div><div class="l">Markup</div></div>
-  <div class="tile"><div class="n">R{{ estimate.selling_price }}</div><div class="l">Selling price</div></div>
+  <div class="tile"><div class="n">{{ CURRENCY_SYMBOL }}{{ estimate.selling_price }}</div><div class="l">Selling price</div></div>
   <div class="tile"><div class="n">{{ estimate.margin_pct }}%</div><div class="l">Margin</div></div>
 </div>
 {% for s in estimate.sections.all %}
-<h2>{{ s.get_category_display }} <span class="muted" style="font-size:13px; font-weight:400;">· R{{ s.subtotal }}</span></h2>
+<h2>{{ s.get_category_display }} <span class="muted" style="font-size:13px; font-weight:400;">· {{ CURRENCY_SYMBOL }}{{ s.subtotal }}</span></h2>
 <div class="card" style="padding:0;">
   <table>
     <tr><th>Item</th><th class="right">Qty</th><th class="right">Unit cost</th>
       <th class="right">Line cost</th><th>Source</th></tr>
     {% for l in s.lines.all %}
     <tr><td>{{ l.description }}{% if l.source_ref %}<br><span class="muted" style="font-size:12px;">{{ l.source_ref }}</span>{% endif %}</td>
-      <td class="right">{{ l.qty }} {{ l.unit }}</td><td class="right">R{{ l.unit_cost }}</td>
-      <td class="right">R{{ l.line_cost }}</td>
+      <td class="right">{{ l.qty }} {{ l.unit }}</td><td class="right">{{ CURRENCY_SYMBOL }}{{ l.unit_cost }}</td>
+      <td class="right">{{ CURRENCY_SYMBOL }}{{ l.line_cost }}</td>
       <td><span class="chip">{{ l.get_source_display }}</span></td></tr>
     {% endfor %}
   </table>

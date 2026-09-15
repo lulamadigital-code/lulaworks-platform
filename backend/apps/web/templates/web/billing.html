@@ -86,7 +86,7 @@
   {% for pack in packs %}
   <div class="tile" style="text-align:left;">
     <div class="n">{{ pack.credits|floatformat:0 }}</div>
-    <div class="l">{% trans "credits" %} · <strong>R{{ pack.price|floatformat:0 }}</strong></div>
+    <div class="l">{% trans "credits" %} · <strong>{{ CURRENCY_SYMBOL }}{{ pack.price|floatformat:0 }}</strong></div>
     {% if can_manage %}
     <form method="post" action="{% url 'web:billing_buy_credits' %}" style="margin-top:10px;">
       {% csrf_token %}
@@ -152,7 +152,7 @@
       <td class="muted">{{ t.created_at|date:"d M Y" }}</td>
       <td>{{ t.description|default:t.get_kind_display }}</td>
       <td class="muted">{% if t.credits %}+{{ t.credits|floatformat:0 }}{% else %}—{% endif %}</td>
-      <td class="right">{% if t.amount %}R{{ t.amount|floatformat:2 }}{% else %}—{% endif %}</td>
+      <td class="right">{% if t.amount %}{{ CURRENCY_SYMBOL }}{{ t.amount|floatformat:2 }}{% else %}—{% endif %}</td>
     </tr>
     {% empty %}
     <tr><td colspan="4" class="muted" style="padding:16px;">{% trans "No billing activity yet." %}</td></tr>

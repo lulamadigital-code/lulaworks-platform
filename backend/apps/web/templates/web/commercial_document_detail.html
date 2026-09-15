@@ -125,17 +125,17 @@
       <tr><th>{% trans "Date" %}</th><th>{% trans "Reference" %}</th><th class="num">{% trans "Amount" %}</th></tr>
       {% for p in doc.payments.all %}
       <tr><td>{{ p.date }}</td><td class="muted">{{ p.reference|default:"—" }}</td>
-        <td class="num">R{{ p.amount|floatformat:2 }}</td></tr>
+        <td class="num">{{ CURRENCY_SYMBOL }}{{ p.amount|floatformat:2 }}</td></tr>
       {% empty %}
       <tr><td colspan="3" class="muted">{% trans "No payments recorded yet." %}</td></tr>
       {% endfor %}
       <tr style="border-top:2px solid var(--line);">
         <td colspan="2" class="muted">{% trans "Invoice total" %}</td>
-        <td class="num">R{{ doc.invoice_amount|floatformat:2 }}</td></tr>
+        <td class="num">{{ CURRENCY_SYMBOL }}{{ doc.invoice_amount|floatformat:2 }}</td></tr>
       <tr><td colspan="2" class="muted">{% trans "Paid" %}</td>
-        <td class="num">R{{ doc.amount_paid|floatformat:2 }}</td></tr>
+        <td class="num">{{ CURRENCY_SYMBOL }}{{ doc.amount_paid|floatformat:2 }}</td></tr>
       <tr><td colspan="2"><strong>{% trans "Outstanding" %}</strong></td>
-        <td class="num"><strong>R{{ doc.outstanding|floatformat:2 }}</strong></td></tr>
+        <td class="num"><strong>{{ CURRENCY_SYMBOL }}{{ doc.outstanding|floatformat:2 }}</strong></td></tr>
     </table>
   </div>
   <div class="card">
@@ -167,7 +167,7 @@
     <tr>
       <td><strong>{{ po.po_number|default:"—" }}</strong></td>
       <td class="muted">{{ po.po_date|default:"—" }}</td>
-      <td class="num">{% if po.value %}R{{ po.value|floatformat:2 }}{% else %}—{% endif %}</td>
+      <td class="num">{% if po.value %}{{ CURRENCY_SYMBOL }}{{ po.value|floatformat:2 }}{% else %}—{% endif %}</td>
       <td style="text-align:right;">{% if po.document %}<a class="btn ghost" href="{{ po.document.url }}">{% trans "Open" %}</a>{% endif %}</td>
     </tr>
     {% endfor %}

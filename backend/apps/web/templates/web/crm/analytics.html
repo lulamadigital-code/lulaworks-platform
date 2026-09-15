@@ -32,7 +32,7 @@
       <div class="barrow">
         <div class="li" style="min-width:150px;">{{ r.name }}</div>
         <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:{% if a.max_owner %}{% widthratio r.value a.max_owner 100 %}{% else %}0{% endif %}%;"></div></div>
-        <div class="right muted" style="min-width:130px;text-align:right;">R{{ r.value|floatformat:0 }} · {{ r.count }}</div>
+        <div class="right muted" style="min-width:130px;text-align:right;">{{ CURRENCY_SYMBOL }}{{ r.value|floatformat:0 }} · {{ r.count }}</div>
       </div>
       {% empty %}<p class="muted" style="padding:14px;">No won deals yet.</p>{% endfor %}
     </div>
@@ -43,7 +43,7 @@
       <div class="barrow">
         <div class="li" style="min-width:150px;">{{ r.name }}</div>
         <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:{% if a.max_industry %}{% widthratio r.value a.max_industry 100 %}{% else %}0{% endif %}%;"></div></div>
-        <div class="right muted" style="min-width:130px;text-align:right;">R{{ r.value|floatformat:0 }} · {{ r.count }}</div>
+        <div class="right muted" style="min-width:130px;text-align:right;">{{ CURRENCY_SYMBOL }}{{ r.value|floatformat:0 }} · {{ r.count }}</div>
       </div>
       {% empty %}<p class="muted" style="padding:14px;">No won deals yet.</p>{% endfor %}
     </div>
@@ -56,7 +56,7 @@
       <div class="barrow">
         <div class="li" style="min-width:150px;"><a href="{% url 'web:customer_detail' r.customer.id %}">{{ r.customer.display_name }}</a></div>
         <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:{% if a.max_customer %}{% widthratio r.value a.max_customer 100 %}{% else %}0{% endif %}%;"></div></div>
-        <div class="right muted" style="min-width:130px;text-align:right;">R{{ r.value|floatformat:0 }} · {{ r.count }}</div>
+        <div class="right muted" style="min-width:130px;text-align:right;">{{ CURRENCY_SYMBOL }}{{ r.value|floatformat:0 }} · {{ r.count }}</div>
       </div>
       {% empty %}<p class="muted" style="padding:14px;">No won deals yet.</p>{% endfor %}
     </div>
@@ -69,7 +69,7 @@
         <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:{% if a.max_trend %}{% widthratio m.won_value a.max_trend 100 %}{% else %}0{% endif %}%;"></div></div>
         <div class="right muted" style="min-width:150px;text-align:right;">
           <span style="color:#0a8f57;">▲ {{ m.won }}</span> · <span style="color:#c0392b;">▼ {{ m.lost }}</span>
-          · R{{ m.won_value|floatformat:0 }}</div>
+          · {{ CURRENCY_SYMBOL }}{{ m.won_value|floatformat:0 }}</div>
       </div>
       {% endfor %}
     </div>

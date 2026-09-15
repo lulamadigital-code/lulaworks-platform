@@ -45,7 +45,7 @@
       <td class="muted">{% if r.task %}{{ r.task.name }}{% elif r.project %}{{ r.project.number }}{% else %}—{% endif %}</td>
       <td class="muted">{% if r.requested_by %}{{ r.requested_by.get_full_name|default:r.requested_by.email }}{% else %}—{% endif %}</td>
       <td class="muted">{{ r.needed_by|date:"d M Y"|default:"—" }}</td>
-      <td class="right">R{{ r.est_total }}</td>
+      <td class="right">{{ CURRENCY_SYMBOL }}{{ r.est_total }}</td>
       <td>
         {% if r.status == 'approved' %}<span class="chip ok">Approved</span>
         {% elif r.status == 'submitted' %}<span class="chip warn">Awaiting approval</span>

@@ -46,7 +46,7 @@
     {% for l in rfq.lines.all %}
     <tr><td class="muted">{{ l.position }}</td><td>{{ l.description }}</td>
       <td class="right">{{ l.qty }} {{ l.unit }}</td>
-      <td class="right">{% if l.unit_price %}R{{ l.unit_price }}{% else %}—{% endif %}</td></tr>
+      <td class="right">{% if l.unit_price %}{{ CURRENCY_SYMBOL }}{{ l.unit_price }}{% else %}—{% endif %}</td></tr>
     {% empty %}<tr><td colspan="4" class="muted" style="padding:16px;">No line items extracted.</td></tr>
     {% endfor %}
   </table>

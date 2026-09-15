@@ -13,9 +13,9 @@
 <div class="grid">
   <div class="tile"><div class="n">{{ times_bought }}×</div><div class="l">Times bought</div></div>
   <div class="tile"><div class="n">{{ supplier_count }}</div><div class="l">Suppliers</div></div>
-  <div class="tile"><div class="n">{% if avg %}R{{ avg }}{% else %}—{% endif %}</div><div class="l">Average</div></div>
-  <div class="tile"><div class="n">{% if lowest %}R{{ lowest }}{% else %}—{% endif %}</div><div class="l">Lowest</div></div>
-  <div class="tile"><div class="n">{% if highest %}R{{ highest }}{% else %}—{% endif %}</div><div class="l">Highest</div></div>
+  <div class="tile"><div class="n">{% if avg %}{{ CURRENCY_SYMBOL }}{{ avg }}{% else %}—{% endif %}</div><div class="l">Average</div></div>
+  <div class="tile"><div class="n">{% if lowest %}{{ CURRENCY_SYMBOL }}{{ lowest }}{% else %}—{% endif %}</div><div class="l">Lowest</div></div>
+  <div class="tile"><div class="n">{% if highest %}{{ CURRENCY_SYMBOL }}{{ highest }}{% else %}—{% endif %}</div><div class="l">Highest</div></div>
   <div class="tile"><div class="n">{% if last_bought %}{{ last_bought|date:"d M Y" }}{% else %}—{% endif %}</div>
     <div class="l">Last bought{% if days_since %} · {{ days_since }}d ago{% endif %}</div></div>
 </div>
@@ -45,7 +45,7 @@
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
     <tr><th>Month</th>{% for t in trend %}<th class="right">{{ t.month }}</th>{% endfor %}</tr>
-    <tr><td class="muted">Avg price</td>{% for t in trend %}<td class="right">R{{ t.avg }}</td>{% endfor %}</tr>
+    <tr><td class="muted">Avg price</td>{% for t in trend %}<td class="right">{{ CURRENCY_SYMBOL }}{{ t.avg }}</td>{% endfor %}</tr>
   </table>
 </div>
 {% endif %}

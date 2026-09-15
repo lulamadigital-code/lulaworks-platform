@@ -53,7 +53,7 @@
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">🛒</div>
     <div class="n">{{ todays_purchases }}</div><div class="l">Purchases today</div></div>
   <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">R</div>
-    <div class="n">R{{ month_spend }}</div><div class="l">Spend this month</div></div>
+    <div class="n">{{ CURRENCY_SYMBOL }}{{ month_spend }}</div><div class="l">Spend this month</div></div>
   <div class="tile">
     <div class="ic" style="background:var(--orange-t);color:#b9711a;">⏳</div>
     <div class="n" style="{% if awaiting_approval %}color:var(--orange,#b9711a);{% endif %}">{{ awaiting_approval }}</div>

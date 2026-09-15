@@ -20,7 +20,7 @@
         {% else %}<span class="chip">{{ e.get_status_display }}</span>{% endif %}
       </td>
       {% if can_view_money %}<td class="right">{{ e.margin_pct }}%</td>
-        <td class="right">R{{ e.selling_price }}</td>{% endif %}
+        <td class="right">{{ CURRENCY_SYMBOL }}{{ e.selling_price }}</td>{% endif %}
     </tr>
     {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">No estimates yet.</td></tr>
     {% endfor %}

@@ -167,7 +167,7 @@
     {% for po in purchase_orders %}
     <tr><td><strong>{{ po.po_number }}</strong></td>
       <td class="muted">{{ po.po_date|date:"d M Y"|default:"—" }}</td>
-      {% if can_view_money %}<td class="right">R{{ po.value }}</td>{% endif %}
+      {% if can_view_money %}<td class="right">{{ CURRENCY_SYMBOL }}{{ po.value }}</td>{% endif %}
       <td><span class="chip">{{ po.get_status_display }}</span></td>
       <td class="right">{% if po.document %}<a href="{{ po.document.url }}">{% trans "document" %}</a>{% endif %}</td></tr>
     {% endfor %}
@@ -231,7 +231,7 @@
   <table class="kv">
     <tr><td class="muted">{% trans "Projects" %}</td><td>{{ trace.projects|length }}</td></tr>
     <tr><td class="muted">{% trans "Jobs" %}</td><td>{{ trace.tasks|length }}</td></tr>
-    {% if can_view_money %}<tr><td class="muted">{% trans "Invoiced" %}</td><td>R{{ trace.invoiced }}</td></tr>{% endif %}
+    {% if can_view_money %}<tr><td class="muted">{% trans "Invoiced" %}</td><td>{{ CURRENCY_SYMBOL }}{{ trace.invoiced }}</td></tr>{% endif %}
   </table>
 </div>
 {% endif %}

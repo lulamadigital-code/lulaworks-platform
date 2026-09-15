@@ -25,12 +25,12 @@
 {% if can_view_money %}
 <div class="two-col">
   <div><div class="card"><strong>{% trans "Total invoiced" %}</strong>
-    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ report.total_value|floatformat:2 }}</p>
-    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{% blocktrans with n=report.count paid=report.paid_total|floatformat:2 %}Across {{ n }} invoice(s) · R{{ paid }} paid{% endblocktrans %}</p>
+    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">{{ CURRENCY_SYMBOL }}{{ report.total_value|floatformat:2 }}</p>
+    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{% blocktrans with n=report.count paid=report.paid_total|floatformat:2 %}Across {{ n }} invoice(s) · {{ CURRENCY_SYMBOL }}{{ paid }} paid{% endblocktrans %}</p>
   </div></div>
   <div><div class="card"><strong>{% trans "Outstanding" %}</strong>
-    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ report.outstanding_total|floatformat:2 }}</p>
-    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{% blocktrans with v=report.month_value|floatformat:2 %}R{{ v }} invoiced this month{% endblocktrans %}</p>
+    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">{{ CURRENCY_SYMBOL }}{{ report.outstanding_total|floatformat:2 }}</p>
+    <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{% blocktrans with v=report.month_value|floatformat:2 %}{{ CURRENCY_SYMBOL }}{{ v }} invoiced this month{% endblocktrans %}</p>
   </div></div>
 </div>
 
@@ -40,8 +40,8 @@
   <table>
     <thead><tr>{% for label, amt in report.aging_rows %}<th class="num">{{ label }}</th>{% endfor %}<th class="num">{% trans "Total" %}</th></tr></thead>
     <tbody><tr>
-      {% for label, amt in report.aging_rows %}<td class="num">R{{ amt|floatformat:2 }}</td>{% endfor %}
-      <td class="num"><strong>R{{ report.outstanding_total|floatformat:2 }}</strong></td>
+      {% for label, amt in report.aging_rows %}<td class="num">{{ CURRENCY_SYMBOL }}{{ amt|floatformat:2 }}</td>{% endfor %}
+      <td class="num"><strong>{{ CURRENCY_SYMBOL }}{{ report.outstanding_total|floatformat:2 }}</strong></td>
     </tr></tbody>
   </table>
   </div>
@@ -63,8 +63,8 @@
         <td><a href="{% url 'web:commercial_document_detail' inv.id %}"><strong>{{ inv.number }}</strong></a></td>
         <td>{{ inv.quotation.customer|default:inv.quotation.client_name|default:"—" }}</td>
         <td>{{ inv.created_at|date:"Y-m-d" }}</td>
-        <td class="num">R{{ inv.invoice_amount|floatformat:2 }}</td>
-        <td class="num">R{{ inv.outstanding|floatformat:2 }}</td>
+        <td class="num">{{ CURRENCY_SYMBOL }}{{ inv.invoice_amount|floatformat:2 }}</td>
+        <td class="num">{{ CURRENCY_SYMBOL }}{{ inv.outstanding|floatformat:2 }}</td>
         <td>{% if inv.payment_state == 'paid' %}<span class="chip ok">{% trans "Paid" %}</span>
           {% elif inv.payment_state == 'part' %}<span class="chip warn">{% trans "Part-paid" %}</span>
           {% else %}<span class="chip">{{ inv.get_status_display }}</span>{% endif %}</td>
@@ -93,7 +93,7 @@
       <tr>
         <td><a href="{% url 'web:quotation_detail' q.id %}"><strong>{{ q.number }}</strong></a></td>
         <td>{{ q.customer|default:"—" }}</td>
-        <td class="num">R{{ q.invoice_total|floatformat:2 }}</td>
+        <td class="num">{{ CURRENCY_SYMBOL }}{{ q.invoice_total|floatformat:2 }}</td>
         <td style="text-align:right;">
           {% if can_create %}
           <form method="post" action="{% url 'web:quotation_create_invoice' q.id %}" style="display:inline;">{% csrf_token %}

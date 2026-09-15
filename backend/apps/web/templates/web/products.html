@@ -9,7 +9,7 @@
 <h2>Spend by category</h2>
 <div class="grid">
   {% for s in spend %}
-  <div class="tile"><div class="n">R{{ s.total }}</div><div class="l">{{ s.category|capfirst }}</div></div>
+  <div class="tile"><div class="n">{{ CURRENCY_SYMBOL }}{{ s.total }}</div><div class="l">{{ s.category|capfirst }}</div></div>
   {% endfor %}
 </div>
 {% endif %}
@@ -35,7 +35,7 @@
       <td class="muted">{{ r.product.get_category_display|default:"—" }}</td>
       <td class="right">{{ r.suppliers }}</td>
       <td class="right">{{ r.times_bought }}×</td>
-      <td class="right">{% if r.avg %}R{{ r.avg }}{% else %}—{% endif %}</td>
+      <td class="right">{% if r.avg %}{{ CURRENCY_SYMBOL }}{{ r.avg }}{% else %}—{% endif %}</td>
       <td class="muted">{% if r.last_bought %}{{ r.last_bought|date:"d M Y" }}
         {% if r.is_stale %}<span class="chip warn" title="Price may no longer be reliable">stale</span>{% endif %}
         {% else %}—{% endif %}</td>

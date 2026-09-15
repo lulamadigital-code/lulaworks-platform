@@ -24,7 +24,7 @@
         {% elif report.latitude is not None %}Captured · {{ report.latitude }}, {{ report.longitude }}
         {% else %}<span class="muted">Not captured</span>{% endif %}</td></tr>
       {% if report.supplier %}<tr><td class="muted">Supplier</td><td>{{ report.supplier }}</td></tr>{% endif %}
-      {% if report.amount and can_view_money %}<tr><td class="muted">Amount</td><td>R{{ report.amount }}</td></tr>{% endif %}
+      {% if report.amount and can_view_money %}<tr><td class="muted">Amount</td><td>{{ CURRENCY_SYMBOL }}{{ report.amount }}</td></tr>{% endif %}
       {% if report.reviewed_by %}<tr><td class="muted">Reviewed by</td><td>{{ report.reviewed_by.get_full_name|default:report.reviewed_by.email }}</td></tr>{% endif %}
     </table>
     {% if map %}

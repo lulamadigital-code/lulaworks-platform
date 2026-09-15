@@ -121,7 +121,7 @@
       <label>Default plan</label>
       <select name="default_plan">
         <option value="">— Trial plan (default) —</option>
-        {% for p in plans %}<option value="{{ p.id }}" {% if cfg.default_plan_id == p.id %}selected{% endif %}>{{ p.name }} — R{{ p.price|floatformat:0 }}/mo</option>{% endfor %}
+        {% for p in plans %}<option value="{{ p.id }}" {% if cfg.default_plan_id == p.id %}selected{% endif %}>{{ p.name }} — {{ CURRENCY_SYMBOL }}{{ p.price|floatformat:0 }}/mo</option>{% endfor %}
       </select>
       <div class="grid2" style="margin-top:10px;">
         <div><label>Trial length (days)</label><input type="number" name="trial_days" min="0" step="1" value="{{ cfg.trial_days }}"></div>

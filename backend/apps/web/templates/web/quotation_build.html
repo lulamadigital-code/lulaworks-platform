@@ -28,12 +28,12 @@
 {% if can_view_money %}
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">R</div>
-    <div class="n">R{{ quote.total }}</div>
+    <div class="n">{{ CURRENCY_SYMBOL }}{{ quote.total }}</div>
     <div class="l">{% if quote.vat_mode == 'inclusive' %}Total (VAT incl.){% else %}Total incl. VAT{% endif %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">Σ</div>
-    <div class="n">R{{ quote.net_total }}</div><div class="l">Net of discounts</div></div>
+    <div class="n">{{ CURRENCY_SYMBOL }}{{ quote.net_total }}</div><div class="l">Net of discounts</div></div>
   <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">C</div>
-    <div class="n">R{{ quote.total_cost }}</div><div class="l">Cost</div></div>
+    <div class="n">{{ CURRENCY_SYMBOL }}{{ quote.total_cost }}</div><div class="l">Cost</div></div>
   <div class="tile"><div class="ic" style="background:{% if quote.margin_pct is None %}#eef0f5;color:var(--muted){% else %}var(--green-t);color:#0a8f57{% endif %};">%</div>
     <div class="n">{% if quote.margin_pct is None %}—{% else %}{{ quote.margin_pct }}%{% endif %}</div>
     <div class="l">Margin</div></div>
@@ -88,7 +88,7 @@
   <div class="row" style="padding:14px 16px;gap:10px;border-bottom:1px solid var(--line);">
     <strong>{{ group.section.name }}</strong>
     <span class="sp"></span>
-    {% if can_view_money %}<span class="muted">R{{ group.section.net_total }}</span>{% endif %}
+    {% if can_view_money %}<span class="muted">{{ CURRENCY_SYMBOL }}{{ group.section.net_total }}</span>{% endif %}
     {% if can_edit %}
     <form method="post" action="{% url 'web:quotation_section' quote.id %}"
           data-confirm="Remove the {{ group.section.name|escapejs }} section?&#10;&#10;Its lines are kept — they just lose their grouping.">
@@ -112,10 +112,10 @@
 {% if can_view_money %}
 <div class="card">
   <table class="kv" style="max-width:360px;margin-left:auto;">
-    <tr><td class="muted">Net</td><td class="right">R{{ quote.net_total }}</td></tr>
+    <tr><td class="muted">Net</td><td class="right">{{ CURRENCY_SYMBOL }}{{ quote.net_total }}</td></tr>
     <tr><td class="muted">VAT ({{ quote.vat_rate }}%{% if quote.vat_mode == 'inclusive' %}, included{% endif %})</td>
-        <td class="right">R{{ quote.vat_amount }}</td></tr>
-    <tr><td><strong>Total</strong></td><td class="right"><strong>R{{ quote.total }}</strong></td></tr>
+        <td class="right">{{ CURRENCY_SYMBOL }}{{ quote.vat_amount }}</td></tr>
+    <tr><td><strong>Total</strong></td><td class="right"><strong>{{ CURRENCY_SYMBOL }}{{ quote.total }}</strong></td></tr>
   </table>
 </div>
 {% endif %}

@@ -29,11 +29,11 @@
       <td>{% if l.product %}<a href="{% url 'web:product_detail' l.product.id %}">{{ l.description }}</a>{% else %}{{ l.description }}{% endif %}</td>
       <td class="right">{{ l.quantity }}</td>
       <td class="muted">{{ l.unit }}</td>
-      <td class="right">R{{ l.est_unit_price }}</td>
-      <td class="right">R{{ l.line_est }}</td>
+      <td class="right">{{ CURRENCY_SYMBOL }}{{ l.est_unit_price }}</td>
+      <td class="right">{{ CURRENCY_SYMBOL }}{{ l.line_est }}</td>
     </tr>
     {% endfor %}
-    <tr style="font-weight:700;"><td colspan="4">Estimated total</td><td class="right">R{{ req.est_total }}</td></tr>
+    <tr style="font-weight:700;"><td colspan="4">Estimated total</td><td class="right">{{ CURRENCY_SYMBOL }}{{ req.est_total }}</td></tr>
   </table>
 </div>
 

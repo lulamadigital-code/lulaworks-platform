@@ -12,9 +12,9 @@ from the parent context.{% endcomment %}
       {% if l.ai_suggested %}· <span class="chip purple">LulaAI</span>{% endif %}</span></td>
     <td class="muted">{{ l.qty }} {{ l.unit }}</td>
     {% if can_view_money %}
-    <td class="right muted">{% if l.has_cost %}R{{ l.unit_cost }}{% else %}—{% endif %}</td>
-    <td class="right">R{{ l.effective_unit_price }}</td>
-    <td class="right"><strong>R{{ l.line_total }}</strong></td>
+    <td class="right muted">{% if l.has_cost %}{{ CURRENCY_SYMBOL }}{{ l.unit_cost }}{% else %}—{% endif %}</td>
+    <td class="right">{{ CURRENCY_SYMBOL }}{{ l.effective_unit_price }}</td>
+    <td class="right"><strong>{{ CURRENCY_SYMBOL }}{{ l.line_total }}</strong></td>
     <td class="right">{% if l.margin_pct is None %}<span class="muted" title="No cost captured">—</span>
       {% else %}{{ l.margin_pct }}%{% endif %}</td>
     {% endif %}

@@ -30,11 +30,11 @@
 {# ── Money: allocated vs spent ─────────────────────────────────────────── #}
 <h2>Money</h2>
 <div class="grid">
-  <div class="tile"><div class="n">R{{ financials.allocated }}</div><div class="l">Allocated</div></div>
-  <div class="tile"><div class="n">R{{ financials.spent }}</div><div class="l">Spent</div></div>
+  <div class="tile"><div class="n">{{ CURRENCY_SYMBOL }}{{ financials.allocated }}</div><div class="l">Allocated</div></div>
+  <div class="tile"><div class="n">{{ CURRENCY_SYMBOL }}{{ financials.spent }}</div><div class="l">Spent</div></div>
   <div class="tile" style="{% if financials.over_budget %}border-color:var(--bad);{% endif %}">
-    <div class="n" style="{% if financials.over_budget %}color:var(--bad);{% endif %}">R{{ financials.remaining }}</div><div class="l">Remaining</div></div>
-  <div class="tile"><div class="n">R{{ financials.materials_total }}</div><div class="l">Materials ({{ financials.materials_count }})</div></div>
+    <div class="n" style="{% if financials.over_budget %}color:var(--bad);{% endif %}">{{ CURRENCY_SYMBOL }}{{ financials.remaining }}</div><div class="l">Remaining</div></div>
+  <div class="tile"><div class="n">{{ CURRENCY_SYMBOL }}{{ financials.materials_total }}</div><div class="l">Materials ({{ financials.materials_count }})</div></div>
   <div class="tile"><div class="n">{{ documents }}</div><div class="l">Documents</div></div>
 </div>
 
@@ -54,9 +54,9 @@
     {% for a in financials.allocations %}
     <tr>
       <td>{{ a.get_kind_display }}{% if a.label %} · {{ a.label }}{% endif %}</td>
-      <td class="right">{% if a.is_monetary %}R{{ a.amount_allocated }}{% else %}<span class="muted">n/a</span>{% endif %}</td>
-      <td class="right">{% if a.is_monetary %}R{{ a.amount_spent }}{% else %}—{% endif %}</td>
-      <td class="right" style="{% if a.is_over_budget %}color:var(--bad);{% endif %}">{% if a.is_monetary %}R{{ a.remaining }}{% else %}—{% endif %}</td>
+      <td class="right">{% if a.is_monetary %}{{ CURRENCY_SYMBOL }}{{ a.amount_allocated }}{% else %}<span class="muted">n/a</span>{% endif %}</td>
+      <td class="right">{% if a.is_monetary %}{{ CURRENCY_SYMBOL }}{{ a.amount_spent }}{% else %}—{% endif %}</td>
+      <td class="right" style="{% if a.is_over_budget %}color:var(--bad);{% endif %}">{% if a.is_monetary %}{{ CURRENCY_SYMBOL }}{{ a.remaining }}{% else %}—{% endif %}</td>
       <td><span class="chip">{{ a.get_status_display }}</span></td>
     </tr>
     {% endfor %}
@@ -115,7 +115,7 @@
       <td>{{ r.get_kind_display }}</td>
       <td>{{ r.title }}{% if r.supplier %} <span class="muted">· {{ r.supplier }}</span>{% endif %}{% if r.supplier_ref_id %} <span class="chip ok" title="Saved to your Suppliers database">in Suppliers</span>{% endif %}</td>
       <td class="muted">{% if r.employee %}{{ r.employee.get_full_name|default:r.employee.email }}{% else %}—{% endif %}</td>
-      <td class="right">{% if r.amount %}R{{ r.amount }}{% endif %}</td>
+      <td class="right">{% if r.amount %}{{ CURRENCY_SYMBOL }}{{ r.amount }}{% endif %}</td>
       <td>
         {% if r.location_flagged %}<span class="chip bad">off-site {{ r.distance_m }} m</span>
         {% elif r.distance_m is not None %}<span class="chip ok">on-site</span>

@@ -28,11 +28,11 @@
 {% if can_view_money %}
 <div class="two-col">
   <div><div class="card"><strong>{% trans "Open pipeline value" %}</strong>
-    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ pipeline.open_value }}</p>
+    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">{{ CURRENCY_SYMBOL }}{{ pipeline.open_value }}</p>
     <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{% blocktrans with n=pipeline.open|length %}Across {{ n }} live quotation(s){% endblocktrans %}</p>
   </div></div>
   <div><div class="card"><strong>{% trans "Won" %}</strong>
-    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">R{{ pipeline.won_value }}</p>
+    <p style="font-size:26px;font-weight:800;margin:6px 0 0;">{{ CURRENCY_SYMBOL }}{{ pipeline.won_value }}</p>
     <p class="muted" style="margin:4px 0 0;font-size:12.5px;">{% blocktrans with n=pipeline.won|length %}{{ n }} awarded{% endblocktrans %}</p>
   </div></div>
 </div>
@@ -75,7 +75,7 @@
       <td class="muted">{{ q.quotation_type.label|default:"—" }}</td>
       <td>{% include "web/_quotechip.html" with q=q %}</td>
       {% if can_view_money %}
-      <td class="right">R{{ q.total }}</td>
+      <td class="right">{{ CURRENCY_SYMBOL }}{{ q.total }}</td>
       <td class="right">{% if q.margin_pct is None %}<span class="muted" title="{% trans 'Some lines have no cost captured' %}">—</span>
         {% else %}{{ q.margin_pct }}%{% endif %}</td>
       {% endif %}

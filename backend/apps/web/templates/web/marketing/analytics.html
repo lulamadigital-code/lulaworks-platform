@@ -13,7 +13,7 @@
   <div class="tile"><div class="n">{{ funnel.qualified }}</div><div class="l">Qualified</div></div>
   <div class="tile"><div class="n">{{ funnel.opportunities }}</div><div class="l">Opportunities</div></div>
   <div class="tile"><div class="n">{{ funnel.won }}</div><div class="l">Won</div></div>
-  <div class="tile"><div class="n">R {{ funnel.revenue|floatformat:0 }}</div><div class="l">Revenue (won)</div></div>
+  <div class="tile"><div class="n">{{ CURRENCY_SYMBOL }} {{ funnel.revenue|floatformat:0 }}</div><div class="l">Revenue (won)</div></div>
 </div>
 <div class="card">
   <div class="row"><span class="lbl">Lead → Opportunity</span>
@@ -44,7 +44,7 @@
         <td class="right">{{ r.leads }}</td>
         <td class="right">{{ r.opportunities }}</td>
         <td class="right">{{ r.won }}</td>
-        <td class="right"><strong>R {{ r.revenue|floatformat:0 }}</strong></td>
+        <td class="right"><strong>{{ CURRENCY_SYMBOL }} {{ r.revenue|floatformat:0 }}</strong></td>
       </tr>
       {% empty %}
       <tr><td colspan="5" class="muted" style="padding:22px;">No revenue data yet — win some opportunities and this shows which sources pay.</td></tr>
@@ -65,7 +65,7 @@
         <td class="right">{{ r.open_rate }}%</td>
         <td class="right">{{ r.influenced }}</td>
         <td class="right">{{ r.won }}</td>
-        <td class="right"><strong>R {{ r.revenue|floatformat:0 }}</strong></td>
+        <td class="right"><strong>{{ CURRENCY_SYMBOL }} {{ r.revenue|floatformat:0 }}</strong></td>
         <td class="right">{% if r.roi is not None %}<span class="chip {% if r.roi >= 0 %}ok{% else %}bad{% endif %}">{{ r.roi }}%</span>{% else %}<span class="muted">—</span>{% endif %}</td>
       </tr>
       {% empty %}

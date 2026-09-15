@@ -212,7 +212,35 @@ def localization(request):
         return {"LANGUAGE_CODE_EFFECTIVE": lang,
                 "LANGUAGE_DIR": R.direction_for(lang),
                 "LOCALE_EFFECTIVE": locale or "",
-                "LANGUAGES_ACTIVE": langs}
+                "LANGUAGES_ACTIVE": langs,
+                "CURRENCY_SYMBOL": _currency_symbol(request)}
     except Exception:  # noqa: BLE001 — localization must never break a page
         return {"LANGUAGE_CODE_EFFECTIVE": "en", "LANGUAGE_DIR": "ltr",
-                "LOCALE_EFFECTIVE": "", "LANGUAGES_ACTIVE": []}
+                "LOCALE_EFFECTIVE": "", "LANGUAGES_ACTIVE": [], "CURRENCY_SYMBOL": "R"}
+
+
+def _currency_symbol(request) -> str:
+    """The active company's currency symbol (R, A$, €, £, KSh …), resolved from
+    the company's stored currency or — failing that — its country. Drives money
+    display across the app so amounts never show a hardcoded 'R'. Falls back to
+    'R' so a page never breaks."""
+    try:
+        from apps.reference.models import Currency
+        from apps.reference.services import CurrencyService
+        user = getattr(request, "user", None)
+        company = getattr(user, "active_company", None) if (
+            user and getattr(user, "is_authenticated", False)) else None
+        if company is not None:
+            code = getattr(company, "currency", "") or ""
+            if code:
+                cur = Currency.objects.filter(code=code).first()
+                if cur and cur.symbol:
+                    return cur.symbol
+            cur = CurrencyService.for_country(getattr(company, "country_code", "") or "")
+            if cur and cur.symbol:
+                return cur.symbol
+            if code:
+                return code + " "
+    except Exception:  # noqa: BLE001
+        pass
+    return "R"
