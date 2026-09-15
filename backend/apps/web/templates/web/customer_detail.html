@@ -1,48 +1,49 @@
 {% extends "web/base.html" %}
+{% load i18n %}
 {% block title %}{{ customer.display_name }}{% endblock %}
 {% block content %}
-<p class="sub"><a href="{% url 'web:procurement_clients' %}">← Our clients</a></p>
+<p class="sub"><a href="{% url 'web:procurement_clients' %}">{% trans "← Our clients" %}</a></p>
 
 <div class="pagehead">
   <div>
     <h1 style="margin:0 0 4px;">{{ customer.display_name }}
-      {% if history_docs %}<span class="chip info" title="Reconstructed from imported history"
-        style="font-size:11px;vertical-align:middle;">Historical data</span>{% endif %}</h1>
+      {% if history_docs %}<span class="chip info" title="{% trans 'Reconstructed from imported history' %}"
+        style="font-size:11px;vertical-align:middle;">{% trans "Historical data" %}</span>{% endif %}</h1>
     <p class="sub" style="margin:0;">{{ customer.code }}
       {% if customer.industry %} · {{ customer.industry }}{% endif %}
       {% if customer.city %} · {{ customer.city }}{% endif %}</p>
     {% if history_docs %}
-    <p class="sub" style="margin:4px 0 0;font-size:12px;">From {{ history_docs|length }} imported document{{ history_docs|length|pluralize }}:
+    <p class="sub" style="margin:4px 0 0;font-size:12px;">{% blocktrans with n=history_docs|length %}From {{ n }} imported documents:{% endblocktrans %}
       {% for d in history_docs|slice:":5" %}<a href="{% url 'web:import_document' d.id %}">{{ d.filename }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% if history_docs|length > 5 %} …{% endif %}</p>
     {% endif %}
   </div>
   <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;">
-    {% if customer.status == 'active' %}<span class="chip ok">Active</span>
-    {% elif customer.status == 'blacklisted' %}<span class="chip bad">Blacklisted</span>
+    {% if customer.status == 'active' %}<span class="chip ok">{% trans "Active" %}</span>
+    {% elif customer.status == 'blacklisted' %}<span class="chip bad">{% trans "Blacklisted" %}</span>
     {% else %}<span class="chip warn">{{ customer.get_status_display }}</span>{% endif %}
     {% if can_manage %}
-    <a class="btn ghost" href="{% url 'web:customer_edit' customer.id %}">Edit</a>
-    <a class="btn" href="#addperson">+ Add a person</a>
+    <a class="btn ghost" href="{% url 'web:customer_edit' customer.id %}">{% trans "Edit" %}</a>
+    <a class="btn" href="#addperson">{% trans "+ Add a person" %}</a>
     {% endif %}
   </div>
 </div>
 
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">◫</div>
-    <div class="n">{{ stats.contacts }}</div><div class="l">Contacts</div></div>
+    <div class="n">{{ stats.contacts }}</div><div class="l">{% trans "Contacts" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">◎</div>
-    <div class="n">{{ open_opp_count }}</div><div class="l">Open opportunities</div></div>
+    <div class="n">{{ open_opp_count }}</div><div class="l">{% trans "Open opportunities" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">R</div>
-    <div class="n">{{ open_opp_value|floatformat:0 }}</div><div class="l">Pipeline value</div></div>
+    <div class="n">{{ open_opp_value|floatformat:0 }}</div><div class="l">{% trans "Pipeline value" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">▤</div>
-    <div class="n">{{ stats.open_projects }}</div><div class="l">Open jobs</div></div>
+    <div class="n">{{ stats.open_projects }}</div><div class="l">{% trans "Open jobs" %}</div></div>
   <div class="tile" style="{% if stats.outstanding_value %}border-color:var(--warn);{% endif %}">
     <div class="ic" style="background:var(--primary-t);color:var(--primary-d);">R</div>
-    <div class="n">{{ stats.outstanding_value|floatformat:0 }}</div><div class="l">Outstanding</div></div>
+    <div class="n">{{ stats.outstanding_value|floatformat:0 }}</div><div class="l">{% trans "Outstanding" %}</div></div>
 </div>
 
 {# ── Unified relationship timeline — merged from every module ─────────────── #}
-<h2>Relationship timeline</h2>
+<h2>{% trans "Relationship timeline" %}</h2>
 <div class="card timeline">
   {% for e in timeline %}
   <div class="tl-row">
@@ -57,8 +58,7 @@
     </div>
     <div class="tl-date muted">{{ e.when|date:"d M Y" }}</div>
   </div>
-  {% empty %}<p class="muted" style="padding:14px;margin:0;">No history yet — quotations, jobs, invoices,
-    opportunities and CRM activities will appear here as they happen.</p>{% endfor %}
+  {% empty %}<p class="muted" style="padding:14px;margin:0;">{% trans "No history yet — quotations, jobs, invoices, opportunities and CRM activities will appear here as they happen." %}</p>{% endfor %}
 </div>
 <style>
 .timeline{padding:4px 0;}
@@ -74,12 +74,12 @@
 </style>
 
 {# ── CRM: sales pipeline against this customer ───────────────────────────── #}
-<h2>Opportunities
+<h2>{% trans "Opportunities" %}
   {% if open_opp_count %}<span class="muted" style="font-weight:400;font-size:14px;">·
-    {{ open_opp_count }} open worth {{ open_opp_value|floatformat:0 }}</span>{% endif %}</h2>
+    {% blocktrans with n=open_opp_count v=open_opp_value|floatformat:0 %}{{ n }} open worth {{ v }}{% endblocktrans %}</span>{% endif %}</h2>
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Opportunity</th><th>Stage</th><th>Value</th><th>Probability</th></tr>
+    <tr><th>{% trans "Opportunity" %}</th><th>{% trans "Stage" %}</th><th>{% trans "Value" %}</th><th>{% trans "Probability" %}</th></tr>
     {% for o in opportunities %}
     <tr>
       <td><a href="{% url 'web:crm_opportunity_detail' o.id %}"><strong>{{ o.title }}</strong></a></td>
@@ -89,69 +89,68 @@
       <td class="muted">{% if o.estimated_value %}{{ o.currency }} {{ o.estimated_value|floatformat:0 }}{% else %}—{% endif %}</td>
       <td class="muted">{{ o.probability }}%</td>
     </tr>
-    {% empty %}<tr><td colspan="4" class="muted" style="padding:16px;">No opportunities yet.</td></tr>
+    {% empty %}<tr><td colspan="4" class="muted" style="padding:16px;">{% trans "No opportunities yet." %}</td></tr>
     {% endfor %}
   </table>
 </div>
 {% if next_activity %}
-<p class="sub" style="margin-top:8px;">Next: <strong>{{ next_activity.subject }}</strong>
-  {% if next_activity.due_at %}· due {{ next_activity.due_at|date:"d M Y" }}{% endif %}
-  · <a href="{% url 'web:crm_activities' %}">all activities</a></p>
+<p class="sub" style="margin-top:8px;">{% trans "Next:" %} <strong>{{ next_activity.subject }}</strong>
+  {% if next_activity.due_at %}· {% blocktrans with date=next_activity.due_at|date:"d M Y" %}due {{ date }}{% endblocktrans %}{% endif %}
+  · <a href="{% url 'web:crm_activities' %}">{% trans "all activities" %}</a></p>
 {% endif %}
 {% if can_manage %}
 <div class="card" style="margin-top:12px;">
   <form method="post" action="{% url 'web:crm_opportunity_create' %}">{% csrf_token %}
     <input type="hidden" name="customer" value="{{ customer.id }}">
     <div class="two">
-      <div><label>New opportunity title</label><input type="text" name="title" required placeholder="Conveyor overhaul — 2026 shutdown"></div>
-      <div><label>Estimated value</label><input type="text" name="estimated_value" placeholder="500000"></div>
+      <div><label>{% trans "New opportunity title" %}</label><input type="text" name="title" required placeholder="Conveyor overhaul — 2026 shutdown"></div>
+      <div><label>{% trans "Estimated value" %}</label><input type="text" name="estimated_value" placeholder="500000"></div>
     </div>
-    <div style="margin-top:10px;"><button class="btn primary" type="submit">Open opportunity</button></div>
+    <div style="margin-top:10px;"><button class="btn primary" type="submit">{% trans "Open opportunity" %}</button></div>
   </form>
 </div>
 {% endif %}
 
 {# ── Company details ────────────────────────────────────────────────────── #}
-<h2>Details</h2>
+<h2>{% trans "Details" %}</h2>
 <div class="card">
   <div class="kvgrid">
-    {% if customer.vendor_number %}<div class="kv-hi"><span class="k">Our vendor no. with them</span><span class="v"><strong>{{ customer.vendor_number }}</strong></span></div>{% endif %}
-    <div><span class="k">Registered name</span><span class="v">{{ customer.name }}</span></div>
-    {% if customer.trading_name %}<div><span class="k">Trading as</span><span class="v">{{ customer.trading_name }}</span></div>{% endif %}
-    {% if customer.registration_no %}<div><span class="k">Registration no.</span><span class="v">{{ customer.registration_no }}</span></div>{% endif %}
-    {% if customer.vat_no %}<div><span class="k">VAT no.</span><span class="v">{{ customer.vat_no }}</span></div>{% endif %}
-    {% if customer.tax_no %}<div><span class="k">Tax no.</span><span class="v">{{ customer.tax_no }}</span></div>{% endif %}
-    {% if customer.physical_address %}<div><span class="k">Physical address</span><span class="v">{{ customer.physical_address }}</span></div>{% endif %}
-    {% if customer.postal_address %}<div><span class="k">Postal address</span><span class="v">{{ customer.postal_address }}</span></div>{% endif %}
-    {% if customer.city or customer.province %}<div><span class="k">City / Province</span><span class="v">{{ customer.city }}{% if customer.province %}, {{ customer.province }}{% endif %}</span></div>{% endif %}
-    {% if customer.telephone %}<div><span class="k">Telephone</span><span class="v">{{ customer.telephone }}</span></div>{% endif %}
-    {% if customer.email %}<div><span class="k">Email</span><span class="v">{{ customer.email }}</span></div>{% endif %}
-    <div><span class="k">Payment terms</span><span class="v">{{ customer.payment_terms_days }} days{% if customer.payment_terms_note %} · {{ customer.payment_terms_note }}{% endif %}</span></div>
-    {% if customer.vendor_portal %}<div><span class="k">Vendor portal</span><span class="v">{{ customer.vendor_portal }}</span></div>{% endif %}
+    {% if customer.vendor_number %}<div class="kv-hi"><span class="k">{% trans "Our vendor no. with them" %}</span><span class="v"><strong>{{ customer.vendor_number }}</strong></span></div>{% endif %}
+    <div><span class="k">{% trans "Registered name" %}</span><span class="v">{{ customer.name }}</span></div>
+    {% if customer.trading_name %}<div><span class="k">{% trans "Trading as" %}</span><span class="v">{{ customer.trading_name }}</span></div>{% endif %}
+    {% if customer.registration_no %}<div><span class="k">{% trans "Registration no." %}</span><span class="v">{{ customer.registration_no }}</span></div>{% endif %}
+    {% if customer.vat_no %}<div><span class="k">{% trans "VAT no." %}</span><span class="v">{{ customer.vat_no }}</span></div>{% endif %}
+    {% if customer.tax_no %}<div><span class="k">{% trans "Tax no." %}</span><span class="v">{{ customer.tax_no }}</span></div>{% endif %}
+    {% if customer.physical_address %}<div><span class="k">{% trans "Physical address" %}</span><span class="v">{{ customer.physical_address }}</span></div>{% endif %}
+    {% if customer.postal_address %}<div><span class="k">{% trans "Postal address" %}</span><span class="v">{{ customer.postal_address }}</span></div>{% endif %}
+    {% if customer.city or customer.province %}<div><span class="k">{% trans "City / Province" %}</span><span class="v">{{ customer.city }}{% if customer.province %}, {{ customer.province }}{% endif %}</span></div>{% endif %}
+    {% if customer.telephone %}<div><span class="k">{% trans "Telephone" %}</span><span class="v">{{ customer.telephone }}</span></div>{% endif %}
+    {% if customer.email %}<div><span class="k">{% trans "Email" %}</span><span class="v">{{ customer.email }}</span></div>{% endif %}
+    <div><span class="k">{% trans "Payment terms" %}</span><span class="v">{% blocktrans with d=customer.payment_terms_days %}{{ d }} days{% endblocktrans %}{% if customer.payment_terms_note %} · {{ customer.payment_terms_note }}{% endif %}</span></div>
+    {% if customer.vendor_portal %}<div><span class="k">{% trans "Vendor portal" %}</span><span class="v">{{ customer.vendor_portal }}</span></div>{% endif %}
   </div>
 </div>
 
 {# ── Responsibility coverage — gaps are the useful part ─────────────────── #}
-<h2>Responsibility coverage</h2>
+<h2>{% trans "Responsibility coverage" %}</h2>
 <div class="card">
   <div class="covergrid">
     {% for row in matrix %}
     <div class="coverrow">
-      {% if row.covered %}<span class="chip ok">✓</span>{% else %}<span class="chip bad">gap</span>{% endif %}
+      {% if row.covered %}<span class="chip ok">✓</span>{% else %}<span class="chip bad">{% trans "gap" %}</span>{% endif %}
       <span class="cl">{{ row.label }}</span>
-      <span class="muted" style="font-size:12px;">{% for c in row.contacts %}{{ c.full_name }}{% if not forloop.last %}, {% endif %}{% empty %}nobody{% endfor %}</span>
+      <span class="muted" style="font-size:12px;">{% for c in row.contacts %}{{ c.full_name }}{% if not forloop.last %}, {% endif %}{% empty %}{% trans "nobody" %}{% endfor %}</span>
     </div>
     {% endfor %}
   </div>
-  <p class="muted" style="margin:10px 0 0;font-size:12px;">An unassigned "approves
-    invoices" is why a payment sits unactioned for a month.</p>
+  <p class="muted" style="margin:10px 0 0;font-size:12px;">{% trans "An unassigned “approves invoices” is why a payment sits unactioned for a month." %}</p>
 </div>
 
 {# ── Who gets what — compact ────────────────────────────────────────────── #}
-<h2>Who gets what</h2>
+<h2>{% trans "Who gets what" %}</h2>
 <div class="card" style="padding:0;">
   <table>
-    <tr><th style="width:150px;">Document</th><th>To</th><th>CC</th></tr>
+    <tr><th style="width:150px;">{% trans "Document" %}</th><th>{% trans "To" %}</th><th>{% trans "CC" %}</th></tr>
     {% for r in routing %}
     <tr>
       <td><strong>{{ r.kind|cut:"_"|capfirst }}</strong></td>
@@ -162,8 +161,7 @@
     {% endfor %}
   </table>
 </div>
-<p class="muted" style="font-size:12px;margin:6px 2px 0;">Resolved from what each
-  person may do, not their job title. Nothing is sent automatically.</p>
+<p class="muted" style="font-size:12px;margin:6px 2px 0;">{% trans "Resolved from what each person may do, not their job title. Nothing is sent automatically." %}</p>
 
 <style>
   .kvgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:2px 24px; }
@@ -178,9 +176,9 @@
 </style>
 
 {# ── The org chart ──────────────────────────────────────────────────────── #}
-<h2 style="display:flex;align-items:center;gap:12px;">Departments &amp; people
+<h2 style="display:flex;align-items:center;gap:12px;">{% trans "Departments & people" %}
   <a class="btn ghost" href="{% url 'web:crm_customer_contacts' customer.id %}"
-     style="font-size:13px;padding:4px 12px;">Manage contacts →</a></h2>
+     style="font-size:13px;padding:4px 12px;">{% trans "Manage contacts →" %}</a></h2>
 {% for group in grouped %}
 <div class="card">
   <div class="row" style="gap:10px;">
@@ -190,11 +188,11 @@
     <span class="chip">{{ group.contacts|length }}</span>
   </div>
   <table style="margin-top:10px;">
-    <tr><th>Name</th><th>Title</th><th>Responsibilities</th><th>Reach</th></tr>
+    <tr><th>{% trans "Name" %}</th><th>{% trans "Title" %}</th><th>{% trans "Responsibilities" %}</th><th>{% trans "Reach" %}</th></tr>
     {% for c in group.contacts %}
     <tr {% if c.status != 'active' %}class="dim"{% endif %}>
       <td><a href="{% url 'web:customer_contact_detail' c.id %}"><strong>{{ c.full_name }}</strong></a>
-        {% if c.is_primary %} <span class="chip ok">Primary</span>{% endif %}</td>
+        {% if c.is_primary %} <span class="chip ok">{% trans "Primary" %}</span>{% endif %}</td>
       <td class="muted">{{ c.job_title|default:"—" }}</td>
       <td>{% for r in c.responsibility_labels %}<span class="chip info">{{ r }}</span> {% empty %}<span class="muted">—</span>{% endfor %}</td>
       <td class="muted">{{ c.reach|default:"—" }}</td>
@@ -203,13 +201,12 @@
   </table>
 </div>
 {% empty %}
-<div class="card"><p class="muted" style="margin:0;">No contacts filed under a
-  department yet — add people below and Lulaworks can start routing documents.</p></div>
+<div class="card"><p class="muted" style="margin:0;">{% trans "No contacts filed under a department yet — add people below and Lulaworks can start routing documents." %}</p></div>
 {% endfor %}
 
 {% if unassigned %}
 <div class="card">
-  <strong>Not in a department</strong>
+  <strong>{% trans "Not in a department" %}</strong>
   <table style="margin-top:10px;">
     {% for c in unassigned %}
     <tr><td><a href="{% url 'web:customer_contact_detail' c.id %}">{{ c.full_name }}</a></td>
@@ -222,37 +219,37 @@
 
 {% if can_manage %}
 <div id="addperson" style="display:none;scroll-margin-top:20px;">
-<h2 style="margin-top:0;">Add a person</h2>
+<h2 style="margin-top:0;">{% trans "Add a person" %}</h2>
 <div class="card">
   <form method="post" action="{% url 'web:customer_contact_save' customer.id %}">
     {% csrf_token %}
     <div class="two">
-      <div><label>Full name</label><input type="text" name="full_name" required></div>
-      <div><label>Job title</label><input type="text" name="job_title" placeholder="Project Engineer"></div>
-      <div><label>Department</label>
+      <div><label>{% trans "Full name" %}</label><input type="text" name="full_name" required></div>
+      <div><label>{% trans "Job title" %}</label><input type="text" name="job_title" placeholder="Project Engineer"></div>
+      <div><label>{% trans "Department" %}</label>
         <select name="department">
-          <option value="">— none —</option>
+          <option value="">{% trans "— none —" %}</option>
           {% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
         </select></div>
-      <div><label>Email</label><input type="email" name="email"></div>
-      <div><label>Telephone</label><input type="text" name="telephone"></div>
-      <div><label>Mobile</label><input type="text" name="mobile"></div>
-      <div><label>Extension</label><input type="text" name="extension"></div>
+      <div><label>{% trans "Email" %}</label><input type="email" name="email"></div>
+      <div><label>{% trans "Telephone" %}</label><input type="text" name="telephone"></div>
+      <div><label>{% trans "Mobile" %}</label><input type="text" name="mobile"></div>
+      <div><label>{% trans "Extension" %}</label><input type="text" name="extension"></div>
       <div><label>WhatsApp</label><input type="text" name="whatsapp"></div>
-      <div><label>Preferred contact method</label>
+      <div><label>{% trans "Preferred contact method" %}</label>
         <select name="preferred_method">
           {% for v, l in methods %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
         </select></div>
     </div>
 
-    <label style="margin-top:16px;">Roles (what they are called)</label>
+    <label style="margin-top:16px;">{% trans "Roles (what they are called)" %}</label>
     <div class="pickgrid">
       {% for role in roles %}
       <label class="opt"><input type="checkbox" name="roles" value="{{ role }}"> <span>{{ role }}</span></label>
       {% endfor %}
     </div>
 
-    <label style="margin-top:16px;">Responsibilities (what they may do — this drives routing)</label>
+    <label style="margin-top:16px;">{% trans "Responsibilities (what they may do — this drives routing)" %}</label>
     <div class="pickgrid">
       {% for key, label in responsibilities %}
       <label class="opt"><input type="checkbox" name="responsibilities" value="{{ key }}"> <span>{{ label }}</span></label>
@@ -260,8 +257,8 @@
     </div>
 
     <label class="inline" style="margin-top:14px;">
-      <input type="checkbox" name="is_primary" value="1"> Primary contact for this customer</label>
-    <br><button class="btn" type="submit" style="margin-top:16px;">Add contact</button>
+      <input type="checkbox" name="is_primary" value="1"> {% trans "Primary contact for this customer" %}</label>
+    <br><button class="btn" type="submit" style="margin-top:16px;">{% trans "Add contact" %}</button>
   </form>
 </div>
 </div>
@@ -279,70 +276,69 @@
 {% endif %}
 
 {# ── Places ─────────────────────────────────────────────────────────────── #}
-<h2 style="display:flex;align-items:center;gap:12px;">Branches &amp; sites
+<h2 style="display:flex;align-items:center;gap:12px;">{% trans "Branches & sites" %}
   <a class="btn ghost" href="{% url 'web:crm_customer_sites' customer.id %}"
-     style="font-size:13px;padding:4px 12px;">Manage sites →</a></h2>
+     style="font-size:13px;padding:4px 12px;">{% trans "Manage sites →" %}</a></h2>
 <div class="two-col">
   <div>
     <div class="card">
-      <strong>Branches</strong>
+      <strong>{% trans "Branches" %}</strong>
       <table style="margin-top:10px;">
         {% for b in customer.branches.all %}
         <tr><td><strong>{{ b.name }}</strong></td>
           <td class="muted">{{ b.city }}{% if b.manager_name %} · {{ b.manager_name }}{% endif %}</td></tr>
-        {% empty %}<tr><td class="muted">No branches.</td></tr>{% endfor %}
+        {% empty %}<tr><td class="muted">{% trans "No branches." %}</td></tr>{% endfor %}
       </table>
     </div>
   </div>
   <div>
     <div class="card">
-      <strong>Sites</strong>
-      <p class="muted" style="margin:6px 0 0;font-size:12.5px;">Projects are assigned
-        to a specific place, not to the client in general.</p>
+      <strong>{% trans "Sites" %}</strong>
+      <p class="muted" style="margin:6px 0 0;font-size:12.5px;">{% trans "Projects are assigned to a specific place, not to the client in general." %}</p>
       <table style="margin-top:10px;">
         {% for s in customer.sites.all %}
         <tr><td>{{ s.full_path }}</td></tr>
-        {% empty %}<tr><td class="muted">No sites.</td></tr>{% endfor %}
+        {% empty %}<tr><td class="muted">{% trans "No sites." %}</td></tr>{% endfor %}
       </table>
     </div>
   </div>
 </div>
 
 {# ── Commercial history ─────────────────────────────────────────────────── #}
-<h2>Jobs for this customer</h2>
+<h2>{% trans "Jobs for this customer" %}</h2>
 <div class="two-col">
   <div>
     <div class="card" style="padding:0;">
       <table>
-        <tr><th>Quotation</th><th>Status</th></tr>
+        <tr><th>{% trans "Quotation" %}</th><th>{% trans "Status" %}</th></tr>
         {% for q in quotations %}
         <tr><td><a href="{% url 'web:quotation_detail' q.id %}">{{ q.number }}</a></td>
           <td class="muted">{{ q.get_status_display }}</td></tr>
-        {% empty %}<tr><td colspan="2" class="muted" style="padding:16px;">None yet.</td></tr>{% endfor %}
+        {% empty %}<tr><td colspan="2" class="muted" style="padding:16px;">{% trans "None yet." %}</td></tr>{% endfor %}
       </table>
     </div>
   </div>
   <div>
     <div class="card" style="padding:0;">
       <table>
-        <tr><th>Project</th><th>Status</th></tr>
+        <tr><th>{% trans "Project" %}</th><th>{% trans "Status" %}</th></tr>
         {% for p in projects %}
         <tr><td><a href="{% url 'web:project_detail' p.id %}">{{ p.number }}</a></td>
           <td class="muted">{{ p.get_status_display }}</td></tr>
-        {% empty %}<tr><td colspan="2" class="muted" style="padding:16px;">None yet.</td></tr>{% endfor %}
+        {% empty %}<tr><td colspan="2" class="muted" style="padding:16px;">{% trans "None yet." %}</td></tr>{% endfor %}
       </table>
     </div>
   </div>
 </div>
 
 {% if can_manage %}
-<h2>Departments</h2>
+<h2>{% trans "Departments" %}</h2>
 <div class="card">
   <form method="post" action="{% url 'web:customer_department' customer.id %}" class="row" style="gap:8px;">
     {% csrf_token %}
-    <input type="text" name="name" placeholder="Department name" style="flex:1;" required>
-    <input type="email" name="email" placeholder="Department email" style="flex:1;">
-    <button class="btn ghost" type="submit">Add department</button>
+    <input type="text" name="name" placeholder="{% trans 'Department name' %}" style="flex:1;" required>
+    <input type="email" name="email" placeholder="{% trans 'Department email' %}" style="flex:1;">
+    <button class="btn ghost" type="submit">{% trans "Add department" %}</button>
   </form>
 </div>
 {% endif %}

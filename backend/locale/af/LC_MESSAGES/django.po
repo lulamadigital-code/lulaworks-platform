@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 13:54+0000\n"
+"POT-Creation-Date: 2026-09-15 13:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,6 +22,7 @@ msgid "Prospect"
 msgstr "Voornemende kliënt"
 
 #: apps/customers/models.py:30 apps/web/templates/web/billing.html:22
+#: apps/web/templates/web/customer_detail.html:21
 #: apps/web/templates/web/customers.html:41
 #: apps/web/templates/web/people.html:102
 msgid "Active"
@@ -35,7 +36,8 @@ msgstr "In wag"
 msgid "Dormant"
 msgstr "Slapend"
 
-#: apps/customers/models.py:33 apps/web/templates/web/customers.html:42
+#: apps/customers/models.py:33 apps/web/templates/web/customer_detail.html:22
+#: apps/web/templates/web/customers.html:42
 msgid "Blacklisted"
 msgstr "Op swartlys"
 
@@ -122,7 +124,8 @@ msgstr "RFQ / Tender"
 msgid "Manual job"
 msgstr "Handmatige werk"
 
-#: apps/execution/models.py:155 apps/web/templates/web/dashboard.html:128
+#: apps/execution/models.py:155 apps/web/templates/web/customer_detail.html:324
+#: apps/web/templates/web/dashboard.html:128
 #: apps/web/templates/web/work.html:110
 msgid "Project"
 msgstr "Projek"
@@ -261,12 +264,10 @@ msgid "Expired"
 msgstr "Verval"
 
 #: apps/web/templates/web/_readiness.html:9
-#| msgid "Ready for site"
 msgid "Ready (overridden)"
 msgstr "Gereed (oorheers)"
 
 #: apps/web/templates/web/_readiness.html:11
-#| msgid "Ready for site"
 msgid "Not ready for site"
 msgstr "Nie gereed vir terrein nie"
 
@@ -623,6 +624,7 @@ msgid "Send to customer"
 msgstr "Stuur na kliënt"
 
 #: apps/web/templates/web/commercial_document_detail.html:97
+#: apps/web/templates/web/customer_detail.html:153
 #: apps/web/templates/web/quotation_detail.html:138
 msgid "To"
 msgstr "Aan"
@@ -652,6 +654,8 @@ msgid "When"
 msgstr "Wanneer"
 
 #: apps/web/templates/web/commercial_document_detail.html:109
+#: apps/web/templates/web/customer_detail.html:313
+#: apps/web/templates/web/customer_detail.html:324
 #: apps/web/templates/web/customers.html:29
 #: apps/web/templates/web/people.html:73
 #: apps/web/templates/web/project_detail.html:133
@@ -687,6 +691,7 @@ msgid "Paid"
 msgstr "Betaal"
 
 #: apps/web/templates/web/commercial_document_detail.html:138
+#: apps/web/templates/web/customer_detail.html:42
 #: apps/web/templates/web/invoices.html:31
 #: apps/web/templates/web/invoices.html:58
 msgid "Outstanding"
@@ -735,6 +740,7 @@ msgid "PO number"
 msgstr "Bestellingnr."
 
 #: apps/web/templates/web/commercial_document_detail.html:166
+#: apps/web/templates/web/customer_detail.html:82
 #: apps/web/templates/web/quotation_detail.html:167
 #: apps/web/templates/web/quotations.html:68
 msgid "Value"
@@ -890,12 +896,14 @@ msgstr "Maatskappy-identiteit"
 #: apps/web/templates/web/company.html:472
 #: apps/web/templates/web/company.html:505
 #: apps/web/templates/web/company.html:531
+#: apps/web/templates/web/customer_detail.html:25
 #: apps/web/templates/web/quotation_detail.html:43
 #: apps/web/templates/web/quotation_detail.html:160
 msgid "Edit"
 msgstr "Wysig"
 
 #: apps/web/templates/web/company.html:69
+#: apps/web/templates/web/customer_detail.html:119
 msgid "Registered name"
 msgstr "Geregistreerde naam"
 
@@ -905,6 +913,7 @@ msgid "Trading name"
 msgstr "Handelsnaam"
 
 #: apps/web/templates/web/company.html:71
+#: apps/web/templates/web/customer_detail.html:121
 msgid "Registration no."
 msgstr "Registrasienr."
 
@@ -1009,6 +1018,7 @@ msgstr "Primêre telefoon"
 #: apps/web/templates/web/company.html:129
 #: apps/web/templates/web/company.html:314
 #: apps/web/templates/web/company.html:316
+#: apps/web/templates/web/customer_detail.html:236
 #: apps/web/templates/web/people.html:57 apps/web/templates/web/profile.html:43
 #: apps/web/templates/web/profile.html:75
 msgid "Mobile"
@@ -1050,6 +1060,7 @@ msgid "Save contact details"
 msgstr "Stoor kontakbesonderhede"
 
 #: apps/web/templates/web/company.html:145
+#: apps/web/templates/web/customer_detail.html:124
 msgid "Physical address"
 msgstr "Fisiese adres"
 
@@ -1088,6 +1099,7 @@ msgstr "Stoor adres"
 
 #: apps/web/templates/web/company.html:187
 #: apps/web/templates/web/company.html:201
+#: apps/web/templates/web/customer_detail.html:125
 msgid "Postal address"
 msgstr "Posadres"
 
@@ -1237,6 +1249,7 @@ msgstr "+ Voeg lid by"
 
 #: apps/web/templates/web/company.html:292
 #: apps/web/templates/web/company.html:379
+#: apps/web/templates/web/customer_detail.html:191
 msgid "Name"
 msgstr "Naam"
 
@@ -1248,8 +1261,10 @@ msgstr "Rol"
 
 #: apps/web/templates/web/company.html:292
 #: apps/web/templates/web/company.html:312
-#: apps/web/templates/web/company.html:316 apps/web/templates/web/login.html:16
-#: apps/web/templates/web/profile.html:44
+#: apps/web/templates/web/company.html:316
+#: apps/web/templates/web/customer_detail.html:128
+#: apps/web/templates/web/customer_detail.html:234
+#: apps/web/templates/web/login.html:16 apps/web/templates/web/profile.html:44
 #: apps/web/templates/web/profile.html:134
 msgid "Email"
 msgstr "E-pos"
@@ -1265,6 +1280,7 @@ msgid "Prefers"
 msgstr "Verkies"
 
 #: apps/web/templates/web/company.html:295
+#: apps/web/templates/web/customer_detail.html:195
 msgid "Primary"
 msgstr "Primêr"
 
@@ -1284,20 +1300,24 @@ msgstr ""
 "Nog geen kontakte nie. Die primêre kontak word op uitgaande dokumente gedruk."
 
 #: apps/web/templates/web/company.html:310
+#: apps/web/templates/web/customer_detail.html:227
 msgid "Full name"
 msgstr "Volledige naam"
 
 #: apps/web/templates/web/company.html:311
+#: apps/web/templates/web/customer_detail.html:228
 #: apps/web/templates/web/people.html:53 apps/web/templates/web/people.html:73
 #: apps/web/templates/web/profile.html:124
 msgid "Job title"
 msgstr "Postitel"
 
 #: apps/web/templates/web/company.html:315
+#: apps/web/templates/web/customer_detail.html:237
 msgid "Extension"
 msgstr "Uitbreiding"
 
 #: apps/web/templates/web/company.html:316
+#: apps/web/templates/web/customer_detail.html:239
 msgid "Preferred contact method"
 msgstr "Voorkeurkontakmetode"
 
@@ -1344,6 +1364,7 @@ msgid "+ Upload"
 msgstr "+ Laai op"
 
 #: apps/web/templates/web/company.html:364
+#: apps/web/templates/web/customer_detail.html:153
 #: apps/web/templates/web/quotation_detail.html:218
 msgid "Document"
 msgstr "Dokument"
@@ -1445,6 +1466,7 @@ msgid "Vehicles"
 msgstr "Voertuie"
 
 #: apps/web/templates/web/company.html:416
+#: apps/web/templates/web/customer_detail.html:296
 msgid "Sites"
 msgstr "Terreine"
 
@@ -1773,6 +1795,329 @@ msgstr "Deursoek CRM…"
 msgid "Search"
 msgstr "Soek"
 
+#: apps/web/templates/web/customer_detail.html:5
+msgid "← Our clients"
+msgstr "← Ons kliënte"
+
+#: apps/web/templates/web/customer_detail.html:10
+msgid "Reconstructed from imported history"
+msgstr "Herbou uit ingevoerde geskiedenis"
+
+#: apps/web/templates/web/customer_detail.html:11
+msgid "Historical data"
+msgstr "Historiese data"
+
+#: apps/web/templates/web/customer_detail.html:16
+#, python-format
+msgid "From %(n)s imported documents:"
+msgstr "Uit %(n)s ingevoerde dokumente:"
+
+#: apps/web/templates/web/customer_detail.html:26
+#| msgid "+ Add person"
+msgid "+ Add a person"
+msgstr "+ Voeg 'n persoon by"
+
+#: apps/web/templates/web/customer_detail.html:33
+#: apps/web/templates/web/customers.html:28
+msgid "Contacts"
+msgstr "Kontakte"
+
+#: apps/web/templates/web/customer_detail.html:35
+msgid "Open opportunities"
+msgstr "Oop geleenthede"
+
+#: apps/web/templates/web/customer_detail.html:37
+#| msgid "Open pipeline value"
+msgid "Pipeline value"
+msgstr "Pyplynwaarde"
+
+#: apps/web/templates/web/customer_detail.html:39
+#: apps/web/templates/web/profile.html:125
+msgid "Open jobs"
+msgstr "take"
+
+#: apps/web/templates/web/customer_detail.html:46
+#| msgid "%(kind)s timeline"
+msgid "Relationship timeline"
+msgstr "Verhoudingstydlyn"
+
+#: apps/web/templates/web/customer_detail.html:61
+msgid ""
+"No history yet — quotations, jobs, invoices, opportunities and CRM "
+"activities will appear here as they happen."
+msgstr "Nog geen geskiedenis nie — kwotasies, werke, fakture, geleenthede en CRM-aktiwiteite sal hier verskyn soos dit gebeur."
+
+#: apps/web/templates/web/customer_detail.html:77
+msgid "Opportunities"
+msgstr "Geleenthede"
+
+#: apps/web/templates/web/customer_detail.html:79
+#, python-format
+#| msgid "%(n)s open"
+msgid "%(n)s open worth %(v)s"
+msgstr "%(n)s oop ter waarde van %(v)s"
+
+#: apps/web/templates/web/customer_detail.html:82
+msgid "Opportunity"
+msgstr "Geleentheid"
+
+#: apps/web/templates/web/customer_detail.html:82
+msgid "Stage"
+msgstr "Stadium"
+
+#: apps/web/templates/web/customer_detail.html:82
+#| msgid "Traceability"
+msgid "Probability"
+msgstr "Waarskynlikheid"
+
+#: apps/web/templates/web/customer_detail.html:92
+#| msgid "No quotations yet."
+msgid "No opportunities yet."
+msgstr "Nog geen geleenthede nie."
+
+#: apps/web/templates/web/customer_detail.html:97
+#| msgid "Next →"
+msgid "Next:"
+msgstr "Volgende:"
+
+#: apps/web/templates/web/customer_detail.html:98
+#, python-format
+#| msgid "No due date (%(n)s)"
+msgid "due %(date)s"
+msgstr "verval %(date)s"
+
+#: apps/web/templates/web/customer_detail.html:99
+#| msgid "Activities"
+msgid "all activities"
+msgstr "alle aktiwiteite"
+
+#: apps/web/templates/web/customer_detail.html:106
+msgid "New opportunity title"
+msgstr "Nuwe geleentheidstitel"
+
+#: apps/web/templates/web/customer_detail.html:107
+#| msgid "Estimator review"
+msgid "Estimated value"
+msgstr "Beraamde waarde"
+
+#: apps/web/templates/web/customer_detail.html:109
+msgid "Open opportunity"
+msgstr "Maak geleentheid oop"
+
+#: apps/web/templates/web/customer_detail.html:115
+#| msgid "Detailed"
+msgid "Details"
+msgstr "Besonderhede"
+
+#: apps/web/templates/web/customer_detail.html:118
+#| msgid "Our vendor number with them"
+msgid "Our vendor no. with them"
+msgstr "Ons verskaffernr. by hulle"
+
+#: apps/web/templates/web/customer_detail.html:120
+#| msgid "Trading name"
+msgid "Trading as"
+msgstr "Handel as"
+
+#: apps/web/templates/web/customer_detail.html:122
+msgid "VAT no."
+msgstr "BTW-nr."
+
+#: apps/web/templates/web/customer_detail.html:123
+#| msgid "Tax invoice"
+msgid "Tax no."
+msgstr "Belastingnr."
+
+#: apps/web/templates/web/customer_detail.html:126
+msgid "City / Province"
+msgstr "Stad / Provinsie"
+
+#: apps/web/templates/web/customer_detail.html:127
+#: apps/web/templates/web/customer_detail.html:235
+#| msgid "Main telephone"
+msgid "Telephone"
+msgstr "Telefoon"
+
+#: apps/web/templates/web/customer_detail.html:129
+#| msgid "Payments"
+msgid "Payment terms"
+msgstr "Betaalvoorwaardes"
+
+#: apps/web/templates/web/customer_detail.html:129
+#: apps/web/templates/web/customers.html:40
+#, python-format
+msgid "%(d)s days"
+msgstr "%(d)s dae"
+
+#: apps/web/templates/web/customer_detail.html:130
+#| msgid "Vendor no."
+msgid "Vendor portal"
+msgstr "Verskafferportaal"
+
+#: apps/web/templates/web/customer_detail.html:135
+msgid "Responsibility coverage"
+msgstr "Verantwoordelikheidsdekking"
+
+#: apps/web/templates/web/customer_detail.html:140
+msgid "gap"
+msgstr "gaping"
+
+#: apps/web/templates/web/customer_detail.html:142
+msgid "nobody"
+msgstr "niemand"
+
+#: apps/web/templates/web/customer_detail.html:146
+msgid ""
+"An unassigned “approves invoices” is why a payment sits unactioned for a "
+"month."
+msgstr "'n Nietoegewese \"keur fakture goed\" is hoekom 'n betaling 'n maand lank sonder aksie bly."
+
+#: apps/web/templates/web/customer_detail.html:150
+#| msgid "Who is carrying what"
+msgid "Who gets what"
+msgstr "Wie kry wat"
+
+#: apps/web/templates/web/customer_detail.html:153
+msgid "CC"
+msgstr "KA"
+
+#: apps/web/templates/web/customer_detail.html:164
+msgid ""
+"Resolved from what each person may do, not their job title. Nothing is sent "
+"automatically."
+msgstr "Bepaal uit wat elke persoon mag doen, nie hul postitel nie. Niks word outomaties gestuur nie."
+
+#: apps/web/templates/web/customer_detail.html:179
+#| msgid "Departments"
+msgid "Departments & people"
+msgstr "Afdelings en mense"
+
+#: apps/web/templates/web/customer_detail.html:181
+#| msgid "Manage templates →"
+msgid "Manage contacts →"
+msgstr "Bestuur kontakte →"
+
+#: apps/web/templates/web/customer_detail.html:191
+#: apps/web/templates/web/projects.html:14
+msgid "Title"
+msgstr "Titel"
+
+#: apps/web/templates/web/customer_detail.html:191
+#| msgid "Response style"
+msgid "Responsibilities"
+msgstr "Verantwoordelikhede"
+
+#: apps/web/templates/web/customer_detail.html:191
+msgid "Reach"
+msgstr "Bereik"
+
+#: apps/web/templates/web/customer_detail.html:204
+msgid ""
+"No contacts filed under a department yet — add people below and Lulaworks "
+"can start routing documents."
+msgstr "Nog geen kontakte onder 'n afdeling geliasseer nie — voeg mense hieronder by en Lulaworks kan begin om dokumente te roeteer."
+
+#: apps/web/templates/web/customer_detail.html:209
+#| msgid "Departments"
+msgid "Not in a department"
+msgstr "Nie in 'n afdeling nie"
+
+#: apps/web/templates/web/customer_detail.html:222
+#| msgid "+ Add person"
+msgid "Add a person"
+msgstr "Voeg 'n persoon by"
+
+#: apps/web/templates/web/customer_detail.html:229
+#| msgid "Departments"
+msgid "Department"
+msgstr "Afdeling"
+
+#: apps/web/templates/web/customer_detail.html:231
+msgid "— none —"
+msgstr "— geen —"
+
+#: apps/web/templates/web/customer_detail.html:245
+msgid "Roles (what they are called)"
+msgstr "Rolle (wat hulle genoem word)"
+
+#: apps/web/templates/web/customer_detail.html:252
+msgid "Responsibilities (what they may do — this drives routing)"
+msgstr "Verantwoordelikhede (wat hulle mag doen — dit dryf roetering)"
+
+#: apps/web/templates/web/customer_detail.html:260
+msgid "Primary contact for this customer"
+msgstr "Primêre kontak vir hierdie kliënt"
+
+#: apps/web/templates/web/customer_detail.html:261
+#| msgid "+ Add account"
+msgid "Add contact"
+msgstr "Voeg kontak by"
+
+#: apps/web/templates/web/customer_detail.html:279
+msgid "Branches & sites"
+msgstr "Takke en terreine"
+
+#: apps/web/templates/web/customer_detail.html:281
+#| msgid "Manage templates →"
+msgid "Manage sites →"
+msgstr "Bestuur terreine →"
+
+#: apps/web/templates/web/customer_detail.html:285
+#| msgid "Branch"
+msgid "Branches"
+msgstr "Takke"
+
+#: apps/web/templates/web/customer_detail.html:290
+msgid "No branches."
+msgstr "Geen takke nie."
+
+#: apps/web/templates/web/customer_detail.html:297
+msgid ""
+"Projects are assigned to a specific place, not to the client in general."
+msgstr "Projekte word aan 'n spesifieke plek toegewys, nie aan die kliënt in die algemeen nie."
+
+#: apps/web/templates/web/customer_detail.html:301
+msgid "No sites."
+msgstr "Geen terreine nie."
+
+#: apps/web/templates/web/customer_detail.html:308
+#| msgid "With the customer"
+msgid "Jobs for this customer"
+msgstr "Werke vir hierdie kliënt"
+
+#: apps/web/templates/web/customer_detail.html:313
+#: apps/web/templates/web/invoices.html:90
+#: apps/web/templates/web/project_detail.html:94
+#: apps/web/templates/web/quotations.html:67
+msgid "Quotation"
+msgstr "Kwotasie"
+
+#: apps/web/templates/web/customer_detail.html:317
+#: apps/web/templates/web/customer_detail.html:328
+#| msgid "No invoices yet."
+msgid "None yet."
+msgstr "Nog geen nie."
+
+#: apps/web/templates/web/customer_detail.html:335
+#: apps/web/templates/web/customers.html:28
+msgid "Departments"
+msgstr "Afdelings"
+
+#: apps/web/templates/web/customer_detail.html:339
+#| msgid "Departments"
+msgid "Department name"
+msgstr "Afdelingsnaam"
+
+#: apps/web/templates/web/customer_detail.html:340
+#| msgid "Departments"
+msgid "Department email"
+msgstr "Afdelings-e-pos"
+
+#: apps/web/templates/web/customer_detail.html:341
+#| msgid "Departments"
+msgid "Add department"
+msgstr "Voeg afdeling by"
+
 #: apps/web/templates/web/customers.html:3
 #: apps/web/templates/web/customers.html:8
 msgid "Customers"
@@ -1818,14 +2163,6 @@ msgstr "Kode"
 msgid "Vendor no."
 msgstr "Verskaffernr."
 
-#: apps/web/templates/web/customers.html:28
-msgid "Contacts"
-msgstr "Kontakte"
-
-#: apps/web/templates/web/customers.html:28
-msgid "Departments"
-msgstr "Afdelings"
-
 #: apps/web/templates/web/customers.html:29
 #: apps/web/templates/web/quotations.html:3
 #: apps/web/templates/web/quotations.html:10 apps/web/translation_strings.py:11
@@ -1849,11 +2186,6 @@ msgstr "Voorwaardes"
 #, python-format
 msgid "%(n)s open"
 msgstr "%(n)s oop"
-
-#: apps/web/templates/web/customers.html:40
-#, python-format
-msgid "%(d)s days"
-msgstr "%(d)s dae"
 
 #: apps/web/templates/web/customers.html:45
 msgid "No customers yet."
@@ -2119,12 +2451,6 @@ msgstr ""
 "belastingfaktuur wat die kwotasie se nommer dra — syfers direk uit die "
 "kwotasie geneem."
 
-#: apps/web/templates/web/invoices.html:90
-#: apps/web/templates/web/project_detail.html:94
-#: apps/web/templates/web/quotations.html:67
-msgid "Quotation"
-msgstr "Kwotasie"
-
 #: apps/web/templates/web/invoices.html:100
 msgid "Create tax invoice →"
 msgstr "Skep belastingfaktuur →"
@@ -2344,10 +2670,6 @@ msgstr "Verwyder foto"
 msgid "Where you stand"
 msgstr "Waar jy staan"
 
-#: apps/web/templates/web/profile.html:125
-msgid "Open jobs"
-msgstr "take"
-
 #: apps/web/templates/web/profile.html:129
 msgid ""
 "Your role is set by an administrator — it decides what you can see and do."
@@ -2386,7 +2708,6 @@ msgid "as %(roles)s"
 msgstr "as %(roles)s"
 
 #: apps/web/templates/web/project_detail.html:5
-#| msgid "Projects"
 msgid "← Projects"
 msgstr "← Projekte"
 
@@ -2395,12 +2716,10 @@ msgid "Override reason (audited)…"
 msgstr "Oorheersingsrede (geoudit)…"
 
 #: apps/web/templates/web/project_detail.html:17
-#| msgid "Overdue"
 msgid "Override gate"
 msgstr "Oorheers hek"
 
 #: apps/web/templates/web/project_detail.html:22
-#| msgid "Project"
 msgid "Project health"
 msgstr "Projekgesondheid"
 
@@ -2409,7 +2728,6 @@ msgid "Overall"
 msgstr "Algeheel"
 
 #: apps/web/templates/web/project_detail.html:31
-#| msgid "Commercial approval"
 msgid "Commercial"
 msgstr "Kommersieel"
 
@@ -2451,33 +2769,27 @@ msgid "Budget"
 msgstr "Begroting"
 
 #: apps/web/templates/web/project_detail.html:50
-#| msgid "Actual cost"
 msgid "Actual"
 msgstr "Werklik"
 
 #: apps/web/templates/web/project_detail.html:50
-#| msgid "Finance"
 msgid "Variance"
 msgstr "Afwyking"
 
 #: apps/web/templates/web/project_detail.html:63
-#| msgid "Jobs by status"
 msgid "Jobs & tasks"
 msgstr "Werke en take"
 
 #: apps/web/templates/web/project_detail.html:65
-#| msgid "+ Add member"
 msgid "+ Add job"
 msgstr "+ Voeg werk by"
 
 #: apps/web/templates/web/project_detail.html:75
 #: apps/web/templates/web/project_detail.html:82
-#| msgid "Operating in"
 msgid "Operations"
 msgstr "Bedrywighede"
 
 #: apps/web/templates/web/project_detail.html:85
-#| msgid "No jobs yet — create some from the Jobs tab."
 msgid "No jobs yet — add the first one."
 msgstr "Nog geen werke nie — voeg die eerste by."
 
@@ -2487,7 +2799,6 @@ msgid "Commercial documents"
 msgstr "Kommersiële dokumente"
 
 #: apps/web/templates/web/project_detail.html:100
-#| msgid "Customer"
 msgid "Customer PO"
 msgstr "Kliëntbestelling"
 
@@ -2496,7 +2807,6 @@ msgid "received"
 msgstr "ontvang"
 
 #: apps/web/templates/web/project_detail.html:105
-#| msgid "Tax Invoice"
 msgid "Tax invoice"
 msgstr "Belastingfaktuur"
 
@@ -2506,16 +2816,16 @@ msgid "PDF"
 msgstr "PDF"
 
 #: apps/web/templates/web/project_detail.html:111
-#| msgid "Delivery note terms"
 msgid "Delivery note"
 msgstr "Afleweringsnota"
 
 #: apps/web/templates/web/project_detail.html:117
 msgid "No commercial documents — this job wasn't raised from a quotation."
-msgstr "Geen kommersiële dokumente nie — hierdie werk is nie uit 'n kwotasie geskep nie."
+msgstr ""
+"Geen kommersiële dokumente nie — hierdie werk is nie uit 'n kwotasie geskep "
+"nie."
 
 #: apps/web/templates/web/project_detail.html:123
-#| msgid "Commercial documents"
 msgid "Materials & procurement"
 msgstr "Materiaal en verkryging"
 
@@ -2529,7 +2839,6 @@ msgstr "Bestee"
 
 #: apps/web/templates/web/project_detail.html:127
 #, python-format
-#| msgid "No due date (%(n)s)"
 msgid "Materials (%(n)s)"
 msgstr "Materiaal (%(n)s)"
 
@@ -2537,7 +2846,10 @@ msgstr "Materiaal (%(n)s)"
 msgid ""
 "Field spend the crew captures here (material, fuel & expense receipts) flows "
 "straight into this job's actual cost and profitability"
-msgstr "Veldbesteding wat die span hier vaslê (materiaal-, brandstof- en onkostestrokies) vloei direk in hierdie werk se werklike koste en winsgewendheid"
+msgstr ""
+"Veldbesteding wat die span hier vaslê (materiaal-, brandstof- en "
+"onkostestrokies) vloei direk in hierdie werk se werklike koste en "
+"winsgewendheid"
 
 #: apps/web/templates/web/project_detail.html:129
 msgid "(visible to finance)"
@@ -2552,7 +2864,6 @@ msgid "For"
 msgstr "Vir"
 
 #: apps/web/templates/web/project_detail.html:139
-#| msgid "Waiting"
 msgid "Awaiting"
 msgstr "Wag"
 
@@ -2561,12 +2872,10 @@ msgid "Fulfilled"
 msgstr "Vervul"
 
 #: apps/web/templates/web/project_detail.html:150
-#| msgid "Pipeline"
 msgid "Timeline"
 msgstr "Tydlyn"
 
 #: apps/web/templates/web/project_detail.html:161
-#| msgid "Compliance"
 msgid "Compliance checklist"
 msgstr "Nakominglys"
 
@@ -2575,7 +2884,6 @@ msgid "mandatory"
 msgstr "verpligtend"
 
 #: apps/web/templates/web/project_detail.html:181
-#| msgid "AI compliance detection"
 msgid "No compliance items."
 msgstr "Geen nakomingsitems nie."
 
@@ -2585,13 +2893,11 @@ msgstr "Stel 'n vorderingseis op"
 
 #: apps/web/templates/web/project_detail.html:191
 #, python-format
-#| msgid "%(pct)s%% complete"
 msgid "%% complete"
 msgstr "%% voltooi"
 
 #: apps/web/templates/web/project_detail.html:193
 #, python-format
-#| msgid "Retention held"
 msgid "retention %%"
 msgstr "retensie %%"
 
@@ -2611,10 +2917,6 @@ msgstr "%(n)s in totaal."
 #: apps/web/templates/web/projects.html:10
 msgid "+ New project"
 msgstr "+ Nuwe projek"
-
-#: apps/web/templates/web/projects.html:14
-msgid "Title"
-msgstr "Titel"
 
 #: apps/web/templates/web/projects.html:14
 msgid "Job type"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 13:54+0000\n"
+"POT-Creation-Date: 2026-09-15 13:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -23,6 +23,7 @@ msgid "Prospect"
 msgstr "عميل محتمل"
 
 #: apps/customers/models.py:30 apps/web/templates/web/billing.html:22
+#: apps/web/templates/web/customer_detail.html:21
 #: apps/web/templates/web/customers.html:41
 #: apps/web/templates/web/people.html:102
 msgid "Active"
@@ -36,7 +37,8 @@ msgstr "معلّق"
 msgid "Dormant"
 msgstr "خامل"
 
-#: apps/customers/models.py:33 apps/web/templates/web/customers.html:42
+#: apps/customers/models.py:33 apps/web/templates/web/customer_detail.html:22
+#: apps/web/templates/web/customers.html:42
 msgid "Blacklisted"
 msgstr "في القائمة السوداء"
 
@@ -123,7 +125,8 @@ msgstr "طلب عرض سعر / مناقصة"
 msgid "Manual job"
 msgstr "مهمة يدوية"
 
-#: apps/execution/models.py:155 apps/web/templates/web/dashboard.html:128
+#: apps/execution/models.py:155 apps/web/templates/web/customer_detail.html:324
+#: apps/web/templates/web/dashboard.html:128
 #: apps/web/templates/web/work.html:110
 msgid "Project"
 msgstr "المشروع"
@@ -262,12 +265,10 @@ msgid "Expired"
 msgstr "منتهي الصلاحية"
 
 #: apps/web/templates/web/_readiness.html:9
-#| msgid "Ready for site"
 msgid "Ready (overridden)"
 msgstr "جاهز (تجاوز)"
 
 #: apps/web/templates/web/_readiness.html:11
-#| msgid "Ready for site"
 msgid "Not ready for site"
 msgstr "غير جاهز للموقع"
 
@@ -624,6 +625,7 @@ msgid "Send to customer"
 msgstr "إرسال إلى العميل"
 
 #: apps/web/templates/web/commercial_document_detail.html:97
+#: apps/web/templates/web/customer_detail.html:153
 #: apps/web/templates/web/quotation_detail.html:138
 msgid "To"
 msgstr "إلى"
@@ -653,6 +655,8 @@ msgid "When"
 msgstr "متى"
 
 #: apps/web/templates/web/commercial_document_detail.html:109
+#: apps/web/templates/web/customer_detail.html:313
+#: apps/web/templates/web/customer_detail.html:324
 #: apps/web/templates/web/customers.html:29
 #: apps/web/templates/web/people.html:73
 #: apps/web/templates/web/project_detail.html:133
@@ -688,6 +692,7 @@ msgid "Paid"
 msgstr "مدفوعة"
 
 #: apps/web/templates/web/commercial_document_detail.html:138
+#: apps/web/templates/web/customer_detail.html:42
 #: apps/web/templates/web/invoices.html:31
 #: apps/web/templates/web/invoices.html:58
 msgid "Outstanding"
@@ -736,6 +741,7 @@ msgid "PO number"
 msgstr "رقم أمر الشراء"
 
 #: apps/web/templates/web/commercial_document_detail.html:166
+#: apps/web/templates/web/customer_detail.html:82
 #: apps/web/templates/web/quotation_detail.html:167
 #: apps/web/templates/web/quotations.html:68
 msgid "Value"
@@ -885,12 +891,14 @@ msgstr "هوية الشركة"
 #: apps/web/templates/web/company.html:472
 #: apps/web/templates/web/company.html:505
 #: apps/web/templates/web/company.html:531
+#: apps/web/templates/web/customer_detail.html:25
 #: apps/web/templates/web/quotation_detail.html:43
 #: apps/web/templates/web/quotation_detail.html:160
 msgid "Edit"
 msgstr "تعديل"
 
 #: apps/web/templates/web/company.html:69
+#: apps/web/templates/web/customer_detail.html:119
 msgid "Registered name"
 msgstr "الاسم المسجَّل"
 
@@ -900,6 +908,7 @@ msgid "Trading name"
 msgstr "الاسم التجاري"
 
 #: apps/web/templates/web/company.html:71
+#: apps/web/templates/web/customer_detail.html:121
 msgid "Registration no."
 msgstr "رقم التسجيل"
 
@@ -1004,6 +1013,7 @@ msgstr "الهاتف الرئيسي"
 #: apps/web/templates/web/company.html:129
 #: apps/web/templates/web/company.html:314
 #: apps/web/templates/web/company.html:316
+#: apps/web/templates/web/customer_detail.html:236
 #: apps/web/templates/web/people.html:57 apps/web/templates/web/profile.html:43
 #: apps/web/templates/web/profile.html:75
 msgid "Mobile"
@@ -1045,6 +1055,7 @@ msgid "Save contact details"
 msgstr "حفظ تفاصيل الاتصال"
 
 #: apps/web/templates/web/company.html:145
+#: apps/web/templates/web/customer_detail.html:124
 msgid "Physical address"
 msgstr "العنوان الفعلي"
 
@@ -1083,6 +1094,7 @@ msgstr "حفظ العنوان"
 
 #: apps/web/templates/web/company.html:187
 #: apps/web/templates/web/company.html:201
+#: apps/web/templates/web/customer_detail.html:125
 msgid "Postal address"
 msgstr "العنوان البريدي"
 
@@ -1228,6 +1240,7 @@ msgstr "+ إضافة عضو"
 
 #: apps/web/templates/web/company.html:292
 #: apps/web/templates/web/company.html:379
+#: apps/web/templates/web/customer_detail.html:191
 msgid "Name"
 msgstr "الاسم"
 
@@ -1239,8 +1252,10 @@ msgstr "الدور"
 
 #: apps/web/templates/web/company.html:292
 #: apps/web/templates/web/company.html:312
-#: apps/web/templates/web/company.html:316 apps/web/templates/web/login.html:16
-#: apps/web/templates/web/profile.html:44
+#: apps/web/templates/web/company.html:316
+#: apps/web/templates/web/customer_detail.html:128
+#: apps/web/templates/web/customer_detail.html:234
+#: apps/web/templates/web/login.html:16 apps/web/templates/web/profile.html:44
 #: apps/web/templates/web/profile.html:134
 msgid "Email"
 msgstr "البريد الإلكتروني"
@@ -1256,6 +1271,7 @@ msgid "Prefers"
 msgstr "يفضّل"
 
 #: apps/web/templates/web/company.html:295
+#: apps/web/templates/web/customer_detail.html:195
 msgid "Primary"
 msgstr "رئيسي"
 
@@ -1275,20 +1291,24 @@ msgstr ""
 "لا توجد جهات اتصال بعد. تُطبع جهة الاتصال الرئيسية على المستندات الصادرة."
 
 #: apps/web/templates/web/company.html:310
+#: apps/web/templates/web/customer_detail.html:227
 msgid "Full name"
 msgstr "الاسم الكامل"
 
 #: apps/web/templates/web/company.html:311
+#: apps/web/templates/web/customer_detail.html:228
 #: apps/web/templates/web/people.html:53 apps/web/templates/web/people.html:73
 #: apps/web/templates/web/profile.html:124
 msgid "Job title"
 msgstr "المسمى الوظيفي"
 
 #: apps/web/templates/web/company.html:315
+#: apps/web/templates/web/customer_detail.html:237
 msgid "Extension"
 msgstr "تحويلة"
 
 #: apps/web/templates/web/company.html:316
+#: apps/web/templates/web/customer_detail.html:239
 msgid "Preferred contact method"
 msgstr "طريقة الاتصال المفضّلة"
 
@@ -1335,6 +1355,7 @@ msgid "+ Upload"
 msgstr "+ رفع"
 
 #: apps/web/templates/web/company.html:364
+#: apps/web/templates/web/customer_detail.html:153
 #: apps/web/templates/web/quotation_detail.html:218
 msgid "Document"
 msgstr "المستند"
@@ -1436,6 +1457,7 @@ msgid "Vehicles"
 msgstr "المركبات"
 
 #: apps/web/templates/web/company.html:416
+#: apps/web/templates/web/customer_detail.html:296
 msgid "Sites"
 msgstr "المواقع"
 
@@ -1761,6 +1783,329 @@ msgstr "البحث في إدارة العلاقات…"
 msgid "Search"
 msgstr "بحث"
 
+#: apps/web/templates/web/customer_detail.html:5
+msgid "← Our clients"
+msgstr "← عملاؤنا"
+
+#: apps/web/templates/web/customer_detail.html:10
+msgid "Reconstructed from imported history"
+msgstr "أُعيد بناؤه من السجل المستورد"
+
+#: apps/web/templates/web/customer_detail.html:11
+msgid "Historical data"
+msgstr "بيانات تاريخية"
+
+#: apps/web/templates/web/customer_detail.html:16
+#, python-format
+msgid "From %(n)s imported documents:"
+msgstr "من %(n)s مستند مستورد:"
+
+#: apps/web/templates/web/customer_detail.html:26
+#| msgid "+ Add person"
+msgid "+ Add a person"
+msgstr "+ إضافة شخص"
+
+#: apps/web/templates/web/customer_detail.html:33
+#: apps/web/templates/web/customers.html:28
+msgid "Contacts"
+msgstr "جهات الاتصال"
+
+#: apps/web/templates/web/customer_detail.html:35
+msgid "Open opportunities"
+msgstr "الفرص المفتوحة"
+
+#: apps/web/templates/web/customer_detail.html:37
+#| msgid "Open pipeline value"
+msgid "Pipeline value"
+msgstr "قيمة المسار"
+
+#: apps/web/templates/web/customer_detail.html:39
+#: apps/web/templates/web/profile.html:125
+msgid "Open jobs"
+msgstr "مهام"
+
+#: apps/web/templates/web/customer_detail.html:46
+#| msgid "%(kind)s timeline"
+msgid "Relationship timeline"
+msgstr "الجدول الزمني للعلاقة"
+
+#: apps/web/templates/web/customer_detail.html:61
+msgid ""
+"No history yet — quotations, jobs, invoices, opportunities and CRM "
+"activities will appear here as they happen."
+msgstr "لا يوجد سجل بعد — ستظهر هنا عروض الأسعار والمهام والفواتير والفرص وأنشطة إدارة العلاقات عند حدوثها."
+
+#: apps/web/templates/web/customer_detail.html:77
+msgid "Opportunities"
+msgstr "الفرص"
+
+#: apps/web/templates/web/customer_detail.html:79
+#, python-format
+#| msgid "%(n)s open"
+msgid "%(n)s open worth %(v)s"
+msgstr "%(n)s مفتوحة بقيمة %(v)s"
+
+#: apps/web/templates/web/customer_detail.html:82
+msgid "Opportunity"
+msgstr "الفرصة"
+
+#: apps/web/templates/web/customer_detail.html:82
+msgid "Stage"
+msgstr "المرحلة"
+
+#: apps/web/templates/web/customer_detail.html:82
+#| msgid "Traceability"
+msgid "Probability"
+msgstr "الاحتمالية"
+
+#: apps/web/templates/web/customer_detail.html:92
+#| msgid "No quotations yet."
+msgid "No opportunities yet."
+msgstr "لا توجد فرص بعد."
+
+#: apps/web/templates/web/customer_detail.html:97
+#| msgid "Next →"
+msgid "Next:"
+msgstr "التالي:"
+
+#: apps/web/templates/web/customer_detail.html:98
+#, python-format
+#| msgid "No due date (%(n)s)"
+msgid "due %(date)s"
+msgstr "تُستحق %(date)s"
+
+#: apps/web/templates/web/customer_detail.html:99
+#| msgid "Activities"
+msgid "all activities"
+msgstr "كل الأنشطة"
+
+#: apps/web/templates/web/customer_detail.html:106
+msgid "New opportunity title"
+msgstr "عنوان الفرصة الجديدة"
+
+#: apps/web/templates/web/customer_detail.html:107
+#| msgid "Estimator review"
+msgid "Estimated value"
+msgstr "القيمة المقدَّرة"
+
+#: apps/web/templates/web/customer_detail.html:109
+msgid "Open opportunity"
+msgstr "فتح الفرصة"
+
+#: apps/web/templates/web/customer_detail.html:115
+#| msgid "Detailed"
+msgid "Details"
+msgstr "التفاصيل"
+
+#: apps/web/templates/web/customer_detail.html:118
+#| msgid "Our vendor number with them"
+msgid "Our vendor no. with them"
+msgstr "رقم المورّد الخاص بنا لديهم"
+
+#: apps/web/templates/web/customer_detail.html:120
+#| msgid "Trading name"
+msgid "Trading as"
+msgstr "يعمل باسم"
+
+#: apps/web/templates/web/customer_detail.html:122
+msgid "VAT no."
+msgstr "رقم ضريبة القيمة المضافة"
+
+#: apps/web/templates/web/customer_detail.html:123
+#| msgid "Tax invoice"
+msgid "Tax no."
+msgstr "الرقم الضريبي"
+
+#: apps/web/templates/web/customer_detail.html:126
+msgid "City / Province"
+msgstr "المدينة / المقاطعة"
+
+#: apps/web/templates/web/customer_detail.html:127
+#: apps/web/templates/web/customer_detail.html:235
+#| msgid "Main telephone"
+msgid "Telephone"
+msgstr "الهاتف"
+
+#: apps/web/templates/web/customer_detail.html:129
+#| msgid "Payments"
+msgid "Payment terms"
+msgstr "شروط الدفع"
+
+#: apps/web/templates/web/customer_detail.html:129
+#: apps/web/templates/web/customers.html:40
+#, python-format
+msgid "%(d)s days"
+msgstr "%(d)s يومًا"
+
+#: apps/web/templates/web/customer_detail.html:130
+#| msgid "Vendor no."
+msgid "Vendor portal"
+msgstr "بوابة المورّد"
+
+#: apps/web/templates/web/customer_detail.html:135
+msgid "Responsibility coverage"
+msgstr "تغطية المسؤوليات"
+
+#: apps/web/templates/web/customer_detail.html:140
+msgid "gap"
+msgstr "فجوة"
+
+#: apps/web/templates/web/customer_detail.html:142
+msgid "nobody"
+msgstr "لا أحد"
+
+#: apps/web/templates/web/customer_detail.html:146
+msgid ""
+"An unassigned “approves invoices” is why a payment sits unactioned for a "
+"month."
+msgstr "وجود \"يعتمد الفواتير\" غير مُسند هو سبب بقاء دفعة دون إجراء لمدة شهر."
+
+#: apps/web/templates/web/customer_detail.html:150
+#| msgid "Who is carrying what"
+msgid "Who gets what"
+msgstr "من يحصل على ماذا"
+
+#: apps/web/templates/web/customer_detail.html:153
+msgid "CC"
+msgstr "نسخة"
+
+#: apps/web/templates/web/customer_detail.html:164
+msgid ""
+"Resolved from what each person may do, not their job title. Nothing is sent "
+"automatically."
+msgstr "يُحدَّد بناءً على ما يُسمح لكل شخص بفعله، لا مسمّاه الوظيفي. لا يُرسَل شيء تلقائيًا."
+
+#: apps/web/templates/web/customer_detail.html:179
+#| msgid "Departments"
+msgid "Departments & people"
+msgstr "الأقسام والأشخاص"
+
+#: apps/web/templates/web/customer_detail.html:181
+#| msgid "Manage templates →"
+msgid "Manage contacts →"
+msgstr "إدارة جهات الاتصال →"
+
+#: apps/web/templates/web/customer_detail.html:191
+#: apps/web/templates/web/projects.html:14
+msgid "Title"
+msgstr "العنوان"
+
+#: apps/web/templates/web/customer_detail.html:191
+#| msgid "Response style"
+msgid "Responsibilities"
+msgstr "المسؤوليات"
+
+#: apps/web/templates/web/customer_detail.html:191
+msgid "Reach"
+msgstr "وسيلة التواصل"
+
+#: apps/web/templates/web/customer_detail.html:204
+msgid ""
+"No contacts filed under a department yet — add people below and Lulaworks "
+"can start routing documents."
+msgstr "لا توجد جهات اتصال مصنّفة ضمن قسم بعد — أضف أشخاصًا أدناه ليتمكن Lulaworks من بدء توجيه المستندات."
+
+#: apps/web/templates/web/customer_detail.html:209
+#| msgid "Departments"
+msgid "Not in a department"
+msgstr "خارج أي قسم"
+
+#: apps/web/templates/web/customer_detail.html:222
+#| msgid "+ Add person"
+msgid "Add a person"
+msgstr "إضافة شخص"
+
+#: apps/web/templates/web/customer_detail.html:229
+#| msgid "Departments"
+msgid "Department"
+msgstr "القسم"
+
+#: apps/web/templates/web/customer_detail.html:231
+msgid "— none —"
+msgstr "— لا شيء —"
+
+#: apps/web/templates/web/customer_detail.html:245
+msgid "Roles (what they are called)"
+msgstr "الأدوار (كيف يُسمّون)"
+
+#: apps/web/templates/web/customer_detail.html:252
+msgid "Responsibilities (what they may do — this drives routing)"
+msgstr "المسؤوليات (ما يُسمح لهم بفعله — يحدد هذا التوجيه)"
+
+#: apps/web/templates/web/customer_detail.html:260
+msgid "Primary contact for this customer"
+msgstr "جهة الاتصال الرئيسية لهذا العميل"
+
+#: apps/web/templates/web/customer_detail.html:261
+#| msgid "+ Add account"
+msgid "Add contact"
+msgstr "إضافة جهة اتصال"
+
+#: apps/web/templates/web/customer_detail.html:279
+msgid "Branches & sites"
+msgstr "الفروع والمواقع"
+
+#: apps/web/templates/web/customer_detail.html:281
+#| msgid "Manage templates →"
+msgid "Manage sites →"
+msgstr "إدارة المواقع →"
+
+#: apps/web/templates/web/customer_detail.html:285
+#| msgid "Branch"
+msgid "Branches"
+msgstr "الفروع"
+
+#: apps/web/templates/web/customer_detail.html:290
+msgid "No branches."
+msgstr "لا توجد فروع."
+
+#: apps/web/templates/web/customer_detail.html:297
+msgid ""
+"Projects are assigned to a specific place, not to the client in general."
+msgstr "تُسنَد المشاريع إلى مكان محدد، لا إلى العميل بشكل عام."
+
+#: apps/web/templates/web/customer_detail.html:301
+msgid "No sites."
+msgstr "لا توجد مواقع."
+
+#: apps/web/templates/web/customer_detail.html:308
+#| msgid "With the customer"
+msgid "Jobs for this customer"
+msgstr "المهام لهذا العميل"
+
+#: apps/web/templates/web/customer_detail.html:313
+#: apps/web/templates/web/invoices.html:90
+#: apps/web/templates/web/project_detail.html:94
+#: apps/web/templates/web/quotations.html:67
+msgid "Quotation"
+msgstr "عرض السعر"
+
+#: apps/web/templates/web/customer_detail.html:317
+#: apps/web/templates/web/customer_detail.html:328
+#| msgid "No invoices yet."
+msgid "None yet."
+msgstr "لا شيء بعد."
+
+#: apps/web/templates/web/customer_detail.html:335
+#: apps/web/templates/web/customers.html:28
+msgid "Departments"
+msgstr "الأقسام"
+
+#: apps/web/templates/web/customer_detail.html:339
+#| msgid "Departments"
+msgid "Department name"
+msgstr "اسم القسم"
+
+#: apps/web/templates/web/customer_detail.html:340
+#| msgid "Departments"
+msgid "Department email"
+msgstr "بريد القسم الإلكتروني"
+
+#: apps/web/templates/web/customer_detail.html:341
+#| msgid "Departments"
+msgid "Add department"
+msgstr "إضافة قسم"
+
 #: apps/web/templates/web/customers.html:3
 #: apps/web/templates/web/customers.html:8
 msgid "Customers"
@@ -1806,14 +2151,6 @@ msgstr "الرمز"
 msgid "Vendor no."
 msgstr "رقم المورّد"
 
-#: apps/web/templates/web/customers.html:28
-msgid "Contacts"
-msgstr "جهات الاتصال"
-
-#: apps/web/templates/web/customers.html:28
-msgid "Departments"
-msgstr "الأقسام"
-
 #: apps/web/templates/web/customers.html:29
 #: apps/web/templates/web/quotations.html:3
 #: apps/web/templates/web/quotations.html:10 apps/web/translation_strings.py:11
@@ -1837,11 +2174,6 @@ msgstr "الشروط"
 #, python-format
 msgid "%(n)s open"
 msgstr "%(n)s مفتوحة"
-
-#: apps/web/templates/web/customers.html:40
-#, python-format
-msgid "%(d)s days"
-msgstr "%(d)s يومًا"
 
 #: apps/web/templates/web/customers.html:45
 msgid "No customers yet."
@@ -2099,12 +2431,6 @@ msgstr ""
 "عروض الأسعار المُعتمدة هذه جاهزة للفوترة. يؤدي هذا إلى إنشاء فاتورة ضريبية "
 "تحمل رقم عرض السعر — الأرقام مأخوذة مباشرة من عرض السعر."
 
-#: apps/web/templates/web/invoices.html:90
-#: apps/web/templates/web/project_detail.html:94
-#: apps/web/templates/web/quotations.html:67
-msgid "Quotation"
-msgstr "عرض السعر"
-
 #: apps/web/templates/web/invoices.html:100
 msgid "Create tax invoice →"
 msgstr "إنشاء فاتورة ضريبية →"
@@ -2320,10 +2646,6 @@ msgstr "إزالة الصورة"
 msgid "Where you stand"
 msgstr "وضعك الحالي"
 
-#: apps/web/templates/web/profile.html:125
-msgid "Open jobs"
-msgstr "مهام"
-
 #: apps/web/templates/web/profile.html:129
 msgid ""
 "Your role is set by an administrator — it decides what you can see and do."
@@ -2358,7 +2680,6 @@ msgid "as %(roles)s"
 msgstr "بصفتك %(roles)s"
 
 #: apps/web/templates/web/project_detail.html:5
-#| msgid "Projects"
 msgid "← Projects"
 msgstr "← المشاريع"
 
@@ -2367,12 +2688,10 @@ msgid "Override reason (audited)…"
 msgstr "سبب التجاوز (مُدقَّق)…"
 
 #: apps/web/templates/web/project_detail.html:17
-#| msgid "Overdue"
 msgid "Override gate"
 msgstr "تجاوز البوابة"
 
 #: apps/web/templates/web/project_detail.html:22
-#| msgid "Project"
 msgid "Project health"
 msgstr "صحة المشروع"
 
@@ -2381,7 +2700,6 @@ msgid "Overall"
 msgstr "إجمالي"
 
 #: apps/web/templates/web/project_detail.html:31
-#| msgid "Commercial approval"
 msgid "Commercial"
 msgstr "تجاري"
 
@@ -2423,33 +2741,27 @@ msgid "Budget"
 msgstr "الميزانية"
 
 #: apps/web/templates/web/project_detail.html:50
-#| msgid "Actual cost"
 msgid "Actual"
 msgstr "الفعلي"
 
 #: apps/web/templates/web/project_detail.html:50
-#| msgid "Finance"
 msgid "Variance"
 msgstr "الفرق"
 
 #: apps/web/templates/web/project_detail.html:63
-#| msgid "Jobs by status"
 msgid "Jobs & tasks"
 msgstr "الأعمال والمهام"
 
 #: apps/web/templates/web/project_detail.html:65
-#| msgid "+ Add member"
 msgid "+ Add job"
 msgstr "+ إضافة مهمة"
 
 #: apps/web/templates/web/project_detail.html:75
 #: apps/web/templates/web/project_detail.html:82
-#| msgid "Operating in"
 msgid "Operations"
 msgstr "العمليات"
 
 #: apps/web/templates/web/project_detail.html:85
-#| msgid "No jobs yet — create some from the Jobs tab."
 msgid "No jobs yet — add the first one."
 msgstr "لا توجد مهام بعد — أضف الأولى."
 
@@ -2459,7 +2771,6 @@ msgid "Commercial documents"
 msgstr "المستندات التجارية"
 
 #: apps/web/templates/web/project_detail.html:100
-#| msgid "Customer"
 msgid "Customer PO"
 msgstr "أمر شراء العميل"
 
@@ -2468,7 +2779,6 @@ msgid "received"
 msgstr "مُستلَم"
 
 #: apps/web/templates/web/project_detail.html:105
-#| msgid "Tax Invoice"
 msgid "Tax invoice"
 msgstr "فاتورة ضريبية"
 
@@ -2478,7 +2788,6 @@ msgid "PDF"
 msgstr "PDF"
 
 #: apps/web/templates/web/project_detail.html:111
-#| msgid "Delivery note terms"
 msgid "Delivery note"
 msgstr "مذكرة التسليم"
 
@@ -2487,7 +2796,6 @@ msgid "No commercial documents — this job wasn't raised from a quotation."
 msgstr "لا توجد مستندات تجارية — لم تُنشأ هذه المهمة من عرض سعر."
 
 #: apps/web/templates/web/project_detail.html:123
-#| msgid "Commercial documents"
 msgid "Materials & procurement"
 msgstr "المواد والمشتريات"
 
@@ -2501,7 +2809,6 @@ msgstr "مُنفَق"
 
 #: apps/web/templates/web/project_detail.html:127
 #, python-format
-#| msgid "No due date (%(n)s)"
 msgid "Materials (%(n)s)"
 msgstr "المواد (%(n)s)"
 
@@ -2509,7 +2816,9 @@ msgstr "المواد (%(n)s)"
 msgid ""
 "Field spend the crew captures here (material, fuel & expense receipts) flows "
 "straight into this job's actual cost and profitability"
-msgstr "تتدفق نفقات الميدان التي يسجلها الطاقم هنا (إيصالات المواد والوقود والمصروفات) مباشرة إلى التكلفة الفعلية وربحية هذه المهمة"
+msgstr ""
+"تتدفق نفقات الميدان التي يسجلها الطاقم هنا (إيصالات المواد والوقود "
+"والمصروفات) مباشرة إلى التكلفة الفعلية وربحية هذه المهمة"
 
 #: apps/web/templates/web/project_detail.html:129
 msgid "(visible to finance)"
@@ -2524,7 +2833,6 @@ msgid "For"
 msgstr "لـ"
 
 #: apps/web/templates/web/project_detail.html:139
-#| msgid "Waiting"
 msgid "Awaiting"
 msgstr "في الانتظار"
 
@@ -2533,12 +2841,10 @@ msgid "Fulfilled"
 msgstr "تم التنفيذ"
 
 #: apps/web/templates/web/project_detail.html:150
-#| msgid "Pipeline"
 msgid "Timeline"
 msgstr "الجدول الزمني"
 
 #: apps/web/templates/web/project_detail.html:161
-#| msgid "Compliance"
 msgid "Compliance checklist"
 msgstr "قائمة الامتثال"
 
@@ -2547,7 +2853,6 @@ msgid "mandatory"
 msgstr "إلزامي"
 
 #: apps/web/templates/web/project_detail.html:181
-#| msgid "AI compliance detection"
 msgid "No compliance items."
 msgstr "لا توجد عناصر امتثال."
 
@@ -2557,13 +2862,11 @@ msgstr "إصدار مطالبة تقدّم"
 
 #: apps/web/templates/web/project_detail.html:191
 #, python-format
-#| msgid "%(pct)s%% complete"
 msgid "%% complete"
 msgstr "%% مكتمل"
 
 #: apps/web/templates/web/project_detail.html:193
 #, python-format
-#| msgid "Retention held"
 msgid "retention %%"
 msgstr "احتجاز %%"
 
@@ -2583,10 +2886,6 @@ msgstr "%(n)s إجمالًا."
 #: apps/web/templates/web/projects.html:10
 msgid "+ New project"
 msgstr "+ مشروع جديد"
-
-#: apps/web/templates/web/projects.html:14
-msgid "Title"
-msgstr "العنوان"
 
 #: apps/web/templates/web/projects.html:14
 msgid "Job type"
