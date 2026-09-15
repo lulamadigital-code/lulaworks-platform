@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 11:41+0000\n"
+"POT-Creation-Date: 2026-09-15 11:49+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -236,12 +236,10 @@ msgid "Sign out"
 msgstr "تسجيل الخروج"
 
 #: apps/web/templates/web/billing.html:3
-#| msgid "Billing & plan"
 msgid "Billing"
 msgstr "الفوترة"
 
 #: apps/web/templates/web/billing.html:5
-#| msgid "Billing & plan"
 msgid "Billing & subscription"
 msgstr "الفوترة والاشتراك"
 
@@ -257,7 +255,9 @@ msgstr "لقد تجاوزت حدود خطتك."
 msgid ""
 "Your data is safe and fully accessible — but you can't add new users until "
 "you're back within the limit or on a bigger plan."
-msgstr "بياناتك آمنة ويمكن الوصول إليها بالكامل — لكن لا يمكنك إضافة مستخدمين جدد حتى تعود ضمن الحد أو تنتقل إلى خطة أكبر."
+msgstr ""
+"بياناتك آمنة ويمكن الوصول إليها بالكامل — لكن لا يمكنك إضافة مستخدمين جدد "
+"حتى تعود ضمن الحد أو تنتقل إلى خطة أكبر."
 
 #: apps/web/templates/web/billing.html:20
 msgid "No plan"
@@ -281,10 +281,11 @@ msgstr "فوترة %(cycle)s"
 msgid ""
 "%(n)s days left in your trial. Choose a plan below to keep everything after "
 "it ends — your data stays intact."
-msgstr "تبقّى %(n)s يومًا في تجربتك. اختر خطة أدناه للاحتفاظ بكل شيء بعد انتهائها — تبقى بياناتك سليمة."
+msgstr ""
+"تبقّى %(n)s يومًا في تجربتك. اختر خطة أدناه للاحتفاظ بكل شيء بعد انتهائها — "
+"تبقى بياناتك سليمة."
 
 #: apps/web/templates/web/billing.html:32
-#| msgid "Access"
 msgid "Access ends"
 msgstr "ينتهي الوصول"
 
@@ -310,7 +311,6 @@ msgstr "رصيد الذكاء الاصطناعي المتبقي"
 
 #: apps/web/templates/web/billing.html:55
 #, python-format
-#| msgid "%(n)s open"
 msgid "/ %(n)s mo"
 msgstr "/ %(n)s شهريًا"
 
@@ -339,7 +339,10 @@ msgstr "نفد رصيد الذكاء الاصطناعي لديك."
 msgid ""
 "Non-AI features keep working. Buy a credit pack below or upgrade your plan "
 "to resume AI document extraction and suggestions."
-msgstr "تستمر الميزات غير المعتمدة على الذكاء الاصطناعي في العمل. اشترِ حزمة رصيد أدناه أو قم بترقية خطتك لاستئناف استخراج المستندات واقتراحات الذكاء الاصطناعي."
+msgstr ""
+"تستمر الميزات غير المعتمدة على الذكاء الاصطناعي في العمل. اشترِ حزمة رصيد "
+"أدناه أو قم بترقية خطتك لاستئناف استخراج المستندات واقتراحات الذكاء "
+"الاصطناعي."
 
 #: apps/web/templates/web/billing.html:84
 msgid "Buy AI credits"
@@ -354,7 +357,6 @@ msgid "Buy pack"
 msgstr "شراء الحزمة"
 
 #: apps/web/templates/web/billing.html:103
-#| msgid "Planning"
 msgid "Plans"
 msgstr "الخطط"
 
@@ -409,7 +411,6 @@ msgid "Select"
 msgstr "اختيار"
 
 #: apps/web/templates/web/billing.html:146
-#| msgid "Email history"
 msgid "Billing history"
 msgstr "سجل الفوترة"
 
@@ -432,9 +433,930 @@ msgid "Amount"
 msgstr "المبلغ"
 
 #: apps/web/templates/web/billing.html:158
-#| msgid "No invoices yet."
 msgid "No billing activity yet."
 msgstr "لا يوجد نشاط فوترة بعد."
+
+#: apps/web/templates/web/company.html:3
+#: apps/web/templates/web/profile.html:122
+#: apps/web/templates/web/settings.html:12
+msgid "Company"
+msgstr "الشركة"
+
+#: apps/web/templates/web/company.html:9
+msgid "Finish setting up your company to start issuing documents"
+msgstr "أكمل إعداد شركتك لبدء إصدار المستندات"
+
+#: apps/web/templates/web/company.html:10
+msgid ""
+"Every quotation and invoice you send pulls from here. A few essentials are "
+"still missing:"
+msgstr "كل عرض سعر وفاتورة ترسلها تعتمد على هذا. لا تزال بعض الأساسيات مفقودة:"
+
+#: apps/web/templates/web/company.html:14
+msgid ""
+"Fill these in below (and add your logo &amp; banking under the tabs). You'll "
+"have full access as soon as they're saved."
+msgstr "املأها أدناه (وأضف شعارك وبياناتك المصرفية ضمن علامات التبويب). ستحصل على وصول كامل بمجرد حفظها."
+
+#: apps/web/templates/web/company.html:21
+#: apps/web/templates/web/settings.html:15
+msgid "Company profile"
+msgstr "ملف الشركة"
+
+#: apps/web/templates/web/company.html:22
+msgid ""
+"Your identity inside Lulaworks. Entered once here, then read by every "
+"quotation, invoice, purchase order and generated document."
+msgstr "هويتك داخل Lulaworks. تُدخَل مرة واحدة هنا، ثم تقرأها كل عرض سعر وفاتورة وأمر شراء ومستند مُنشأ."
+
+#: apps/web/templates/web/company.html:25
+#, python-format
+msgid "%(pct)s%% complete"
+msgstr "%(pct)s%% مكتمل"
+
+#: apps/web/templates/web/company.html:30
+msgid "Document Designer"
+msgstr "مصمم المستندات"
+
+#: apps/web/templates/web/company.html:31
+#: apps/web/templates/web/settings.html:41
+msgid "Email history"
+msgstr "سجل البريد الإلكتروني"
+
+#: apps/web/templates/web/company.html:32
+msgid "Working hours"
+msgstr "ساعات العمل"
+
+#: apps/web/templates/web/company.html:33
+msgid "Tax settings"
+msgstr "إعدادات الضرائب"
+
+#: apps/web/templates/web/company.html:38
+msgid "Add your company email"
+msgstr "أضف البريد الإلكتروني لشركتك"
+
+#: apps/web/templates/web/company.html:39
+msgid ""
+"Without it, when a customer replies to a quotation or invoice you send, the "
+"reply won't reach you. Edit <strong>Contact details</strong> below to set it."
+msgstr "بدونه، عندما يرد عميل على عرض سعر أو فاتورة ترسلها، لن يصلك الرد. عدّل <strong>تفاصيل الاتصال</strong> أدناه لضبطه."
+
+#: apps/web/templates/web/company.html:45
+msgid "What is missing actually costs you"
+msgstr "ما ينقص يكلفك فعلًا"
+
+#: apps/web/templates/web/company.html:52
+msgid "Registrations lapsing"
+msgstr "تسجيلات على وشك الانتهاء"
+
+#: apps/web/templates/web/company.html:54
+#: apps/web/templates/web/quotations.html:83
+msgid "expired"
+msgstr "منتهي"
+
+#: apps/web/templates/web/company.html:54
+msgid "expires"
+msgstr "تنتهي"
+
+#: apps/web/templates/web/company.html:60
+msgid ""
+"You can view the company profile but not change it — that needs the company-"
+"manage permission."
+msgstr "يمكنك عرض ملف الشركة لكن لا يمكنك تغييره — يتطلب ذلك إذن إدارة الشركة."
+
+#: apps/web/templates/web/company.html:65
+msgid "Company identity"
+msgstr "هوية الشركة"
+
+#: apps/web/templates/web/company.html:66
+#: apps/web/templates/web/company.html:109
+#: apps/web/templates/web/company.html:146
+#: apps/web/templates/web/company.html:188
+#: apps/web/templates/web/company.html:328
+#: apps/web/templates/web/company.html:393
+#: apps/web/templates/web/company.html:431
+#: apps/web/templates/web/company.html:472
+#: apps/web/templates/web/company.html:505
+#: apps/web/templates/web/company.html:531
+msgid "Edit"
+msgstr "تعديل"
+
+#: apps/web/templates/web/company.html:69
+msgid "Registered name"
+msgstr "الاسم المسجَّل"
+
+#: apps/web/templates/web/company.html:70
+#: apps/web/templates/web/company.html:83
+msgid "Trading name"
+msgstr "الاسم التجاري"
+
+#: apps/web/templates/web/company.html:71
+msgid "Registration no."
+msgstr "رقم التسجيل"
+
+#: apps/web/templates/web/company.html:72
+msgid "Tax reference"
+msgstr "المرجع الضريبي"
+
+#: apps/web/templates/web/company.html:73
+#: apps/web/templates/web/company.html:86
+msgid "VAT number"
+msgstr "رقم ضريبة القيمة المضافة"
+
+#: apps/web/templates/web/company.html:74
+#: apps/web/templates/web/company.html:87
+msgid "Company type"
+msgstr "نوع الشركة"
+
+#: apps/web/templates/web/company.html:75
+#: apps/web/templates/web/company.html:97
+#: apps/web/templates/web/customers.html:59
+msgid "Industry"
+msgstr "القطاع"
+
+#: apps/web/templates/web/company.html:76
+#: apps/web/templates/web/company.html:98
+msgid "Year established"
+msgstr "سنة التأسيس"
+
+#: apps/web/templates/web/company.html:82
+#: apps/web/templates/web/customers.html:57
+msgid "Registered company name"
+msgstr "الاسم المسجَّل للشركة"
+
+#: apps/web/templates/web/company.html:84
+msgid "Company registration number"
+msgstr "رقم تسجيل الشركة"
+
+#: apps/web/templates/web/company.html:85
+msgid "Tax reference number"
+msgstr "رقم المرجع الضريبي"
+
+#: apps/web/templates/web/company.html:90
+msgid "(Pty) Ltd"
+msgstr "(Pty) Ltd"
+
+#: apps/web/templates/web/company.html:91
+msgid "Close Corporation"
+msgstr "شركة محدودة (CC)"
+
+#: apps/web/templates/web/company.html:92
+msgid "Sole Proprietor"
+msgstr "مؤسسة فردية"
+
+#: apps/web/templates/web/company.html:93
+msgid "Partnership"
+msgstr "شراكة"
+
+#: apps/web/templates/web/company.html:94
+msgid "Trust"
+msgstr "صندوق ائتمان"
+
+#: apps/web/templates/web/company.html:95
+msgid "Non-Profit Company"
+msgstr "شركة غير ربحية"
+
+#: apps/web/templates/web/company.html:100
+msgid "Save identity"
+msgstr "حفظ الهوية"
+
+#: apps/web/templates/web/company.html:101
+#: apps/web/templates/web/company.html:138
+#: apps/web/templates/web/company.html:180
+#: apps/web/templates/web/company.html:212
+#: apps/web/templates/web/company.html:280
+#: apps/web/templates/web/company.html:319
+#: apps/web/templates/web/company.html:353
+#: apps/web/templates/web/company.html:384
+#: apps/web/templates/web/company.html:423
+#: apps/web/templates/web/company.html:464
+#: apps/web/templates/web/company.html:497
+#: apps/web/templates/web/company.html:523
+#: apps/web/templates/web/company.html:552
+#: apps/web/templates/web/profile.html:91
+msgid "Cancel"
+msgstr "المالية"
+
+#: apps/web/templates/web/company.html:108
+msgid "Contact details"
+msgstr "تفاصيل الاتصال"
+
+#: apps/web/templates/web/company.html:112
+#: apps/web/templates/web/company.html:124
+msgid "Primary email"
+msgstr "البريد الإلكتروني الرئيسي"
+
+#: apps/web/templates/web/company.html:113
+#: apps/web/templates/web/company.html:127
+msgid "Primary phone"
+msgstr "الهاتف الرئيسي"
+
+#: apps/web/templates/web/company.html:114
+#: apps/web/templates/web/company.html:129
+#: apps/web/templates/web/company.html:314
+#: apps/web/templates/web/company.html:316
+#: apps/web/templates/web/people.html:57 apps/web/templates/web/profile.html:43
+#: apps/web/templates/web/profile.html:75
+msgid "Mobile"
+msgstr "الجوال"
+
+#: apps/web/templates/web/company.html:115
+#: apps/web/templates/web/company.html:130
+msgid "WhatsApp"
+msgstr "واتساب"
+
+#: apps/web/templates/web/company.html:116
+#: apps/web/templates/web/company.html:131
+msgid "Emergency / after-hours"
+msgstr "الطوارئ / خارج ساعات العمل"
+
+#: apps/web/templates/web/company.html:117
+#: apps/web/templates/web/company.html:132
+msgid "Website"
+msgstr "الموقع الإلكتروني"
+
+#: apps/web/templates/web/company.html:118
+msgid "Social"
+msgstr "التواصل الاجتماعي"
+
+#: apps/web/templates/web/company.html:126
+msgid "Required — the address customers reply to on your documents."
+msgstr "مطلوب — العنوان الذي يرد إليه العملاء على مستنداتك."
+
+#: apps/web/templates/web/company.html:128
+msgid "Secondary phone"
+msgstr "الهاتف الثانوي"
+
+#: apps/web/templates/web/company.html:135
+msgid "X (Twitter)"
+msgstr "إكس (تويتر)"
+
+#: apps/web/templates/web/company.html:137
+msgid "Save contact details"
+msgstr "حفظ تفاصيل الاتصال"
+
+#: apps/web/templates/web/company.html:145
+msgid "Physical address"
+msgstr "العنوان الفعلي"
+
+#: apps/web/templates/web/company.html:152
+msgid "No physical address set."
+msgstr "لم يتم تعيين عنوان فعلي."
+
+#: apps/web/templates/web/company.html:168
+#: apps/web/templates/web/company.html:204
+msgid "Country"
+msgstr "البلد"
+
+#: apps/web/templates/web/company.html:171
+#: apps/web/templates/web/company.html:206
+msgid "Select a country…"
+msgstr "اختر بلدًا…"
+
+#: apps/web/templates/web/company.html:177
+#: apps/web/templates/web/company.html:223
+#: apps/web/templates/web/company.html:475
+#: apps/web/templates/web/company.html:484
+msgid "Currency"
+msgstr "العملة"
+
+#: apps/web/templates/web/company.html:178
+msgid ""
+"— set automatically from your company country. We check the address format "
+"for your country; we don't verify that it physically exists."
+msgstr "— تُضبط تلقائيًا من بلد شركتك. نتحقق من تنسيق العنوان لبلدك؛ لكننا لا نتحقق من وجوده فعليًا."
+
+#: apps/web/templates/web/company.html:179
+msgid "Save address"
+msgstr "حفظ العنوان"
+
+#: apps/web/templates/web/company.html:187
+#: apps/web/templates/web/company.html:201
+msgid "Postal address"
+msgstr "العنوان البريدي"
+
+#: apps/web/templates/web/company.html:191
+msgid "Same as the physical address."
+msgstr "نفس العنوان الفعلي."
+
+#: apps/web/templates/web/company.html:195
+msgid "No postal address set."
+msgstr "لم يتم تعيين عنوان بريدي."
+
+#: apps/web/templates/web/company.html:199
+msgid "Same as physical address"
+msgstr "نفس العنوان الفعلي"
+
+#: apps/web/templates/web/company.html:202
+#: apps/web/templates/web/customers.html:62
+msgid "City"
+msgstr "المدينة"
+
+#: apps/web/templates/web/company.html:211
+msgid "Save postal address"
+msgstr "حفظ العنوان البريدي"
+
+#: apps/web/templates/web/company.html:219
+#: apps/web/templates/web/settings.html:21
+msgid "Banking"
+msgstr "التفاصيل المصرفية"
+
+#: apps/web/templates/web/company.html:220
+msgid "+ Add account"
+msgstr "+ إضافة حساب"
+
+#: apps/web/templates/web/company.html:223
+msgid "Bank"
+msgstr "البنك"
+
+#: apps/web/templates/web/company.html:223
+#: apps/web/templates/web/company.html:259
+msgid "Account name"
+msgstr "اسم الحساب"
+
+#: apps/web/templates/web/company.html:223
+#: apps/web/templates/web/projects.html:14
+msgid "Number"
+msgstr "الرقم"
+
+#: apps/web/templates/web/company.html:223
+msgid "Branch"
+msgstr "الفرع"
+
+#: apps/web/templates/web/company.html:223
+#: apps/web/templates/web/company.html:236
+#: apps/web/templates/web/company.html:239
+msgid "Default"
+msgstr "افتراضي"
+
+#: apps/web/templates/web/company.html:226
+msgid ""
+"We couldn’t match this to a known bank — please re-add it from the picker"
+msgstr "تعذّر علينا مطابقة هذا مع بنك معروف — يُرجى إعادة إضافته من القائمة"
+
+#: apps/web/templates/web/company.html:226
+msgid "Review"
+msgstr "مراجعة"
+
+#: apps/web/templates/web/company.html:234
+msgid "Use this account on invoices &amp; quotes"
+msgstr "استخدم هذا الحساب على الفواتير وعروض الأسعار"
+
+#: apps/web/templates/web/company.html:241
+#, python-format
+msgid "Remove %(b)s %(m)s?"
+msgstr "إزالة %(b)s %(m)s؟"
+
+#: apps/web/templates/web/company.html:241
+#: apps/web/templates/web/company.html:300
+#: apps/web/templates/web/company.html:369
+msgid "Remove"
+msgstr "إزالة"
+
+#: apps/web/templates/web/company.html:244
+msgid ""
+"No bank account yet — invoices will go out with no way for a client to pay "
+"you."
+msgstr "لا يوجد حساب مصرفي بعد — ستُرسل الفواتير دون وسيلة يدفع بها العميل لك."
+
+#: apps/web/templates/web/company.html:251
+msgid "Bank name"
+msgstr "اسم البنك"
+
+#: apps/web/templates/web/company.html:254
+msgid "Select or type your bank"
+msgstr "اختر بنكك أو اكتبه"
+
+#: apps/web/templates/web/company.html:259
+msgid "Account holder name"
+msgstr "اسم صاحب الحساب"
+
+#: apps/web/templates/web/company.html:263
+#: apps/web/templates/web/company.html:344
+#: apps/web/templates/web/company.html:600
+msgid "(optional)"
+msgstr "(اختياري)"
+
+#: apps/web/templates/web/company.html:264
+#: apps/web/templates/web/company.html:601
+msgid "Auto-filled when you pick your bank"
+msgstr "يُملأ تلقائيًا عند اختيار بنكك"
+
+#: apps/web/templates/web/company.html:267
+msgid "Account type"
+msgstr "نوع الحساب"
+
+#: apps/web/templates/web/company.html:267
+msgid "Cheque / Current"
+msgstr "جاري / حساب جاري"
+
+#: apps/web/templates/web/company.html:267
+msgid "Savings"
+msgstr "توفير"
+
+#: apps/web/templates/web/company.html:267
+msgid "Transmission"
+msgstr "تحويل"
+
+#: apps/web/templates/web/company.html:267
+msgid "Foreign currency"
+msgstr "عملة أجنبية"
+
+#: apps/web/templates/web/company.html:279
+msgid "Add bank account"
+msgstr "إضافة حساب مصرفي"
+
+#: apps/web/templates/web/company.html:288
+msgid "Company Members"
+msgstr "أعضاء الشركة"
+
+#: apps/web/templates/web/company.html:289
+msgid "+ Add member"
+msgstr "+ إضافة عضو"
+
+#: apps/web/templates/web/company.html:292
+#: apps/web/templates/web/company.html:379
+msgid "Name"
+msgstr "الاسم"
+
+#: apps/web/templates/web/company.html:292
+#: apps/web/templates/web/people.html:38 apps/web/templates/web/people.html:73
+#: apps/web/templates/web/profile.html:123
+msgid "Role"
+msgstr "الدور"
+
+#: apps/web/templates/web/company.html:292
+#: apps/web/templates/web/company.html:312
+#: apps/web/templates/web/company.html:316 apps/web/templates/web/login.html:16
+#: apps/web/templates/web/profile.html:44
+#: apps/web/templates/web/profile.html:134
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
+#: apps/web/templates/web/company.html:292
+#: apps/web/templates/web/company.html:313
+#: apps/web/templates/web/company.html:316
+msgid "Phone"
+msgstr "الهاتف"
+
+#: apps/web/templates/web/company.html:292
+msgid "Prefers"
+msgstr "يفضّل"
+
+#: apps/web/templates/web/company.html:295
+msgid "Primary"
+msgstr "رئيسي"
+
+#: apps/web/templates/web/company.html:299
+msgid "Make primary"
+msgstr "تعيين كرئيسي"
+
+#: apps/web/templates/web/company.html:300
+#: apps/web/templates/web/company.html:369
+#, python-format
+msgid "Remove %(n)s?"
+msgstr "إزالة %(n)s؟"
+
+#: apps/web/templates/web/company.html:303
+msgid "No contacts yet. The primary contact is printed on outgoing documents."
+msgstr "لا توجد جهات اتصال بعد. تُطبع جهة الاتصال الرئيسية على المستندات الصادرة."
+
+#: apps/web/templates/web/company.html:310
+msgid "Full name"
+msgstr "الاسم الكامل"
+
+#: apps/web/templates/web/company.html:311
+#: apps/web/templates/web/people.html:53 apps/web/templates/web/people.html:73
+#: apps/web/templates/web/profile.html:124
+msgid "Job title"
+msgstr "المسمى الوظيفي"
+
+#: apps/web/templates/web/company.html:315
+msgid "Extension"
+msgstr "تحويلة"
+
+#: apps/web/templates/web/company.html:316
+msgid "Preferred contact method"
+msgstr "طريقة الاتصال المفضّلة"
+
+#: apps/web/templates/web/company.html:318
+#: apps/web/templates/web/people.html:61
+msgid "Add member"
+msgstr "إضافة العضو"
+
+#: apps/web/templates/web/company.html:327
+msgid "Statutory registrations"
+msgstr "التسجيلات القانونية"
+
+#: apps/web/templates/web/company.html:332
+#: apps/web/templates/web/company.html:341
+msgid "VAT / GST registered"
+msgstr "مسجّل في ضريبة القيمة المضافة"
+
+#: apps/web/templates/web/company.html:332
+msgid "Yes"
+msgstr "نعم"
+
+#: apps/web/templates/web/company.html:332
+msgid "No"
+msgstr "لا"
+
+#: apps/web/templates/web/company.html:348
+msgid "ISO certifications (comma separated)"
+msgstr "شهادات ISO (مفصولة بفواصل)"
+
+#: apps/web/templates/web/company.html:350
+msgid "Industry certifications (comma separated)"
+msgstr "شهادات القطاع (مفصولة بفواصل)"
+
+#: apps/web/templates/web/company.html:352
+msgid "Save statutory details"
+msgstr "حفظ التفاصيل القانونية"
+
+#: apps/web/templates/web/company.html:360
+msgid "Supporting documents"
+msgstr "المستندات الداعمة"
+
+#: apps/web/templates/web/company.html:361
+msgid "+ Upload"
+msgstr "+ رفع"
+
+#: apps/web/templates/web/company.html:364
+msgid "Document"
+msgstr "المستند"
+
+#: apps/web/templates/web/company.html:364
+#: apps/web/templates/web/company.html:380
+#: apps/web/templates/web/quotations.html:67
+msgid "Type"
+msgstr "النوع"
+
+#: apps/web/templates/web/company.html:364
+msgid "Expires"
+msgstr "تنتهي"
+
+#: apps/web/templates/web/company.html:368
+msgid "No expiry"
+msgstr "بلا انتهاء"
+
+#: apps/web/templates/web/company.html:371
+msgid "No documents uploaded yet."
+msgstr "لم يتم رفع أي مستندات بعد."
+
+#: apps/web/templates/web/company.html:371
+#, python-format
+msgid "Recommended for your country: %(docs)s."
+msgstr "موصى به لبلدك: %(docs)s."
+
+#: apps/web/templates/web/company.html:378
+msgid "File"
+msgstr "الملف"
+
+#: apps/web/templates/web/company.html:379
+msgid "Tax clearance certificate"
+msgstr "شهادة براءة ذمة ضريبية"
+
+#: apps/web/templates/web/company.html:381
+msgid "Expires on"
+msgstr "تنتهي في"
+
+#: apps/web/templates/web/company.html:383
+msgid "Upload document"
+msgstr "رفع مستند"
+
+#: apps/web/templates/web/company.html:392
+msgid "Business profile"
+msgstr "ملف العمل"
+
+#: apps/web/templates/web/company.html:396
+msgid "Description"
+msgstr "الوصف"
+
+#: apps/web/templates/web/company.html:397
+msgid "Services"
+msgstr "الخدمات"
+
+#: apps/web/templates/web/company.html:398
+msgid "Industries served"
+msgstr "القطاعات المخدومة"
+
+#: apps/web/templates/web/company.html:399
+msgid "Size"
+msgstr "الحجم"
+
+#: apps/web/templates/web/company.html:399
+#, python-format
+msgid "%(staff)s staff · %(vehicles)s vehicles · %(sites)s sites"
+msgstr "%(staff)s موظف · %(vehicles)s مركبة · %(sites)s موقع"
+
+#: apps/web/templates/web/company.html:400
+msgid "Operating in"
+msgstr "تعمل في"
+
+#: apps/web/templates/web/company.html:405
+msgid "Business description"
+msgstr "وصف العمل"
+
+#: apps/web/templates/web/company.html:406
+msgid "What the business does."
+msgstr "ما تقوم به الشركة."
+
+#: apps/web/templates/web/company.html:407
+msgid "Services offered (comma separated)"
+msgstr "الخدمات المقدَّمة (مفصولة بفواصل)"
+
+#: apps/web/templates/web/company.html:409
+msgid "Specialisations (comma separated)"
+msgstr "التخصصات (مفصولة بفواصل)"
+
+#: apps/web/templates/web/company.html:411
+msgid "Industries served (comma separated)"
+msgstr "القطاعات المخدومة (مفصولة بفواصل)"
+
+#: apps/web/templates/web/company.html:414
+msgid "Employees"
+msgstr "الموظفون"
+
+#: apps/web/templates/web/company.html:415
+msgid "Vehicles"
+msgstr "المركبات"
+
+#: apps/web/templates/web/company.html:416
+msgid "Sites"
+msgstr "المواقع"
+
+#: apps/web/templates/web/company.html:418
+msgid "Operating provinces (comma separated)"
+msgstr "المقاطعات التي تعمل بها (مفصولة بفواصل)"
+
+#: apps/web/templates/web/company.html:420
+msgid "Operating countries (comma separated)"
+msgstr "البلدان التي تعمل بها (مفصولة بفواصل)"
+
+#: apps/web/templates/web/company.html:422
+msgid "Save business profile"
+msgstr "حفظ ملف العمل"
+
+#: apps/web/templates/web/company.html:430
+msgid "Branding"
+msgstr "العلامة التجارية"
+
+#: apps/web/templates/web/company.html:434
+msgid "No logo set"
+msgstr "لم يتم تعيين شعار"
+
+#: apps/web/templates/web/company.html:435
+#: apps/web/templates/web/company.html:460
+msgid "Document prefix"
+msgstr "بادئة المستند"
+
+#: apps/web/templates/web/company.html:437
+#: apps/web/templates/web/company.html:458
+msgid "Brand colour"
+msgstr "لون العلامة التجارية"
+
+#: apps/web/templates/web/company.html:446
+msgid "Company logo"
+msgstr "شعار الشركة"
+
+#: apps/web/templates/web/company.html:448
+msgid ""
+"Used on documents, and as the fallback wherever a specific asset is not set."
+msgstr "يُستخدم على المستندات، وكبديل احتياطي حيثما لم يُحدَّد أصل معيّن."
+
+#: apps/web/templates/web/company.html:451
+msgid "Invoice logo"
+msgstr "شعار الفاتورة"
+
+#: apps/web/templates/web/company.html:452
+msgid "Report logo"
+msgstr "شعار التقرير"
+
+#: apps/web/templates/web/company.html:453
+msgid "Email logo"
+msgstr "شعار البريد الإلكتروني"
+
+#: apps/web/templates/web/company.html:454
+msgid "Letterhead"
+msgstr "ترويسة"
+
+#: apps/web/templates/web/company.html:455
+msgid "Stamp"
+msgstr "ختم"
+
+#: apps/web/templates/web/company.html:456
+msgid "Digital signature"
+msgstr "توقيع رقمي"
+
+#: apps/web/templates/web/company.html:457
+msgid "Company seal"
+msgstr "خاتم الشركة"
+
+#: apps/web/templates/web/company.html:459
+msgid "Secondary colour"
+msgstr "اللون الثانوي"
+
+#: apps/web/templates/web/company.html:461
+msgid "Up to 4 letters. Begins every reference."
+msgstr "حتى 4 أحرف. تبدأ بها كل مرجع."
+
+#: apps/web/templates/web/company.html:463
+msgid "Save branding"
+msgstr "حفظ العلامة التجارية"
+
+#: apps/web/templates/web/company.html:471
+msgid "Defaults"
+msgstr "الإعدادات الافتراضية"
+
+#: apps/web/templates/web/company.html:476
+#: apps/web/templates/web/company.html:488
+msgid "Time zone"
+msgstr "المنطقة الزمنية"
+
+#: apps/web/templates/web/company.html:477
+msgid "Default tax rate"
+msgstr "معدل الضريبة الافتراضي"
+
+#: apps/web/templates/web/company.html:478
+msgid "Financial year starts"
+msgstr "تبدأ السنة المالية"
+
+#: apps/web/templates/web/company.html:478
+#, python-format
+msgid "month %(m)s"
+msgstr "الشهر %(m)s"
+
+#: apps/web/templates/web/company.html:485
+msgid "Set automatically from your company country"
+msgstr "يُضبط تلقائيًا من بلد شركتك"
+
+#: apps/web/templates/web/company.html:487
+msgid "From company country — change it on the Address section."
+msgstr "من بلد الشركة — غيّره في قسم العنوان."
+
+#: apps/web/templates/web/company.html:489
+msgid "Date format"
+msgstr "تنسيق التاريخ"
+
+#: apps/web/templates/web/company.html:490
+msgid "Number format"
+msgstr "تنسيق الأرقام"
+
+#: apps/web/templates/web/company.html:491
+#: apps/web/templates/web/profile.html:82
+msgid "Language"
+msgstr "اللغة"
+
+#: apps/web/templates/web/company.html:492
+#, python-format
+msgid "Default tax rate (%%)"
+msgstr "معدل الضريبة الافتراضي (%%)"
+
+#: apps/web/templates/web/company.html:493
+msgid "Financial year starts (month)"
+msgstr "تبدأ السنة المالية (الشهر)"
+
+#: apps/web/templates/web/company.html:494
+msgid "Week starts on (0 = Monday)"
+msgstr "يبدأ الأسبوع في (0 = الإثنين)"
+
+#: apps/web/templates/web/company.html:496
+msgid "Save defaults"
+msgstr "حفظ الإعدادات الافتراضية"
+
+#: apps/web/templates/web/company.html:504
+msgid "Commercial document terms"
+msgstr "شروط المستندات التجارية"
+
+#: apps/web/templates/web/company.html:508
+msgid "Quotation terms"
+msgstr "شروط عرض السعر"
+
+#: apps/web/templates/web/company.html:508
+#: apps/web/templates/web/company.html:509
+#: apps/web/templates/web/company.html:510
+msgid "Set"
+msgstr "محدَّد"
+
+#: apps/web/templates/web/company.html:509
+msgid "Invoice terms"
+msgstr "شروط الفاتورة"
+
+#: apps/web/templates/web/company.html:510
+msgid "Delivery note terms"
+msgstr "شروط مذكرة التسليم"
+
+#: apps/web/templates/web/company.html:512
+msgid "Inserted automatically into every quotation, invoice and delivery note."
+msgstr "تُدرَج تلقائيًا في كل عرض سعر وفاتورة ومذكرة تسليم."
+
+#: apps/web/templates/web/company.html:516
+msgid "Quotation terms & conditions"
+msgstr "شروط وأحكام عرض السعر"
+
+#: apps/web/templates/web/company.html:517
+#, python-format
+msgid "e.g. Prices valid for 30 days. 50%% deposit required to commence."
+msgstr "مثال: الأسعار صالحة لمدة 30 يومًا. يلزم دفعة مقدمة 50%% للبدء."
+
+#: apps/web/templates/web/company.html:518
+msgid "Invoice terms & conditions"
+msgstr "شروط وأحكام الفاتورة"
+
+#: apps/web/templates/web/company.html:519
+msgid "e.g. Payment due within 30 days. E&amp;OE."
+msgstr "مثال: الدفع مستحق خلال 30 يومًا. مع مراعاة الأخطاء والسهو."
+
+#: apps/web/templates/web/company.html:520
+msgid "Delivery note terms & conditions"
+msgstr "شروط وأحكام مذكرة التسليم"
+
+#: apps/web/templates/web/company.html:521
+msgid "e.g. Goods received in good order unless noted at delivery."
+msgstr "مثال: تُستلم البضائع بحالة جيدة ما لم يُذكر خلاف ذلك عند التسليم."
+
+#: apps/web/templates/web/company.html:522
+msgid "Save document terms"
+msgstr "حفظ شروط المستند"
+
+#: apps/web/templates/web/company.html:534
+#: apps/web/templates/web/company.html:542
+msgid "Response style"
+msgstr "أسلوب الرد"
+
+#: apps/web/templates/web/company.html:535
+msgid "Enabled"
+msgstr "مُفعَّل"
+
+#: apps/web/templates/web/company.html:535
+msgid "Suggestions"
+msgstr "الاقتراحات"
+
+#: apps/web/templates/web/company.html:535
+msgid "Summaries"
+msgstr "الملخصات"
+
+#: apps/web/templates/web/company.html:535
+msgid "Cost-estimation"
+msgstr "تقدير التكاليف"
+
+#: apps/web/templates/web/company.html:535
+msgid "Task-generation"
+msgstr "توليد المهام"
+
+#: apps/web/templates/web/company.html:535
+msgid "Compliance"
+msgstr "الامتثال"
+
+#: apps/web/templates/web/company.html:538
+#, python-format
+msgid ""
+"Administrators manage providers, health and usage in <a "
+"href=\"%(ai_url)s\">AI Settings</a>."
+msgstr "يدير المسؤولون المزوّدين والحالة والاستخدام في <a href=\"%(ai_url)s\">إعدادات الذكاء الاصطناعي</a>."
+
+#: apps/web/templates/web/company.html:543
+msgid "Concise"
+msgstr "موجز"
+
+#: apps/web/templates/web/company.html:543
+msgid "Detailed"
+msgstr "مفصّل"
+
+#: apps/web/templates/web/company.html:545
+msgid "AI suggestions"
+msgstr "اقتراحات الذكاء الاصطناعي"
+
+#: apps/web/templates/web/company.html:546
+msgid "AI summaries"
+msgstr "ملخصات الذكاء الاصطناعي"
+
+#: apps/web/templates/web/company.html:547
+msgid "AI cost estimation"
+msgstr "تقدير التكاليف بالذكاء الاصطناعي"
+
+#: apps/web/templates/web/company.html:548
+msgid "AI task generation"
+msgstr "توليد المهام بالذكاء الاصطناعي"
+
+#: apps/web/templates/web/company.html:549
+msgid "AI compliance detection"
+msgstr "كشف الامتثال بالذكاء الاصطناعي"
+
+#: apps/web/templates/web/company.html:551
+msgid "Save AI settings"
+msgstr "حفظ إعدادات الذكاء الاصطناعي"
+
+#: apps/web/templates/web/company.html:602
+msgid "Changing country to"
+msgstr "تغيير البلد إلى"
+
+#: apps/web/templates/web/company.html:603
+msgid ""
+"Its currency, banking, address, statutory and document rules will apply when "
+"you save. Your existing information is kept — nothing is deleted "
+"automatically."
+msgstr "ستُطبَّق قواعد عملته والبنوك والعنوان والقواعد القانونية والمستندات عند الحفظ. تُحفظ معلوماتك الحالية — لا يُحذف شيء تلقائيًا."
 
 #: apps/web/templates/web/crm/_tabs.html:7
 msgid "Overview"
@@ -581,14 +1503,6 @@ msgstr "+ إضافة عميل"
 msgid "Add a customer"
 msgstr "إضافة عميل"
 
-#: apps/web/templates/web/customers.html:57
-msgid "Registered company name"
-msgstr "الاسم المسجَّل للشركة"
-
-#: apps/web/templates/web/customers.html:59
-msgid "Industry"
-msgstr "القطاع"
-
 #: apps/web/templates/web/customers.html:60
 msgid "General email"
 msgstr "البريد الإلكتروني العام"
@@ -596,10 +1510,6 @@ msgstr "البريد الإلكتروني العام"
 #: apps/web/templates/web/customers.html:61
 msgid "Main telephone"
 msgstr "الهاتف الرئيسي"
-
-#: apps/web/templates/web/customers.html:62
-msgid "City"
-msgstr "المدينة"
 
 #: apps/web/templates/web/customers.html:63
 msgid "Our vendor number with them"
@@ -865,11 +1775,6 @@ msgstr "تسجيل الدخول"
 msgid "Manager dashboards"
 msgstr "لوحات تحكم المدير"
 
-#: apps/web/templates/web/login.html:16 apps/web/templates/web/profile.html:44
-#: apps/web/templates/web/profile.html:134
-msgid "Email"
-msgstr "البريد الإلكتروني"
-
 #: apps/web/templates/web/login.html:18
 msgid "Password"
 msgstr "كلمة المرور"
@@ -931,11 +1836,6 @@ msgstr "إضافة عضو"
 msgid "Email (their sign-in)"
 msgstr "البريد الإلكتروني (تسجيل دخولهم)"
 
-#: apps/web/templates/web/people.html:38 apps/web/templates/web/people.html:73
-#: apps/web/templates/web/profile.html:123
-msgid "Role"
-msgstr "الدور"
-
 #: apps/web/templates/web/people.html:40
 msgid "Choose a role…"
 msgstr "اختر دورًا…"
@@ -949,20 +1849,6 @@ msgstr "الاسم الأول"
 #: apps/web/templates/web/profile.html:70
 msgid "Last name"
 msgstr "اسم العائلة"
-
-#: apps/web/templates/web/people.html:53 apps/web/templates/web/people.html:73
-#: apps/web/templates/web/profile.html:124
-msgid "Job title"
-msgstr "المسمى الوظيفي"
-
-#: apps/web/templates/web/people.html:57 apps/web/templates/web/profile.html:43
-#: apps/web/templates/web/profile.html:75
-msgid "Mobile"
-msgstr "الجوال"
-
-#: apps/web/templates/web/people.html:61
-msgid "Add member"
-msgstr "إضافة العضو"
 
 #: apps/web/templates/web/people.html:63
 msgid ""
@@ -1067,10 +1953,6 @@ msgstr "البريد الإلكتروني (تسجيل دخولهم)"
 msgid "Ask an administrator to change your email"
 msgstr "اطلب من المسؤول تغيير بريدك الإلكتروني"
 
-#: apps/web/templates/web/profile.html:82
-msgid "Language"
-msgstr "اللغة"
-
 #: apps/web/templates/web/profile.html:84
 msgid "Use company / country default"
 msgstr "استخدام الإعداد الافتراضي للشركة / البلد"
@@ -1084,10 +1966,6 @@ msgstr "اللغة التي يعرضها لك Lulaworks — مستقلة عن ب
 msgid "Save profile"
 msgstr "حفظ الملف الشخصي"
 
-#: apps/web/templates/web/profile.html:91
-msgid "Cancel"
-msgstr "المالية"
-
 #: apps/web/templates/web/profile.html:94
 msgid "Remove your profile photo?"
 msgstr "إزالة صورة ملفك الشخصي؟"
@@ -1099,11 +1977,6 @@ msgstr "إزالة الصورة"
 #: apps/web/templates/web/profile.html:118
 msgid "Where you stand"
 msgstr "وضعك الحالي"
-
-#: apps/web/templates/web/profile.html:122
-#: apps/web/templates/web/settings.html:12
-msgid "Company"
-msgstr "الشركة"
 
 #: apps/web/templates/web/profile.html:125
 msgid "Open jobs"
@@ -1154,10 +2027,6 @@ msgstr "%(n)s إجمالًا."
 #: apps/web/templates/web/projects.html:10
 msgid "+ New project"
 msgstr "+ مشروع جديد"
-
-#: apps/web/templates/web/projects.html:14
-msgid "Number"
-msgstr "الرقم"
 
 #: apps/web/templates/web/projects.html:14
 msgid "Title"
@@ -1239,10 +2108,6 @@ msgstr "رقم عرض السعر…"
 msgid "Any customer"
 msgstr "أي عميل"
 
-#: apps/web/templates/web/quotations.html:67
-msgid "Type"
-msgstr "النوع"
-
 #: apps/web/templates/web/quotations.html:68
 msgid "Value"
 msgstr "القيمة"
@@ -1258,10 +2123,6 @@ msgstr "صالح حتى"
 #: apps/web/templates/web/quotations.html:79
 msgid "Some lines have no cost captured"
 msgstr "بعض البنود ليس لها تكلفة مُسجَّلة"
-
-#: apps/web/templates/web/quotations.html:83
-msgid "expired"
-msgstr "منتهي"
 
 #: apps/web/templates/web/quotations.html:85
 msgid "No quotations yet."
@@ -1298,10 +2159,6 @@ msgid ""
 msgstr ""
 "كل ما يهيّئ Lulaworks لأعمالك — اضبطه مرة واحدة هنا وتقرأ منه كل شاشة ومستند."
 
-#: apps/web/templates/web/settings.html:15
-msgid "Company profile"
-msgstr "ملف الشركة"
-
 #: apps/web/templates/web/settings.html:16
 msgid "Name, registration, address, branding & logo — read by every document."
 msgstr "الاسم والتسجيل والعنوان والعلامة التجارية والشعار — تقرأها كل مستند."
@@ -1313,10 +2170,6 @@ msgstr "ساعات العمل"
 #: apps/web/templates/web/settings.html:19
 msgid "Operating days and times."
 msgstr "أيام وساعات العمل."
-
-#: apps/web/templates/web/settings.html:21
-msgid "Banking"
-msgstr "التفاصيل المصرفية"
 
 #: apps/web/templates/web/settings.html:22
 msgid "Bank accounts shown on invoices for payment."
@@ -1356,10 +2209,6 @@ msgstr "إعدادات LulaAI"
 #: apps/web/templates/web/settings.html:39
 msgid "AI provider status, model, health and usage."
 msgstr "حالة مزوّد الذكاء الاصطناعي والنموذج والصحة والاستخدام."
-
-#: apps/web/templates/web/settings.html:41
-msgid "Email history"
-msgstr "سجل البريد الإلكتروني"
 
 #: apps/web/templates/web/settings.html:42
 msgid "Every email sent, delivery status and resend."

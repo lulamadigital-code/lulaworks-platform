@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 11:41+0000\n"
+"POT-Creation-Date: 2026-09-15 11:49+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -235,12 +235,10 @@ msgid "Sign out"
 msgstr "Meld af"
 
 #: apps/web/templates/web/billing.html:3
-#| msgid "Billing & plan"
 msgid "Billing"
 msgstr "Fakturering"
 
 #: apps/web/templates/web/billing.html:5
-#| msgid "Billing & plan"
 msgid "Billing & subscription"
 msgstr "Fakturering en intekening"
 
@@ -256,7 +254,9 @@ msgstr "Jy is oor jou plan se perke."
 msgid ""
 "Your data is safe and fully accessible — but you can't add new users until "
 "you're back within the limit or on a bigger plan."
-msgstr "Jou data is veilig en heeltemal toeganklik — maar jy kan nie nuwe gebruikers byvoeg totdat jy terug binne die perk is of op 'n groter plan is nie."
+msgstr ""
+"Jou data is veilig en heeltemal toeganklik — maar jy kan nie nuwe gebruikers "
+"byvoeg totdat jy terug binne die perk is of op 'n groter plan is nie."
 
 #: apps/web/templates/web/billing.html:20
 msgid "No plan"
@@ -280,10 +280,11 @@ msgstr "%(cycle)s fakturering"
 msgid ""
 "%(n)s days left in your trial. Choose a plan below to keep everything after "
 "it ends — your data stays intact."
-msgstr "%(n)s dae oor in jou proeftydperk. Kies 'n plan hieronder om alles te behou nadat dit eindig — jou data bly ongeskonde."
+msgstr ""
+"%(n)s dae oor in jou proeftydperk. Kies 'n plan hieronder om alles te behou "
+"nadat dit eindig — jou data bly ongeskonde."
 
 #: apps/web/templates/web/billing.html:32
-#| msgid "Access"
 msgid "Access ends"
 msgstr "Toegang eindig"
 
@@ -309,7 +310,6 @@ msgstr "KI-krediete oor"
 
 #: apps/web/templates/web/billing.html:55
 #, python-format
-#| msgid "%(n)s open"
 msgid "/ %(n)s mo"
 msgstr "/ %(n)s md"
 
@@ -338,7 +338,9 @@ msgstr "Jy het nie meer KI-krediete nie."
 msgid ""
 "Non-AI features keep working. Buy a credit pack below or upgrade your plan "
 "to resume AI document extraction and suggestions."
-msgstr "Nie-KI-kenmerke werk steeds. Koop 'n kredietpak hieronder of gradeer jou plan op om KI-dokumentonttrekking en -voorstelle te hervat."
+msgstr ""
+"Nie-KI-kenmerke werk steeds. Koop 'n kredietpak hieronder of gradeer jou "
+"plan op om KI-dokumentonttrekking en -voorstelle te hervat."
 
 #: apps/web/templates/web/billing.html:84
 msgid "Buy AI credits"
@@ -353,7 +355,6 @@ msgid "Buy pack"
 msgstr "Koop pak"
 
 #: apps/web/templates/web/billing.html:103
-#| msgid "Planning"
 msgid "Plans"
 msgstr "Planne"
 
@@ -408,7 +409,6 @@ msgid "Select"
 msgstr "Kies"
 
 #: apps/web/templates/web/billing.html:146
-#| msgid "Email history"
 msgid "Billing history"
 msgstr "Faktureringsgeskiedenis"
 
@@ -431,9 +431,930 @@ msgid "Amount"
 msgstr "Bedrag"
 
 #: apps/web/templates/web/billing.html:158
-#| msgid "No invoices yet."
 msgid "No billing activity yet."
 msgstr "Nog geen faktureringsaktiwiteit nie."
+
+#: apps/web/templates/web/company.html:3
+#: apps/web/templates/web/profile.html:122
+#: apps/web/templates/web/settings.html:12
+msgid "Company"
+msgstr "Maatskappy"
+
+#: apps/web/templates/web/company.html:9
+msgid "Finish setting up your company to start issuing documents"
+msgstr "Voltooi jou maatskappy se opstelling om dokumente uit te reik"
+
+#: apps/web/templates/web/company.html:10
+msgid ""
+"Every quotation and invoice you send pulls from here. A few essentials are "
+"still missing:"
+msgstr "Elke kwotasie en faktuur wat jy stuur trek hiervandaan. 'n Paar noodsaaklikhede ontbreek nog:"
+
+#: apps/web/templates/web/company.html:14
+msgid ""
+"Fill these in below (and add your logo &amp; banking under the tabs). You'll "
+"have full access as soon as they're saved."
+msgstr "Vul hulle hieronder in (en voeg jou logo en bankbesonderhede onder die oortjies by). Jy sal volle toegang hê sodra hulle gestoor is."
+
+#: apps/web/templates/web/company.html:21
+#: apps/web/templates/web/settings.html:15
+msgid "Company profile"
+msgstr "Maatskappyprofiel"
+
+#: apps/web/templates/web/company.html:22
+msgid ""
+"Your identity inside Lulaworks. Entered once here, then read by every "
+"quotation, invoice, purchase order and generated document."
+msgstr "Jou identiteit binne Lulaworks. Een keer hier ingevoer, dan deur elke kwotasie, faktuur, bestelling en gegenereerde dokument gelees."
+
+#: apps/web/templates/web/company.html:25
+#, python-format
+msgid "%(pct)s%% complete"
+msgstr "%(pct)s%% voltooi"
+
+#: apps/web/templates/web/company.html:30
+msgid "Document Designer"
+msgstr "Dokumentontwerper"
+
+#: apps/web/templates/web/company.html:31
+#: apps/web/templates/web/settings.html:41
+msgid "Email history"
+msgstr "E-posgeskiedenis"
+
+#: apps/web/templates/web/company.html:32
+msgid "Working hours"
+msgstr "Werksure"
+
+#: apps/web/templates/web/company.html:33
+msgid "Tax settings"
+msgstr "Belastinginstellings"
+
+#: apps/web/templates/web/company.html:38
+msgid "Add your company email"
+msgstr "Voeg jou maatskappy se e-pos by"
+
+#: apps/web/templates/web/company.html:39
+msgid ""
+"Without it, when a customer replies to a quotation or invoice you send, the "
+"reply won't reach you. Edit <strong>Contact details</strong> below to set it."
+msgstr "Sonder dit sal die antwoord jou nie bereik wanneer 'n kliënt op 'n kwotasie of faktuur reageer nie. Wysig <strong>Kontakbesonderhede</strong> hieronder om dit te stel."
+
+#: apps/web/templates/web/company.html:45
+msgid "What is missing actually costs you"
+msgstr "Wat ontbreek kos jou werklik"
+
+#: apps/web/templates/web/company.html:52
+msgid "Registrations lapsing"
+msgstr "Registrasies wat verval"
+
+#: apps/web/templates/web/company.html:54
+#: apps/web/templates/web/quotations.html:83
+msgid "expired"
+msgstr "verval"
+
+#: apps/web/templates/web/company.html:54
+msgid "expires"
+msgstr "verval"
+
+#: apps/web/templates/web/company.html:60
+msgid ""
+"You can view the company profile but not change it — that needs the company-"
+"manage permission."
+msgstr "Jy kan die maatskappyprofiel bekyk maar nie verander nie — dit benodig die maatskappy-bestuur-toestemming."
+
+#: apps/web/templates/web/company.html:65
+msgid "Company identity"
+msgstr "Maatskappy-identiteit"
+
+#: apps/web/templates/web/company.html:66
+#: apps/web/templates/web/company.html:109
+#: apps/web/templates/web/company.html:146
+#: apps/web/templates/web/company.html:188
+#: apps/web/templates/web/company.html:328
+#: apps/web/templates/web/company.html:393
+#: apps/web/templates/web/company.html:431
+#: apps/web/templates/web/company.html:472
+#: apps/web/templates/web/company.html:505
+#: apps/web/templates/web/company.html:531
+msgid "Edit"
+msgstr "Wysig"
+
+#: apps/web/templates/web/company.html:69
+msgid "Registered name"
+msgstr "Geregistreerde naam"
+
+#: apps/web/templates/web/company.html:70
+#: apps/web/templates/web/company.html:83
+msgid "Trading name"
+msgstr "Handelsnaam"
+
+#: apps/web/templates/web/company.html:71
+msgid "Registration no."
+msgstr "Registrasienr."
+
+#: apps/web/templates/web/company.html:72
+msgid "Tax reference"
+msgstr "Belastingverwysing"
+
+#: apps/web/templates/web/company.html:73
+#: apps/web/templates/web/company.html:86
+msgid "VAT number"
+msgstr "BTW-nommer"
+
+#: apps/web/templates/web/company.html:74
+#: apps/web/templates/web/company.html:87
+msgid "Company type"
+msgstr "Maatskappytipe"
+
+#: apps/web/templates/web/company.html:75
+#: apps/web/templates/web/company.html:97
+#: apps/web/templates/web/customers.html:59
+msgid "Industry"
+msgstr "Bedryf"
+
+#: apps/web/templates/web/company.html:76
+#: apps/web/templates/web/company.html:98
+msgid "Year established"
+msgstr "Jaar gestig"
+
+#: apps/web/templates/web/company.html:82
+#: apps/web/templates/web/customers.html:57
+msgid "Registered company name"
+msgstr "Geregistreerde maatskappynaam"
+
+#: apps/web/templates/web/company.html:84
+msgid "Company registration number"
+msgstr "Maatskappy-registrasienommer"
+
+#: apps/web/templates/web/company.html:85
+msgid "Tax reference number"
+msgstr "Belastingverwysingsnommer"
+
+#: apps/web/templates/web/company.html:90
+msgid "(Pty) Ltd"
+msgstr "(Edms) Bpk"
+
+#: apps/web/templates/web/company.html:91
+msgid "Close Corporation"
+msgstr "Beslote Korporasie"
+
+#: apps/web/templates/web/company.html:92
+msgid "Sole Proprietor"
+msgstr "Eenmansaak"
+
+#: apps/web/templates/web/company.html:93
+msgid "Partnership"
+msgstr "Vennootskap"
+
+#: apps/web/templates/web/company.html:94
+msgid "Trust"
+msgstr "Trust"
+
+#: apps/web/templates/web/company.html:95
+msgid "Non-Profit Company"
+msgstr "Niewinsmaatskappy"
+
+#: apps/web/templates/web/company.html:100
+msgid "Save identity"
+msgstr "Stoor identiteit"
+
+#: apps/web/templates/web/company.html:101
+#: apps/web/templates/web/company.html:138
+#: apps/web/templates/web/company.html:180
+#: apps/web/templates/web/company.html:212
+#: apps/web/templates/web/company.html:280
+#: apps/web/templates/web/company.html:319
+#: apps/web/templates/web/company.html:353
+#: apps/web/templates/web/company.html:384
+#: apps/web/templates/web/company.html:423
+#: apps/web/templates/web/company.html:464
+#: apps/web/templates/web/company.html:497
+#: apps/web/templates/web/company.html:523
+#: apps/web/templates/web/company.html:552
+#: apps/web/templates/web/profile.html:91
+msgid "Cancel"
+msgstr "Finansies"
+
+#: apps/web/templates/web/company.html:108
+msgid "Contact details"
+msgstr "Kontakbesonderhede"
+
+#: apps/web/templates/web/company.html:112
+#: apps/web/templates/web/company.html:124
+msgid "Primary email"
+msgstr "Primêre e-pos"
+
+#: apps/web/templates/web/company.html:113
+#: apps/web/templates/web/company.html:127
+msgid "Primary phone"
+msgstr "Primêre telefoon"
+
+#: apps/web/templates/web/company.html:114
+#: apps/web/templates/web/company.html:129
+#: apps/web/templates/web/company.html:314
+#: apps/web/templates/web/company.html:316
+#: apps/web/templates/web/people.html:57 apps/web/templates/web/profile.html:43
+#: apps/web/templates/web/profile.html:75
+msgid "Mobile"
+msgstr "Sel"
+
+#: apps/web/templates/web/company.html:115
+#: apps/web/templates/web/company.html:130
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+#: apps/web/templates/web/company.html:116
+#: apps/web/templates/web/company.html:131
+msgid "Emergency / after-hours"
+msgstr "Nood / na-ure"
+
+#: apps/web/templates/web/company.html:117
+#: apps/web/templates/web/company.html:132
+msgid "Website"
+msgstr "Webwerf"
+
+#: apps/web/templates/web/company.html:118
+msgid "Social"
+msgstr "Sosiaal"
+
+#: apps/web/templates/web/company.html:126
+msgid "Required — the address customers reply to on your documents."
+msgstr "Vereis — die adres waarheen kliënte op jou dokumente antwoord."
+
+#: apps/web/templates/web/company.html:128
+msgid "Secondary phone"
+msgstr "Sekondêre telefoon"
+
+#: apps/web/templates/web/company.html:135
+msgid "X (Twitter)"
+msgstr "X (Twitter)"
+
+#: apps/web/templates/web/company.html:137
+msgid "Save contact details"
+msgstr "Stoor kontakbesonderhede"
+
+#: apps/web/templates/web/company.html:145
+msgid "Physical address"
+msgstr "Fisiese adres"
+
+#: apps/web/templates/web/company.html:152
+msgid "No physical address set."
+msgstr "Geen fisiese adres gestel nie."
+
+#: apps/web/templates/web/company.html:168
+#: apps/web/templates/web/company.html:204
+msgid "Country"
+msgstr "Land"
+
+#: apps/web/templates/web/company.html:171
+#: apps/web/templates/web/company.html:206
+msgid "Select a country…"
+msgstr "Kies 'n land…"
+
+#: apps/web/templates/web/company.html:177
+#: apps/web/templates/web/company.html:223
+#: apps/web/templates/web/company.html:475
+#: apps/web/templates/web/company.html:484
+msgid "Currency"
+msgstr "Geldeenheid"
+
+#: apps/web/templates/web/company.html:178
+msgid ""
+"— set automatically from your company country. We check the address format "
+"for your country; we don't verify that it physically exists."
+msgstr "— outomaties gestel vanaf jou maatskappy se land. Ons kontroleer die adresformaat vir jou land; ons verifieer nie dat dit fisies bestaan nie."
+
+#: apps/web/templates/web/company.html:179
+msgid "Save address"
+msgstr "Stoor adres"
+
+#: apps/web/templates/web/company.html:187
+#: apps/web/templates/web/company.html:201
+msgid "Postal address"
+msgstr "Posadres"
+
+#: apps/web/templates/web/company.html:191
+msgid "Same as the physical address."
+msgstr "Dieselfde as die fisiese adres."
+
+#: apps/web/templates/web/company.html:195
+msgid "No postal address set."
+msgstr "Geen posadres gestel nie."
+
+#: apps/web/templates/web/company.html:199
+msgid "Same as physical address"
+msgstr "Dieselfde as fisiese adres"
+
+#: apps/web/templates/web/company.html:202
+#: apps/web/templates/web/customers.html:62
+msgid "City"
+msgstr "Stad"
+
+#: apps/web/templates/web/company.html:211
+msgid "Save postal address"
+msgstr "Stoor posadres"
+
+#: apps/web/templates/web/company.html:219
+#: apps/web/templates/web/settings.html:21
+msgid "Banking"
+msgstr "Bankbesonderhede"
+
+#: apps/web/templates/web/company.html:220
+msgid "+ Add account"
+msgstr "+ Voeg rekening by"
+
+#: apps/web/templates/web/company.html:223
+msgid "Bank"
+msgstr "Bank"
+
+#: apps/web/templates/web/company.html:223
+#: apps/web/templates/web/company.html:259
+msgid "Account name"
+msgstr "Rekeningnaam"
+
+#: apps/web/templates/web/company.html:223
+#: apps/web/templates/web/projects.html:14
+msgid "Number"
+msgstr "Nommer"
+
+#: apps/web/templates/web/company.html:223
+msgid "Branch"
+msgstr "Tak"
+
+#: apps/web/templates/web/company.html:223
+#: apps/web/templates/web/company.html:236
+#: apps/web/templates/web/company.html:239
+msgid "Default"
+msgstr "Verstek"
+
+#: apps/web/templates/web/company.html:226
+msgid ""
+"We couldn’t match this to a known bank — please re-add it from the picker"
+msgstr "Ons kon dit nie aan 'n bekende bank koppel nie — voeg dit asseblief weer by vanaf die kieser"
+
+#: apps/web/templates/web/company.html:226
+msgid "Review"
+msgstr "Hersien"
+
+#: apps/web/templates/web/company.html:234
+msgid "Use this account on invoices &amp; quotes"
+msgstr "Gebruik hierdie rekening op fakture en kwotasies"
+
+#: apps/web/templates/web/company.html:241
+#, python-format
+msgid "Remove %(b)s %(m)s?"
+msgstr "Verwyder %(b)s %(m)s?"
+
+#: apps/web/templates/web/company.html:241
+#: apps/web/templates/web/company.html:300
+#: apps/web/templates/web/company.html:369
+msgid "Remove"
+msgstr "Verwyder"
+
+#: apps/web/templates/web/company.html:244
+msgid ""
+"No bank account yet — invoices will go out with no way for a client to pay "
+"you."
+msgstr "Nog geen bankrekening nie — fakture sal uitgaan sonder 'n manier vir 'n kliënt om jou te betaal."
+
+#: apps/web/templates/web/company.html:251
+msgid "Bank name"
+msgstr "Banknaam"
+
+#: apps/web/templates/web/company.html:254
+msgid "Select or type your bank"
+msgstr "Kies of tik jou bank"
+
+#: apps/web/templates/web/company.html:259
+msgid "Account holder name"
+msgstr "Rekeninghouer se naam"
+
+#: apps/web/templates/web/company.html:263
+#: apps/web/templates/web/company.html:344
+#: apps/web/templates/web/company.html:600
+msgid "(optional)"
+msgstr "(opsioneel)"
+
+#: apps/web/templates/web/company.html:264
+#: apps/web/templates/web/company.html:601
+msgid "Auto-filled when you pick your bank"
+msgstr "Outomaties ingevul wanneer jy jou bank kies"
+
+#: apps/web/templates/web/company.html:267
+msgid "Account type"
+msgstr "Rekeningtipe"
+
+#: apps/web/templates/web/company.html:267
+msgid "Cheque / Current"
+msgstr "Tjek / Lopend"
+
+#: apps/web/templates/web/company.html:267
+msgid "Savings"
+msgstr "Spaar"
+
+#: apps/web/templates/web/company.html:267
+msgid "Transmission"
+msgstr "Transmissie"
+
+#: apps/web/templates/web/company.html:267
+msgid "Foreign currency"
+msgstr "Buitelandse valuta"
+
+#: apps/web/templates/web/company.html:279
+msgid "Add bank account"
+msgstr "Voeg bankrekening by"
+
+#: apps/web/templates/web/company.html:288
+msgid "Company Members"
+msgstr "Maatskappylede"
+
+#: apps/web/templates/web/company.html:289
+msgid "+ Add member"
+msgstr "+ Voeg lid by"
+
+#: apps/web/templates/web/company.html:292
+#: apps/web/templates/web/company.html:379
+msgid "Name"
+msgstr "Naam"
+
+#: apps/web/templates/web/company.html:292
+#: apps/web/templates/web/people.html:38 apps/web/templates/web/people.html:73
+#: apps/web/templates/web/profile.html:123
+msgid "Role"
+msgstr "Rol"
+
+#: apps/web/templates/web/company.html:292
+#: apps/web/templates/web/company.html:312
+#: apps/web/templates/web/company.html:316 apps/web/templates/web/login.html:16
+#: apps/web/templates/web/profile.html:44
+#: apps/web/templates/web/profile.html:134
+msgid "Email"
+msgstr "E-pos"
+
+#: apps/web/templates/web/company.html:292
+#: apps/web/templates/web/company.html:313
+#: apps/web/templates/web/company.html:316
+msgid "Phone"
+msgstr "Telefoon"
+
+#: apps/web/templates/web/company.html:292
+msgid "Prefers"
+msgstr "Verkies"
+
+#: apps/web/templates/web/company.html:295
+msgid "Primary"
+msgstr "Primêr"
+
+#: apps/web/templates/web/company.html:299
+msgid "Make primary"
+msgstr "Maak primêr"
+
+#: apps/web/templates/web/company.html:300
+#: apps/web/templates/web/company.html:369
+#, python-format
+msgid "Remove %(n)s?"
+msgstr "Verwyder %(n)s?"
+
+#: apps/web/templates/web/company.html:303
+msgid "No contacts yet. The primary contact is printed on outgoing documents."
+msgstr "Nog geen kontakte nie. Die primêre kontak word op uitgaande dokumente gedruk."
+
+#: apps/web/templates/web/company.html:310
+msgid "Full name"
+msgstr "Volledige naam"
+
+#: apps/web/templates/web/company.html:311
+#: apps/web/templates/web/people.html:53 apps/web/templates/web/people.html:73
+#: apps/web/templates/web/profile.html:124
+msgid "Job title"
+msgstr "Postitel"
+
+#: apps/web/templates/web/company.html:315
+msgid "Extension"
+msgstr "Uitbreiding"
+
+#: apps/web/templates/web/company.html:316
+msgid "Preferred contact method"
+msgstr "Voorkeurkontakmetode"
+
+#: apps/web/templates/web/company.html:318
+#: apps/web/templates/web/people.html:61
+msgid "Add member"
+msgstr "Voeg lid by"
+
+#: apps/web/templates/web/company.html:327
+msgid "Statutory registrations"
+msgstr "Statutêre registrasies"
+
+#: apps/web/templates/web/company.html:332
+#: apps/web/templates/web/company.html:341
+msgid "VAT / GST registered"
+msgstr "BTW / GST geregistreer"
+
+#: apps/web/templates/web/company.html:332
+msgid "Yes"
+msgstr "Ja"
+
+#: apps/web/templates/web/company.html:332
+msgid "No"
+msgstr "Nee"
+
+#: apps/web/templates/web/company.html:348
+msgid "ISO certifications (comma separated)"
+msgstr "ISO-sertifisering (met kommas geskei)"
+
+#: apps/web/templates/web/company.html:350
+msgid "Industry certifications (comma separated)"
+msgstr "Bedryfsertifisering (met kommas geskei)"
+
+#: apps/web/templates/web/company.html:352
+msgid "Save statutory details"
+msgstr "Stoor statutêre besonderhede"
+
+#: apps/web/templates/web/company.html:360
+msgid "Supporting documents"
+msgstr "Ondersteunende dokumente"
+
+#: apps/web/templates/web/company.html:361
+msgid "+ Upload"
+msgstr "+ Laai op"
+
+#: apps/web/templates/web/company.html:364
+msgid "Document"
+msgstr "Dokument"
+
+#: apps/web/templates/web/company.html:364
+#: apps/web/templates/web/company.html:380
+#: apps/web/templates/web/quotations.html:67
+msgid "Type"
+msgstr "Tipe"
+
+#: apps/web/templates/web/company.html:364
+msgid "Expires"
+msgstr "Verval"
+
+#: apps/web/templates/web/company.html:368
+msgid "No expiry"
+msgstr "Geen vervaldatum"
+
+#: apps/web/templates/web/company.html:371
+msgid "No documents uploaded yet."
+msgstr "Nog geen dokumente opgelaai nie."
+
+#: apps/web/templates/web/company.html:371
+#, python-format
+msgid "Recommended for your country: %(docs)s."
+msgstr "Aanbeveel vir jou land: %(docs)s."
+
+#: apps/web/templates/web/company.html:378
+msgid "File"
+msgstr "Lêer"
+
+#: apps/web/templates/web/company.html:379
+msgid "Tax clearance certificate"
+msgstr "Belastingklaringsertifikaat"
+
+#: apps/web/templates/web/company.html:381
+msgid "Expires on"
+msgstr "Verval op"
+
+#: apps/web/templates/web/company.html:383
+msgid "Upload document"
+msgstr "Laai dokument op"
+
+#: apps/web/templates/web/company.html:392
+msgid "Business profile"
+msgstr "Besigheidsprofiel"
+
+#: apps/web/templates/web/company.html:396
+msgid "Description"
+msgstr "Beskrywing"
+
+#: apps/web/templates/web/company.html:397
+msgid "Services"
+msgstr "Dienste"
+
+#: apps/web/templates/web/company.html:398
+msgid "Industries served"
+msgstr "Bedrywe bedien"
+
+#: apps/web/templates/web/company.html:399
+msgid "Size"
+msgstr "Grootte"
+
+#: apps/web/templates/web/company.html:399
+#, python-format
+msgid "%(staff)s staff · %(vehicles)s vehicles · %(sites)s sites"
+msgstr "%(staff)s personeel · %(vehicles)s voertuie · %(sites)s terreine"
+
+#: apps/web/templates/web/company.html:400
+msgid "Operating in"
+msgstr "Bedryf in"
+
+#: apps/web/templates/web/company.html:405
+msgid "Business description"
+msgstr "Besigheidsbeskrywing"
+
+#: apps/web/templates/web/company.html:406
+msgid "What the business does."
+msgstr "Wat die besigheid doen."
+
+#: apps/web/templates/web/company.html:407
+msgid "Services offered (comma separated)"
+msgstr "Dienste aangebied (met kommas geskei)"
+
+#: apps/web/templates/web/company.html:409
+msgid "Specialisations (comma separated)"
+msgstr "Spesialisasies (met kommas geskei)"
+
+#: apps/web/templates/web/company.html:411
+msgid "Industries served (comma separated)"
+msgstr "Bedrywe bedien (met kommas geskei)"
+
+#: apps/web/templates/web/company.html:414
+msgid "Employees"
+msgstr "Werknemers"
+
+#: apps/web/templates/web/company.html:415
+msgid "Vehicles"
+msgstr "Voertuie"
+
+#: apps/web/templates/web/company.html:416
+msgid "Sites"
+msgstr "Terreine"
+
+#: apps/web/templates/web/company.html:418
+msgid "Operating provinces (comma separated)"
+msgstr "Bedryfsprovinsies (met kommas geskei)"
+
+#: apps/web/templates/web/company.html:420
+msgid "Operating countries (comma separated)"
+msgstr "Bedryfslande (met kommas geskei)"
+
+#: apps/web/templates/web/company.html:422
+msgid "Save business profile"
+msgstr "Stoor besigheidsprofiel"
+
+#: apps/web/templates/web/company.html:430
+msgid "Branding"
+msgstr "Handelsmerk"
+
+#: apps/web/templates/web/company.html:434
+msgid "No logo set"
+msgstr "Geen logo gestel nie"
+
+#: apps/web/templates/web/company.html:435
+#: apps/web/templates/web/company.html:460
+msgid "Document prefix"
+msgstr "Dokumentvoorvoegsel"
+
+#: apps/web/templates/web/company.html:437
+#: apps/web/templates/web/company.html:458
+msgid "Brand colour"
+msgstr "Handelsmerkkleur"
+
+#: apps/web/templates/web/company.html:446
+msgid "Company logo"
+msgstr "Maatskappylogo"
+
+#: apps/web/templates/web/company.html:448
+msgid ""
+"Used on documents, and as the fallback wherever a specific asset is not set."
+msgstr "Gebruik op dokumente, en as die terugval waar 'n spesifieke bate nie gestel is nie."
+
+#: apps/web/templates/web/company.html:451
+msgid "Invoice logo"
+msgstr "Faktuurlogo"
+
+#: apps/web/templates/web/company.html:452
+msgid "Report logo"
+msgstr "Verslaglogo"
+
+#: apps/web/templates/web/company.html:453
+msgid "Email logo"
+msgstr "E-poslogo"
+
+#: apps/web/templates/web/company.html:454
+msgid "Letterhead"
+msgstr "Briefhoof"
+
+#: apps/web/templates/web/company.html:455
+msgid "Stamp"
+msgstr "Stempel"
+
+#: apps/web/templates/web/company.html:456
+msgid "Digital signature"
+msgstr "Digitale handtekening"
+
+#: apps/web/templates/web/company.html:457
+msgid "Company seal"
+msgstr "Maatskappyseël"
+
+#: apps/web/templates/web/company.html:459
+msgid "Secondary colour"
+msgstr "Sekondêre kleur"
+
+#: apps/web/templates/web/company.html:461
+msgid "Up to 4 letters. Begins every reference."
+msgstr "Tot 4 letters. Begin elke verwysing."
+
+#: apps/web/templates/web/company.html:463
+msgid "Save branding"
+msgstr "Stoor handelsmerk"
+
+#: apps/web/templates/web/company.html:471
+msgid "Defaults"
+msgstr "Verstekwaardes"
+
+#: apps/web/templates/web/company.html:476
+#: apps/web/templates/web/company.html:488
+msgid "Time zone"
+msgstr "Tydsone"
+
+#: apps/web/templates/web/company.html:477
+msgid "Default tax rate"
+msgstr "Verstek belastingkoers"
+
+#: apps/web/templates/web/company.html:478
+msgid "Financial year starts"
+msgstr "Boekjaar begin"
+
+#: apps/web/templates/web/company.html:478
+#, python-format
+msgid "month %(m)s"
+msgstr "maand %(m)s"
+
+#: apps/web/templates/web/company.html:485
+msgid "Set automatically from your company country"
+msgstr "Outomaties gestel vanaf jou maatskappy se land"
+
+#: apps/web/templates/web/company.html:487
+msgid "From company country — change it on the Address section."
+msgstr "Vanaf maatskappyland — verander dit op die Adres-afdeling."
+
+#: apps/web/templates/web/company.html:489
+msgid "Date format"
+msgstr "Datumformaat"
+
+#: apps/web/templates/web/company.html:490
+msgid "Number format"
+msgstr "Getalformaat"
+
+#: apps/web/templates/web/company.html:491
+#: apps/web/templates/web/profile.html:82
+msgid "Language"
+msgstr "Taal"
+
+#: apps/web/templates/web/company.html:492
+#, python-format
+msgid "Default tax rate (%%)"
+msgstr "Verstek belastingkoers (%%)"
+
+#: apps/web/templates/web/company.html:493
+msgid "Financial year starts (month)"
+msgstr "Boekjaar begin (maand)"
+
+#: apps/web/templates/web/company.html:494
+msgid "Week starts on (0 = Monday)"
+msgstr "Week begin op (0 = Maandag)"
+
+#: apps/web/templates/web/company.html:496
+msgid "Save defaults"
+msgstr "Stoor verstekwaardes"
+
+#: apps/web/templates/web/company.html:504
+msgid "Commercial document terms"
+msgstr "Kommersiële dokumentvoorwaardes"
+
+#: apps/web/templates/web/company.html:508
+msgid "Quotation terms"
+msgstr "Kwotasievoorwaardes"
+
+#: apps/web/templates/web/company.html:508
+#: apps/web/templates/web/company.html:509
+#: apps/web/templates/web/company.html:510
+msgid "Set"
+msgstr "Gestel"
+
+#: apps/web/templates/web/company.html:509
+msgid "Invoice terms"
+msgstr "Faktuurvoorwaardes"
+
+#: apps/web/templates/web/company.html:510
+msgid "Delivery note terms"
+msgstr "Afleweringsnotavoorwaardes"
+
+#: apps/web/templates/web/company.html:512
+msgid "Inserted automatically into every quotation, invoice and delivery note."
+msgstr "Outomaties in elke kwotasie, faktuur en afleweringsnota ingevoeg."
+
+#: apps/web/templates/web/company.html:516
+msgid "Quotation terms & conditions"
+msgstr "Kwotasie-bepalings en -voorwaardes"
+
+#: apps/web/templates/web/company.html:517
+#, python-format
+msgid "e.g. Prices valid for 30 days. 50%% deposit required to commence."
+msgstr "bv. Pryse geldig vir 30 dae. 50%% deposito benodig om te begin."
+
+#: apps/web/templates/web/company.html:518
+msgid "Invoice terms & conditions"
+msgstr "Faktuur-bepalings en -voorwaardes"
+
+#: apps/web/templates/web/company.html:519
+msgid "e.g. Payment due within 30 days. E&amp;OE."
+msgstr "bv. Betaling verskuldig binne 30 dae. F&amp;U uitgesluit."
+
+#: apps/web/templates/web/company.html:520
+msgid "Delivery note terms & conditions"
+msgstr "Afleweringsnota-bepalings en -voorwaardes"
+
+#: apps/web/templates/web/company.html:521
+msgid "e.g. Goods received in good order unless noted at delivery."
+msgstr "bv. Goedere in goeie orde ontvang tensy by aflewering aangeteken."
+
+#: apps/web/templates/web/company.html:522
+msgid "Save document terms"
+msgstr "Stoor dokumentvoorwaardes"
+
+#: apps/web/templates/web/company.html:534
+#: apps/web/templates/web/company.html:542
+msgid "Response style"
+msgstr "Antwoordstyl"
+
+#: apps/web/templates/web/company.html:535
+msgid "Enabled"
+msgstr "Geaktiveer"
+
+#: apps/web/templates/web/company.html:535
+msgid "Suggestions"
+msgstr "Voorstelle"
+
+#: apps/web/templates/web/company.html:535
+msgid "Summaries"
+msgstr "Opsommings"
+
+#: apps/web/templates/web/company.html:535
+msgid "Cost-estimation"
+msgstr "Kosteberaming"
+
+#: apps/web/templates/web/company.html:535
+msgid "Task-generation"
+msgstr "Taakgenerering"
+
+#: apps/web/templates/web/company.html:535
+msgid "Compliance"
+msgstr "Nakoming"
+
+#: apps/web/templates/web/company.html:538
+#, python-format
+msgid ""
+"Administrators manage providers, health and usage in <a "
+"href=\"%(ai_url)s\">AI Settings</a>."
+msgstr "Administrateurs bestuur verskaffers, gesondheid en gebruik in <a href=\"%(ai_url)s\">KI-instellings</a>."
+
+#: apps/web/templates/web/company.html:543
+msgid "Concise"
+msgstr "Bondig"
+
+#: apps/web/templates/web/company.html:543
+msgid "Detailed"
+msgstr "Gedetailleerd"
+
+#: apps/web/templates/web/company.html:545
+msgid "AI suggestions"
+msgstr "KI-voorstelle"
+
+#: apps/web/templates/web/company.html:546
+msgid "AI summaries"
+msgstr "KI-opsommings"
+
+#: apps/web/templates/web/company.html:547
+msgid "AI cost estimation"
+msgstr "KI-kosteberaming"
+
+#: apps/web/templates/web/company.html:548
+msgid "AI task generation"
+msgstr "KI-taakgenerering"
+
+#: apps/web/templates/web/company.html:549
+msgid "AI compliance detection"
+msgstr "KI-nakomingsopsporing"
+
+#: apps/web/templates/web/company.html:551
+msgid "Save AI settings"
+msgstr "Stoor KI-instellings"
+
+#: apps/web/templates/web/company.html:602
+msgid "Changing country to"
+msgstr "Verander land na"
+
+#: apps/web/templates/web/company.html:603
+msgid ""
+"Its currency, banking, address, statutory and document rules will apply when "
+"you save. Your existing information is kept — nothing is deleted "
+"automatically."
+msgstr "Sy geldeenheid-, bank-, adres-, statutêre en dokumentreëls sal geld wanneer jy stoor. Jou bestaande inligting word behou — niks word outomaties uitgevee nie."
 
 #: apps/web/templates/web/crm/_tabs.html:7
 msgid "Overview"
@@ -580,14 +1501,6 @@ msgstr "+ Voeg kliënt by"
 msgid "Add a customer"
 msgstr "Voeg 'n kliënt by"
 
-#: apps/web/templates/web/customers.html:57
-msgid "Registered company name"
-msgstr "Geregistreerde maatskappynaam"
-
-#: apps/web/templates/web/customers.html:59
-msgid "Industry"
-msgstr "Bedryf"
-
 #: apps/web/templates/web/customers.html:60
 msgid "General email"
 msgstr "Algemene e-pos"
@@ -595,10 +1508,6 @@ msgstr "Algemene e-pos"
 #: apps/web/templates/web/customers.html:61
 msgid "Main telephone"
 msgstr "Hooftelefoon"
-
-#: apps/web/templates/web/customers.html:62
-msgid "City"
-msgstr "Stad"
 
 #: apps/web/templates/web/customers.html:63
 msgid "Our vendor number with them"
@@ -872,11 +1781,6 @@ msgstr "Meld aan"
 msgid "Manager dashboards"
 msgstr "Bestuurder-kontroleskerms"
 
-#: apps/web/templates/web/login.html:16 apps/web/templates/web/profile.html:44
-#: apps/web/templates/web/profile.html:134
-msgid "Email"
-msgstr "E-pos"
-
 #: apps/web/templates/web/login.html:18
 msgid "Password"
 msgstr "Wagwoord"
@@ -938,11 +1842,6 @@ msgstr "Voeg 'n lid by"
 msgid "Email (their sign-in)"
 msgstr "E-pos (hul aanmelding)"
 
-#: apps/web/templates/web/people.html:38 apps/web/templates/web/people.html:73
-#: apps/web/templates/web/profile.html:123
-msgid "Role"
-msgstr "Rol"
-
 #: apps/web/templates/web/people.html:40
 msgid "Choose a role…"
 msgstr "Kies 'n rol…"
@@ -956,20 +1855,6 @@ msgstr "Voornaam"
 #: apps/web/templates/web/profile.html:70
 msgid "Last name"
 msgstr "Van"
-
-#: apps/web/templates/web/people.html:53 apps/web/templates/web/people.html:73
-#: apps/web/templates/web/profile.html:124
-msgid "Job title"
-msgstr "Postitel"
-
-#: apps/web/templates/web/people.html:57 apps/web/templates/web/profile.html:43
-#: apps/web/templates/web/profile.html:75
-msgid "Mobile"
-msgstr "Sel"
-
-#: apps/web/templates/web/people.html:61
-msgid "Add member"
-msgstr "Voeg lid by"
 
 #: apps/web/templates/web/people.html:63
 msgid ""
@@ -1076,10 +1961,6 @@ msgstr "E-pos (hul aanmelding)"
 msgid "Ask an administrator to change your email"
 msgstr "Vra 'n administrateur om jou e-pos te verander"
 
-#: apps/web/templates/web/profile.html:82
-msgid "Language"
-msgstr "Taal"
-
 #: apps/web/templates/web/profile.html:84
 msgid "Use company / country default"
 msgstr "Gebruik maatskappy- / landverstek"
@@ -1095,10 +1976,6 @@ msgstr ""
 msgid "Save profile"
 msgstr "Stoor profiel"
 
-#: apps/web/templates/web/profile.html:91
-msgid "Cancel"
-msgstr "Finansies"
-
 #: apps/web/templates/web/profile.html:94
 msgid "Remove your profile photo?"
 msgstr "Verwyder jou profielfoto?"
@@ -1110,11 +1987,6 @@ msgstr "Verwyder foto"
 #: apps/web/templates/web/profile.html:118
 msgid "Where you stand"
 msgstr "Waar jy staan"
-
-#: apps/web/templates/web/profile.html:122
-#: apps/web/templates/web/settings.html:12
-msgid "Company"
-msgstr "Maatskappy"
 
 #: apps/web/templates/web/profile.html:125
 msgid "Open jobs"
@@ -1169,10 +2041,6 @@ msgstr "%(n)s in totaal."
 #: apps/web/templates/web/projects.html:10
 msgid "+ New project"
 msgstr "+ Nuwe projek"
-
-#: apps/web/templates/web/projects.html:14
-msgid "Number"
-msgstr "Nommer"
 
 #: apps/web/templates/web/projects.html:14
 msgid "Title"
@@ -1254,10 +2122,6 @@ msgstr "Kwotasienommer…"
 msgid "Any customer"
 msgstr "Enige kliënt"
 
-#: apps/web/templates/web/quotations.html:67
-msgid "Type"
-msgstr "Tipe"
-
 #: apps/web/templates/web/quotations.html:68
 msgid "Value"
 msgstr "Waarde"
@@ -1273,10 +2137,6 @@ msgstr "Geldig tot"
 #: apps/web/templates/web/quotations.html:79
 msgid "Some lines have no cost captured"
 msgstr "Sommige reëls het geen koste vasgelê nie"
-
-#: apps/web/templates/web/quotations.html:83
-msgid "expired"
-msgstr "verval"
 
 #: apps/web/templates/web/quotations.html:85
 msgid "No quotations yet."
@@ -1314,10 +2174,6 @@ msgstr ""
 "Alles wat Lulaworks vir jou besigheid opstel — stel dit een keer hier en "
 "elke skerm en dokument lees daaruit."
 
-#: apps/web/templates/web/settings.html:15
-msgid "Company profile"
-msgstr "Maatskappyprofiel"
-
 #: apps/web/templates/web/settings.html:16
 msgid "Name, registration, address, branding & logo — read by every document."
 msgstr ""
@@ -1330,10 +2186,6 @@ msgstr "Besigheidsure"
 #: apps/web/templates/web/settings.html:19
 msgid "Operating days and times."
 msgstr "Bedryfsdae en -tye."
-
-#: apps/web/templates/web/settings.html:21
-msgid "Banking"
-msgstr "Bankbesonderhede"
 
 #: apps/web/templates/web/settings.html:22
 msgid "Bank accounts shown on invoices for payment."
@@ -1374,10 +2226,6 @@ msgstr "LulaAI-instellings"
 #: apps/web/templates/web/settings.html:39
 msgid "AI provider status, model, health and usage."
 msgstr "KI-verskafferstatus, model, gesondheid en gebruik."
-
-#: apps/web/templates/web/settings.html:41
-msgid "Email history"
-msgstr "E-posgeskiedenis"
 
 #: apps/web/templates/web/settings.html:42
 msgid "Every email sent, delivery status and resend."

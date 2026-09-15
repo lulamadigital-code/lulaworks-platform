@@ -1,161 +1,155 @@
 {% extends "web/base.html" %}
-{% block title %}Company{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Company" %}{% endblock %}
 {% block content %}
 
 {% with missing=request.user.active_company.setup_missing %}
 {% if missing %}
 <div class="card" style="border-left:4px solid var(--orange,#fdab3d);border-radius:0 var(--r) var(--r) 0;margin-bottom:16px;background:var(--orange-t,#fff3e2);">
-  <strong>Finish setting up your company to start issuing documents</strong>
-  <p class="muted" style="margin:6px 0 8px;">Every quotation and invoice you send
-    pulls from here. A few essentials are still missing:</p>
+  <strong>{% trans "Finish setting up your company to start issuing documents" %}</strong>
+  <p class="muted" style="margin:6px 0 8px;">{% trans "Every quotation and invoice you send pulls from here. A few essentials are still missing:" %}</p>
   <ul style="margin:0;padding-left:18px;font-size:13.5px;">
     {% for item in missing %}<li>{{ item }}</li>{% endfor %}
   </ul>
-  <p class="muted" style="margin:8px 0 0;font-size:12.5px;">Fill these in below (and
-    add your logo &amp; banking under the tabs). You'll have full access as soon as
-    they're saved.</p>
+  <p class="muted" style="margin:8px 0 0;font-size:12.5px;">{% blocktrans %}Fill these in below (and add your logo &amp; banking under the tabs). You'll have full access as soon as they're saved.{% endblocktrans %}</p>
 </div>
 {% endif %}
 {% endwith %}
 
 <div class="pagehead">
   <div>
-    <h1>Company profile</h1>
-    <p class="sub" style="margin:0;">Your identity inside Lulaworks. Entered once here,
-      then read by every quotation, invoice, purchase order and generated document.</p>
+    <h1>{% trans "Company profile" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "Your identity inside Lulaworks. Entered once here, then read by every quotation, invoice, purchase order and generated document." %}</p>
   </div>
   <span class="chip {% if score.overall >= 80 %}ok{% elif score.overall >= 40 %}warn{% else %}bad{% endif %}">
-    {{ score.overall }}% complete</span>
+    {% blocktrans with pct=score.overall %}{{ pct }}% complete{% endblocktrans %}</span>
 </div>
 
 {# ── Tools: links to the pages these settings live on (not fields on this page) ── #}
 <div class="filterbar" style="gap:8px;margin-bottom:18px;flex-wrap:wrap;">
-  <a class="btn ghost" href="{% url 'web:doc_templates' %}">🎨 Document Designer</a>
-  <a class="btn ghost" href="{% url 'web:email_history' %}">✉ Email history</a>
-  <a class="btn ghost" href="{% url 'web:company_hours_page' %}">🕒 Working hours</a>
-  <a class="btn ghost" href="{% url 'web:company_tax' %}">🧾 Tax settings</a>
+  <a class="btn ghost" href="{% url 'web:doc_templates' %}">🎨 {% trans "Document Designer" %}</a>
+  <a class="btn ghost" href="{% url 'web:email_history' %}">✉ {% trans "Email history" %}</a>
+  <a class="btn ghost" href="{% url 'web:company_hours_page' %}">🕒 {% trans "Working hours" %}</a>
+  <a class="btn ghost" href="{% url 'web:company_tax' %}">🧾 {% trans "Tax settings" %}</a>
 </div>
 
 {% if not company.email %}
 <div class="card" style="border-left:4px solid var(--orange);border-radius:0 var(--r) var(--r) 0;background:var(--orange-t);">
-  <strong style="color:#a8620a;">⚠ Add your company email</strong>
-  <p style="margin:6px 0 0;font-size:13.5px;">Without it, when a customer replies to a
-    quotation or invoice you send, the reply won't reach you. Edit
-    <strong>Contact details</strong> below to set it.</p>
+  <strong style="color:#a8620a;">⚠ {% trans "Add your company email" %}</strong>
+  <p style="margin:6px 0 0;font-size:13.5px;">{% blocktrans %}Without it, when a customer replies to a quotation or invoice you send, the reply won't reach you. Edit <strong>Contact details</strong> below to set it.{% endblocktrans %}</p>
 </div>
 {% endif %}
 
 {% if score.blocks %}
 <div class="card" style="border-left:4px solid var(--red);border-radius:0 var(--r) var(--r) 0;">
-  <strong style="color:#c22a41;">What is missing actually costs you</strong>
+  <strong style="color:#c22a41;">{% trans "What is missing actually costs you" %}</strong>
   <ul style="margin:10px 0 0;padding-left:20px;">{% for b in score.blocks %}<li>{{ b }}</li>{% endfor %}</ul>
 </div>
 {% endif %}
 
 {% if expiring %}
 <div class="card" style="border-left:4px solid var(--orange);border-radius:0 var(--r) var(--r) 0;">
-  <strong style="color:#b9711a;">Registrations lapsing</strong>
+  <strong style="color:#b9711a;">{% trans "Registrations lapsing" %}</strong>
   <ul style="margin:10px 0 0;padding-left:20px;">
-    {% for e in expiring %}<li>{{ e.name }} — {% if e.expired %}<strong>expired</strong>{% else %}expires{% endif %} {{ e.expires|date:"d M Y" }}</li>{% endfor %}
+    {% for e in expiring %}<li>{{ e.name }} — {% if e.expired %}<strong>{% trans "expired" %}</strong>{% else %}{% trans "expires" %}{% endif %} {{ e.expires|date:"d M Y" }}</li>{% endfor %}
   </ul>
 </div>
 {% endif %}
 
 {% if not can_edit %}
-<div class="card"><p class="muted" style="margin:0;">You can view the company profile
-  but not change it — that needs the company-manage permission.</p></div>
+<div class="card"><p class="muted" style="margin:0;">{% trans "You can view the company profile but not change it — that needs the company-manage permission." %}</p></div>
 {% endif %}
 
 {# ── 1 · Identity ───────────────────────────────────────────────────────── #}
 <div class="card">
-  <div class="sec-head"><strong>Company identity</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="identity">✎ Edit</button>{% endif %}</div>
+  <div class="sec-head"><strong>{% trans "Company identity" %}</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="identity">✎ {% trans "Edit" %}</button>{% endif %}</div>
   <div id="view-identity">
     <table class="kv">
-      <tr><td class="muted">Registered name</td><td>{{ company.name|default:"—" }}</td></tr>
-      <tr><td class="muted">Trading name</td><td>{{ company.trading_name|default:"—" }}</td></tr>
-      <tr><td class="muted">Registration no.</td><td>{{ company.registration_no|default:"—" }}</td></tr>
-      <tr><td class="muted">Tax reference</td><td>{{ company.tax_reference_no|default:"—" }}</td></tr>
-      <tr><td class="muted">VAT number</td><td>{{ company.vat_no|default:"—" }}</td></tr>
-      <tr><td class="muted">Company type</td><td>{{ company.company_type|default:"—" }}</td></tr>
-      <tr><td class="muted">Industry</td><td>{{ company.industry|default:"—" }}</td></tr>
-      <tr><td class="muted">Year established</td><td>{{ company.year_established|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Registered name" %}</td><td>{{ company.name|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Trading name" %}</td><td>{{ company.trading_name|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Registration no." %}</td><td>{{ company.registration_no|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Tax reference" %}</td><td>{{ company.tax_reference_no|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "VAT number" %}</td><td>{{ company.vat_no|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Company type" %}</td><td>{{ company.company_type|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Industry" %}</td><td>{{ company.industry|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Year established" %}</td><td>{{ company.year_established|default:"—" }}</td></tr>
     </table>
   </div>
   <div id="form-identity" style="display:none;">
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="identity">
       <div class="two">
-        <div><label>Registered company name</label><input type="text" name="name" value="{{ company.name }}" required></div>
-        <div><label>Trading name</label><input type="text" name="trading_name" value="{{ company.trading_name }}"></div>
-        <div><label>Company registration number</label><input type="text" name="registration_no" value="{{ company.registration_no }}" placeholder="2019/123456/07"></div>
-        <div><label>Tax reference number</label><input type="text" name="tax_reference_no" value="{{ company.tax_reference_no }}"></div>
-        <div><label>VAT number</label><input type="text" name="vat_no" value="{{ company.vat_no }}" placeholder="4123456789"></div>
-        <div><label>Company type</label>
+        <div><label>{% trans "Registered company name" %}</label><input type="text" name="name" value="{{ company.name }}" required></div>
+        <div><label>{% trans "Trading name" %}</label><input type="text" name="trading_name" value="{{ company.trading_name }}"></div>
+        <div><label>{% trans "Company registration number" %}</label><input type="text" name="registration_no" value="{{ company.registration_no }}" placeholder="2019/123456/07"></div>
+        <div><label>{% trans "Tax reference number" %}</label><input type="text" name="tax_reference_no" value="{{ company.tax_reference_no }}"></div>
+        <div><label>{% trans "VAT number" %}</label><input type="text" name="vat_no" value="{{ company.vat_no }}" placeholder="4123456789"></div>
+        <div><label>{% trans "Company type" %}</label>
           <select name="company_type">
             <option value="">—</option>
-            <option value="Pty Ltd" {% if company.company_type == 'Pty Ltd' %}selected{% endif %}>(Pty) Ltd</option>
-            <option value="CC" {% if company.company_type == 'CC' %}selected{% endif %}>Close Corporation</option>
-            <option value="Sole Proprietor" {% if company.company_type == 'Sole Proprietor' %}selected{% endif %}>Sole Proprietor</option>
-            <option value="Partnership" {% if company.company_type == 'Partnership' %}selected{% endif %}>Partnership</option>
-            <option value="Trust" {% if company.company_type == 'Trust' %}selected{% endif %}>Trust</option>
-            <option value="NPC" {% if company.company_type == 'NPC' %}selected{% endif %}>Non-Profit Company</option>
+            <option value="Pty Ltd" {% if company.company_type == 'Pty Ltd' %}selected{% endif %}>{% trans "(Pty) Ltd" %}</option>
+            <option value="CC" {% if company.company_type == 'CC' %}selected{% endif %}>{% trans "Close Corporation" %}</option>
+            <option value="Sole Proprietor" {% if company.company_type == 'Sole Proprietor' %}selected{% endif %}>{% trans "Sole Proprietor" %}</option>
+            <option value="Partnership" {% if company.company_type == 'Partnership' %}selected{% endif %}>{% trans "Partnership" %}</option>
+            <option value="Trust" {% if company.company_type == 'Trust' %}selected{% endif %}>{% trans "Trust" %}</option>
+            <option value="NPC" {% if company.company_type == 'NPC' %}selected{% endif %}>{% trans "Non-Profit Company" %}</option>
           </select></div>
-        <div><label>Industry</label><input type="text" name="industry" value="{{ company.industry }}" placeholder="Mechanical contracting"></div>
-        <div><label>Year established</label><input type="number" name="year_established" min="1800" max="2100" value="{{ company.year_established|default_if_none:'' }}"></div>
+        <div><label>{% trans "Industry" %}</label><input type="text" name="industry" value="{{ company.industry }}" placeholder="Mechanical contracting"></div>
+        <div><label>{% trans "Year established" %}</label><input type="number" name="year_established" min="1800" max="2100" value="{{ company.year_established|default_if_none:'' }}"></div>
       </div>
-      <div class="secbtns"><button class="btn" type="submit">Save identity</button>
-        <button class="btn ghost" type="button" data-cancel="identity">Cancel</button></div>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Save identity" %}</button>
+        <button class="btn ghost" type="button" data-cancel="identity">{% trans "Cancel" %}</button></div>
     </form>
   </div>
 </div>
 
 {# ── 2 · Contact ────────────────────────────────────────────────────────── #}
 <div class="card">
-  <div class="sec-head"><strong>Contact details</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="contact">✎ Edit</button>{% endif %}</div>
+  <div class="sec-head"><strong>{% trans "Contact details" %}</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="contact">✎ {% trans "Edit" %}</button>{% endif %}</div>
   <div id="view-contact">
     <table class="kv">
-      <tr><td class="muted">Primary email</td><td>{{ company.email|default:"—" }}</td></tr>
-      <tr><td class="muted">Primary phone</td><td>{{ company.phone|default:"—" }}</td></tr>
-      <tr><td class="muted">Mobile</td><td>{{ company.mobile|default:"—" }}</td></tr>
-      <tr><td class="muted">WhatsApp</td><td>{{ company.whatsapp|default:"—" }}</td></tr>
-      <tr><td class="muted">Emergency / after-hours</td><td>{{ company.emergency_phone|default:"—" }}</td></tr>
-      <tr><td class="muted">Website</td><td>{{ company.website|default:"—" }}</td></tr>
-      <tr><td class="muted">Social</td><td>{% if company.linkedin %}LinkedIn {% endif %}{% if company.facebook %}Facebook {% endif %}{% if company.twitter %}X {% endif %}{% if not company.linkedin and not company.facebook and not company.twitter %}—{% endif %}</td></tr>
+      <tr><td class="muted">{% trans "Primary email" %}</td><td>{{ company.email|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Primary phone" %}</td><td>{{ company.phone|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Mobile" %}</td><td>{{ company.mobile|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "WhatsApp" %}</td><td>{{ company.whatsapp|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Emergency / after-hours" %}</td><td>{{ company.emergency_phone|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Website" %}</td><td>{{ company.website|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Social" %}</td><td>{% if company.linkedin %}LinkedIn {% endif %}{% if company.facebook %}Facebook {% endif %}{% if company.twitter %}X {% endif %}{% if not company.linkedin and not company.facebook and not company.twitter %}—{% endif %}</td></tr>
     </table>
   </div>
   <div id="form-contact" style="display:none;">
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="contact">
       <div class="two">
-        <div><label>Primary email <span style="color:var(--red);">*</span></label>
+        <div><label>{% trans "Primary email" %} <span style="color:var(--red);">*</span></label>
           <input type="email" name="email" value="{{ company.email }}" required placeholder="accounts@yourcompany.co.za">
-          <p class="muted" style="font-size:11.5px;margin:4px 0 0;">Required — the address customers reply to on your documents.</p></div>
-        <div><label>Primary phone</label>{% include "web/_phone_field.html" with name="phone" value=company.phone default_cc=company.country_code|default:"ZA" countries=countries %}</div>
-        <div><label>Secondary phone</label>{% include "web/_phone_field.html" with name="phone_secondary" value=company.phone_secondary default_cc=company.country_code|default:"ZA" countries=countries %}</div>
-        <div><label>Mobile</label>{% include "web/_phone_field.html" with name="mobile" value=company.mobile default_cc=company.country_code|default:"ZA" countries=countries %}</div>
-        <div><label>WhatsApp</label>{% include "web/_phone_field.html" with name="whatsapp" value=company.whatsapp default_cc=company.country_code|default:"ZA" countries=countries %}</div>
-        <div><label>Emergency / after-hours</label>{% include "web/_phone_field.html" with name="emergency_phone" value=company.emergency_phone default_cc=company.country_code|default:"ZA" countries=countries %}</div>
-        <div><label>Website</label><input type="url" name="website" value="{{ company.website }}"></div>
+          <p class="muted" style="font-size:11.5px;margin:4px 0 0;">{% trans "Required — the address customers reply to on your documents." %}</p></div>
+        <div><label>{% trans "Primary phone" %}</label>{% include "web/_phone_field.html" with name="phone" value=company.phone default_cc=company.country_code|default:"ZA" countries=countries %}</div>
+        <div><label>{% trans "Secondary phone" %}</label>{% include "web/_phone_field.html" with name="phone_secondary" value=company.phone_secondary default_cc=company.country_code|default:"ZA" countries=countries %}</div>
+        <div><label>{% trans "Mobile" %}</label>{% include "web/_phone_field.html" with name="mobile" value=company.mobile default_cc=company.country_code|default:"ZA" countries=countries %}</div>
+        <div><label>{% trans "WhatsApp" %}</label>{% include "web/_phone_field.html" with name="whatsapp" value=company.whatsapp default_cc=company.country_code|default:"ZA" countries=countries %}</div>
+        <div><label>{% trans "Emergency / after-hours" %}</label>{% include "web/_phone_field.html" with name="emergency_phone" value=company.emergency_phone default_cc=company.country_code|default:"ZA" countries=countries %}</div>
+        <div><label>{% trans "Website" %}</label><input type="url" name="website" value="{{ company.website }}"></div>
         <div><label>LinkedIn</label><input type="text" name="linkedin" value="{{ company.linkedin }}"></div>
         <div><label>Facebook</label><input type="text" name="facebook" value="{{ company.facebook }}"></div>
-        <div><label>X (Twitter)</label><input type="text" name="twitter" value="{{ company.twitter }}"></div>
+        <div><label>{% trans "X (Twitter)" %}</label><input type="text" name="twitter" value="{{ company.twitter }}"></div>
       </div>
-      <div class="secbtns"><button class="btn" type="submit">Save contact details</button>
-        <button class="btn ghost" type="button" data-cancel="contact">Cancel</button></div>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Save contact details" %}</button>
+        <button class="btn ghost" type="button" data-cancel="contact">{% trans "Cancel" %}</button></div>
     </form>
   </div>
 </div>
 
 {# ── 3 · Physical address ───────────────────────────────────────────────── #}
 <div class="card">
-  <div class="sec-head"><strong>Physical address</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="address">✎ Edit</button>{% endif %}</div>
+  <div class="sec-head"><strong>{% trans "Physical address" %}</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="address">✎ {% trans "Edit" %}</button>{% endif %}</div>
   <div id="view-address">
     {% if company.street_address or company.city %}
     <p style="margin:0;line-height:1.6;">{{ company.street_address }}{% if company.suburb %}, {{ company.suburb }}{% endif %}<br>
       {{ company.city }}{% if company.province %}, {{ company.province }}{% endif %} {{ company.postal_code }}<br>
       {{ company.country }}</p>
-    {% else %}<p class="muted" style="margin:0;">No physical address set.</p>{% endif %}
+    {% else %}<p class="muted" style="margin:0;">{% trans "No physical address set." %}</p>{% endif %}
   </div>
   <div id="form-address" style="display:none;">
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="address">
@@ -171,66 +165,65 @@
         {% endif %}{% endfor %}
         <div><label id="phys-postal-label">{{ address_rule.postal_label }}</label>
           <input type="text" name="postal_code" value="{{ address_rule.postal_value }}"{% if address_rule.postal_hint %} title="{{ address_rule.postal_hint }}"{% endif %}></div>
-        <div><label>Country</label>
+        <div><label>{% trans "Country" %}</label>
           <select name="country_code" id="country-select"
                   style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg,#f7f8fa);color:var(--ink);">
-            <option value="">Select a country…</option>
+            <option value="">{% trans "Select a country…" %}</option>
             {% for c in countries %}<option value="{{ c.code }}" {% if c.code == company.country_code %}selected{% endif %}>{{ c.flag_emoji }} {{ c.name }}</option>{% endfor %}
           </select>
         </div>
       </div>
       <div id="country-change-note" class="chip warn" hidden style="margin:10px 0 0;display:block;padding:8px 12px;font-size:12px;line-height:1.5;"></div>
-      <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Currency
-        <strong id="currency-display" style="color:var(--ink);">{{ currency_label }}</strong> — set automatically from your company country.
-        We check the address format for your country; we don't verify that it physically exists.</p>
-      <div class="secbtns"><button class="btn" type="submit">Save address</button>
-        <button class="btn ghost" type="button" data-cancel="address">Cancel</button></div>
+      <p class="muted" style="margin:10px 0 0;font-size:12.5px;">{% trans "Currency" %}
+        <strong id="currency-display" style="color:var(--ink);">{{ currency_label }}</strong> {% trans "— set automatically from your company country. We check the address format for your country; we don't verify that it physically exists." %}</p>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Save address" %}</button>
+        <button class="btn ghost" type="button" data-cancel="address">{% trans "Cancel" %}</button></div>
     </form>
   </div>
 </div>
 
 {# ── 4 · Postal address ─────────────────────────────────────────────────── #}
 <div class="card">
-  <div class="sec-head"><strong>Postal address</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="postal">✎ Edit</button>{% endif %}</div>
+  <div class="sec-head"><strong>{% trans "Postal address" %}</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="postal">✎ {% trans "Edit" %}</button>{% endif %}</div>
   <div id="view-postal">
     {% if company.postal_same_as_physical %}
-    <p class="muted" style="margin:0;">Same as the physical address.</p>
+    <p class="muted" style="margin:0;">{% trans "Same as the physical address." %}</p>
     {% elif company.postal_address %}
     <p style="margin:0;line-height:1.6;">{{ company.postal_address }}<br>
       {{ company.postal_city }} {{ company.postal_code_postal }}<br>{{ company.postal_country }}</p>
-    {% else %}<p class="muted" style="margin:0;">No postal address set.</p>{% endif %}
+    {% else %}<p class="muted" style="margin:0;">{% trans "No postal address set." %}</p>{% endif %}
   </div>
   <div id="form-postal" style="display:none;">
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="postal">
-      <label class="inline"><input type="checkbox" name="postal_same_as_physical" value="1" {% if company.postal_same_as_physical %}checked{% endif %}> Same as physical address</label>
+      <label class="inline"><input type="checkbox" name="postal_same_as_physical" value="1" {% if company.postal_same_as_physical %}checked{% endif %}> {% trans "Same as physical address" %}</label>
       <div class="two" style="margin-top:12px;">
-        <div><label>Postal address <span style="color:var(--red);">*</span></label><input type="text" name="postal_address" value="{{ company.postal_address }}"></div>
-        <div><label>City <span style="color:var(--red);">*</span></label><input type="text" name="postal_city" value="{{ company.postal_city }}"></div>
+        <div><label>{% trans "Postal address" %} <span style="color:var(--red);">*</span></label><input type="text" name="postal_address" value="{{ company.postal_address }}"></div>
+        <div><label>{% trans "City" %} <span style="color:var(--red);">*</span></label><input type="text" name="postal_city" value="{{ company.postal_city }}"></div>
         <div><label>{{ postal_rule.postal_label }}</label><input type="text" name="postal_code_postal" value="{{ company.postal_code_postal }}"{% if postal_rule.postal_hint %} title="{{ postal_rule.postal_hint }}"{% endif %}></div>
-        <div><label>Country <span style="color:var(--red);">*</span></label>
+        <div><label>{% trans "Country" %} <span style="color:var(--red);">*</span></label>
           <select name="postal_country" style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg,#f7f8fa);color:var(--ink);">
-            <option value="">Select a country…</option>
+            <option value="">{% trans "Select a country…" %}</option>
             {% for c in countries %}<option value="{{ c.name }}" {% if c.name == company.postal_country %}selected{% endif %}>{{ c.flag_emoji }} {{ c.name }}</option>{% endfor %}
           </select>
         </div>
       </div>
-      <div class="secbtns"><button class="btn" type="submit">Save postal address</button>
-        <button class="btn ghost" type="button" data-cancel="postal">Cancel</button></div>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Save postal address" %}</button>
+        <button class="btn ghost" type="button" data-cancel="postal">{% trans "Cancel" %}</button></div>
     </form>
   </div>
 </div>
 
 {# ── 5 · Banking (table + toggle add form) ──────────────────────────────── #}
 <div class="card" id="banking" style="scroll-margin-top:20px;">
-  <div class="sec-head"><strong>Banking</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="bank">+ Add account</button>{% endif %}</div>
+  <div class="sec-head"><strong>{% trans "Banking" %}</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="bank">{% trans "+ Add account" %}</button>{% endif %}</div>
   <div style="overflow-x:auto;">
     <table>
-      <tr><th>Bank</th><th>Account name</th><th>Number</th><th>Branch</th><th>Currency</th><th>Default</th><th></th></tr>
+      <tr><th>{% trans "Bank" %}</th><th>{% trans "Account name" %}</th><th>{% trans "Number" %}</th><th>{% trans "Branch" %}</th><th>{% trans "Currency" %}</th><th>{% trans "Default" %}</th><th></th></tr>
       {% for a in bank_accounts %}
       <tr>
-        <td><strong>{{ a.bank_name }}</strong>{% if a.needs_review %} <span class="chip warn" title="We couldn't match this to a known bank — please re-add it from the picker" style="font-size:11px;">Review</span>{% endif %}{% if a.label %}<br><span class="muted" style="font-size:12px;">{{ a.label }}</span>{% endif %}</td>
+        <td><strong>{{ a.bank_name }}</strong>{% if a.needs_review %} <span class="chip warn" title="{% trans 'We couldn’t match this to a known bank — please re-add it from the picker' %}" style="font-size:11px;">{% trans "Review" %}</span>{% endif %}{% if a.label %}<br><span class="muted" style="font-size:12px;">{{ a.label }}</span>{% endif %}</td>
         <td class="muted">{{ a.account_name }}</td><td class="muted">{{ a.masked_number }}</td>
         <td class="muted">{{ a.branch_code|default:"—" }}</td><td class="muted">{{ a.currency }}</td>
         <td>{% if can_edit %}
@@ -238,40 +231,40 @@
           <form method="post" action="{% url 'web:company_bank' %}" style="display:inline;">{% csrf_token %}
             <input type="hidden" name="action" value="default">
             <input type="hidden" name="account" value="{{ a.id }}">
-            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;" title="Use this account on invoices &amp; quotes">
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;" title="{% trans 'Use this account on invoices &amp; quotes' %}">
               <input type="radio" name="default_bank" {% if a.is_default %}checked{% endif %} onchange="this.form.submit()">
-              {% if a.is_default %}<span class="chip ok">Default</span>{% endif %}
+              {% if a.is_default %}<span class="chip ok">{% trans "Default" %}</span>{% endif %}
             </label>
           </form>
-          {% else %}{% if a.is_default %}<span class="chip ok">Default</span>{% endif %}{% endif %}</td>
+          {% else %}{% if a.is_default %}<span class="chip ok">{% trans "Default" %}</span>{% endif %}{% endif %}</td>
         <td class="right nowrap">{% if can_edit %}
-          <form method="post" action="{% url 'web:company_bank' %}" style="display:inline;" data-confirm="Remove {{ a.bank_name|escapejs }} {{ a.masked_number|escapejs }}?">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="account" value="{{ a.id }}"><button class="btn ghost" type="submit">Remove</button></form>
+          <form method="post" action="{% url 'web:company_bank' %}" style="display:inline;" data-confirm="{% blocktrans with b=a.bank_name|escapejs m=a.masked_number|escapejs %}Remove {{ b }} {{ m }}?{% endblocktrans %}">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="account" value="{{ a.id }}"><button class="btn ghost" type="submit">{% trans "Remove" %}</button></form>
         {% endif %}</td>
       </tr>
-      {% empty %}<tr><td colspan="7" class="muted" style="padding:18px;">No bank account yet — invoices will go out with no way for a client to pay you.</td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="7" class="muted" style="padding:18px;">{% trans "No bank account yet — invoices will go out with no way for a client to pay you." %}</td></tr>{% endfor %}
     </table>
   </div>
   {% if can_edit %}
   <div id="form-bank" style="{% if bank_accounts %}display:none;{% endif %}border-top:1px solid var(--line);margin-top:14px;padding-top:16px;">
     <form method="post" action="{% url 'web:company_bank' %}">{% csrf_token %}
       <div class="two">
-        <div><label>Bank name</label>
+        <div><label>{% trans "Bank name" %}</label>
           {# Country-aware bank directory (SA banks first). Any bank can also be typed. #}
           <input type="text" name="bank_name" id="bank-name" list="bank-list" required autocomplete="off"
-                 placeholder="Select or type your bank" oninput="onBankPick(this.value)">
+                 placeholder="{% trans 'Select or type your bank' %}" oninput="onBankPick(this.value)">
           <datalist id="bank-list">
             {% for b in banking.banks %}<option value="{{ b.name }}"></option>{% endfor %}
           </datalist>
         </div>
-        <div><label>Account name</label><input type="text" name="account_name" placeholder="Account holder name"></div>
+        <div><label>{% trans "Account name" %}</label><input type="text" name="account_name" placeholder="{% trans 'Account holder name' %}"></div>
         {# Fields are driven by the selected country's banking rule. #}
         <span id="banking-fields" style="display:contents;">
         {% for f in banking.fields %}
-        <div><label>{{ f.label }}{% if not f.required %} <span class="muted" style="font-weight:400;">(optional)</span>{% endif %}</label>
-          <input type="text" name="{{ f.key }}"{% if f.required %} required{% endif %}{% if f.key == 'branch_code' %} id="branch-code" placeholder="Auto-filled when you pick your bank"{% endif %}{% if f.hint %} title="{{ f.hint }}"{% endif %}></div>
+        <div><label>{{ f.label }}{% if not f.required %} <span class="muted" style="font-weight:400;">{% trans "(optional)" %}</span>{% endif %}</label>
+          <input type="text" name="{{ f.key }}"{% if f.required %} required{% endif %}{% if f.key == 'branch_code' %} id="branch-code" placeholder="{% trans 'Auto-filled when you pick your bank' %}"{% endif %}{% if f.hint %} title="{{ f.hint }}"{% endif %}></div>
         {% endfor %}
         </span>
-        <div><label>Account type</label><select name="account_type"><option value="cheque">Cheque / Current</option><option value="savings">Savings</option><option value="transmission">Transmission</option><option value="foreign">Foreign currency</option></select></div>
+        <div><label>{% trans "Account type" %}</label><select name="account_type"><option value="cheque">{% trans "Cheque / Current" %}</option><option value="savings">{% trans "Savings" %}</option><option value="transmission">{% trans "Transmission" %}</option><option value="foreign">{% trans "Foreign currency" %}</option></select></div>
       </div>
       <script>
         // Picking a bank with a known branch code (SA universal codes) fills the
@@ -283,8 +276,8 @@
           if (code && el) el.value = code;
         }
       </script>
-      <div class="secbtns"><button class="btn" type="submit">Add bank account</button>
-        <button class="btn ghost" type="button" data-cancel="bank">Cancel</button></div>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Add bank account" %}</button>
+        <button class="btn ghost" type="button" data-cancel="bank">{% trans "Cancel" %}</button></div>
     </form>
   </div>
   {% endif %}
@@ -292,38 +285,38 @@
 
 {# ── 6 · Company contacts (table + toggle add form) ─────────────────────── #}
 <div class="card">
-  <div class="sec-head"><strong>Company Members</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="contactp">+ Add member</button>{% endif %}</div>
+  <div class="sec-head"><strong>{% trans "Company Members" %}</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="contactp">{% trans "+ Add member" %}</button>{% endif %}</div>
   <div style="overflow-x:auto;">
     <table>
-      <tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Prefers</th><th></th></tr>
+      <tr><th>{% trans "Name" %}</th><th>{% trans "Role" %}</th><th>{% trans "Email" %}</th><th>{% trans "Phone" %}</th><th>{% trans "Prefers" %}</th><th></th></tr>
       {% for c in contacts %}
       <tr>
-        <td><strong>{{ c.full_name }}</strong>{% if c.is_primary %} <span class="chip ok">Primary</span>{% endif %}</td>
+        <td><strong>{{ c.full_name }}</strong>{% if c.is_primary %} <span class="chip ok">{% trans "Primary" %}</span>{% endif %}</td>
         <td class="muted">{{ c.job_title|default:"—" }}</td><td class="muted">{{ c.email|default:"—" }}</td>
         <td class="muted">{{ c.phone|default:c.mobile|default:"—" }}</td><td class="muted">{{ c.get_preferred_method_display }}</td>
         <td class="right nowrap">{% if can_edit %}
-          {% if not c.is_primary %}<form method="post" action="{% url 'web:company_contact' %}" style="display:inline;">{% csrf_token %}<input type="hidden" name="action" value="primary"><input type="hidden" name="contact" value="{{ c.id }}"><button class="btn ghost" type="submit">Make primary</button></form>{% endif %}
-          <form method="post" action="{% url 'web:company_contact' %}" style="display:inline;" data-confirm="Remove {{ c.full_name|escapejs }}?">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="contact" value="{{ c.id }}"><button class="btn ghost" type="submit">Remove</button></form>
+          {% if not c.is_primary %}<form method="post" action="{% url 'web:company_contact' %}" style="display:inline;">{% csrf_token %}<input type="hidden" name="action" value="primary"><input type="hidden" name="contact" value="{{ c.id }}"><button class="btn ghost" type="submit">{% trans "Make primary" %}</button></form>{% endif %}
+          <form method="post" action="{% url 'web:company_contact' %}" style="display:inline;" data-confirm="{% blocktrans with n=c.full_name|escapejs %}Remove {{ n }}?{% endblocktrans %}">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="contact" value="{{ c.id }}"><button class="btn ghost" type="submit">{% trans "Remove" %}</button></form>
         {% endif %}</td>
       </tr>
-      {% empty %}<tr><td colspan="6" class="muted" style="padding:18px;">No contacts yet. The primary contact is printed on outgoing documents.</td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="6" class="muted" style="padding:18px;">{% trans "No contacts yet. The primary contact is printed on outgoing documents." %}</td></tr>{% endfor %}
     </table>
   </div>
   {% if can_edit %}
   <div id="form-contactp" style="{% if contacts %}display:none;{% endif %}border-top:1px solid var(--line);margin-top:14px;padding-top:16px;">
     <form method="post" action="{% url 'web:company_contact' %}">{% csrf_token %}
       <div class="two">
-        <div><label>Full name</label><input type="text" name="full_name" required></div>
-        <div><label>Job title</label><input type="text" name="job_title" placeholder="Finance Manager"></div>
-        <div><label>Email</label><input type="email" name="email"></div>
-        <div><label>Phone</label>{% include "web/_phone_field.html" with name="phone" value="" default_cc=company.country_code|default:"ZA" countries=countries %}</div>
-        <div><label>Mobile</label>{% include "web/_phone_field.html" with name="mobile" value="" default_cc=company.country_code|default:"ZA" countries=countries %}</div>
-        <div><label>Extension</label><input type="text" name="extension"></div>
-        <div><label>Preferred contact method</label><select name="preferred_method"><option value="email">Email</option><option value="phone">Phone</option><option value="mobile">Mobile</option><option value="whatsapp">WhatsApp</option></select></div>
+        <div><label>{% trans "Full name" %}</label><input type="text" name="full_name" required></div>
+        <div><label>{% trans "Job title" %}</label><input type="text" name="job_title" placeholder="Finance Manager"></div>
+        <div><label>{% trans "Email" %}</label><input type="email" name="email"></div>
+        <div><label>{% trans "Phone" %}</label>{% include "web/_phone_field.html" with name="phone" value="" default_cc=company.country_code|default:"ZA" countries=countries %}</div>
+        <div><label>{% trans "Mobile" %}</label>{% include "web/_phone_field.html" with name="mobile" value="" default_cc=company.country_code|default:"ZA" countries=countries %}</div>
+        <div><label>{% trans "Extension" %}</label><input type="text" name="extension"></div>
+        <div><label>{% trans "Preferred contact method" %}</label><select name="preferred_method"><option value="email">{% trans "Email" %}</option><option value="phone">{% trans "Phone" %}</option><option value="mobile">{% trans "Mobile" %}</option><option value="whatsapp">WhatsApp</option></select></div>
       </div>
-      <div class="secbtns"><button class="btn" type="submit">Add member</button>
-        <button class="btn ghost" type="button" data-cancel="contactp">Cancel</button></div>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Add member" %}</button>
+        <button class="btn ghost" type="button" data-cancel="contactp">{% trans "Cancel" %}</button></div>
     </form>
   </div>
   {% endif %}
@@ -331,12 +324,12 @@
 
 {# ── 7 · Statutory ──────────────────────────────────────────────────────── #}
 <div class="card">
-  <div class="sec-head"><strong>Statutory registrations</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="compliance">✎ Edit</button>{% endif %}</div>
+  <div class="sec-head"><strong>{% trans "Statutory registrations" %}</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="compliance">✎ {% trans "Edit" %}</button>{% endif %}</div>
   {# Statutory registrations are driven by the company country's rules. #}
   <div id="view-compliance">
     <table class="kv">
-      <tr><td class="muted">VAT / GST registered</td><td>{% if compliance.vat_registered %}Yes{% else %}No{% endif %}</td></tr>
+      <tr><td class="muted">{% trans "VAT / GST registered" %}</td><td>{% if compliance.vat_registered %}{% trans "Yes" %}{% else %}{% trans "No" %}{% endif %}</td></tr>
       {% for r in statutory_rules %}
       <tr><td class="muted">{{ r.label }}</td><td>{{ r.value|default:"—" }}{% if r.authority and r.value %} <span class="muted" style="font-size:11.5px;">· {{ r.authority }}</span>{% endif %}</td></tr>
       {% endfor %}
@@ -345,50 +338,50 @@
   </div>
   <div id="form-compliance" style="display:none;">
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="compliance">
-      <label class="inline"><input type="checkbox" name="vat_registered" value="1" {% if compliance.vat_registered %}checked{% endif %}> VAT / GST registered</label>
+      <label class="inline"><input type="checkbox" name="vat_registered" value="1" {% if compliance.vat_registered %}checked{% endif %}> {% trans "VAT / GST registered" %}</label>
       <div class="two" style="margin-top:12px;" id="statutory-fields">
         {% for r in statutory_rules %}
-        <div><label>{{ r.label }}{% if not r.required %} <span class="muted" style="font-weight:400;">(optional)</span>{% endif %}</label>
+        <div><label>{{ r.label }}{% if not r.required %} <span class="muted" style="font-weight:400;">{% trans "(optional)" %}</span>{% endif %}</label>
           <input type="{% if r.field_type == 'date' %}date{% else %}text{% endif %}" name="stat__{{ r.key }}" value="{{ r.value }}" placeholder="{{ r.placeholder }}"{% if r.help_text %} title="{{ r.help_text }}"{% endif %}></div>
         {% endfor %}
       </div>
-      <label>ISO certifications (comma separated)</label>
+      <label>{% trans "ISO certifications (comma separated)" %}</label>
       <input type="text" name="iso_certifications" value="{{ compliance.iso_certifications|join:', ' }}" placeholder="ISO 9001, ISO 45001">
-      <label>Industry certifications (comma separated)</label>
+      <label>{% trans "Industry certifications (comma separated)" %}</label>
       <input type="text" name="industry_certifications" value="{{ compliance.industry_certifications|join:', ' }}">
-      <div class="secbtns"><button class="btn" type="submit">Save statutory details</button>
-        <button class="btn ghost" type="button" data-cancel="compliance">Cancel</button></div>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Save statutory details" %}</button>
+        <button class="btn ghost" type="button" data-cancel="compliance">{% trans "Cancel" %}</button></div>
     </form>
   </div>
 </div>
 
 {# Supporting documents (table + toggle upload) #}
 <div class="card">
-  <div class="sec-head"><strong>Supporting documents</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="doc">+ Upload</button>{% endif %}</div>
+  <div class="sec-head"><strong>{% trans "Supporting documents" %}</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="doc">{% trans "+ Upload" %}</button>{% endif %}</div>
   <div style="overflow-x:auto;">
     <table>
-      <tr><th>Document</th><th>Type</th><th>Expires</th><th></th></tr>
+      <tr><th>{% trans "Document" %}</th><th>{% trans "Type" %}</th><th>{% trans "Expires" %}</th><th></th></tr>
       {% for d in documents %}
       <tr>
         <td><a href="{{ d.file.url }}">{{ d.name }}</a></td><td class="muted">{{ d.doc_type|default:"—" }}</td>
-        <td>{% if d.expires_on %}<span class="chip {{ d.expiry_tone }}">{{ d.expiry_state }}</span> <span class="muted" style="font-size:11.5px;">{{ d.expires_on|date:"d M Y" }}</span>{% else %}<span class="muted">No expiry</span>{% endif %}</td>
-        <td class="right">{% if can_edit %}<form method="post" action="{% url 'web:company_document' %}" data-confirm="Remove {{ d.name|escapejs }}?">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="document" value="{{ d.id }}"><button class="btn ghost" type="submit">Remove</button></form>{% endif %}</td>
+        <td>{% if d.expires_on %}<span class="chip {{ d.expiry_tone }}">{{ d.expiry_state }}</span> <span class="muted" style="font-size:11.5px;">{{ d.expires_on|date:"d M Y" }}</span>{% else %}<span class="muted">{% trans "No expiry" %}</span>{% endif %}</td>
+        <td class="right">{% if can_edit %}<form method="post" action="{% url 'web:company_document' %}" data-confirm="{% blocktrans with n=d.name|escapejs %}Remove {{ n }}?{% endblocktrans %}">{% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="document" value="{{ d.id }}"><button class="btn ghost" type="submit">{% trans "Remove" %}</button></form>{% endif %}</td>
       </tr>
-      {% empty %}<tr><td colspan="4" class="muted" style="padding:18px;">No documents uploaded yet.{% if recommended_documents %}<br>Recommended for your country: {{ recommended_documents|join:", " }}.{% endif %}</td></tr>{% endfor %}
+      {% empty %}<tr><td colspan="4" class="muted" style="padding:18px;">{% trans "No documents uploaded yet." %}{% if recommended_documents %}<br>{% blocktrans with docs=recommended_documents|join:", " %}Recommended for your country: {{ docs }}.{% endblocktrans %}{% endif %}</td></tr>{% endfor %}
     </table>
   </div>
   {% if can_edit %}
   <div id="form-doc" style="{% if documents %}display:none;{% endif %}border-top:1px solid var(--line);margin-top:14px;padding-top:16px;">
     <form method="post" action="{% url 'web:company_document' %}" enctype="multipart/form-data">{% csrf_token %}
       <div class="two">
-        <div><label>File</label><input type="file" name="file" required></div>
-        <div><label>Name</label><input type="text" name="name" placeholder="Tax clearance certificate"></div>
-        <div><label>Type</label><input type="text" name="doc_type" placeholder="tax"></div>
-        <div><label>Expires on</label><input type="date" name="expires_on"></div>
+        <div><label>{% trans "File" %}</label><input type="file" name="file" required></div>
+        <div><label>{% trans "Name" %}</label><input type="text" name="name" placeholder="{% trans 'Tax clearance certificate' %}"></div>
+        <div><label>{% trans "Type" %}</label><input type="text" name="doc_type" placeholder="tax"></div>
+        <div><label>{% trans "Expires on" %}</label><input type="date" name="expires_on"></div>
       </div>
-      <div class="secbtns"><button class="btn" type="submit">Upload document</button>
-        <button class="btn ghost" type="button" data-cancel="doc">Cancel</button></div>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Upload document" %}</button>
+        <button class="btn ghost" type="button" data-cancel="doc">{% trans "Cancel" %}</button></div>
     </form>
   </div>
   {% endif %}
@@ -396,52 +389,52 @@
 
 {# ── 8 · Business profile ───────────────────────────────────────────────── #}
 <div class="card">
-  <div class="sec-head"><strong>Business profile</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="business">✎ Edit</button>{% endif %}</div>
+  <div class="sec-head"><strong>{% trans "Business profile" %}</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="business">✎ {% trans "Edit" %}</button>{% endif %}</div>
   <div id="view-business">
     <table class="kv">
-      <tr><td class="muted">Description</td><td>{{ company.description|default:"—" }}</td></tr>
-      <tr><td class="muted">Services</td><td>{{ company.services_offered|join:", "|default:"—" }}</td></tr>
-      <tr><td class="muted">Industries served</td><td>{{ company.industries_served|join:", "|default:"—" }}</td></tr>
-      <tr><td class="muted">Size</td><td>{{ company.employee_count|default:"—" }} staff · {{ company.vehicle_count|default:"—" }} vehicles · {{ company.site_count|default:"—" }} sites</td></tr>
-      <tr><td class="muted">Operating in</td><td>{{ company.operating_provinces|join:", "|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Description" %}</td><td>{{ company.description|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Services" %}</td><td>{{ company.services_offered|join:", "|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Industries served" %}</td><td>{{ company.industries_served|join:", "|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Size" %}</td><td>{% blocktrans with staff=company.employee_count|default:"—" vehicles=company.vehicle_count|default:"—" sites=company.site_count|default:"—" %}{{ staff }} staff · {{ vehicles }} vehicles · {{ sites }} sites{% endblocktrans %}</td></tr>
+      <tr><td class="muted">{% trans "Operating in" %}</td><td>{{ company.operating_provinces|join:", "|default:"—" }}</td></tr>
     </table>
   </div>
   <div id="form-business" style="display:none;">
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="business">
-      <label>Business description</label>
-      <textarea name="description" rows="4" placeholder="What the business does.">{{ company.description }}</textarea>
-      <label>Services offered (comma separated)</label>
+      <label>{% trans "Business description" %}</label>
+      <textarea name="description" rows="4" placeholder="{% trans 'What the business does.' %}">{{ company.description }}</textarea>
+      <label>{% trans "Services offered (comma separated)" %}</label>
       <input type="text" name="services_offered" value="{{ company.services_offered|join:', ' }}" placeholder="Mechanical maintenance, Conveyor installation">
-      <label>Specialisations (comma separated)</label>
+      <label>{% trans "Specialisations (comma separated)" %}</label>
       <input type="text" name="specialisations" value="{{ company.specialisations|join:', ' }}">
-      <label>Industries served (comma separated)</label>
+      <label>{% trans "Industries served (comma separated)" %}</label>
       <input type="text" name="industries_served" value="{{ company.industries_served|join:', ' }}" placeholder="Mining, Petrochemical">
       <div class="two" style="margin-top:4px;">
-        <div><label>Employees</label><input type="number" name="employee_count" min="0" value="{{ company.employee_count|default_if_none:'' }}"></div>
-        <div><label>Vehicles</label><input type="number" name="vehicle_count" min="0" value="{{ company.vehicle_count|default_if_none:'' }}"></div>
-        <div><label>Sites</label><input type="number" name="site_count" min="0" value="{{ company.site_count|default_if_none:'' }}"></div>
+        <div><label>{% trans "Employees" %}</label><input type="number" name="employee_count" min="0" value="{{ company.employee_count|default_if_none:'' }}"></div>
+        <div><label>{% trans "Vehicles" %}</label><input type="number" name="vehicle_count" min="0" value="{{ company.vehicle_count|default_if_none:'' }}"></div>
+        <div><label>{% trans "Sites" %}</label><input type="number" name="site_count" min="0" value="{{ company.site_count|default_if_none:'' }}"></div>
       </div>
-      <label>Operating provinces (comma separated)</label>
+      <label>{% trans "Operating provinces (comma separated)" %}</label>
       <input type="text" name="operating_provinces" value="{{ company.operating_provinces|join:', ' }}" placeholder="Gauteng, Mpumalanga">
-      <label>Operating countries (comma separated)</label>
+      <label>{% trans "Operating countries (comma separated)" %}</label>
       <input type="text" name="operating_countries" value="{{ company.operating_countries|join:', ' }}">
-      <div class="secbtns"><button class="btn" type="submit">Save business profile</button>
-        <button class="btn ghost" type="button" data-cancel="business">Cancel</button></div>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Save business profile" %}</button>
+        <button class="btn ghost" type="button" data-cancel="business">{% trans "Cancel" %}</button></div>
     </form>
   </div>
 </div>
 
 {# ── 9 · Branding ───────────────────────────────────────────────────────── #}
 <div class="card">
-  <div class="sec-head"><strong>Branding</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="branding">✎ Edit</button>{% endif %}</div>
+  <div class="sec-head"><strong>{% trans "Branding" %}</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="branding">✎ {% trans "Edit" %}</button>{% endif %}</div>
   <div id="view-branding">
     <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
-      {% if company.logo %}<img src="{{ company.logo.url }}" alt="Logo" style="max-height:64px;max-width:180px;">{% else %}<span class="muted">No logo set</span>{% endif %}
-      <div><div class="muted" style="font-size:12px;">Document prefix</div>
+      {% if company.logo %}<img src="{{ company.logo.url }}" alt="Logo" style="max-height:64px;max-width:180px;">{% else %}<span class="muted">{% trans "No logo set" %}</span>{% endif %}
+      <div><div class="muted" style="font-size:12px;">{% trans "Document prefix" %}</div>
         <strong style="letter-spacing:.08em;">{{ company.document_prefix|default:"—" }}</strong></div>
-      <div><div class="muted" style="font-size:12px;">Brand colour</div>
+      <div><div class="muted" style="font-size:12px;">{% trans "Brand colour" %}</div>
         <span style="display:inline-block;width:22px;height:22px;border-radius:5px;vertical-align:middle;border:1px solid var(--line);background:{{ company.brand_primary|default:'#0e6e6e' }};"></span>
         <code style="font-size:12px;">{{ company.brand_primary|default:"—" }}</code></div>
     </div>
@@ -450,84 +443,84 @@
     <form method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="section" value="branding">
       <div class="avatar-edit">
         {% if company.logo %}<img src="{{ company.logo.url }}" alt="Logo" style="max-height:80px;max-width:200px;">{% endif %}
-        <div style="flex:1;min-width:220px;"><label style="margin-top:0;">Company logo</label>
+        <div style="flex:1;min-width:220px;"><label style="margin-top:0;">{% trans "Company logo" %}</label>
           <input type="file" name="logo" accept="image/*">
-          <p class="muted" style="margin:8px 0 0;font-size:12.5px;">Used on documents, and as the fallback wherever a specific asset is not set.</p></div>
+          <p class="muted" style="margin:8px 0 0;font-size:12.5px;">{% trans "Used on documents, and as the fallback wherever a specific asset is not set." %}</p></div>
       </div>
       <div class="two" style="margin-top:14px;">
-        <div><label>Invoice logo</label><input type="file" name="invoice_logo" accept="image/*"></div>
-        <div><label>Report logo</label><input type="file" name="report_logo" accept="image/*"></div>
-        <div><label>Email logo</label><input type="file" name="email_logo" accept="image/*"></div>
-        <div><label>Letterhead</label><input type="file" name="letterhead" accept="image/*"></div>
-        <div><label>Stamp</label><input type="file" name="stamp" accept="image/*"></div>
-        <div><label>Digital signature</label><input type="file" name="signature" accept="image/*"></div>
-        <div><label>Company seal</label><input type="file" name="seal" accept="image/*"></div>
-        <div><label>Brand colour</label><input type="color" name="brand_primary" value="{{ company.brand_primary|default:'#0e6e6e' }}" style="height:42px;padding:4px;"></div>
-        <div><label>Secondary colour</label><input type="color" name="brand_secondary" value="{{ company.brand_secondary|default:'#0e6e6e' }}" style="height:42px;padding:4px;"></div>
-        <div><label>Document prefix</label><input type="text" name="document_prefix" value="{{ company.document_prefix }}" maxlength="4" placeholder="e.g. LPS" style="text-transform:uppercase;max-width:140px;letter-spacing:.08em;">
-          <p class="muted" style="margin:4px 0 0;font-size:12px;">Up to 4 letters. Begins every reference.</p></div>
+        <div><label>{% trans "Invoice logo" %}</label><input type="file" name="invoice_logo" accept="image/*"></div>
+        <div><label>{% trans "Report logo" %}</label><input type="file" name="report_logo" accept="image/*"></div>
+        <div><label>{% trans "Email logo" %}</label><input type="file" name="email_logo" accept="image/*"></div>
+        <div><label>{% trans "Letterhead" %}</label><input type="file" name="letterhead" accept="image/*"></div>
+        <div><label>{% trans "Stamp" %}</label><input type="file" name="stamp" accept="image/*"></div>
+        <div><label>{% trans "Digital signature" %}</label><input type="file" name="signature" accept="image/*"></div>
+        <div><label>{% trans "Company seal" %}</label><input type="file" name="seal" accept="image/*"></div>
+        <div><label>{% trans "Brand colour" %}</label><input type="color" name="brand_primary" value="{{ company.brand_primary|default:'#0e6e6e' }}" style="height:42px;padding:4px;"></div>
+        <div><label>{% trans "Secondary colour" %}</label><input type="color" name="brand_secondary" value="{{ company.brand_secondary|default:'#0e6e6e' }}" style="height:42px;padding:4px;"></div>
+        <div><label>{% trans "Document prefix" %}</label><input type="text" name="document_prefix" value="{{ company.document_prefix }}" maxlength="4" placeholder="e.g. LPS" style="text-transform:uppercase;max-width:140px;letter-spacing:.08em;">
+          <p class="muted" style="margin:4px 0 0;font-size:12px;">{% trans "Up to 4 letters. Begins every reference." %}</p></div>
       </div>
-      <div class="secbtns"><button class="btn" type="submit">Save branding</button>
-        <button class="btn ghost" type="button" data-cancel="branding">Cancel</button></div>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Save branding" %}</button>
+        <button class="btn ghost" type="button" data-cancel="branding">{% trans "Cancel" %}</button></div>
     </form>
   </div>
 </div>
 
 {# ── 10 · Defaults ──────────────────────────────────────────────────────── #}
 <div class="card">
-  <div class="sec-head"><strong>Defaults</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="defaults">✎ Edit</button>{% endif %}</div>
+  <div class="sec-head"><strong>{% trans "Defaults" %}</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="defaults">✎ {% trans "Edit" %}</button>{% endif %}</div>
   <div id="view-defaults">
     <table class="kv">
-      <tr><td class="muted">Currency</td><td>{{ company.currency|default:"—" }}</td></tr>
-      <tr><td class="muted">Time zone</td><td>{{ company.timezone|default:"—" }}</td></tr>
-      <tr><td class="muted">Default tax rate</td><td>{{ settings.tax_rate|default:"—" }}%</td></tr>
-      <tr><td class="muted">Financial year starts</td><td>month {{ settings.financial_year_start_month|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Currency" %}</td><td>{{ company.currency|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Time zone" %}</td><td>{{ company.timezone|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Default tax rate" %}</td><td>{{ settings.tax_rate|default:"—" }}%</td></tr>
+      <tr><td class="muted">{% trans "Financial year starts" %}</td><td>{% blocktrans with m=settings.financial_year_start_month|default:"—" %}month {{ m }}{% endblocktrans %}</td></tr>
     </table>
   </div>
   <div id="form-defaults" style="display:none;">
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="defaults">
       <div class="two">
-        <div><label>Currency</label>
-          <input type="text" value="{{ currency_label }}" disabled title="Set automatically from your company country"
+        <div><label>{% trans "Currency" %}</label>
+          <input type="text" value="{{ currency_label }}" disabled title="{% trans 'Set automatically from your company country' %}"
                  style="background:#f0f1f4;color:var(--muted);">
-          <span class="muted" style="font-size:11.5px;">From company country — change it on the Address section.</span></div>
-        <div><label>Time zone</label><input type="text" name="timezone" value="{{ company.timezone }}"></div>
-        <div><label>Date format</label><input type="text" name="date_format" value="{{ settings.date_format }}"></div>
-        <div><label>Number format</label><input type="text" name="number_format" value="{{ settings.number_format }}"></div>
-        <div><label>Language</label><input type="text" name="language" value="{{ settings.language }}"></div>
-        <div><label>Default tax rate (%)</label><input type="number" step="0.01" name="tax_rate" value="{{ settings.tax_rate }}"></div>
-        <div><label>Financial year starts (month)</label><input type="number" name="financial_year_start_month" min="1" max="12" value="{{ settings.financial_year_start_month }}"></div>
-        <div><label>Week starts on (0 = Monday)</label><input type="number" name="week_starts_on" min="0" max="6" value="{{ settings.week_starts_on }}"></div>
+          <span class="muted" style="font-size:11.5px;">{% trans "From company country — change it on the Address section." %}</span></div>
+        <div><label>{% trans "Time zone" %}</label><input type="text" name="timezone" value="{{ company.timezone }}"></div>
+        <div><label>{% trans "Date format" %}</label><input type="text" name="date_format" value="{{ settings.date_format }}"></div>
+        <div><label>{% trans "Number format" %}</label><input type="text" name="number_format" value="{{ settings.number_format }}"></div>
+        <div><label>{% trans "Language" %}</label><input type="text" name="language" value="{{ settings.language }}"></div>
+        <div><label>{% trans "Default tax rate (%)" %}</label><input type="number" step="0.01" name="tax_rate" value="{{ settings.tax_rate }}"></div>
+        <div><label>{% trans "Financial year starts (month)" %}</label><input type="number" name="financial_year_start_month" min="1" max="12" value="{{ settings.financial_year_start_month }}"></div>
+        <div><label>{% trans "Week starts on (0 = Monday)" %}</label><input type="number" name="week_starts_on" min="0" max="6" value="{{ settings.week_starts_on }}"></div>
       </div>
-      <div class="secbtns"><button class="btn" type="submit">Save defaults</button>
-        <button class="btn ghost" type="button" data-cancel="defaults">Cancel</button></div>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Save defaults" %}</button>
+        <button class="btn ghost" type="button" data-cancel="defaults">{% trans "Cancel" %}</button></div>
     </form>
   </div>
 </div>
 
 {# ── 11 · Commercial document settings ──────────────────────────────────── #}
 <div class="card">
-  <div class="sec-head"><strong>Commercial document terms</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="commercial">✎ Edit</button>{% endif %}</div>
+  <div class="sec-head"><strong>{% trans "Commercial document terms" %}</strong>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="commercial">✎ {% trans "Edit" %}</button>{% endif %}</div>
   <div id="view-commercial">
     <table class="kv">
-      <tr><td class="muted">Quotation terms</td><td>{% if settings.quotation_terms %}Set{% else %}—{% endif %}</td></tr>
-      <tr><td class="muted">Invoice terms</td><td>{% if settings.invoice_terms %}Set{% else %}—{% endif %}</td></tr>
-      <tr><td class="muted">Delivery note terms</td><td>{% if settings.delivery_terms %}Set{% else %}—{% endif %}</td></tr>
+      <tr><td class="muted">{% trans "Quotation terms" %}</td><td>{% if settings.quotation_terms %}{% trans "Set" %}{% else %}—{% endif %}</td></tr>
+      <tr><td class="muted">{% trans "Invoice terms" %}</td><td>{% if settings.invoice_terms %}{% trans "Set" %}{% else %}—{% endif %}</td></tr>
+      <tr><td class="muted">{% trans "Delivery note terms" %}</td><td>{% if settings.delivery_terms %}{% trans "Set" %}{% else %}—{% endif %}</td></tr>
     </table>
-    <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Inserted automatically into every quotation, invoice and delivery note.</p>
+    <p class="muted" style="margin:10px 0 0;font-size:12.5px;">{% trans "Inserted automatically into every quotation, invoice and delivery note." %}</p>
   </div>
   <div id="form-commercial" style="display:none;">
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="commercial">
-      <label>Quotation terms &amp; conditions</label>
-      <textarea name="quotation_terms" rows="4" placeholder="e.g. Prices valid for 30 days. 50% deposit required to commence.">{{ settings.quotation_terms }}</textarea>
-      <label style="margin-top:14px;display:block;">Invoice terms &amp; conditions</label>
-      <textarea name="invoice_terms" rows="4" placeholder="e.g. Payment due within 30 days. E&amp;OE.">{{ settings.invoice_terms }}</textarea>
-      <label style="margin-top:14px;display:block;">Delivery note terms &amp; conditions</label>
-      <textarea name="delivery_terms" rows="4" placeholder="e.g. Goods received in good order unless noted at delivery.">{{ settings.delivery_terms }}</textarea>
-      <div class="secbtns"><button class="btn" type="submit">Save document terms</button>
-        <button class="btn ghost" type="button" data-cancel="commercial">Cancel</button></div>
+      <label>{% trans "Quotation terms & conditions" %}</label>
+      <textarea name="quotation_terms" rows="4" placeholder="{% trans 'e.g. Prices valid for 30 days. 50% deposit required to commence.' %}">{{ settings.quotation_terms }}</textarea>
+      <label style="margin-top:14px;display:block;">{% trans "Invoice terms & conditions" %}</label>
+      <textarea name="invoice_terms" rows="4" placeholder="{% trans 'e.g. Payment due within 30 days. E&amp;OE.' %}">{{ settings.invoice_terms }}</textarea>
+      <label style="margin-top:14px;display:block;">{% trans "Delivery note terms & conditions" %}</label>
+      <textarea name="delivery_terms" rows="4" placeholder="{% trans 'e.g. Goods received in good order unless noted at delivery.' %}">{{ settings.delivery_terms }}</textarea>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Save document terms" %}</button>
+        <button class="btn ghost" type="button" data-cancel="commercial">{% trans "Cancel" %}</button></div>
     </form>
   </div>
 </div>
@@ -535,27 +528,28 @@
 {# ── 12 · LulaAI ────────────────────────────────────────────────────────── #}
 <div class="card">
   <div class="sec-head"><strong>LulaAI</strong>
-    {% if can_edit %}<button type="button" class="btn ghost" data-edit="ai">✎ Edit</button>{% endif %}</div>
+    {% if can_edit %}<button type="button" class="btn ghost" data-edit="ai">✎ {% trans "Edit" %}</button>{% endif %}</div>
   <div id="view-ai">
     <table class="kv">
-      <tr><td class="muted">Response style</td><td>{{ settings.ai_response_style|title|default:"—" }}</td></tr>
-      <tr><td class="muted">Enabled</td><td>{% if settings.ai_suggestions_enabled %}Suggestions {% endif %}{% if settings.ai_summaries_enabled %}Summaries {% endif %}{% if settings.ai_cost_estimation_enabled %}Cost-estimation {% endif %}{% if settings.ai_task_generation_enabled %}Task-generation {% endif %}{% if settings.ai_compliance_detection_enabled %}Compliance {% endif %}</td></tr>
+      <tr><td class="muted">{% trans "Response style" %}</td><td>{{ settings.ai_response_style|title|default:"—" }}</td></tr>
+      <tr><td class="muted">{% trans "Enabled" %}</td><td>{% if settings.ai_suggestions_enabled %}{% trans "Suggestions" %} {% endif %}{% if settings.ai_summaries_enabled %}{% trans "Summaries" %} {% endif %}{% if settings.ai_cost_estimation_enabled %}{% trans "Cost-estimation" %} {% endif %}{% if settings.ai_task_generation_enabled %}{% trans "Task-generation" %} {% endif %}{% if settings.ai_compliance_detection_enabled %}{% trans "Compliance" %} {% endif %}</td></tr>
     </table>
-    <p class="muted" style="margin:10px 0 0;font-size:12.5px;">Administrators manage providers, health and usage in <a href="{% url 'web:ai_settings' %}">AI Settings</a>.</p>
+    {% url 'web:ai_settings' as ai_url %}
+    <p class="muted" style="margin:10px 0 0;font-size:12.5px;">{% blocktrans %}Administrators manage providers, health and usage in <a href="{{ ai_url }}">AI Settings</a>.{% endblocktrans %}</p>
   </div>
   <div id="form-ai" style="display:none;">
     <form method="post">{% csrf_token %}<input type="hidden" name="section" value="defaults">
-      <div class="two"><div><label>Response style</label>
-        <select name="ai_response_style"><option value="concise" {% if settings.ai_response_style == 'concise' %}selected{% endif %}>Concise</option><option value="detailed" {% if settings.ai_response_style == 'detailed' %}selected{% endif %}>Detailed</option></select></div></div>
+      <div class="two"><div><label>{% trans "Response style" %}</label>
+        <select name="ai_response_style"><option value="concise" {% if settings.ai_response_style == 'concise' %}selected{% endif %}>{% trans "Concise" %}</option><option value="detailed" {% if settings.ai_response_style == 'detailed' %}selected{% endif %}>{% trans "Detailed" %}</option></select></div></div>
       <div style="margin-top:14px;">
-        <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_suggestions_enabled" value="1" {% if settings.ai_suggestions_enabled %}checked{% endif %}> AI suggestions</label>
-        <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_summaries_enabled" value="1" {% if settings.ai_summaries_enabled %}checked{% endif %}> AI summaries</label>
-        <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_cost_estimation_enabled" value="1" {% if settings.ai_cost_estimation_enabled %}checked{% endif %}> AI cost estimation</label>
-        <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_task_generation_enabled" value="1" {% if settings.ai_task_generation_enabled %}checked{% endif %}> AI task generation</label>
-        <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_compliance_detection_enabled" value="1" {% if settings.ai_compliance_detection_enabled %}checked{% endif %}> AI compliance detection</label>
+        <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_suggestions_enabled" value="1" {% if settings.ai_suggestions_enabled %}checked{% endif %}> {% trans "AI suggestions" %}</label>
+        <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_summaries_enabled" value="1" {% if settings.ai_summaries_enabled %}checked{% endif %}> {% trans "AI summaries" %}</label>
+        <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_cost_estimation_enabled" value="1" {% if settings.ai_cost_estimation_enabled %}checked{% endif %}> {% trans "AI cost estimation" %}</label>
+        <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_task_generation_enabled" value="1" {% if settings.ai_task_generation_enabled %}checked{% endif %}> {% trans "AI task generation" %}</label>
+        <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_compliance_detection_enabled" value="1" {% if settings.ai_compliance_detection_enabled %}checked{% endif %}> {% trans "AI compliance detection" %}</label>
       </div>
-      <div class="secbtns"><button class="btn" type="submit">Save AI settings</button>
-        <button class="btn ghost" type="button" data-cancel="ai">Cancel</button></div>
+      <div class="secbtns"><button class="btn" type="submit">{% trans "Save AI settings" %}</button>
+        <button class="btn ghost" type="button" data-cancel="ai">{% trans "Cancel" %}</button></div>
     </form>
   </div>
 </div>
@@ -602,6 +596,12 @@
 (function () {
   var sel = document.getElementById('country-select');
   if (!sel) return;
+  var I18N = {
+    optional: "{% trans '(optional)' %}",
+    branchAuto: "{% trans 'Auto-filled when you pick your bank' %}",
+    bannerPrefix: "{% trans 'Changing country to' %}",
+    bannerSuffix: "{% trans 'Its currency, banking, address, statutory and document rules will apply when you save. Your existing information is kept — nothing is deleted automatically.' %}"
+  };
   var API = '/api/v1/reference/countries/';
   var initial = sel.value;
   function getJSON(url) {
@@ -610,15 +610,13 @@
   }
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
   function optLabel(f, req) {
-    return esc(f) + (req ? '' : ' <span class="muted" style="font-weight:400;">(optional)</span>');
+    return esc(f) + (req ? '' : ' <span class="muted" style="font-weight:400;">' + I18N.optional + '</span>');
   }
   function banner(name) {
     var el = document.getElementById('country-change-note');
     if (!el) return;
     if (sel.value === initial) { el.hidden = true; return; }
-    el.innerHTML = 'Changing country to <strong>' + esc(name) + '</strong>. Its currency, ' +
-      'banking, address, statutory and document rules will apply when you save. ' +
-      'Your existing information is kept — nothing is deleted automatically.';
+    el.innerHTML = I18N.bannerPrefix + ' <strong>' + esc(name) + '</strong>. ' + I18N.bannerSuffix;
     el.hidden = false;
   }
   function setCurrency(label) {
@@ -636,7 +634,7 @@
       var isBranch = f.key === 'branch_code';
       return '<div><label>' + optLabel(f.label, f.required) + '</label>' +
         '<input type="text" name="' + esc(f.key) + '"' + (f.required ? ' required' : '') +
-        (isBranch ? ' id="branch-code" placeholder="Auto-filled when you pick your bank"' : '') +
+        (isBranch ? ' id="branch-code" placeholder="' + I18N.branchAuto + '"' : '') +
         (f.hint ? ' title="' + esc(f.hint) + '"' : '') + '></div>';
     }).join('');
   }
