@@ -11,16 +11,17 @@ override is recorded.
 
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import TenantBaseModel
 
 
 class ProjectStatus(models.TextChoices):
-    PENDING_COMPLIANCE = "pending_compliance", "Pending compliance"
-    READY = "ready", "Ready for site"
-    IN_EXECUTION = "in_execution", "In execution"
-    COMPLETE = "complete", "Complete"
-    CANCELLED = "cancelled", "Cancelled"
+    PENDING_COMPLIANCE = "pending_compliance", _("Pending compliance")
+    READY = "ready", _("Ready for site")
+    IN_EXECUTION = "in_execution", _("In execution")
+    COMPLETE = "complete", _("Complete")
+    CANCELLED = "cancelled", _("Cancelled")
 
 
 class ProjectPriority(models.TextChoices):

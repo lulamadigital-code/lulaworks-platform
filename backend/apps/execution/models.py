@@ -18,6 +18,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import TenantBaseModel
 
@@ -100,19 +101,19 @@ class TaskStatus(models.TextChoices):
     """The default lifecycle. Companies extend/rename it via StatusDefinition —
     these keys stay as the canonical engine states the services reason about."""
 
-    DRAFT = "draft", "Draft"
-    READY = "ready", "Ready"
-    ASSIGNED = "assigned", "Assigned"
-    ACCEPTED = "accepted", "Accepted"
-    IN_PROGRESS = "in_progress", "In progress"
-    PAUSED = "paused", "Paused"
-    WAITING = "waiting", "Waiting"
-    BLOCKED = "blocked", "Blocked"
-    QUALITY_CHECK = "quality_check", "Quality check"
-    CLIENT_SIGNOFF = "client_signoff", "Client sign-off"
-    COMPLETED = "completed", "Completed"
-    CLOSED = "closed", "Closed"
-    CANCELLED = "cancelled", "Cancelled"
+    DRAFT = "draft", _("Draft")
+    READY = "ready", _("Ready")
+    ASSIGNED = "assigned", _("Assigned")
+    ACCEPTED = "accepted", _("Accepted")
+    IN_PROGRESS = "in_progress", _("In progress")
+    PAUSED = "paused", _("Paused")
+    WAITING = "waiting", _("Waiting")
+    BLOCKED = "blocked", _("Blocked")
+    QUALITY_CHECK = "quality_check", _("Quality check")
+    CLIENT_SIGNOFF = "client_signoff", _("Client sign-off")
+    COMPLETED = "completed", _("Completed")
+    CLOSED = "closed", _("Closed")
+    CANCELLED = "cancelled", _("Cancelled")
 
 
 #: States the engine treats as finished — readiness is never recomputed for them.
@@ -131,11 +132,11 @@ LIFECYCLE_ORDER = [
 
 
 class TaskPriority(models.TextChoices):
-    CRITICAL = "critical", "Critical"
-    HIGH = "high", "High"
-    MEDIUM = "medium", "Medium"
-    LOW = "low", "Low"
-    PLANNING = "planning", "Planning"
+    CRITICAL = "critical", _("Critical")
+    HIGH = "high", _("High")
+    MEDIUM = "medium", _("Medium")
+    LOW = "low", _("Low")
+    PLANNING = "planning", _("Planning")
 
 
 class RiskLevel(models.TextChoices):
@@ -149,14 +150,14 @@ class WorkOrigin(models.TextChoices):
     """How the work started — the ONLY real difference between jobs. Everything
     else flows through the same engine (the unified workflow)."""
 
-    RFQ = "rfq", "RFQ / Tender"
-    MANUAL = "manual", "Manual job"
-    PROJECT = "project", "Project"
-    CUSTOMER_REQUEST = "customer_request", "Customer request"
-    RECURRING = "recurring", "Recurring maintenance"
-    INTERNAL = "internal", "Internal company job"
-    BREAKDOWN = "breakdown", "Breakdown / emergency callout"
-    PREVENTATIVE = "preventative", "Preventative maintenance"
+    RFQ = "rfq", _("RFQ / Tender")
+    MANUAL = "manual", _("Manual job")
+    PROJECT = "project", _("Project")
+    CUSTOMER_REQUEST = "customer_request", _("Customer request")
+    RECURRING = "recurring", _("Recurring maintenance")
+    INTERNAL = "internal", _("Internal company job")
+    BREAKDOWN = "breakdown", _("Breakdown / emergency callout")
+    PREVENTATIVE = "preventative", _("Preventative maintenance")
 
 
 class StatusDefinition(TenantBaseModel):

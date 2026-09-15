@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 11:31+0000\n"
+"POT-Creation-Date: 2026-09-15 11:36+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,6 +16,138 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: apps/customers/models.py:29
+msgid "Prospect"
+msgstr "Prospect"
+
+#: apps/customers/models.py:30 apps/web/templates/web/customers.html:41
+#: apps/web/templates/web/people.html:102
+msgid "Active"
+msgstr "Actif"
+
+#: apps/customers/models.py:31
+msgid "On hold"
+msgstr "Suspendu"
+
+#: apps/customers/models.py:32
+msgid "Dormant"
+msgstr "Dormant"
+
+#: apps/customers/models.py:33 apps/web/templates/web/customers.html:42
+msgid "Blacklisted"
+msgstr "Sur liste noire"
+
+#: apps/execution/models.py:104 apps/quotes/models.py:62
+#: apps/web/templates/web/invoices.html:20
+msgid "Draft"
+msgstr "Brouillon"
+
+#: apps/execution/models.py:105 apps/web/templates/web/projects.html:22
+msgid "Ready"
+msgstr "Prêt"
+
+#: apps/execution/models.py:106
+msgid "Assigned"
+msgstr "Assignée"
+
+#: apps/execution/models.py:107 apps/quotes/models.py:70
+msgid "Accepted"
+msgstr "Acceptée"
+
+#: apps/execution/models.py:108
+#| msgid "Progress"
+msgid "In progress"
+msgstr "En cours"
+
+#: apps/execution/models.py:109
+msgid "Paused"
+msgstr "En pause"
+
+#: apps/execution/models.py:110
+#| msgid "Marketing"
+msgid "Waiting"
+msgstr "En attente"
+
+#: apps/execution/models.py:111 apps/web/templates/web/work.html:20
+msgid "Blocked"
+msgstr "Bloquées"
+
+#: apps/execution/models.py:112
+msgid "Quality check"
+msgstr "Contrôle qualité"
+
+#: apps/execution/models.py:113
+msgid "Client sign-off"
+msgstr "Validation client"
+
+#: apps/execution/models.py:114 apps/web/templates/web/profile.html:126
+msgid "Completed"
+msgstr "Terminée"
+
+#: apps/execution/models.py:115
+msgid "Closed"
+msgstr "Clôturée"
+
+#: apps/execution/models.py:116 apps/projects/models.py:24
+#: apps/web/templates/web/projects.html:25
+msgid "Cancelled"
+msgstr "Annulé"
+
+#: apps/execution/models.py:135
+msgid "Critical"
+msgstr "Critique"
+
+#: apps/execution/models.py:136
+msgid "High"
+msgstr "Élevée"
+
+#: apps/execution/models.py:137
+msgid "Medium"
+msgstr "Moyenne"
+
+#: apps/execution/models.py:138
+msgid "Low"
+msgstr "Faible"
+
+#: apps/execution/models.py:139
+msgid "Planning"
+msgstr "Planification"
+
+#: apps/execution/models.py:153
+msgid "RFQ / Tender"
+msgstr "Demande de devis / Appel d'offres"
+
+#: apps/execution/models.py:154
+#| msgid "Total jobs"
+msgid "Manual job"
+msgstr "Tâche manuelle"
+
+#: apps/execution/models.py:155 apps/web/templates/web/dashboard.html:128
+#: apps/web/templates/web/work.html:110
+msgid "Project"
+msgstr "Projet"
+
+#: apps/execution/models.py:156
+#| msgid "Customers"
+msgid "Customer request"
+msgstr "Demande client"
+
+#: apps/execution/models.py:157
+msgid "Recurring maintenance"
+msgstr "Maintenance récurrente"
+
+#: apps/execution/models.py:158
+msgid "Internal company job"
+msgstr "Tâche interne"
+
+#: apps/execution/models.py:159
+msgid "Breakdown / emergency callout"
+msgstr "Panne / intervention d'urgence"
+
+#: apps/execution/models.py:160
+msgid "Preventative maintenance"
+msgstr "Maintenance préventive"
 
 #: apps/identity/validators.py:26
 #, python-format
@@ -31,6 +163,70 @@ msgid "Your password must contain at least %(min)d character."
 msgid_plural "Your password must contain at least %(min)d characters."
 msgstr[0] ""
 msgstr[1] ""
+
+#: apps/projects/models.py:20 apps/web/templates/web/projects.html:26
+msgid "Pending compliance"
+msgstr "Conformité en attente"
+
+#: apps/projects/models.py:21
+msgid "Ready for site"
+msgstr "Prêt pour le site"
+
+#: apps/projects/models.py:22 apps/web/templates/web/projects.html:23
+msgid "In execution"
+msgstr "En exécution"
+
+#: apps/projects/models.py:23 apps/web/templates/web/projects.html:24
+msgid "Complete"
+msgstr "Terminé"
+
+#: apps/quotes/models.py:63
+msgid "Estimator review"
+msgstr "Revue de l'estimateur"
+
+#: apps/quotes/models.py:64
+#| msgid "Awaiting approval"
+msgid "Manager approval"
+msgstr "Approbation du responsable"
+
+#: apps/quotes/models.py:65
+msgid "Commercial approval"
+msgstr "Approbation commerciale"
+
+#: apps/quotes/models.py:66
+msgid "Approved (internal)"
+msgstr "Approuvé (interne)"
+
+#: apps/quotes/models.py:67
+#| msgid "Add a customer"
+msgid "Issued to customer"
+msgstr "Émis au client"
+
+#: apps/quotes/models.py:68
+msgid "Sent"
+msgstr "Envoyé"
+
+#: apps/quotes/models.py:69
+msgid "Revision requested"
+msgstr "Révision demandée"
+
+#: apps/quotes/models.py:71
+#| msgid "%(n)s awarded"
+msgid "Awarded"
+msgstr "Attribué"
+
+#: apps/quotes/models.py:72
+msgid "Rejected"
+msgstr "Rejeté"
+
+#: apps/quotes/models.py:73
+msgid "Lost"
+msgstr "Perdu"
+
+#: apps/quotes/models.py:74
+#| msgid "expired"
+msgid "Expired"
+msgstr "Expiré"
 
 #: apps/web/templates/web/base.html:369
 msgid "Search customers, jobs…"
@@ -177,15 +373,6 @@ msgstr "%(n)s ouverts"
 #, python-format
 msgid "%(d)s days"
 msgstr "%(d)s jours"
-
-#: apps/web/templates/web/customers.html:41
-#: apps/web/templates/web/people.html:102
-msgid "Active"
-msgstr "Actif"
-
-#: apps/web/templates/web/customers.html:42
-msgid "Blacklisted"
-msgstr "Sur liste noire"
 
 #: apps/web/templates/web/customers.html:45
 msgid "No customers yet."
@@ -350,11 +537,6 @@ msgid "Needs attention · compliance not ready"
 msgstr "Nécessite attention · conformité non prête"
 
 #: apps/web/templates/web/dashboard.html:128
-#: apps/web/templates/web/work.html:110
-msgid "Project"
-msgstr "Projet"
-
-#: apps/web/templates/web/dashboard.html:128
 #: apps/web/templates/web/projects.html:14
 msgid "Client"
 msgstr "Client"
@@ -383,7 +565,6 @@ msgstr "Chaque projet est prêt pour la conformité."
 #: apps/web/templates/web/invoices.html:3
 #: apps/web/templates/web/invoices.html:8
 #: apps/web/templates/web/invoices.html:16
-#| msgid "Tax Invoice"
 msgid "Invoices"
 msgstr "Factures"
 
@@ -391,10 +572,11 @@ msgstr "Factures"
 msgid ""
 "Create a customer invoice from scratch, or raise a tax invoice from an "
 "approved quotation."
-msgstr "Créez une facture client à partir de zéro, ou émettez une facture fiscale à partir d'un devis approuvé."
+msgstr ""
+"Créez une facture client à partir de zéro, ou émettez une facture fiscale à "
+"partir d'un devis approuvé."
 
 #: apps/web/templates/web/invoices.html:11
-#| msgid "+ New project"
 msgid "+ New invoice"
 msgstr "+ Nouvelle facture"
 
@@ -402,16 +584,11 @@ msgstr "+ Nouvelle facture"
 msgid "Approved"
 msgstr "Approuvées"
 
-#: apps/web/templates/web/invoices.html:20
-msgid "Draft"
-msgstr "Brouillon"
-
 #: apps/web/templates/web/invoices.html:22
 msgid "This month"
 msgstr "Ce mois-ci"
 
 #: apps/web/templates/web/invoices.html:27
-#| msgid "Tax Invoice"
 msgid "Total invoiced"
 msgstr "Total facturé"
 
@@ -444,7 +621,6 @@ msgid "Your invoices"
 msgstr "Vos factures"
 
 #: apps/web/templates/web/invoices.html:57
-#| msgid "Tax Invoice"
 msgid "Invoice"
 msgstr "Facture"
 
@@ -465,7 +641,6 @@ msgid "Part-paid"
 msgstr "Partiellement payée"
 
 #: apps/web/templates/web/invoices.html:78
-#| msgid "No jobs yet."
 msgid "No invoices yet."
 msgstr "Aucune facture pour le moment."
 
@@ -482,7 +657,10 @@ msgid ""
 "These approved quotations are ready to invoice. This creates a tax invoice "
 "that carries the quotation's number — figures pulled straight from the "
 "quotation."
-msgstr "Ces devis approuvés sont prêts à être facturés. Cela crée une facture fiscale qui porte le numéro du devis — les montants sont repris directement du devis."
+msgstr ""
+"Ces devis approuvés sont prêts à être facturés. Cela crée une facture "
+"fiscale qui porte le numéro du devis — les montants sont repris directement "
+"du devis."
 
 #: apps/web/templates/web/invoices.html:90
 #: apps/web/templates/web/quotations.html:67
@@ -490,12 +668,10 @@ msgid "Quotation"
 msgstr "Devis"
 
 #: apps/web/templates/web/invoices.html:90
-#| msgid "Account"
 msgid "Amount"
 msgstr "Montant"
 
 #: apps/web/templates/web/invoices.html:100
-#| msgid "Marketing"
 msgid "Creating…"
 msgstr "Création…"
 
@@ -761,10 +937,6 @@ msgstr "Entreprise"
 msgid "Open jobs"
 msgstr "travaux"
 
-#: apps/web/templates/web/profile.html:126
-msgid "Completed"
-msgstr "Terminer la configuration"
-
 #: apps/web/templates/web/profile.html:129
 msgid ""
 "Your role is set by an administrator — it decides what you can see and do."
@@ -826,26 +998,6 @@ msgstr "Titre"
 #: apps/web/templates/web/projects.html:14
 msgid "Job type"
 msgstr "Type de tâche"
-
-#: apps/web/templates/web/projects.html:22
-msgid "Ready"
-msgstr "Prêt"
-
-#: apps/web/templates/web/projects.html:23
-msgid "In execution"
-msgstr "En exécution"
-
-#: apps/web/templates/web/projects.html:24
-msgid "Complete"
-msgstr "Terminé"
-
-#: apps/web/templates/web/projects.html:25
-msgid "Cancelled"
-msgstr "Annulé"
-
-#: apps/web/templates/web/projects.html:26
-msgid "Pending compliance"
-msgstr "Conformité en attente"
 
 #: apps/web/templates/web/projects.html:30
 msgid "No projects yet."
@@ -1089,7 +1241,6 @@ msgid "Your own name, avatar and password."
 msgstr "Votre nom, avatar et mot de passe."
 
 #: apps/web/templates/web/work.html:11
-#| msgid "+ New project"
 msgid "+ New Job"
 msgstr "+ Nouvelle tâche"
 
@@ -1097,17 +1248,11 @@ msgstr "+ Nouvelle tâche"
 msgid "Total jobs"
 msgstr "Total des tâches"
 
-#: apps/web/templates/web/work.html:20
-msgid "Blocked"
-msgstr "Bloquées"
-
 #: apps/web/templates/web/work.html:22
-#| msgid "Complete"
 msgid "Completion"
 msgstr "Achèvement"
 
 #: apps/web/templates/web/work.html:36
-#| msgid "Search CRM…"
 msgid "Search jobs…"
 msgstr "Rechercher des tâches…"
 
@@ -1116,7 +1261,6 @@ msgid "All origins"
 msgstr "Toutes les origines"
 
 #: apps/web/templates/web/work.html:44
-#| msgid "Any status"
 msgid "All statuses"
 msgstr "Tous les statuts"
 
@@ -1129,7 +1273,6 @@ msgid "Project + standalone"
 msgstr "Projet + autonome"
 
 #: apps/web/templates/web/work.html:57
-#| msgid "Projects"
 msgid "Project jobs"
 msgstr "Tâches de projet"
 
@@ -1143,7 +1286,6 @@ msgid "Mine"
 msgstr "Les miennes"
 
 #: apps/web/templates/web/work.html:78 apps/web/templates/web/work.html:138
-#| msgid "Overview"
 msgid "Overdue"
 msgstr "En retard"
 
@@ -1156,7 +1298,6 @@ msgid "blocked"
 msgstr "bloquée"
 
 #: apps/web/templates/web/work.html:110
-#| msgid "Jobs"
 msgid "Job"
 msgstr "Tâche"
 
@@ -1200,7 +1341,6 @@ msgstr "%(h)s h est."
 
 #: apps/web/templates/web/work.html:167
 #, python-format
-#| msgid "%(n)s active"
 msgid "%(n)s late"
 msgstr "%(n)s en retard"
 

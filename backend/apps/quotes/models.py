@@ -26,6 +26,7 @@ from decimal import Decimal, InvalidOperation
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import TenantBaseModel
 
@@ -58,19 +59,19 @@ class QuotationStatus(models.TextChoices):
     rows and code keep working.
     """
 
-    DRAFT = "draft", "Draft"
-    REVIEW = "review", "Estimator review"
-    MANAGER_APPROVAL = "manager_approval", "Manager approval"
-    COMMERCIAL_APPROVAL = "commercial_approval", "Commercial approval"
-    APPROVED = "approved", "Approved (internal)"
-    ISSUED = "issued", "Issued to customer"
-    SENT = "sent", "Sent"                       # legacy alias of ISSUED
-    REVISION_REQUESTED = "revision_requested", "Revision requested"
-    ACCEPTED = "accepted", "Accepted"
-    AWARDED = "awarded", "Awarded"
-    REJECTED = "rejected", "Rejected"
-    LOST = "lost", "Lost"                       # legacy alias of REJECTED
-    EXPIRED = "expired", "Expired"
+    DRAFT = "draft", _("Draft")
+    REVIEW = "review", _("Estimator review")
+    MANAGER_APPROVAL = "manager_approval", _("Manager approval")
+    COMMERCIAL_APPROVAL = "commercial_approval", _("Commercial approval")
+    APPROVED = "approved", _("Approved (internal)")
+    ISSUED = "issued", _("Issued to customer")
+    SENT = "sent", _("Sent")                       # legacy alias of ISSUED
+    REVISION_REQUESTED = "revision_requested", _("Revision requested")
+    ACCEPTED = "accepted", _("Accepted")
+    AWARDED = "awarded", _("Awarded")
+    REJECTED = "rejected", _("Rejected")
+    LOST = "lost", _("Lost")                       # legacy alias of REJECTED
+    EXPIRED = "expired", _("Expired")
 
 #: The internal chain, in order — used to offer "the next step".
 APPROVAL_CHAIN = [

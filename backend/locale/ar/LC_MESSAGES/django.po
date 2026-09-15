@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 11:31+0000\n"
+"POT-Creation-Date: 2026-09-15 11:36+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,138 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+
+#: apps/customers/models.py:29
+msgid "Prospect"
+msgstr "عميل محتمل"
+
+#: apps/customers/models.py:30 apps/web/templates/web/customers.html:41
+#: apps/web/templates/web/people.html:102
+msgid "Active"
+msgstr "نشط"
+
+#: apps/customers/models.py:31
+msgid "On hold"
+msgstr "معلّق"
+
+#: apps/customers/models.py:32
+msgid "Dormant"
+msgstr "خامل"
+
+#: apps/customers/models.py:33 apps/web/templates/web/customers.html:42
+msgid "Blacklisted"
+msgstr "في القائمة السوداء"
+
+#: apps/execution/models.py:104 apps/quotes/models.py:62
+#: apps/web/templates/web/invoices.html:20
+msgid "Draft"
+msgstr "مسودة"
+
+#: apps/execution/models.py:105 apps/web/templates/web/projects.html:22
+msgid "Ready"
+msgstr "جاهز"
+
+#: apps/execution/models.py:106
+msgid "Assigned"
+msgstr "مُسندة"
+
+#: apps/execution/models.py:107 apps/quotes/models.py:70
+msgid "Accepted"
+msgstr "مقبولة"
+
+#: apps/execution/models.py:108
+#| msgid "Progress"
+msgid "In progress"
+msgstr "قيد التنفيذ"
+
+#: apps/execution/models.py:109
+msgid "Paused"
+msgstr "متوقفة مؤقتًا"
+
+#: apps/execution/models.py:110
+#| msgid "Marketing"
+msgid "Waiting"
+msgstr "في الانتظار"
+
+#: apps/execution/models.py:111 apps/web/templates/web/work.html:20
+msgid "Blocked"
+msgstr "محظورة"
+
+#: apps/execution/models.py:112
+msgid "Quality check"
+msgstr "فحص الجودة"
+
+#: apps/execution/models.py:113
+msgid "Client sign-off"
+msgstr "موافقة العميل"
+
+#: apps/execution/models.py:114 apps/web/templates/web/profile.html:126
+msgid "Completed"
+msgstr "مكتملة"
+
+#: apps/execution/models.py:115
+msgid "Closed"
+msgstr "مغلقة"
+
+#: apps/execution/models.py:116 apps/projects/models.py:24
+#: apps/web/templates/web/projects.html:25
+msgid "Cancelled"
+msgstr "مُلغى"
+
+#: apps/execution/models.py:135
+msgid "Critical"
+msgstr "حرجة"
+
+#: apps/execution/models.py:136
+msgid "High"
+msgstr "عالية"
+
+#: apps/execution/models.py:137
+msgid "Medium"
+msgstr "متوسطة"
+
+#: apps/execution/models.py:138
+msgid "Low"
+msgstr "منخفضة"
+
+#: apps/execution/models.py:139
+msgid "Planning"
+msgstr "تخطيط"
+
+#: apps/execution/models.py:153
+msgid "RFQ / Tender"
+msgstr "طلب عرض سعر / مناقصة"
+
+#: apps/execution/models.py:154
+#| msgid "Total jobs"
+msgid "Manual job"
+msgstr "مهمة يدوية"
+
+#: apps/execution/models.py:155 apps/web/templates/web/dashboard.html:128
+#: apps/web/templates/web/work.html:110
+msgid "Project"
+msgstr "المشروع"
+
+#: apps/execution/models.py:156
+#| msgid "Customers"
+msgid "Customer request"
+msgstr "طلب عميل"
+
+#: apps/execution/models.py:157
+msgid "Recurring maintenance"
+msgstr "صيانة متكررة"
+
+#: apps/execution/models.py:158
+msgid "Internal company job"
+msgstr "مهمة داخلية"
+
+#: apps/execution/models.py:159
+msgid "Breakdown / emergency callout"
+msgstr "عطل / استدعاء طارئ"
+
+#: apps/execution/models.py:160
+msgid "Preventative maintenance"
+msgstr "صيانة وقائية"
 
 #: apps/identity/validators.py:26
 #, python-format
@@ -32,6 +164,70 @@ msgid "Your password must contain at least %(min)d character."
 msgid_plural "Your password must contain at least %(min)d characters."
 msgstr[0] ""
 msgstr[1] ""
+
+#: apps/projects/models.py:20 apps/web/templates/web/projects.html:26
+msgid "Pending compliance"
+msgstr "في انتظار الامتثال"
+
+#: apps/projects/models.py:21
+msgid "Ready for site"
+msgstr "جاهز للموقع"
+
+#: apps/projects/models.py:22 apps/web/templates/web/projects.html:23
+msgid "In execution"
+msgstr "قيد التنفيذ"
+
+#: apps/projects/models.py:23 apps/web/templates/web/projects.html:24
+msgid "Complete"
+msgstr "مكتمل"
+
+#: apps/quotes/models.py:63
+msgid "Estimator review"
+msgstr "مراجعة المُقدِّر"
+
+#: apps/quotes/models.py:64
+#| msgid "Awaiting approval"
+msgid "Manager approval"
+msgstr "موافقة المدير"
+
+#: apps/quotes/models.py:65
+msgid "Commercial approval"
+msgstr "الموافقة التجارية"
+
+#: apps/quotes/models.py:66
+msgid "Approved (internal)"
+msgstr "معتمد (داخليًا)"
+
+#: apps/quotes/models.py:67
+#| msgid "Add a customer"
+msgid "Issued to customer"
+msgstr "صادر إلى العميل"
+
+#: apps/quotes/models.py:68
+msgid "Sent"
+msgstr "مُرسَل"
+
+#: apps/quotes/models.py:69
+msgid "Revision requested"
+msgstr "مطلوب مراجعة"
+
+#: apps/quotes/models.py:71
+#| msgid "%(n)s awarded"
+msgid "Awarded"
+msgstr "مُرسى"
+
+#: apps/quotes/models.py:72
+msgid "Rejected"
+msgstr "مرفوض"
+
+#: apps/quotes/models.py:73
+msgid "Lost"
+msgstr "خاسر"
+
+#: apps/quotes/models.py:74
+#| msgid "expired"
+msgid "Expired"
+msgstr "منتهي الصلاحية"
 
 #: apps/web/templates/web/base.html:369
 msgid "Search customers, jobs…"
@@ -177,15 +373,6 @@ msgstr "%(n)s مفتوحة"
 #, python-format
 msgid "%(d)s days"
 msgstr "%(d)s يومًا"
-
-#: apps/web/templates/web/customers.html:41
-#: apps/web/templates/web/people.html:102
-msgid "Active"
-msgstr "نشط"
-
-#: apps/web/templates/web/customers.html:42
-msgid "Blacklisted"
-msgstr "في القائمة السوداء"
 
 #: apps/web/templates/web/customers.html:45
 msgid "No customers yet."
@@ -344,11 +531,6 @@ msgid "Needs attention · compliance not ready"
 msgstr "يحتاج انتباه · الامتثال غير جاهز"
 
 #: apps/web/templates/web/dashboard.html:128
-#: apps/web/templates/web/work.html:110
-msgid "Project"
-msgstr "المشروع"
-
-#: apps/web/templates/web/dashboard.html:128
 #: apps/web/templates/web/projects.html:14
 msgid "Client"
 msgstr "العميل"
@@ -377,7 +559,6 @@ msgstr "كل مشروع جاهز للامتثال."
 #: apps/web/templates/web/invoices.html:3
 #: apps/web/templates/web/invoices.html:8
 #: apps/web/templates/web/invoices.html:16
-#| msgid "Tax Invoice"
 msgid "Invoices"
 msgstr "الفواتير"
 
@@ -388,7 +569,6 @@ msgid ""
 msgstr "أنشئ فاتورة عميل من الصفر، أو أصدر فاتورة ضريبية من عرض سعر مُعتمد."
 
 #: apps/web/templates/web/invoices.html:11
-#| msgid "+ New project"
 msgid "+ New invoice"
 msgstr "+ فاتورة جديدة"
 
@@ -396,16 +576,11 @@ msgstr "+ فاتورة جديدة"
 msgid "Approved"
 msgstr "معتمدة"
 
-#: apps/web/templates/web/invoices.html:20
-msgid "Draft"
-msgstr "مسودة"
-
 #: apps/web/templates/web/invoices.html:22
 msgid "This month"
 msgstr "هذا الشهر"
 
 #: apps/web/templates/web/invoices.html:27
-#| msgid "Tax Invoice"
 msgid "Total invoiced"
 msgstr "إجمالي المفوتر"
 
@@ -438,7 +613,6 @@ msgid "Your invoices"
 msgstr "فواتيرك"
 
 #: apps/web/templates/web/invoices.html:57
-#| msgid "Tax Invoice"
 msgid "Invoice"
 msgstr "فاتورة"
 
@@ -459,7 +633,6 @@ msgid "Part-paid"
 msgstr "مدفوعة جزئيًا"
 
 #: apps/web/templates/web/invoices.html:78
-#| msgid "No jobs yet."
 msgid "No invoices yet."
 msgstr "لا توجد فواتير بعد."
 
@@ -476,7 +649,9 @@ msgid ""
 "These approved quotations are ready to invoice. This creates a tax invoice "
 "that carries the quotation's number — figures pulled straight from the "
 "quotation."
-msgstr "عروض الأسعار المُعتمدة هذه جاهزة للفوترة. يؤدي هذا إلى إنشاء فاتورة ضريبية تحمل رقم عرض السعر — الأرقام مأخوذة مباشرة من عرض السعر."
+msgstr ""
+"عروض الأسعار المُعتمدة هذه جاهزة للفوترة. يؤدي هذا إلى إنشاء فاتورة ضريبية "
+"تحمل رقم عرض السعر — الأرقام مأخوذة مباشرة من عرض السعر."
 
 #: apps/web/templates/web/invoices.html:90
 #: apps/web/templates/web/quotations.html:67
@@ -484,12 +659,10 @@ msgid "Quotation"
 msgstr "عرض السعر"
 
 #: apps/web/templates/web/invoices.html:90
-#| msgid "Account"
 msgid "Amount"
 msgstr "المبلغ"
 
 #: apps/web/templates/web/invoices.html:100
-#| msgid "Marketing"
 msgid "Creating…"
 msgstr "جارٍ الإنشاء…"
 
@@ -749,10 +922,6 @@ msgstr "الشركة"
 msgid "Open jobs"
 msgstr "مهام"
 
-#: apps/web/templates/web/profile.html:126
-msgid "Completed"
-msgstr "إكمال الإعداد"
-
 #: apps/web/templates/web/profile.html:129
 msgid ""
 "Your role is set by an administrator — it decides what you can see and do."
@@ -810,26 +979,6 @@ msgstr "العنوان"
 #: apps/web/templates/web/projects.html:14
 msgid "Job type"
 msgstr "نوع المهمة"
-
-#: apps/web/templates/web/projects.html:22
-msgid "Ready"
-msgstr "جاهز"
-
-#: apps/web/templates/web/projects.html:23
-msgid "In execution"
-msgstr "قيد التنفيذ"
-
-#: apps/web/templates/web/projects.html:24
-msgid "Complete"
-msgstr "مكتمل"
-
-#: apps/web/templates/web/projects.html:25
-msgid "Cancelled"
-msgstr "مُلغى"
-
-#: apps/web/templates/web/projects.html:26
-msgid "Pending compliance"
-msgstr "في انتظار الامتثال"
 
 #: apps/web/templates/web/projects.html:30
 msgid "No projects yet."
@@ -1067,7 +1216,6 @@ msgid "Your own name, avatar and password."
 msgstr "اسمك وصورتك الرمزية وكلمة مرورك."
 
 #: apps/web/templates/web/work.html:11
-#| msgid "+ New project"
 msgid "+ New Job"
 msgstr "+ مهمة جديدة"
 
@@ -1075,17 +1223,11 @@ msgstr "+ مهمة جديدة"
 msgid "Total jobs"
 msgstr "إجمالي المهام"
 
-#: apps/web/templates/web/work.html:20
-msgid "Blocked"
-msgstr "محظورة"
-
 #: apps/web/templates/web/work.html:22
-#| msgid "Complete"
 msgid "Completion"
 msgstr "الإنجاز"
 
 #: apps/web/templates/web/work.html:36
-#| msgid "Search CRM…"
 msgid "Search jobs…"
 msgstr "البحث عن المهام…"
 
@@ -1094,7 +1236,6 @@ msgid "All origins"
 msgstr "كل المصادر"
 
 #: apps/web/templates/web/work.html:44
-#| msgid "Any status"
 msgid "All statuses"
 msgstr "كل الحالات"
 
@@ -1107,7 +1248,6 @@ msgid "Project + standalone"
 msgstr "مشروع + مستقلة"
 
 #: apps/web/templates/web/work.html:57
-#| msgid "Projects"
 msgid "Project jobs"
 msgstr "مهام المشروع"
 
@@ -1121,7 +1261,6 @@ msgid "Mine"
 msgstr "مهامي"
 
 #: apps/web/templates/web/work.html:78 apps/web/templates/web/work.html:138
-#| msgid "Overview"
 msgid "Overdue"
 msgstr "متأخرة"
 
@@ -1134,7 +1273,6 @@ msgid "blocked"
 msgstr "محظورة"
 
 #: apps/web/templates/web/work.html:110
-#| msgid "Jobs"
 msgid "Job"
 msgstr "المهمة"
 
@@ -1178,7 +1316,6 @@ msgstr "%(h)s ساعة تقديرًا"
 
 #: apps/web/templates/web/work.html:167
 #, python-format
-#| msgid "%(n)s active"
 msgid "%(n)s late"
 msgstr "%(n)s متأخرة"
 

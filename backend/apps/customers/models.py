@@ -20,16 +20,17 @@ who to copy, which is the whole point of modelling the organisation at all.
 
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import TenantBaseModel
 
 
 class CustomerStatus(models.TextChoices):
-    PROSPECT = "prospect", "Prospect"
-    ACTIVE = "active", "Active"
-    ON_HOLD = "on_hold", "On hold"
-    DORMANT = "dormant", "Dormant"
-    BLACKLISTED = "blacklisted", "Blacklisted"
+    PROSPECT = "prospect", _("Prospect")
+    ACTIVE = "active", _("Active")
+    ON_HOLD = "on_hold", _("On hold")
+    DORMANT = "dormant", _("Dormant")
+    BLACKLISTED = "blacklisted", _("Blacklisted")
 
 
 #: Job roles a contact may hold. A contact may hold several — a Maintenance
