@@ -53,18 +53,18 @@ Tunisia,TN,TND,+216,generic,generic,generic,0,generic,generic,generic,REGIONAL,"
 Uganda,UG,UGX,+256,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Zambia,ZM,ZMW,+260,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Zimbabwe,ZW,ZWG,+263,generic,generic,generic,0,generic,generic,generic,REGIONAL,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-Argentina,AR,ARS,+54,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Argentina,AR,ARS,+54,yes,yes,yes,5,VAT/GST,yes,yes,FIRST_CLASS,
 Australia,AU,AUD,+61,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 Brazil,BR,BRL,+55,yes,yes,yes,6,VAT/GST,yes,yes,FIRST_CLASS,
 Canada,CA,CAD,+1,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
-Chile,CL,CLP,+56,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-Colombia,CO,COP,+57,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Chile,CL,CLP,+56,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
+Colombia,CO,COP,+57,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 France,FR,EUR,+33,yes,yes,yes,6,VAT/GST,yes,yes,FIRST_CLASS,
 Germany,DE,EUR,+49,yes,yes,yes,3,VAT/GST,yes,yes,FIRST_CLASS,
 India,IN,INR,+91,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 Ireland,IE,EUR,+353,yes,yes,yes,3,VAT/GST,yes,yes,FIRST_CLASS,
 Japan,JP,JPY,+81,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-Mexico,MX,MXN,+52,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Mexico,MX,MXN,+52,yes,yes,yes,5,VAT/GST,yes,yes,FIRST_CLASS,
 Netherlands,NL,EUR,+31,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 New Zealand,NZ,NZD,+64,yes,yes,yes,5,VAT/GST,yes,yes,FIRST_CLASS,
 Singapore,SG,SGD,+65,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
@@ -190,7 +190,7 @@ Palau,PW,USD,+680,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASEL
 Panama,PA,PAB,+507,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Papua New Guinea,PG,PGK,+675,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Paraguay,PY,PYG,+595,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
-Peru,PE,PEN,+51,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
+Peru,PE,PEN,+51,yes,yes,yes,4,VAT/GST,yes,yes,FIRST_CLASS,
 Philippines,PH,PHP,+63,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Pitcairn,PN,NZD,,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"
 Poland,PL,PLN,+48,generic,generic,generic,0,generic,generic,generic,GLOBAL_BASELINE,"banks, banking-rule, address-rule, statutory-rules, document-rules"

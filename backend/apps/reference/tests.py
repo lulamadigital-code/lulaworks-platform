@@ -336,7 +336,8 @@ class GlobalCoverageTests(TestCase):
     of Africa covered and major markets first-class."""
     UNINHABITED = {"AQ", "BV", "GS", "HM", "IO", "TF", "UM"}   # no economy/currency
     FIRST_CLASS = {"AU", "BR", "CA", "CH", "DE", "ES", "FR", "GB", "IE", "IN", "IT",
-                   "KE", "NG", "NL", "NZ", "US", "ZA"}
+                   "KE", "NG", "NL", "NZ", "US", "ZA",
+                   "MX", "AR", "CL", "CO", "PE"}
 
     @classmethod
     def setUpTestData(cls):

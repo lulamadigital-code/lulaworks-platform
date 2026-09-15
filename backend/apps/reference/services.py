@@ -131,6 +131,16 @@ _COUNTRY_DOCUMENTS = {
     "IE": ["Certificate of Incorporation (CRO)", "VAT registration",
            "Tax clearance certificate", "Bank confirmation"],
     "CH": ["Handelsregisterauszug", "UID / VAT registration", "Bank confirmation"],
+    "MX": ["Acta constitutiva", "Cédula de identificación fiscal (RFC)",
+           "Comprobante de domicilio", "Bank confirmation"],
+    "AR": ["Estatuto / Contrato social", "Constancia de CUIT (AFIP)",
+           "Bank confirmation"],
+    "CL": ["Escritura de constitución", "RUT (SII)",
+           "Certificado de vigencia", "Bank confirmation"],
+    "CO": ["Certificado de existencia (Cámara de Comercio)", "RUT (DIAN)",
+           "Bank confirmation"],
+    "PE": ["Ficha RUC (SUNAT)", "Vigencia de poder", "Partida registral",
+           "Bank confirmation"],
 }
 _DEFAULT_DOCUMENTS = ["Company registration document", "Tax registration document",
                       "Bank confirmation"]

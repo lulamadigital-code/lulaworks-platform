@@ -163,6 +163,38 @@ BANKS = {
         ("Santander Brasil", "Santander", "", "BSCHBRSP", [], False),
         ("Nubank", "Nubank", "", "NUBRBRSP", [], False),
     ],
+    "MX": [
+        ("BBVA México", "BBVA", "", "BCMRMXMM", [], True),
+        ("Banorte", "Banorte", "", "MENOMXMT", [], True),
+        ("Santander México", "Santander", "", "BMSXMXMM", [], True),
+        ("Citibanamex", "Banamex", "", "BNMXMXMM", ["Banamex"], True),
+        ("HSBC México", "HSBC", "", "BIMEMXMM", [], False),
+    ],
+    "AR": [
+        ("Banco de la Nación Argentina", "Banco Nación", "", "NACNARBA", [], True),
+        ("Banco Santander Argentina", "Santander", "", "BSCHARBA", [], True),
+        ("Banco Galicia", "Galicia", "", "GABAARBA", [], True),
+        ("BBVA Argentina", "BBVA", "", "FRBBARBA", [], False),
+        ("Banco Macro", "Macro", "", "BSUDARBA", [], False),
+    ],
+    "CL": [
+        ("Banco de Chile", "Banco de Chile", "", "BCHICLRM", [], True),
+        ("Banco Santander Chile", "Santander", "", "BSCHCLRM", [], True),
+        ("BancoEstado", "BancoEstado", "", "BECHCLRM", [], True),
+        ("Banco de Crédito e Inversiones (BCI)", "BCI", "", "CREDCLRM", [], False),
+    ],
+    "CO": [
+        ("Bancolombia", "Bancolombia", "", "COLOCOBM", [], True),
+        ("Banco de Bogotá", "Banco de Bogotá", "", "BBOGCOBB", [], True),
+        ("Davivienda", "Davivienda", "", "CAFECOBB", [], True),
+        ("BBVA Colombia", "BBVA", "", "GEBCCOBB", [], False),
+    ],
+    "PE": [
+        ("Banco de Crédito del Perú (BCP)", "BCP", "", "BCPLPEPL", [], True),
+        ("BBVA Perú", "BBVA", "", "BCONPEPL", [], True),
+        ("Interbank", "Interbank", "", "BINPPEPL", [], True),
+        ("Scotiabank Perú", "Scotiabank", "", "BSUDPEPL", [], False),
+    ],
     "FR": [
         ("BNP Paribas", "BNP Paribas", "", "BNPAFRPP", [], True),
         ("Crédit Agricole", "Crédit Agricole", "", "AGRIFRPP", [], True),
@@ -279,6 +311,26 @@ BANKING_RULES = {
                branch_hint="Swiss IBAN routes the payment.",
                fields=[_F("iban", "IBAN", True, "iban", "CH.. 21 characters."),
                        _F("swift_code", "BIC/SWIFT", False, "swift_bic")]),
+    # Mexico routes on the 18-digit CLABE; Argentina on the 22-digit CBU. Both are
+    # longer than the generic account cap, so no strict length validator.
+    "MX": dict(branch_label="CLABE", show_swift=True,
+               branch_hint="18-digit CLABE interbank number.",
+               fields=[_F("account_number", "CLABE", True, "", "18 digits"),
+                       _F("swift_code", "SWIFT/BIC", False, "swift_bic")]),
+    "AR": dict(branch_label="CBU", show_swift=True,
+               branch_hint="22-digit CBU (or CVU) number.",
+               fields=[_F("account_number", "CBU / CVU", True, "", "22 digits"),
+                       _F("swift_code", "SWIFT/BIC", False, "swift_bic")]),
+    "CL": dict(branch_label="Account number", show_swift=True,
+               fields=[_F("account_number", "Account number", True, "account_number"),
+                       _F("swift_code", "SWIFT/BIC", False, "swift_bic")]),
+    "CO": dict(branch_label="Account number", show_swift=True,
+               fields=[_F("account_number", "Account number", True, "account_number"),
+                       _F("swift_code", "SWIFT/BIC", False, "swift_bic")]),
+    "PE": dict(branch_label="Account number / CCI", show_swift=True,
+               branch_hint="Account number or 20-digit CCI.",
+               fields=[_F("account_number", "Account number / CCI", True, ""),
+                       _F("swift_code", "SWIFT/BIC", False, "swift_bic")]),
 }
 # SEPA members share an IBAN-based rule.
 _SEPA_RULE = dict(branch_label="IBAN", show_swift=True,
@@ -355,6 +407,26 @@ ADDRESS_RULES = {
     "CH": dict(fields=_ADDR(("street_address", "Strasse (street)", True), ("city", "Ort (city)", True)),
                postal_label="PLZ", postal_regex=r"\d{4}",
                postal_hint="Enter a valid 4-digit PLZ."),
+    "MX": dict(fields=_ADDR(("street_address", "Calle (street)", True), ("suburb", "Colonia", False),
+                            ("city", "Ciudad / Municipio", True), ("province", "Estado", True)),
+               postal_label="Código postal (CP)", postal_regex=r"\d{5}",
+               postal_hint="Enter a valid 5-digit CP."),
+    "AR": dict(fields=_ADDR(("street_address", "Calle (street)", True), ("city", "Localidad (city)", True),
+                            ("province", "Provincia", True)),
+               postal_label="Código postal (CPA)", postal_regex=r"[A-Za-z]?\d{4}[A-Za-z]{0,3}",
+               postal_hint="Enter a valid postal code (e.g. C1234ABC or 1234)."),
+    "CL": dict(fields=_ADDR(("street_address", "Calle (street)", True), ("suburb", "Comuna", True),
+                            ("city", "Ciudad (city)", True), ("province", "Región", False)),
+               postal_label="Código postal", postal_regex=r"\d{7}",
+               postal_hint="Enter a valid 7-digit postal code."),
+    "CO": dict(fields=_ADDR(("street_address", "Dirección (street)", True), ("city", "Ciudad (city)", True),
+                            ("province", "Departamento", True)),
+               postal_label="Código postal", postal_regex=r"\d{6}",
+               postal_hint="Enter a valid 6-digit postal code."),
+    "PE": dict(fields=_ADDR(("street_address", "Dirección (street)", True), ("suburb", "Distrito", True),
+                            ("city", "Provincia", True), ("province", "Departamento", True)),
+               postal_label="Código postal", postal_regex=r"\d{5}",
+               postal_hint="Enter a valid 5-digit postal code."),
 }
 
 
@@ -473,6 +545,28 @@ STATUTORY_RULES = {
     "CH": [
         _S("uid", "UID (CHE)", "Federal Statistical Office", placeholder="CHE-123.456.789"),
         _S("vat_no", "MWST / VAT number", "ESTV", placeholder="CHE-123.456.789 MWST"),
+    ],
+    "MX": [
+        _S("rfc", "RFC", "SAT", placeholder="ABC680524P76"),
+        _S("folio_mercantil", "Folio Mercantil (registration)", "Registro Público de Comercio"),
+        _S("curp", "CURP (if sole trader)", "RENAPO"),
+    ],
+    "AR": [
+        _S("cuit", "CUIT", "AFIP", validator=r"\d{2}-?\d{8}-?\d", placeholder="30-12345678-9"),
+        _S("iibb", "Ingresos Brutos (IIBB)", "Rentas"),
+    ],
+    "CL": [
+        _S("rut", "RUT", "SII", validator=r"\d{1,2}\.?\d{3}\.?\d{3}-?[0-9Kk]",
+           placeholder="76.123.456-7"),
+        _S("giro", "Giro (activity)", "SII"),
+    ],
+    "CO": [
+        _S("nit", "NIT", "DIAN", validator=r"\d{9,10}-?\d?", placeholder="900123456-7"),
+        _S("matricula", "Matrícula mercantil", "Cámara de Comercio"),
+    ],
+    "PE": [
+        _S("ruc", "RUC", "SUNAT", validator=r"\d{11}", placeholder="20123456789"),
+        _S("partida", "Partida registral", "SUNARP"),
     ],
 }
 
