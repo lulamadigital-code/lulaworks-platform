@@ -396,6 +396,20 @@ def customer_timeline(customer, limit: int = 60) -> list:
     are facts drawn from their source tables, never editable here. Each source is
     isolated so a missing field can never break the whole timeline."""
     events = []
+    # Money on the timeline shows the company's own currency symbol, not a
+    # hardcoded Rand.
+    _sym = "R"
+    try:
+        from apps.reference.models import Currency
+        from apps.reference.services import CurrencyService
+        _co = getattr(customer, "company", None)
+        _code = (getattr(_co, "currency", "") or "")
+        _cur = Currency.objects.filter(code=_code).first() if _code else None
+        if not (_cur and _cur.symbol):
+            _cur = CurrencyService.for_country(getattr(_co, "country_code", "") or "")
+        _sym = (_cur.symbol if _cur and _cur.symbol else (_code + " " if _code else "R"))
+    except Exception:  # noqa: BLE001
+        _sym = "R"
 
     def add(when, icon, kind, title, detail="", url="", amount=None):
         if when is None:
@@ -403,7 +417,7 @@ def customer_timeline(customer, limit: int = 60) -> list:
         money = ""
         if amount not in (None, ""):
             try:
-                money = f"R{amount:,.2f}"
+                money = f"{_sym}{amount:,.2f}"
             except (TypeError, ValueError):
                 money = ""
         events.append({"when": when, "icon": icon, "kind": kind, "title": title,

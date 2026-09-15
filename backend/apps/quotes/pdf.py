@@ -356,6 +356,28 @@ def _signoff_banking_boxes(header, brand, small, muted, *, compiled_label,
     return footer
 
 
+def _ccy_symbol(company) -> str:
+    """The company's currency symbol for money on generated documents, resolved
+    from its stored currency (or country), falling back to 'R'. Keeps printed
+    quotations/invoices in the company's own currency, not a hardcoded Rand."""
+    try:
+        from apps.reference.models import Currency
+        from apps.reference.services import CurrencyService
+        code = (getattr(company, "currency", "") or "").strip()
+        if code:
+            cur = Currency.objects.filter(code=code).first()
+            if cur and cur.symbol:
+                return cur.symbol
+        cur = CurrencyService.for_country(getattr(company, "country_code", "") or "")
+        if cur and cur.symbol:
+            return cur.symbol
+        if code:
+            return code + " "
+    except Exception:  # noqa: BLE001
+        pass
+    return "R"
+
+
 def quotation_pdf_bytes(quote) -> bytes:
     # HTML-engine templates (custom-built / AI-imported) render via WeasyPrint;
     # the built-in ReportLab looks fall through to the code below.
@@ -366,6 +388,7 @@ def quotation_pdf_bytes(quote) -> bytes:
         return render_html_pdf(quote, "quotation", design)
 
     company = quote.company
+    sym = _ccy_symbol(company)
     buf = BytesIO()
     # Narrow margins so the content fills the page width (usable width ≈ 186mm).
     doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=14 * mm, bottomMargin=12 * mm,
@@ -490,8 +513,8 @@ def quotation_pdf_bytes(quote) -> bytes:
         # The price the customer actually pays — cost + markup when no explicit
         # price was set — so the Unit Price column and the Amount agree.
         rows.append([str(ln.position), Paragraph(escape(ln.description), cell),
-                     f"{ln.qty:g}", ln.unit, f"R{ln.effective_unit_price:,.2f}",
-                     f"R{ln.line_total:,.2f}"])
+                     f"{ln.qty:g}", ln.unit, f"{sym}{ln.effective_unit_price:,.2f}",
+                     f"{sym}{ln.line_total:,.2f}"])
     if len(rows) == 1:
         rows.append(["", Paragraph("No line items.", cell), "", "", "", ""])
     tbl = Table(rows, colWidths=[14 * mm, 85 * mm, 20 * mm, 20 * mm, 23.5 * mm, 23.5 * mm],
@@ -513,11 +536,11 @@ def quotation_pdf_bytes(quote) -> bytes:
     # ── Totals. On an exclusive quote VAT is not part of the quotation total
     # (it is added on the tax invoice), so the VAT line reads R0.00.
     vat_on_quote = quote.vat_amount if quote.vat_mode == "inclusive" else 0
-    totals = [["SUBTOTAL", f"R{quote.subtotal:,.2f}"]]
+    totals = [["SUBTOTAL", f"{sym}{quote.subtotal:,.2f}"]]
     if quote.discount_amount:
-        totals.append(["DISCOUNT", f"-R{quote.discount_amount:,.2f}"])
-    totals += [["VAT", f"R{vat_on_quote:,.2f}"],
-               ["TOTAL", f"R{quote.total:,.2f}"]]
+        totals.append(["DISCOUNT", f"-{sym}{quote.discount_amount:,.2f}"])
+    totals += [["VAT", f"{sym}{vat_on_quote:,.2f}"],
+               ["TOTAL", f"{sym}{quote.total:,.2f}"]]
     tot = Table(totals, colWidths=[45 * mm, 33.5 * mm], hAlign="RIGHT")
     tot.setStyle(TableStyle([
         ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
@@ -669,6 +692,7 @@ def invoice_pdf_bytes(doc) -> bytes:
 
     quote = doc.quotation
     company = quote.company
+    sym = _ccy_symbol(company)
     res = _resolve(doc, "invoice")
     brand, cfg, font, font_bold = res["brand"], res["cfg"], res["font"], res["font_bold"]
     header = document_header(company, kind="invoice")
@@ -724,8 +748,8 @@ def invoice_pdf_bytes(doc) -> bytes:
     rows = [["Item", "Description", "Qty", "Unit", "Unit Price", "Amount"]]
     for ln in quote.lines.all():
         rows.append([str(ln.position), Paragraph(escape(ln.description), cell),
-                     f"{ln.qty:g}", ln.unit, f"R{ln.effective_unit_price:,.2f}",
-                     f"R{ln.line_total:,.2f}"])
+                     f"{ln.qty:g}", ln.unit, f"{sym}{ln.effective_unit_price:,.2f}",
+                     f"{sym}{ln.line_total:,.2f}"])
     tbl = Table(rows, colWidths=[14 * mm, 85 * mm, 20 * mm, 20 * mm, 23.5 * mm, 23.5 * mm],
                 repeatRows=1)
     tbl.setStyle(TableStyle([
@@ -736,11 +760,11 @@ def invoice_pdf_bytes(doc) -> bytes:
     story += [tbl]
 
     # VAT is added here (deferred from an exclusive quotation).
-    totals = [["SUBTOTAL", f"R{quote.subtotal:,.2f}"]]
+    totals = [["SUBTOTAL", f"{sym}{quote.subtotal:,.2f}"]]
     if quote.discount_amount:
-        totals.append(["DISCOUNT", f"-R{quote.discount_amount:,.2f}"])
-    totals += [[f"VAT@{quote.vat_rate:g}%", f"R{quote.vat_amount:,.2f}"],
-               ["TOTAL", f"R{quote.invoice_total:,.2f}"]]
+        totals.append(["DISCOUNT", f"-{sym}{quote.discount_amount:,.2f}"])
+    totals += [[f"VAT@{quote.vat_rate:g}%", f"{sym}{quote.vat_amount:,.2f}"],
+               ["TOTAL", f"{sym}{quote.invoice_total:,.2f}"]]
     tot = Table(totals, colWidths=[45 * mm, 33.5 * mm], hAlign="RIGHT")
     tot.setStyle(TableStyle([
         ("ALIGN", (0, 0), (-1, -1), "RIGHT"), ("FONTSIZE", (0, 0), (-1, -1), 9.5),
@@ -786,6 +810,7 @@ def delivery_note_pdf_bytes(doc) -> bytes:
 
     quote = doc.quotation
     company = quote.company
+    sym = _ccy_symbol(company)
     res = _resolve(doc, "delivery")
     brand, cfg, font, font_bold = res["brand"], res["cfg"], res["font"], res["font_bold"]
     header = document_header(company, kind="report")

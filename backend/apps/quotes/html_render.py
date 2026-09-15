@@ -28,6 +28,26 @@ from .models import DEFAULT_DESIGN, TEMPLATE_ITEM_COLUMN_KEYS
 
 # ── Rendering context: the {{field}} library, filled from real data ────────────
 
+def _ccy_symbol(company) -> str:
+    """Company currency symbol for rendered documents; falls back to 'R'."""
+    try:
+        from apps.reference.models import Currency
+        from apps.reference.services import CurrencyService
+        code = (getattr(company, "currency", "") or "").strip()
+        if code:
+            cur = Currency.objects.filter(code=code).first()
+            if cur and cur.symbol:
+                return cur.symbol
+        cur = CurrencyService.for_country(getattr(company, "country_code", "") or "")
+        if cur and cur.symbol:
+            return cur.symbol
+        if code:
+            return code + " "
+    except Exception:  # noqa: BLE001
+        pass
+    return "R"
+
+
 def build_context(document, doc_type: str) -> dict:
     """Everything a document template can show, drawn from the same sources the
     ReportLab builders use — so an HTML template and a built-in render identical
@@ -39,6 +59,7 @@ def build_context(document, doc_type: str) -> dict:
 
     company = document.company
     header = document_header(company, kind=doc_type)
+    sym = _ccy_symbol(company)
     quote = document if doc_type == "quotation" else document.quotation
 
     prep = quote.prepared_by
@@ -61,8 +82,8 @@ def build_context(document, doc_type: str) -> dict:
         row = {"item_no": str(ln.position), "description": ln.description,
                "qty": f"{ln.qty:g}", "unit": ln.unit}
         if show_prices:
-            row["unit_price"] = f"R{ln.effective_unit_price:,.2f}"
-            row["amount"] = f"R{ln.line_total:,.2f}"
+            row["unit_price"] = f"{sym}{ln.effective_unit_price:,.2f}"
+            row["amount"] = f"{sym}{ln.line_total:,.2f}"
         else:
             row["unit_price"] = row["amount"] = ""
             row["ordered"] = f"{ln.qty:g}"
@@ -74,20 +95,20 @@ def build_context(document, doc_type: str) -> dict:
     financial = {}
     if doc_type == "invoice":
         financial = {
-            "subtotal": f"R{quote.subtotal:,.2f}",
-            "discount": f"R{quote.discount_amount:,.2f}" if quote.discount_amount else "",
+            "subtotal": f"{sym}{quote.subtotal:,.2f}",
+            "discount": f"{sym}{quote.discount_amount:,.2f}" if quote.discount_amount else "",
             "vat_label": f"VAT @ {quote.vat_rate:g}%",
-            "vat": f"R{quote.vat_amount:,.2f}",
-            "total": f"R{quote.invoice_total:,.2f}",
+            "vat": f"{sym}{quote.vat_amount:,.2f}",
+            "total": f"{sym}{quote.invoice_total:,.2f}",
         }
     elif doc_type == "quotation":
         vat_on_quote = quote.vat_amount if quote.vat_mode == "inclusive" else 0
         financial = {
-            "subtotal": f"R{quote.subtotal:,.2f}",
-            "discount": f"R{quote.discount_amount:,.2f}" if quote.discount_amount else "",
+            "subtotal": f"{sym}{quote.subtotal:,.2f}",
+            "discount": f"{sym}{quote.discount_amount:,.2f}" if quote.discount_amount else "",
             "vat_label": "VAT",
-            "vat": f"R{vat_on_quote:,.2f}",
-            "total": f"R{quote.total:,.2f}",
+            "vat": f"{sym}{vat_on_quote:,.2f}",
+            "total": f"{sym}{quote.total:,.2f}",
         }
 
     title = {"quotation": "QUOTATION", "invoice": "TAX INVOICE",
@@ -149,6 +170,7 @@ def sample_context(company, doc_type: str) -> dict:
     from apps.identity.profile import document_header
 
     header = document_header(company, kind=doc_type)
+    sym = _ccy_symbol(company)
     show_prices = doc_type != "delivery"
     rows = [("Centrifugal pump overhaul — strip, inspect, rebuild", "2", 18500),
             ("Mechanical seal replacement kit", "2", 4200),
@@ -156,8 +178,8 @@ def sample_context(company, doc_type: str) -> dict:
     items = []
     for i, (desc, qty, price) in enumerate(rows, start=1):
         row = {"item_no": str(i), "description": desc, "qty": qty, "unit": "ea"}
-        row["unit_price"] = f"R{price:,.2f}" if show_prices else ""
-        row["amount"] = f"R{price * int(qty):,.2f}" if show_prices else ""
+        row["unit_price"] = f"{sym}{price:,.2f}" if show_prices else ""
+        row["amount"] = f"{sym}{price * int(qty):,.2f}" if show_prices else ""
         if not show_prices:
             row["ordered"] = qty
             row["delivered"] = qty
