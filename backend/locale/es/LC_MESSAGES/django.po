@@ -1,0 +1,4795 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-15 14:55+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
+"1 : 2;\n"
+
+#: apps/customers/models.py:29
+msgid "Prospect"
+msgstr ""
+
+#: apps/customers/models.py:30 apps/web/templates/web/billing.html:22
+#: apps/web/templates/web/customer_detail.html:21
+#: apps/web/templates/web/customers.html:41
+#: apps/web/templates/web/people.html:102
+msgid "Active"
+msgstr ""
+
+#: apps/customers/models.py:31
+msgid "On hold"
+msgstr ""
+
+#: apps/customers/models.py:32
+msgid "Dormant"
+msgstr ""
+
+#: apps/customers/models.py:33 apps/web/templates/web/customer_detail.html:22
+#: apps/web/templates/web/customers.html:42
+msgid "Blacklisted"
+msgstr ""
+
+#: apps/execution/models.py:104 apps/quotes/models.py:62
+#: apps/web/templates/web/invoices.html:20
+msgid "Draft"
+msgstr ""
+
+#: apps/execution/models.py:105 apps/web/templates/web/projects.html:22
+msgid "Ready"
+msgstr ""
+
+#: apps/execution/models.py:106
+msgid "Assigned"
+msgstr ""
+
+#: apps/execution/models.py:107 apps/quotes/models.py:70
+msgid "Accepted"
+msgstr ""
+
+#: apps/execution/models.py:108
+msgid "In progress"
+msgstr ""
+
+#: apps/execution/models.py:109
+msgid "Paused"
+msgstr ""
+
+#: apps/execution/models.py:110
+msgid "Waiting"
+msgstr ""
+
+#: apps/execution/models.py:111 apps/web/templates/web/work.html:20
+msgid "Blocked"
+msgstr ""
+
+#: apps/execution/models.py:112
+msgid "Quality check"
+msgstr ""
+
+#: apps/execution/models.py:113
+msgid "Client sign-off"
+msgstr ""
+
+#: apps/execution/models.py:114 apps/web/templates/web/profile.html:126
+msgid "Completed"
+msgstr ""
+
+#: apps/execution/models.py:115
+msgid "Closed"
+msgstr ""
+
+#: apps/execution/models.py:116 apps/projects/models.py:24
+#: apps/web/templates/web/billing.html:24
+#: apps/web/templates/web/projects.html:25
+msgid "Cancelled"
+msgstr ""
+
+#: apps/execution/models.py:135
+msgid "Critical"
+msgstr ""
+
+#: apps/execution/models.py:136
+msgid "High"
+msgstr ""
+
+#: apps/execution/models.py:137
+msgid "Medium"
+msgstr ""
+
+#: apps/execution/models.py:138
+msgid "Low"
+msgstr ""
+
+#: apps/execution/models.py:139
+msgid "Planning"
+msgstr ""
+
+#: apps/execution/models.py:153
+msgid "RFQ / Tender"
+msgstr ""
+
+#: apps/execution/models.py:154
+msgid "Manual job"
+msgstr ""
+
+#: apps/execution/models.py:155 apps/web/templates/web/customer_detail.html:324
+#: apps/web/templates/web/dashboard.html:128
+#: apps/web/templates/web/work.html:110
+msgid "Project"
+msgstr ""
+
+#: apps/execution/models.py:156
+msgid "Customer request"
+msgstr ""
+
+#: apps/execution/models.py:157
+msgid "Recurring maintenance"
+msgstr ""
+
+#: apps/execution/models.py:158
+msgid "Internal company job"
+msgstr ""
+
+#: apps/execution/models.py:159
+msgid "Breakdown / emergency callout"
+msgstr ""
+
+#: apps/execution/models.py:160
+msgid "Preventative maintenance"
+msgstr ""
+
+#: apps/identity/models.py:146
+msgid "Business address"
+msgstr ""
+
+#: apps/identity/models.py:148
+msgid "A phone number or email"
+msgstr ""
+
+#: apps/identity/models.py:150
+msgid "Company registration or VAT number"
+msgstr ""
+
+#: apps/identity/models.py:152
+msgid "Banking details (so customers can pay you)"
+msgstr ""
+
+#: apps/identity/profile.py:214
+msgid "Invoices will go out with no payment details."
+msgstr ""
+
+#: apps/identity/profile.py:217
+msgid ""
+"You are marked VAT-registered but have no VAT number — a tax invoice is not "
+"valid without it."
+msgstr ""
+
+#: apps/identity/profile.py:220
+msgid "Tenders and vendor onboarding require a registration number."
+msgstr ""
+
+#: apps/identity/profile.py:222
+msgid "Documents will print without a company address."
+msgstr ""
+
+#: apps/identity/validators.py:26
+#, python-format
+msgid "This password is too short. It must contain at least %(min)d character."
+msgid_plural ""
+"This password is too short. It must contain at least %(min)d characters."
+msgstr[0] ""
+msgstr[1] ""
+
+#: apps/identity/validators.py:33
+#, python-format
+msgid "Your password must contain at least %(min)d character."
+msgid_plural "Your password must contain at least %(min)d characters."
+msgstr[0] ""
+msgstr[1] ""
+
+#: apps/marketing/templates/marketing/about.html:6
+msgid "About us"
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:7
+msgid "We build software for the people who build things"
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:8
+msgid ""
+"Lulaworks is a modern operations platform built for contractors, engineering "
+"firms, mining contractors, maintenance teams, industrial service providers "
+"and construction businesses — anywhere in the world."
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:10
+msgid "Why we built Lulaworks"
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:11
+msgid ""
+"Contracting is hard enough without the admin. Most contractors run their "
+"business across spreadsheets, WhatsApp groups, email chains and a few "
+"disconnected apps. A quote lives in one place, the purchase order in "
+"another, the site photos on a phone, and the invoice in a third system "
+"entirely. Information falls through the cracks, margins leak, and no one "
+"ever has the full picture of a job in one place."
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:12
+msgid ""
+"We built Lulaworks to fix exactly that — to take a contractor from the first "
+"customer enquiry all the way to the final payment on one intelligent "
+"platform, with AI doing the tedious data entry along the way."
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:14
+msgid "Our mission"
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:15
+msgid ""
+"To give every contractor — from a two-person team to a fifty-person "
+"operation — the kind of operating system that used to be reserved for large "
+"enterprises: connected, intelligent, and simple enough to actually use on a "
+"busy site."
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:17
+msgid "Our vision"
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:18
+msgid ""
+"A world where running a contracting business is about doing great work, not "
+"fighting paperwork — where quoting, buying, delivering and getting paid all "
+"flow together, and the numbers are always clear."
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:20
+msgid "Built around real problems"
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:22
+msgid "Quote faster and win more work, without re-typing the same details."
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:23
+msgid "Know the true cost and profit of every job as it happens."
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:24
+msgid ""
+"Buy materials at the best price, with a supplier history that builds itself."
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:25
+msgid "Keep the field team accountable with GPS-stamped check-ins."
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:26
+msgid "Get paid on time with clean, compliant invoices and clear tracking."
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:30
+#: apps/marketing/templates/marketing/base.html:250
+#: apps/marketing/templates/marketing/base.html:282
+#: apps/marketing/templates/marketing/features.html:10
+#: apps/marketing/templates/marketing/features.html:38
+#: apps/marketing/templates/marketing/home.html:12
+#: apps/marketing/templates/marketing/home.html:110
+#: apps/marketing/templates/marketing/pricing.html:35
+msgid "Start Free Trial"
+msgstr ""
+
+#: apps/marketing/templates/marketing/about.html:31
+msgid "Talk to us"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:234
+#: apps/marketing/templates/marketing/base.html:279
+#: apps/marketing/templates/marketing/features.html:6
+msgid "Features"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:235
+#: apps/marketing/templates/marketing/base.html:280
+#: apps/marketing/templates/marketing/faq.html:13
+#: apps/marketing/templates/marketing/pricing.html:6
+msgid "Pricing"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:236
+#: apps/marketing/templates/marketing/base.html:286
+msgid "Learn"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:237
+#: apps/marketing/templates/marketing/base.html:287
+msgid "Free tools"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:238
+#: apps/marketing/templates/marketing/base.html:288
+msgid "Templates"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:239
+msgid "About"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:240
+#: apps/marketing/templates/marketing/base.html:289
+#: apps/marketing/templates/marketing/faq.html:6
+msgid "FAQ"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:241
+#: apps/marketing/templates/marketing/base.html:294
+msgid "Contact"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:247
+msgid "Go to Dashboard"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:249
+#: apps/marketing/templates/marketing/base.html:295
+msgid "Log in"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:273
+msgid ""
+"The Contractor Operating System — from quotation to payment, one intelligent "
+"platform built for contractors worldwide."
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:278
+msgid "Product"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:281
+#: apps/marketing/templates/marketing/features.html:11
+#: apps/marketing/templates/marketing/features.html:39
+#: apps/marketing/templates/marketing/home.html:13
+#: apps/marketing/templates/marketing/home.html:111
+#: apps/marketing/templates/marketing/pricing.html:43
+msgid "Book a Demo"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:285
+msgid "Resources"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:292
+#: apps/marketing/templates/marketing/contact.html:27
+#: apps/web/templates/web/company.html:3
+#: apps/web/templates/web/profile.html:122
+#: apps/web/templates/web/settings.html:12
+msgid "Company"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:293
+msgid "About Us"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:298
+msgid "Legal"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:299
+msgid "Privacy Policy"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:300
+msgid "Terms & Conditions"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:301
+msgid "Cookie Policy"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:306
+#, python-format
+msgid "© %(year)s Lulaworks. All rights reserved."
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:307
+msgid "Built for contractors worldwide · GDPR-ready"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:317
+#, python-format
+msgid ""
+"We use cookies to understand site traffic and improve Lulaworks. See our <a "
+"href=\"%(cookies_url)s\">cookie policy</a>."
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:319
+msgid "Decline"
+msgstr ""
+
+#: apps/marketing/templates/marketing/base.html:320
+msgid "Accept"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:8
+#: apps/marketing/templates/marketing/faq.html:49
+msgid "Contact us"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:9
+msgid "We'd love to hear from you"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:10
+msgid ""
+"Questions about Lulaworks, pricing or getting started? Send us a message and "
+"the right person will get back to you."
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:12
+msgid "Sales:"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:13
+msgid "Support:"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:14
+msgid "Business hours:"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:14
+msgid "Mon–Fri, 08:00–17:00 (local time)"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:15
+msgid "Where we work:"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:15
+msgid "Online, serving contractors worldwide"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:16
+msgid "Follow us: LinkedIn · Facebook · X · Instagram"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:20
+msgid "Send a message"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:24
+msgid "Name *"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:25
+msgid "Email *"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:28
+msgid "Subject"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:29
+msgid "Message *"
+msgstr ""
+
+#: apps/marketing/templates/marketing/contact.html:30
+msgid "Send message"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:6
+msgid "Frequently asked questions"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:8
+msgid "General"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:9
+msgid "What is Lulaworks?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:9
+msgid ""
+"Lulaworks is an all-in-one platform for contractors — quotations, jobs, "
+"tasks, procurement, suppliers, delivery notes, invoices and payments — with "
+"AI that handles the tedious data entry. It replaces the spreadsheets, "
+"WhatsApp threads and disconnected tools most contractors juggle."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:10
+msgid "Who is Lulaworks for?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:10
+msgid ""
+"Contractors, engineering firms, mining contractors, maintenance teams, "
+"industrial service providers and construction businesses — from a two-person "
+"office to a fifty-person operation."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:11
+msgid "Do I need to install anything?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:11
+msgid ""
+"No. Lulaworks runs in your browser and on mobile. There's nothing to install "
+"and updates happen automatically."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:14
+msgid "How much does Lulaworks cost?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:14
+#, python-format
+msgid ""
+"Three plans: Starter (R299/month), Professional (R1,299/month) and Business "
+"(R3,999/month). Annual billing saves roughly two months. See the <a "
+"href=\"%(pricing_url)s\">pricing page</a> for full details."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:15
+msgid "What's the difference between users and employees?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:15
+msgid ""
+"A <strong>user</strong> is someone who logs in (owner, admin, project "
+"manager, procurement, accounts) and consumes a licence. An <strong>employee</"
+"strong> is a worker you manage in the system (technicians, drivers, welders, "
+"operators). Employees are unlimited on every plan — we never charge for the "
+"size of your crew."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:16
+msgid "Can I change plans later?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:16
+msgid ""
+"Yes. Upgrade any time and the new limits apply immediately. Downgrades keep "
+"all your data — you simply can't add users beyond the smaller plan's limit "
+"until you're within it."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:18 apps/marketing/views.py:130
+msgid "Security"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:19
+msgid "Is my data secure?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:19
+msgid ""
+"Yes. Lulaworks uses role-based access control, full audit logging and strict "
+"tenant isolation, so your company's data is only ever visible to your "
+"company. Data is encrypted in transit."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:20
+msgid "Who can see my company's information?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:20
+msgid ""
+"Only the users you invite, according to the roles you assign them. No other "
+"company on the platform can access your data."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:22
+msgid "AI"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:23
+msgid "What does the AI actually do?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:23
+msgid ""
+"It reads documents for you — RFQs, purchase orders, supplier invoices and "
+"scopes of work — and fills in the details, and it can suggest quotations "
+"based on your own history. Each AI operation uses one AI credit."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:24
+msgid "What happens if I run out of AI credits?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:24
+msgid ""
+"All non-AI features keep working normally. You can buy an AI credit pack or "
+"upgrade your plan to resume AI operations. Your remaining credits are always "
+"shown on your dashboard."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:26
+#: apps/web/templates/web/billing.html:3
+msgid "Billing"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:27
+msgid "How does billing work?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:27
+msgid ""
+"You're billed monthly or annually for your chosen plan. AI credits reset "
+"each billing cycle. You can buy additional credit packs at any time, and "
+"they're added to your balance immediately."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:28
+msgid "Do you offer annual billing?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:28
+msgid ""
+"Yes — annual billing is available on every plan and saves you roughly two "
+"months compared to paying monthly."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:30
+msgid "Support"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:31
+msgid "What support is included?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:31
+msgid ""
+"Starter includes email support, Professional includes priority support, and "
+"Business includes highest-priority support. You can always reach us at "
+"support@lulaworks.com."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:33
+msgid "Data"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:34
+msgid "Who owns the data I put into Lulaworks?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:34
+#, python-format
+msgid ""
+"You do. Your data is yours — we process it to provide the service and never "
+"sell it. See our <a href=\"%(privacy_url)s\">Privacy Policy</a>."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:35
+msgid "Can I export my data?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:35
+msgid ""
+"Yes. Quotations, invoices and delivery notes export as PDF, and data exports "
+"as Excel."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:37
+msgid "Trial"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:38
+msgid "How does the free trial work?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:38
+msgid ""
+"Every new company gets a 30-day free trial with Professional features, 2 "
+"users, unlimited employees, 100 AI credits and 2 GB of storage. No credit "
+"card is required to start."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:39
+msgid "What happens when the trial ends?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:39
+msgid ""
+"You choose a paid plan to continue. All the data you created during the "
+"trial stays intact when you upgrade."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:41
+msgid "Cancellation"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:42
+msgid "Can I cancel any time?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:42
+msgid ""
+"Yes. You can cancel from your billing page. Access continues until the end "
+"of your current billing period, and your data is preserved."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:44
+msgid "Migration"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:45
+msgid "Can you help me move my existing data across?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:45
+#, python-format
+msgid ""
+"Yes. You can import historical quotations and supplier invoices to seed your "
+"history, and our team can help you get set up — <a "
+"href=\"%(contact_url)s\">get in touch</a>."
+msgstr ""
+
+#: apps/marketing/templates/marketing/faq.html:48
+msgid "Still have a question?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/features.html:7
+msgid "Everything a contractor needs, in one platform"
+msgstr ""
+
+#: apps/marketing/templates/marketing/features.html:8
+msgid ""
+"From the first customer enquiry to the final payment — plus the AI, mobile "
+"and reporting tools that make it effortless."
+msgstr ""
+
+#: apps/marketing/templates/marketing/features.html:35
+msgid "See it on your own jobs"
+msgstr ""
+
+#: apps/marketing/templates/marketing/features.html:36
+msgid "Start a free trial or book a live demo with our team."
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:8
+msgid "The Contractor Operating System"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:9
+msgid "From Quotation to Payment."
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:9
+msgid "One Platform. Powered by AI."
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:10
+msgid ""
+"Lulaworks helps contractors manage quotations, jobs, procurement, teams, "
+"deliveries, invoices and payments from one intelligent platform."
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:16
+msgid "AI Powered"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:17
+msgid "Cloud Based"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:18
+msgid "Mobile Friendly"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:19
+msgid "Secure"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:20
+msgid "Built for Contractors"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:24
+msgid "Lulaworks dashboard preview"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:27
+msgid "Open quotations"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:28
+msgid "Active jobs"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:29
+#: apps/web/templates/web/commercial_document_detail.html:138
+#: apps/web/templates/web/customer_detail.html:42
+#: apps/web/templates/web/invoices.html:31
+#: apps/web/templates/web/invoices.html:58
+msgid "Outstanding"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:32
+#: apps/marketing/templates/marketing/home.html:80 apps/marketing/views.py:47
+#: apps/marketing/views.py:100 apps/web/templates/web/settings.html:45
+#: apps/web/translation_strings.py:10
+msgid "Procurement"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:33
+msgid "On site now"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:34
+msgid "AI credits"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:44
+msgid "Why Lulaworks"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:45
+msgid "Stop juggling spreadsheets, WhatsApp and disconnected tools"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:46
+msgid ""
+"Most contractors run the business across a dozen places — a quote in Excel, "
+"a PO in email, site photos on WhatsApp, invoices in another app. Things "
+"slip, margins leak, and nobody has the full picture. Lulaworks brings the "
+"whole job into one place, from the first quotation to the final payment."
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:54
+msgid "Everything in one place"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:55
+msgid "One platform for the whole operation"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:63
+msgid "Explore all features →"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:71
+msgid "How it works"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:72
+msgid "The whole job, end to end"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:73
+msgid ""
+"Every step flows into the next — no re-typing, no lost paperwork, no gaps."
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:75
+#: apps/web/templates/web/customers.html:28
+#: apps/web/templates/web/invoices.html:57
+#: apps/web/templates/web/invoices.html:90
+#: apps/web/templates/web/quotations.html:67
+msgid "Customer"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:76
+#: apps/web/templates/web/customer_detail.html:313
+#: apps/web/templates/web/invoices.html:90
+#: apps/web/templates/web/project_detail.html:94
+#: apps/web/templates/web/quotations.html:67
+msgid "Quotation"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:77
+msgid "Purchase Order"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:78
+#: apps/web/templates/web/work.html:110
+msgid "Job"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:79 apps/marketing/views.py:97
+msgid "Tasks"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:81
+msgid "Delivery"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:82
+#: apps/web/templates/web/invoices.html:57
+msgid "Invoice"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:83
+#: apps/web/templates/web/invoices.html:58
+msgid "Payment"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:91
+msgid "Trusted by contractors"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:92
+msgid "Built for the way you actually work"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:107
+msgid "Ready to transform your contracting business?"
+msgstr ""
+
+#: apps/marketing/templates/marketing/home.html:108
+msgid "Start your 30-day free trial today. No credit card required."
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:7
+msgid "Simple, transparent pricing"
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:8
+msgid ""
+"Pay for the users and AI you need. <strong>Employees are always unlimited</"
+"strong> — we never charge you for the size of your crew."
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:12
+#: apps/web/templates/web/billing.html:106
+msgid "Monthly"
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:13
+#: apps/web/templates/web/billing.html:107
+msgid "Annual"
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:13
+#: apps/web/templates/web/billing.html:107
+msgid "· save ~2 months"
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:19
+msgid "MOST POPULAR"
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:22
+#: apps/web/templates/web/billing.html:117
+msgid "/yr"
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:23
+#: apps/web/templates/web/billing.html:118
+msgid "/mo"
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:26
+#: apps/web/templates/web/billing.html:121
+#, python-format
+msgid "Save %(sym)s%(amt)s a year"
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:29
+#, python-format
+msgid "%(n)s users"
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:30
+msgid "Unlimited employees"
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:31
+#, python-format
+msgid "%(c)s AI credits / month"
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:32
+#, python-format
+msgid "%(s)s storage"
+msgstr ""
+
+#: apps/marketing/templates/marketing/pricing.html:41
+#, python-format
+msgid ""
+"Prices shown in %(currency)s, based on your location. All plans include a 30-"
+"day free trial — no credit card required."
+msgstr ""
+
+#: apps/marketing/views.py:44 apps/marketing/views.py:88
+msgid "Quotation Management"
+msgstr ""
+
+#: apps/marketing/views.py:44
+msgid "Build accurate quotes fast and turn them into jobs in one click."
+msgstr ""
+
+#: apps/marketing/views.py:45
+msgid "Job Management"
+msgstr ""
+
+#: apps/marketing/views.py:45
+msgid "Every job in one view — scope, team, progress, money and paperwork."
+msgstr ""
+
+#: apps/marketing/views.py:46
+msgid "Task Management"
+msgstr ""
+
+#: apps/marketing/views.py:46
+msgid "Break jobs into tasks with checklists, owners and live progress."
+msgstr ""
+
+#: apps/marketing/views.py:47
+msgid "Raise requests, compare supplier prices and issue purchase orders."
+msgstr ""
+
+#: apps/marketing/views.py:48
+msgid "Supplier Intelligence"
+msgstr ""
+
+#: apps/marketing/views.py:48
+msgid "Every receipt teaches the system who sells what, and for how much."
+msgstr ""
+
+#: apps/marketing/views.py:49
+msgid "Document Management"
+msgstr ""
+
+#: apps/marketing/views.py:49
+msgid "POs, invoices, delivery notes and safety files, all in one place."
+msgstr ""
+
+#: apps/marketing/views.py:50
+msgid "AI Document Extraction"
+msgstr ""
+
+#: apps/marketing/views.py:50
+msgid "Drop in an RFQ, PO or invoice — AI reads it and fills the details."
+msgstr ""
+
+#: apps/marketing/views.py:51 apps/marketing/views.py:115
+msgid "Delivery Notes"
+msgstr ""
+
+#: apps/marketing/views.py:51
+msgid "Generate branded delivery notes straight from the job."
+msgstr ""
+
+#: apps/marketing/views.py:52
+msgid "Tax Invoices"
+msgstr ""
+
+#: apps/marketing/views.py:52
+msgid "Compliant tax invoices and progress claims, with payments tracked."
+msgstr ""
+
+#: apps/marketing/views.py:53
+msgid "GPS & Time Tracking"
+msgstr ""
+
+#: apps/marketing/views.py:53
+msgid "Field check-ins are GPS-stamped so you know who was where, when."
+msgstr ""
+
+#: apps/marketing/views.py:54
+msgid "Employee Management"
+msgstr ""
+
+#: apps/marketing/views.py:54
+msgid "Unlimited employees — technicians, drivers, operators — on every plan."
+msgstr ""
+
+#: apps/marketing/views.py:55
+msgid "Reporting & Analytics"
+msgstr ""
+
+#: apps/marketing/views.py:55
+msgid "See profitability, cash flow and job health as the work happens."
+msgstr ""
+
+#: apps/marketing/views.py:59
+msgid ""
+"We quote in minutes now, and I can finally see which jobs actually make "
+"money."
+msgstr ""
+
+#: apps/marketing/views.py:60
+msgid "Managing Director, mechanical contractor"
+msgstr ""
+
+#: apps/marketing/views.py:61
+msgid ""
+"The mobile check-ins ended the arguments about who was on site. It just "
+"works."
+msgstr ""
+
+#: apps/marketing/views.py:62
+msgid "Operations Manager, maintenance company"
+msgstr ""
+
+#: apps/marketing/views.py:63
+msgid ""
+"Uploading a mine's PO and having it fill in the job automatically saves us "
+"hours."
+msgstr ""
+
+#: apps/marketing/views.py:64
+msgid "Owner, industrial services"
+msgstr ""
+
+#: apps/marketing/views.py:82
+msgid "Company Management"
+msgstr ""
+
+#: apps/marketing/views.py:82
+msgid "Your business identity, entered once and reused everywhere."
+msgstr ""
+
+#: apps/marketing/views.py:83
+msgid "Company profile, VAT & registration numbers, banking and branding"
+msgstr ""
+
+#: apps/marketing/views.py:84
+msgid "Flows onto every quotation, invoice and delivery note automatically"
+msgstr ""
+
+#: apps/marketing/views.py:85
+msgid "Customer Management"
+msgstr ""
+
+#: apps/marketing/views.py:85
+msgid "Every client organisation, department and contact in one place."
+msgstr ""
+
+#: apps/marketing/views.py:86
+msgid "Contacts, sites and a full communication timeline"
+msgstr ""
+
+#: apps/marketing/views.py:87
+msgid "Documents routed to the right person by responsibility"
+msgstr ""
+
+#: apps/marketing/views.py:88
+msgid "Build accurate, professional quotes in minutes."
+msgstr ""
+
+#: apps/marketing/views.py:89
+msgid "Per-type templates and spreadsheet-style bulk line entry"
+msgstr ""
+
+#: apps/marketing/views.py:90
+msgid "Branded PDF output; award a quote to open a job in one click"
+msgstr ""
+
+#: apps/marketing/views.py:91 apps/web/templates/web/dashboard.html:53
+#: apps/web/templates/web/quotation_detail.html:235
+#: apps/web/templates/web/work.html:3 apps/web/templates/web/work.html:8
+msgid "Jobs"
+msgstr ""
+
+#: apps/marketing/views.py:91
+msgid "The operational heart — every job in a single view."
+msgstr ""
+
+#: apps/marketing/views.py:92
+msgid "Scope, team, progress, money and paperwork together"
+msgstr ""
+
+#: apps/marketing/views.py:93
+msgid "Raised from a quotation, a customer PO, or started standalone"
+msgstr ""
+
+#: apps/marketing/views.py:94 apps/web/templates/web/customers.html:29
+#: apps/web/templates/web/dashboard.html:51
+#: apps/web/templates/web/projects.html:3
+#: apps/web/templates/web/projects.html:7
+#: apps/web/templates/web/quotation_detail.html:234
+#: apps/web/translation_strings.py:11
+msgid "Projects"
+msgstr ""
+
+#: apps/marketing/views.py:94
+msgid "Group related jobs under one engagement."
+msgstr ""
+
+#: apps/marketing/views.py:95
+msgid "Roll up commercial documents, budget, actuals and timeline"
+msgstr ""
+
+#: apps/marketing/views.py:96
+msgid "Readiness gate keeps compliance in check before work starts"
+msgstr ""
+
+#: apps/marketing/views.py:97
+msgid "Break work down and track it to completion."
+msgstr ""
+
+#: apps/marketing/views.py:98
+msgid "Checklists, owners, dependencies and live progress"
+msgstr ""
+
+#: apps/marketing/views.py:99
+msgid "Field reports, GPS and evidence captured against each task"
+msgstr ""
+
+#: apps/marketing/views.py:100
+msgid "Buy the right materials at the right price."
+msgstr ""
+
+#: apps/marketing/views.py:101
+msgid "Raise procurement requests and compare supplier prices"
+msgstr ""
+
+#: apps/marketing/views.py:102
+msgid "Issue purchase orders and reconcile against receipts"
+msgstr ""
+
+#: apps/marketing/views.py:103
+msgid "Suppliers"
+msgstr ""
+
+#: apps/marketing/views.py:103
+msgid "A supplier database that builds itself."
+msgstr ""
+
+#: apps/marketing/views.py:104
+msgid "Every receipt records who you bought from and what you paid"
+msgstr ""
+
+#: apps/marketing/views.py:105
+msgid "Manual entry and old-invoice upload to seed your history"
+msgstr ""
+
+#: apps/marketing/views.py:106
+msgid "Products"
+msgstr ""
+
+#: apps/marketing/views.py:106
+msgid "Know the real price of everything you buy."
+msgstr ""
+
+#: apps/marketing/views.py:107
+msgid "Price comparison across suppliers, trends and stale-price flags"
+msgstr ""
+
+#: apps/marketing/views.py:108
+msgid "Product aliases so the same item is never counted twice"
+msgstr ""
+
+#: apps/marketing/views.py:109 apps/web/translation_strings.py:11
+msgid "Purchase Orders"
+msgstr ""
+
+#: apps/marketing/views.py:109
+msgid "Turn approved buying into clean paperwork."
+msgstr ""
+
+#: apps/marketing/views.py:110
+msgid "Generate and track POs against jobs and suppliers"
+msgstr ""
+
+#: apps/marketing/views.py:111
+msgid "Extract incoming customer POs with AI"
+msgstr ""
+
+#: apps/marketing/views.py:112 apps/web/templates/web/invoices.html:3
+#: apps/web/templates/web/invoices.html:8
+#: apps/web/templates/web/invoices.html:16
+msgid "Invoices"
+msgstr ""
+
+#: apps/marketing/views.py:112
+msgid "Get paid, and see it clearly."
+msgstr ""
+
+#: apps/marketing/views.py:113
+msgid "Compliant tax invoices and progress claims with retention"
+msgstr ""
+
+#: apps/marketing/views.py:114
+msgid "Payments and outstanding balances tracked per job"
+msgstr ""
+
+#: apps/marketing/views.py:115
+msgid "Prove delivery, on brand."
+msgstr ""
+
+#: apps/marketing/views.py:116
+msgid "Generate delivery notes straight from the job"
+msgstr ""
+
+#: apps/marketing/views.py:117
+msgid "Quantities and signatures captured for the record"
+msgstr ""
+
+#: apps/marketing/views.py:118
+msgid "Reports & Analytics"
+msgstr ""
+
+#: apps/marketing/views.py:118
+msgid "Run the business on numbers, not guesswork."
+msgstr ""
+
+#: apps/marketing/views.py:119
+msgid "Profitability, cash flow, aging and job health"
+msgstr ""
+
+#: apps/marketing/views.py:120
+msgid "Field spend flows into live profitability automatically"
+msgstr ""
+
+#: apps/marketing/views.py:121
+msgid "Employee App"
+msgstr ""
+
+#: apps/marketing/views.py:121
+msgid "The field team's tool, built mobile-first."
+msgstr ""
+
+#: apps/marketing/views.py:122
+msgid "Capture time, materials, fuel and progress from site"
+msgstr ""
+
+#: apps/marketing/views.py:123
+msgid "Works for technicians, drivers, welders, operators and labourers"
+msgstr ""
+
+#: apps/marketing/views.py:124
+msgid "GPS Tracking"
+msgstr ""
+
+#: apps/marketing/views.py:124
+msgid "Know who was on site, and when."
+msgstr ""
+
+#: apps/marketing/views.py:125
+msgid "Every field check-in is GPS-stamped and time-stamped"
+msgstr ""
+
+#: apps/marketing/views.py:126
+msgid "Distance-from-site flags keep records honest"
+msgstr ""
+
+#: apps/marketing/views.py:127
+msgid "AI Automation"
+msgstr ""
+
+#: apps/marketing/views.py:127
+msgid "Let AI do the data entry."
+msgstr ""
+
+#: apps/marketing/views.py:128
+msgid "Extract RFQs, purchase orders, supplier invoices and scopes of work"
+msgstr ""
+
+#: apps/marketing/views.py:129
+msgid "AI quotation suggestions grounded in your own history"
+msgstr ""
+
+#: apps/marketing/views.py:130
+msgid "Enterprise-grade protection for your data."
+msgstr ""
+
+#: apps/marketing/views.py:131
+msgid "Role-based access control and full audit logging"
+msgstr ""
+
+#: apps/marketing/views.py:132
+msgid "Tenant isolation so your data is only ever yours"
+msgstr ""
+
+#: apps/marketing/views.py:133
+msgid "Cloud Platform"
+msgstr ""
+
+#: apps/marketing/views.py:133
+msgid "Always on, everywhere."
+msgstr ""
+
+#: apps/marketing/views.py:134
+msgid "Access from desktop, tablet and mobile"
+msgstr ""
+
+#: apps/marketing/views.py:135
+msgid "Automatic backups and no software to install"
+msgstr ""
+
+#: apps/projects/models.py:20 apps/web/templates/web/projects.html:26
+msgid "Pending compliance"
+msgstr ""
+
+#: apps/projects/models.py:21 apps/web/templates/web/_readiness.html:7
+msgid "Ready for site"
+msgstr ""
+
+#: apps/projects/models.py:22 apps/web/templates/web/projects.html:23
+msgid "In execution"
+msgstr ""
+
+#: apps/projects/models.py:23 apps/web/templates/web/projects.html:24
+#: apps/web/templates/web/work_detail.html:66
+msgid "Complete"
+msgstr ""
+
+#: apps/quotes/models.py:63
+msgid "Estimator review"
+msgstr ""
+
+#: apps/quotes/models.py:64
+msgid "Manager approval"
+msgstr ""
+
+#: apps/quotes/models.py:65
+msgid "Commercial approval"
+msgstr ""
+
+#: apps/quotes/models.py:66
+msgid "Approved (internal)"
+msgstr ""
+
+#: apps/quotes/models.py:67
+msgid "Issued to customer"
+msgstr ""
+
+#: apps/quotes/models.py:68
+#: apps/web/templates/web/commercial_document_detail.html:112
+#: apps/web/templates/web/quotation_detail.html:153
+msgid "Sent"
+msgstr ""
+
+#: apps/quotes/models.py:69
+msgid "Revision requested"
+msgstr ""
+
+#: apps/quotes/models.py:71
+msgid "Awarded"
+msgstr ""
+
+#: apps/quotes/models.py:72
+msgid "Rejected"
+msgstr ""
+
+#: apps/quotes/models.py:73
+msgid "Lost"
+msgstr ""
+
+#: apps/quotes/models.py:74
+msgid "Expired"
+msgstr ""
+
+#: apps/web/templates/web/_language_switcher.html:12
+#: apps/web/templates/web/company.html:491
+#: apps/web/templates/web/profile.html:82
+msgid "Language"
+msgstr ""
+
+#: apps/web/templates/web/_language_switcher.html:18
+msgid "Change"
+msgstr ""
+
+#: apps/web/templates/web/_readiness.html:9
+msgid "Ready (overridden)"
+msgstr ""
+
+#: apps/web/templates/web/_readiness.html:11
+msgid "Not ready for site"
+msgstr ""
+
+#: apps/web/templates/web/_readiness.html:17
+msgid "Refresh"
+msgstr ""
+
+#: apps/web/templates/web/_readiness.html:32
+#, python-format
+msgid "Blocking (%(n)s)"
+msgstr ""
+
+#: apps/web/templates/web/_related.html:5
+msgid "Related records"
+msgstr ""
+
+#: apps/web/templates/web/base.html:369
+msgid "Search customers, jobs…"
+msgstr ""
+
+#: apps/web/templates/web/base.html:376
+msgid "Attention"
+msgstr ""
+
+#: apps/web/templates/web/base.html:400 apps/web/templates/web/profile.html:3
+#: apps/web/templates/web/profile.html:19
+#: apps/web/templates/web/settings.html:61
+msgid "My profile"
+msgstr ""
+
+#: apps/web/templates/web/base.html:406
+msgid "Sign out"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:5
+msgid "Billing & subscription"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:6
+msgid "Your Lulaworks plan, AI credits, storage and billing history."
+msgstr ""
+
+#: apps/web/templates/web/billing.html:10
+msgid "You're over your plan's limits."
+msgstr ""
+
+#: apps/web/templates/web/billing.html:11
+msgid ""
+"Your data is safe and fully accessible — but you can't add new users until "
+"you're back within the limit or on a bigger plan."
+msgstr ""
+
+#: apps/web/templates/web/billing.html:20
+msgid "No plan"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:21
+msgid "Free trial"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:23
+msgid "Suspended"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:26
+#, python-format
+msgid "%(cycle)s billing"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:29
+#, python-format
+msgid ""
+"%(n)s days left in your trial. Choose a plan below to keep everything after "
+"it ends — your data stays intact."
+msgstr ""
+
+#: apps/web/templates/web/billing.html:32
+msgid "Access ends"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:32
+msgid "Next billing date"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:37
+msgid "Cancellation scheduled — your data will be preserved."
+msgstr ""
+
+#: apps/web/templates/web/billing.html:43
+msgid "Cancel at the end of the current period? Your data is kept."
+msgstr ""
+
+#: apps/web/templates/web/billing.html:45
+msgid "Cancel subscription"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:55
+msgid "AI credits left"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:55
+#, python-format
+msgid "/ %(n)s mo"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:59
+msgid "Storage"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:63
+msgid "Users (licensed)"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:67
+msgid "Employees (unlimited)"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:72
+#, python-format
+msgid "⚠ Storage is %(pct)s%% full — free up space or upgrade for more."
+msgstr ""
+
+#: apps/web/templates/web/billing.html:78
+msgid "You're out of AI credits."
+msgstr ""
+
+#: apps/web/templates/web/billing.html:79
+msgid ""
+"Non-AI features keep working. Buy a credit pack below or upgrade your plan "
+"to resume AI document extraction and suggestions."
+msgstr ""
+
+#: apps/web/templates/web/billing.html:84
+msgid "Buy AI credits"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:89
+msgid "credits"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:94
+msgid "Buy pack"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:103
+msgid "Plans"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:114
+msgid "Most popular"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:127
+msgid "Current plan"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:134
+#, python-format
+msgid "Choose %(name)s"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:135
+msgid "Upgrade"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:136
+msgid "Downgrade"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:137
+msgid "Select"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:146
+msgid "Billing history"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:149
+#: apps/web/templates/web/commercial_document_detail.html:126
+#: apps/web/templates/web/commercial_document_detail.html:150
+#: apps/web/templates/web/commercial_document_detail.html:166
+#: apps/web/templates/web/invoices.html:57
+#: apps/web/templates/web/quotation_detail.html:167
+#: apps/web/templates/web/quotation_detail.html:218
+msgid "Date"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:149
+msgid "Item"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:149
+msgid "Credits"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:149
+#: apps/web/templates/web/commercial_document_detail.html:126
+#: apps/web/templates/web/invoices.html:90
+msgid "Amount"
+msgstr ""
+
+#: apps/web/templates/web/billing.html:158
+msgid "No billing activity yet."
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:13
+msgid "Read-only — the commercial record"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:22
+msgid "from"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:33
+#: apps/web/templates/web/project_detail.html:175
+#: apps/web/templates/web/quotation_detail.html:47
+msgid "Approve"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:36
+#: apps/web/templates/web/quotation_detail.html:50
+msgid "Download PDF"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:37
+#: apps/web/templates/web/quotation_detail.html:51
+msgid "Export Excel"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:42
+msgid "View quotation"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:46
+#: apps/web/templates/web/quotation_detail.html:60
+msgid "View delivery note"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:49
+#: apps/web/templates/web/commercial_document_detail.html:56
+#: apps/web/templates/web/invoices.html:100
+msgid "Creating…"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:49
+#: apps/web/templates/web/quotation_detail.html:63
+msgid "Create delivery note"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:53
+#: apps/web/templates/web/quotation_detail.html:54
+msgid "View tax invoice"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:56
+#: apps/web/templates/web/quotation_detail.html:57
+msgid "Create tax invoice"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:61
+msgid "View purchase order"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:63
+#: apps/web/templates/web/quotation_detail.html:78
+msgid "Upload purchase order"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:67
+#: apps/web/templates/web/commercial_document_detail.html:154
+msgid "Record payment"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:67
+#: apps/web/templates/web/commercial_document_detail.html:122
+msgid "Payments"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:72
+#, python-format
+msgid "%(kind)s timeline"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:77
+msgid "current"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:77
+#: apps/web/templates/web/quotation_detail.html:96
+msgid "pending"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:83
+#, python-format
+msgid "%(kind)s preview"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:85
+#, python-format
+msgid "%(kind)s PDF preview"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:88
+msgid "Generated from"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:89
+msgid ""
+"the customer, items, prices and VAT come from the quotation, nothing re-"
+"entered."
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:89
+msgid ""
+"the customer, items and quantities come from the quotation, nothing re-"
+"entered."
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:93
+#: apps/web/templates/web/quotation_detail.html:134
+msgid "Send to customer"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:97
+#: apps/web/templates/web/customer_detail.html:153
+#: apps/web/templates/web/quotation_detail.html:138
+msgid "To"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:100
+#: apps/web/templates/web/quotation_detail.html:141
+msgid "Message (optional)"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:101
+msgid "Add a short note…"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:102
+#, python-format
+msgid "Email %(kind)s (PDF attached)"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:109
+#: apps/web/templates/web/quotation_detail.html:150
+msgid "Sent to"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:109
+#: apps/web/templates/web/quotation_detail.html:150
+msgid "When"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:109
+#: apps/web/templates/web/customer_detail.html:313
+#: apps/web/templates/web/customer_detail.html:324
+#: apps/web/templates/web/customers.html:29
+#: apps/web/templates/web/people.html:73
+#: apps/web/templates/web/project_detail.html:133
+#: apps/web/templates/web/projects.html:14
+#: apps/web/templates/web/quotation_detail.html:150
+#: apps/web/templates/web/quotation_detail.html:168
+#: apps/web/templates/web/quotation_detail.html:218
+#: apps/web/templates/web/quotations.html:67
+#: apps/web/templates/web/work.html:111
+msgid "Status"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:113
+#: apps/web/templates/web/quotation_detail.html:154
+msgid "Failed"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:126
+msgid "Reference"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:131
+msgid "No payments recorded yet."
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:134
+msgid "Invoice total"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:136
+#: apps/web/templates/web/invoices.html:68
+msgid "Paid"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:143
+msgid "Paid in full"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:144
+#: apps/web/templates/web/invoices.html:69
+msgid "Part-paid"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:145
+msgid "Unpaid"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:148
+msgid "Record a payment"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:149
+msgid "Amount (R)"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:152
+msgid "Reference (POP)"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:153
+msgid "EFT ref / POP"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:154
+msgid "Recording…"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:162
+msgid "Purchase order"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:166
+#: apps/web/templates/web/quotation_detail.html:167
+msgid "PO number"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:166
+#: apps/web/templates/web/customer_detail.html:82
+#: apps/web/templates/web/quotation_detail.html:167
+#: apps/web/templates/web/quotations.html:68
+msgid "Value"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:172
+#: apps/web/templates/web/quotation_detail.html:224
+#: apps/web/templates/web/quotations.html:18
+#: apps/web/templates/web/work.html:18
+msgid "Open"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:177
+#, python-format
+msgid ""
+"Manage purchase orders on the <a href=\"%(quote_url)s#po-upload\">quotation</"
+"a>."
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:180
+#: apps/web/templates/web/quotation_detail.html:183
+msgid "Attach a purchase order"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:181
+msgid ""
+"Attach the customer's PO document — its number, date, value and payment "
+"terms are read straight off it, so there is nothing to type."
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:184
+#: apps/web/templates/web/quotation_detail.html:187
+msgid "Choose PO document"
+msgstr ""
+
+#: apps/web/templates/web/commercial_document_detail.html:192
+msgid "No purchase order attached."
+msgstr ""
+
+#: apps/web/templates/web/company.html:9
+msgid "Finish setting up your company to start issuing documents"
+msgstr ""
+
+#: apps/web/templates/web/company.html:10
+msgid ""
+"Every quotation and invoice you send pulls from here. A few essentials are "
+"still missing:"
+msgstr ""
+
+#: apps/web/templates/web/company.html:14
+msgid ""
+"Fill these in below (and add your logo &amp; banking under the tabs). You'll "
+"have full access as soon as they're saved."
+msgstr ""
+
+#: apps/web/templates/web/company.html:21
+#: apps/web/templates/web/settings.html:15
+msgid "Company profile"
+msgstr ""
+
+#: apps/web/templates/web/company.html:22
+msgid ""
+"Your identity inside Lulaworks. Entered once here, then read by every "
+"quotation, invoice, purchase order and generated document."
+msgstr ""
+
+#: apps/web/templates/web/company.html:25
+#, python-format
+msgid "%(pct)s%% complete"
+msgstr ""
+
+#: apps/web/templates/web/company.html:30
+msgid "Document Designer"
+msgstr ""
+
+#: apps/web/templates/web/company.html:31
+#: apps/web/templates/web/settings.html:41
+msgid "Email history"
+msgstr ""
+
+#: apps/web/templates/web/company.html:32
+msgid "Working hours"
+msgstr ""
+
+#: apps/web/templates/web/company.html:33
+msgid "Tax settings"
+msgstr ""
+
+#: apps/web/templates/web/company.html:38
+msgid "Add your company email"
+msgstr ""
+
+#: apps/web/templates/web/company.html:39
+msgid ""
+"Without it, when a customer replies to a quotation or invoice you send, the "
+"reply won't reach you. Edit <strong>Contact details</strong> below to set it."
+msgstr ""
+
+#: apps/web/templates/web/company.html:45
+msgid "What is missing actually costs you"
+msgstr ""
+
+#: apps/web/templates/web/company.html:52
+msgid "Registrations lapsing"
+msgstr ""
+
+#: apps/web/templates/web/company.html:54
+#: apps/web/templates/web/quotations.html:83
+msgid "expired"
+msgstr ""
+
+#: apps/web/templates/web/company.html:54
+msgid "expires"
+msgstr ""
+
+#: apps/web/templates/web/company.html:60
+msgid ""
+"You can view the company profile but not change it — that needs the company-"
+"manage permission."
+msgstr ""
+
+#: apps/web/templates/web/company.html:65
+msgid "Company identity"
+msgstr ""
+
+#: apps/web/templates/web/company.html:66
+#: apps/web/templates/web/company.html:109
+#: apps/web/templates/web/company.html:146
+#: apps/web/templates/web/company.html:188
+#: apps/web/templates/web/company.html:328
+#: apps/web/templates/web/company.html:393
+#: apps/web/templates/web/company.html:431
+#: apps/web/templates/web/company.html:472
+#: apps/web/templates/web/company.html:505
+#: apps/web/templates/web/company.html:531
+#: apps/web/templates/web/customer_detail.html:25
+#: apps/web/templates/web/quotation_detail.html:43
+#: apps/web/templates/web/quotation_detail.html:160
+msgid "Edit"
+msgstr ""
+
+#: apps/web/templates/web/company.html:69
+#: apps/web/templates/web/customer_detail.html:119
+msgid "Registered name"
+msgstr ""
+
+#: apps/web/templates/web/company.html:70
+#: apps/web/templates/web/company.html:83
+msgid "Trading name"
+msgstr ""
+
+#: apps/web/templates/web/company.html:71
+#: apps/web/templates/web/customer_detail.html:121
+msgid "Registration no."
+msgstr ""
+
+#: apps/web/templates/web/company.html:72
+msgid "Tax reference"
+msgstr ""
+
+#: apps/web/templates/web/company.html:73
+#: apps/web/templates/web/company.html:86
+msgid "VAT number"
+msgstr ""
+
+#: apps/web/templates/web/company.html:74
+#: apps/web/templates/web/company.html:87
+msgid "Company type"
+msgstr ""
+
+#: apps/web/templates/web/company.html:75
+#: apps/web/templates/web/company.html:97
+#: apps/web/templates/web/customers.html:59
+msgid "Industry"
+msgstr ""
+
+#: apps/web/templates/web/company.html:76
+#: apps/web/templates/web/company.html:98
+msgid "Year established"
+msgstr ""
+
+#: apps/web/templates/web/company.html:82
+#: apps/web/templates/web/customers.html:57
+msgid "Registered company name"
+msgstr ""
+
+#: apps/web/templates/web/company.html:84
+msgid "Company registration number"
+msgstr ""
+
+#: apps/web/templates/web/company.html:85
+msgid "Tax reference number"
+msgstr ""
+
+#: apps/web/templates/web/company.html:90
+msgid "(Pty) Ltd"
+msgstr ""
+
+#: apps/web/templates/web/company.html:91
+msgid "Close Corporation"
+msgstr ""
+
+#: apps/web/templates/web/company.html:92
+msgid "Sole Proprietor"
+msgstr ""
+
+#: apps/web/templates/web/company.html:93
+msgid "Partnership"
+msgstr ""
+
+#: apps/web/templates/web/company.html:94
+msgid "Trust"
+msgstr ""
+
+#: apps/web/templates/web/company.html:95
+msgid "Non-Profit Company"
+msgstr ""
+
+#: apps/web/templates/web/company.html:100
+msgid "Save identity"
+msgstr ""
+
+#: apps/web/templates/web/company.html:101
+#: apps/web/templates/web/company.html:138
+#: apps/web/templates/web/company.html:180
+#: apps/web/templates/web/company.html:212
+#: apps/web/templates/web/company.html:280
+#: apps/web/templates/web/company.html:319
+#: apps/web/templates/web/company.html:353
+#: apps/web/templates/web/company.html:384
+#: apps/web/templates/web/company.html:423
+#: apps/web/templates/web/company.html:464
+#: apps/web/templates/web/company.html:497
+#: apps/web/templates/web/company.html:523
+#: apps/web/templates/web/company.html:552
+#: apps/web/templates/web/profile.html:91
+msgid "Cancel"
+msgstr ""
+
+#: apps/web/templates/web/company.html:108
+msgid "Contact details"
+msgstr ""
+
+#: apps/web/templates/web/company.html:112
+#: apps/web/templates/web/company.html:124
+msgid "Primary email"
+msgstr ""
+
+#: apps/web/templates/web/company.html:113
+#: apps/web/templates/web/company.html:127
+msgid "Primary phone"
+msgstr ""
+
+#: apps/web/templates/web/company.html:114
+#: apps/web/templates/web/company.html:129
+#: apps/web/templates/web/company.html:314
+#: apps/web/templates/web/company.html:316
+#: apps/web/templates/web/customer_detail.html:236
+#: apps/web/templates/web/people.html:57 apps/web/templates/web/profile.html:43
+#: apps/web/templates/web/profile.html:75
+msgid "Mobile"
+msgstr ""
+
+#: apps/web/templates/web/company.html:115
+#: apps/web/templates/web/company.html:130
+msgid "WhatsApp"
+msgstr ""
+
+#: apps/web/templates/web/company.html:116
+#: apps/web/templates/web/company.html:131
+msgid "Emergency / after-hours"
+msgstr ""
+
+#: apps/web/templates/web/company.html:117
+#: apps/web/templates/web/company.html:132
+msgid "Website"
+msgstr ""
+
+#: apps/web/templates/web/company.html:118
+msgid "Social"
+msgstr ""
+
+#: apps/web/templates/web/company.html:126
+msgid "Required — the address customers reply to on your documents."
+msgstr ""
+
+#: apps/web/templates/web/company.html:128
+msgid "Secondary phone"
+msgstr ""
+
+#: apps/web/templates/web/company.html:135
+msgid "X (Twitter)"
+msgstr ""
+
+#: apps/web/templates/web/company.html:137
+msgid "Save contact details"
+msgstr ""
+
+#: apps/web/templates/web/company.html:145
+#: apps/web/templates/web/customer_detail.html:124
+msgid "Physical address"
+msgstr ""
+
+#: apps/web/templates/web/company.html:152
+msgid "No physical address set."
+msgstr ""
+
+#: apps/web/templates/web/company.html:168
+#: apps/web/templates/web/company.html:204
+msgid "Country"
+msgstr ""
+
+#: apps/web/templates/web/company.html:171
+#: apps/web/templates/web/company.html:206
+msgid "Select a country…"
+msgstr ""
+
+#: apps/web/templates/web/company.html:177
+#: apps/web/templates/web/company.html:223
+#: apps/web/templates/web/company.html:475
+#: apps/web/templates/web/company.html:484
+msgid "Currency"
+msgstr ""
+
+#: apps/web/templates/web/company.html:178
+msgid ""
+"— set automatically from your company country. We check the address format "
+"for your country; we don't verify that it physically exists."
+msgstr ""
+
+#: apps/web/templates/web/company.html:179
+msgid "Save address"
+msgstr ""
+
+#: apps/web/templates/web/company.html:187
+#: apps/web/templates/web/company.html:201
+#: apps/web/templates/web/customer_detail.html:125
+msgid "Postal address"
+msgstr ""
+
+#: apps/web/templates/web/company.html:191
+msgid "Same as the physical address."
+msgstr ""
+
+#: apps/web/templates/web/company.html:195
+msgid "No postal address set."
+msgstr ""
+
+#: apps/web/templates/web/company.html:199
+msgid "Same as physical address"
+msgstr ""
+
+#: apps/web/templates/web/company.html:202
+#: apps/web/templates/web/customers.html:62
+msgid "City"
+msgstr ""
+
+#: apps/web/templates/web/company.html:211
+msgid "Save postal address"
+msgstr ""
+
+#: apps/web/templates/web/company.html:219
+#: apps/web/templates/web/settings.html:21
+msgid "Banking"
+msgstr ""
+
+#: apps/web/templates/web/company.html:220
+msgid "+ Add account"
+msgstr ""
+
+#: apps/web/templates/web/company.html:223
+msgid "Bank"
+msgstr ""
+
+#: apps/web/templates/web/company.html:223
+#: apps/web/templates/web/company.html:259
+msgid "Account name"
+msgstr ""
+
+#: apps/web/templates/web/company.html:223
+#: apps/web/templates/web/projects.html:14
+#: apps/web/templates/web/quotation_detail.html:218
+msgid "Number"
+msgstr ""
+
+#: apps/web/templates/web/company.html:223
+msgid "Branch"
+msgstr ""
+
+#: apps/web/templates/web/company.html:223
+#: apps/web/templates/web/company.html:236
+#: apps/web/templates/web/company.html:239
+msgid "Default"
+msgstr ""
+
+#: apps/web/templates/web/company.html:226
+msgid ""
+"We couldn’t match this to a known bank — please re-add it from the picker"
+msgstr ""
+
+#: apps/web/templates/web/company.html:226
+msgid "Review"
+msgstr ""
+
+#: apps/web/templates/web/company.html:234
+msgid "Use this account on invoices &amp; quotes"
+msgstr ""
+
+#: apps/web/templates/web/company.html:241
+#, python-format
+msgid "Remove %(b)s %(m)s?"
+msgstr ""
+
+#: apps/web/templates/web/company.html:241
+#: apps/web/templates/web/company.html:300
+#: apps/web/templates/web/company.html:369
+msgid "Remove"
+msgstr ""
+
+#: apps/web/templates/web/company.html:244
+msgid ""
+"No bank account yet — invoices will go out with no way for a client to pay "
+"you."
+msgstr ""
+
+#: apps/web/templates/web/company.html:251
+msgid "Bank name"
+msgstr ""
+
+#: apps/web/templates/web/company.html:254
+msgid "Select or type your bank"
+msgstr ""
+
+#: apps/web/templates/web/company.html:259
+msgid "Account holder name"
+msgstr ""
+
+#: apps/web/templates/web/company.html:263
+#: apps/web/templates/web/company.html:344
+#: apps/web/templates/web/company.html:600
+msgid "(optional)"
+msgstr ""
+
+#: apps/web/templates/web/company.html:264
+#: apps/web/templates/web/company.html:601
+msgid "Auto-filled when you pick your bank"
+msgstr ""
+
+#: apps/web/templates/web/company.html:267
+msgid "Account type"
+msgstr ""
+
+#: apps/web/templates/web/company.html:267
+msgid "Cheque / Current"
+msgstr ""
+
+#: apps/web/templates/web/company.html:267
+msgid "Savings"
+msgstr ""
+
+#: apps/web/templates/web/company.html:267
+msgid "Transmission"
+msgstr ""
+
+#: apps/web/templates/web/company.html:267
+msgid "Foreign currency"
+msgstr ""
+
+#: apps/web/templates/web/company.html:279
+msgid "Add bank account"
+msgstr ""
+
+#: apps/web/templates/web/company.html:288
+msgid "Company Members"
+msgstr ""
+
+#: apps/web/templates/web/company.html:289
+msgid "+ Add member"
+msgstr ""
+
+#: apps/web/templates/web/company.html:292
+#: apps/web/templates/web/company.html:379
+#: apps/web/templates/web/customer_detail.html:191
+msgid "Name"
+msgstr ""
+
+#: apps/web/templates/web/company.html:292
+#: apps/web/templates/web/people.html:38 apps/web/templates/web/people.html:73
+#: apps/web/templates/web/profile.html:123
+msgid "Role"
+msgstr ""
+
+#: apps/web/templates/web/company.html:292
+#: apps/web/templates/web/company.html:312
+#: apps/web/templates/web/company.html:316
+#: apps/web/templates/web/customer_detail.html:128
+#: apps/web/templates/web/customer_detail.html:234
+#: apps/web/templates/web/login.html:16 apps/web/templates/web/profile.html:44
+#: apps/web/templates/web/profile.html:134
+msgid "Email"
+msgstr ""
+
+#: apps/web/templates/web/company.html:292
+#: apps/web/templates/web/company.html:313
+#: apps/web/templates/web/company.html:316
+msgid "Phone"
+msgstr ""
+
+#: apps/web/templates/web/company.html:292
+msgid "Prefers"
+msgstr ""
+
+#: apps/web/templates/web/company.html:295
+#: apps/web/templates/web/customer_detail.html:195
+msgid "Primary"
+msgstr ""
+
+#: apps/web/templates/web/company.html:299
+msgid "Make primary"
+msgstr ""
+
+#: apps/web/templates/web/company.html:300
+#: apps/web/templates/web/company.html:369
+#, python-format
+msgid "Remove %(n)s?"
+msgstr ""
+
+#: apps/web/templates/web/company.html:303
+msgid "No contacts yet. The primary contact is printed on outgoing documents."
+msgstr ""
+
+#: apps/web/templates/web/company.html:310
+#: apps/web/templates/web/customer_detail.html:227
+msgid "Full name"
+msgstr ""
+
+#: apps/web/templates/web/company.html:311
+#: apps/web/templates/web/customer_detail.html:228
+#: apps/web/templates/web/people.html:53 apps/web/templates/web/people.html:73
+#: apps/web/templates/web/profile.html:124
+msgid "Job title"
+msgstr ""
+
+#: apps/web/templates/web/company.html:315
+#: apps/web/templates/web/customer_detail.html:237
+msgid "Extension"
+msgstr ""
+
+#: apps/web/templates/web/company.html:316
+#: apps/web/templates/web/customer_detail.html:239
+msgid "Preferred contact method"
+msgstr ""
+
+#: apps/web/templates/web/company.html:318
+#: apps/web/templates/web/people.html:61
+msgid "Add member"
+msgstr ""
+
+#: apps/web/templates/web/company.html:327
+msgid "Statutory registrations"
+msgstr ""
+
+#: apps/web/templates/web/company.html:332
+#: apps/web/templates/web/company.html:341
+msgid "VAT / GST registered"
+msgstr ""
+
+#: apps/web/templates/web/company.html:332
+#: apps/web/templates/web/work_detail.html:413
+msgid "Yes"
+msgstr ""
+
+#: apps/web/templates/web/company.html:332
+#: apps/web/templates/web/work_detail.html:413
+msgid "No"
+msgstr ""
+
+#: apps/web/templates/web/company.html:348
+msgid "ISO certifications (comma separated)"
+msgstr ""
+
+#: apps/web/templates/web/company.html:350
+msgid "Industry certifications (comma separated)"
+msgstr ""
+
+#: apps/web/templates/web/company.html:352
+msgid "Save statutory details"
+msgstr ""
+
+#: apps/web/templates/web/company.html:360
+msgid "Supporting documents"
+msgstr ""
+
+#: apps/web/templates/web/company.html:361
+msgid "+ Upload"
+msgstr ""
+
+#: apps/web/templates/web/company.html:364
+#: apps/web/templates/web/customer_detail.html:153
+#: apps/web/templates/web/quotation_detail.html:218
+msgid "Document"
+msgstr ""
+
+#: apps/web/templates/web/company.html:364
+#: apps/web/templates/web/company.html:380
+#: apps/web/templates/web/quotations.html:67
+msgid "Type"
+msgstr ""
+
+#: apps/web/templates/web/company.html:364
+msgid "Expires"
+msgstr ""
+
+#: apps/web/templates/web/company.html:368
+msgid "No expiry"
+msgstr ""
+
+#: apps/web/templates/web/company.html:371
+msgid "No documents uploaded yet."
+msgstr ""
+
+#: apps/web/templates/web/company.html:371
+#, python-format
+msgid "Recommended for your country: %(docs)s."
+msgstr ""
+
+#: apps/web/templates/web/company.html:378
+msgid "File"
+msgstr ""
+
+#: apps/web/templates/web/company.html:379
+msgid "Tax clearance certificate"
+msgstr ""
+
+#: apps/web/templates/web/company.html:381
+msgid "Expires on"
+msgstr ""
+
+#: apps/web/templates/web/company.html:383
+msgid "Upload document"
+msgstr ""
+
+#: apps/web/templates/web/company.html:392
+msgid "Business profile"
+msgstr ""
+
+#: apps/web/templates/web/company.html:396
+msgid "Description"
+msgstr ""
+
+#: apps/web/templates/web/company.html:397
+msgid "Services"
+msgstr ""
+
+#: apps/web/templates/web/company.html:398
+msgid "Industries served"
+msgstr ""
+
+#: apps/web/templates/web/company.html:399
+msgid "Size"
+msgstr ""
+
+#: apps/web/templates/web/company.html:399
+#, python-format
+msgid "%(staff)s staff · %(vehicles)s vehicles · %(sites)s sites"
+msgstr ""
+
+#: apps/web/templates/web/company.html:400
+msgid "Operating in"
+msgstr ""
+
+#: apps/web/templates/web/company.html:405
+msgid "Business description"
+msgstr ""
+
+#: apps/web/templates/web/company.html:406
+msgid "What the business does."
+msgstr ""
+
+#: apps/web/templates/web/company.html:407
+msgid "Services offered (comma separated)"
+msgstr ""
+
+#: apps/web/templates/web/company.html:409
+msgid "Specialisations (comma separated)"
+msgstr ""
+
+#: apps/web/templates/web/company.html:411
+msgid "Industries served (comma separated)"
+msgstr ""
+
+#: apps/web/templates/web/company.html:414
+msgid "Employees"
+msgstr ""
+
+#: apps/web/templates/web/company.html:415
+msgid "Vehicles"
+msgstr ""
+
+#: apps/web/templates/web/company.html:416
+#: apps/web/templates/web/customer_detail.html:296
+msgid "Sites"
+msgstr ""
+
+#: apps/web/templates/web/company.html:418
+msgid "Operating provinces (comma separated)"
+msgstr ""
+
+#: apps/web/templates/web/company.html:420
+msgid "Operating countries (comma separated)"
+msgstr ""
+
+#: apps/web/templates/web/company.html:422
+msgid "Save business profile"
+msgstr ""
+
+#: apps/web/templates/web/company.html:430
+msgid "Branding"
+msgstr ""
+
+#: apps/web/templates/web/company.html:434
+msgid "No logo set"
+msgstr ""
+
+#: apps/web/templates/web/company.html:435
+#: apps/web/templates/web/company.html:460
+msgid "Document prefix"
+msgstr ""
+
+#: apps/web/templates/web/company.html:437
+#: apps/web/templates/web/company.html:458
+msgid "Brand colour"
+msgstr ""
+
+#: apps/web/templates/web/company.html:446
+msgid "Company logo"
+msgstr ""
+
+#: apps/web/templates/web/company.html:448
+msgid ""
+"Used on documents, and as the fallback wherever a specific asset is not set."
+msgstr ""
+
+#: apps/web/templates/web/company.html:451
+msgid "Invoice logo"
+msgstr ""
+
+#: apps/web/templates/web/company.html:452
+msgid "Report logo"
+msgstr ""
+
+#: apps/web/templates/web/company.html:453
+msgid "Email logo"
+msgstr ""
+
+#: apps/web/templates/web/company.html:454
+msgid "Letterhead"
+msgstr ""
+
+#: apps/web/templates/web/company.html:455
+msgid "Stamp"
+msgstr ""
+
+#: apps/web/templates/web/company.html:456
+msgid "Digital signature"
+msgstr ""
+
+#: apps/web/templates/web/company.html:457
+msgid "Company seal"
+msgstr ""
+
+#: apps/web/templates/web/company.html:459
+msgid "Secondary colour"
+msgstr ""
+
+#: apps/web/templates/web/company.html:461
+msgid "Up to 4 letters. Begins every reference."
+msgstr ""
+
+#: apps/web/templates/web/company.html:463
+msgid "Save branding"
+msgstr ""
+
+#: apps/web/templates/web/company.html:471
+msgid "Defaults"
+msgstr ""
+
+#: apps/web/templates/web/company.html:476
+#: apps/web/templates/web/company.html:488
+msgid "Time zone"
+msgstr ""
+
+#: apps/web/templates/web/company.html:477
+msgid "Default tax rate"
+msgstr ""
+
+#: apps/web/templates/web/company.html:478
+msgid "Financial year starts"
+msgstr ""
+
+#: apps/web/templates/web/company.html:478
+#, python-format
+msgid "month %(m)s"
+msgstr ""
+
+#: apps/web/templates/web/company.html:485
+msgid "Set automatically from your company country"
+msgstr ""
+
+#: apps/web/templates/web/company.html:487
+msgid "From company country — change it on the Address section."
+msgstr ""
+
+#: apps/web/templates/web/company.html:489
+msgid "Date format"
+msgstr ""
+
+#: apps/web/templates/web/company.html:490
+msgid "Number format"
+msgstr ""
+
+#: apps/web/templates/web/company.html:492
+#, python-format
+msgid "Default tax rate (%%)"
+msgstr ""
+
+#: apps/web/templates/web/company.html:493
+msgid "Financial year starts (month)"
+msgstr ""
+
+#: apps/web/templates/web/company.html:494
+msgid "Week starts on (0 = Monday)"
+msgstr ""
+
+#: apps/web/templates/web/company.html:496
+msgid "Save defaults"
+msgstr ""
+
+#: apps/web/templates/web/company.html:504
+msgid "Commercial document terms"
+msgstr ""
+
+#: apps/web/templates/web/company.html:508
+msgid "Quotation terms"
+msgstr ""
+
+#: apps/web/templates/web/company.html:508
+#: apps/web/templates/web/company.html:509
+#: apps/web/templates/web/company.html:510
+msgid "Set"
+msgstr ""
+
+#: apps/web/templates/web/company.html:509
+msgid "Invoice terms"
+msgstr ""
+
+#: apps/web/templates/web/company.html:510
+msgid "Delivery note terms"
+msgstr ""
+
+#: apps/web/templates/web/company.html:512
+msgid "Inserted automatically into every quotation, invoice and delivery note."
+msgstr ""
+
+#: apps/web/templates/web/company.html:516
+msgid "Quotation terms & conditions"
+msgstr ""
+
+#: apps/web/templates/web/company.html:517
+#, python-format
+msgid "e.g. Prices valid for 30 days. 50%% deposit required to commence."
+msgstr ""
+
+#: apps/web/templates/web/company.html:518
+msgid "Invoice terms & conditions"
+msgstr ""
+
+#: apps/web/templates/web/company.html:519
+msgid "e.g. Payment due within 30 days. E&amp;OE."
+msgstr ""
+
+#: apps/web/templates/web/company.html:520
+msgid "Delivery note terms & conditions"
+msgstr ""
+
+#: apps/web/templates/web/company.html:521
+msgid "e.g. Goods received in good order unless noted at delivery."
+msgstr ""
+
+#: apps/web/templates/web/company.html:522
+msgid "Save document terms"
+msgstr ""
+
+#: apps/web/templates/web/company.html:534
+#: apps/web/templates/web/company.html:542
+msgid "Response style"
+msgstr ""
+
+#: apps/web/templates/web/company.html:535
+msgid "Enabled"
+msgstr ""
+
+#: apps/web/templates/web/company.html:535
+msgid "Suggestions"
+msgstr ""
+
+#: apps/web/templates/web/company.html:535
+msgid "Summaries"
+msgstr ""
+
+#: apps/web/templates/web/company.html:535
+msgid "Cost-estimation"
+msgstr ""
+
+#: apps/web/templates/web/company.html:535
+msgid "Task-generation"
+msgstr ""
+
+#: apps/web/templates/web/company.html:535
+#: apps/web/templates/web/work_detail.html:480
+msgid "Compliance"
+msgstr ""
+
+#: apps/web/templates/web/company.html:538
+#, python-format
+msgid ""
+"Administrators manage providers, health and usage in <a "
+"href=\"%(ai_url)s\">AI Settings</a>."
+msgstr ""
+
+#: apps/web/templates/web/company.html:543
+msgid "Concise"
+msgstr ""
+
+#: apps/web/templates/web/company.html:543
+msgid "Detailed"
+msgstr ""
+
+#: apps/web/templates/web/company.html:545
+msgid "AI suggestions"
+msgstr ""
+
+#: apps/web/templates/web/company.html:546
+msgid "AI summaries"
+msgstr ""
+
+#: apps/web/templates/web/company.html:547
+msgid "AI cost estimation"
+msgstr ""
+
+#: apps/web/templates/web/company.html:548
+msgid "AI task generation"
+msgstr ""
+
+#: apps/web/templates/web/company.html:549
+msgid "AI compliance detection"
+msgstr ""
+
+#: apps/web/templates/web/company.html:551
+msgid "Save AI settings"
+msgstr ""
+
+#: apps/web/templates/web/company.html:602
+msgid "Changing country to"
+msgstr ""
+
+#: apps/web/templates/web/company.html:603
+msgid ""
+"Its currency, banking, address, statutory and document rules will apply when "
+"you save. Your existing information is kept — nothing is deleted "
+"automatically."
+msgstr ""
+
+#: apps/web/templates/web/crm/_tabs.html:7
+msgid "Overview"
+msgstr ""
+
+#: apps/web/templates/web/crm/_tabs.html:9
+msgid "Sales"
+msgstr ""
+
+#: apps/web/templates/web/crm/_tabs.html:10
+msgid "Leads"
+msgstr ""
+
+#: apps/web/templates/web/crm/_tabs.html:11
+msgid "Pipeline"
+msgstr ""
+
+#: apps/web/templates/web/crm/_tabs.html:12
+msgid "Activities"
+msgstr ""
+
+#: apps/web/templates/web/crm/_tabs.html:15
+#: apps/web/templates/web/crm/_tabs.html:16
+msgid "Analytics"
+msgstr ""
+
+#: apps/web/templates/web/crm/_tabs.html:17
+msgid "Reports"
+msgstr ""
+
+#: apps/web/templates/web/crm/_tabs.html:20 apps/web/translation_strings.py:10
+msgid "Marketing"
+msgstr ""
+
+#: apps/web/templates/web/crm/_tabs.html:21
+msgid "Campaigns & more"
+msgstr ""
+
+#: apps/web/templates/web/crm/_tabs.html:24
+msgid "Search CRM…"
+msgstr ""
+
+#: apps/web/templates/web/crm/_tabs.html:25
+msgid "Search"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:5
+msgid "← Our clients"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:10
+msgid "Reconstructed from imported history"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:11
+msgid "Historical data"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:16
+#, python-format
+msgid "From %(n)s imported documents:"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:26
+msgid "+ Add a person"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:33
+#: apps/web/templates/web/customers.html:28
+msgid "Contacts"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:35
+msgid "Open opportunities"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:37
+msgid "Pipeline value"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:39
+#: apps/web/templates/web/profile.html:125
+msgid "Open jobs"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:46
+msgid "Relationship timeline"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:61
+msgid ""
+"No history yet — quotations, jobs, invoices, opportunities and CRM "
+"activities will appear here as they happen."
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:77
+msgid "Opportunities"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:79
+#, python-format
+msgid "%(n)s open worth %(v)s"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:82
+msgid "Opportunity"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:82
+msgid "Stage"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:82
+msgid "Probability"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:92
+msgid "No opportunities yet."
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:97
+msgid "Next:"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:98
+#: apps/web/templates/web/work_detail.html:229
+#, python-format
+msgid "due %(date)s"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:99
+msgid "all activities"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:106
+msgid "New opportunity title"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:107
+msgid "Estimated value"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:109
+msgid "Open opportunity"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:115
+msgid "Details"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:118
+msgid "Our vendor no. with them"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:120
+msgid "Trading as"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:122
+msgid "VAT no."
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:123
+msgid "Tax no."
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:126
+msgid "City / Province"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:127
+#: apps/web/templates/web/customer_detail.html:235
+msgid "Telephone"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:129
+msgid "Payment terms"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:129
+#: apps/web/templates/web/customers.html:40
+#, python-format
+msgid "%(d)s days"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:130
+msgid "Vendor portal"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:135
+msgid "Responsibility coverage"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:140
+msgid "gap"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:142
+msgid "nobody"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:146
+msgid ""
+"An unassigned “approves invoices” is why a payment sits unactioned for a "
+"month."
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:150
+msgid "Who gets what"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:153
+msgid "CC"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:164
+msgid ""
+"Resolved from what each person may do, not their job title. Nothing is sent "
+"automatically."
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:179
+msgid "Departments & people"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:181
+msgid "Manage contacts →"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:191
+#: apps/web/templates/web/projects.html:14
+msgid "Title"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:191
+msgid "Responsibilities"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:191
+msgid "Reach"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:204
+msgid ""
+"No contacts filed under a department yet — add people below and Lulaworks "
+"can start routing documents."
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:209
+msgid "Not in a department"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:222
+msgid "Add a person"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:229
+#: apps/web/templates/web/work_detail.html:408
+msgid "Department"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:231
+msgid "— none —"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:245
+msgid "Roles (what they are called)"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:252
+msgid "Responsibilities (what they may do — this drives routing)"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:260
+msgid "Primary contact for this customer"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:261
+msgid "Add contact"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:279
+msgid "Branches & sites"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:281
+msgid "Manage sites →"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:285
+msgid "Branches"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:290
+msgid "No branches."
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:297
+msgid ""
+"Projects are assigned to a specific place, not to the client in general."
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:301
+msgid "No sites."
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:308
+msgid "Jobs for this customer"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:317
+#: apps/web/templates/web/customer_detail.html:328
+msgid "None yet."
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:335
+#: apps/web/templates/web/customers.html:28
+msgid "Departments"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:339
+msgid "Department name"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:340
+msgid "Department email"
+msgstr ""
+
+#: apps/web/templates/web/customer_detail.html:341
+msgid "Add department"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:3
+#: apps/web/templates/web/customers.html:8
+msgid "Customers"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:9
+msgid ""
+"Client organisations — not names in a text field. Each one holds its own "
+"branches, sites, departments and the people who actually release RFQs, "
+"approve quotations and pay invoices."
+msgstr ""
+
+#: apps/web/templates/web/customers.html:16
+msgid "Search customers…"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:18
+#: apps/web/templates/web/quotations.html:51
+msgid "Any status"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:23
+#: apps/web/templates/web/quotations.html:62
+#: apps/web/templates/web/work.html:61
+msgid "Filter"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:28
+msgid "Code"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:28
+msgid "Vendor no."
+msgstr ""
+
+#: apps/web/templates/web/customers.html:29
+#: apps/web/templates/web/quotations.html:3
+#: apps/web/templates/web/quotations.html:10 apps/web/translation_strings.py:11
+msgid "Quotations"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:29
+msgid "Terms"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:39
+#, python-format
+msgid "%(n)s open"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:45
+msgid "No customers yet."
+msgstr ""
+
+#: apps/web/templates/web/customers.html:52
+msgid "+ Add customer"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:54
+msgid "Add a customer"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:60
+msgid "General email"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:61
+msgid "Main telephone"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:63
+msgid "Our vendor number with them"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:65
+msgid ""
+"The code they use for you in their system. It goes on every quotation and "
+"invoice you send them."
+msgstr ""
+
+#: apps/web/templates/web/customers.html:67
+msgid "Add customer"
+msgstr ""
+
+#: apps/web/templates/web/customers.html:68
+msgid ""
+"A standard department structure (Engineering, Maintenance, Procurement, "
+"Finance…) is created so you can file contacts immediately. Remove any you "
+"don't need."
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:3 apps/web/translation_strings.py:10
+msgid "Dashboard"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:5
+msgid "Operations dashboard"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:6
+msgid "Your whole business at a glance."
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:12
+msgid "Finish your company setup"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:14
+#, python-format
+msgid "%(pct)s%% complete · %(remaining)s items left."
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:15
+msgid "Complete your details to unlock invoicing & professional documents."
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:28
+msgid "Complete setup"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:29
+msgid "Remind me later"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:55
+msgid "Ready / in progress"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:57
+msgid "Blocked on compliance"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:63
+#: apps/web/templates/web/project_detail.html:33
+msgid "Revenue"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:65
+#: apps/web/templates/web/project_detail.html:34
+msgid "Actual cost"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:67
+msgid "Portfolio margin"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:69
+msgid "Retention held"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:75
+msgid "Jobs by status"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:86
+msgid "jobs"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:96
+msgid "No jobs yet — create some from the Jobs tab."
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:100
+msgid "Jobs by origin"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:108 apps/web/templates/web/work.html:9
+msgid ""
+"Every job runs through one engine — the only difference is how it started."
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:109
+msgid "No jobs yet."
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:115
+msgid "Loss-making projects"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:118
+#, python-format
+msgid "margin %(m)s%%"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:124
+msgid "Needs attention · compliance not ready"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:128
+#: apps/web/templates/web/projects.html:14
+msgid "Client"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:128
+#: apps/web/templates/web/project_detail.html:9
+msgid "Readiness"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:136
+#, python-format
+msgid "%(pct)s%% · %(n)s blocking"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:139
+msgid "Review →"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:145
+msgid "All clear"
+msgstr ""
+
+#: apps/web/templates/web/dashboard.html:145
+msgid "Every project is compliance-ready."
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:9
+msgid ""
+"Create a customer invoice from scratch, or raise a tax invoice from an "
+"approved quotation."
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:11
+msgid "+ New invoice"
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:18
+#: apps/web/templates/web/project_detail.html:138
+msgid "Approved"
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:22
+msgid "This month"
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:27
+msgid "Total invoiced"
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:29
+#, python-format
+msgid "Across %(n)s invoice(s) · R%(paid)s paid"
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:33
+#, python-format
+msgid "R%(v)s invoiced this month"
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:38
+msgid "Outstanding by age"
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:41
+#: apps/web/templates/web/invoices.html:57
+#: apps/web/templates/web/project_detail.html:56
+msgid "Total"
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:52
+msgid "Your invoices"
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:78
+msgid "No invoices yet."
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:79
+msgid "+ Create your first invoice"
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:86
+msgid "Raise a tax invoice from a quotation"
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:87
+msgid ""
+"These approved quotations are ready to invoice. This creates a tax invoice "
+"that carries the quotation's number — figures pulled straight from the "
+"quotation."
+msgstr ""
+
+#: apps/web/templates/web/invoices.html:100
+msgid "Create tax invoice →"
+msgstr ""
+
+#: apps/web/templates/web/login.html:3 apps/web/templates/web/login.html:20
+msgid "Sign in"
+msgstr ""
+
+#: apps/web/templates/web/login.html:11
+msgid "Manager dashboards"
+msgstr ""
+
+#: apps/web/templates/web/login.html:18
+msgid "Password"
+msgstr ""
+
+#: apps/web/templates/web/login.html:23
+msgid "Forgot your password?"
+msgstr ""
+
+#: apps/web/templates/web/login.html:28
+msgid "New to Lulaworks?"
+msgstr ""
+
+#: apps/web/templates/web/login.html:29
+msgid "Book a demo →"
+msgstr ""
+
+#: apps/web/templates/web/people.html:3 apps/web/templates/web/people.html:8
+#: apps/web/translation_strings.py:12
+msgid "People"
+msgstr ""
+
+#: apps/web/templates/web/people.html:9
+msgid ""
+"Your company's members. Everyone here is assignable to jobs — active members "
+"fill every team picker."
+msgstr ""
+
+#: apps/web/templates/web/people.html:11
+#, python-format
+msgid "%(n)s active"
+msgstr ""
+
+#: apps/web/templates/web/people.html:17
+#, python-format
+msgid "Temporary password for %(email)s"
+msgstr ""
+
+#: apps/web/templates/web/people.html:20
+msgid ""
+"Hand this over now — it will not be shown again and is not stored anywhere "
+"in readable form. They must choose their own password the first time they "
+"sign in; until they do, they cannot reach any other page."
+msgstr ""
+
+#: apps/web/templates/web/people.html:27
+msgid "+ Add person"
+msgstr ""
+
+#: apps/web/templates/web/people.html:29
+msgid "Add a member"
+msgstr ""
+
+#: apps/web/templates/web/people.html:34
+msgid "Email (their sign-in)"
+msgstr ""
+
+#: apps/web/templates/web/people.html:40
+msgid "Choose a role…"
+msgstr ""
+
+#: apps/web/templates/web/people.html:45 apps/web/templates/web/profile.html:41
+#: apps/web/templates/web/profile.html:66
+msgid "First name"
+msgstr ""
+
+#: apps/web/templates/web/people.html:49 apps/web/templates/web/profile.html:42
+#: apps/web/templates/web/profile.html:70
+msgid "Last name"
+msgstr ""
+
+#: apps/web/templates/web/people.html:63
+msgid ""
+"A temporary password is generated and shown to you once — there is no invite "
+"email yet, so you pass it on yourself."
+msgstr ""
+
+#: apps/web/templates/web/people.html:70
+msgid "Members"
+msgstr ""
+
+#: apps/web/templates/web/people.html:73
+msgid "Person"
+msgstr ""
+
+#: apps/web/templates/web/people.html:83
+msgid "has not set a password yet"
+msgstr ""
+
+#: apps/web/templates/web/people.html:97
+msgid "Save"
+msgstr ""
+
+#: apps/web/templates/web/people.html:99
+msgid "No role"
+msgstr ""
+
+#: apps/web/templates/web/people.html:103
+msgid "Deactivated"
+msgstr ""
+
+#: apps/web/templates/web/people.html:112
+msgid "Deactivate"
+msgstr ""
+
+#: apps/web/templates/web/people.html:115
+msgid "Restore"
+msgstr ""
+
+#: apps/web/templates/web/people.html:118
+msgid "you"
+msgstr ""
+
+#: apps/web/templates/web/people.html:126
+msgid ""
+"Members are deactivated, never deleted — a person who leaves keeps their "
+"name on the jobs, timesheets and sign-offs they touched. Deactivating "
+"removes every permission immediately and takes them out of all assignment "
+"pickers."
+msgstr ""
+
+#: apps/web/templates/web/profile.html:20
+msgid ""
+"Your photo and details. Everyone can edit their own profile, whatever their "
+"role."
+msgstr ""
+
+#: apps/web/templates/web/profile.html:22
+msgid "Change password"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:35
+msgid "Team member"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:35
+#: apps/web/templates/web/profile.html:133
+msgid "Platform administrator"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:38
+msgid "Edit profile"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:56
+msgid "Profile photo"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:59
+msgid ""
+"JPEG, PNG, WebP or GIF, up to 5 MB. Your photo appears on every job you are "
+"assigned to, so the crew can see who is who."
+msgstr ""
+
+#: apps/web/templates/web/profile.html:78
+msgid "Email (your sign-in)"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:80
+msgid "Ask an administrator to change your email"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:84
+msgid "Use company / country default"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:87
+msgid ""
+"The language Lulaworks shows you — independent of your company's country."
+msgstr ""
+
+#: apps/web/templates/web/profile.html:90
+msgid "Save profile"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:94
+msgid "Remove your profile photo?"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:94
+msgid "Remove photo"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:118
+msgid "Where you stand"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:129
+msgid ""
+"Your role is set by an administrator — it decides what you can see and do."
+msgstr ""
+
+#: apps/web/templates/web/profile.html:133
+msgid "Access"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:133
+msgid "No company linked"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:137
+#, python-format
+msgid ""
+"You manage the whole platform from the <a href=\"%(console_url)s\">Console</"
+"a>."
+msgstr ""
+
+#: apps/web/templates/web/profile.html:137
+msgid "Your account isn't linked to a company yet."
+msgstr ""
+
+#: apps/web/templates/web/profile.html:143
+msgid "Your open jobs"
+msgstr ""
+
+#: apps/web/templates/web/profile.html:150
+#, python-format
+msgid "as %(roles)s"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:5
+msgid "← Projects"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:16
+msgid "Override reason (audited)…"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:17
+msgid "Override gate"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:22
+msgid "Project health"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:24
+msgid "Overall"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:31
+msgid "Commercial"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:31
+msgid "(finance only)"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:35
+msgid "Gross profit"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:36
+#: apps/web/templates/web/quotations.html:68
+msgid "Margin"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:40
+msgid "Profit forecast"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:42
+msgid "AT RISK"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:43
+msgid "WATCH"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:44
+msgid "ON TRACK"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:50
+msgid "Category"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:50
+msgid "Budget"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:50
+#: apps/web/templates/web/work_detail.html:411
+msgid "Actual"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:50
+msgid "Variance"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:63
+msgid "Jobs & tasks"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:65
+msgid "+ Add job"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:75
+#: apps/web/templates/web/project_detail.html:82
+#: apps/web/templates/web/work_detail.html:19
+msgid "Operations"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:85
+msgid "No jobs yet — add the first one."
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:90
+#: apps/web/templates/web/quotation_detail.html:215
+msgid "Commercial documents"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:100
+msgid "Customer PO"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:101
+msgid "received"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:105
+msgid "Tax invoice"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:108
+#: apps/web/templates/web/project_detail.html:114
+msgid "PDF"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:111
+msgid "Delivery note"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:117
+msgid "No commercial documents — this job wasn't raised from a quotation."
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:123
+msgid "Materials & procurement"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:125
+#: apps/web/templates/web/work_detail.html:312
+msgid "Allocated"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:126
+#: apps/web/templates/web/work_detail.html:314
+msgid "Spent"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:127
+#, python-format
+msgid "Materials (%(n)s)"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:129
+msgid ""
+"Field spend the crew captures here (material, fuel & expense receipts) flows "
+"straight into this job's actual cost and profitability"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:129
+msgid "(visible to finance)"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:133
+msgid "Request"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:133
+msgid "For"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:139
+msgid "Awaiting"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:140
+msgid "Fulfilled"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:150
+msgid "Timeline"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:161
+msgid "Compliance checklist"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:168
+msgid "mandatory"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:181
+msgid "No compliance items."
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:187
+msgid "Raise a progress claim"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:191
+#, python-format
+msgid "%% complete"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:193
+#, python-format
+msgid "retention %%"
+msgstr ""
+
+#: apps/web/templates/web/project_detail.html:195
+msgid "Raise claim"
+msgstr ""
+
+#: apps/web/templates/web/projects.html:8
+msgid "A project groups related jobs."
+msgstr ""
+
+#: apps/web/templates/web/projects.html:8
+#, python-format
+msgid "%(n)s in total."
+msgstr ""
+
+#: apps/web/templates/web/projects.html:10
+msgid "+ New project"
+msgstr ""
+
+#: apps/web/templates/web/projects.html:14
+msgid "Job type"
+msgstr ""
+
+#: apps/web/templates/web/projects.html:30
+msgid "No projects yet."
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:5
+msgid "← Quotations"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:18
+msgid "Finalized"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:18
+msgid "Sent to customer"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:19
+msgid "Pending approval"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:22
+msgid "Read-only — a change is a new revision"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:23
+msgid "Past its validity date"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:25
+#, python-format
+msgid "Revision %(n)s"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:69
+msgid "Open Job"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:72
+msgid "Start Job"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:82
+#, python-format
+msgid "Create revision %(n)s? This version stays exactly as it is."
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:83
+msgid "Create revision"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:88
+msgid "Commercial timeline"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:103
+msgid "Scope of Work"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:108
+msgid "Quotation preview"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:114
+msgid "Document template"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:116
+msgid "Company default"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:118
+msgid "(default)"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:122
+msgid "Apply to this quotation"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:123
+msgid "Manage templates →"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:128
+msgid "Quotation PDF preview"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:142
+msgid "Add a short note to the customer…"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:143
+msgid "Email quotation (PDF attached)"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:160
+msgid "This is the exact PDF the customer receives. To change it, use"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:160
+msgid "(available while the quotation is still in preparation)"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:163
+msgid "Purchase orders"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:174
+msgid "document"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:184
+msgid ""
+"Attach the customer's PO document — its number, date, value and payment "
+"terms are read straight off it, so there is nothing to type. Several may be "
+"attached for staged jobs."
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:198
+msgid "Award and create job"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:199
+msgid ""
+"Moves the customer, site, contact, scope and value into a project and a job "
+"in one step."
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:201
+#, python-format
+msgid "Award %(num)s and create the job?&#10;&#10;This is not reversible."
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:203
+msgid "Name for the job (optional)"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:204
+msgid "Award → create job"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:210
+msgid ""
+"Available once the quotation is approved — a PO is the customer's "
+"instruction to proceed."
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:231
+msgid "Traceability"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:236
+msgid "Invoiced"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:243
+msgid "Revisions"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:247
+msgid "the version this supersedes"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:248
+msgid "this version"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:258
+msgid "History"
+msgstr ""
+
+#: apps/web/templates/web/quotation_detail.html:266
+msgid "Nothing recorded yet."
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:11
+msgid ""
+"The commercial gateway between sales and operations. Every awarded quotation "
+"becomes the contract execution traces back to."
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:13
+msgid "+ New quotation"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:20
+msgid "With the customer"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:22
+msgid "Awaiting approval"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:25
+msgid "Win rate"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:30
+msgid "Open pipeline value"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:32
+#, python-format
+msgid "Across %(n)s live quotation(s)"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:34
+msgid "Won"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:36
+#, python-format
+msgid "%(n)s awarded"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:43
+#, python-format
+msgid "%(n)s quotation(s) past their validity date"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:44
+msgid ""
+"Still showing as open. Follow them up or mark them expired — a stale "
+"pipeline flatters your forecast."
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:49
+msgid "Quotation number…"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:57
+msgid "Any customer"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:69
+msgid "Valid until"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:79
+msgid "Some lines have no cost captured"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:85
+msgid "No quotations yet."
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:91
+msgid "Quotation pages"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:93
+#: apps/web/templates/web/quotations.html:94
+msgid "← Previous"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:95
+#, python-format
+msgid "Page %(cur)s of %(total)s"
+msgstr ""
+
+#: apps/web/templates/web/quotations.html:97
+#: apps/web/templates/web/quotations.html:98
+msgid "Next →"
+msgstr ""
+
+#: apps/web/templates/web/settings.html:3
+#: apps/web/templates/web/settings.html:7 apps/web/translation_strings.py:13
+msgid "Settings"
+msgstr ""
+
+#: apps/web/templates/web/settings.html:8
+msgid ""
+"Everything that configures Lulaworks for your business — set it once here "
+"and every screen and document reads from it."
+msgstr ""
+
+#: apps/web/templates/web/settings.html:16
+msgid "Name, registration, address, branding & logo — read by every document."
+msgstr ""
+
+#: apps/web/templates/web/settings.html:18
+msgid "Business hours"
+msgstr ""
+
+#: apps/web/templates/web/settings.html:19
+msgid "Operating days and times."
+msgstr ""
+
+#: apps/web/templates/web/settings.html:22
+msgid "Bank accounts shown on invoices for payment."
+msgstr ""
+
+#: apps/web/templates/web/settings.html:24
+msgid "Tax"
+msgstr ""
+
+#: apps/web/templates/web/settings.html:25
+msgid "VAT number, tax settings and jurisdictions."
+msgstr ""
+
+#: apps/web/templates/web/settings.html:28
+msgid "Documents"
+msgstr ""
+
+#: apps/web/templates/web/settings.html:31
+msgid "Document templates"
+msgstr ""
+
+#: apps/web/templates/web/settings.html:32
+msgid ""
+"Design your quotation, invoice & delivery-note look — pick, customise or "
+"import."
+msgstr ""
+
+#: apps/web/templates/web/settings.html:35
+msgid "Communication & AI"
+msgstr ""
+
+#: apps/web/templates/web/settings.html:38
+msgid "LulaAI settings"
+msgstr ""
+
+#: apps/web/templates/web/settings.html:39
+msgid "AI provider status, model, health and usage."
+msgstr ""
+
+#: apps/web/templates/web/settings.html:42
+msgid "Every email sent, delivery status and resend."
+msgstr ""
+
+#: apps/web/templates/web/settings.html:48
+msgid "Purchase request settings"
+msgstr ""
+
+#: apps/web/templates/web/settings.html:49
+msgid ""
+"Whether purchases need approval, and the value threshold that triggers it."
+msgstr ""
+
+#: apps/web/templates/web/settings.html:52
+msgid "Account"
+msgstr ""
+
+#: apps/web/templates/web/settings.html:55
+msgid "People & roles"
+msgstr ""
+
+#: apps/web/templates/web/settings.html:56
+msgid "Team members, invites and permissions."
+msgstr ""
+
+#: apps/web/templates/web/settings.html:58
+msgid "Billing & plan"
+msgstr ""
+
+#: apps/web/templates/web/settings.html:59
+msgid "Subscription, AI credits and invoices."
+msgstr ""
+
+#: apps/web/templates/web/settings.html:62
+msgid "Your own name, avatar and password."
+msgstr ""
+
+#: apps/web/templates/web/work.html:11
+msgid "+ New Job"
+msgstr ""
+
+#: apps/web/templates/web/work.html:16
+msgid "Total jobs"
+msgstr ""
+
+#: apps/web/templates/web/work.html:22
+msgid "Completion"
+msgstr ""
+
+#: apps/web/templates/web/work.html:36
+msgid "Search jobs…"
+msgstr ""
+
+#: apps/web/templates/web/work.html:38
+msgid "All origins"
+msgstr ""
+
+#: apps/web/templates/web/work.html:44
+msgid "All statuses"
+msgstr ""
+
+#: apps/web/templates/web/work.html:50
+msgid "Any priority"
+msgstr ""
+
+#: apps/web/templates/web/work.html:56
+msgid "Project + standalone"
+msgstr ""
+
+#: apps/web/templates/web/work.html:57
+msgid "Project jobs"
+msgstr ""
+
+#: apps/web/templates/web/work.html:58 apps/web/templates/web/work.html:71
+#: apps/web/templates/web/work.html:95 apps/web/templates/web/work.html:137
+msgid "Standalone"
+msgstr ""
+
+#: apps/web/templates/web/work.html:60
+msgid "Mine"
+msgstr ""
+
+#: apps/web/templates/web/work.html:78 apps/web/templates/web/work.html:138
+#: apps/web/templates/web/work_detail.html:23
+msgid "Overdue"
+msgstr ""
+
+#: apps/web/templates/web/work.html:82 apps/web/templates/web/work.html:125
+msgid "No jobs match these filters."
+msgstr ""
+
+#: apps/web/templates/web/work.html:99
+msgid "blocked"
+msgstr ""
+
+#: apps/web/templates/web/work.html:110
+#: apps/web/templates/web/work_detail.html:405
+msgid "Origin"
+msgstr ""
+
+#: apps/web/templates/web/work.html:110
+#: apps/web/templates/web/work_detail.html:378
+msgid "Owner"
+msgstr ""
+
+#: apps/web/templates/web/work.html:110
+msgid "Priority"
+msgstr ""
+
+#: apps/web/templates/web/work.html:111
+#: apps/web/templates/web/work_detail.html:409
+msgid "Due"
+msgstr ""
+
+#: apps/web/templates/web/work.html:111
+#: apps/web/templates/web/work_detail.html:30
+msgid "Progress"
+msgstr ""
+
+#: apps/web/templates/web/work.html:144
+msgid "Nothing scheduled — no job has a due date yet."
+msgstr ""
+
+#: apps/web/templates/web/work.html:147
+#, python-format
+msgid "No due date (%(n)s)"
+msgstr ""
+
+#: apps/web/templates/web/work.html:161
+msgid "Who is carrying what"
+msgstr ""
+
+#: apps/web/templates/web/work.html:166
+#, python-format
+msgid "%(h)sh est."
+msgstr ""
+
+#: apps/web/templates/web/work.html:167
+#, python-format
+msgid "%(n)s late"
+msgstr ""
+
+#: apps/web/templates/web/work.html:169
+msgid "Nobody is assigned to open jobs yet."
+msgstr ""
+
+#: apps/web/templates/web/work.html:173
+#, python-format
+msgid "Unassigned open jobs (%(n)s)"
+msgstr ""
+
+#: apps/web/templates/web/work.html:178
+msgid "Needs an owner"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:5
+msgid "← Jobs"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:12
+msgid "Standalone job"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:22
+#, python-format
+msgid "Risk: %(level)s"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:32
+msgid "Checklist"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:34
+msgid "Subtasks"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:37
+msgid "Blockers"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:42
+msgid "Why this is blocked"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:46
+msgid ""
+"Blockers are computed from real dependencies — clear the cause and this "
+"clears itself."
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:52
+msgid "Move it along"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:56
+msgid "Start job"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:65
+msgid "Actual hrs"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:76
+msgid "Field chat"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:79
+msgid "connecting…"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:80
+msgid "Messages sync live with the field."
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:95
+msgid "No messages yet — say hello to the field."
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:101
+msgid "Attach a photo"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:103
+msgid "Message the field…"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:104
+msgid "Send"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:120
+#: apps/web/templates/web/work_detail.html:355
+msgid "live"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:120
+msgid "reconnecting…"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:121
+msgid "New report:"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:121
+#: apps/web/templates/web/work_detail.html:366
+msgid "off-site"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:122
+msgid "Submitted"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:215
+msgid "No breakdown yet"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:217
+msgid "Break it down with LulaAI"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:219
+msgid ""
+"LulaAI drafts the checklist, estimate and risks from jobs like this one you "
+"have already finished. It proposes — you tick what is right before anything "
+"is created."
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:223
+msgid "Subtasks & checklist"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:233
+#: apps/web/templates/web/work_detail.html:245
+msgid "Toggle"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:253
+msgid "No breakdown yet — add a subtask or a checklist item."
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:260
+msgid "Add checklist item"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:261
+msgid "+ Item"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:265
+msgid "Add subtask"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:266
+msgid "+ Subtask"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:269
+msgid "Ask LulaAI for more steps →"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:275
+msgid "Conversation"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:282
+#: apps/web/templates/web/work_detail.html:300
+msgid "Customer-visible"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:293
+msgid "No comments yet."
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:297
+msgid "Add a comment…"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:301
+msgid "Comment"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:310
+msgid "Budget & spend"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:316
+msgid "Remaining"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:317
+msgid "over budget"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:323
+msgid "over"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:329
+msgid "Receipts"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:343
+msgid "receipt"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:349
+msgid ""
+"No receipts captured yet — fuel, material and expense receipts appear here."
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:355
+msgid "Field reports"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:370
+msgid "No field reports yet — they appear here the moment the field files one."
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:376
+msgid "Team"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:380
+msgid "Execution"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:382
+msgid "Approvers"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:384
+msgid "Watchers"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:396
+msgid "Add"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:402
+msgid "Detail"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:406
+msgid "Workspace"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:407
+msgid "Phase"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:410
+msgid "Estimated"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:412
+msgid "Started"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:413
+msgid "Billable"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:426
+msgid "Dependencies"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:434
+msgid "Nothing is holding this up."
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:437
+msgid "This job unblocks:"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:446
+msgid "Wait for"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:450
+msgid "Kind"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:454
+msgid "Add dependency"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:460
+msgid "Files"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:468
+msgid "No files yet."
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:474
+msgid "Upload"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:482
+msgid "Project gate"
+msgstr ""
+
+#: apps/web/templates/web/work_detail.html:487
+#, python-format
+msgid "%(n)s item(s) blocking — <a href=\"%(proj_url)s\">review →</a>"
+msgstr ""
+
+#: apps/web/translation_strings.py:10
+msgid "Intelligence"
+msgstr ""
+
+#: apps/web/translation_strings.py:10
+msgid "CRM"
+msgstr ""
+
+#: apps/web/translation_strings.py:11
+msgid "Job Card"
+msgstr ""
+
+#: apps/web/translation_strings.py:12
+msgid "Tax Invoice"
+msgstr ""
+
+#: apps/web/translation_strings.py:12
+msgid "Finance"
+msgstr ""
+
+#: apps/web/translation_strings.py:12
+msgid "Business history"
+msgstr ""
+
+#: apps/web/translation_strings.py:13
+msgid "Automations"
+msgstr ""
+
+#: apps/web/translation_strings.py:13
+msgid "Help & Support"
+msgstr ""
+
+#: apps/web/translation_strings.py:19
+msgid "Business information"
+msgstr ""
+
+#: apps/web/translation_strings.py:19
+msgid "Tax / registration"
+msgstr ""
+
+#: apps/web/translation_strings.py:19
+msgid "Banking details"
+msgstr ""
+
+#: apps/web/translation_strings.py:20
+msgid "Communication"
+msgstr ""
+
+#: apps/web/translation_strings.py:20
+msgid "Documents & branding"
+msgstr ""
+
+#: apps/web/translation_strings.py:25
+msgid "List"
+msgstr ""
+
+#: apps/web/translation_strings.py:25
+msgid "Board"
+msgstr ""
+
+#: apps/web/translation_strings.py:25
+msgid "Table"
+msgstr ""
+
+#: apps/web/translation_strings.py:25
+msgid "Calendar"
+msgstr ""
+
+#: apps/web/translation_strings.py:25
+msgid "Workload"
+msgstr ""
