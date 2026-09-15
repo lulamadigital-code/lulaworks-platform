@@ -16,18 +16,74 @@ ZERO_DECIMAL = {"JPY"}
 # ── Country → default currency (curated majors + eurozone) ────────────────────
 _EUROZONE = ["AT", "BE", "HR", "CY", "EE", "FI", "FR", "DE", "GR", "IE", "IT",
              "LV", "LT", "LU", "MT", "NL", "PT", "SK", "SI", "ES"]
+# Comprehensive country → default ISO-4217 currency, so EVERY country resolves a
+# currency (GLOBAL_BASELINE). Currencies are auto-created as reference rows from
+# these codes. Shared/regional currencies (XOF/XAF/XCD/EUR) map many countries.
 COUNTRY_CCY = {
-    "ZA": "ZAR", "US": "USD", "GB": "GBP", "AU": "AUD", "CA": "CAD", "IN": "INR",
-    "NG": "NGN", "KE": "KES", "AE": "AED", "SG": "SGD", "BR": "BRL", "JP": "JPY",
-    "NZ": "NZD", "GH": "GHS", "BW": "BWP", "NA": "NAD", "ZM": "ZMW",
+    # ── Africa (all 54) ──
+    "DZ": "DZD", "AO": "AOA", "BJ": "XOF", "BW": "BWP", "BF": "XOF", "BI": "BIF",
+    "CV": "CVE", "CM": "XAF", "CF": "XAF", "TD": "XAF", "KM": "KMF", "CG": "XAF",
+    "CD": "CDF", "CI": "XOF", "DJ": "DJF", "EG": "EGP", "GQ": "XAF", "ER": "ERN",
+    "SZ": "SZL", "ET": "ETB", "GA": "XAF", "GM": "GMD", "GH": "GHS", "GN": "GNF",
+    "GW": "XOF", "KE": "KES", "LS": "LSL", "LR": "LRD", "LY": "LYD", "MG": "MGA",
+    "MW": "MWK", "ML": "XOF", "MR": "MRU", "MU": "MUR", "MA": "MAD", "MZ": "MZN",
+    "NA": "NAD", "NE": "XOF", "NG": "NGN", "RW": "RWF", "ST": "STN", "SN": "XOF",
+    "SC": "SCR", "SL": "SLE", "SO": "SOS", "ZA": "ZAR", "SS": "SSP", "SD": "SDG",
+    "TZ": "TZS", "TG": "XOF", "TN": "TND", "UG": "UGX", "ZM": "ZMW", "ZW": "ZWG",
+    # ── Americas ──
+    "US": "USD", "CA": "CAD", "MX": "MXN", "GT": "GTQ", "BZ": "BZD", "HN": "HNL",
+    "SV": "USD", "NI": "NIO", "CR": "CRC", "PA": "PAB", "JM": "JMD", "TT": "TTD",
+    "BB": "BBD", "BS": "BSD", "DO": "DOP", "HT": "HTG", "CU": "CUP", "GD": "XCD",
+    "AG": "XCD", "DM": "XCD", "KN": "XCD", "LC": "XCD", "VC": "XCD", "GY": "GYD",
+    "SR": "SRD", "BR": "BRL", "AR": "ARS", "CL": "CLP", "CO": "COP", "PE": "PEN",
+    "EC": "USD", "UY": "UYU", "PY": "PYG", "BO": "BOB", "VE": "VES",
+    # ── Europe (non-eurozone; eurozone via _EUROZONE below) ──
+    "GB": "GBP", "CH": "CHF", "NO": "NOK", "SE": "SEK", "DK": "DKK", "PL": "PLN",
+    "CZ": "CZK", "RO": "RON", "HU": "HUF", "BG": "BGN", "IS": "ISK", "UA": "UAH",
+    "RS": "RSD", "TR": "TRY", "AL": "ALL", "MK": "MKD", "BA": "BAM", "MD": "MDL",
+    "GE": "GEL", "AM": "AMD", "AZ": "AZN", "BY": "BYN", "RU": "RUB",
+    # ── Asia ──
+    "IN": "INR", "JP": "JPY", "CN": "CNY", "KR": "KRW", "ID": "IDR", "MY": "MYR",
+    "TH": "THB", "PH": "PHP", "VN": "VND", "SG": "SGD", "HK": "HKD", "TW": "TWD",
+    "PK": "PKR", "BD": "BDT", "LK": "LKR", "NP": "NPR", "KZ": "KZT", "UZ": "UZS",
+    "MM": "MMK", "KH": "KHR", "LA": "LAK", "MN": "MNT", "AF": "AFN", "BT": "BTN",
+    "MV": "MVR", "BN": "BND",
+    # ── Middle East ──
+    "AE": "AED", "SA": "SAR", "QA": "QAR", "KW": "KWD", "BH": "BHD", "OM": "OMR",
+    "JO": "JOD", "LB": "LBP", "IL": "ILS", "IQ": "IQD", "IR": "IRR", "YE": "YER",
+    "SY": "SYP",
+    # ── Oceania ──
+    "AU": "AUD", "NZ": "NZD", "FJ": "FJD", "PG": "PGK",
+    # ── European micro-states + Central Asia ──
+    "AD": "EUR", "MC": "EUR", "SM": "EUR", "VA": "EUR", "ME": "EUR", "XK": "EUR",
+    "LI": "CHF", "GI": "GIP", "AX": "EUR", "GG": "GBP", "JE": "GBP", "IM": "GBP",
+    "GL": "DKK", "FO": "DKK", "SJ": "NOK", "KG": "KGS", "TJ": "TJS", "TM": "TMT",
+    "KP": "KPW", "MO": "MOP", "PS": "ILS", "SH": "SHP",
+    # ── Territories & small island states ──
+    "AW": "AWG", "CW": "ANG", "SX": "ANG", "BQ": "USD", "KY": "KYD", "BM": "BMD",
+    "AI": "XCD", "MS": "XCD", "VG": "USD", "TC": "USD", "FK": "FKP", "PR": "USD",
+    "VI": "USD", "MQ": "EUR", "GP": "EUR", "BL": "EUR", "MF": "EUR", "GF": "EUR",
+    "RE": "EUR", "YT": "EUR", "PM": "EUR", "NC": "XPF", "PF": "XPF", "WF": "XPF",
+    "KI": "AUD", "NR": "AUD", "TV": "AUD", "CC": "AUD", "CX": "AUD", "NF": "AUD",
+    "TO": "TOP", "WS": "WST", "VU": "VUV", "SB": "SBD", "FM": "USD", "MH": "USD",
+    "PW": "USD", "GU": "USD", "AS": "USD", "MP": "USD", "TL": "USD", "CK": "NZD",
+    "NU": "NZD", "TK": "NZD", "PN": "NZD", "EH": "MAD",
     **{c: "EUR" for c in _EUROZONE},
 }
 
-_AFRICA = {"ZA", "NG", "KE", "GH", "BW", "NA", "ZM", "ZW", "MZ", "AO", "TZ",
-           "UG", "RW", "ET", "EG", "MA", "SN", "CI", "CM", "MW", "LS", "SZ"}
-_EUROPE = set(_EUROZONE) | {"GB", "CH", "NO", "SE", "DK", "PL", "CZ", "RO"}
+# All 54 African countries — the home continent is explicitly covered (region +
+# picker boost), even where first-class local rules aren't built yet.
+_AFRICA = {
+    "DZ", "AO", "BJ", "BW", "BF", "BI", "CV", "CM", "CF", "TD", "KM", "CG", "CD",
+    "CI", "DJ", "EG", "GQ", "ER", "SZ", "ET", "GA", "GM", "GH", "GN", "GW", "KE",
+    "LS", "LR", "LY", "MG", "MW", "ML", "MR", "MU", "MA", "MZ", "NA", "NE", "NG",
+    "RW", "ST", "SN", "SC", "SL", "SO", "ZA", "SS", "SD", "TZ", "TG", "TN", "UG",
+    "ZM", "ZW",
+}
+_EUROPE = set(_EUROZONE) | {"GB", "CH", "NO", "SE", "DK", "PL", "CZ", "RO", "HU",
+                            "BG", "IS", "UA", "RS", "TR"}
 _MAJOR = {"US", "GB", "AU", "CA", "DE", "FR", "NL", "IE", "IN", "AE", "SG",
-          "BR", "JP", "NZ", "NG", "KE", "GH"}
+          "BR", "JP", "NZ", "NG", "KE", "GH", "MX", "AR", "CL", "CO", "EG", "MA"}
 
 # ── Bank directory (SA full + top international) ───────────────────────────────
 # (name, short_name, bank_code, swift_bic, [aliases], is_major)
@@ -98,6 +154,14 @@ BANKS = {
         ("Deutsche Bank", "Deutsche", "", "DEUTDEFF", [], True),
         ("Commerzbank", "Commerzbank", "", "COBADEFF", [], True),
         ("Sparkasse", "Sparkasse", "", "", [], False),
+    ],
+    "BR": [
+        ("Itaú Unibanco", "Itaú", "", "ITAUBRSP", [], True),
+        ("Banco do Brasil", "BB", "", "BRASBRRJ", [], True),
+        ("Bradesco", "Bradesco", "", "BBDEBRSP", [], True),
+        ("Caixa Econômica Federal", "Caixa", "", "CEFXBRSP", [], True),
+        ("Santander Brasil", "Santander", "", "BSCHBRSP", [], False),
+        ("Nubank", "Nubank", "", "NUBRBRSP", [], False),
     ],
     "FR": [
         ("BNP Paribas", "BNP Paribas", "", "BNPAFRPP", [], True),
@@ -170,6 +234,18 @@ BANKING_RULES = {
                           "e.g. 12-3456-7890123-00"),
                        _F("swift_code", "SWIFT/BIC", False, "swift_bic",
                           "For international payments.")]),
+    # Nigeria: 10-digit NUBAN account number (bank identified separately).
+    "NG": dict(branch_label="Account number (NUBAN)", show_swift=True,
+               branch_hint="Your 10-digit NUBAN account number.",
+               fields=[_F("account_number", "Account number (NUBAN)", True, "account_number"),
+                       _F("swift_code", "SWIFT/BIC", False, "swift_bic",
+                          "For international payments.")]),
+    # Brazil: agência (branch) + conta (account).
+    "BR": dict(branch_label="Agência", show_swift=True,
+               branch_hint="Agency (branch) + account number.",
+               fields=[_F("branch_code", "Agência (branch)", True, "branch_code"),
+                       _F("account_number", "Conta (account)", True, "account_number"),
+                       _F("swift_code", "SWIFT/BIC", False, "swift_bic")]),
 }
 # SEPA members share an IBAN-based rule.
 _SEPA_RULE = dict(branch_label="IBAN", show_swift=True,
@@ -211,6 +287,22 @@ ADDRESS_RULES = {
                             ("city", "Ville / Commune", True)),
                postal_label="Code postal", postal_regex=r"\d{5}",
                postal_hint="Enter a valid 5-digit French postal code."),
+    "NG": dict(fields=_ADDR(("street_address", "Street address", True), ("suburb", "Area / District", False),
+                            ("city", "City / Town", True), ("province", "State", True)),
+               postal_label="Postal code", postal_regex=r"\d{6}",
+               postal_hint="Enter a valid 6-digit Nigerian postal code."),
+    "BR": dict(fields=_ADDR(("street_address", "Logradouro (street)", True), ("suburb", "Bairro (district)", False),
+                            ("city", "Cidade (city)", True), ("province", "Estado (state)", True)),
+               postal_label="CEP", postal_regex=r"\d{5}-?\d{3}",
+               postal_hint="Enter a valid CEP (00000-000)."),
+    "IN": dict(fields=_ADDR(("street_address", "Street address", True), ("suburb", "Area / Locality", False),
+                            ("city", "City", True), ("province", "State", True)),
+               postal_label="PIN code", postal_regex=r"\d{6}",
+               postal_hint="Enter a valid 6-digit PIN code."),
+    "DE": dict(fields=_ADDR(("street_address", "Straße (street)", True), ("suburb", "Adresszusatz", False),
+                            ("city", "Stadt (city)", True)),
+               postal_label="PLZ", postal_regex=r"\d{5}",
+               postal_hint="Enter a valid 5-digit PLZ."),
 }
 
 
@@ -281,6 +373,31 @@ STATUTORY_RULES = {
         _S("tva", "TVA intracommunautaire (VAT)", "DGFiP", placeholder="FR40552100554"),
         _S("rcs", "RCS registration", "Greffe du tribunal de commerce"),
         _S("ape", "Code APE / NAF", "INSEE", placeholder="4120A"),
+    ],
+    "NG": [
+        _S("rc_no", "RC number (CAC)", "Corporate Affairs Commission", placeholder="RC1234567"),
+        _S("tin", "Tax Identification Number (TIN)", "FIRS", validator=r"\d{8,12}"),
+        _S("vat_no", "VAT registration number", "FIRS"),
+    ],
+    "BR": [
+        _S("cnpj", "CNPJ", "Receita Federal", validator=r"\d{14}",
+           placeholder="12345678000195"),
+        _S("ie", "Inscrição Estadual", "State revenue"),
+        _S("cnae", "CNAE (activity code)", "IBGE"),
+    ],
+    "IN": [
+        _S("cin", "CIN (Corporate ID)", "MCA", placeholder="U12345MH2020PTC012345"),
+        _S("pan", "PAN", "Income Tax Dept", validator=r"[A-Za-z]{5}\d{4}[A-Za-z]",
+           placeholder="AAACA1234A"),
+        _S("gstin", "GSTIN", "GSTN", validator=r"\d{2}[A-Za-z]{5}\d{4}[A-Za-z][A-Za-z0-9]{3}",
+           placeholder="27AAACA1234A1Z5"),
+        _S("tan", "TAN", "Income Tax Dept"),
+    ],
+    "DE": [
+        _S("hrb", "Handelsregisternummer (HRB)", "Handelsregister", placeholder="HRB 12345"),
+        _S("ust_id", "USt-IdNr (VAT)", "BZSt", validator=r"[A-Za-z]{2}\d{9}",
+           placeholder="DE123456789"),
+        _S("steuernummer", "Steuernummer (tax no.)", "Finanzamt"),
     ],
 }
 

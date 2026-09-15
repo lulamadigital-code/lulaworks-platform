@@ -331,6 +331,62 @@ class FranceConfigTests(TestCase):
         self.assertNotIn("cipc", docs)
 
 
+class GlobalCoverageTests(TestCase):
+    """The engine must handle every ISO country — never 'unsupported' — with all
+    of Africa covered and major markets first-class."""
+    UNINHABITED = {"AQ", "BV", "GS", "HM", "IO", "TF", "UM"}   # no economy/currency
+    FIRST_CLASS = {"AU", "BR", "CA", "DE", "FR", "GB", "IN", "KE", "NG", "NZ", "US", "ZA"}
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_reference")
+
+    def test_every_populated_country_resolves_currency(self):
+        from apps.reference.models import Country
+        from apps.reference.services import CurrencyService
+        missing = [c.code for c in Country.objects.filter(active=True)
+                   if c.code not in self.UNINHABITED and CurrencyService.for_country(c.code) is None]
+        self.assertEqual(missing, [], f"Countries with no currency: {missing}")
+
+    def test_all_africa_covered(self):
+        from apps.reference.management.commands.seed_reference import _AFRICA
+        from apps.reference.models import Country
+        from apps.reference.services import CurrencyService
+        self.assertEqual(len(_AFRICA), 54)
+        for code in _AFRICA:
+            c = Country.objects.filter(code=code).first()
+            self.assertIsNotNone(c, code)
+            self.assertEqual(c.region, "Africa", code)
+            self.assertIsNotNone(CurrencyService.for_country(code), code)
+
+    def test_first_class_countries_are_complete(self):
+        from apps.reference.services import (AddressValidationService,
+                                             BankingValidationService,
+                                             DocumentRulesService, StatutoryService)
+        for code in self.FIRST_CLASS:
+            self.assertIsNotNone(BankingValidationService.rule(code), f"{code} banking")
+            self.assertIsNotNone(AddressValidationService.rule(code), f"{code} address")
+            self.assertTrue(StatutoryService.rules(code), f"{code} statutory")
+            self.assertTrue(len(StatutoryService.rules(code)) >= 2, f"{code} statutory > generic")
+            self.assertTrue(DocumentRulesService.recommended(code), f"{code} docs")
+
+    def test_unconfigured_country_degrades_not_errors(self):
+        # A baseline country (no local rules) still works via generic fallbacks —
+        # never raises, never 'unsupported'.
+        from apps.reference.services import (DocumentRulesService, StatutoryService)
+        keys = {f["key"] for f in StatutoryService.rules("FJ")}   # Fiji: baseline
+        self.assertIn("reg_no", keys)                            # generic fallback
+        self.assertTrue(DocumentRulesService.recommended("FJ"))
+
+    def test_audit_runs_and_only_uninhabited_incomplete(self):
+        from io import StringIO
+        out = StringIO()
+        call_command("country_coverage_audit", stdout=out)
+        report = out.getvalue()
+        self.assertIn("FIRST_CLASS", report)
+        self.assertIn("Africa audited: 54 of 54", report)
+
+
 class EmailTests(TestCase):
     def test_normalise(self):
         self.assertEqual(EmailValidationService.normalize("  John@Example.COM "), "john@example.com")

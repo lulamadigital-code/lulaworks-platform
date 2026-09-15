@@ -116,6 +116,14 @@ _COUNTRY_DOCUMENTS = {
     "FR": ["Extrait Kbis (company registration)", "Attestation TVA (VAT)",
            "Attestation URSSAF", "Assurance décennale (if construction)",
            "RIB (bank details)"],
+    "NG": ["Certificate of Incorporation (CAC)", "TIN certificate",
+           "VAT registration", "Bank confirmation letter"],
+    "BR": ["Cartão CNPJ", "Contrato Social", "Inscrição Estadual (if applicable)",
+           "Bank confirmation"],
+    "IN": ["Certificate of Incorporation", "PAN card", "GST registration",
+           "Bank confirmation"],
+    "DE": ["Handelsregisterauszug", "USt-IdNr certificate",
+           "Gewerbeanmeldung (business registration)", "Bank confirmation"],
 }
 _DEFAULT_DOCUMENTS = ["Company registration document", "Tax registration document",
                       "Bank confirmation"]
