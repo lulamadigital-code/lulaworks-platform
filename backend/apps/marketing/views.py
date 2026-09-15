@@ -11,6 +11,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_http_methods
 
 from .models import ContactMessage, DemoRequest
@@ -40,27 +41,27 @@ def _seo(title, description):
 
 
 _FEATURE_CARDS = [
-    ("📝", "Quotation Management", "Build accurate quotes fast and turn them into jobs in one click."),
-    ("🔧", "Job Management", "Every job in one view — scope, team, progress, money and paperwork."),
-    ("✅", "Task Management", "Break jobs into tasks with checklists, owners and live progress."),
-    ("🛒", "Procurement", "Raise requests, compare supplier prices and issue purchase orders."),
-    ("🧠", "Supplier Intelligence", "Every receipt teaches the system who sells what, and for how much."),
-    ("📁", "Document Management", "POs, invoices, delivery notes and safety files, all in one place."),
-    ("🤖", "AI Document Extraction", "Drop in an RFQ, PO or invoice — AI reads it and fills the details."),
-    ("🚚", "Delivery Notes", "Generate branded delivery notes straight from the job."),
-    ("💰", "Tax Invoices", "Compliant tax invoices and progress claims, with payments tracked."),
-    ("📍", "GPS & Time Tracking", "Field check-ins are GPS-stamped so you know who was where, when."),
-    ("👷", "Employee Management", "Unlimited employees — technicians, drivers, operators — on every plan."),
-    ("📊", "Reporting & Analytics", "See profitability, cash flow and job health as the work happens."),
+    ("📝", _("Quotation Management"), _("Build accurate quotes fast and turn them into jobs in one click.")),
+    ("🔧", _("Job Management"), _("Every job in one view — scope, team, progress, money and paperwork.")),
+    ("✅", _("Task Management"), _("Break jobs into tasks with checklists, owners and live progress.")),
+    ("🛒", _("Procurement"), _("Raise requests, compare supplier prices and issue purchase orders.")),
+    ("🧠", _("Supplier Intelligence"), _("Every receipt teaches the system who sells what, and for how much.")),
+    ("📁", _("Document Management"), _("POs, invoices, delivery notes and safety files, all in one place.")),
+    ("🤖", _("AI Document Extraction"), _("Drop in an RFQ, PO or invoice — AI reads it and fills the details.")),
+    ("🚚", _("Delivery Notes"), _("Generate branded delivery notes straight from the job.")),
+    ("💰", _("Tax Invoices"), _("Compliant tax invoices and progress claims, with payments tracked.")),
+    ("📍", _("GPS & Time Tracking"), _("Field check-ins are GPS-stamped so you know who was where, when.")),
+    ("👷", _("Employee Management"), _("Unlimited employees — technicians, drivers, operators — on every plan.")),
+    ("📊", _("Reporting & Analytics"), _("See profitability, cash flow and job health as the work happens.")),
 ]
 
 _TESTIMONIALS = [
-    ("We quote in minutes now, and I can finally see which jobs actually make money.",
-     "Thabo M.", "Managing Director, mechanical contractor"),
-    ("The mobile check-ins ended the arguments about who was on site. It just works.",
-     "Naledi K.", "Operations Manager, maintenance company"),
-    ("Uploading a mine's PO and having it fill in the job automatically saves us hours.",
-     "Riaan P.", "Owner, industrial services"),
+    (_("We quote in minutes now, and I can finally see which jobs actually make money."),
+     "Thabo M.", _("Managing Director, mechanical contractor")),
+    (_("The mobile check-ins ended the arguments about who was on site. It just works."),
+     "Naledi K.", _("Operations Manager, maintenance company")),
+    (_("Uploading a mine's PO and having it fill in the job automatically saves us hours."),
+     "Riaan P.", _("Owner, industrial services")),
 ]
 
 

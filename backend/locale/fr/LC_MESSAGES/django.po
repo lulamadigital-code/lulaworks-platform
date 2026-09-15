@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 14:21+0000\n"
+"POT-Creation-Date: 2026-09-15 14:26+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -220,7 +220,6 @@ msgstr "Apprendre"
 
 #: apps/marketing/templates/marketing/base.html:237
 #: apps/marketing/templates/marketing/base.html:287
-#| msgid "Free trial"
 msgid "Free tools"
 msgstr "Outils gratuits"
 
@@ -240,12 +239,10 @@ msgstr "FAQ"
 
 #: apps/marketing/templates/marketing/base.html:241
 #: apps/marketing/templates/marketing/base.html:294
-#| msgid "Contacts"
 msgid "Contact"
 msgstr "Contact"
 
 #: apps/marketing/templates/marketing/base.html:247
-#| msgid "Dashboard"
 msgid "Go to Dashboard"
 msgstr "Aller au tableau de bord"
 
@@ -256,7 +253,8 @@ msgstr "Se connecter"
 
 #: apps/marketing/templates/marketing/base.html:250
 #: apps/marketing/templates/marketing/base.html:282
-#| msgid "Free trial"
+#: apps/marketing/templates/marketing/home.html:12
+#: apps/marketing/templates/marketing/home.html:110
 msgid "Start Free Trial"
 msgstr "Démarrer l'essai gratuit"
 
@@ -264,14 +262,17 @@ msgstr "Démarrer l'essai gratuit"
 msgid ""
 "The Contractor Operating System — from quotation to payment, one intelligent "
 "platform built for contractors worldwide."
-msgstr "Le système d'exploitation pour entrepreneurs — du devis au paiement, une plateforme intelligente conçue pour les entrepreneurs du monde entier."
+msgstr ""
+"Le système d'exploitation pour entrepreneurs — du devis au paiement, une "
+"plateforme intelligente conçue pour les entrepreneurs du monde entier."
 
 #: apps/marketing/templates/marketing/base.html:278
 msgid "Product"
 msgstr "Produit"
 
 #: apps/marketing/templates/marketing/base.html:281
-#| msgid "Book a demo →"
+#: apps/marketing/templates/marketing/home.html:13
+#: apps/marketing/templates/marketing/home.html:111
 msgid "Book a Demo"
 msgstr "Réserver une démo"
 
@@ -299,7 +300,6 @@ msgid "Privacy Policy"
 msgstr "Politique de confidentialité"
 
 #: apps/marketing/templates/marketing/base.html:300
-#| msgid "Invoice terms & conditions"
 msgid "Terms & Conditions"
 msgstr "Conditions générales"
 
@@ -321,17 +321,332 @@ msgstr "Conçu pour les entrepreneurs du monde entier · conforme au RGPD"
 msgid ""
 "We use cookies to understand site traffic and improve Lulaworks. See our <a "
 "href=\"%(cookies_url)s\">cookie policy</a>."
-msgstr "Nous utilisons des cookies pour comprendre le trafic du site et améliorer Lulaworks. Consultez notre <a href=\"%(cookies_url)s\">politique relative aux cookies</a>."
+msgstr ""
+"Nous utilisons des cookies pour comprendre le trafic du site et améliorer "
+"Lulaworks. Consultez notre <a href=\"%(cookies_url)s\">politique relative "
+"aux cookies</a>."
 
 #: apps/marketing/templates/marketing/base.html:319
-#| msgid "Pipeline"
 msgid "Decline"
 msgstr "Refuser"
 
 #: apps/marketing/templates/marketing/base.html:320
-#| msgid "Accepted"
 msgid "Accept"
 msgstr "Accepter"
+
+#: apps/marketing/templates/marketing/home.html:8
+msgid "The Contractor Operating System"
+msgstr "Le système d'exploitation pour entrepreneurs"
+
+#: apps/marketing/templates/marketing/home.html:9
+#| msgid "No quotations yet."
+msgid "From Quotation to Payment."
+msgstr "Du devis au paiement."
+
+#: apps/marketing/templates/marketing/home.html:9
+msgid "One Platform. Powered by AI."
+msgstr "Une plateforme. Propulsée par l'IA."
+
+#: apps/marketing/templates/marketing/home.html:10
+msgid ""
+"Lulaworks helps contractors manage quotations, jobs, procurement, teams, "
+"deliveries, invoices and payments from one intelligent platform."
+msgstr "Lulaworks aide les entrepreneurs à gérer devis, tâches, approvisionnement, équipes, livraisons, factures et paiements depuis une seule plateforme intelligente."
+
+#: apps/marketing/templates/marketing/home.html:16
+msgid "AI Powered"
+msgstr "Propulsé par l'IA"
+
+#: apps/marketing/templates/marketing/home.html:17
+msgid "Cloud Based"
+msgstr "Basé sur le cloud"
+
+#: apps/marketing/templates/marketing/home.html:18
+msgid "Mobile Friendly"
+msgstr "Adapté au mobile"
+
+#: apps/marketing/templates/marketing/home.html:19
+msgid "Secure"
+msgstr "Sécurisé"
+
+#: apps/marketing/templates/marketing/home.html:20
+#| msgid "Built for contractors worldwide · GDPR-ready"
+msgid "Built for Contractors"
+msgstr "Conçu pour les entrepreneurs"
+
+#: apps/marketing/templates/marketing/home.html:24
+msgid "Lulaworks dashboard preview"
+msgstr "Aperçu du tableau de bord Lulaworks"
+
+#: apps/marketing/templates/marketing/home.html:27
+#| msgid "View quotation"
+msgid "Open quotations"
+msgstr "Devis ouverts"
+
+#: apps/marketing/templates/marketing/home.html:28
+#| msgid "Active"
+msgid "Active jobs"
+msgstr "Tâches actives"
+
+#: apps/marketing/templates/marketing/home.html:29
+#: apps/web/templates/web/commercial_document_detail.html:138
+#: apps/web/templates/web/customer_detail.html:42
+#: apps/web/templates/web/invoices.html:31
+#: apps/web/templates/web/invoices.html:58
+msgid "Outstanding"
+msgstr "En souffrance"
+
+#: apps/marketing/templates/marketing/home.html:32
+#: apps/marketing/templates/marketing/home.html:80 apps/marketing/views.py:47
+#: apps/web/templates/web/settings.html:45 apps/web/translation_strings.py:10
+msgid "Procurement"
+msgstr "Approvisionnement"
+
+#: apps/marketing/templates/marketing/home.html:33
+msgid "On site now"
+msgstr "Sur site maintenant"
+
+#: apps/marketing/templates/marketing/home.html:34
+#| msgid "Buy AI credits"
+msgid "AI credits"
+msgstr "Crédits IA"
+
+#: apps/marketing/templates/marketing/home.html:44
+#| msgid "New to Lulaworks?"
+msgid "Why Lulaworks"
+msgstr "Pourquoi Lulaworks"
+
+#: apps/marketing/templates/marketing/home.html:45
+msgid "Stop juggling spreadsheets, WhatsApp and disconnected tools"
+msgstr "Arrêtez de jongler avec les tableurs, WhatsApp et des outils déconnectés"
+
+#: apps/marketing/templates/marketing/home.html:46
+msgid ""
+"Most contractors run the business across a dozen places — a quote in Excel, "
+"a PO in email, site photos on WhatsApp, invoices in another app. Things "
+"slip, margins leak, and nobody has the full picture. Lulaworks brings the "
+"whole job into one place, from the first quotation to the final payment."
+msgstr "La plupart des entrepreneurs gèrent leur activité à travers une dizaine d'endroits — un devis dans Excel, un bon de commande par e-mail, des photos de chantier sur WhatsApp, des factures dans une autre application. Des choses passent à la trappe, les marges s'érodent, et personne n'a la vue d'ensemble. Lulaworks réunit toute la tâche au même endroit, du premier devis au paiement final."
+
+#: apps/marketing/templates/marketing/home.html:54
+msgid "Everything in one place"
+msgstr "Tout au même endroit"
+
+#: apps/marketing/templates/marketing/home.html:55
+#| msgid "Name for the job (optional)"
+msgid "One platform for the whole operation"
+msgstr "Une plateforme pour toute l'exploitation"
+
+#: apps/marketing/templates/marketing/home.html:63
+msgid "Explore all features →"
+msgstr "Découvrir toutes les fonctionnalités →"
+
+#: apps/marketing/templates/marketing/home.html:71
+#| msgid "New to Lulaworks?"
+msgid "How it works"
+msgstr "Comment ça marche"
+
+#: apps/marketing/templates/marketing/home.html:72
+msgid "The whole job, end to end"
+msgstr "Toute la tâche, de bout en bout"
+
+#: apps/marketing/templates/marketing/home.html:73
+msgid ""
+"Every step flows into the next — no re-typing, no lost paperwork, no gaps."
+msgstr "Chaque étape s'enchaîne à la suivante — aucune ressaisie, aucun document perdu, aucune lacune."
+
+#: apps/marketing/templates/marketing/home.html:75
+#: apps/web/templates/web/customers.html:28
+#: apps/web/templates/web/invoices.html:57
+#: apps/web/templates/web/invoices.html:90
+#: apps/web/templates/web/quotations.html:67
+msgid "Customer"
+msgstr "Client"
+
+#: apps/marketing/templates/marketing/home.html:76
+#: apps/web/templates/web/customer_detail.html:313
+#: apps/web/templates/web/invoices.html:90
+#: apps/web/templates/web/project_detail.html:94
+#: apps/web/templates/web/quotations.html:67
+msgid "Quotation"
+msgstr "Devis"
+
+#: apps/marketing/templates/marketing/home.html:77
+#| msgid "Purchase Orders"
+msgid "Purchase Order"
+msgstr "Bon de commande"
+
+#: apps/marketing/templates/marketing/home.html:78
+#: apps/web/templates/web/work.html:110
+msgid "Job"
+msgstr "Tâche"
+
+#: apps/marketing/templates/marketing/home.html:79
+#| msgid "Subtasks"
+msgid "Tasks"
+msgstr "Tâches"
+
+#: apps/marketing/templates/marketing/home.html:81
+#| msgid "Delivery note"
+msgid "Delivery"
+msgstr "Livraison"
+
+#: apps/marketing/templates/marketing/home.html:82
+#: apps/web/templates/web/invoices.html:57
+msgid "Invoice"
+msgstr "Facture"
+
+#: apps/marketing/templates/marketing/home.html:83
+#: apps/web/templates/web/invoices.html:58
+msgid "Payment"
+msgstr "Paiement"
+
+#: apps/marketing/templates/marketing/home.html:91
+msgid "Trusted by contractors"
+msgstr "Approuvé par les entrepreneurs"
+
+#: apps/marketing/templates/marketing/home.html:92
+msgid "Built for the way you actually work"
+msgstr "Conçu pour votre façon de travailler"
+
+#: apps/marketing/templates/marketing/home.html:107
+msgid "Ready to transform your contracting business?"
+msgstr "Prêt à transformer votre activité d'entrepreneur ?"
+
+#: apps/marketing/templates/marketing/home.html:108
+msgid "Start your 30-day free trial today. No credit card required."
+msgstr "Démarrez votre essai gratuit de 30 jours dès aujourd'hui. Sans carte bancaire."
+
+#: apps/marketing/views.py:44
+#| msgid "Quotation pages"
+msgid "Quotation Management"
+msgstr "Gestion des devis"
+
+#: apps/marketing/views.py:44
+msgid "Build accurate quotes fast and turn them into jobs in one click."
+msgstr "Créez des devis précis rapidement et transformez-les en tâches en un clic."
+
+#: apps/marketing/views.py:45
+msgid "Job Management"
+msgstr "Gestion des tâches"
+
+#: apps/marketing/views.py:45
+msgid "Every job in one view — scope, team, progress, money and paperwork."
+msgstr "Chaque tâche dans une seule vue — périmètre, équipe, avancement, argent et paperasse."
+
+#: apps/marketing/views.py:46
+msgid "Task Management"
+msgstr "Gestion des sous-tâches"
+
+#: apps/marketing/views.py:46
+msgid "Break jobs into tasks with checklists, owners and live progress."
+msgstr "Décomposez les tâches en sous-tâches avec listes de contrôle, responsables et avancement en direct."
+
+#: apps/marketing/views.py:47
+msgid "Raise requests, compare supplier prices and issue purchase orders."
+msgstr "Créez des demandes, comparez les prix des fournisseurs et émettez des bons de commande."
+
+#: apps/marketing/views.py:48
+#| msgid "Intelligence"
+msgid "Supplier Intelligence"
+msgstr "Intelligence fournisseurs"
+
+#: apps/marketing/views.py:48
+msgid "Every receipt teaches the system who sells what, and for how much."
+msgstr "Chaque reçu apprend au système qui vend quoi, et à quel prix."
+
+#: apps/marketing/views.py:49
+#| msgid "Document template"
+msgid "Document Management"
+msgstr "Gestion documentaire"
+
+#: apps/marketing/views.py:49
+msgid "POs, invoices, delivery notes and safety files, all in one place."
+msgstr "Bons de commande, factures, bons de livraison et dossiers de sécurité, au même endroit."
+
+#: apps/marketing/views.py:50
+#| msgid "Documents & branding"
+msgid "AI Document Extraction"
+msgstr "Extraction de documents par IA"
+
+#: apps/marketing/views.py:50
+msgid "Drop in an RFQ, PO or invoice — AI reads it and fills the details."
+msgstr "Déposez une demande de devis, un bon de commande ou une facture — l'IA la lit et remplit les détails."
+
+#: apps/marketing/views.py:51
+#| msgid "Delivery note"
+msgid "Delivery Notes"
+msgstr "Bons de livraison"
+
+#: apps/marketing/views.py:51
+msgid "Generate branded delivery notes straight from the job."
+msgstr "Générez des bons de livraison à votre image directement depuis la tâche."
+
+#: apps/marketing/views.py:52
+#| msgid "Tax Invoice"
+msgid "Tax Invoices"
+msgstr "Factures fiscales"
+
+#: apps/marketing/views.py:52
+msgid "Compliant tax invoices and progress claims, with payments tracked."
+msgstr "Factures fiscales conformes et situations d'avancement, avec suivi des paiements."
+
+#: apps/marketing/views.py:53
+msgid "GPS & Time Tracking"
+msgstr "GPS et suivi du temps"
+
+#: apps/marketing/views.py:53
+msgid "Field check-ins are GPS-stamped so you know who was where, when."
+msgstr "Les pointages sur le terrain sont horodatés par GPS pour savoir qui était où, et quand."
+
+#: apps/marketing/views.py:54
+#| msgid "Employees (unlimited)"
+msgid "Employee Management"
+msgstr "Gestion des employés"
+
+#: apps/marketing/views.py:54
+msgid "Unlimited employees — technicians, drivers, operators — on every plan."
+msgstr "Employés illimités — techniciens, chauffeurs, opérateurs — sur tous les forfaits."
+
+#: apps/marketing/views.py:55
+#| msgid "Analytics"
+msgid "Reporting & Analytics"
+msgstr "Rapports et analyses"
+
+#: apps/marketing/views.py:55
+msgid "See profitability, cash flow and job health as the work happens."
+msgstr "Visualisez la rentabilité, la trésorerie et la santé des tâches en temps réel."
+
+#: apps/marketing/views.py:59
+msgid ""
+"We quote in minutes now, and I can finally see which jobs actually make "
+"money."
+msgstr "Nous établissons des devis en quelques minutes maintenant, et je vois enfin quelles tâches rapportent réellement."
+
+#: apps/marketing/views.py:60
+msgid "Managing Director, mechanical contractor"
+msgstr "Directeur général, entreprise de mécanique"
+
+#: apps/marketing/views.py:61
+msgid ""
+"The mobile check-ins ended the arguments about who was on site. It just "
+"works."
+msgstr "Les pointages mobiles ont mis fin aux disputes sur qui était sur le chantier. Ça fonctionne, tout simplement."
+
+#: apps/marketing/views.py:62
+msgid "Operations Manager, maintenance company"
+msgstr "Responsable des opérations, société de maintenance"
+
+#: apps/marketing/views.py:63
+msgid ""
+"Uploading a mine's PO and having it fill in the job automatically saves us "
+"hours."
+msgstr "Téléverser le bon de commande d'une mine et le voir remplir la tâche automatiquement nous fait gagner des heures."
+
+#: apps/marketing/views.py:64
+#| msgid "Industries served"
+msgid "Owner, industrial services"
+msgstr "Propriétaire, services industriels"
 
 #: apps/projects/models.py:20 apps/web/templates/web/projects.html:26
 msgid "Pending compliance"
@@ -845,13 +1160,6 @@ msgstr "Total de la facture"
 #: apps/web/templates/web/invoices.html:68
 msgid "Paid"
 msgstr "Payée"
-
-#: apps/web/templates/web/commercial_document_detail.html:138
-#: apps/web/templates/web/customer_detail.html:42
-#: apps/web/templates/web/invoices.html:31
-#: apps/web/templates/web/invoices.html:58
-msgid "Outstanding"
-msgstr "En souffrance"
 
 #: apps/web/templates/web/commercial_document_detail.html:143
 msgid "Paid in full"
@@ -2225,13 +2533,6 @@ msgstr "Aucun site."
 msgid "Jobs for this customer"
 msgstr "Tâches pour ce client"
 
-#: apps/web/templates/web/customer_detail.html:313
-#: apps/web/templates/web/invoices.html:90
-#: apps/web/templates/web/project_detail.html:94
-#: apps/web/templates/web/quotations.html:67
-msgid "Quotation"
-msgstr "Devis"
-
 #: apps/web/templates/web/customer_detail.html:317
 #: apps/web/templates/web/customer_detail.html:328
 msgid "None yet."
@@ -2284,13 +2585,6 @@ msgstr "Tout statut"
 #: apps/web/templates/web/work.html:61
 msgid "Filter"
 msgstr "Filtrer"
-
-#: apps/web/templates/web/customers.html:28
-#: apps/web/templates/web/invoices.html:57
-#: apps/web/templates/web/invoices.html:90
-#: apps/web/templates/web/quotations.html:67
-msgid "Customer"
-msgstr "Client"
 
 #: apps/web/templates/web/customers.html:28
 msgid "Code"
@@ -2558,14 +2852,6 @@ msgstr "Total"
 #: apps/web/templates/web/invoices.html:52
 msgid "Your invoices"
 msgstr "Vos factures"
-
-#: apps/web/templates/web/invoices.html:57
-msgid "Invoice"
-msgstr "Facture"
-
-#: apps/web/templates/web/invoices.html:58
-msgid "Payment"
-msgstr "Paiement"
 
 #: apps/web/templates/web/invoices.html:78
 msgid "No invoices yet."
@@ -3408,10 +3694,6 @@ msgstr "État du fournisseur d'IA, modèle, santé et utilisation."
 msgid "Every email sent, delivery status and resend."
 msgstr "Chaque e-mail envoyé, statut de livraison et renvoi."
 
-#: apps/web/templates/web/settings.html:45 apps/web/translation_strings.py:10
-msgid "Procurement"
-msgstr "Approvisionnement"
-
 #: apps/web/templates/web/settings.html:48
 msgid "Purchase request settings"
 msgstr "Paramètres des demandes d'achat"
@@ -3504,10 +3786,6 @@ msgstr "Aucune tâche ne correspond à ces filtres."
 #: apps/web/templates/web/work.html:99
 msgid "blocked"
 msgstr "bloquée"
-
-#: apps/web/templates/web/work.html:110
-msgid "Job"
-msgstr "Tâche"
 
 #: apps/web/templates/web/work.html:110
 #: apps/web/templates/web/work_detail.html:405

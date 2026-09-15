@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 14:21+0000\n"
+"POT-Creation-Date: 2026-09-15 14:26+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -218,7 +218,6 @@ msgstr "Leer"
 
 #: apps/marketing/templates/marketing/base.html:237
 #: apps/marketing/templates/marketing/base.html:287
-#| msgid "Free trial"
 msgid "Free tools"
 msgstr "Gratis gereedskap"
 
@@ -238,12 +237,10 @@ msgstr "Gereelde vrae"
 
 #: apps/marketing/templates/marketing/base.html:241
 #: apps/marketing/templates/marketing/base.html:294
-#| msgid "Contacts"
 msgid "Contact"
 msgstr "Kontak"
 
 #: apps/marketing/templates/marketing/base.html:247
-#| msgid "Dashboard"
 msgid "Go to Dashboard"
 msgstr "Gaan na Kontroleskerm"
 
@@ -254,7 +251,8 @@ msgstr "Meld aan"
 
 #: apps/marketing/templates/marketing/base.html:250
 #: apps/marketing/templates/marketing/base.html:282
-#| msgid "Free trial"
+#: apps/marketing/templates/marketing/home.html:12
+#: apps/marketing/templates/marketing/home.html:110
 msgid "Start Free Trial"
 msgstr "Begin gratis proeftydperk"
 
@@ -262,14 +260,17 @@ msgstr "Begin gratis proeftydperk"
 msgid ""
 "The Contractor Operating System — from quotation to payment, one intelligent "
 "platform built for contractors worldwide."
-msgstr "Die Kontrakteur-Bedryfstelsel — van kwotasie tot betaling, een intelligente platform gebou vir kontrakteurs wêreldwyd."
+msgstr ""
+"Die Kontrakteur-Bedryfstelsel — van kwotasie tot betaling, een intelligente "
+"platform gebou vir kontrakteurs wêreldwyd."
 
 #: apps/marketing/templates/marketing/base.html:278
 msgid "Product"
 msgstr "Produk"
 
 #: apps/marketing/templates/marketing/base.html:281
-#| msgid "Book a demo →"
+#: apps/marketing/templates/marketing/home.html:13
+#: apps/marketing/templates/marketing/home.html:111
 msgid "Book a Demo"
 msgstr "Bespreek 'n demo"
 
@@ -297,7 +298,6 @@ msgid "Privacy Policy"
 msgstr "Privaatheidsbeleid"
 
 #: apps/marketing/templates/marketing/base.html:300
-#| msgid "Invoice terms & conditions"
 msgid "Terms & Conditions"
 msgstr "Bepalings en Voorwaardes"
 
@@ -319,17 +319,331 @@ msgstr "Gebou vir kontrakteurs wêreldwyd · GDPR-gereed"
 msgid ""
 "We use cookies to understand site traffic and improve Lulaworks. See our <a "
 "href=\"%(cookies_url)s\">cookie policy</a>."
-msgstr "Ons gebruik koekies om werfverkeer te verstaan en Lulaworks te verbeter. Sien ons <a href=\"%(cookies_url)s\">koekiebeleid</a>."
+msgstr ""
+"Ons gebruik koekies om werfverkeer te verstaan en Lulaworks te verbeter. "
+"Sien ons <a href=\"%(cookies_url)s\">koekiebeleid</a>."
 
 #: apps/marketing/templates/marketing/base.html:319
-#| msgid "Pipeline"
 msgid "Decline"
 msgstr "Weier"
 
 #: apps/marketing/templates/marketing/base.html:320
-#| msgid "Accepted"
 msgid "Accept"
 msgstr "Aanvaar"
+
+#: apps/marketing/templates/marketing/home.html:8
+msgid "The Contractor Operating System"
+msgstr "Die Kontrakteur-Bedryfstelsel"
+
+#: apps/marketing/templates/marketing/home.html:9
+#| msgid "No quotations yet."
+msgid "From Quotation to Payment."
+msgstr "Van kwotasie tot betaling."
+
+#: apps/marketing/templates/marketing/home.html:9
+msgid "One Platform. Powered by AI."
+msgstr "Een platform. Aangedryf deur KI."
+
+#: apps/marketing/templates/marketing/home.html:10
+msgid ""
+"Lulaworks helps contractors manage quotations, jobs, procurement, teams, "
+"deliveries, invoices and payments from one intelligent platform."
+msgstr "Lulaworks help kontrakteurs om kwotasies, werke, verkryging, spanne, aflewerings, fakture en betalings vanaf een intelligente platform te bestuur."
+
+#: apps/marketing/templates/marketing/home.html:16
+msgid "AI Powered"
+msgstr "KI-aangedryf"
+
+#: apps/marketing/templates/marketing/home.html:17
+msgid "Cloud Based"
+msgstr "Wolkgebaseer"
+
+#: apps/marketing/templates/marketing/home.html:18
+msgid "Mobile Friendly"
+msgstr "Mobielvriendelik"
+
+#: apps/marketing/templates/marketing/home.html:19
+msgid "Secure"
+msgstr "Veilig"
+
+#: apps/marketing/templates/marketing/home.html:20
+#| msgid "Built for contractors worldwide · GDPR-ready"
+msgid "Built for Contractors"
+msgstr "Gebou vir kontrakteurs"
+
+#: apps/marketing/templates/marketing/home.html:24
+msgid "Lulaworks dashboard preview"
+msgstr "Lulaworks-kontroleskerm-voorskou"
+
+#: apps/marketing/templates/marketing/home.html:27
+#| msgid "View quotation"
+msgid "Open quotations"
+msgstr "Oop kwotasies"
+
+#: apps/marketing/templates/marketing/home.html:28
+#| msgid "Active"
+msgid "Active jobs"
+msgstr "Aktiewe werke"
+
+#: apps/marketing/templates/marketing/home.html:29
+#: apps/web/templates/web/commercial_document_detail.html:138
+#: apps/web/templates/web/customer_detail.html:42
+#: apps/web/templates/web/invoices.html:31
+#: apps/web/templates/web/invoices.html:58
+msgid "Outstanding"
+msgstr "Uitstaande"
+
+#: apps/marketing/templates/marketing/home.html:32
+#: apps/marketing/templates/marketing/home.html:80 apps/marketing/views.py:47
+#: apps/web/templates/web/settings.html:45 apps/web/translation_strings.py:10
+msgid "Procurement"
+msgstr "Verkryging"
+
+#: apps/marketing/templates/marketing/home.html:33
+msgid "On site now"
+msgstr "Nou op terrein"
+
+#: apps/marketing/templates/marketing/home.html:34
+#| msgid "Buy AI credits"
+msgid "AI credits"
+msgstr "KI-krediete"
+
+#: apps/marketing/templates/marketing/home.html:44
+#| msgid "New to Lulaworks?"
+msgid "Why Lulaworks"
+msgstr "Hoekom Lulaworks"
+
+#: apps/marketing/templates/marketing/home.html:45
+msgid "Stop juggling spreadsheets, WhatsApp and disconnected tools"
+msgstr "Hou op om met sigblaaie, WhatsApp en ontkoppelde gereedskap te goël"
+
+#: apps/marketing/templates/marketing/home.html:46
+msgid ""
+"Most contractors run the business across a dozen places — a quote in Excel, "
+"a PO in email, site photos on WhatsApp, invoices in another app. Things "
+"slip, margins leak, and nobody has the full picture. Lulaworks brings the "
+"whole job into one place, from the first quotation to the final payment."
+msgstr "Die meeste kontrakteurs bestuur die besigheid oor 'n dosyn plekke — 'n kwotasie in Excel, 'n bestelling in e-pos, terreinfoto's op WhatsApp, fakture in 'n ander toepassing. Dinge glip, marges lek, en niemand het die volle prentjie nie. Lulaworks bring die hele werk op een plek saam, van die eerste kwotasie tot die finale betaling."
+
+#: apps/marketing/templates/marketing/home.html:54
+msgid "Everything in one place"
+msgstr "Alles op een plek"
+
+#: apps/marketing/templates/marketing/home.html:55
+#| msgid "Name for the job (optional)"
+msgid "One platform for the whole operation"
+msgstr "Een platform vir die hele bedryf"
+
+#: apps/marketing/templates/marketing/home.html:63
+msgid "Explore all features →"
+msgstr "Verken alle kenmerke →"
+
+#: apps/marketing/templates/marketing/home.html:71
+#| msgid "New to Lulaworks?"
+msgid "How it works"
+msgstr "Hoe dit werk"
+
+#: apps/marketing/templates/marketing/home.html:72
+msgid "The whole job, end to end"
+msgstr "Die hele werk, van begin tot end"
+
+#: apps/marketing/templates/marketing/home.html:73
+msgid ""
+"Every step flows into the next — no re-typing, no lost paperwork, no gaps."
+msgstr "Elke stap vloei in die volgende — geen hertik, geen verlore papierwerk, geen gapings nie."
+
+#: apps/marketing/templates/marketing/home.html:75
+#: apps/web/templates/web/customers.html:28
+#: apps/web/templates/web/invoices.html:57
+#: apps/web/templates/web/invoices.html:90
+#: apps/web/templates/web/quotations.html:67
+msgid "Customer"
+msgstr "Kliënt"
+
+#: apps/marketing/templates/marketing/home.html:76
+#: apps/web/templates/web/customer_detail.html:313
+#: apps/web/templates/web/invoices.html:90
+#: apps/web/templates/web/project_detail.html:94
+#: apps/web/templates/web/quotations.html:67
+msgid "Quotation"
+msgstr "Kwotasie"
+
+#: apps/marketing/templates/marketing/home.html:77
+#| msgid "Purchase Orders"
+msgid "Purchase Order"
+msgstr "Bestelling"
+
+#: apps/marketing/templates/marketing/home.html:78
+#: apps/web/templates/web/work.html:110
+msgid "Job"
+msgstr "Werk"
+
+#: apps/marketing/templates/marketing/home.html:79
+#| msgid "Subtasks"
+msgid "Tasks"
+msgstr "Take"
+
+#: apps/marketing/templates/marketing/home.html:81
+#| msgid "Delivery note"
+msgid "Delivery"
+msgstr "Aflewering"
+
+#: apps/marketing/templates/marketing/home.html:82
+#: apps/web/templates/web/invoices.html:57
+msgid "Invoice"
+msgstr "Faktuur"
+
+#: apps/marketing/templates/marketing/home.html:83
+#: apps/web/templates/web/invoices.html:58
+msgid "Payment"
+msgstr "Betaling"
+
+#: apps/marketing/templates/marketing/home.html:91
+msgid "Trusted by contractors"
+msgstr "Vertrou deur kontrakteurs"
+
+#: apps/marketing/templates/marketing/home.html:92
+msgid "Built for the way you actually work"
+msgstr "Gebou vir die manier waarop jy werklik werk"
+
+#: apps/marketing/templates/marketing/home.html:107
+msgid "Ready to transform your contracting business?"
+msgstr "Gereed om jou kontrakteursbesigheid te transformeer?"
+
+#: apps/marketing/templates/marketing/home.html:108
+msgid "Start your 30-day free trial today. No credit card required."
+msgstr "Begin vandag jou gratis proeftydperk van 30 dae. Geen kredietkaart nodig nie."
+
+#: apps/marketing/views.py:44
+#| msgid "Quotation pages"
+msgid "Quotation Management"
+msgstr "Kwotasiebestuur"
+
+#: apps/marketing/views.py:44
+msgid "Build accurate quotes fast and turn them into jobs in one click."
+msgstr "Bou akkurate kwotasies vinnig en verander hulle in werke met een klik."
+
+#: apps/marketing/views.py:45
+msgid "Job Management"
+msgstr "Werkbestuur"
+
+#: apps/marketing/views.py:45
+msgid "Every job in one view — scope, team, progress, money and paperwork."
+msgstr "Elke werk in een aansig — omvang, span, vordering, geld en papierwerk."
+
+#: apps/marketing/views.py:46
+msgid "Task Management"
+msgstr "Taakbestuur"
+
+#: apps/marketing/views.py:46
+msgid "Break jobs into tasks with checklists, owners and live progress."
+msgstr "Breek werke op in take met kontrolelyste, eienaars en lewendige vordering."
+
+#: apps/marketing/views.py:47
+msgid "Raise requests, compare supplier prices and issue purchase orders."
+msgstr "Skep versoeke, vergelyk verskafferpryse en reik bestellings uit."
+
+#: apps/marketing/views.py:48
+#| msgid "Intelligence"
+msgid "Supplier Intelligence"
+msgstr "Verskaffer-intelligensie"
+
+#: apps/marketing/views.py:48
+msgid "Every receipt teaches the system who sells what, and for how much."
+msgstr "Elke kwitansie leer die stelsel wie wat verkoop, en teen hoeveel."
+
+#: apps/marketing/views.py:49
+#| msgid "Document template"
+msgid "Document Management"
+msgstr "Dokumentbestuur"
+
+#: apps/marketing/views.py:49
+msgid "POs, invoices, delivery notes and safety files, all in one place."
+msgstr "Bestellings, fakture, afleweringsnotas en veiligheidslêers, alles op een plek."
+
+#: apps/marketing/views.py:50
+#| msgid "Documents & branding"
+msgid "AI Document Extraction"
+msgstr "KI-dokumentonttrekking"
+
+#: apps/marketing/views.py:50
+msgid "Drop in an RFQ, PO or invoice — AI reads it and fills the details."
+msgstr "Los 'n RFQ, bestelling of faktuur — KI lees dit en vul die besonderhede in."
+
+#: apps/marketing/views.py:51
+#| msgid "Delivery note"
+msgid "Delivery Notes"
+msgstr "Afleweringsnotas"
+
+#: apps/marketing/views.py:51
+msgid "Generate branded delivery notes straight from the job."
+msgstr "Genereer gemerkte afleweringsnotas direk vanaf die werk."
+
+#: apps/marketing/views.py:52
+#| msgid "Tax Invoice"
+msgid "Tax Invoices"
+msgstr "Belastingfakture"
+
+#: apps/marketing/views.py:52
+msgid "Compliant tax invoices and progress claims, with payments tracked."
+msgstr "Voldoenende belastingfakture en vorderingseise, met betalings nagespoor."
+
+#: apps/marketing/views.py:53
+msgid "GPS & Time Tracking"
+msgstr "GPS- en tydopsporing"
+
+#: apps/marketing/views.py:53
+msgid "Field check-ins are GPS-stamped so you know who was where, when."
+msgstr "Veld-inteken word met GPS gestempel sodat jy weet wie waar was, wanneer."
+
+#: apps/marketing/views.py:54
+#| msgid "Employees (unlimited)"
+msgid "Employee Management"
+msgstr "Werknemerbestuur"
+
+#: apps/marketing/views.py:54
+msgid "Unlimited employees — technicians, drivers, operators — on every plan."
+msgstr "Onbeperkte werknemers — tegnici, bestuurders, operateurs — op elke plan."
+
+#: apps/marketing/views.py:55
+#| msgid "Analytics"
+msgid "Reporting & Analytics"
+msgstr "Verslagdoening en analise"
+
+#: apps/marketing/views.py:55
+msgid "See profitability, cash flow and job health as the work happens."
+msgstr "Sien winsgewendheid, kontantvloei en werkgesondheid soos die werk gebeur."
+
+#: apps/marketing/views.py:59
+msgid ""
+"We quote in minutes now, and I can finally see which jobs actually make "
+"money."
+msgstr "Ons kwoteer nou in minute, en ek kan uiteindelik sien watter werke werklik geld maak."
+
+#: apps/marketing/views.py:60
+msgid "Managing Director, mechanical contractor"
+msgstr "Besturende Direkteur, meganiese kontrakteur"
+
+#: apps/marketing/views.py:61
+msgid ""
+"The mobile check-ins ended the arguments about who was on site. It just "
+"works."
+msgstr "Die mobiele inteken het die argumente oor wie op die terrein was, beëindig. Dit werk net."
+
+#: apps/marketing/views.py:62
+msgid "Operations Manager, maintenance company"
+msgstr "Bedryfsbestuurder, instandhoudingsmaatskappy"
+
+#: apps/marketing/views.py:63
+msgid ""
+"Uploading a mine's PO and having it fill in the job automatically saves us "
+"hours."
+msgstr "Om 'n myn se bestelling op te laai en dit outomaties die werk te laat invul, spaar ons ure."
+
+#: apps/marketing/views.py:64
+#| msgid "Industries served"
+msgid "Owner, industrial services"
+msgstr "Eienaar, industriële dienste"
 
 #: apps/projects/models.py:20 apps/web/templates/web/projects.html:26
 msgid "Pending compliance"
@@ -836,13 +1150,6 @@ msgstr "Faktuurtotaal"
 #: apps/web/templates/web/invoices.html:68
 msgid "Paid"
 msgstr "Betaal"
-
-#: apps/web/templates/web/commercial_document_detail.html:138
-#: apps/web/templates/web/customer_detail.html:42
-#: apps/web/templates/web/invoices.html:31
-#: apps/web/templates/web/invoices.html:58
-msgid "Outstanding"
-msgstr "Uitstaande"
 
 #: apps/web/templates/web/commercial_document_detail.html:143
 msgid "Paid in full"
@@ -2208,13 +2515,6 @@ msgstr "Geen terreine nie."
 msgid "Jobs for this customer"
 msgstr "Werke vir hierdie kliënt"
 
-#: apps/web/templates/web/customer_detail.html:313
-#: apps/web/templates/web/invoices.html:90
-#: apps/web/templates/web/project_detail.html:94
-#: apps/web/templates/web/quotations.html:67
-msgid "Quotation"
-msgstr "Kwotasie"
-
 #: apps/web/templates/web/customer_detail.html:317
 #: apps/web/templates/web/customer_detail.html:328
 msgid "None yet."
@@ -2266,13 +2566,6 @@ msgstr "Enige status"
 #: apps/web/templates/web/work.html:61
 msgid "Filter"
 msgstr "Filter"
-
-#: apps/web/templates/web/customers.html:28
-#: apps/web/templates/web/invoices.html:57
-#: apps/web/templates/web/invoices.html:90
-#: apps/web/templates/web/quotations.html:67
-msgid "Customer"
-msgstr "Kliënt"
 
 #: apps/web/templates/web/customers.html:28
 msgid "Code"
@@ -2539,14 +2832,6 @@ msgstr "Totaal"
 #: apps/web/templates/web/invoices.html:52
 msgid "Your invoices"
 msgstr "Jou fakture"
-
-#: apps/web/templates/web/invoices.html:57
-msgid "Invoice"
-msgstr "Faktuur"
-
-#: apps/web/templates/web/invoices.html:58
-msgid "Payment"
-msgstr "Betaling"
 
 #: apps/web/templates/web/invoices.html:78
 msgid "No invoices yet."
@@ -3386,10 +3671,6 @@ msgstr "KI-verskafferstatus, model, gesondheid en gebruik."
 msgid "Every email sent, delivery status and resend."
 msgstr "Elke e-pos gestuur, afleweringstatus en herstuur."
 
-#: apps/web/templates/web/settings.html:45 apps/web/translation_strings.py:10
-msgid "Procurement"
-msgstr "Verkryging"
-
 #: apps/web/templates/web/settings.html:48
 msgid "Purchase request settings"
 msgstr "Instellings vir aankoopversoeke"
@@ -3480,10 +3761,6 @@ msgstr "Geen werke pas by hierdie filters nie."
 #: apps/web/templates/web/work.html:99
 msgid "blocked"
 msgstr "geblokkeer"
-
-#: apps/web/templates/web/work.html:110
-msgid "Job"
-msgstr "Werk"
 
 #: apps/web/templates/web/work.html:110
 #: apps/web/templates/web/work_detail.html:405
