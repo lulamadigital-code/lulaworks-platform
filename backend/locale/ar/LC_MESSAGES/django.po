@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 13:49+0000\n"
+"POT-Creation-Date: 2026-09-15 13:54+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -203,7 +203,7 @@ msgstr[1] ""
 msgid "Pending compliance"
 msgstr "في انتظار الامتثال"
 
-#: apps/projects/models.py:21
+#: apps/projects/models.py:21 apps/web/templates/web/_readiness.html:7
 msgid "Ready for site"
 msgstr "جاهز للموقع"
 
@@ -260,6 +260,25 @@ msgstr "خاسر"
 #: apps/quotes/models.py:74
 msgid "Expired"
 msgstr "منتهي الصلاحية"
+
+#: apps/web/templates/web/_readiness.html:9
+#| msgid "Ready for site"
+msgid "Ready (overridden)"
+msgstr "جاهز (تجاوز)"
+
+#: apps/web/templates/web/_readiness.html:11
+#| msgid "Ready for site"
+msgid "Not ready for site"
+msgstr "غير جاهز للموقع"
+
+#: apps/web/templates/web/_readiness.html:17
+msgid "Refresh"
+msgstr "تحديث"
+
+#: apps/web/templates/web/_readiness.html:32
+#, python-format
+msgid "Blocking (%(n)s)"
+msgstr "حاجز (%(n)s)"
 
 #: apps/web/templates/web/_related.html:5
 msgid "Related records"
@@ -493,8 +512,8 @@ msgid "from"
 msgstr "من"
 
 #: apps/web/templates/web/commercial_document_detail.html:33
+#: apps/web/templates/web/project_detail.html:175
 #: apps/web/templates/web/quotation_detail.html:47
-#| msgid "Approved"
 msgid "Approve"
 msgstr "اعتماد"
 
@@ -509,13 +528,11 @@ msgid "Export Excel"
 msgstr "تصدير Excel"
 
 #: apps/web/templates/web/commercial_document_detail.html:42
-#| msgid "+ New quotation"
 msgid "View quotation"
 msgstr "عرض عرض السعر"
 
 #: apps/web/templates/web/commercial_document_detail.html:46
 #: apps/web/templates/web/quotation_detail.html:60
-#| msgid "Delivery note terms"
 msgid "View delivery note"
 msgstr "عرض مذكرة التسليم"
 
@@ -527,30 +544,25 @@ msgstr "جارٍ الإنشاء…"
 
 #: apps/web/templates/web/commercial_document_detail.html:49
 #: apps/web/templates/web/quotation_detail.html:63
-#| msgid "Delivery note terms"
 msgid "Create delivery note"
 msgstr "إنشاء مذكرة تسليم"
 
 #: apps/web/templates/web/commercial_document_detail.html:53
 #: apps/web/templates/web/quotation_detail.html:54
-#| msgid "+ New invoice"
 msgid "View tax invoice"
 msgstr "عرض الفاتورة الضريبية"
 
 #: apps/web/templates/web/commercial_document_detail.html:56
 #: apps/web/templates/web/quotation_detail.html:57
-#| msgid "Create tax invoice →"
 msgid "Create tax invoice"
 msgstr "إنشاء فاتورة ضريبية"
 
 #: apps/web/templates/web/commercial_document_detail.html:61
-#| msgid "Purchase Orders"
 msgid "View purchase order"
 msgstr "عرض أمر الشراء"
 
 #: apps/web/templates/web/commercial_document_detail.html:63
 #: apps/web/templates/web/quotation_detail.html:78
-#| msgid "Purchase Orders"
 msgid "Upload purchase order"
 msgstr "رفع أمر الشراء"
 
@@ -561,7 +573,6 @@ msgstr "تسجيل دفعة"
 
 #: apps/web/templates/web/commercial_document_detail.html:67
 #: apps/web/templates/web/commercial_document_detail.html:122
-#| msgid "Payment"
 msgid "Payments"
 msgstr "المدفوعات"
 
@@ -571,13 +582,11 @@ msgid "%(kind)s timeline"
 msgstr "الجدول الزمني: %(kind)s"
 
 #: apps/web/templates/web/commercial_document_detail.html:77
-#| msgid "Currency"
 msgid "current"
 msgstr "الحالي"
 
 #: apps/web/templates/web/commercial_document_detail.html:77
 #: apps/web/templates/web/quotation_detail.html:96
-#| msgid "Branding"
 msgid "pending"
 msgstr "معلّق"
 
@@ -599,7 +608,9 @@ msgstr "تم إنشاؤه من"
 msgid ""
 "the customer, items, prices and VAT come from the quotation, nothing re-"
 "entered."
-msgstr "يأتي العميل والبنود والأسعار وضريبة القيمة المضافة من عرض السعر، دون إعادة إدخال أي شيء."
+msgstr ""
+"يأتي العميل والبنود والأسعار وضريبة القيمة المضافة من عرض السعر، دون إعادة "
+"إدخال أي شيء."
 
 #: apps/web/templates/web/commercial_document_detail.html:89
 msgid ""
@@ -609,7 +620,6 @@ msgstr "يأتي العميل والبنود والكميات من عرض الس
 
 #: apps/web/templates/web/commercial_document_detail.html:93
 #: apps/web/templates/web/quotation_detail.html:134
-#| msgid "Issued to customer"
 msgid "Send to customer"
 msgstr "إرسال إلى العميل"
 
@@ -620,12 +630,10 @@ msgstr "إلى"
 
 #: apps/web/templates/web/commercial_document_detail.html:100
 #: apps/web/templates/web/quotation_detail.html:141
-#| msgid "(optional)"
 msgid "Message (optional)"
 msgstr "رسالة (اختياري)"
 
 #: apps/web/templates/web/commercial_document_detail.html:101
-#| msgid "Add a customer"
 msgid "Add a short note…"
 msgstr "أضف ملاحظة قصيرة…"
 
@@ -636,7 +644,6 @@ msgstr "إرسال %(kind)s بالبريد الإلكتروني (PDF مرفق)"
 
 #: apps/web/templates/web/commercial_document_detail.html:109
 #: apps/web/templates/web/quotation_detail.html:150
-#| msgid "Sent"
 msgid "Sent to"
 msgstr "أُرسل إلى"
 
@@ -648,6 +655,7 @@ msgstr "متى"
 #: apps/web/templates/web/commercial_document_detail.html:109
 #: apps/web/templates/web/customers.html:29
 #: apps/web/templates/web/people.html:73
+#: apps/web/templates/web/project_detail.html:133
 #: apps/web/templates/web/projects.html:14
 #: apps/web/templates/web/quotation_detail.html:150
 #: apps/web/templates/web/quotation_detail.html:168
@@ -659,22 +667,18 @@ msgstr "الحالة"
 
 #: apps/web/templates/web/commercial_document_detail.html:113
 #: apps/web/templates/web/quotation_detail.html:154
-#| msgid "Detailed"
 msgid "Failed"
 msgstr "فشل"
 
 #: apps/web/templates/web/commercial_document_detail.html:126
-#| msgid "Tax reference"
 msgid "Reference"
 msgstr "المرجع"
 
 #: apps/web/templates/web/commercial_document_detail.html:131
-#| msgid "No documents uploaded yet."
 msgid "No payments recorded yet."
 msgstr "لم تُسجَّل أي مدفوعات بعد."
 
 #: apps/web/templates/web/commercial_document_detail.html:134
-#| msgid "Invoice logo"
 msgid "Invoice total"
 msgstr "إجمالي الفاتورة"
 
@@ -707,7 +711,6 @@ msgid "Record a payment"
 msgstr "تسجيل دفعة"
 
 #: apps/web/templates/web/commercial_document_detail.html:149
-#| msgid "Amount"
 msgid "Amount (R)"
 msgstr "المبلغ (R)"
 
@@ -720,18 +723,15 @@ msgid "EFT ref / POP"
 msgstr "مرجع التحويل / إثبات الدفع"
 
 #: apps/web/templates/web/commercial_document_detail.html:154
-#| msgid "Creating…"
 msgid "Recording…"
 msgstr "جارٍ التسجيل…"
 
 #: apps/web/templates/web/commercial_document_detail.html:162
-#| msgid "Purchase Orders"
 msgid "Purchase order"
 msgstr "أمر الشراء"
 
 #: apps/web/templates/web/commercial_document_detail.html:166
 #: apps/web/templates/web/quotation_detail.html:167
-#| msgid "VAT number"
 msgid "PO number"
 msgstr "رقم أمر الشراء"
 
@@ -750,9 +750,6 @@ msgstr "مفتوحة"
 
 #: apps/web/templates/web/commercial_document_detail.html:177
 #, python-format
-#| msgid ""
-#| "You manage the whole platform from the <a "
-#| "href=\"%(console_url)s\">Console</a>."
 msgid ""
 "Manage purchase orders on the <a href=\"%(quote_url)s#po-upload\">quotation</"
 "a>."
@@ -760,7 +757,6 @@ msgstr "أدر أوامر الشراء في <a href=\"%(quote_url)s#po-upload\">
 
 #: apps/web/templates/web/commercial_document_detail.html:180
 #: apps/web/templates/web/quotation_detail.html:183
-#| msgid "Purchase Orders"
 msgid "Attach a purchase order"
 msgstr "إرفاق أمر شراء"
 
@@ -768,11 +764,12 @@ msgstr "إرفاق أمر شراء"
 msgid ""
 "Attach the customer's PO document — its number, date, value and payment "
 "terms are read straight off it, so there is nothing to type."
-msgstr "أرفق مستند أمر شراء العميل — يُقرأ رقمه وتاريخه وقيمته وشروط الدفع منه مباشرة، فلا حاجة لكتابة أي شيء."
+msgstr ""
+"أرفق مستند أمر شراء العميل — يُقرأ رقمه وتاريخه وقيمته وشروط الدفع منه "
+"مباشرة، فلا حاجة لكتابة أي شيء."
 
 #: apps/web/templates/web/commercial_document_detail.html:184
 #: apps/web/templates/web/quotation_detail.html:187
-#| msgid "Upload document"
 msgid "Choose PO document"
 msgstr "اختر مستند أمر الشراء"
 
@@ -1938,10 +1935,12 @@ msgid "Blocked on compliance"
 msgstr "متوقف بسبب الامتثال"
 
 #: apps/web/templates/web/dashboard.html:63
+#: apps/web/templates/web/project_detail.html:33
 msgid "Revenue"
 msgstr "الإيرادات"
 
 #: apps/web/templates/web/dashboard.html:65
+#: apps/web/templates/web/project_detail.html:34
 msgid "Actual cost"
 msgstr "التكلفة الفعلية"
 
@@ -1997,6 +1996,7 @@ msgid "Client"
 msgstr "العميل"
 
 #: apps/web/templates/web/dashboard.html:128
+#: apps/web/templates/web/project_detail.html:9
 msgid "Readiness"
 msgstr "الجاهزية"
 
@@ -2034,6 +2034,7 @@ msgid "+ New invoice"
 msgstr "+ فاتورة جديدة"
 
 #: apps/web/templates/web/invoices.html:18
+#: apps/web/templates/web/project_detail.html:138
 msgid "Approved"
 msgstr "معتمدة"
 
@@ -2061,6 +2062,7 @@ msgstr "المستحق حسب العمر"
 
 #: apps/web/templates/web/invoices.html:41
 #: apps/web/templates/web/invoices.html:57
+#: apps/web/templates/web/project_detail.html:56
 msgid "Total"
 msgstr "الإجمالي"
 
@@ -2098,6 +2100,7 @@ msgstr ""
 "تحمل رقم عرض السعر — الأرقام مأخوذة مباشرة من عرض السعر."
 
 #: apps/web/templates/web/invoices.html:90
+#: apps/web/templates/web/project_detail.html:94
 #: apps/web/templates/web/quotations.html:67
 msgid "Quotation"
 msgstr "عرض السعر"
@@ -2354,6 +2357,220 @@ msgstr "مهامك المفتوحة"
 msgid "as %(roles)s"
 msgstr "بصفتك %(roles)s"
 
+#: apps/web/templates/web/project_detail.html:5
+#| msgid "Projects"
+msgid "← Projects"
+msgstr "← المشاريع"
+
+#: apps/web/templates/web/project_detail.html:16
+msgid "Override reason (audited)…"
+msgstr "سبب التجاوز (مُدقَّق)…"
+
+#: apps/web/templates/web/project_detail.html:17
+#| msgid "Overdue"
+msgid "Override gate"
+msgstr "تجاوز البوابة"
+
+#: apps/web/templates/web/project_detail.html:22
+#| msgid "Project"
+msgid "Project health"
+msgstr "صحة المشروع"
+
+#: apps/web/templates/web/project_detail.html:24
+msgid "Overall"
+msgstr "إجمالي"
+
+#: apps/web/templates/web/project_detail.html:31
+#| msgid "Commercial approval"
+msgid "Commercial"
+msgstr "تجاري"
+
+#: apps/web/templates/web/project_detail.html:31
+msgid "(finance only)"
+msgstr "(المالية فقط)"
+
+#: apps/web/templates/web/project_detail.html:35
+msgid "Gross profit"
+msgstr "إجمالي الربح"
+
+#: apps/web/templates/web/project_detail.html:36
+#: apps/web/templates/web/quotations.html:68
+msgid "Margin"
+msgstr "الهامش"
+
+#: apps/web/templates/web/project_detail.html:40
+msgid "Profit forecast"
+msgstr "توقع الربح"
+
+#: apps/web/templates/web/project_detail.html:42
+msgid "AT RISK"
+msgstr "في خطر"
+
+#: apps/web/templates/web/project_detail.html:43
+msgid "WATCH"
+msgstr "مراقبة"
+
+#: apps/web/templates/web/project_detail.html:44
+msgid "ON TRACK"
+msgstr "على المسار"
+
+#: apps/web/templates/web/project_detail.html:50
+msgid "Category"
+msgstr "الفئة"
+
+#: apps/web/templates/web/project_detail.html:50
+msgid "Budget"
+msgstr "الميزانية"
+
+#: apps/web/templates/web/project_detail.html:50
+#| msgid "Actual cost"
+msgid "Actual"
+msgstr "الفعلي"
+
+#: apps/web/templates/web/project_detail.html:50
+#| msgid "Finance"
+msgid "Variance"
+msgstr "الفرق"
+
+#: apps/web/templates/web/project_detail.html:63
+#| msgid "Jobs by status"
+msgid "Jobs & tasks"
+msgstr "الأعمال والمهام"
+
+#: apps/web/templates/web/project_detail.html:65
+#| msgid "+ Add member"
+msgid "+ Add job"
+msgstr "+ إضافة مهمة"
+
+#: apps/web/templates/web/project_detail.html:75
+#: apps/web/templates/web/project_detail.html:82
+#| msgid "Operating in"
+msgid "Operations"
+msgstr "العمليات"
+
+#: apps/web/templates/web/project_detail.html:85
+#| msgid "No jobs yet — create some from the Jobs tab."
+msgid "No jobs yet — add the first one."
+msgstr "لا توجد مهام بعد — أضف الأولى."
+
+#: apps/web/templates/web/project_detail.html:90
+#: apps/web/templates/web/quotation_detail.html:215
+msgid "Commercial documents"
+msgstr "المستندات التجارية"
+
+#: apps/web/templates/web/project_detail.html:100
+#| msgid "Customer"
+msgid "Customer PO"
+msgstr "أمر شراء العميل"
+
+#: apps/web/templates/web/project_detail.html:101
+msgid "received"
+msgstr "مُستلَم"
+
+#: apps/web/templates/web/project_detail.html:105
+#| msgid "Tax Invoice"
+msgid "Tax invoice"
+msgstr "فاتورة ضريبية"
+
+#: apps/web/templates/web/project_detail.html:108
+#: apps/web/templates/web/project_detail.html:114
+msgid "PDF"
+msgstr "PDF"
+
+#: apps/web/templates/web/project_detail.html:111
+#| msgid "Delivery note terms"
+msgid "Delivery note"
+msgstr "مذكرة التسليم"
+
+#: apps/web/templates/web/project_detail.html:117
+msgid "No commercial documents — this job wasn't raised from a quotation."
+msgstr "لا توجد مستندات تجارية — لم تُنشأ هذه المهمة من عرض سعر."
+
+#: apps/web/templates/web/project_detail.html:123
+#| msgid "Commercial documents"
+msgid "Materials & procurement"
+msgstr "المواد والمشتريات"
+
+#: apps/web/templates/web/project_detail.html:125
+msgid "Allocated"
+msgstr "مُخصَّص"
+
+#: apps/web/templates/web/project_detail.html:126
+msgid "Spent"
+msgstr "مُنفَق"
+
+#: apps/web/templates/web/project_detail.html:127
+#, python-format
+#| msgid "No due date (%(n)s)"
+msgid "Materials (%(n)s)"
+msgstr "المواد (%(n)s)"
+
+#: apps/web/templates/web/project_detail.html:129
+msgid ""
+"Field spend the crew captures here (material, fuel & expense receipts) flows "
+"straight into this job's actual cost and profitability"
+msgstr "تتدفق نفقات الميدان التي يسجلها الطاقم هنا (إيصالات المواد والوقود والمصروفات) مباشرة إلى التكلفة الفعلية وربحية هذه المهمة"
+
+#: apps/web/templates/web/project_detail.html:129
+msgid "(visible to finance)"
+msgstr "(مرئي للمالية)"
+
+#: apps/web/templates/web/project_detail.html:133
+msgid "Request"
+msgstr "الطلب"
+
+#: apps/web/templates/web/project_detail.html:133
+msgid "For"
+msgstr "لـ"
+
+#: apps/web/templates/web/project_detail.html:139
+#| msgid "Waiting"
+msgid "Awaiting"
+msgstr "في الانتظار"
+
+#: apps/web/templates/web/project_detail.html:140
+msgid "Fulfilled"
+msgstr "تم التنفيذ"
+
+#: apps/web/templates/web/project_detail.html:150
+#| msgid "Pipeline"
+msgid "Timeline"
+msgstr "الجدول الزمني"
+
+#: apps/web/templates/web/project_detail.html:161
+#| msgid "Compliance"
+msgid "Compliance checklist"
+msgstr "قائمة الامتثال"
+
+#: apps/web/templates/web/project_detail.html:168
+msgid "mandatory"
+msgstr "إلزامي"
+
+#: apps/web/templates/web/project_detail.html:181
+#| msgid "AI compliance detection"
+msgid "No compliance items."
+msgstr "لا توجد عناصر امتثال."
+
+#: apps/web/templates/web/project_detail.html:187
+msgid "Raise a progress claim"
+msgstr "إصدار مطالبة تقدّم"
+
+#: apps/web/templates/web/project_detail.html:191
+#, python-format
+#| msgid "%(pct)s%% complete"
+msgid "%% complete"
+msgstr "%% مكتمل"
+
+#: apps/web/templates/web/project_detail.html:193
+#, python-format
+#| msgid "Retention held"
+msgid "retention %%"
+msgstr "احتجاز %%"
+
+#: apps/web/templates/web/project_detail.html:195
+msgid "Raise claim"
+msgstr "إصدار المطالبة"
+
 #: apps/web/templates/web/projects.html:8
 msgid "A project groups related jobs."
 msgstr "المشروع يجمع المهام المرتبطة."
@@ -2380,22 +2597,18 @@ msgid "No projects yet."
 msgstr "لا توجد مشاريع بعد."
 
 #: apps/web/templates/web/quotation_detail.html:5
-#| msgid "Quotations"
 msgid "← Quotations"
 msgstr "← عروض الأسعار"
 
 #: apps/web/templates/web/quotation_detail.html:18
-#| msgid "Finance"
 msgid "Finalized"
 msgstr "نهائي"
 
 #: apps/web/templates/web/quotation_detail.html:18
-#| msgid "Issued to customer"
 msgid "Sent to customer"
 msgstr "أُرسل إلى العميل"
 
 #: apps/web/templates/web/quotation_detail.html:19
-#| msgid "Awaiting approval"
 msgid "Pending approval"
 msgstr "في انتظار الاعتماد"
 
@@ -2409,12 +2622,10 @@ msgstr "تجاوز تاريخ صلاحيته"
 
 #: apps/web/templates/web/quotation_detail.html:25
 #, python-format
-#| msgid "Remove %(n)s?"
 msgid "Revision %(n)s"
 msgstr "المراجعة %(n)s"
 
 #: apps/web/templates/web/quotation_detail.html:69
-#| msgid "Open jobs"
 msgid "Open Job"
 msgstr "فتح المهمة"
 
@@ -2432,7 +2643,6 @@ msgid "Create revision"
 msgstr "إنشاء مراجعة"
 
 #: apps/web/templates/web/quotation_detail.html:88
-#| msgid "Commercial document terms"
 msgid "Commercial timeline"
 msgstr "الجدول الزمني التجاري"
 
@@ -2441,22 +2651,18 @@ msgid "Scope of Work"
 msgstr "نطاق العمل"
 
 #: apps/web/templates/web/quotation_detail.html:108
-#| msgid "Quotation pages"
 msgid "Quotation preview"
 msgstr "معاينة عرض السعر"
 
 #: apps/web/templates/web/quotation_detail.html:114
-#| msgid "Document templates"
 msgid "Document template"
 msgstr "قالب المستند"
 
 #: apps/web/templates/web/quotation_detail.html:116
-#| msgid "Company seal"
 msgid "Company default"
 msgstr "افتراضي الشركة"
 
 #: apps/web/templates/web/quotation_detail.html:118
-#| msgid "Default"
 msgid "(default)"
 msgstr "(افتراضي)"
 
@@ -2469,7 +2675,6 @@ msgid "Manage templates →"
 msgstr "إدارة القوالب →"
 
 #: apps/web/templates/web/quotation_detail.html:128
-#| msgid "Quotation pages"
 msgid "Quotation PDF preview"
 msgstr "معاينة PDF لعرض السعر"
 
@@ -2490,12 +2695,10 @@ msgid "(available while the quotation is still in preparation)"
 msgstr "(متاح ما دام عرض السعر قيد الإعداد)"
 
 #: apps/web/templates/web/quotation_detail.html:163
-#| msgid "Purchase Orders"
 msgid "Purchase orders"
 msgstr "أوامر الشراء"
 
 #: apps/web/templates/web/quotation_detail.html:174
-#| msgid "Document"
 msgid "document"
 msgstr "مستند"
 
@@ -2504,7 +2707,9 @@ msgid ""
 "Attach the customer's PO document — its number, date, value and payment "
 "terms are read straight off it, so there is nothing to type. Several may be "
 "attached for staged jobs."
-msgstr "أرفق مستند أمر شراء العميل — يُقرأ رقمه وتاريخه وقيمته وشروط الدفع منه مباشرة، فلا حاجة لكتابة أي شيء. يمكن إرفاق عدة مستندات للمهام المرحلية."
+msgstr ""
+"أرفق مستند أمر شراء العميل — يُقرأ رقمه وتاريخه وقيمته وشروط الدفع منه "
+"مباشرة، فلا حاجة لكتابة أي شيء. يمكن إرفاق عدة مستندات للمهام المرحلية."
 
 #: apps/web/templates/web/quotation_detail.html:198
 msgid "Award and create job"
@@ -2514,7 +2719,9 @@ msgstr "الترسية وإنشاء المهمة"
 msgid ""
 "Moves the customer, site, contact, scope and value into a project and a job "
 "in one step."
-msgstr "ينقل العميل والموقع وجهة الاتصال والنطاق والقيمة إلى مشروع ومهمة في خطوة واحدة."
+msgstr ""
+"ينقل العميل والموقع وجهة الاتصال والنطاق والقيمة إلى مشروع ومهمة في خطوة "
+"واحدة."
 
 #: apps/web/templates/web/quotation_detail.html:201
 #, python-format
@@ -2535,22 +2742,15 @@ msgid ""
 "instruction to proceed."
 msgstr "متاح بمجرد اعتماد عرض السعر — أمر الشراء هو تعليمات العميل بالمتابعة."
 
-#: apps/web/templates/web/quotation_detail.html:215
-#| msgid "Commercial document terms"
-msgid "Commercial documents"
-msgstr "المستندات التجارية"
-
 #: apps/web/templates/web/quotation_detail.html:231
 msgid "Traceability"
 msgstr "إمكانية التتبع"
 
 #: apps/web/templates/web/quotation_detail.html:236
-#| msgid "Invoice"
 msgid "Invoiced"
 msgstr "مفوتر"
 
 #: apps/web/templates/web/quotation_detail.html:243
-#| msgid "Revision requested"
 msgid "Revisions"
 msgstr "المراجعات"
 
@@ -2563,7 +2763,6 @@ msgid "this version"
 msgstr "هذا الإصدار"
 
 #: apps/web/templates/web/quotation_detail.html:258
-#| msgid "Email history"
 msgid "History"
 msgstr "السجل"
 
@@ -2633,10 +2832,6 @@ msgstr "رقم عرض السعر…"
 #: apps/web/templates/web/quotations.html:57
 msgid "Any customer"
 msgstr "أي عميل"
-
-#: apps/web/templates/web/quotations.html:68
-msgid "Margin"
-msgstr "الهامش"
 
 #: apps/web/templates/web/quotations.html:69
 msgid "Valid until"

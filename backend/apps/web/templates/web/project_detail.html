@@ -1,67 +1,68 @@
 {% extends "web/base.html" %}
+{% load i18n %}
 {% block title %}{{ project.number }}{% endblock %}
 {% block content %}
-<p class="sub"><a href="{% url 'web:projects' %}">← Projects</a></p>
+<p class="sub"><a href="{% url 'web:projects' %}">{% trans "← Projects" %}</a></p>
 <h1>{{ project.title|default:project.client_name }}</h1>
 <p class="sub">{{ project.number }} · {{ project.client_name }}{% if project.site %} · {{ project.site }}{% endif %}{% if project.work_type %} · {{ project.work_type }}{% endif %}</p>
 
-<h2>Readiness</h2>
+<h2>{% trans "Readiness" %}</h2>
 {% include "web/_readiness.html" %}
 
 {% if can_compliance and not readiness.gate_status == 'ready' and not readiness.gate_status == 'overridden' %}
 <div class="card">
   <form method="post" action="{% url 'web:project_override' project.id %}" class="row" style="gap:8px;">
     {% csrf_token %}
-    <input type="text" name="reason" placeholder="Override reason (audited)…" style="flex:1;" required>
-    <button class="btn" type="submit" style="background:var(--warn);">Override gate</button>
+    <input type="text" name="reason" placeholder="{% trans 'Override reason (audited)…' %}" style="flex:1;" required>
+    <button class="btn" type="submit" style="background:var(--warn);">{% trans "Override gate" %}</button>
   </form>
 </div>
 {% endif %}
 
-<h2>Project health</h2>
+<h2>{% trans "Project health" %}</h2>
 <div class="grid">
-  <div class="tile"><div class="n">{{ health.overall }}%</div><div class="l">Overall</div></div>
+  <div class="tile"><div class="n">{{ health.overall }}%</div><div class="l">{% trans "Overall" %}</div></div>
   {% for dim, val in health.dimensions.items %}
   <div class="tile"><div class="n">{{ val }}%</div><div class="l">{{ dim|capfirst }}</div></div>
   {% endfor %}
 </div>
 
 {% if can_view_money %}
-<h2>Commercial <span class="muted" style="font-size:12px; font-weight:400;">(finance only)</span></h2>
+<h2>{% trans "Commercial" %} <span class="muted" style="font-size:12px; font-weight:400;">{% trans "(finance only)" %}</span></h2>
 <div class="grid">
-  <div class="tile"><div class="n">R{{ profitability.revenue }}</div><div class="l">Revenue</div></div>
-  <div class="tile"><div class="n">R{{ profitability.actual_cost }}</div><div class="l">Actual cost</div></div>
-  <div class="tile"><div class="n">R{{ profitability.gross_profit }}</div><div class="l">Gross profit</div></div>
-  <div class="tile"><div class="n">{{ profitability.margin_pct }}%</div><div class="l">Margin</div></div>
+  <div class="tile"><div class="n">R{{ profitability.revenue }}</div><div class="l">{% trans "Revenue" %}</div></div>
+  <div class="tile"><div class="n">R{{ profitability.actual_cost }}</div><div class="l">{% trans "Actual cost" %}</div></div>
+  <div class="tile"><div class="n">R{{ profitability.gross_profit }}</div><div class="l">{% trans "Gross profit" %}</div></div>
+  <div class="tile"><div class="n">{{ profitability.margin_pct }}%</div><div class="l">{% trans "Margin" %}</div></div>
 </div>
 <div class="card" style="{% if forecast.verdict == 'at risk' %}border-color:var(--badbg);{% elif forecast.verdict == 'watch' %}border-color:var(--warnbg);{% endif %}">
   <div class="row">
-    <strong>Profit forecast</strong>
+    <strong>{% trans "Profit forecast" %}</strong>
     <span class="sp" style="flex:1;"></span>
-    {% if forecast.verdict == 'at risk' %}<span class="chip bad">AT RISK</span>
-    {% elif forecast.verdict == 'watch' %}<span class="chip warn">WATCH</span>
-    {% else %}<span class="chip ok">ON TRACK</span>{% endif %}
+    {% if forecast.verdict == 'at risk' %}<span class="chip bad">{% trans "AT RISK" %}</span>
+    {% elif forecast.verdict == 'watch' %}<span class="chip warn">{% trans "WATCH" %}</span>
+    {% else %}<span class="chip ok">{% trans "ON TRACK" %}</span>{% endif %}
   </div>
   <p class="muted" style="margin:8px 0 0;">{{ forecast.narrative }}</p>
 </div>
 <div class="card" style="padding:0;">
   <table>
-    <tr><th>Category</th><th class="right">Budget</th><th class="right">Actual</th><th class="right">Variance</th></tr>
+    <tr><th>{% trans "Category" %}</th><th class="right">{% trans "Budget" %}</th><th class="right">{% trans "Actual" %}</th><th class="right">{% trans "Variance" %}</th></tr>
     {% for l in budget.lines %}
     <tr><td>{{ l.category|capfirst }}</td><td class="right">R{{ l.budget }}</td>
       <td class="right">R{{ l.actual }}</td>
       <td class="right" style="{% if l.variance|slice:':1' != '-' and l.variance != '0.00' %}color:var(--bad);{% endif %}">R{{ l.variance }}</td></tr>
     {% endfor %}
-    <tr style="font-weight:700;"><td>Total</td><td class="right">R{{ budget.total_budget }}</td>
+    <tr style="font-weight:700;"><td>{% trans "Total" %}</td><td class="right">R{{ budget.total_budget }}</td>
       <td class="right">R{{ budget.total_actual }}</td><td></td></tr>
   </table>
 </div>
 {% endif %}
 
 <div class="row" style="margin:26px 0 12px;">
-  <h2 style="margin:0;">Jobs &amp; tasks</h2>
+  <h2 style="margin:0;">{% trans "Jobs & tasks" %}</h2>
   <span class="sp" style="flex:1;"></span>
-  <a class="btn" href="{% url 'web:work_new' %}?project={{ project.id }}">+ Add job</a>
+  <a class="btn" href="{% url 'web:work_new' %}?project={{ project.id }}">{% trans "+ Add job" %}</a>
 </div>
 <div class="card" style="padding:0;">
   <table>
@@ -71,74 +72,72 @@
         <td>{{ t.name }}</td>
         <td class="muted">{{ phase.name }}</td>
         <td class="muted">{{ t.get_status_display }}</td>
-        <td class="right" style="width:120px;"><a class="btn" style="padding:5px 12px; font-size:13px;" href="{% url 'web:work_operations' t.id %}">Operations</a></td>
+        <td class="right" style="width:120px;"><a class="btn" style="padding:5px 12px; font-size:13px;" href="{% url 'web:work_operations' t.id %}">{% trans "Operations" %}</a></td>
       </tr>
       {% endfor %}
     {% endfor %}
     {% for t in unphased_tasks %}
     <tr>
       <td>{{ t.name }}</td><td class="muted">—</td><td class="muted">{{ t.get_status_display }}</td>
-      <td class="right" style="width:120px;"><a class="btn" style="padding:5px 12px; font-size:13px;" href="{% url 'web:work_operations' t.id %}">Operations</a></td>
+      <td class="right" style="width:120px;"><a class="btn" style="padding:5px 12px; font-size:13px;" href="{% url 'web:work_operations' t.id %}">{% trans "Operations" %}</a></td>
     </tr>
     {% endfor %}
-    {% if not has_tasks %}<tr><td colspan="4" class="muted" style="padding:16px;">No jobs yet — add the first one.</td></tr>{% endif %}
+    {% if not has_tasks %}<tr><td colspan="4" class="muted" style="padding:16px;">{% trans "No jobs yet — add the first one." %}</td></tr>{% endif %}
   </table>
 </div>
 
 {# ── Commercial documents (the paper trail for this job) ─────────────────── #}
-<h2>Commercial documents</h2>
+<h2>{% trans "Commercial documents" %}</h2>
 <div class="card" style="padding:0;">
   <table>
     {% if hub_quote %}
-    <tr><td><span class="chip info">Quotation</span></td>
+    <tr><td><span class="chip info">{% trans "Quotation" %}</span></td>
       <td><a href="{% url 'web:quotation_detail' hub_quote.id %}">{{ hub_quote.display_number }}</a></td>
       <td class="muted">{{ hub_quote.get_status_display }}</td>
       <td class="right">{% if can_view_money %}R{{ hub_quote.total }}{% endif %}</td></tr>
     {% endif %}
     {% for po in hub_pos %}
-    <tr><td><span class="chip purple">Customer PO</span></td>
-      <td>{{ po.number|default:"—" }}</td><td class="muted">received</td>
+    <tr><td><span class="chip purple">{% trans "Customer PO" %}</span></td>
+      <td>{{ po.number|default:"—" }}</td><td class="muted">{% trans "received" %}</td>
       <td class="right">{% if can_view_money and po.value %}R{{ po.value }}{% endif %}</td></tr>
     {% endfor %}
     {% for d in hub_invoices %}
-    <tr><td><span class="chip ok">Tax invoice</span></td>
+    <tr><td><span class="chip ok">{% trans "Tax invoice" %}</span></td>
       <td><a href="{% url 'web:commercial_document_detail' d.id %}">{{ d.number }}</a></td>
       <td class="muted">{{ d.get_status_display }}</td>
-      <td class="right"><a href="{% url 'web:commercial_document_pdf' d.id %}">PDF</a></td></tr>
+      <td class="right"><a href="{% url 'web:commercial_document_pdf' d.id %}">{% trans "PDF" %}</a></td></tr>
     {% endfor %}
     {% for d in hub_deliveries %}
-    <tr><td><span class="chip">Delivery note</span></td>
+    <tr><td><span class="chip">{% trans "Delivery note" %}</span></td>
       <td><a href="{% url 'web:commercial_document_detail' d.id %}">{{ d.number }}</a></td>
       <td class="muted">{{ d.get_status_display }}</td>
-      <td class="right"><a href="{% url 'web:commercial_document_pdf' d.id %}">PDF</a></td></tr>
+      <td class="right"><a href="{% url 'web:commercial_document_pdf' d.id %}">{% trans "PDF" %}</a></td></tr>
     {% endfor %}
     {% if not hub_quote and not hub_invoices and not hub_deliveries %}
-    <tr><td colspan="4" class="muted" style="padding:16px;">No commercial documents — this job wasn't raised from a quotation.</td></tr>
+    <tr><td colspan="4" class="muted" style="padding:16px;">{% trans "No commercial documents — this job wasn't raised from a quotation." %}</td></tr>
     {% endif %}
   </table>
 </div>
 
 {# ── Materials & procurement rolled up from the job's tasks ──────────────── #}
-<h2>Materials &amp; procurement</h2>
+<h2>{% trans "Materials & procurement" %}</h2>
 <div class="grid">
-  <div class="tile"><div class="n">R{{ hub_allocated }}</div><div class="l">Allocated</div></div>
-  <div class="tile"><div class="n">R{{ hub_spent }}</div><div class="l">Spent</div></div>
-  <div class="tile"><div class="n">R{{ hub_materials }}</div><div class="l">Materials ({{ hub_materials_lines }})</div></div>
+  <div class="tile"><div class="n">R{{ hub_allocated }}</div><div class="l">{% trans "Allocated" %}</div></div>
+  <div class="tile"><div class="n">R{{ hub_spent }}</div><div class="l">{% trans "Spent" %}</div></div>
+  <div class="tile"><div class="n">R{{ hub_materials }}</div><div class="l">{% blocktrans with n=hub_materials_lines %}Materials ({{ n }}){% endblocktrans %}</div></div>
 </div>
-<p class="muted" style="font-size:12.5px;margin:2px 0 14px;">Field spend the crew
-  captures here (material, fuel &amp; expense receipts) flows straight into this
-  job's actual cost and profitability{% if not can_view_money %} (visible to finance){% endif %}.</p>
+<p class="muted" style="font-size:12.5px;margin:2px 0 14px;">{% trans "Field spend the crew captures here (material, fuel & expense receipts) flows straight into this job's actual cost and profitability" %}{% if not can_view_money %} {% trans "(visible to finance)" %}{% endif %}.</p>
 {% if hub_requests %}
 <div class="card" style="padding:0;">
   <table>
-    <tr><th>Request</th><th>For</th><th>Status</th></tr>
+    <tr><th>{% trans "Request" %}</th><th>{% trans "For" %}</th><th>{% trans "Status" %}</th></tr>
     {% for r in hub_requests %}
     <tr>
       <td><a href="{% url 'web:request_detail' r.id %}">{{ r.number }}</a> <span class="muted">{{ r.title }}</span></td>
       <td class="muted">{% if r.task %}{{ r.task.name }}{% else %}—{% endif %}</td>
-      <td>{% if r.status == 'approved' %}<span class="chip ok">Approved</span>
-        {% elif r.status == 'submitted' %}<span class="chip warn">Awaiting</span>
-        {% elif r.status == 'fulfilled' %}<span class="chip ok">Fulfilled</span>
+      <td>{% if r.status == 'approved' %}<span class="chip ok">{% trans "Approved" %}</span>
+        {% elif r.status == 'submitted' %}<span class="chip warn">{% trans "Awaiting" %}</span>
+        {% elif r.status == 'fulfilled' %}<span class="chip ok">{% trans "Fulfilled" %}</span>
         {% else %}<span class="chip">{{ r.get_status_display }}</span>{% endif %}</td>
     </tr>
     {% endfor %}
@@ -148,7 +147,7 @@
 
 {# ── One timeline for the whole job ─────────────────────────────────────── #}
 {% if hub_timeline %}
-<h2>Timeline</h2>
+<h2>{% trans "Timeline" %}</h2>
 <div class="card">
   {% for e in hub_timeline reversed %}
   <div class="row" style="align-items:flex-start; gap:10px; padding:6px 0; {% if not forloop.last %}border-bottom:1px solid var(--line,#eee);{% endif %}">
@@ -159,41 +158,41 @@
 </div>
 {% endif %}
 
-<h2>Compliance checklist</h2>
+<h2>{% trans "Compliance checklist" %}</h2>
 <div class="card" style="padding:0;">
   <table>
     {% for c in checklist %}
     <tr>
       <td>{% if c.is_satisfied %}<span style="color:var(--ok);">●</span>{% else %}<span class="muted">○</span>{% endif %}
         {{ c.name }}</td>
-      <td class="muted right">{{ c.category }} · {{ c.status }}{% if c.is_mandatory %} · mandatory{% endif %}</td>
+      <td class="muted right">{{ c.category }} · {{ c.status }}{% if c.is_mandatory %} · {% trans "mandatory" %}{% endif %}</td>
       {% if can_compliance %}
       <td class="right" style="width:220px;">
         {% if not c.is_satisfied %}
         <form method="post" action="{% url 'web:compliance_item_approve' c.id %}" class="row" style="gap:6px; justify-content:flex-end; margin:0;">
           {% csrf_token %}
           <input type="date" name="expiry" value="{{ today }}" style="width:auto; padding:5px 8px;">
-          <button class="btn" style="padding:5px 12px; font-size:13px;" type="submit">Approve</button>
+          <button class="btn" style="padding:5px 12px; font-size:13px;" type="submit">{% trans "Approve" %}</button>
         </form>
         {% endif %}
       </td>
       {% endif %}
     </tr>
-    {% empty %}<tr><td class="muted" style="padding:16px;">No compliance items.</td></tr>
+    {% empty %}<tr><td class="muted" style="padding:16px;">{% trans "No compliance items." %}</td></tr>
     {% endfor %}
   </table>
 </div>
 
 {% if can_finance and can_view_money %}
-<h2>Raise a progress claim</h2>
+<h2>{% trans "Raise a progress claim" %}</h2>
 <div class="card">
   <form method="post" action="{% url 'web:project_progress_claim' project.id %}" class="row" style="gap:10px;">
     {% csrf_token %}
-    <span class="muted">% complete</span>
+    <span class="muted">{% trans "% complete" %}</span>
     <input type="number" name="percent_complete" min="0" max="100" step="1" value="40" style="width:90px;">
-    <span class="muted">retention %</span>
+    <span class="muted">{% trans "retention %" %}</span>
     <input type="number" name="retention" min="0" max="100" step="1" value="10" style="width:90px;">
-    <button class="btn" type="submit">Raise claim</button>
+    <button class="btn" type="submit">{% trans "Raise claim" %}</button>
   </form>
 </div>
 {% endif %}

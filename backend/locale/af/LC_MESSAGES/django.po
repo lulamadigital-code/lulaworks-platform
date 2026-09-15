@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-15 13:49+0000\n"
+"POT-Creation-Date: 2026-09-15 13:54+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -202,7 +202,7 @@ msgstr[1] ""
 msgid "Pending compliance"
 msgstr "Wag op nakoming"
 
-#: apps/projects/models.py:21
+#: apps/projects/models.py:21 apps/web/templates/web/_readiness.html:7
 msgid "Ready for site"
 msgstr "Gereed vir terrein"
 
@@ -259,6 +259,25 @@ msgstr "Verloor"
 #: apps/quotes/models.py:74
 msgid "Expired"
 msgstr "Verval"
+
+#: apps/web/templates/web/_readiness.html:9
+#| msgid "Ready for site"
+msgid "Ready (overridden)"
+msgstr "Gereed (oorheers)"
+
+#: apps/web/templates/web/_readiness.html:11
+#| msgid "Ready for site"
+msgid "Not ready for site"
+msgstr "Nie gereed vir terrein nie"
+
+#: apps/web/templates/web/_readiness.html:17
+msgid "Refresh"
+msgstr "Verfris"
+
+#: apps/web/templates/web/_readiness.html:32
+#, python-format
+msgid "Blocking (%(n)s)"
+msgstr "Blokkeer (%(n)s)"
 
 #: apps/web/templates/web/_related.html:5
 msgid "Related records"
@@ -491,8 +510,8 @@ msgid "from"
 msgstr "van"
 
 #: apps/web/templates/web/commercial_document_detail.html:33
+#: apps/web/templates/web/project_detail.html:175
 #: apps/web/templates/web/quotation_detail.html:47
-#| msgid "Approved"
 msgid "Approve"
 msgstr "Keur goed"
 
@@ -507,13 +526,11 @@ msgid "Export Excel"
 msgstr "Voer Excel uit"
 
 #: apps/web/templates/web/commercial_document_detail.html:42
-#| msgid "+ New quotation"
 msgid "View quotation"
 msgstr "Bekyk kwotasie"
 
 #: apps/web/templates/web/commercial_document_detail.html:46
 #: apps/web/templates/web/quotation_detail.html:60
-#| msgid "Delivery note terms"
 msgid "View delivery note"
 msgstr "Bekyk afleweringsnota"
 
@@ -525,30 +542,25 @@ msgstr "Besig om te skep…"
 
 #: apps/web/templates/web/commercial_document_detail.html:49
 #: apps/web/templates/web/quotation_detail.html:63
-#| msgid "Delivery note terms"
 msgid "Create delivery note"
 msgstr "Skep afleweringsnota"
 
 #: apps/web/templates/web/commercial_document_detail.html:53
 #: apps/web/templates/web/quotation_detail.html:54
-#| msgid "+ New invoice"
 msgid "View tax invoice"
 msgstr "Bekyk belastingfaktuur"
 
 #: apps/web/templates/web/commercial_document_detail.html:56
 #: apps/web/templates/web/quotation_detail.html:57
-#| msgid "Create tax invoice →"
 msgid "Create tax invoice"
 msgstr "Skep belastingfaktuur"
 
 #: apps/web/templates/web/commercial_document_detail.html:61
-#| msgid "Purchase Orders"
 msgid "View purchase order"
 msgstr "Bekyk bestelling"
 
 #: apps/web/templates/web/commercial_document_detail.html:63
 #: apps/web/templates/web/quotation_detail.html:78
-#| msgid "Purchase Orders"
 msgid "Upload purchase order"
 msgstr "Laai bestelling op"
 
@@ -559,7 +571,6 @@ msgstr "Teken betaling aan"
 
 #: apps/web/templates/web/commercial_document_detail.html:67
 #: apps/web/templates/web/commercial_document_detail.html:122
-#| msgid "Payment"
 msgid "Payments"
 msgstr "Betalings"
 
@@ -569,13 +580,11 @@ msgid "%(kind)s timeline"
 msgstr "%(kind)s-tydlyn"
 
 #: apps/web/templates/web/commercial_document_detail.html:77
-#| msgid "Currency"
 msgid "current"
 msgstr "huidig"
 
 #: apps/web/templates/web/commercial_document_detail.html:77
 #: apps/web/templates/web/quotation_detail.html:96
-#| msgid "Branding"
 msgid "pending"
 msgstr "hangende"
 
@@ -597,17 +606,19 @@ msgstr "Gegenereer vanaf"
 msgid ""
 "the customer, items, prices and VAT come from the quotation, nothing re-"
 "entered."
-msgstr "die kliënt, items, pryse en BTW kom van die kwotasie, niks word oorgetik nie."
+msgstr ""
+"die kliënt, items, pryse en BTW kom van die kwotasie, niks word oorgetik nie."
 
 #: apps/web/templates/web/commercial_document_detail.html:89
 msgid ""
 "the customer, items and quantities come from the quotation, nothing re-"
 "entered."
-msgstr "die kliënt, items en hoeveelhede kom van die kwotasie, niks word oorgetik nie."
+msgstr ""
+"die kliënt, items en hoeveelhede kom van die kwotasie, niks word oorgetik "
+"nie."
 
 #: apps/web/templates/web/commercial_document_detail.html:93
 #: apps/web/templates/web/quotation_detail.html:134
-#| msgid "Issued to customer"
 msgid "Send to customer"
 msgstr "Stuur na kliënt"
 
@@ -618,12 +629,10 @@ msgstr "Aan"
 
 #: apps/web/templates/web/commercial_document_detail.html:100
 #: apps/web/templates/web/quotation_detail.html:141
-#| msgid "(optional)"
 msgid "Message (optional)"
 msgstr "Boodskap (opsioneel)"
 
 #: apps/web/templates/web/commercial_document_detail.html:101
-#| msgid "Add a customer"
 msgid "Add a short note…"
 msgstr "Voeg 'n kort nota by…"
 
@@ -634,7 +643,6 @@ msgstr "E-pos %(kind)s (PDF aangeheg)"
 
 #: apps/web/templates/web/commercial_document_detail.html:109
 #: apps/web/templates/web/quotation_detail.html:150
-#| msgid "Sent"
 msgid "Sent to"
 msgstr "Gestuur aan"
 
@@ -646,6 +654,7 @@ msgstr "Wanneer"
 #: apps/web/templates/web/commercial_document_detail.html:109
 #: apps/web/templates/web/customers.html:29
 #: apps/web/templates/web/people.html:73
+#: apps/web/templates/web/project_detail.html:133
 #: apps/web/templates/web/projects.html:14
 #: apps/web/templates/web/quotation_detail.html:150
 #: apps/web/templates/web/quotation_detail.html:168
@@ -657,22 +666,18 @@ msgstr "Status"
 
 #: apps/web/templates/web/commercial_document_detail.html:113
 #: apps/web/templates/web/quotation_detail.html:154
-#| msgid "Detailed"
 msgid "Failed"
 msgstr "Misluk"
 
 #: apps/web/templates/web/commercial_document_detail.html:126
-#| msgid "Tax reference"
 msgid "Reference"
 msgstr "Verwysing"
 
 #: apps/web/templates/web/commercial_document_detail.html:131
-#| msgid "No documents uploaded yet."
 msgid "No payments recorded yet."
 msgstr "Nog geen betalings aangeteken nie."
 
 #: apps/web/templates/web/commercial_document_detail.html:134
-#| msgid "Invoice logo"
 msgid "Invoice total"
 msgstr "Faktuurtotaal"
 
@@ -705,7 +710,6 @@ msgid "Record a payment"
 msgstr "Teken 'n betaling aan"
 
 #: apps/web/templates/web/commercial_document_detail.html:149
-#| msgid "Amount"
 msgid "Amount (R)"
 msgstr "Bedrag (R)"
 
@@ -718,18 +722,15 @@ msgid "EFT ref / POP"
 msgstr "EFT-verw / BvB"
 
 #: apps/web/templates/web/commercial_document_detail.html:154
-#| msgid "Creating…"
 msgid "Recording…"
 msgstr "Besig om aan te teken…"
 
 #: apps/web/templates/web/commercial_document_detail.html:162
-#| msgid "Purchase Orders"
 msgid "Purchase order"
 msgstr "Bestelling"
 
 #: apps/web/templates/web/commercial_document_detail.html:166
 #: apps/web/templates/web/quotation_detail.html:167
-#| msgid "VAT number"
 msgid "PO number"
 msgstr "Bestellingnr."
 
@@ -748,17 +749,14 @@ msgstr "Oop"
 
 #: apps/web/templates/web/commercial_document_detail.html:177
 #, python-format
-#| msgid ""
-#| "You manage the whole platform from the <a "
-#| "href=\"%(console_url)s\">Console</a>."
 msgid ""
 "Manage purchase orders on the <a href=\"%(quote_url)s#po-upload\">quotation</"
 "a>."
-msgstr "Bestuur bestellings op die <a href=\"%(quote_url)s#po-upload\">kwotasie</a>."
+msgstr ""
+"Bestuur bestellings op die <a href=\"%(quote_url)s#po-upload\">kwotasie</a>."
 
 #: apps/web/templates/web/commercial_document_detail.html:180
 #: apps/web/templates/web/quotation_detail.html:183
-#| msgid "Purchase Orders"
 msgid "Attach a purchase order"
 msgstr "Heg 'n bestelling aan"
 
@@ -766,11 +764,12 @@ msgstr "Heg 'n bestelling aan"
 msgid ""
 "Attach the customer's PO document — its number, date, value and payment "
 "terms are read straight off it, so there is nothing to type."
-msgstr "Heg die kliënt se bestellingdokument aan — sy nommer, datum, waarde en betaalvoorwaardes word direk daarvan gelees, so daar is niks om te tik nie."
+msgstr ""
+"Heg die kliënt se bestellingdokument aan — sy nommer, datum, waarde en "
+"betaalvoorwaardes word direk daarvan gelees, so daar is niks om te tik nie."
 
 #: apps/web/templates/web/commercial_document_detail.html:184
 #: apps/web/templates/web/quotation_detail.html:187
-#| msgid "Upload document"
 msgid "Choose PO document"
 msgstr "Kies bestellingdokument"
 
@@ -1952,10 +1951,12 @@ msgid "Blocked on compliance"
 msgstr "Geblokkeer op nakoming"
 
 #: apps/web/templates/web/dashboard.html:63
+#: apps/web/templates/web/project_detail.html:33
 msgid "Revenue"
 msgstr "Inkomste"
 
 #: apps/web/templates/web/dashboard.html:65
+#: apps/web/templates/web/project_detail.html:34
 msgid "Actual cost"
 msgstr "Werklike koste"
 
@@ -2012,6 +2013,7 @@ msgid "Client"
 msgstr "Kliënt"
 
 #: apps/web/templates/web/dashboard.html:128
+#: apps/web/templates/web/project_detail.html:9
 msgid "Readiness"
 msgstr "Gereedheid"
 
@@ -2051,6 +2053,7 @@ msgid "+ New invoice"
 msgstr "+ Nuwe faktuur"
 
 #: apps/web/templates/web/invoices.html:18
+#: apps/web/templates/web/project_detail.html:138
 msgid "Approved"
 msgstr "Goedgekeur"
 
@@ -2078,6 +2081,7 @@ msgstr "Uitstaande volgens ouderdom"
 
 #: apps/web/templates/web/invoices.html:41
 #: apps/web/templates/web/invoices.html:57
+#: apps/web/templates/web/project_detail.html:56
 msgid "Total"
 msgstr "Totaal"
 
@@ -2116,6 +2120,7 @@ msgstr ""
 "kwotasie geneem."
 
 #: apps/web/templates/web/invoices.html:90
+#: apps/web/templates/web/project_detail.html:94
 #: apps/web/templates/web/quotations.html:67
 msgid "Quotation"
 msgstr "Kwotasie"
@@ -2380,6 +2385,220 @@ msgstr "Jou oop werke"
 msgid "as %(roles)s"
 msgstr "as %(roles)s"
 
+#: apps/web/templates/web/project_detail.html:5
+#| msgid "Projects"
+msgid "← Projects"
+msgstr "← Projekte"
+
+#: apps/web/templates/web/project_detail.html:16
+msgid "Override reason (audited)…"
+msgstr "Oorheersingsrede (geoudit)…"
+
+#: apps/web/templates/web/project_detail.html:17
+#| msgid "Overdue"
+msgid "Override gate"
+msgstr "Oorheers hek"
+
+#: apps/web/templates/web/project_detail.html:22
+#| msgid "Project"
+msgid "Project health"
+msgstr "Projekgesondheid"
+
+#: apps/web/templates/web/project_detail.html:24
+msgid "Overall"
+msgstr "Algeheel"
+
+#: apps/web/templates/web/project_detail.html:31
+#| msgid "Commercial approval"
+msgid "Commercial"
+msgstr "Kommersieel"
+
+#: apps/web/templates/web/project_detail.html:31
+msgid "(finance only)"
+msgstr "(slegs finansies)"
+
+#: apps/web/templates/web/project_detail.html:35
+msgid "Gross profit"
+msgstr "Bruto wins"
+
+#: apps/web/templates/web/project_detail.html:36
+#: apps/web/templates/web/quotations.html:68
+msgid "Margin"
+msgstr "Marge"
+
+#: apps/web/templates/web/project_detail.html:40
+msgid "Profit forecast"
+msgstr "Winsvooruitskatting"
+
+#: apps/web/templates/web/project_detail.html:42
+msgid "AT RISK"
+msgstr "IN GEVAAR"
+
+#: apps/web/templates/web/project_detail.html:43
+msgid "WATCH"
+msgstr "DOPHOU"
+
+#: apps/web/templates/web/project_detail.html:44
+msgid "ON TRACK"
+msgstr "OP KOERS"
+
+#: apps/web/templates/web/project_detail.html:50
+msgid "Category"
+msgstr "Kategorie"
+
+#: apps/web/templates/web/project_detail.html:50
+msgid "Budget"
+msgstr "Begroting"
+
+#: apps/web/templates/web/project_detail.html:50
+#| msgid "Actual cost"
+msgid "Actual"
+msgstr "Werklik"
+
+#: apps/web/templates/web/project_detail.html:50
+#| msgid "Finance"
+msgid "Variance"
+msgstr "Afwyking"
+
+#: apps/web/templates/web/project_detail.html:63
+#| msgid "Jobs by status"
+msgid "Jobs & tasks"
+msgstr "Werke en take"
+
+#: apps/web/templates/web/project_detail.html:65
+#| msgid "+ Add member"
+msgid "+ Add job"
+msgstr "+ Voeg werk by"
+
+#: apps/web/templates/web/project_detail.html:75
+#: apps/web/templates/web/project_detail.html:82
+#| msgid "Operating in"
+msgid "Operations"
+msgstr "Bedrywighede"
+
+#: apps/web/templates/web/project_detail.html:85
+#| msgid "No jobs yet — create some from the Jobs tab."
+msgid "No jobs yet — add the first one."
+msgstr "Nog geen werke nie — voeg die eerste by."
+
+#: apps/web/templates/web/project_detail.html:90
+#: apps/web/templates/web/quotation_detail.html:215
+msgid "Commercial documents"
+msgstr "Kommersiële dokumente"
+
+#: apps/web/templates/web/project_detail.html:100
+#| msgid "Customer"
+msgid "Customer PO"
+msgstr "Kliëntbestelling"
+
+#: apps/web/templates/web/project_detail.html:101
+msgid "received"
+msgstr "ontvang"
+
+#: apps/web/templates/web/project_detail.html:105
+#| msgid "Tax Invoice"
+msgid "Tax invoice"
+msgstr "Belastingfaktuur"
+
+#: apps/web/templates/web/project_detail.html:108
+#: apps/web/templates/web/project_detail.html:114
+msgid "PDF"
+msgstr "PDF"
+
+#: apps/web/templates/web/project_detail.html:111
+#| msgid "Delivery note terms"
+msgid "Delivery note"
+msgstr "Afleweringsnota"
+
+#: apps/web/templates/web/project_detail.html:117
+msgid "No commercial documents — this job wasn't raised from a quotation."
+msgstr "Geen kommersiële dokumente nie — hierdie werk is nie uit 'n kwotasie geskep nie."
+
+#: apps/web/templates/web/project_detail.html:123
+#| msgid "Commercial documents"
+msgid "Materials & procurement"
+msgstr "Materiaal en verkryging"
+
+#: apps/web/templates/web/project_detail.html:125
+msgid "Allocated"
+msgstr "Toegeken"
+
+#: apps/web/templates/web/project_detail.html:126
+msgid "Spent"
+msgstr "Bestee"
+
+#: apps/web/templates/web/project_detail.html:127
+#, python-format
+#| msgid "No due date (%(n)s)"
+msgid "Materials (%(n)s)"
+msgstr "Materiaal (%(n)s)"
+
+#: apps/web/templates/web/project_detail.html:129
+msgid ""
+"Field spend the crew captures here (material, fuel & expense receipts) flows "
+"straight into this job's actual cost and profitability"
+msgstr "Veldbesteding wat die span hier vaslê (materiaal-, brandstof- en onkostestrokies) vloei direk in hierdie werk se werklike koste en winsgewendheid"
+
+#: apps/web/templates/web/project_detail.html:129
+msgid "(visible to finance)"
+msgstr "(sigbaar vir finansies)"
+
+#: apps/web/templates/web/project_detail.html:133
+msgid "Request"
+msgstr "Versoek"
+
+#: apps/web/templates/web/project_detail.html:133
+msgid "For"
+msgstr "Vir"
+
+#: apps/web/templates/web/project_detail.html:139
+#| msgid "Waiting"
+msgid "Awaiting"
+msgstr "Wag"
+
+#: apps/web/templates/web/project_detail.html:140
+msgid "Fulfilled"
+msgstr "Vervul"
+
+#: apps/web/templates/web/project_detail.html:150
+#| msgid "Pipeline"
+msgid "Timeline"
+msgstr "Tydlyn"
+
+#: apps/web/templates/web/project_detail.html:161
+#| msgid "Compliance"
+msgid "Compliance checklist"
+msgstr "Nakominglys"
+
+#: apps/web/templates/web/project_detail.html:168
+msgid "mandatory"
+msgstr "verpligtend"
+
+#: apps/web/templates/web/project_detail.html:181
+#| msgid "AI compliance detection"
+msgid "No compliance items."
+msgstr "Geen nakomingsitems nie."
+
+#: apps/web/templates/web/project_detail.html:187
+msgid "Raise a progress claim"
+msgstr "Stel 'n vorderingseis op"
+
+#: apps/web/templates/web/project_detail.html:191
+#, python-format
+#| msgid "%(pct)s%% complete"
+msgid "%% complete"
+msgstr "%% voltooi"
+
+#: apps/web/templates/web/project_detail.html:193
+#, python-format
+#| msgid "Retention held"
+msgid "retention %%"
+msgstr "retensie %%"
+
+#: apps/web/templates/web/project_detail.html:195
+msgid "Raise claim"
+msgstr "Stel eis op"
+
 #: apps/web/templates/web/projects.html:8
 msgid "A project groups related jobs."
 msgstr "'n Projek groepeer verwante werke."
@@ -2406,22 +2625,18 @@ msgid "No projects yet."
 msgstr "Nog geen projekte nie."
 
 #: apps/web/templates/web/quotation_detail.html:5
-#| msgid "Quotations"
 msgid "← Quotations"
 msgstr "← Kwotasies"
 
 #: apps/web/templates/web/quotation_detail.html:18
-#| msgid "Finance"
 msgid "Finalized"
 msgstr "Afgehandel"
 
 #: apps/web/templates/web/quotation_detail.html:18
-#| msgid "Issued to customer"
 msgid "Sent to customer"
 msgstr "Aan kliënt gestuur"
 
 #: apps/web/templates/web/quotation_detail.html:19
-#| msgid "Awaiting approval"
 msgid "Pending approval"
 msgstr "Wag op goedkeuring"
 
@@ -2435,12 +2650,10 @@ msgstr "Verby sy geldigheidsdatum"
 
 #: apps/web/templates/web/quotation_detail.html:25
 #, python-format
-#| msgid "Remove %(n)s?"
 msgid "Revision %(n)s"
 msgstr "Hersiening %(n)s"
 
 #: apps/web/templates/web/quotation_detail.html:69
-#| msgid "Open jobs"
 msgid "Open Job"
 msgstr "Maak werk oop"
 
@@ -2458,7 +2671,6 @@ msgid "Create revision"
 msgstr "Skep hersiening"
 
 #: apps/web/templates/web/quotation_detail.html:88
-#| msgid "Commercial document terms"
 msgid "Commercial timeline"
 msgstr "Kommersiële tydlyn"
 
@@ -2467,22 +2679,18 @@ msgid "Scope of Work"
 msgstr "Omvang van werk"
 
 #: apps/web/templates/web/quotation_detail.html:108
-#| msgid "Quotation pages"
 msgid "Quotation preview"
 msgstr "Kwotasievoorskou"
 
 #: apps/web/templates/web/quotation_detail.html:114
-#| msgid "Document templates"
 msgid "Document template"
 msgstr "Dokumentsjabloon"
 
 #: apps/web/templates/web/quotation_detail.html:116
-#| msgid "Company seal"
 msgid "Company default"
 msgstr "Maatskappyverstek"
 
 #: apps/web/templates/web/quotation_detail.html:118
-#| msgid "Default"
 msgid "(default)"
 msgstr "(verstek)"
 
@@ -2495,7 +2703,6 @@ msgid "Manage templates →"
 msgstr "Bestuur sjablone →"
 
 #: apps/web/templates/web/quotation_detail.html:128
-#| msgid "Quotation pages"
 msgid "Quotation PDF preview"
 msgstr "Kwotasie PDF-voorskou"
 
@@ -2509,19 +2716,18 @@ msgstr "E-pos kwotasie (PDF aangeheg)"
 
 #: apps/web/templates/web/quotation_detail.html:160
 msgid "This is the exact PDF the customer receives. To change it, use"
-msgstr "Dit is die presiese PDF wat die kliënt ontvang. Om dit te verander, gebruik"
+msgstr ""
+"Dit is die presiese PDF wat die kliënt ontvang. Om dit te verander, gebruik"
 
 #: apps/web/templates/web/quotation_detail.html:160
 msgid "(available while the quotation is still in preparation)"
 msgstr "(beskikbaar terwyl die kwotasie nog voorberei word)"
 
 #: apps/web/templates/web/quotation_detail.html:163
-#| msgid "Purchase Orders"
 msgid "Purchase orders"
 msgstr "Bestellings"
 
 #: apps/web/templates/web/quotation_detail.html:174
-#| msgid "Document"
 msgid "document"
 msgstr "dokument"
 
@@ -2530,7 +2736,10 @@ msgid ""
 "Attach the customer's PO document — its number, date, value and payment "
 "terms are read straight off it, so there is nothing to type. Several may be "
 "attached for staged jobs."
-msgstr "Heg die kliënt se bestellingdokument aan — sy nommer, datum, waarde en betaalvoorwaardes word direk daarvan gelees, so daar is niks om te tik nie. Verskeie kan aangeheg word vir gefaseerde werke."
+msgstr ""
+"Heg die kliënt se bestellingdokument aan — sy nommer, datum, waarde en "
+"betaalvoorwaardes word direk daarvan gelees, so daar is niks om te tik nie. "
+"Verskeie kan aangeheg word vir gefaseerde werke."
 
 #: apps/web/templates/web/quotation_detail.html:198
 msgid "Award and create job"
@@ -2540,7 +2749,9 @@ msgstr "Ken toe en skep werk"
 msgid ""
 "Moves the customer, site, contact, scope and value into a project and a job "
 "in one step."
-msgstr "Skuif die kliënt, terrein, kontak, omvang en waarde na 'n projek en 'n werk in een stap."
+msgstr ""
+"Skuif die kliënt, terrein, kontak, omvang en waarde na 'n projek en 'n werk "
+"in een stap."
 
 #: apps/web/templates/web/quotation_detail.html:201
 #, python-format
@@ -2559,24 +2770,19 @@ msgstr "Ken toe → skep werk"
 msgid ""
 "Available once the quotation is approved — a PO is the customer's "
 "instruction to proceed."
-msgstr "Beskikbaar sodra die kwotasie goedgekeur is — 'n bestelling is die kliënt se opdrag om voort te gaan."
-
-#: apps/web/templates/web/quotation_detail.html:215
-#| msgid "Commercial document terms"
-msgid "Commercial documents"
-msgstr "Kommersiële dokumente"
+msgstr ""
+"Beskikbaar sodra die kwotasie goedgekeur is — 'n bestelling is die kliënt se "
+"opdrag om voort te gaan."
 
 #: apps/web/templates/web/quotation_detail.html:231
 msgid "Traceability"
 msgstr "Naspeurbaarheid"
 
 #: apps/web/templates/web/quotation_detail.html:236
-#| msgid "Invoice"
 msgid "Invoiced"
 msgstr "Gefaktureer"
 
 #: apps/web/templates/web/quotation_detail.html:243
-#| msgid "Revision requested"
 msgid "Revisions"
 msgstr "Hersienings"
 
@@ -2589,7 +2795,6 @@ msgid "this version"
 msgstr "hierdie weergawe"
 
 #: apps/web/templates/web/quotation_detail.html:258
-#| msgid "Email history"
 msgid "History"
 msgstr "Geskiedenis"
 
@@ -2659,10 +2864,6 @@ msgstr "Kwotasienommer…"
 #: apps/web/templates/web/quotations.html:57
 msgid "Any customer"
 msgstr "Enige kliënt"
-
-#: apps/web/templates/web/quotations.html:68
-msgid "Margin"
-msgstr "Marge"
 
 #: apps/web/templates/web/quotations.html:69
 msgid "Valid until"
