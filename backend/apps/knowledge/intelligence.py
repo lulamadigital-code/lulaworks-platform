@@ -168,52 +168,91 @@ def item_price_intelligence(query, user, *, limit=8) -> dict:
     }
 
 
+# ── Unified purchase-price stream ────────────────────────────────────────────
+# Both procurement price pages read the SAME purchase-price points: the live
+# ledger (procurement.SupplierPrice) and the imported historical ledger
+# (HistoricalLineItem purchases), merged and de-duplicated. That is why
+# /procurement/prices/ (raw list) and /procurement/price-history/ (analytics)
+# agree — one source, two views.
+def purchase_points(*, query="", cap=5000) -> list[dict]:
+    """Normalised purchase-price points from both ledgers, newest first, deduped
+    on (item, price, date, supplier). Each: description, item_key, unit, price
+    (Decimal), supplier, date (date|None), source (doc ref|None), origin."""
+    from apps.procurement.models import SupplierPrice
+
+    key = item_key(query) if query else ""
+    out: list[dict] = []
+    seen: set = set()
+
+    def push(desc, unit, price, supplier, dt, source, origin):
+        if price is None:
+            return
+        ik = item_key(desc)
+        if key and key not in ik:
+            return
+        dedup = (ik, str(price), dt.isoformat() if dt else "", (supplier or "").lower())
+        if dedup in seen:
+            return
+        seen.add(dedup)
+        out.append({"description": desc, "item_key": ik, "unit": unit or "",
+                    "price": price, "supplier": supplier or "", "date": dt,
+                    "source": source, "origin": origin})
+
+    # Live ledger first (so a confirmed import's live copy wins any dedup tie).
+    sp = SupplierPrice.objects.select_related("supplier")
+    if key:
+        sp = sp.filter(item_key__icontains=key)
+    for r in sp.order_by("-date")[:cap]:
+        push(r.description, r.unit, r.unit_price,
+             getattr(r.supplier, "name", "") or "", r.date, None, "live")
+    # Imported historical ledger.
+    li = (HistoricalLineItem.objects
+          .filter(direction__in=_PURCHASE, unit_price__isnull=False)
+          .select_related("document"))
+    if key:
+        li = li.filter(item_key__icontains=key)
+    for r in li.order_by("-occurred_on")[:cap]:
+        push(r.description, r.unit, r.unit_price, r.party_name or "",
+             r.occurred_on, _doc_ref(r.document), "imported")
+
+    out.sort(key=lambda p: (p["date"] or _MIN_DATE), reverse=True)
+    return out
+
+
 # ── Item price behaviour + forecast ──────────────────────────────────────────
 def item_price_forecast(query, user, *, limit=24) -> dict:
     """How an item's PURCHASE price has behaved over time, and where it is likely
-    to head next — from the historical purchase ledger (HistoricalLineItem), so it
-    works off imported history even before a supplier is confirmed into the live
-    price ledger.
+    to head next — over the UNIFIED purchase stream (live + imported), so it works
+    off imported history even before a supplier is confirmed, and agrees with the
+    raw ledger page.
 
     Deterministic and honest (AI OS §16/§19): the projection is a transparent
     average-step extrapolation shown only with >=3 dated prices; with fewer we
     report the behaviour and say a forecast needs more history. Purchase prices
-    are procurement's own domain, so figures are shown (the page already requires
-    procurement.manage). Never invents a price."""
+    are procurement's own domain, so figures are shown."""
     key = item_key(query)
     if len(key) < 2:
         return {"found": False}
-    rows = list(HistoricalLineItem.objects
-                .filter(item_key__icontains=key, direction__in=_PURCHASE,
-                        unit_price__isnull=False)
-                .select_related("document").order_by("occurred_on", "created_at"))
-    if not rows:
+    pts = purchase_points(query=query)
+    if not pts:
         return {"found": False}
-
-    # Dated points power the trend/forecast; undated priced rows still count.
-    dated = [r for r in rows if r.occurred_on and r.unit_price is not None]
-    prices = [r.unit_price for r in rows if r.unit_price is not None]
-    lo = min(prices)
-    hi = max(prices)
+    # Oldest → newest for trend/forecast.
+    pts_asc = sorted(pts, key=lambda p: (p["date"] or _MIN_DATE))
+    dated = [p for p in pts_asc if p["date"]]
+    prices = [p["price"] for p in pts_asc]
+    lo, hi = min(prices), max(prices)
     avg = sum(prices, Decimal("0")) / len(prices)
-    last = dated[-1].unit_price if dated else prices[-1]
-    first = dated[0].unit_price if dated else prices[0]
+    seq = [p["price"] for p in dated] or prices
+    last, first = seq[-1], seq[0]
 
-    trend = "flat"
-    change_pct = None
+    trend, change_pct = _trend_of(seq)
     forecast = None
-    if len(dated) >= 2 and first:
-        change_pct = float((last - first) / first * 100)
-        trend = "up" if change_pct > 2 else "down" if change_pct < -2 else "flat"
     if len(dated) >= 3:
-        # Average step between consecutive dated prices → next likely price.
-        steps = [dated[i].unit_price - dated[i - 1].unit_price
-                 for i in range(1, len(dated))]
+        steps = [seq[i] - seq[i - 1] for i in range(1, len(seq))]
         avg_step = sum(steps, Decimal("0")) / len(steps)
         projected = last + avg_step
         if projected < 0:
             projected = Decimal("0")
-        # Consistency of direction → a simple confidence.
         ups = sum(1 for s in steps if s > 0)
         downs = sum(1 for s in steps if s < 0)
         agree = max(ups, downs) / len(steps) if steps else 0
@@ -225,25 +264,25 @@ def item_price_forecast(query, user, *, limit=24) -> dict:
                      f"{avg_step.quantize(Decimal('0.01'))} per step",
         }
 
-    # A ready-to-draw sparkline over the dated prices (SVG 300x60), plus the
-    # projected next point as a dashed continuation — geometry only, no styling.
+    # A ready-to-draw sparkline (SVG 300x60); dashed continuation = projection.
     spark = None
     if len(dated) >= 2:
-        seq = [d.unit_price for d in dated]
+        vseq = list(seq)
         if forecast:
-            seq = seq + [Decimal(forecast["next_price"])]
-        smin, smax = min(seq), max(seq)
+            vseq = vseq + [Decimal(forecast["next_price"])]
+        smin, smax = min(vseq), max(vseq)
         span = (smax - smin) or Decimal("1")
         W, H, pad = 300, 60, 6
-        n = len(seq)
+        n = len(vseq)
+
         def _xy(i, val):
             x = pad + (W - 2 * pad) * (i / (n - 1 if n > 1 else 1))
             y = H - pad - (H - 2 * pad) * float((val - smin) / span)
             return f"{x:.1f},{y:.1f}"
-        hist_pts = [_xy(i, seq[i]) for i in range(len(dated))]
+        hist_pts = [_xy(i, vseq[i]) for i in range(len(dated))]
         spark = {
             "history": " ".join(hist_pts),
-            "forecast_seg": (f"{hist_pts[-1]} {_xy(n - 1, seq[-1])}" if forecast else ""),
+            "forecast_seg": (f"{hist_pts[-1]} {_xy(n - 1, vseq[-1])}" if forecast else ""),
             "w": W, "h": H,
         }
 
@@ -253,13 +292,12 @@ def item_price_forecast(query, user, *, limit=24) -> dict:
         "min": str(lo), "max": str(hi), "average": str(avg.quantize(Decimal("0.01"))),
         "first": str(first), "last": str(last),
         "trend": trend,
-        "change_pct": (round(change_pct, 1) if change_pct is not None else None),
+        "change_pct": change_pct,
         "forecast": forecast,
         "spark": spark,
-        "points": [{"date": r.occurred_on.isoformat() if r.occurred_on else None,
-                    "price": str(r.unit_price),
-                    "supplier": r.party_name or "",
-                    "source": _doc_ref(r.document)} for r in rows[-limit:]],
+        "points": [{"date": p["date"].isoformat() if p["date"] else None,
+                    "price": str(p["price"]), "supplier": p["supplier"],
+                    "source": p["source"]} for p in pts[:limit]],
     }
 
 
@@ -273,47 +311,37 @@ def _trend_of(seq):
 
 
 def price_analytics(user, *, query="", limit=200) -> dict:
-    """Analytics over the historical PURCHASE ledger: a portfolio overview plus a
-    per-item explorer (count, min/avg/last, trend, suppliers) — ranked, and
-    filtered to a search term when given. Purchase prices are procurement's own
-    domain (the page requires procurement.manage), so figures are shown.
-
-    One pass over the ledger; deterministic and evidence-free of invention."""
+    """Analytics over the UNIFIED purchase stream (live + imported): a portfolio
+    overview plus a per-item explorer (count, min/avg/last, trend, suppliers) —
+    ranked, and filtered to a search term when given. Same source as the raw
+    ledger page, so the two agree. Purchase prices are procurement's own domain."""
     key = item_key(query) if query else ""
-    qs = (HistoricalLineItem.objects
-          .filter(direction__in=_PURCHASE, unit_price__isnull=False)
-          .order_by("occurred_on", "created_at")
-          .values("item_key", "description", "party_name", "unit",
-                  "unit_price", "line_total", "occurred_on"))
-    rows = list(qs)
-    if not rows:
+    pts = purchase_points(query=query)
+    if not pts:
         return {"found": False, "query": query,
                 "overview": {"items": 0, "points": 0, "suppliers": 0}}
 
     groups: dict = {}
     suppliers: set = set()
     dates = []
-    spend = Decimal("0")
-    for r in rows:
-        k = r["item_key"] or (r["description"] or "").lower()[:160]
-        g = groups.setdefault(k, {"item_key": k, "description": r["description"],
+    for p in pts:
+        k = p["item_key"] or (p["description"] or "").lower()[:160]
+        g = groups.setdefault(k, {"item_key": k, "description": p["description"],
                                   "prices": [], "suppliers": set(),
-                                  "last_date": None, "unit": r["unit"] or ""})
-        g["prices"].append((r["occurred_on"], r["unit_price"]))
-        if r["party_name"]:
-            g["suppliers"].add(r["party_name"])
-            suppliers.add(r["party_name"])
-        if r["occurred_on"]:
-            dates.append(r["occurred_on"])
-            if g["last_date"] is None or r["occurred_on"] > g["last_date"]:
-                g["last_date"] = r["occurred_on"]
-        if r["line_total"] is not None:
-            spend += r["line_total"]
+                                  "last_date": None, "unit": p["unit"]})
+        g["prices"].append((p["date"], p["price"]))
+        if p["supplier"]:
+            g["suppliers"].add(p["supplier"].lower())
+            suppliers.add(p["supplier"].lower())
+        if p["date"]:
+            dates.append(p["date"])
+            if g["last_date"] is None or p["date"] > g["last_date"]:
+                g["last_date"] = p["date"]
 
     def _item(g) -> dict:
-        vals = [p for _d, p in g["prices"] if p is not None]
-        dated = [p for d, p in sorted(g["prices"], key=lambda x: (x[0] or _MIN_DATE))
-                 if d and p is not None]
+        vals = [pr for _d, pr in g["prices"] if pr is not None]
+        dated = [pr for d, pr in sorted(g["prices"], key=lambda x: (x[0] or _MIN_DATE))
+                 if d and pr is not None]
         seq = dated or vals
         trend, pct = _trend_of(seq)
         avg = sum(vals, Decimal("0")) / len(vals)
@@ -327,7 +355,6 @@ def price_analytics(user, *, query="", limit=200) -> dict:
         }
 
     items = [_item(g) for g in groups.values()]
-    # Explorer: search filter + rank (most price points first, then most recent).
     shown = items
     if key:
         shown = [it for it in items if key in (it["item_key"] or "")]
@@ -342,10 +369,10 @@ def price_analytics(user, *, query="", limit=200) -> dict:
     return {
         "found": True, "query": query, "item_key": key,
         "overview": {
-            "items": len(items), "points": len(rows), "suppliers": len(suppliers),
+            "items": len(items), "points": len(pts), "suppliers": len(suppliers),
             "date_from": (min(dates).isoformat() if dates else None),
             "date_to": (max(dates).isoformat() if dates else None),
-            "spend": (str(spend.quantize(Decimal("0.01"))) if spend else None),
+            "spend": None,
         },
         "movers_up": _movers("up"),
         "movers_down": _movers("down"),

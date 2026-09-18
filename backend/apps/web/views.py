@@ -3301,13 +3301,16 @@ def price_history(request):
 
 @login_required
 def procurement_prices(request):
-    """Price history — the append-only ledger of everything we've paid."""
-    from apps.procurement.models import SupplierPrice
+    """Price ledger — every purchase price we've paid, from the live ledger and
+    the imported history combined (the same unified source the Price Analytics
+    page aggregates, so the two agree)."""
     q = (request.GET.get("q") or "").strip()
-    rows = SupplierPrice.objects.select_related("supplier", "product")
-    if q:
-        rows = rows.filter(description__icontains=q)
-    rows = rows.order_by("-date", "-created_at")[:300]
+    rows = []
+    try:
+        from apps.knowledge.intelligence import purchase_points
+        rows = purchase_points(query=q)[:300]
+    except Exception:                                # noqa: BLE001
+        rows = []
     return render(request, "web/procurement_prices.html", {"rows": rows, "q": q})
 
 

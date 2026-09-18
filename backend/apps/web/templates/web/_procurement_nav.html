@@ -7,6 +7,7 @@
   <a class="btn {% if u == 'products' or u == 'product_detail' %}{% else %}ghost{% endif %}" href="{% url 'web:products' %}">Products</a>
   <a class="btn {% if u == 'requests' or u == 'request_new' or u == 'request_detail' %}{% else %}ghost{% endif %}" href="{% url 'web:requests' %}">Requests</a>
   <a class="btn {% if u == 'purchase_orders' or u == 'po_detail' %}{% else %}ghost{% endif %}" href="{% url 'web:purchase_orders' %}">Purchase orders</a>
-  <a class="btn {% if u == 'procurement_prices' %}{% else %}ghost{% endif %}" href="{% url 'web:procurement_prices' %}">Price history</a>
+  <a class="btn {% if u == 'price_history' %}{% else %}ghost{% endif %}" href="{% url 'web:price_history' %}" title="Trends, movers and a price forecast">Price analytics</a>
+  <a class="btn {% if u == 'procurement_prices' %}{% else %}ghost{% endif %}" href="{% url 'web:procurement_prices' %}" title="Every price point, newest first">Price ledger</a>
 </div>
 {% endwith %}

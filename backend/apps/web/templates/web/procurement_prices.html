@@ -1,28 +1,40 @@
 {% extends "web/base.html" %}
-{% block title %}Price history{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Price ledger" %}{% endblock %}
 {% block content %}
-<h1>Price history</h1>
-<p class="sub">Every price we've paid — the ledger that feeds product intelligence and estimates.</p>
+<h1>{% trans "Price ledger" %}</h1>
+<p class="sub">{% trans "Every purchase price we've paid — live captures and imported history combined, newest first." %}
+  <a href="{% url 'web:price_history' %}">{% trans "See trends & forecast →" %}</a></p>
 {% include "web/_procurement_nav.html" %}
 
 <form method="get" class="filterbar">
-  <input type="search" name="q" value="{{ q }}" placeholder="Search an item…" style="flex:2;min-width:180px;">
-  <button class="btn ghost" type="submit">Search</button>
+  <input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Search an item…' %}" style="flex:2;min-width:180px;">
+  <button class="btn ghost" type="submit">{% trans "Search" %}</button>
+  {% if q %}<a class="btn ghost" href="{% url 'web:procurement_prices' %}">{% trans "Clear" %}</a>{% endif %}
 </form>
 
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Date</th><th>Item</th><th>Supplier</th><th>Unit</th><th class="right">Price</th></tr>
+    <tr><th>{% trans "Date" %}</th><th>{% trans "Item" %}</th><th>{% trans "Supplier" %}</th><th>{% trans "Unit" %}</th><th class="right">{% trans "Price" %}</th><th>{% trans "Source" %}</th></tr>
     {% for p in rows %}
     <tr>
-      <td class="muted">{{ p.date|date:"d M Y" }}</td>
-      <td>{% if p.product %}<a href="{% url 'web:product_detail' p.product.id %}">{{ p.description }}</a>{% else %}{{ p.description }}{% endif %}</td>
-      <td class="muted"><a href="{% url 'web:supplier_detail' p.supplier.id %}">{{ p.supplier.name }}</a></td>
+      <td class="muted">{{ p.date|date:"d M Y"|default:"—" }}</td>
+      <td>{{ p.description }}</td>
+      <td class="muted">{{ p.supplier|default:"—" }}</td>
       <td class="muted">{{ p.unit }}</td>
-      <td class="right">{{ p.currency }} {{ p.unit_price }}</td>
+      <td class="right">{{ CURRENCY_SYMBOL }}{{ p.price }}</td>
+      <td>
+        {% if p.origin == 'imported' and p.source %}
+          <a href="{% url 'web:import_document' p.source.id %}" title="{{ p.source.filename }}">📄 {{ p.source.doc_type }}</a>
+        {% elif p.origin == 'imported' %}
+          <span class="muted" style="font-size:11.5px;">{% trans "imported" %}</span>
+        {% else %}
+          <span class="muted" style="font-size:11.5px;">{% trans "captured" %}</span>
+        {% endif %}
+      </td>
     </tr>
-    {% empty %}<tr><td colspan="5" class="muted" style="padding:20px;">
-      {% if q %}No prices match “{{ q }}”.{% else %}No prices recorded yet.{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">
+      {% if q %}{% blocktrans %}No prices match “{{ q }}”.{% endblocktrans %}{% else %}{% trans "No prices recorded yet." %}{% endif %}</td></tr>
     {% endfor %}
   </table>
 </div>

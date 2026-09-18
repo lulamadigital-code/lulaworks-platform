@@ -8,6 +8,7 @@
     <p class="sub" style="margin:0;">{% trans "What you pay across suppliers and time — trends, movers and a forecast, from your recorded purchases." %}</p>
   </div>
 </div>
+{% include "web/_procurement_nav.html" %}
 
 <form method="get" action="{% url 'web:price_history' %}" class="ph-search">
   <input type="search" name="q" value="{{ q }}" autocomplete="off"
