@@ -42,6 +42,9 @@
     <div class="n">{{ stats.outstanding_value|floatformat:0 }}</div><div class="l">{% trans "Outstanding" %}</div></div>
 </div>
 
+{# ── Historical Intelligence (from imported business history) ─────────────── #}
+{% include "web/_customer_intelligence.html" %}
+
 {# ── Unified relationship timeline — merged from every module ─────────────── #}
 <h2>{% trans "Relationship timeline" %}</h2>
 <div class="card timeline">

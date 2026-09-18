@@ -3733,7 +3733,19 @@ def customer_detail(request, pk):
         # Historical-data provenance: was this customer reconstructed from an
         # imported document? Show a badge + a link to the source documents.
         "history_docs": _customer_history_docs(customer),
+        # Contextual historical Intelligence (previous jobs, values, prices),
+        # evidence-backed and money-gated — the imported archive made useful here.
+        "intel": _customer_intel(customer, request.user),
     })
+
+
+def _customer_intel(customer, user):
+    """Historical Intelligence for the customer page — never breaks the page."""
+    try:
+        from apps.knowledge.intelligence import customer_intelligence
+        return customer_intelligence(customer, user)
+    except Exception:                                # noqa: BLE001
+        return {"found": False}
 
 
 def _customer_history_docs(customer):

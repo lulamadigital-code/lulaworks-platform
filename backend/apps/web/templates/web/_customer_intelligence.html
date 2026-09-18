@@ -1,0 +1,70 @@
+{% comment %}Customer Intelligence panel — historical relationship surfaced from
+the imported Business History (AI OS §4). Rendered only when there is real
+history; every figure is evidence-backed (source document) and money is gated by
+the view. Pass `intel` = knowledge.intelligence.customer_intelligence(customer, user).{% endcomment %}
+{% load i18n %}
+{% if intel.found %}
+<div class="card intel-panel">
+  <div class="intel-head">
+    <span class="intel-badge">✦ {% trans "Intelligence" %}</span>
+    <strong>{% trans "Historical activity" %}</strong>
+    <span class="muted" style="font-size:11.5px;">{% trans "from your imported business history" %}</span>
+  </div>
+
+  <div class="intel-tiles">
+    <div class="intel-tile"><div class="n">{{ intel.job_count }}</div><div class="l">{% trans "Previous jobs" %}</div></div>
+    {% if intel.charged_items %}<div class="intel-tile"><div class="n">{{ intel.charged_items|length }}</div><div class="l">{% trans "Historical priced items" %}</div></div>{% endif %}
+    {% if intel.similar_count %}<div class="intel-tile"><div class="n">{{ intel.similar_count }}</div><div class="l">{% trans "Similar jobs" %}</div></div>{% endif %}
+    {% if intel.money_visible and intel.total_value %}<div class="intel-tile"><div class="n">{{ CURRENCY_SYMBOL }}{{ intel.total_value }}</div><div class="l">{% trans "Historical value" %}</div></div>{% endif %}
+  </div>
+
+  {% if intel.last_job %}
+  <div class="intel-row">
+    <div>
+      <span class="muted" style="font-size:12px;">{% trans "Last job" %}</span>
+      <div><strong>{{ intel.last_job.title }}</strong>{% if intel.last_job.work_type %} · {{ intel.last_job.work_type }}{% endif %}
+        {% if intel.last_job.occurred_on %} · {{ intel.last_job.occurred_on }}{% endif %}
+        {% if intel.money_visible and intel.last_job.value %} · <strong>{{ CURRENCY_SYMBOL }}{{ intel.last_job.value }}</strong>{% endif %}</div>
+    </div>
+    {% for s in intel.last_job.sources %}
+    <a class="intel-src" href="{% url 'web:import_document' s.id %}" title="{% trans 'Open the source document' %}">📄 {{ s.filename }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if intel.charged_items %}
+  <div class="intel-sub">{% trans "What you historically quoted / charged them" %}</div>
+  <div style="overflow-x:auto;">
+  <table class="intel-table">
+    {% for it in intel.charged_items %}
+    <tr>
+      <td>{{ it.description }}</td>
+      <td class="num">{% if it.unit_price %}{{ CURRENCY_SYMBOL }}{{ it.unit_price }}{% if it.unit %}/{{ it.unit }}{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="muted" style="font-size:11.5px;">{{ it.occurred_on|default:"" }}</td>
+      <td class="right">{% if it.source %}<a class="intel-src" href="{% url 'web:import_document' it.source.id %}">{{ it.source.doc_type }}</a>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% endif %}
+
+  <p class="muted intel-foot">{% trans "Historical information is advisory — it never changes a new quotation, price or job on its own." %}</p>
+</div>
+<style>
+  .intel-panel{border:1px solid var(--primary-t,#e6f6f9);background:linear-gradient(0deg,var(--primary-t,#e6f6f9),transparent);}
+  .intel-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+  .intel-badge{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--primary-d,#0e7c8c);background:#fff;border:1px solid var(--primary-t,#cdeef3);border-radius:20px;padding:2px 10px;}
+  .intel-tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+  .intel-tile{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:110px;}
+  .intel-tile .n{font-size:22px;font-weight:800;color:var(--ink);}
+  .intel-tile .l{font-size:12px;color:var(--muted);}
+  .intel-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:10px;}
+  .intel-sub{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 6px;}
+  .intel-table{width:100%;border-collapse:collapse;}
+  .intel-table td{padding:6px 8px;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .intel-src{font-size:11.5px;color:var(--primary-d,#0e7c8c);white-space:nowrap;}
+  .intel-foot{font-size:11.5px;margin:10px 0 0;}
+</style>
+{% endif %}
