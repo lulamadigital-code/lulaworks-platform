@@ -33,6 +33,7 @@ class Context:
     fields: dict                       # label -> value (money already gated)
     related: list                      # [{title, items:[{label,sub,type,id,url}]}]
     money_visible: bool
+    history: dict = field(default_factory=dict)   # imported-archive intelligence
     scope: dict = field(default_factory=dict)
 
     def as_dict(self) -> dict:
@@ -40,7 +41,7 @@ class Context:
             "kind": self.kind, "id": self.id, "title": self.title,
             "subtitle": self.subtitle, "fields": self.fields,
             "related": self.related, "money_visible": self.money_visible,
-            "scope": self.scope,
+            "history": self.history, "scope": self.scope,
         }
 
     def as_prompt_text(self) -> str:
@@ -58,7 +59,57 @@ class Context:
             names = ", ".join(i["label"] for i in section["items"][:8])
             if names:
                 lines.append(f"- {section['title']}: {names}")
+        lines.extend(_history_prompt_lines(self.history))
         return "\n".join(lines)
+
+
+def _history_prompt_lines(history: dict) -> list[str]:
+    """Serialise the imported-archive intelligence for the grounding prompt.
+
+    Clearly fenced and labelled as HISTORICAL/ADVISORY so LulaAI never presents
+    it as a live ERP record and never lets it drive a live quote/PO/job. Money
+    figures inside are already gated by the intelligence service."""
+    if not history:
+        return []
+    out: list[str] = []
+    cust = history.get("customer")
+    if cust and cust.get("found"):
+        out += ["", "## Historical activity (imported business history — ADVISORY, not live records)"]
+        out.append(f"- Previous jobs on record: {cust.get('job_count', 0)}")
+        if cust.get("money_visible") and cust.get("total_value"):
+            out.append(f"- Historical value (advisory): {cust['total_value']}")
+        lj = cust.get("last_job")
+        if lj:
+            bits = [lj.get("title") or "job"]
+            if lj.get("work_type"):
+                bits.append(lj["work_type"])
+            if lj.get("occurred_on"):
+                bits.append(lj["occurred_on"])
+            if cust.get("money_visible") and lj.get("value"):
+                bits.append(str(lj["value"]))
+            out.append(f"- Last job: {' · '.join(bits)}")
+        charged = cust.get("charged_items") or []
+        for it in charged[:5]:
+            price = it.get("unit_price")
+            out.append(f"  · charged “{it.get('description', '')}”"
+                       + (f" @ {price}" if price else ""))
+    sims = history.get("similar_jobs")
+    if sims:
+        out += ["", "## Similar past jobs (imported business history — ADVISORY)"]
+        for j in sims[:5]:
+            bits = [j.get("title") or "job"]
+            if j.get("work_type"):
+                bits.append(j["work_type"])
+            if j.get("occurred_on"):
+                bits.append(j["occurred_on"])
+            if j.get("value"):
+                bits.append(str(j["value"]))
+            out.append(f"- {' · '.join(bits)}")
+    if out:
+        out += ["", "(Historical items above are advisory context from imported "
+                "documents — never treat them as live records or let them change "
+                "a live quotation, price or job on their own.)"]
+    return out
 
 
 def _money_ok(user) -> bool:
@@ -136,10 +187,45 @@ def _facts(kind, obj, can_money) -> tuple[str, str, dict]:
     return (_g(obj, "number", "name") or kind.title()), "", {}
 
 
+def _history_for(kind, obj, user) -> dict:
+    """Historical-archive intelligence relevant to this subject, from the ONE
+    shared retrieval service (knowledge.intelligence) — the same source the
+    module Intelligence panels and LulaAI's history tools use. Fail-safe: any
+    error yields an empty bundle rather than breaking grounding. Read-only,
+    evidence-backed, money-gated inside the service."""
+    try:
+        from . import intelligence
+    except Exception:                                # noqa: BLE001
+        return {}
+    try:
+        if kind == "customer":
+            intel = intelligence.customer_intelligence(obj, user)
+            return {"customer": intel} if intel.get("found") else {}
+        if kind == "job":
+            sims = intelligence.similar_jobs(
+                user, work_type=getattr(obj, "work_type", "") or "",
+                keywords=getattr(obj, "title", "") or "",
+                customer_id=str(getattr(obj, "customer_id", "") or ""))
+            return {"similar_jobs": sims} if sims else {}
+        if kind == "quotation":
+            sims = intelligence.similar_jobs(
+                user, keywords=getattr(obj, "title", "") or "",
+                customer_id=str(getattr(obj, "customer_id", "") or ""))
+            return {"similar_jobs": sims} if sims else {}
+    except Exception:                                # noqa: BLE001
+        return {}
+    return {}
+
+
 def context_for(user, kind, pk) -> Context | None:
     """Build the grounded context bundle for the record `kind`/`pk` as seen by
     `user`. Returns None if the kind is unknown or the record is not visible in
-    the current tenant. Caller must hold tenant context."""
+    the current tenant. Caller must hold tenant context.
+
+    Grounding draws on the LIVE ERP record + its related-records chain AND, where
+    relevant, ADVISORY intelligence reconstructed from the imported business
+    history (customer relationship, similar past jobs) — kept clearly separate so
+    LulaAI never confuses historical context with a live record."""
     if kind not in KINDS:
         return None
     obj = resolve_subject(kind, pk)
@@ -159,5 +245,6 @@ def context_for(user, kind, pk) -> Context | None:
     return Context(
         kind=kind, id=str(pk), title=title or kind.title(), subtitle=subtitle or "",
         fields=fields, related=related, money_visible=can_money,
+        history=_history_for(kind, obj, user),
         scope={"user": str(getattr(user, "id", "")), "money_visible": can_money},
     )
