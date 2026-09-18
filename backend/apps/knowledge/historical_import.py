@@ -21,10 +21,13 @@ from django.core.files.base import ContentFile
 from django.db import IntegrityError
 from django.utils import timezone
 
+from apps.rfq.extraction import to_decimal
+
 from . import entity_resolution as er
 from .classifier import classify_document
 from .document_intelligence import extract_text_from_upload
-from .models import HistoricalJob, ImportBatch, ImportedDocument, StagedEntity
+from .models import (HistoricalJob, HistoricalLineItem, ImportBatch,
+                     ImportedDocument, StagedEntity)
 
 _TEXT_CAP = 20000          # store at most this many chars of extracted text
 _EMAIL = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
@@ -219,6 +222,12 @@ def process_document(doc: ImportedDocument) -> ImportedDocument:
             # customers/suppliers connect without a click); NEW/uncertain wait in
             # the queue → COMPLETED only if nothing is pending, else NEEDS_REVIEW.
             pending = _auto_apply(doc, doc.created_by)
+            # Structure priced lines into the historical price ledger (both what
+            # we bought and what we charged), with whatever party is resolved.
+            try:
+                _capture_document_lines(doc, doc.created_by)
+            except Exception:                        # noqa: BLE001
+                pass
             doc.status = (ImportedDocument.Status.NEEDS_REVIEW if pending
                           else ImportedDocument.Status.COMPLETED)
             doc.failed = False
@@ -783,6 +792,7 @@ def commit_entity(staged: StagedEntity, user, *, decision, customer_id=None) -> 
         staged.review_status = StagedEntity.Review.LINKED
         staged.save(update_fields=["resolved_id", "review_status", "updated_at"])
         prices = _capture_supplier_prices(staged, user)
+        _relink_line_items(staged, user)
         return {"ok": True, "review_status": staged.review_status,
                 "resolved_id": staged.resolved_id, "prices_recorded": prices}
 
@@ -792,6 +802,7 @@ def commit_entity(staged: StagedEntity, user, *, decision, customer_id=None) -> 
         staged.review_status = StagedEntity.Review.CREATED
         staged.save(update_fields=["resolved_id", "review_status", "updated_at"])
         prices = _capture_supplier_prices(staged, user)
+        _relink_line_items(staged, user)
         return {"ok": True, "review_status": staged.review_status,
                 "resolved_id": staged.resolved_id, "prices_recorded": prices}
 
@@ -832,6 +843,12 @@ _PRICED_LINE = re.compile(
     r"(?:R|ZAR)?\s*(?P<price>\d[\d ,]*\.\d{2})\s*$")
 
 
+#: Descriptions that are a document's total/tax/discount, not a line item.
+_TOTALS_RE = re.compile(
+    r"^(sub[\s-]*total|total|grand\s+total|vat|tax|discount|amount\s+due|"
+    r"balance(?:\s+due)?|deposit|nett?|excl|incl)\b", re.IGNORECASE)
+
+
 def _extract_priced_lines(text: str, *, company=None, user=None, use_ai=False) -> list[dict]:
     """Pull priced lines from a supplier document. Deterministic first (lines with
     an explicit amount + cents), then AI adds priced lines a regex missed. Never
@@ -843,6 +860,10 @@ def _extract_priced_lines(text: str, *, company=None, user=None, use_ai=False) -
         desc = (desc or "").strip(" \t:-|")
         key = desc.lower()
         if len(desc) < 3 or key in seen:
+            return
+        # Totals/tax/discount lines are the document's value, not line items —
+        # keep them out of the item price ledger.
+        if _TOTALS_RE.match(key):
             return
         seen.add(key)
         out.append({"description": desc, "unit": unit or "each", "unit_price": price})
@@ -860,6 +881,87 @@ def _extract_priced_lines(text: str, *, company=None, user=None, use_ai=False) -
             add(ln["description"], ln.get("unit"), ln["unit_price"])
 
     return out
+
+
+# doc_type → (direction, party StagedEntity.Kind) for the historical line ledger.
+_LINE_DIRECTION = {
+    ImportedDocument.DocType.SUPPLIER_INVOICE:
+        (HistoricalLineItem.Direction.PURCHASE, StagedEntity.Kind.SUPPLIER),
+    ImportedDocument.DocType.SUPPLIER_QUOTE:
+        (HistoricalLineItem.Direction.SUPPLIER_QUOTE, StagedEntity.Kind.SUPPLIER),
+    ImportedDocument.DocType.INVOICE:
+        (HistoricalLineItem.Direction.SALE, StagedEntity.Kind.CUSTOMER),
+    ImportedDocument.DocType.CUSTOMER_PO:
+        (HistoricalLineItem.Direction.SALE, StagedEntity.Kind.CUSTOMER),
+    ImportedDocument.DocType.QUOTATION:
+        (HistoricalLineItem.Direction.QUOTE, StagedEntity.Kind.CUSTOMER),
+}
+
+
+def _item_key(desc: str) -> str:
+    """A normalised key for grouping the same item across documents/spellings."""
+    return re.sub(r"[^a-z0-9 ]", "", (desc or "").lower()).strip()[:160]
+
+
+def _company_currency(company) -> str:
+    return (getattr(company, "currency", "") or "ZAR")[:3]
+
+
+def _capture_document_lines(doc: ImportedDocument, user) -> int:
+    """Structure a priced document's line items into the historical price ledger
+    (HistoricalLineItem) — for BOTH what we bought (supplier docs) and what we
+    charged/quoted (customer docs), with direction, party, date and provenance.
+    Idempotent per document. Never invents a price."""
+    spec = _LINE_DIRECTION.get(doc.doc_type)
+    if not spec or not (doc.text or "").strip():
+        return 0
+    direction, party_kind = spec
+    lines = _extract_priced_lines(doc.text, company=doc.company, user=user, use_ai=False)
+    if not lines:
+        return 0
+    ent = doc.entities.filter(kind=party_kind).first()
+    party_id = (ent.resolved_id if ent else "") or ""
+    party_name = (ent.raw_name if ent else "") or ""
+    HistoricalLineItem.all_objects.filter(document=doc).delete()   # idempotent re-run
+    ccy = _company_currency(doc.company)
+    rows = []
+    for ln in lines:
+        price = ln.get("unit_price")
+        price = to_decimal(price) if price not in (None, "", 0) else None
+        rows.append(HistoricalLineItem(
+            company=doc.company, document=doc, job=doc.job, direction=direction,
+            party_kind=(party_kind if party_kind in (HistoricalLineItem.Party.SUPPLIER,
+                        HistoricalLineItem.Party.CUSTOMER) else ""),
+            party_id=str(party_id), party_name=party_name[:255],
+            description=ln["description"][:300], item_key=_item_key(ln["description"]),
+            unit=(ln.get("unit") or "")[:24], unit_price=price,
+            currency=ccy, occurred_on=getattr(doc, "document_date", None),
+            confidence=1.0, created_by=user))
+    if rows:
+        HistoricalLineItem.objects.bulk_create(rows)
+    return len(rows)
+
+
+def _relink_line_items(staged: StagedEntity, user) -> None:
+    """After a customer/supplier is confirmed, connect the historical price-ledger
+    rows to the resolved ERP id — on the entity's own document and any line with
+    the same party name in the batch that isn't linked yet."""
+    if staged.kind not in (StagedEntity.Kind.SUPPLIER, StagedEntity.Kind.CUSTOMER):
+        return
+    if not staged.resolved_id:
+        return
+    if staged.document_id:
+        try:
+            _capture_document_lines(staged.document, user)   # re-reads resolved party
+        except Exception:                                    # noqa: BLE001
+            pass
+    try:
+        HistoricalLineItem.objects.filter(
+            company=staged.company, party_kind=staged.kind, party_id="",
+            party_name__iexact=staged.raw_name, document__batch=staged.batch,
+        ).update(party_id=str(staged.resolved_id))
+    except Exception:                                        # noqa: BLE001
+        pass
 
 
 def _create_record(staged: StagedEntity, user, *, customer_id=None):

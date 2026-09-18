@@ -12,7 +12,49 @@ from __future__ import annotations
 
 import re
 
-from .models import HistoricalJob, ImportedDocument
+from apps.rfq.extraction import to_decimal
+
+from .document_intelligence import _VALUE_RE
+from .models import HistoricalJob, HistoricalLineItem, ImportedDocument
+
+# Document types whose total best represents the job's value, most authoritative
+# first (an invoice is what was actually billed; a quotation is the proposal).
+_VALUE_DOC_ORDER = (
+    ImportedDocument.DocType.INVOICE,
+    ImportedDocument.DocType.QUOTATION,
+    ImportedDocument.DocType.CUSTOMER_PO,
+    ImportedDocument.DocType.SUPPLIER_INVOICE,
+)
+#: Broad job-type keywords, to label a reconstructed job's kind of work.
+_WORK_TYPES = [
+    "hydraulic", "electrical", "mechanical", "welding", "fabrication", "conveyor",
+    "pump", "motor", "gearbox", "maintenance", "installation", "repair", "overhaul",
+    "shutdown", "construction", "piping", "instrumentation", "civil", "structural",
+]
+
+
+def _job_value(members):
+    """(Decimal value, currency-hint) from the most authoritative priced document
+    in the cluster, or (None, '') if no total was stated. Never invents a figure."""
+    order = {t: i for i, t in enumerate(_VALUE_DOC_ORDER)}
+    for m in sorted(members, key=lambda d: order.get(d.doc_type, 99)):
+        mt = _VALUE_RE.search(m.text or "")
+        if mt:
+            raw = mt.group(1).replace("R", "").replace(" ", "").replace(",", "")
+            val = to_decimal(raw)
+            if val:
+                return val, ""
+    return None, ""
+
+
+def _work_type(members) -> str:
+    blob = " ".join((m.title if hasattr(m, "title") else "") + " " + (m.filename or "")
+                    for m in members).lower()
+    blob += " " + " ".join((m.text or "")[:400].lower() for m in members)
+    for kw in _WORK_TYPES:
+        if kw in blob:
+            return kw.capitalize()
+    return ""
 
 # Reference tokens: a labelled number (Quote No: Q-123) or a standalone code
 # (PO-2024-0912, INV/55). Two documents that share one are likely one job.
@@ -89,12 +131,22 @@ def reconstruct_jobs(batch, user) -> list[HistoricalJob]:
         evidence = (f"{len(members)} documents ({', '.join(sorted(types))}) "
                     f"sharing reference {ref.upper()}.")
 
+        value, _ = _job_value(members)
+        dates = [m.document_date for m in members if getattr(m, "document_date", None)]
+        occurred_on = max(dates) if dates else None
+        currency = (getattr(batch.company, "currency", "") or "")[:3]
+
         job = HistoricalJob.objects.create(
             batch=batch, title=title[:200], reference=ref[:120],
             customer_id=customer_id, customer_name=customer_name[:255],
             confidence=round(confidence, 2), evidence=evidence,
+            value=value, currency=(currency if value else ""),
+            work_type=_work_type(members), occurred_on=occurred_on,
             created_by=user)
-        ImportedDocument.objects.filter(id__in=[m.id for m in members]).update(job=job)
+        member_ids = [m.id for m in members]
+        ImportedDocument.objects.filter(id__in=member_ids).update(job=job)
+        # Attach the priced lines from these documents to the job they belong to.
+        HistoricalLineItem.objects.filter(document_id__in=member_ids).update(job=job)
         created.append(job)
 
     return created

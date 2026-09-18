@@ -316,9 +316,62 @@ class HistoricalJob(TenantBaseModel):
     confidence = models.FloatField(default=0.0)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.PROPOSED)
     evidence = models.TextField(blank=True)                    # human-readable "why these belong"
+    # Headline facts extracted from the grouped documents, so this past job can
+    # answer "previous value / when / what kind" as contextual intelligence.
+    value = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=3, blank=True)
+    work_type = models.CharField(max_length=120, blank=True)   # inferred job type/category
+    occurred_on = models.DateField(null=True, blank=True)      # when the work happened
 
     class Meta:
-        indexes = [models.Index(fields=["batch", "status"])]
+        indexes = [models.Index(fields=["batch", "status"]),
+                   models.Index(fields=["company", "customer_id", "status"])]
 
     def __str__(self):
         return self.title or f"Historical job {self.pk}"
+
+
+class HistoricalLineItem(TenantBaseModel):
+    """A single priced line extracted from an imported document — the structured,
+    provenance-carrying historical price ledger (AI OS §10). Each row records what
+    was bought or sold, at what price, with whom, when, and which document it came
+    from — so Intelligence can answer "what did we pay/charge for X" with a source.
+    Never invents a price: only real, priced lines are recorded."""
+
+    class Direction(models.TextChoices):
+        PURCHASE = "purchase", "Purchased (from supplier)"     # supplier invoice
+        SUPPLIER_QUOTE = "supplier_quote", "Supplier quote"    # supplier quotation
+        SALE = "sale", "Sold (to customer)"                    # our invoice / customer PO
+        QUOTE = "quote", "Quoted (to customer)"                # our quotation
+
+    class Party(models.TextChoices):
+        SUPPLIER = "supplier", "Supplier"
+        CUSTOMER = "customer", "Customer"
+
+    document = models.ForeignKey(ImportedDocument, on_delete=models.CASCADE,
+                                 related_name="line_items")
+    job = models.ForeignKey(HistoricalJob, on_delete=models.SET_NULL, null=True,
+                            blank=True, related_name="line_items")
+    direction = models.CharField(max_length=16, choices=Direction.choices)
+    party_kind = models.CharField(max_length=12, choices=Party.choices, blank=True)
+    party_id = models.CharField(max_length=64, blank=True)      # resolved ERP Supplier/Customer id
+    party_name = models.CharField(max_length=255, blank=True)
+    description = models.CharField(max_length=300)
+    item_key = models.CharField(max_length=160, db_index=True)  # normalised, for grouping/search
+    qty = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
+    unit = models.CharField(max_length=24, blank=True)
+    unit_price = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    line_total = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=3, blank=True)
+    occurred_on = models.DateField(null=True, blank=True)       # the document's date
+    confidence = models.FloatField(default=1.0)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["company", "item_key", "direction"]),
+            models.Index(fields=["company", "party_kind", "party_id"]),
+            models.Index(fields=["document"]),
+        ]
+
+    def __str__(self):
+        return f"{self.description} @ {self.unit_price} [{self.direction}]"
