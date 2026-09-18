@@ -102,6 +102,9 @@
 <div class="card"><div style="white-space:pre-wrap;margin:0;">{{ quote.scope_of_work }}</div></div>
 {% endif %}
 
+{# ── Historical intelligence — comparable past work (advisory) ─────────────── #}
+{% include "web/_similar_jobs.html" %}
+
 {# ── The document, as the customer will see it ─────────────────────────────── #}
 <h2>{% trans "Quotation preview" %}</h2>
 {% if doc_templates %}

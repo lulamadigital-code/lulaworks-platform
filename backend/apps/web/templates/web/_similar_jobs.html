@@ -1,0 +1,42 @@
+{% comment %}Similar Historical Jobs panel — comparable past work reconstructed from
+the imported Business History (AI OS §6 Quotation / §7 Job Intelligence). Advisory
+and evidence-backed; values are money-gated inside the service. Pass
+`similar_jobs` = knowledge.intelligence.similar_jobs(user, ...).{% endcomment %}
+{% load i18n %}
+{% if similar_jobs %}
+<div class="card intel-panel">
+  <div class="intel-head">
+    <span class="intel-badge">✦ {% trans "Intelligence" %}</span>
+    <strong>{% trans "Similar past jobs" %}</strong>
+    <span class="muted" style="font-size:11.5px;">{% trans "from your imported business history" %}</span>
+  </div>
+  <div style="overflow-x:auto;">
+  <table class="intel-table">
+    <tr><th style="text-align:left;">{% trans "Job" %}</th><th>{% trans "Type" %}</th><th>{% trans "When" %}</th><th class="right">{% trans "Value" %}</th><th></th></tr>
+    {% for j in similar_jobs %}
+    <tr>
+      <td><strong>{{ j.title }}</strong></td>
+      <td class="muted">{{ j.work_type|default:"—" }}</td>
+      <td class="muted" style="font-size:11.5px;">{{ j.occurred_on|default:"—" }}</td>
+      <td class="num">{% if j.value %}{{ CURRENCY_SYMBOL }}{{ j.value }}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="right">{% for s in j.sources %}<a class="intel-src" href="{% url 'web:import_document' s.id %}" title="{{ s.filename }}">📄</a> {% endfor %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  <p class="muted intel-foot">{% trans "Shown for reference — comparable work you did before. It never changes this quotation or job on its own." %}</p>
+</div>
+<style>
+  .intel-panel{border:1px solid var(--primary-t,#e6f6f9);background:linear-gradient(0deg,var(--primary-t,#e6f6f9),transparent);}
+  .intel-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+  .intel-badge{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--primary-d,#0e7c8c);background:#fff;border:1px solid var(--primary-t,#cdeef3);border-radius:20px;padding:2px 10px;}
+  .intel-table{width:100%;border-collapse:collapse;}
+  .intel-table th{padding:6px 8px;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--line);}
+  .intel-table td{padding:6px 8px;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .intel-table td.num{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums;}
+  .intel-table td.right{text-align:right;}
+  .intel-src{font-size:11.5px;color:var(--primary-d,#0e7c8c);white-space:nowrap;text-decoration:none;}
+  .intel-foot{font-size:11.5px;margin:10px 0 0;}
+</style>
+{% endif %}

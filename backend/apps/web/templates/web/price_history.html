@@ -63,6 +63,8 @@
     Import supplier invoices/quotes on <a href="{% url 'web:import_centre' %}">Business history</a>,
     or capture a supplier quote, to build price history.</p></div>
   {% endif %}
+
+  {% include "web/_item_price_intelligence.html" %}
 {% else %}
   {# Browse mode — items with recorded prices. #}
   <div class="card" style="padding:0;overflow-x:auto;">

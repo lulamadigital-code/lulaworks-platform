@@ -1,0 +1,56 @@
+{% comment %}Supplier Intelligence panel — historical purchasing surfaced from the
+imported Business History (AI OS §9). Rendered only when there is real history;
+every figure is evidence-backed (source document). Supplier purchase prices are
+procurement's own domain (this page already requires procurement.manage), so
+they are shown here. Pass `intel` = knowledge.intelligence.supplier_intelligence(supplier, user).{% endcomment %}
+{% load i18n %}
+{% if intel.found %}
+<div class="card intel-panel">
+  <div class="intel-head">
+    <span class="intel-badge">✦ {% trans "Intelligence" %}</span>
+    <strong>{% trans "Historical purchasing" %}</strong>
+    <span class="muted" style="font-size:11.5px;">{% trans "from your imported business history" %}</span>
+  </div>
+
+  <div class="intel-tiles">
+    <div class="intel-tile"><div class="n">{{ intel.purchase_count }}</div><div class="l">{% trans "Priced lines" %}</div></div>
+    <div class="intel-tile"><div class="n">{{ intel.item_count }}</div><div class="l">{% trans "Distinct items" %}</div></div>
+    {% if intel.last_purchase %}<div class="intel-tile"><div class="n" style="font-size:15px;">{{ intel.last_purchase }}</div><div class="l">{% trans "Last purchase" %}</div></div>{% endif %}
+  </div>
+
+  {% if intel.items %}
+  <div class="intel-sub">{% trans "What you historically bought from them" %}</div>
+  <div style="overflow-x:auto;">
+  <table class="intel-table">
+    {% for it in intel.items %}
+    <tr>
+      <td>{{ it.description }}</td>
+      <td class="num">{% if it.unit_price %}{{ CURRENCY_SYMBOL }}{{ it.unit_price }}{% if it.unit %}/{{ it.unit }}{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="muted" style="font-size:11.5px;">{{ it.occurred_on|default:"" }}</td>
+      <td class="right">{% if it.source %}<a class="intel-src" href="{% url 'web:import_document' it.source.id %}">{{ it.source.doc_type }}</a>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% endif %}
+
+  <p class="muted intel-foot">{% trans "Historical prices are advisory — the last price you paid, for reference. They never set a new purchase order or quote on their own." %}</p>
+</div>
+<style>
+  .intel-panel{border:1px solid var(--primary-t,#e6f6f9);background:linear-gradient(0deg,var(--primary-t,#e6f6f9),transparent);}
+  .intel-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+  .intel-badge{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--primary-d,#0e7c8c);background:#fff;border:1px solid var(--primary-t,#cdeef3);border-radius:20px;padding:2px 10px;}
+  .intel-tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+  .intel-tile{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:110px;}
+  .intel-tile .n{font-size:22px;font-weight:800;color:var(--ink);}
+  .intel-tile .l{font-size:12px;color:var(--muted);}
+  .intel-sub{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 6px;}
+  .intel-table{width:100%;border-collapse:collapse;}
+  .intel-table td{padding:6px 8px;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .intel-table td.num{white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .intel-table td.right{text-align:right;}
+  .intel-src{font-size:11.5px;color:var(--primary-d,#0e7c8c);white-space:nowrap;}
+  .intel-foot{font-size:11.5px;margin:10px 0 0;}
+</style>
+{% endif %}

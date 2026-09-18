@@ -369,6 +369,11 @@ def project_detail(request, pk):
     from apps.web.relations import related_records
     context["related"] = related_records(project)
     context.update(_job_hub(project))
+    # Job Intelligence: comparable past jobs (same customer / work type / like
+    # title) from the imported history. Advisory, evidence-backed, never applied.
+    context["similar_jobs"] = _similar_jobs_for(
+        request.user, work_type=project.work_type or "",
+        keywords=project.title or "", customer_id=project.customer_id)
     return render(request, "web/project_detail.html", context)
 
 
@@ -2376,7 +2381,26 @@ def _quotation_review(request, quote):
     context["can_send"] = request.user.has_perm_code("quotes.create") and quote.is_finalized
     if quote.status == "awarded":
         context["trace"] = traceability(quote)
+    # Quotation Intelligence: similar historical jobs (same customer / like work)
+    # so the estimator can see what comparable past work looked like. Advisory,
+    # evidence-backed, never auto-applied (AI OS §6).
+    context["similar_jobs"] = _similar_jobs_for(
+        request.user, keywords=quote.title or "",
+        customer_id=quote.customer_id)
     return render(request, "web/quotation_detail.html", context)
+
+
+def _similar_jobs_for(user, *, work_type="", keywords="", customer_id="",
+                      exclude_job_id=None):
+    """Thin, fail-safe wrapper around the shared historical-intelligence service
+    for the module Intelligence panels (never breaks the host page)."""
+    try:
+        from apps.knowledge.intelligence import similar_jobs
+        return similar_jobs(user, work_type=work_type, keywords=keywords,
+                            customer_id=str(customer_id or ""),
+                            exclude_job_id=exclude_job_id)
+    except Exception:                                # noqa: BLE001
+        return []
 
 
 @login_required
@@ -2752,10 +2776,17 @@ def supplier_detail(request, pk):
     supplier = get_object_or_404(Supplier.objects.all(), pk=pk)
     prices = supplier.prices.all().order_by("-date")[:200]
     receipts = supplier.receipts.select_related("task").order_by("-reported_at")[:100]
+    intel = {"found": False}
+    try:
+        from apps.knowledge.intelligence import supplier_intelligence
+        intel = supplier_intelligence(supplier, request.user)
+    except Exception:                                # noqa: BLE001
+        pass
     return render(request, "web/supplier_detail.html", {
         "supplier": supplier, "prices": prices, "receipts": receipts,
         "documents": supplier.documents.all(),
         "can_manage": request.user.has_perm_code("procurement.manage"),
+        "intel": intel,
     })
 
 
@@ -3236,15 +3267,24 @@ def price_history(request):
 
     q = (request.GET.get("q") or "").strip()
     intel = items = None
+    hist = {"found": False}
     if q:
         from apps.procurement.services import price_intelligence
         intel = price_intelligence(request.user.active_company, q)
+        # Historical archive: what we CHARGED/QUOTED customers for this item
+        # (kept strictly separate from supplier purchase prices — AI OS §10).
+        try:
+            from apps.knowledge.intelligence import item_price_intelligence
+            hist = item_price_intelligence(q, request.user)
+        except Exception:                            # noqa: BLE001
+            hist = {"found": False}
     else:
         items = list(SupplierPrice.objects.values("item_key", "description")
                      .annotate(n=Count("id"), lo=Min("unit_price"), hi=Max("unit_price"),
                                last=Max("date"))
                      .order_by("-n")[:200])
-    return render(request, "web/price_history.html", {"q": q, "intel": intel, "items": items})
+    return render(request, "web/price_history.html",
+                  {"q": q, "intel": intel, "items": items, "hist": hist})
 
 
 @login_required
