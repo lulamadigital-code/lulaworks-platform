@@ -16,9 +16,12 @@ Guarantees:
 from __future__ import annotations
 
 import re
+from datetime import date
 from decimal import Decimal
 
 from .models import HistoricalJob, HistoricalLineItem
+
+_MIN_DATE = date.min
 
 _DISMISSED = HistoricalJob.Status.DISMISSED
 _PURCHASE = (HistoricalLineItem.Direction.PURCHASE,
@@ -257,6 +260,98 @@ def item_price_forecast(query, user, *, limit=24) -> dict:
                     "price": str(r.unit_price),
                     "supplier": r.party_name or "",
                     "source": _doc_ref(r.document)} for r in rows[-limit:]],
+    }
+
+
+# ── Price analytics (item explorer + overview) ───────────────────────────────
+def _trend_of(seq):
+    """(trend, change_pct) from a date-ordered price sequence."""
+    if len(seq) < 2 or not seq[0]:
+        return "flat", None
+    pct = float((seq[-1] - seq[0]) / seq[0] * 100)
+    return ("up" if pct > 2 else "down" if pct < -2 else "flat"), round(pct, 1)
+
+
+def price_analytics(user, *, query="", limit=200) -> dict:
+    """Analytics over the historical PURCHASE ledger: a portfolio overview plus a
+    per-item explorer (count, min/avg/last, trend, suppliers) — ranked, and
+    filtered to a search term when given. Purchase prices are procurement's own
+    domain (the page requires procurement.manage), so figures are shown.
+
+    One pass over the ledger; deterministic and evidence-free of invention."""
+    key = item_key(query) if query else ""
+    qs = (HistoricalLineItem.objects
+          .filter(direction__in=_PURCHASE, unit_price__isnull=False)
+          .order_by("occurred_on", "created_at")
+          .values("item_key", "description", "party_name", "unit",
+                  "unit_price", "line_total", "occurred_on"))
+    rows = list(qs)
+    if not rows:
+        return {"found": False, "query": query,
+                "overview": {"items": 0, "points": 0, "suppliers": 0}}
+
+    groups: dict = {}
+    suppliers: set = set()
+    dates = []
+    spend = Decimal("0")
+    for r in rows:
+        k = r["item_key"] or (r["description"] or "").lower()[:160]
+        g = groups.setdefault(k, {"item_key": k, "description": r["description"],
+                                  "prices": [], "suppliers": set(),
+                                  "last_date": None, "unit": r["unit"] or ""})
+        g["prices"].append((r["occurred_on"], r["unit_price"]))
+        if r["party_name"]:
+            g["suppliers"].add(r["party_name"])
+            suppliers.add(r["party_name"])
+        if r["occurred_on"]:
+            dates.append(r["occurred_on"])
+            if g["last_date"] is None or r["occurred_on"] > g["last_date"]:
+                g["last_date"] = r["occurred_on"]
+        if r["line_total"] is not None:
+            spend += r["line_total"]
+
+    def _item(g) -> dict:
+        vals = [p for _d, p in g["prices"] if p is not None]
+        dated = [p for d, p in sorted(g["prices"], key=lambda x: (x[0] or _MIN_DATE))
+                 if d and p is not None]
+        seq = dated or vals
+        trend, pct = _trend_of(seq)
+        avg = sum(vals, Decimal("0")) / len(vals)
+        return {
+            "item_key": g["item_key"], "description": g["description"], "unit": g["unit"],
+            "count": len(vals), "min": str(min(vals)), "max": str(max(vals)),
+            "average": str(avg.quantize(Decimal("0.01"))),
+            "last": str(seq[-1]) if seq else None,
+            "last_date": g["last_date"].isoformat() if g["last_date"] else None,
+            "suppliers": len(g["suppliers"]), "trend": trend, "change_pct": pct,
+        }
+
+    items = [_item(g) for g in groups.values()]
+    # Explorer: search filter + rank (most price points first, then most recent).
+    shown = items
+    if key:
+        shown = [it for it in items if key in (it["item_key"] or "")]
+    shown.sort(key=lambda it: (it["count"], it["last_date"] or ""), reverse=True)
+
+    def _movers(direction):
+        pool = [it for it in items if it["count"] >= 3 and it["change_pct"] is not None
+                and it["trend"] == direction]
+        pool.sort(key=lambda it: abs(it["change_pct"]), reverse=True)
+        return pool[:5]
+
+    return {
+        "found": True, "query": query, "item_key": key,
+        "overview": {
+            "items": len(items), "points": len(rows), "suppliers": len(suppliers),
+            "date_from": (min(dates).isoformat() if dates else None),
+            "date_to": (max(dates).isoformat() if dates else None),
+            "spend": (str(spend.quantize(Decimal("0.01"))) if spend else None),
+        },
+        "movers_up": _movers("up"),
+        "movers_down": _movers("down"),
+        "top_volume": sorted(items, key=lambda it: it["count"], reverse=True)[:6],
+        "items": shown[:limit],
+        "match_count": len(shown),
     }
 
 

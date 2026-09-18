@@ -1,92 +1,161 @@
 {% extends "web/base.html" %}
-{% block title %}Items & Price History{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Items & Price Analytics" %}{% endblock %}
 {% block content %}
 <div class="pagehead">
   <div>
-    <h1>Items &amp; price history</h1>
-    <p class="sub" style="margin:0;">What you've paid over time — search an item to see the
-      lowest, average and latest price, the trend, and which suppliers quoted it.</p>
+    <h1>{% trans "Items &amp; price analytics" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "What you pay across suppliers and time — trends, movers and a forecast, from your recorded purchases." %}</p>
   </div>
 </div>
 
-<form method="get" action="{% url 'web:price_history' %}" style="display:flex;gap:8px;margin-bottom:18px;max-width:520px;">
-  <input type="search" name="q" value="{{ q }}" placeholder="e.g. hydraulic pipe"
-    style="flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg,#f7f8fa);color:var(--ink);">
-  <button class="btn" type="submit">Search</button>
-  {% if q %}<a class="btn ghost" href="{% url 'web:price_history' %}">Clear</a>{% endif %}
+<form method="get" action="{% url 'web:price_history' %}" class="ph-search">
+  <input type="search" name="q" value="{{ q }}" autocomplete="off"
+    placeholder="{% trans 'Search an item — e.g. hydraulic hose, diesel, cement' %}">
+  <button class="btn" type="submit">{% trans "Search" %}</button>
+  {% if q %}<a class="btn ghost" href="{% url 'web:price_history' %}">{% trans "Clear" %}</a>{% endif %}
 </form>
 
-{% if intel %}
-  {# Historical purchase-price behaviour + forecast (from the imported ledger). #}
+{% if q %}
+  {# ───────────────────────── SEARCH / DRILL-IN ───────────────────────── #}
+  <p class="sub" style="margin:0 0 14px;">
+    <a href="{% url 'web:price_history' %}">← {% trans "All items" %}</a>
+    {% if analytics.match_count %} · {% blocktrans count n=analytics.match_count %}{{ n }} matching item{% plural %}{{ n }} matching items{% endblocktrans %}{% endif %}
+  </p>
+
+  {% if analytics.match_count > 1 %}
+  <div class="card" style="padding:0;overflow-x:auto;margin-bottom:20px;">
+    <div class="ph-cardhead">{% trans "Matching items" %}</div>
+    <table class="ph-table">
+      <tr><th>{% trans "Item" %}</th><th class="right">{% trans "Prices" %}</th><th class="right">{% trans "Latest" %}</th><th class="right">{% trans "Avg" %}</th><th>{% trans "Trend" %}</th><th class="right">{% trans "Suppliers" %}</th></tr>
+      {% for it in analytics.items %}
+      <tr class="ph-row" onclick="location.href='{% url 'web:price_history' %}?q={{ it.description|urlencode }}'">
+        <td><strong>{{ it.description }}</strong>{% if it.unit %} <span class="muted">/ {{ it.unit }}</span>{% endif %}</td>
+        <td class="right muted">{{ it.count }}</td>
+        <td class="right">{{ CURRENCY_SYMBOL }}{{ it.last }}</td>
+        <td class="right muted">{{ CURRENCY_SYMBOL }}{{ it.average }}</td>
+        <td>{% include "web/_trendchip.html" with trend=it.trend pct=it.change_pct %}</td>
+        <td class="right muted">{{ it.suppliers }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  {# Behaviour + forecast for the searched item (from the historical ledger). #}
   {% include "web/_price_outlook.html" %}
 
+  {# Live per-supplier breakdown, when the live price ledger has this item. #}
   {% if intel.found %}
-  <h2 style="font-size:16px;margin:0 0 4px;">{{ intel.item }}</h2>
-  <p class="muted" style="margin:0 0 14px;font-size:12.5px;">{{ intel.point_count }} recorded price{{ intel.point_count|pluralize }}
-    {% if intel.source %}· {{ intel.source }}{% endif %}</p>
-
-  <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
-    <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">↓</div><div class="n">{{ intel.min_price }}</div><div class="l">Lowest</div></div>
-    <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">≈</div><div class="n">{{ intel.avg_price }}</div><div class="l">Average</div></div>
-    <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">•</div><div class="n">{{ intel.last_price }}</div><div class="l">Latest</div></div>
-    <div class="tile">
-      <div class="ic" style="background:{% if intel.trend == 'up' %}#fdecea;color:#c0392b{% elif intel.trend == 'down' %}var(--green-t);color:#0a8f57{% else %}#eef0f5;color:var(--muted){% endif %};">
-        {% if intel.trend == 'up' %}↗{% elif intel.trend == 'down' %}↘{% else %}→{% endif %}</div>
-      <div class="n">{% if intel.change_pct is not None %}{{ intel.change_pct }}%{% else %}—{% endif %}</div><div class="l">Trend</div></div>
-  </div>
-
-  <h2 style="font-size:15px;margin:0 0 10px;">By supplier</h2>
-  <div class="card" style="padding:0;overflow-x:auto;margin-bottom:22px;">
-    <table>
-      <tr><th>Supplier</th><th class="right">Latest</th><th class="right">Lowest</th><th class="right">Times</th><th>Last seen</th></tr>
+  <h2 style="font-size:15px;margin:18px 0 10px;">{% trans "By supplier" %} <span class="muted" style="font-weight:400;font-size:12.5px;">{% trans "(live price ledger)" %}</span></h2>
+  <div class="card" style="padding:0;overflow-x:auto;">
+    <table class="ph-table">
+      <tr><th>{% trans "Supplier" %}</th><th class="right">{% trans "Latest" %}</th><th class="right">{% trans "Lowest" %}</th><th class="right">{% trans "Times" %}</th><th>{% trans "Last seen" %}</th></tr>
       {% for s in intel.suppliers %}
       <tr>
-        <td><strong>{{ s.supplier }}</strong>{% if s.supplier == intel.cheapest_supplier %} <span class="chip" style="background:var(--green-t);color:#0a8f57;">cheapest</span>{% endif %}</td>
-        <td style="text-align:right;">{{ s.last_price }}</td>
-        <td style="text-align:right;" class="muted">{{ s.min_price }}</td>
-        <td style="text-align:right;" class="muted">{{ s.count }}</td>
+        <td><strong>{{ s.supplier }}</strong>{% if s.supplier == intel.cheapest_supplier %} <span class="chip" style="background:var(--green-t);color:#0a8f57;">{% trans "cheapest" %}</span>{% endif %}</td>
+        <td class="right">{{ s.last_price }}</td>
+        <td class="right muted">{{ s.min_price }}</td>
+        <td class="right muted">{{ s.count }}</td>
         <td class="muted">{{ s.last_date|default:"—" }}</td>
       </tr>
       {% endfor %}
     </table>
   </div>
+  {% endif %}
 
-  <h2 style="font-size:15px;margin:0 0 10px;">Every recorded price</h2>
+  {# What we historically CHARGED customers for this item (money-gated). #}
+  {% include "web/_item_price_intelligence.html" %}
+
+  {% if not outlook.found and not intel.found %}
+  <div class="card"><p class="muted" style="margin:0;">{% blocktrans %}No recorded prices for “{{ q }}”. Import supplier invoices/quotes on the Business history page, or capture a supplier quote, to build price history.{% endblocktrans %}</p></div>
+  {% endif %}
+
+{% else %}
+  {# ───────────────────────── ANALYTICS LANDING ───────────────────────── #}
+  {% if analytics.found %}
+  <div class="ph-tiles">
+    <div class="ph-tile"><div class="n">{{ analytics.overview.items }}</div><div class="l">{% trans "Items tracked" %}</div></div>
+    <div class="ph-tile"><div class="n">{{ analytics.overview.points }}</div><div class="l">{% trans "Price points" %}</div></div>
+    <div class="ph-tile"><div class="n">{{ analytics.overview.suppliers }}</div><div class="l">{% trans "Suppliers seen" %}</div></div>
+    {% if analytics.overview.spend %}<div class="ph-tile"><div class="n">{{ CURRENCY_SYMBOL }}{{ analytics.overview.spend }}</div><div class="l">{% trans "Recorded spend" %}</div></div>{% endif %}
+    {% if analytics.overview.date_from %}<div class="ph-tile"><div class="n" style="font-size:14px;">{{ analytics.overview.date_from }} → {{ analytics.overview.date_to }}</div><div class="l">{% trans "Period covered" %}</div></div>{% endif %}
+  </div>
+
+  {% if analytics.movers_up or analytics.movers_down %}
+  <div class="ph-movers">
+    <div class="card">
+      <div class="ph-cardhead">↗ {% trans "Biggest price risers" %}</div>
+      {% for it in analytics.movers_up %}
+      <a class="ph-mover" href="{% url 'web:price_history' %}?q={{ it.description|urlencode }}">
+        <span class="ph-mover-name">{{ it.description }}</span>
+        <span class="ph-mover-pct up">+{{ it.change_pct }}%</span>
+        <span class="muted ph-mover-sub">{{ CURRENCY_SYMBOL }}{{ it.last }} · {{ it.count }} {% trans "prices" %}</span>
+      </a>
+      {% empty %}<p class="muted" style="margin:6px 0 0;font-size:12.5px;">{% trans "Not enough history yet." %}</p>{% endfor %}
+    </div>
+    <div class="card">
+      <div class="ph-cardhead">↘ {% trans "Biggest price drops" %}</div>
+      {% for it in analytics.movers_down %}
+      <a class="ph-mover" href="{% url 'web:price_history' %}?q={{ it.description|urlencode }}">
+        <span class="ph-mover-name">{{ it.description }}</span>
+        <span class="ph-mover-pct down">{{ it.change_pct }}%</span>
+        <span class="muted ph-mover-sub">{{ CURRENCY_SYMBOL }}{{ it.last }} · {{ it.count }} {% trans "prices" %}</span>
+      </a>
+      {% empty %}<p class="muted" style="margin:6px 0 0;font-size:12.5px;">{% trans "Not enough history yet." %}</p>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <h2 style="font-size:15px;margin:22px 0 10px;">{% trans "All items" %}
+    <span class="muted" style="font-weight:400;font-size:12.5px;">{% trans "— click any item for its trend & forecast" %}</span></h2>
   <div class="card" style="padding:0;overflow-x:auto;">
-    <table>
-      <tr><th>Date</th><th>Supplier</th><th class="right">Price</th><th>Unit</th></tr>
-      {% for p in intel.points %}
-      <tr><td class="muted">{{ p.date|default:"—" }}</td><td>{{ p.supplier }}</td>
-        <td style="text-align:right;"><strong>{{ p.price }}</strong></td><td class="muted">{{ p.unit }}</td></tr>
+    <table class="ph-table">
+      <tr><th>{% trans "Item" %}</th><th class="right">{% trans "Prices" %}</th><th class="right">{% trans "Lowest" %}</th><th class="right">{% trans "Avg" %}</th><th class="right">{% trans "Latest" %}</th><th>{% trans "Trend" %}</th><th class="right">{% trans "Suppliers" %}</th><th>{% trans "Last" %}</th></tr>
+      {% for it in analytics.items %}
+      <tr class="ph-row" onclick="location.href='{% url 'web:price_history' %}?q={{ it.description|urlencode }}'">
+        <td><strong>{{ it.description }}</strong>{% if it.unit %} <span class="muted">/ {{ it.unit }}</span>{% endif %}</td>
+        <td class="right muted">{{ it.count }}</td>
+        <td class="right muted">{{ CURRENCY_SYMBOL }}{{ it.min }}</td>
+        <td class="right muted">{{ CURRENCY_SYMBOL }}{{ it.average }}</td>
+        <td class="right"><strong>{{ CURRENCY_SYMBOL }}{{ it.last }}</strong></td>
+        <td>{% include "web/_trendchip.html" with trend=it.trend pct=it.change_pct %}</td>
+        <td class="right muted">{{ it.suppliers }}</td>
+        <td class="muted">{{ it.last_date|default:"—" }}</td>
+      </tr>
       {% endfor %}
     </table>
   </div>
   {% else %}
-  <div class="card"><p class="muted" style="margin:0;">No recorded prices for “{{ q }}”.
-    Import supplier invoices/quotes on <a href="{% url 'web:import_centre' %}">Business history</a>,
-    or capture a supplier quote, to build price history.</p></div>
+  <div class="card"><p class="muted" style="margin:0;">{% blocktrans %}No price history yet. Import supplier invoices/quotes on the Business history page to build it.{% endblocktrans %}</p></div>
   {% endif %}
-
-  {% include "web/_item_price_intelligence.html" %}
-{% else %}
-  {# Browse mode — items with recorded prices. #}
-  <div class="card" style="padding:0;overflow-x:auto;">
-    <table>
-      <tr><th>Item</th><th class="right">Prices</th><th class="right">Lowest</th><th class="right">Highest</th><th>Last</th></tr>
-      {% for it in items %}
-      <tr onclick="location.href='{% url 'web:price_history' %}?q={{ it.description|urlencode }}'" style="cursor:pointer;">
-        <td><strong>{{ it.description }}</strong></td>
-        <td style="text-align:right;">{{ it.n }}</td>
-        <td style="text-align:right;" class="muted">{{ it.lo }}</td>
-        <td style="text-align:right;" class="muted">{{ it.hi }}</td>
-        <td class="muted">{{ it.last|default:"—" }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="5" style="padding:22px;color:var(--muted);">
-        No price history yet. Import supplier invoices/quotes on
-        <a href="{% url 'web:import_centre' %}">Business history</a> to build it.</td></tr>
-      {% endfor %}
-    </table>
-  </div>
 {% endif %}
+
+<style>
+  .ph-search{display:flex;gap:8px;margin-bottom:22px;max-width:560px;}
+  .ph-search input{flex:1;padding:11px 14px;border:1px solid var(--line);border-radius:10px;
+    background:var(--bg,#f7f8fa);color:var(--ink);font-size:14px;}
+  .ph-tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+  .ph-tile{background:linear-gradient(0deg,var(--primary-t,#e6f6f9),transparent);
+    border:1px solid var(--primary-t,#cdeef3);border-radius:14px;padding:14px 18px;min-width:130px;flex:1;}
+  .ph-tile .n{font-size:24px;font-weight:800;color:var(--ink);line-height:1.1;}
+  .ph-tile .l{font-size:12px;color:var(--muted);margin-top:2px;}
+  .ph-movers{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;}
+  @media (max-width:640px){.ph-movers{grid-template-columns:1fr;}}
+  .ph-cardhead{font-size:13px;font-weight:700;margin-bottom:8px;}
+  .ph-mover{display:grid;grid-template-columns:1fr auto;grid-template-areas:"name pct" "sub pct";
+    gap:0 10px;padding:8px 0;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink);}
+  .ph-mover:last-child{border-bottom:0;}
+  .ph-mover-name{grid-area:name;font-weight:600;font-size:13.5px;}
+  .ph-mover-sub{grid-area:sub;font-size:11.5px;}
+  .ph-mover-pct{grid-area:pct;align-self:center;font-weight:800;font-size:15px;}
+  .ph-mover-pct.up{color:#c0392b;} .ph-mover-pct.down{color:#0a8f57;}
+  .ph-table{width:100%;border-collapse:collapse;}
+  .ph-table th{padding:9px 12px;text-align:left;font-size:11.5px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--line);}
+  .ph-table th.right{text-align:right;}
+  .ph-table td{padding:9px 12px;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .ph-table td.right{text-align:right;font-variant-numeric:tabular-nums;}
+  .ph-row{cursor:pointer;} .ph-row:hover{background:var(--primary-t,#f0fbfd);}
+</style>
 {% endblock %}

@@ -1,0 +1,16 @@
+{% comment %}Tiny price-trend chip. Pass `trend` ("up"|"down"|"flat") and `pct`
+(signed number or None).{% endcomment %}
+{% load i18n %}
+{% if trend == 'up' %}
+  <span class="tchip up">↗ {% if pct is not None %}+{{ pct }}%{% else %}{% trans "rising" %}{% endif %}</span>
+{% elif trend == 'down' %}
+  <span class="tchip down">↘ {% if pct is not None %}{{ pct }}%{% else %}{% trans "falling" %}{% endif %}</span>
+{% else %}
+  <span class="tchip flat">→ {% if pct is not None %}{{ pct }}%{% else %}{% trans "steady" %}{% endif %}</span>
+{% endif %}
+<style>
+  .tchip{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+  .tchip.up{background:#fdecea;color:#c0392b;}
+  .tchip.down{background:var(--green-t,#e6f7ef);color:#0a8f57;}
+  .tchip.flat{background:#eef0f5;color:var(--muted);}
+</style>
