@@ -377,3 +377,63 @@ def _customer_dossier(user, *, customer_name="", customer_id=""):
     if cust is None:
         return {"found": False, "source": "Customers"}
     return {"found": True, **customer_dossier(cust, money=_can_money(user))}
+
+
+# ── Historical Intelligence tools (imported Business History) ─────────────────
+# These reuse apps.knowledge.intelligence so LulaAI and the on-page Intelligence
+# panels answer from ONE implementation (AI OS §14). The service itself withholds
+# revenue figures without finance access; the tool's required_perm gates the area.
+
+@register("historical_customer", required_perm="customers.manage",
+          description="A customer's HISTORY from imported business documents: "
+                      "previous jobs, values, and what we quoted/charged them, "
+                      "each with a source document — 'have we worked with X before'")
+def _historical_customer(user, *, customer_name="", customer_id=""):
+    from apps.customers.models import Customer
+    from apps.knowledge.intelligence import customer_intelligence
+    cust = None
+    if customer_id:
+        cust = Customer.objects.filter(pk=customer_id).first()
+    elif customer_name:
+        cust = (Customer.objects.filter(name__icontains=customer_name).first()
+                or Customer.objects.filter(trading_name__icontains=customer_name).first())
+    if cust is None:
+        return {"found": False, "source": "Business History"}
+    return {"source": "Business History", **customer_intelligence(cust, user)}
+
+
+@register("historical_item_price", required_perm="procurement.manage",
+          description="Historical prices for an item from imported documents — "
+                      "what we PAID suppliers vs what we CHARGED customers, kept "
+                      "separate, with source documents — 'what did we pay for X'")
+def _historical_item_price(user, *, item=""):
+    from apps.knowledge.intelligence import item_price_intelligence
+    return {"source": "Business History", **item_price_intelligence(item, user)}
+
+
+@register("historical_supplier", required_perm="procurement.manage",
+          description="A supplier's purchase HISTORY from imported documents: "
+                      "items bought, last price per item and last purchase, with "
+                      "sources — 'what have we bought from X'")
+def _historical_supplier(user, *, supplier_name="", supplier_id=""):
+    from apps.procurement.models import Supplier
+    from apps.knowledge.intelligence import supplier_intelligence
+    sup = None
+    if supplier_id:
+        sup = Supplier.objects.filter(pk=supplier_id).first()
+    elif supplier_name:
+        sup = Supplier.objects.filter(name__icontains=supplier_name).first()
+    if sup is None:
+        return {"found": False, "source": "Business History"}
+    return {"source": "Business History", **supplier_intelligence(sup, user)}
+
+
+@register("similar_historical_jobs", required_perm="projects.view",
+          description="Past jobs from imported history that resemble a described "
+                      "job — by work type / keywords / customer — with values "
+                      "(finance access) and source documents")
+def _similar_historical_jobs(user, *, work_type="", keywords="", customer_id=""):
+    from apps.knowledge.intelligence import similar_jobs
+    jobs = similar_jobs(user, work_type=work_type, keywords=keywords,
+                        customer_id=customer_id)
+    return {"source": "Business History", "found": bool(jobs), "jobs": jobs}
