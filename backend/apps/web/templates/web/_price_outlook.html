@@ -1,0 +1,100 @@
+{% comment %}Price behaviour & outlook — how an item's purchase price has moved over
+time and where it is likely to head next, from the imported historical ledger
+(AI OS §11/§16). Deterministic + evidence-backed; the forecast is a transparent
+average-step projection, shown only with enough dated history. Pass `outlook` =
+knowledge.intelligence.item_price_forecast(query, user).{% endcomment %}
+{% load i18n %}
+{% if outlook.found %}
+<div class="card intel-panel" style="margin-top:22px;">
+  <div class="intel-head">
+    <span class="intel-badge">✦ {% trans "Intelligence" %}</span>
+    <strong>{% trans "Price behaviour &amp; outlook" %}</strong>
+    <span class="muted" style="font-size:11.5px;">{% trans "purchase prices from your imported history" %}</span>
+  </div>
+
+  <div class="ol-grid">
+    <div>
+      <div class="intel-tiles">
+        <div class="intel-tile"><div class="n">{{ CURRENCY_SYMBOL }}{{ outlook.last }}</div><div class="l">{% trans "Latest paid" %}</div></div>
+        <div class="intel-tile"><div class="n">{{ CURRENCY_SYMBOL }}{{ outlook.average }}</div><div class="l">{% trans "Average" %}</div></div>
+        <div class="intel-tile"><div class="n">{{ CURRENCY_SYMBOL }}{{ outlook.min }}</div><div class="l">{% trans "Lowest" %}</div></div>
+        <div class="intel-tile">
+          <div class="n">
+            {% if outlook.trend == 'up' %}<span style="color:#c0392b;">↗</span>{% elif outlook.trend == 'down' %}<span style="color:#0a8f57;">↘</span>{% else %}<span class="muted">→</span>{% endif %}
+            {% if outlook.change_pct is not None %}{{ outlook.change_pct }}%{% endif %}
+          </div>
+          <div class="l">{% trans "Trend" %}</div>
+        </div>
+      </div>
+
+      {% if outlook.forecast %}
+      <div class="ol-forecast">
+        <div class="ol-fc-label">{% trans "Likely next price" %}</div>
+        <div class="ol-fc-price">{{ CURRENCY_SYMBOL }}{{ outlook.forecast.next_price }}
+          <span class="ol-fc-dir ol-{{ outlook.forecast.direction }}">
+            {% if outlook.forecast.direction == 'up' %}{% trans "rising" %}{% elif outlook.forecast.direction == 'down' %}{% trans "easing" %}{% else %}{% trans "steady" %}{% endif %}
+          </span></div>
+        <div class="muted" style="font-size:11.5px;">{% blocktrans with c=outlook.forecast.confidence b=outlook.forecast.basis %}confidence {{ c }} · based on {{ b }}{% endblocktrans %}</div>
+      </div>
+      {% else %}
+      <p class="muted" style="font-size:12px;margin:8px 0 0;">{% trans "A forecast needs at least three dated prices — showing behaviour so far." %}</p>
+      {% endif %}
+    </div>
+
+    {% if outlook.spark %}
+    <div class="ol-chart">
+      <svg viewBox="0 0 {{ outlook.spark.w }} {{ outlook.spark.h }}" width="100%" height="72" preserveAspectRatio="none" role="img" aria-label="{% trans 'Price over time' %}">
+        {% if outlook.spark.forecast_seg %}
+        <polyline points="{{ outlook.spark.forecast_seg }}" fill="none" stroke="var(--primary-d,#0e7c8c)" stroke-width="2" stroke-dasharray="4 3" opacity="0.7"/>
+        {% endif %}
+        <polyline points="{{ outlook.spark.history }}" fill="none" stroke="var(--primary-d,#0e7c8c)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      <div class="muted" style="font-size:11px;text-align:center;">{% trans "solid = history · dashed = projection" %}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="intel-sub" style="margin-top:14px;">{% trans "Every recorded purchase price" %}</div>
+  <div style="overflow-x:auto;">
+  <table class="intel-table">
+    <tr><th style="text-align:left;">{% trans "Date" %}</th><th>{% trans "Supplier" %}</th><th class="right">{% trans "Price" %}</th><th></th></tr>
+    {% for p in outlook.points reversed %}
+    <tr>
+      <td class="muted">{{ p.date|default:"—" }}</td>
+      <td>{{ p.supplier|default:"—" }}</td>
+      <td class="num">{{ CURRENCY_SYMBOL }}{{ p.price }}</td>
+      <td class="right">{% if p.source %}<a class="intel-src" href="{% url 'web:import_document' p.source.id %}">{{ p.source.doc_type }}</a>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+
+  <p class="muted intel-foot">{% trans "The projection is a transparent trend estimate from your own purchase history — advisory only. It never sets a purchase order or quote on its own." %}</p>
+</div>
+<style>
+  .intel-panel{border:1px solid var(--primary-t,#e6f6f9);background:linear-gradient(0deg,var(--primary-t,#e6f6f9),transparent);}
+  .intel-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+  .intel-badge{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--primary-d,#0e7c8c);background:#fff;border:1px solid var(--primary-t,#cdeef3);border-radius:20px;padding:2px 10px;}
+  .ol-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:center;}
+  @media (max-width:640px){.ol-grid{grid-template-columns:1fr;}}
+  .intel-tiles{display:flex;gap:10px;flex-wrap:wrap;}
+  .intel-tile{background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 14px;min-width:92px;}
+  .intel-tile .n{font-size:19px;font-weight:800;color:var(--ink);}
+  .intel-tile .l{font-size:11.5px;color:var(--muted);}
+  .ol-forecast{margin-top:12px;background:#fff;border:1px dashed var(--primary-t,#cdeef3);border-radius:12px;padding:10px 14px;}
+  .ol-fc-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;}
+  .ol-fc-price{font-size:24px;font-weight:800;color:var(--ink);}
+  .ol-fc-dir{font-size:12px;font-weight:700;padding:2px 8px;border-radius:20px;vertical-align:middle;}
+  .ol-up{background:#fdecea;color:#c0392b;} .ol-down{background:var(--green-t,#e6f7ef);color:#0a8f57;} .ol-flat{background:#eef0f5;color:var(--muted);}
+  .ol-chart{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;}
+  .intel-sub{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+  .intel-table{width:100%;border-collapse:collapse;}
+  .intel-table th{padding:6px 8px;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--line);}
+  .intel-table td{padding:6px 8px;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .intel-table td.num{white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums;}
+  .intel-table td.right{text-align:right;}
+  .intel-src{font-size:11.5px;color:var(--primary-d,#0e7c8c);white-space:nowrap;}
+  .intel-foot{font-size:11.5px;margin:10px 0 0;}
+</style>
+{% endif %}

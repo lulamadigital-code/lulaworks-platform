@@ -17,6 +17,9 @@
 </form>
 
 {% if intel %}
+  {# Historical purchase-price behaviour + forecast (from the imported ledger). #}
+  {% include "web/_price_outlook.html" %}
+
   {% if intel.found %}
   <h2 style="font-size:16px;margin:0 0 4px;">{{ intel.item }}</h2>
   <p class="muted" style="margin:0 0 14px;font-size:12.5px;">{{ intel.point_count }} recorded price{{ intel.point_count|pluralize }}

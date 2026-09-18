@@ -165,6 +165,101 @@ def item_price_intelligence(query, user, *, limit=8) -> dict:
     }
 
 
+# ── Item price behaviour + forecast ──────────────────────────────────────────
+def item_price_forecast(query, user, *, limit=24) -> dict:
+    """How an item's PURCHASE price has behaved over time, and where it is likely
+    to head next — from the historical purchase ledger (HistoricalLineItem), so it
+    works off imported history even before a supplier is confirmed into the live
+    price ledger.
+
+    Deterministic and honest (AI OS §16/§19): the projection is a transparent
+    average-step extrapolation shown only with >=3 dated prices; with fewer we
+    report the behaviour and say a forecast needs more history. Purchase prices
+    are procurement's own domain, so figures are shown (the page already requires
+    procurement.manage). Never invents a price."""
+    key = item_key(query)
+    if len(key) < 2:
+        return {"found": False}
+    rows = list(HistoricalLineItem.objects
+                .filter(item_key__icontains=key, direction__in=_PURCHASE,
+                        unit_price__isnull=False)
+                .select_related("document").order_by("occurred_on", "created_at"))
+    if not rows:
+        return {"found": False}
+
+    # Dated points power the trend/forecast; undated priced rows still count.
+    dated = [r for r in rows if r.occurred_on and r.unit_price is not None]
+    prices = [r.unit_price for r in rows if r.unit_price is not None]
+    lo = min(prices)
+    hi = max(prices)
+    avg = sum(prices, Decimal("0")) / len(prices)
+    last = dated[-1].unit_price if dated else prices[-1]
+    first = dated[0].unit_price if dated else prices[0]
+
+    trend = "flat"
+    change_pct = None
+    forecast = None
+    if len(dated) >= 2 and first:
+        change_pct = float((last - first) / first * 100)
+        trend = "up" if change_pct > 2 else "down" if change_pct < -2 else "flat"
+    if len(dated) >= 3:
+        # Average step between consecutive dated prices → next likely price.
+        steps = [dated[i].unit_price - dated[i - 1].unit_price
+                 for i in range(1, len(dated))]
+        avg_step = sum(steps, Decimal("0")) / len(steps)
+        projected = last + avg_step
+        if projected < 0:
+            projected = Decimal("0")
+        # Consistency of direction → a simple confidence.
+        ups = sum(1 for s in steps if s > 0)
+        downs = sum(1 for s in steps if s < 0)
+        agree = max(ups, downs) / len(steps) if steps else 0
+        forecast = {
+            "next_price": str(projected.quantize(Decimal("0.01"))),
+            "direction": trend,
+            "confidence": round(0.4 + 0.5 * agree, 2),
+            "basis": f"{len(dated)} dated prices, average change "
+                     f"{avg_step.quantize(Decimal('0.01'))} per step",
+        }
+
+    # A ready-to-draw sparkline over the dated prices (SVG 300x60), plus the
+    # projected next point as a dashed continuation — geometry only, no styling.
+    spark = None
+    if len(dated) >= 2:
+        seq = [d.unit_price for d in dated]
+        if forecast:
+            seq = seq + [Decimal(forecast["next_price"])]
+        smin, smax = min(seq), max(seq)
+        span = (smax - smin) or Decimal("1")
+        W, H, pad = 300, 60, 6
+        n = len(seq)
+        def _xy(i, val):
+            x = pad + (W - 2 * pad) * (i / (n - 1 if n > 1 else 1))
+            y = H - pad - (H - 2 * pad) * float((val - smin) / span)
+            return f"{x:.1f},{y:.1f}"
+        hist_pts = [_xy(i, seq[i]) for i in range(len(dated))]
+        spark = {
+            "history": " ".join(hist_pts),
+            "forecast_seg": (f"{hist_pts[-1]} {_xy(n - 1, seq[-1])}" if forecast else ""),
+            "w": W, "h": H,
+        }
+
+    return {
+        "found": True, "query": query, "item_key": key,
+        "point_count": len(prices),
+        "min": str(lo), "max": str(hi), "average": str(avg.quantize(Decimal("0.01"))),
+        "first": str(first), "last": str(last),
+        "trend": trend,
+        "change_pct": (round(change_pct, 1) if change_pct is not None else None),
+        "forecast": forecast,
+        "spark": spark,
+        "points": [{"date": r.occurred_on.isoformat() if r.occurred_on else None,
+                    "price": str(r.unit_price),
+                    "supplier": r.party_name or "",
+                    "source": _doc_ref(r.document)} for r in rows[-limit:]],
+    }
+
+
 # ── Similar jobs ─────────────────────────────────────────────────────────────
 def similar_jobs(user, *, work_type="", keywords="", customer_id="",
                  exclude_job_id=None, limit=5) -> list:

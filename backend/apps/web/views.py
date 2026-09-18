@@ -3268,23 +3268,32 @@ def price_history(request):
     q = (request.GET.get("q") or "").strip()
     intel = items = None
     hist = {"found": False}
+    outlook = {"found": False}
     if q:
         from apps.procurement.services import price_intelligence
         intel = price_intelligence(request.user.active_company, q)
         # Historical archive: what we CHARGED/QUOTED customers for this item
         # (kept strictly separate from supplier purchase prices — AI OS §10).
         try:
-            from apps.knowledge.intelligence import item_price_intelligence
+            from apps.knowledge.intelligence import (
+                item_price_forecast,
+                item_price_intelligence,
+            )
             hist = item_price_intelligence(q, request.user)
+            # Purchase-price behaviour + forecast from the historical ledger —
+            # works even before suppliers are confirmed into the live ledger.
+            outlook = item_price_forecast(q, request.user)
         except Exception:                            # noqa: BLE001
             hist = {"found": False}
+            outlook = {"found": False}
     else:
         items = list(SupplierPrice.objects.values("item_key", "description")
                      .annotate(n=Count("id"), lo=Min("unit_price"), hi=Max("unit_price"),
                                last=Max("date"))
                      .order_by("-n")[:200])
     return render(request, "web/price_history.html",
-                  {"q": q, "intel": intel, "items": items, "hist": hist})
+                  {"q": q, "intel": intel, "items": items, "hist": hist,
+                   "outlook": outlook})
 
 
 @login_required
