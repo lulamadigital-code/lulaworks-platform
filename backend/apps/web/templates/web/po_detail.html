@@ -1,7 +1,8 @@
 {% extends "web/base.html" %}
+{% load i18n %}
 {% block title %}{{ po.number }}{% endblock %}
 {% block content %}
-<p class="sub"><a href="{% url 'web:purchase_orders' %}">← Purchase orders</a></p>
+<p class="sub"><a href="{% url 'web:purchase_orders' %}">{% trans "← Purchase orders" %}</a></p>
 <div class="row">
   <h1 style="margin:0;">{{ po.number }}</h1>
   <span class="sp" style="flex:1;"></span>
@@ -12,34 +13,34 @@
 
 {% if can_approve %}
 <form method="post" action="{% url 'web:po_approve' po.id %}" style="margin-bottom:16px;">
-  {% csrf_token %}<button class="btn" type="submit">Approve purchase order</button>
+  {% csrf_token %}<button class="btn" type="submit">{% trans "Approve purchase order" %}</button>
 </form>
 {% endif %}
 
-<h2>3-way match <span class="muted" style="font-size:13px; font-weight:400;">PO ↔ GRN ↔ invoice</span></h2>
+<h2>{% trans "3-way match" %} <span class="muted" style="font-size:13px; font-weight:400;">{% trans "PO ↔ GRN ↔ invoice" %}</span></h2>
 <div class="card" style="{% if not match.matched %}border-color:var(--badbg);{% endif %}">
   <div class="row">
-    <strong>{% if match.matched %}<span style="color:var(--ok);">✓ Matched</span>
-      {% else %}<span style="color:var(--bad);">Not matched — {{ match.variances|length }} variance(s)</span>{% endif %}</strong>
+    <strong>{% if match.matched %}<span style="color:var(--ok);">{% trans "✓ Matched" %}</span>
+      {% else %}<span style="color:var(--bad);">{% blocktrans count n=match.variances|length %}Not matched — {{ n }} variance{% plural %}Not matched — {{ n }} variances{% endblocktrans %}</span>{% endif %}</strong>
   </div>
   {% if match.variances %}
   <ul style="margin:8px 0 0; padding-left:18px;" class="muted">
     {% for v in match.variances %}
-      <li>{% if v.type == 'quantity' %}{{ v.line }}: ordered {{ v.ordered }}, received {{ v.received }}
-          {% else %}price: PO total {{ CURRENCY_SYMBOL }}{{ v.po_total }} vs invoiced {{ CURRENCY_SYMBOL }}{{ v.invoiced }}{% endif %}</li>
+      <li>{% if v.type == 'quantity' %}{% blocktrans with line=v.line ordered=v.ordered received=v.received %}{{ line }}: ordered {{ ordered }}, received {{ received }}{% endblocktrans %}
+          {% else %}{% blocktrans with pt=v.po_total inv=v.invoiced sym=CURRENCY_SYMBOL %}price: PO total {{ sym }}{{ pt }} vs invoiced {{ sym }}{{ inv }}{% endblocktrans %}{% endif %}</li>
     {% endfor %}
   </ul>
   {% endif %}
 </div>
 
-<h2>Lines</h2>
+<h2>{% trans "Lines" %}</h2>
 <form method="post" action="{% url 'web:po_receive' po.id %}">
 {% csrf_token %}
 <div class="card" style="padding:0;">
   <table>
-    <tr><th>Item</th><th class="right">Qty</th><th class="right">Received</th><th class="right">Outstanding</th>
-      {% if can_view_money %}<th class="right">Unit price</th><th class="right">Line total</th>{% endif %}
-      {% if can_receive %}<th class="right">Receive now</th>{% endif %}</tr>
+    <tr><th>{% trans "Item" %}</th><th class="right">{% trans "Qty" %}</th><th class="right">{% trans "Received" %}</th><th class="right">{% trans "Outstanding" %}</th>
+      {% if can_view_money %}<th class="right">{% trans "Unit price" %}</th><th class="right">{% trans "Line total" %}</th>{% endif %}
+      {% if can_receive %}<th class="right">{% trans "Receive now" %}</th>{% endif %}</tr>
     {% for l in po.lines.all %}
     <tr><td>{{ l.description }}</td><td class="right">{{ l.qty }} {{ l.unit }}</td>
       <td class="right">{{ l.qty_received }}</td><td class="right">{{ l.outstanding }}</td>
@@ -47,10 +48,10 @@
       {% if can_receive %}<td class="right"><input type="number" name="qty_{{ l.id }}" min="0" step="0.01"
         value="{{ l.outstanding }}" style="width:90px; padding:5px 8px; text-align:right;"></td>{% endif %}</tr>
     {% endfor %}
-    {% if can_view_money %}<tr style="font-weight:700;"><td colspan="5" class="right">Total</td>
+    {% if can_view_money %}<tr style="font-weight:700;"><td colspan="5" class="right">{% trans "Total" %}</td>
       <td class="right">{{ CURRENCY_SYMBOL }}{{ po.total }}</td>{% if can_receive %}<td></td>{% endif %}</tr>{% endif %}
   </table>
 </div>
-{% if can_receive %}<button class="btn" type="submit">Receive goods (create GRN)</button>{% endif %}
+{% if can_receive %}<button class="btn" type="submit">{% trans "Receive goods (create GRN)" %}</button>{% endif %}
 </form>
 {% endblock %}

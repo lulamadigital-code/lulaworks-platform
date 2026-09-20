@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 18:39+0000\n"
+"POT-Creation-Date: 2026-09-20 19:41+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3560,6 +3560,53 @@ msgstr ""
 " La désactivation retire immédiatement toutes les autorisations et la retire"
 " de tous les sélecteurs d'affectation."
 
+msgid "← Purchase orders"
+msgstr "← Bons de commande"
+
+msgid "Approve purchase order"
+msgstr "Approuver le bon de commande"
+
+msgid "3-way match"
+msgstr "Rapprochement à 3 voies"
+
+msgid "PO ↔ GRN ↔ invoice"
+msgstr "BC ↔ BR ↔ facture"
+
+msgid "✓ Matched"
+msgstr "✓ Rapproché"
+
+#, python-format
+msgid "Not matched — %(n)s variance"
+msgid_plural "Not matched — %(n)s variances"
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgid "%(line)s: ordered %(ordered)s, received %(received)s"
+msgstr "%(line)s : commandé %(ordered)s, reçu %(received)s"
+
+#, python-format
+msgid "price: PO total %(sym)s%(pt)s vs invoiced %(sym)s%(inv)s"
+msgstr "prix : total BC %(sym)s%(pt)s contre facturé %(sym)s%(inv)s"
+
+msgid "Lines"
+msgstr "Lignes"
+
+msgid "Qty"
+msgstr "Qté"
+
+msgid "Received"
+msgstr "Reçu"
+
+msgid "Line total"
+msgstr "Total ligne"
+
+msgid "Receive now"
+msgstr "Réceptionner"
+
+msgid "Receive goods (create GRN)"
+msgstr "Réceptionner les marchandises (créer un BR)"
+
 msgid "Items & Price Analytics"
 msgstr "Articles et analyse des prix"
 
@@ -3693,6 +3740,100 @@ msgstr "Aucun prix ne correspond à « %(q)s »."
 msgid "No prices recorded yet."
 msgstr "Aucun prix enregistré pour le moment."
 
+msgid "← Products"
+msgstr "← Produits"
+
+msgid "Last price may no longer be reliable"
+msgstr "Le dernier prix n'est peut-être plus fiable"
+
+msgid "stale price"
+msgstr "prix obsolète"
+
+msgid "Times bought"
+msgstr "Nombre d'achats"
+
+msgid "Highest"
+msgstr "Le plus élevé"
+
+msgid "Last bought"
+msgstr "Dernier achat"
+
+#, python-format
+msgid "%(d)sd ago"
+msgstr "il y a %(d)s j"
+
+msgid "Who sells it"
+msgstr "Qui le vend"
+
+msgid "Latest price"
+msgstr "Dernier prix"
+
+msgid "Price trend"
+msgstr "Tendance des prix"
+
+msgid "Month"
+msgstr "Mois"
+
+msgid "Avg price"
+msgstr "Prix moyen"
+
+msgid "Spellings & category"
+msgstr "Orthographes et catégorie"
+
+msgid "Category & name"
+msgstr "Catégorie et nom"
+
+msgid "Uncategorised"
+msgstr "Non catégorisé"
+
+msgid "Other spellings"
+msgstr "Autres orthographes"
+
+msgid "Add a spelling (e.g. Hyd Pipe 50mm)"
+msgstr "Ajouter une orthographe (ex. Tuyau Hyd 50 mm)"
+
+msgid "Add"
+msgstr "Ajouter"
+
+msgid "Merge another product into this…"
+msgstr "Fusionner un autre produit dans celui-ci…"
+
+msgid "Merge"
+msgstr "Fusionner"
+
+msgid "What you buy — built from every receipt and supplier price."
+msgstr ""
+"Ce que vous achetez — constitué à partir de chaque reçu et prix fournisseur."
+
+msgid "Spend by category"
+msgstr "Dépenses par catégorie"
+
+msgid "Search a product (name or spelling)…"
+msgstr "Rechercher un produit (nom ou orthographe)…"
+
+msgid "Any category"
+msgstr "Toute catégorie"
+
+msgid "Category"
+msgstr "Catégorie"
+
+msgid "Bought"
+msgstr "Acheté"
+
+msgid "Price may no longer be reliable"
+msgstr "Le prix n'est peut-être plus fiable"
+
+msgid "stale"
+msgstr "obsolète"
+
+msgid "No products match."
+msgstr "Aucun produit ne correspond."
+
+msgid "No products yet — they appear as you record purchases."
+msgstr ""
+"Aucun produit pour l'instant — ils apparaissent au fur et à mesure de vos "
+"achats."
+
 msgid ""
 "Your photo and details. Everyone can edit their own profile, whatever their "
 "role."
@@ -3818,9 +3959,6 @@ msgstr "À SURVEILLER"
 msgid "ON TRACK"
 msgstr "SUR LA BONNE VOIE"
 
-msgid "Category"
-msgstr "Catégorie"
-
 msgid "Budget"
 msgstr "Budget"
 
@@ -3942,6 +4080,12 @@ msgstr "Type de tâche"
 
 msgid "No projects yet."
 msgstr "Aucun projet pour le moment."
+
+msgid "Outbound orders to suppliers."
+msgstr "Commandes émises vers les fournisseurs."
+
+msgid "No purchase orders yet."
+msgstr "Aucun bon de commande pour le moment."
 
 msgid "← Quotations"
 msgstr "← Devis"
@@ -4161,9 +4305,6 @@ msgstr "par %(who)s"
 
 msgid "Rejected:"
 msgstr "Rejetée :"
-
-msgid "Qty"
-msgstr "Qté"
 
 msgid "Est. price"
 msgstr "Prix est."
@@ -4402,6 +4543,144 @@ msgstr "Abonnement, crédits IA et factures."
 msgid "Your own name, avatar and password."
 msgstr "Votre nom, avatar et mot de passe."
 
+msgid "← Suppliers"
+msgstr "← Fournisseurs"
+
+msgid "Edit details"
+msgstr "Modifier les détails"
+
+msgid "Contact person"
+msgstr "Personne à contacter"
+
+msgid "Categories, comma-separated"
+msgstr "Catégories, séparées par des virgules"
+
+msgid "Operational notes (e.g. delivers after 10am, min order R500)"
+msgstr "Notes opérationnelles (ex. livre après 10h, commande min. 500 R)"
+
+msgid "★ Preferred supplier"
+msgstr "★ Fournisseur privilégié"
+
+msgid "What we’ve bought"
+msgstr "Ce que nous avons acheté"
+
+msgid "No purchases recorded yet."
+msgstr "Aucun achat enregistré pour le moment."
+
+msgid "Receipts"
+msgstr "Reçus"
+
+msgid "Receipt"
+msgstr "Reçu"
+
+msgid "Invoice / ref"
+msgstr "Facture / réf."
+
+msgid "No receipts linked yet."
+msgstr "Aucun reçu associé pour le moment."
+
+msgid "Name (optional)"
+msgstr "Nom (facultatif)"
+
+msgid "Quote"
+msgstr "Devis"
+
+msgid "Certificate"
+msgstr "Certificat"
+
+msgid "Upload"
+msgstr "Téléverser"
+
+msgid "No documents yet."
+msgstr "Aucun document pour le moment."
+
+msgid ""
+"Everyone you buy from — added automatically when you attach a receipt, or "
+"added by hand."
+msgstr ""
+"Tous ceux auprès de qui vous achetez — ajoutés automatiquement lorsque vous "
+"joignez un reçu, ou ajoutés à la main."
+
+msgid "+ Add supplier"
+msgstr "+ Ajouter un fournisseur"
+
+msgid "Search a supplier, or an item you buy (e.g. pipes)…"
+msgstr ""
+"Rechercher un fournisseur, ou un article que vous achetez (ex. tuyaux)…"
+
+msgid "Active suppliers"
+msgstr "Fournisseurs actifs"
+
+msgid "Products tracked"
+msgstr "Produits suivis"
+
+msgid "Top supplier"
+msgstr "Principal fournisseur"
+
+msgid "Most purchased"
+msgstr "Le plus acheté"
+
+msgid "Add a supplier"
+msgstr "Ajouter un fournisseur"
+
+msgid "✕ Close"
+msgstr "✕ Fermer"
+
+msgid "Supplier name *"
+msgstr "Nom du fournisseur *"
+
+msgid "Terms (e.g. credit / COD)"
+msgstr "Conditions (ex. crédit / paiement à la livraison)"
+
+msgid "Categories, comma-separated (Steel, Hoses)"
+msgstr "Catégories, séparées par des virgules (Acier, Tuyaux)"
+
+msgid "Add supplier"
+msgstr "Ajouter le fournisseur"
+
+msgid "Import from an old invoice"
+msgstr "Importer depuis une ancienne facture"
+
+msgid ""
+"Upload a past supplier invoice — we extract the seller and item prices for "
+"you to confirm, to back-fill the database."
+msgstr ""
+"Téléversez une ancienne facture fournisseur — nous en extrayons le vendeur "
+"et les prix des articles pour que vous les confirmiez, afin d'enrichir la "
+"base de données."
+
+msgid "Upload & review"
+msgstr "Téléverser et vérifier"
+
+#, python-format
+msgid "Where we buy “%(q)s”"
+msgstr "Où nous achetons « %(q)s »"
+
+msgid "Last price"
+msgstr "Dernier prix"
+
+msgid "Matching suppliers"
+msgstr "Fournisseurs correspondants"
+
+msgid "All suppliers"
+msgstr "Tous les fournisseurs"
+
+msgid "Categories"
+msgstr "Catégories"
+
+msgid "Performance"
+msgstr "Performance"
+
+#, python-format
+msgid "No suppliers match “%(q)s”."
+msgstr "Aucun fournisseur ne correspond à « %(q)s »."
+
+msgid ""
+"No suppliers yet — attach a receipt on a job and the seller lands here."
+msgstr ""
+"Aucun fournisseur pour l'instant — joignez un reçu à un chantier et le "
+"vendeur apparaîtra ici."
+
 msgid "+ New Job"
 msgstr "+ Nouvelle tâche"
 
@@ -4628,9 +4907,6 @@ msgstr "dépassement de budget"
 msgid "over"
 msgstr "dépassé"
 
-msgid "Receipts"
-msgstr "Reçus"
-
 msgid "receipt"
 msgstr "reçu"
 
@@ -4660,9 +4936,6 @@ msgstr "Approbateurs"
 
 msgid "Watchers"
 msgstr "Observateurs"
-
-msgid "Add"
-msgstr "Ajouter"
 
 msgid "Detail"
 msgstr "Détail"
@@ -4705,9 +4978,6 @@ msgstr "Fichiers"
 
 msgid "No files yet."
 msgstr "Aucun fichier pour le moment."
-
-msgid "Upload"
-msgstr "Téléverser"
 
 msgid "Project gate"
 msgstr "Contrôle du projet"

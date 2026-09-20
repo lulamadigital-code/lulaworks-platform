@@ -1,29 +1,30 @@
 {% extends "web/base.html" %}
-{% block title %}Suppliers{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Suppliers" %}{% endblock %}
 {% block content %}
 <div class="pagehead">
   <div>
-    <h1>Suppliers</h1>
-    <p class="sub" style="margin:0;">Everyone you buy from — added automatically when you attach a receipt, or added by hand.</p>
+    <h1>{% trans "Suppliers" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "Everyone you buy from — added automatically when you attach a receipt, or added by hand." %}</p>
   </div>
-  {% if can_manage %}<div><button type="button" class="btn primary" id="add-supplier-btn" aria-expanded="false" aria-controls="add-supplier-panel">+ Add supplier</button></div>{% endif %}
+  {% if can_manage %}<div><button type="button" class="btn primary" id="add-supplier-btn" aria-expanded="false" aria-controls="add-supplier-panel">{% trans "+ Add supplier" %}</button></div>{% endif %}
 </div>
 
 <form method="get" class="filterbar" style="margin-bottom:16px;">
   <input type="search" name="q" value="{{ q }}"
-         placeholder="Search a supplier, or an item you buy (e.g. pipes)…" style="flex:2;min-width:200px;">
-  <button class="btn primary" type="submit">Search</button>
-  {% if q %}<a class="btn ghost" href="{% url 'web:suppliers' %}">Clear</a>{% endif %}
+         placeholder="{% trans 'Search a supplier, or an item you buy (e.g. pipes)…' %}" style="flex:2;min-width:200px;">
+  <button class="btn primary" type="submit">{% trans "Search" %}</button>
+  {% if q %}<a class="btn ghost" href="{% url 'web:suppliers' %}">{% trans "Clear" %}</a>{% endif %}
 </form>
 
 <div class="grid">
-  <div class="tile"><div class="n">{{ active_suppliers }}</div><div class="l">Active suppliers</div></div>
-  <div class="tile"><div class="n">{{ products }}</div><div class="l">Products tracked</div></div>
+  <div class="tile"><div class="n">{{ active_suppliers }}</div><div class="l">{% trans "Active suppliers" %}</div></div>
+  <div class="tile"><div class="n">{{ products }}</div><div class="l">{% trans "Products tracked" %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">★</div>
-    <div class="l">Top supplier</div>
+    <div class="l">{% trans "Top supplier" %}</div>
     <div style="font-size:13px;font-weight:600;">{% if top_supplier %}<a href="{% url 'web:supplier_detail' top_supplier.id %}">{{ top_supplier.name }}</a>{% else %}—{% endif %}</div></div>
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▣</div>
-    <div class="l">Most purchased</div>
+    <div class="l">{% trans "Most purchased" %}</div>
     <div style="font-size:13px;font-weight:600;">{% if most_purchased %}<a href="{% url 'web:product_detail' most_purchased.id %}">{{ most_purchased.name }}</a>{% else %}—{% endif %}</div></div>
 </div>
 
@@ -31,32 +32,30 @@
 <div class="two-col" id="add-supplier-panel" style="display:none;margin-bottom:16px;">
   <div><div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;">
-      <strong>Add a supplier</strong>
-      <button type="button" class="btn ghost" id="add-supplier-close" style="padding:2px 10px;">✕ Close</button>
+      <strong>{% trans "Add a supplier" %}</strong>
+      <button type="button" class="btn ghost" id="add-supplier-close" style="padding:2px 10px;">{% trans "✕ Close" %}</button>
     </div>
     <form method="post" action="{% url 'web:supplier_create' %}" style="margin-top:10px;">
       {% csrf_token %}
-      <input type="text" name="name" id="add-supplier-name" placeholder="Supplier name *" required>
+      <input type="text" name="name" id="add-supplier-name" placeholder="{% trans 'Supplier name *' %}" required>
       <div class="two" style="margin-top:8px;">
-        <div><input type="text" name="contact_person" placeholder="Contact person"></div>
-        <div><input type="text" name="phone" placeholder="Phone"></div>
-        <div><input type="email" name="email" placeholder="Email"></div>
-        <div><input type="text" name="payment_terms" placeholder="Terms (e.g. credit / COD)"></div>
+        <div><input type="text" name="contact_person" placeholder="{% trans 'Contact person' %}"></div>
+        <div><input type="text" name="phone" placeholder="{% trans 'Phone' %}"></div>
+        <div><input type="email" name="email" placeholder="{% trans 'Email' %}"></div>
+        <div><input type="text" name="payment_terms" placeholder="{% trans 'Terms (e.g. credit / COD)' %}"></div>
       </div>
-      <input type="text" name="categories" placeholder="Categories, comma-separated (Steel, Hoses)" style="margin-top:8px;">
-      <button class="btn" type="submit" style="margin-top:12px;">Add supplier</button>
+      <input type="text" name="categories" placeholder="{% trans 'Categories, comma-separated (Steel, Hoses)' %}" style="margin-top:8px;">
+      <button class="btn" type="submit" style="margin-top:12px;">{% trans "Add supplier" %}</button>
     </form>
   </div></div>
   <div><div class="card">
-    <strong>Import from an old invoice</strong>
-    <p class="muted" style="margin:6px 0 10px;font-size:12.5px;">Upload a past supplier
-      invoice — we extract the seller and item prices for you to confirm, to back-fill
-      the database.</p>
+    <strong>{% trans "Import from an old invoice" %}</strong>
+    <p class="muted" style="margin:6px 0 10px;font-size:12.5px;">{% trans "Upload a past supplier invoice — we extract the seller and item prices for you to confirm, to back-fill the database." %}</p>
     <form method="post" action="{% url 'web:supplier_import' %}" enctype="multipart/form-data">
       {% csrf_token %}
       <input type="file" name="file" required
              accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.csv,.txt">
-      <button class="btn ghost" type="submit" style="margin-top:12px;">Upload &amp; review</button>
+      <button class="btn ghost" type="submit" style="margin-top:12px;">{% trans "Upload & review" %}</button>
     </form>
   </div></div>
 </div>
@@ -84,10 +83,10 @@
 {% endif %}
 
 {% if q and item_matches %}
-<h2>Where we buy “{{ q }}”</h2>
+<h2>{% blocktrans %}Where we buy “{{ q }}”{% endblocktrans %}</h2>
 <div class="card" style="padding:0;">
   <table>
-    <tr><th>Item</th><th>Supplier</th><th class="right">Last price</th><th>When</th></tr>
+    <tr><th>{% trans "Item" %}</th><th>{% trans "Supplier" %}</th><th class="right">{% trans "Last price" %}</th><th>{% trans "When" %}</th></tr>
     {% for p in item_matches %}
     <tr>
       <td>{{ p.description }}</td>
@@ -100,10 +99,10 @@
 </div>
 {% endif %}
 
-<h2>{% if q %}Matching suppliers{% else %}All suppliers{% endif %}</h2>
+<h2>{% if q %}{% trans "Matching suppliers" %}{% else %}{% trans "All suppliers" %}{% endif %}</h2>
 <div class="card" style="padding:0;">
   <table>
-    <tr><th>Supplier</th><th>Categories</th><th>Terms</th><th class="right">Performance</th></tr>
+    <tr><th>{% trans "Supplier" %}</th><th>{% trans "Categories" %}</th><th>{% trans "Terms" %}</th><th class="right">{% trans "Performance" %}</th></tr>
     {% for s in suppliers %}
     <tr>
       <td>{% if s.preferred %}★ {% endif %}<a href="{% url 'web:supplier_detail' s.id %}">{{ s.name }}</a></td>
@@ -116,7 +115,7 @@
       </td>
     </tr>
     {% empty %}<tr><td colspan="4" class="muted" style="padding:20px;">
-      {% if q %}No suppliers match “{{ q }}”.{% else %}No suppliers yet — attach a receipt on a job and the seller lands here.{% endif %}</td></tr>
+      {% if q %}{% blocktrans %}No suppliers match “{{ q }}”.{% endblocktrans %}{% else %}{% trans "No suppliers yet — attach a receipt on a job and the seller lands here." %}{% endif %}</td></tr>
     {% endfor %}
   </table>
 </div>

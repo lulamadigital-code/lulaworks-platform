@@ -1,7 +1,8 @@
 {% extends "web/base.html" %}
+{% load i18n %}
 {% block title %}{{ supplier.name }}{% endblock %}
 {% block content %}
-<p class="sub"><a href="{% url 'web:suppliers' %}">← Suppliers</a></p>
+<p class="sub"><a href="{% url 'web:suppliers' %}">{% trans "← Suppliers" %}</a></p>
 <h1>{% if supplier.preferred %}★ {% endif %}{{ supplier.name }}</h1>
 <p class="sub">
   {{ supplier.payment_terms }}{% if supplier.categories %} · {{ supplier.categories|join:", " }}{% endif %}
@@ -12,33 +13,33 @@
 
 {% if can_manage %}
 <details class="card" style="margin-bottom:16px;">
-  <summary style="cursor:pointer;font-weight:600;">Edit details</summary>
+  <summary style="cursor:pointer;font-weight:600;">{% trans "Edit details" %}</summary>
   <form method="post" action="{% url 'web:supplier_edit' supplier.id %}" style="margin-top:12px;">
     {% csrf_token %}
-    <input type="text" name="name" value="{{ supplier.name }}" placeholder="Name *" required>
+    <input type="text" name="name" value="{{ supplier.name }}" placeholder="{% trans 'Name *' %}" required>
     <div class="two" style="margin-top:8px;">
-      <div><input type="text" name="contact_person" value="{{ supplier.contact_person }}" placeholder="Contact person"></div>
-      <div><input type="text" name="phone" value="{{ supplier.phone }}" placeholder="Phone"></div>
-      <div><input type="email" name="email" value="{{ supplier.email }}" placeholder="Email"></div>
-      <div><input type="text" name="payment_terms" value="{{ supplier.payment_terms }}" placeholder="Terms"></div>
+      <div><input type="text" name="contact_person" value="{{ supplier.contact_person }}" placeholder="{% trans 'Contact person' %}"></div>
+      <div><input type="text" name="phone" value="{{ supplier.phone }}" placeholder="{% trans 'Phone' %}"></div>
+      <div><input type="email" name="email" value="{{ supplier.email }}" placeholder="{% trans 'Email' %}"></div>
+      <div><input type="text" name="payment_terms" value="{{ supplier.payment_terms }}" placeholder="{% trans 'Terms' %}"></div>
     </div>
     <input type="text" name="categories" value="{{ supplier.categories|join:', ' }}"
-           placeholder="Categories, comma-separated" style="margin-top:8px;">
-    <textarea name="notes" rows="2" placeholder="Operational notes (e.g. delivers after 10am, min order R500)" style="margin-top:8px;">{{ supplier.notes }}</textarea>
+           placeholder="{% trans 'Categories, comma-separated' %}" style="margin-top:8px;">
+    <textarea name="notes" rows="2" placeholder="{% trans 'Operational notes (e.g. delivers after 10am, min order R500)' %}" style="margin-top:8px;">{{ supplier.notes }}</textarea>
     <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:normal;">
       <input type="checkbox" name="preferred" value="1" {% if supplier.preferred %}checked{% endif %} style="width:auto;">
-      ★ Preferred supplier</label>
-    <button class="btn" type="submit" style="margin-top:12px;">Save</button>
+      {% trans "★ Preferred supplier" %}</label>
+    <button class="btn" type="submit" style="margin-top:12px;">{% trans "Save" %}</button>
   </form>
 </details>
 {% endif %}
 
 {% include "web/_supplier_intelligence.html" %}
 
-<h2>What we’ve bought</h2>
+<h2>{% trans "What we’ve bought" %}</h2>
 <div class="card" style="padding:0;">
   <table>
-    <tr><th>Item</th><th>Unit</th><th class="right">Price</th><th>Date</th></tr>
+    <tr><th>{% trans "Item" %}</th><th>{% trans "Unit" %}</th><th class="right">{% trans "Price" %}</th><th>{% trans "Date" %}</th></tr>
     {% for p in prices %}
     <tr>
       <td>{{ p.description }}</td>
@@ -46,15 +47,15 @@
       <td class="right">{{ p.currency }} {{ p.unit_price }}</td>
       <td class="muted">{{ p.date|date:"d M Y" }}</td>
     </tr>
-    {% empty %}<tr><td colspan="4" class="muted" style="padding:16px;">No purchases recorded yet.</td></tr>
+    {% empty %}<tr><td colspan="4" class="muted" style="padding:16px;">{% trans "No purchases recorded yet." %}</td></tr>
     {% endfor %}
   </table>
 </div>
 
-<h2>Receipts</h2>
+<h2>{% trans "Receipts" %}</h2>
 <div class="card" style="padding:0;">
   <table>
-    <tr><th>Receipt</th><th>Job</th><th>Invoice / ref</th><th class="right">Amount</th><th>When</th></tr>
+    <tr><th>{% trans "Receipt" %}</th><th>{% trans "Job" %}</th><th>{% trans "Invoice / ref" %}</th><th class="right">{% trans "Amount" %}</th><th>{% trans "When" %}</th></tr>
     {% for r in receipts %}
     <tr>
       <td>{% if r.task_id %}<a href="{% url 'web:work_operations' r.task_id %}">{{ r.title }}</a>{% else %}{{ r.title }}{% endif %}</td>
@@ -63,12 +64,12 @@
       <td class="right">{% if r.amount %}{{ r.currency }} {{ r.amount }}{% endif %}</td>
       <td class="muted">{{ r.reported_at|date:"d M Y" }}</td>
     </tr>
-    {% empty %}<tr><td colspan="5" class="muted" style="padding:16px;">No receipts linked yet.</td></tr>
+    {% empty %}<tr><td colspan="5" class="muted" style="padding:16px;">{% trans "No receipts linked yet." %}</td></tr>
     {% endfor %}
   </table>
 </div>
 
-<h2>Documents</h2>
+<h2>{% trans "Documents" %}</h2>
 {% if can_manage %}
 <div class="card">
   <form method="post" action="{% url 'web:supplier_document' supplier.id %}"
@@ -76,15 +77,15 @@
     {% csrf_token %}
     <input type="file" name="file" required
            accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.csv,.txt" style="flex:2;min-width:180px;">
-    <input type="text" name="name" placeholder="Name (optional)" style="flex:1;min-width:140px;">
+    <input type="text" name="name" placeholder="{% trans 'Name (optional)' %}" style="flex:1;min-width:140px;">
     <select name="doc_type" style="width:auto;">
-      <option value="quote">Quote</option>
-      <option value="invoice">Invoice</option>
-      <option value="certificate">Certificate</option>
-      <option value="banking">Banking</option>
-      <option value="other">Other</option>
+      <option value="quote">{% trans "Quote" %}</option>
+      <option value="invoice">{% trans "Invoice" %}</option>
+      <option value="certificate">{% trans "Certificate" %}</option>
+      <option value="banking">{% trans "Banking" %}</option>
+      <option value="other">{% trans "Other" %}</option>
     </select>
-    <button class="btn" type="submit">Upload</button>
+    <button class="btn" type="submit">{% trans "Upload" %}</button>
   </form>
 </div>
 {% endif %}
@@ -107,6 +108,6 @@
 </div>
 {% endfor %}
 {% else %}
-<div class="card"><span class="muted">No documents yet.</span></div>
+<div class="card"><span class="muted">{% trans "No documents yet." %}</span></div>
 {% endif %}
 {% endblock %}
