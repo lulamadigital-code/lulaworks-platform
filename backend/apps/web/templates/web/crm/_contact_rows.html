@@ -1,9 +1,10 @@
+{% load i18n %}
 <table>
-  <tr><th>Name</th><th>Reach</th><th>Responsibilities</th><th>Status</th><th></th></tr>
+  <tr><th>{% trans "Name" %}</th><th>{% trans "Reach" %}</th><th>{% trans "Responsibilities" %}</th><th>{% trans "Status" %}</th><th></th></tr>
   {% for c in rows %}
   <tr{% if c.status != 'active' %} style="opacity:.55;"{% endif %}>
     <td>
-      <strong>{{ c.full_name }}</strong>{% if c.is_primary %} <span class="pill">Primary</span>{% endif %}
+      <strong>{{ c.full_name }}</strong>{% if c.is_primary %} <span class="pill">{% trans "Primary" %}</span>{% endif %}
       {% if c.job_title %}<br><span class="muted" style="font-size:12px;">{{ c.job_title }}</span>{% endif %}
     </td>
     <td class="muted" style="font-size:12.5px;">
@@ -17,16 +18,16 @@
     <td style="font-size:12px;">{{ c.get_status_display }}</td>
     <td style="white-space:nowrap;">
       {% if can_manage %}
-      <a class="btn ghost" href="?edit={{ c.id }}#form" style="padding:3px 10px;">Edit</a>
+      <a class="btn ghost" href="?edit={{ c.id }}#form" style="padding:3px 10px;">{% trans "Edit" %}</a>
       {% if c.status == 'active' %}
       <form method="post" action="{% url 'web:crm_customer_contact_status' customer.id c.id %}" style="display:inline;">
         {% csrf_token %}<input type="hidden" name="status" value="left">
-        <button class="btn ghost" type="submit" style="padding:3px 10px;" title="Mark as no longer there">Deactivate</button>
+        <button class="btn ghost" type="submit" style="padding:3px 10px;" title="{% trans 'Mark as no longer there' %}">{% trans "Deactivate" %}</button>
       </form>
       {% else %}
       <form method="post" action="{% url 'web:crm_customer_contact_status' customer.id c.id %}" style="display:inline;">
         {% csrf_token %}<input type="hidden" name="status" value="active">
-        <button class="btn ghost" type="submit" style="padding:3px 10px;">Reactivate</button>
+        <button class="btn ghost" type="submit" style="padding:3px 10px;">{% trans "Reactivate" %}</button>
       </form>
       {% endif %}{% endif %}
     </td>

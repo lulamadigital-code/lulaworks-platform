@@ -1,21 +1,21 @@
 {% extends "web/base.html" %}
-{% block title %}Activities · CRM{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Activities · CRM" %}{% endblock %}
 {% block content %}
 
-<div class="pagehead"><div><h1>Activities</h1>
-  <p class="sub" style="margin:0;">Everything the team still has to do — calls, meetings,
-    site visits and follow-ups across every customer, lead and deal.</p></div></div>
+<div class="pagehead"><div><h1>{% trans "Activities" %}</h1>
+  <p class="sub" style="margin:0;">{% trans "Everything the team still has to do — calls, meetings, site visits and follow-ups across every customer, lead and deal." %}</p></div></div>
 
 {% include "web/crm/_tabs.html" with active='activities' %}
 
 <div class="filterbar">
-  <a class="btn {% if scope == 'mine' %}primary{% else %}ghost{% endif %}" href="?scope=mine">Mine</a>
-  <a class="btn {% if scope == 'all' %}primary{% else %}ghost{% endif %}" href="?scope=all">Everyone</a>
+  <a class="btn {% if scope == 'mine' %}primary{% else %}ghost{% endif %}" href="?scope=mine">{% trans "Mine" %}</a>
+  <a class="btn {% if scope == 'all' %}primary{% else %}ghost{% endif %}" href="?scope=all">{% trans "Everyone" %}</a>
 </div>
 
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>What</th><th>Type</th><th>Related to</th><th>Owner</th><th>Due</th><th></th></tr>
+    <tr><th>{% trans "What" %}</th><th>{% trans "Type" %}</th><th>{% trans "Related to" %}</th><th>{% trans "Owner" %}</th><th>{% trans "Due" %}</th><th></th></tr>
     {% for a in items %}
     <tr>
       <td><strong>{{ a.subject }}</strong></td>
@@ -31,10 +31,10 @@
       <td>{% if can_manage %}
         <form method="post" action="{% url 'web:crm_activity_complete' a.id %}" style="display:inline;">{% csrf_token %}
           <input type="hidden" name="next" value="{% url 'web:crm_activities' %}?scope={{ scope }}">
-          <button class="btn ghost" type="submit" style="padding:3px 10px;">Done</button>
+          <button class="btn ghost" type="submit" style="padding:3px 10px;">{% trans "Done" %}</button>
         </form>{% endif %}</td>
     </tr>
-    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">Nothing open. Everyone's clear.</td></tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">{% trans "Nothing open. Everyone's clear." %}</td></tr>
     {% endfor %}
   </table>
 </div>

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 19:41+0000\n"
+"POT-Creation-Date: 2026-09-20 19:48+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2977,6 +2977,21 @@ msgstr ""
 "s'appliqueront lors de l'enregistrement. Vos informations existantes sont "
 "conservées — rien n'est supprimé automatiquement."
 
+msgid "Reach"
+msgstr "Joignabilité"
+
+msgid "Responsibilities"
+msgstr "Responsabilités"
+
+msgid "Mark as no longer there"
+msgstr "Marquer comme parti"
+
+msgid "Deactivate"
+msgstr "Désactiver"
+
+msgid "Reactivate"
+msgstr "Réactiver"
+
 msgid "Sales"
 msgstr "Ventes"
 
@@ -3007,6 +3022,694 @@ msgstr "Rechercher dans le CRM…"
 msgid "Search"
 msgstr "Rechercher"
 
+msgid "What"
+msgstr "Objet"
+
+msgid "Call procurement"
+msgstr "Appeler le service achats"
+
+msgid "Call"
+msgstr "Appel"
+
+msgid "Meeting"
+msgstr "Réunion"
+
+msgid "Site visit"
+msgstr "Visite de site"
+
+msgid "Follow-up"
+msgstr "Relance"
+
+msgid "Reminder"
+msgstr "Rappel"
+
+msgid "Due"
+msgstr "Échéance"
+
+msgid "Schedule"
+msgstr "Planifier"
+
+#, python-format
+msgid "done %(d)s"
+msgstr "terminé le %(d)s"
+
+msgid "Done"
+msgstr "Terminé"
+
+msgid "No activities yet."
+msgstr "Aucune activité pour le moment."
+
+msgid "Communication"
+msgstr "Communication"
+
+msgid "Channel"
+msgstr "Canal"
+
+msgid "Phone call"
+msgstr "Appel téléphonique"
+
+msgid "Note"
+msgstr "Note"
+
+msgid "Direction"
+msgstr "Sens"
+
+msgid "Outbound"
+msgstr "Sortant"
+
+msgid "Inbound"
+msgstr "Entrant"
+
+msgid "Internal"
+msgstr "Interne"
+
+msgid "Summary"
+msgstr "Résumé"
+
+msgid "What was said / agreed"
+msgstr "Ce qui a été dit / convenu"
+
+msgid "Log"
+msgstr "Enregistrer"
+
+msgid "No history logged yet."
+msgstr "Aucun historique enregistré pour le moment."
+
+msgid "Notes"
+msgstr "Notes"
+
+msgid "Prefers morning deliveries · always request site induction"
+msgstr ""
+"Préfère les livraisons le matin · demander toujours l'accueil sécurité"
+
+msgid "Pin"
+msgstr "Épingler"
+
+msgid "Add note"
+msgstr "Ajouter une note"
+
+msgid "📌 pinned"
+msgstr "📌 épinglée"
+
+msgid "No notes yet."
+msgstr "Aucune note pour le moment."
+
+msgid "Activities · CRM"
+msgstr "Activités · CRM"
+
+msgid ""
+"Everything the team still has to do — calls, meetings, site visits and "
+"follow-ups across every customer, lead and deal."
+msgstr ""
+"Tout ce que l'équipe doit encore faire — appels, réunions, visites de site "
+"et relances pour chaque client, prospect et affaire."
+
+msgid "Mine"
+msgstr "Les miennes"
+
+msgid "Everyone"
+msgstr "Tout le monde"
+
+msgid "Related to"
+msgstr "Lié à"
+
+msgid "Owner"
+msgstr "Responsable"
+
+msgid "Nothing open. Everyone's clear."
+msgstr "Rien en cours. Tout le monde est à jour."
+
+msgid "Analytics · CRM"
+msgstr "Analyses · CRM"
+
+msgid "Sales analytics"
+msgstr "Analyses des ventes"
+
+msgid ""
+"How sales are really performing — won value by salesperson, customer and "
+"industry, the win/loss trend, deal size and cycle, and how fast you're "
+"winning new customers. Computed from your opportunities and customers."
+msgstr ""
+"Les performances réelles des ventes — valeur remportée par commercial, "
+"client et secteur, la tendance gains/pertes, la taille et le cycle des "
+"affaires, et la vitesse d'acquisition de nouveaux clients. Calculé à partir "
+"de vos opportunités et clients."
+
+msgid "Won value"
+msgstr "Valeur remportée"
+
+msgid "Won / lost"
+msgstr "Gagnées / perdues"
+
+msgid "Win rate"
+msgstr "Taux de réussite"
+
+msgid "Avg deal"
+msgstr "Affaire moyenne"
+
+msgid "Avg sales cycle"
+msgstr "Cycle de vente moyen"
+
+#, python-format
+msgid "%(d)sd"
+msgstr "%(d)s j"
+
+msgid "Sales by salesperson"
+msgstr "Ventes par commercial"
+
+msgid "No won deals yet."
+msgstr "Aucune affaire remportée pour le moment."
+
+msgid "Sales by industry"
+msgstr "Ventes par secteur"
+
+msgid "Top customers by won value"
+msgstr "Meilleurs clients par valeur remportée"
+
+msgid "Won vs lost — last 6 months"
+msgstr "Gagnées vs perdues — 6 derniers mois"
+
+msgid "New customers — last 6 months"
+msgstr "Nouveaux clients — 6 derniers mois"
+
+msgid "Contacts"
+msgstr "Contacts"
+
+#, python-format
+msgid "Contacts — %(name)s"
+msgstr "Contacts — %(name)s"
+
+msgid ""
+"The people, grouped by department, and what each is empowered to do. "
+"Responsibilities aren't labels — they route documents. An RFQ goes to "
+"whoever “can release RFQs”; an invoice to whoever “receives invoices”. The "
+"gaps below are the point: an unheld responsibility is a document with "
+"nowhere to go."
+msgstr ""
+"Les personnes, regroupées par service, et ce que chacune est habilitée à "
+"faire. Les responsabilités ne sont pas des étiquettes — elles orientent les "
+"documents. Un appel d'offres va à la personne qui « peut émettre des appels "
+"d'offres » ; une facture à celle qui « reçoit les factures ». Les manques "
+"ci-dessous sont l'essentiel : une responsabilité non attribuée est un "
+"document sans destinataire."
+
+msgid "← Customer"
+msgstr "← Client"
+
+msgid "Responsibility coverage"
+msgstr "Couverture des responsabilités"
+
+msgid "No one assigned"
+msgstr "Personne d'assigné"
+
+msgid "No department"
+msgstr "Aucun service"
+
+msgid "No contacts yet."
+msgstr "Aucun contact pour le moment."
+
+msgid "Edit contact"
+msgstr "Modifier le contact"
+
+msgid "Add a contact"
+msgstr "Ajouter un contact"
+
+msgid "Full name *"
+msgstr "Nom complet *"
+
+msgid "Department"
+msgstr "Service"
+
+msgid "Telephone"
+msgstr "Téléphone"
+
+msgid "Preferred method"
+msgstr "Méthode préférée"
+
+msgid "Roles (what they're called)"
+msgstr "Rôles (leur intitulé)"
+
+msgid "Responsibilities (what they can do — these route documents)"
+msgstr ""
+"Responsabilités (ce qu'ils peuvent faire — elles orientent les documents)"
+
+msgid "Primary contact"
+msgstr "Contact principal"
+
+msgid "Save contact"
+msgstr "Enregistrer le contact"
+
+msgid "Add contact"
+msgstr "Ajouter le contact"
+
+#, python-format
+msgid "Sites — %(name)s"
+msgstr "Sites — %(name)s"
+
+msgid ""
+"Where work actually happens, and what it takes to get on site. A job is "
+"assigned to a specific place — the gate, the induction, the person to call "
+"all live here so the crew has them before they arrive."
+msgstr ""
+"Là où le travail a réellement lieu, et ce qu'il faut pour accéder au site. "
+"Un chantier est affecté à un lieu précis — le portail, l'accueil sécurité, "
+"la personne à appeler figurent tous ici pour que l'équipe les ait avant "
+"d'arriver."
+
+msgid "Site"
+msgstr "Site"
+
+msgid "Address / GPS"
+msgstr "Adresse / GPS"
+
+msgid "On-site contact"
+msgstr "Contact sur site"
+
+msgid "Access & safety"
+msgstr "Accès et sécurité"
+
+msgid "Remove this site?"
+msgstr "Supprimer ce site ?"
+
+msgid "No sites yet."
+msgstr "Aucun site pour le moment."
+
+msgid "Edit site"
+msgstr "Modifier le site"
+
+msgid "Add a site"
+msgstr "Ajouter un site"
+
+msgid "Site name *"
+msgstr "Nom du site *"
+
+msgid "Site code"
+msgstr "Code du site"
+
+msgid "Parent site (for nesting)"
+msgstr "Site parent (pour l'imbrication)"
+
+msgid "— top level —"
+msgstr "— niveau supérieur —"
+
+msgid "GPS latitude"
+msgstr "Latitude GPS"
+
+msgid "GPS longitude"
+msgstr "Longitude GPS"
+
+msgid "Access notes"
+msgstr "Notes d'accès"
+
+msgid "Gate 3, sign in at security"
+msgstr "Portail 3, se présenter à la sécurité"
+
+msgid "Safety requirements (induction, PPE, permits)"
+msgstr "Exigences de sécurité (accueil, EPI, permis)"
+
+msgid "Full PPE. Site induction required. Hot-work permit for welding."
+msgstr ""
+"EPI complets. Accueil sécurité obligatoire. Permis de travail à chaud pour "
+"la soudure."
+
+msgid "Save site"
+msgstr "Enregistrer le site"
+
+msgid "Add site"
+msgstr "Ajouter le site"
+
+msgid "CRM"
+msgstr "CRM"
+
+msgid "Customer Relationship Management"
+msgstr "Gestion de la relation client"
+
+#, python-format
+msgid ""
+"The selling layer over your customer master: Lead → Opportunity → Quotation "
+"→ Won → Customer. Company records live in <a "
+"href=\"%(clients_url)s\">Purchasing → Our Clients</a> and are reused "
+"everywhere — CRM never keeps a second copy."
+msgstr ""
+"La couche commerciale au-dessus de votre référentiel client : Prospect → "
+"Opportunité → Devis → Gagné → Client. Les fiches d'entreprise résident dans "
+"<a href=\"%(clients_url)s\">Achats → Nos clients</a> et sont réutilisées "
+"partout — le CRM ne conserve jamais de copie."
+
+msgid "Turn enquiries into won work."
+msgstr "Transformez les demandes en contrats remportés."
+
+msgid "Opportunities & pipeline"
+msgstr "Opportunités et pipeline"
+
+msgid "Quotations"
+msgstr "Devis"
+
+msgid "Follow-ups & activities"
+msgstr "Relances et activités"
+
+msgid "Sales forecast"
+msgstr "Prévisions de ventes"
+
+msgid "Relationships"
+msgstr "Relations"
+
+msgid "The history behind every customer."
+msgstr "L'historique de chaque client."
+
+msgid "Calls & meetings"
+msgstr "Appels et réunions"
+
+msgid "Client records"
+msgstr "Fiches clients"
+
+msgid "Communication history"
+msgstr "Historique des communications"
+
+msgid "Reach the right customers."
+msgstr "Touchez les bons clients."
+
+msgid "Campaigns"
+msgstr "Campagnes"
+
+msgid "Segments"
+msgstr "Segments"
+
+msgid "Lead sources"
+msgstr "Sources de prospects"
+
+msgid "How sales are really performing."
+msgstr "Les performances réelles des ventes."
+
+msgid "Pipeline & conversion"
+msgstr "Pipeline et conversion"
+
+msgid "Sales by salesperson / customer / industry"
+msgstr "Ventes par commercial / client / secteur"
+
+msgid "Open opportunities"
+msgstr "Opportunités ouvertes"
+
+msgid "Pipeline value"
+msgstr "Valeur du pipeline"
+
+msgid "Weighted forecast"
+msgstr "Prévision pondérée"
+
+msgid "People we work with"
+msgstr "Les personnes avec qui nous travaillons"
+
+#, python-format
+msgid ""
+"The real humans at your clients — kept on each <a "
+"href=\"%(clients_url)s\">client record</a>."
+msgstr ""
+"Les personnes réelles chez vos clients — conservées sur chaque <a "
+"href=\"%(clients_url)s\">fiche client</a>."
+
+msgid "✉ Email"
+msgstr "✉ E-mail"
+
+msgid "✆ Call"
+msgstr "✆ Appeler"
+
+msgid "See all clients & their people →"
+msgstr "Voir tous les clients et leurs contacts →"
+
+#, python-format
+msgid ""
+"No contacts yet. Add the people you deal with on each <a "
+"href=\"%(clients_url)s\">client record</a> — they'll show up here."
+msgstr ""
+"Aucun contact pour le moment. Ajoutez les personnes avec qui vous traitez "
+"sur chaque <a href=\"%(clients_url)s\">fiche client</a> — elles apparaîtront"
+" ici."
+
+msgid "Pipeline by stage"
+msgstr "Pipeline par étape"
+
+msgid "No open opportunities yet."
+msgstr "Aucune opportunité ouverte pour le moment."
+
+msgid "New leads"
+msgstr "Nouveaux prospects"
+
+msgid "Source"
+msgstr "Source"
+
+msgid "No open leads."
+msgstr "Aucun prospect ouvert."
+
+msgid "Capture one →"
+msgstr "En saisir un →"
+
+msgid "My open activities"
+msgstr "Mes activités en cours"
+
+#, python-format
+msgid "Due %(d)s"
+msgstr "Échéance %(d)s"
+
+msgid "Nothing scheduled. You're clear."
+msgstr "Rien de prévu. Vous êtes à jour."
+
+msgid "All activities →"
+msgstr "Toutes les activités →"
+
+msgid "Lead"
+msgstr "Prospect"
+
+#, python-format
+msgid "from %(s)s"
+msgstr "depuis %(s)s"
+
+msgid "← Leads"
+msgstr "← Prospects"
+
+msgid "Details"
+msgstr "Détails"
+
+msgid "Contact:"
+msgstr "Contact :"
+
+msgid "Title:"
+msgstr "Fonction :"
+
+msgid "Email:"
+msgstr "E-mail :"
+
+msgid "Mobile:"
+msgstr "Mobile :"
+
+msgid "Tel:"
+msgstr "Tél. :"
+
+msgid "Industry:"
+msgstr "Secteur :"
+
+msgid "Est. value:"
+msgstr "Valeur est. :"
+
+msgid "Converted"
+msgstr "Converti"
+
+msgid "Also open an opportunity"
+msgstr "Ouvrir aussi une opportunité"
+
+msgid "Opportunity title (optional)"
+msgstr "Titre de l'opportunité (facultatif)"
+
+msgid "Convert to customer"
+msgstr "Convertir en client"
+
+msgid "Reason (optional)"
+msgstr "Motif (facultatif)"
+
+msgid "Mark lost"
+msgstr "Marquer comme perdu"
+
+msgid "Leads · CRM"
+msgstr "Prospects · CRM"
+
+msgid ""
+"Potential customers you haven't qualified yet. Convert a real one and it "
+"becomes a customer with an opportunity in the pipeline."
+msgstr ""
+"Des clients potentiels que vous n'avez pas encore qualifiés. Convertissez-en"
+" un réel et il devient un client avec une opportunité dans le pipeline."
+
+msgid "Any status"
+msgstr "Tout statut"
+
+msgid "Est. value"
+msgstr "Valeur est."
+
+msgid "No leads yet."
+msgstr "Aucun prospect pour le moment."
+
+msgid "+ Capture a lead"
+msgstr "+ Saisir un prospect"
+
+msgid "Capture a lead"
+msgstr "Saisir un prospect"
+
+msgid "Company / organisation *"
+msgstr "Entreprise / organisation *"
+
+msgid "Contact person"
+msgstr "Personne à contacter"
+
+msgid "Customer type"
+msgstr "Type de client"
+
+msgid "Estimated value"
+msgstr "Valeur estimée"
+
+msgid "Add lead"
+msgstr "Ajouter le prospect"
+
+msgid "Opportunity"
+msgstr "Opportunité"
+
+msgid "← Pipeline"
+msgstr "← Pipeline"
+
+msgid "Deal"
+msgstr "Affaire"
+
+msgid "Expected close:"
+msgstr "Clôture prévue :"
+
+msgid "Source:"
+msgstr "Source :"
+
+msgid "From lead:"
+msgstr "Depuis le prospect :"
+
+msgid "Quotation:"
+msgstr "Devis :"
+
+msgid "Move stage"
+msgstr "Changer d'étape"
+
+msgid "Reason (if lost)"
+msgstr "Motif (si perdu)"
+
+msgid "Update"
+msgstr "Mettre à jour"
+
+msgid "Create quotation →"
+msgstr "Créer un devis →"
+
+msgid "Pipeline · CRM"
+msgstr "Pipeline · CRM"
+
+#, python-format
+msgid ""
+"Open deals by stage — <span id=\"pl-count\">%(cnt)s</span> open worth <span "
+"id=\"pl-value\">%(val)s</span> · weighted forecast %(wtd)s."
+msgstr ""
+"Affaires ouvertes par étape — <span id=\"pl-count\">%(cnt)s</span> ouvertes "
+"pour %(val)s · prévision pondérée %(wtd)s."
+
+msgid "Drag a card to move it between stages."
+msgstr "Faites glisser une carte pour la déplacer entre les étapes."
+
+msgid "Recently won"
+msgstr "Récemment gagnées"
+
+msgid "Could not move."
+msgstr "Déplacement impossible."
+
+msgid "Moved to"
+msgstr "Déplacé vers"
+
+msgid "Reports · CRM"
+msgstr "Rapports · CRM"
+
+msgid "CRM reports"
+msgstr "Rapports CRM"
+
+msgid ""
+"Who your customers are, what they're worth, which have gone quiet, and how "
+"well enquiries turn into deals."
+msgstr ""
+"Qui sont vos clients, ce qu'ils valent, lesquels sont devenus silencieux, et"
+" dans quelle mesure les demandes se transforment en affaires."
+
+msgid "Customers"
+msgstr "Clients"
+
+msgid "Prospects"
+msgstr "Prospects"
+
+msgid "Total revenue"
+msgstr "Chiffre d'affaires total"
+
+msgid "Top customers by revenue"
+msgstr "Meilleurs clients par chiffre d'affaires"
+
+msgid "Revenue"
+msgstr "Chiffre d'affaires"
+
+msgid "No invoiced revenue yet."
+msgstr "Aucun chiffre d'affaires facturé pour le moment."
+
+msgid "Conversion"
+msgstr "Conversion"
+
+msgid "Opportunities won / lost:"
+msgstr "Opportunités gagnées / perdues :"
+
+msgid "Lead conversion:"
+msgstr "Conversion des prospects :"
+
+#, python-format
+msgid "%(pct)s%% (%(conv)s of %(total)s)"
+msgstr "%(pct)s%% (%(conv)s sur %(total)s)"
+
+msgid "Open pipeline:"
+msgstr "Pipeline ouvert :"
+
+#, python-format
+msgid "%(n)s deals · %(val)s · weighted %(wtd)s"
+msgstr "%(n)s affaires · %(val)s · pondéré %(wtd)s"
+
+msgid "Inactive customers"
+msgstr "Clients inactifs"
+
+msgid ""
+"Active customers with no project or activity in 120 days — worth a call."
+msgstr ""
+"Clients actifs sans projet ni activité depuis 120 jours — un appel s'impose."
+
+msgid "Everyone's been engaged recently."
+msgstr "Tout le monde a été sollicité récemment."
+
+msgid "Search · CRM"
+msgstr "Recherche · CRM"
+
+msgid "CRM search"
+msgstr "Recherche CRM"
+
+msgid ""
+"One box across customers, contacts, leads, opportunities, quotations and "
+"invoices."
+msgstr ""
+"Un seul champ pour les clients, contacts, prospects, opportunités, devis et "
+"factures."
+
+#, python-format
+msgid "Nothing matched “%(q)s”."
+msgstr "Aucun résultat pour « %(q)s »."
+
+#, python-format
+msgid "vendor %(v)s"
+msgstr "fournisseur %(v)s"
+
+msgid "Opportunities"
+msgstr "Opportunités"
+
 msgid "← Our clients"
 msgstr "← Nos clients"
 
@@ -3023,15 +3726,6 @@ msgstr "À partir de %(n)s documents importés :"
 msgid "+ Add a person"
 msgstr "+ Ajouter une personne"
 
-msgid "Contacts"
-msgstr "Contacts"
-
-msgid "Open opportunities"
-msgstr "Opportunités ouvertes"
-
-msgid "Pipeline value"
-msgstr "Valeur du pipeline"
-
 msgid "Open jobs"
 msgstr "travaux"
 
@@ -3045,15 +3739,9 @@ msgstr ""
 "Aucun historique pour le moment — les devis, tâches, factures, opportunités "
 "et activités CRM apparaîtront ici au fur et à mesure."
 
-msgid "Opportunities"
-msgstr "Opportunités"
-
 #, python-format
 msgid "%(n)s open worth %(v)s"
 msgstr "%(n)s ouvertes valant %(v)s"
-
-msgid "Opportunity"
-msgstr "Opportunité"
 
 msgid "Stage"
 msgstr "Étape"
@@ -3077,14 +3765,8 @@ msgstr "toutes les activités"
 msgid "New opportunity title"
 msgstr "Titre de la nouvelle opportunité"
 
-msgid "Estimated value"
-msgstr "Valeur estimée"
-
 msgid "Open opportunity"
 msgstr "Ouvrir l'opportunité"
-
-msgid "Details"
-msgstr "Détails"
 
 msgid "Our vendor no. with them"
 msgstr "Notre n° de fournisseur chez eux"
@@ -3101,9 +3783,6 @@ msgstr "N° fiscal"
 msgid "City / Province"
 msgstr "Ville / Province"
 
-msgid "Telephone"
-msgstr "Téléphone"
-
 msgid "Payment terms"
 msgstr "Conditions de paiement"
 
@@ -3113,9 +3792,6 @@ msgstr "%(d)s jours"
 
 msgid "Vendor portal"
 msgstr "Portail fournisseur"
-
-msgid "Responsibility coverage"
-msgstr "Couverture des responsabilités"
 
 msgid "gap"
 msgstr "manque"
@@ -3152,12 +3828,6 @@ msgstr "Gérer les contacts →"
 msgid "Title"
 msgstr "Titre"
 
-msgid "Responsibilities"
-msgstr "Responsabilités"
-
-msgid "Reach"
-msgstr "Joignabilité"
-
 msgid ""
 "No contacts filed under a department yet — add people below and Lulaworks "
 "can start routing documents."
@@ -3171,9 +3841,6 @@ msgstr "Sans service"
 msgid "Add a person"
 msgstr "Ajouter une personne"
 
-msgid "Department"
-msgstr "Service"
-
 msgid "— none —"
 msgstr "— aucun —"
 
@@ -3186,9 +3853,6 @@ msgstr ""
 
 msgid "Primary contact for this customer"
 msgstr "Contact principal pour ce client"
-
-msgid "Add contact"
-msgstr "Ajouter le contact"
 
 msgid "Branches & sites"
 msgstr "Succursales et sites"
@@ -3227,9 +3891,6 @@ msgstr "E-mail du service"
 msgid "Add department"
 msgstr "Ajouter un service"
 
-msgid "Customers"
-msgstr "Clients"
-
 msgid ""
 "Client organisations — not names in a text field. Each one holds its own "
 "branches, sites, departments and the people who actually release RFQs, "
@@ -3243,9 +3904,6 @@ msgstr ""
 msgid "Search customers…"
 msgstr "Rechercher des clients…"
 
-msgid "Any status"
-msgstr "Tout statut"
-
 msgid "Filter"
 msgstr "Filtrer"
 
@@ -3254,9 +3912,6 @@ msgstr "Code"
 
 msgid "Vendor no."
 msgstr "N° de fournisseur"
-
-msgid "Quotations"
-msgstr "Devis"
 
 msgid "Terms"
 msgstr "Conditions"
@@ -3334,9 +3989,6 @@ msgstr "Prêt / en cours"
 
 msgid "Blocked on compliance"
 msgstr "Bloqué par la conformité"
-
-msgid "Revenue"
-msgstr "Chiffre d'affaires"
 
 msgid "Actual cost"
 msgstr "Coût réel"
@@ -3540,9 +4192,6 @@ msgstr "Aucun rôle"
 msgid "Deactivated"
 msgstr "Désactivé"
 
-msgid "Deactivate"
-msgstr "Désactiver"
-
 msgid "Restore"
 msgstr "Restaurer"
 
@@ -3723,9 +4372,6 @@ msgstr "Rechercher un article…"
 
 msgid "Unit"
 msgstr "Unité"
-
-msgid "Source"
-msgstr "Source"
 
 msgid "imported"
 msgstr "importé"
@@ -4236,9 +4882,6 @@ msgstr "Chez le client"
 msgid "Awaiting approval"
 msgstr "En attente d'approbation"
 
-msgid "Win rate"
-msgstr "Taux de réussite"
-
 msgid "Open pipeline value"
 msgstr "Valeur du pipeline ouvert"
 
@@ -4348,9 +4991,6 @@ msgstr "Pour la tâche (facultatif)"
 msgid "Needed by"
 msgstr "Requis pour le"
 
-msgid "Notes"
-msgstr "Notes"
-
 msgid "Anything the approver/buyer should know"
 msgstr "Toute information utile à l'approbateur/acheteur"
 
@@ -4458,9 +5098,6 @@ msgstr "Demandé par"
 msgid "Needed"
 msgstr "Requis pour"
 
-msgid "Est. value"
-msgstr "Valeur est."
-
 msgid "No requests yet."
 msgstr "Aucune demande pour le moment."
 
@@ -4548,9 +5185,6 @@ msgstr "← Fournisseurs"
 
 msgid "Edit details"
 msgstr "Modifier les détails"
-
-msgid "Contact person"
-msgstr "Personne à contacter"
 
 msgid "Categories, comma-separated"
 msgstr "Catégories, séparées par des virgules"
@@ -4711,9 +5345,6 @@ msgstr "Tâches de projet"
 msgid "Standalone"
 msgstr "Autonome"
 
-msgid "Mine"
-msgstr "Les miennes"
-
 msgid "Overdue"
 msgstr "En retard"
 
@@ -4726,14 +5357,8 @@ msgstr "bloquée"
 msgid "Origin"
 msgstr "Origine"
 
-msgid "Owner"
-msgstr "Responsable"
-
 msgid "Priority"
 msgstr "Priorité"
-
-msgid "Due"
-msgstr "Échéance"
 
 msgid "Progress"
 msgstr "Progression"
@@ -4986,9 +5611,6 @@ msgstr "Contrôle du projet"
 msgid "%(n)s item(s) blocking — <a href=\"%(proj_url)s\">review →</a>"
 msgstr "%(n)s élément(s) bloquant(s) — <a href=\"%(proj_url)s\">examiner →</a>"
 
-msgid "CRM"
-msgstr "CRM"
-
 msgid "Job Card"
 msgstr "Fiche de travail"
 
@@ -5015,9 +5637,6 @@ msgstr "Fiscalité / immatriculation"
 
 msgid "Banking details"
 msgstr "Coordonnées bancaires"
-
-msgid "Communication"
-msgstr "Communication"
 
 msgid "Documents & branding"
 msgstr "Documents et image de marque"

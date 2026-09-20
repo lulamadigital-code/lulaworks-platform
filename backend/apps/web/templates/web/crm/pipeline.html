@@ -1,13 +1,11 @@
 {% extends "web/base.html" %}
-{% block title %}Pipeline · CRM{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Pipeline · CRM" %}{% endblock %}
 {% block content %}
 
-<div class="pagehead"><div><h1>Pipeline</h1>
-  <p class="sub" style="margin:0;">Open deals by stage —
-    <span id="pl-count">{{ summary.open_count }}</span> open worth
-    <span id="pl-value">{{ summary.open_value|floatformat:0 }}</span> · weighted forecast
-    {{ summary.weighted_value|floatformat:0 }}.
-    {% if can_manage %}<span class="muted">Drag a card to move it between stages.</span>{% endif %}</p></div></div>
+<div class="pagehead"><div><h1>{% trans "Pipeline" %}</h1>
+  <p class="sub" style="margin:0;">{% blocktrans with cnt=summary.open_count val=summary.open_value|floatformat:0 wtd=summary.weighted_value|floatformat:0 %}Open deals by stage — <span id="pl-count">{{ cnt }}</span> open worth <span id="pl-value">{{ val }}</span> · weighted forecast {{ wtd }}.{% endblocktrans %}
+    {% if can_manage %}<span class="muted">{% trans "Drag a card to move it between stages." %}</span>{% endif %}</p></div></div>
 
 {% include "web/crm/_tabs.html" with active='pipeline' %}
 
@@ -45,10 +43,10 @@
 </div>
 
 {% if won %}
-<h2 style="margin-top:22px;">Recently won</h2>
+<h2 style="margin-top:22px;">{% trans "Recently won" %}</h2>
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Opportunity</th><th>Customer</th><th>Value</th><th>Closed</th></tr>
+    <tr><th>{% trans "Opportunity" %}</th><th>{% trans "Customer" %}</th><th>{% trans "Value" %}</th><th>{% trans "Closed" %}</th></tr>
     {% for o in won %}
     <tr>
       <td><a href="{% url 'web:crm_opportunity_detail' o.id %}"><strong>{{ o.title }}</strong></a></td>
@@ -132,10 +130,10 @@
           body: "stage=" + encodeURIComponent(stage),
         });
         const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "Could not move.");
+        if (!data.ok) throw new Error(data.error || "{% trans 'Could not move.' %}");
         const probEl = dragEl.querySelector(".pl-prob");
         if (probEl) probEl.textContent = data.probability + "%";
-        showToast("Moved to " + col.querySelector("strong").textContent, true);
+        showToast("{% trans 'Moved to' %} " + col.querySelector("strong").textContent, true);
       } catch (err) {                                // roll the card back
         fromCol.querySelector(".pl-drop").insertBefore(dragEl, prev);
         refreshColumn(col); refreshColumn(fromCol);

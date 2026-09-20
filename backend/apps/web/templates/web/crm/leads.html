@@ -1,16 +1,16 @@
 {% extends "web/base.html" %}
-{% block title %}Leads · CRM{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Leads · CRM" %}{% endblock %}
 {% block content %}
 
-<div class="pagehead"><div><h1>Leads</h1>
-  <p class="sub" style="margin:0;">Potential customers you haven't qualified yet. Convert
-    a real one and it becomes a customer with an opportunity in the pipeline.</p></div></div>
+<div class="pagehead"><div><h1>{% trans "Leads" %}</h1>
+  <p class="sub" style="margin:0;">{% trans "Potential customers you haven't qualified yet. Convert a real one and it becomes a customer with an opportunity in the pipeline." %}</p></div></div>
 
 {% include "web/crm/_tabs.html" with active='leads' %}
 
 <form method="get" class="filterbar">
   <select name="status" onchange="this.form.submit()">
-    <option value="">Any status</option>
+    <option value="">{% trans "Any status" %}</option>
     {% for value, label in statuses %}
     <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
@@ -19,7 +19,7 @@
 
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Company</th><th>Contact</th><th>Industry</th><th>Source</th><th>Est. value</th><th>Status</th></tr>
+    <tr><th>{% trans "Company" %}</th><th>{% trans "Contact" %}</th><th>{% trans "Industry" %}</th><th>{% trans "Source" %}</th><th>{% trans "Est. value" %}</th><th>{% trans "Status" %}</th></tr>
     {% for lead in leads %}
     <tr>
       <td><a href="{% url 'web:crm_lead_detail' lead.id %}"><strong>{{ lead.company_name }}</strong></a></td>
@@ -27,37 +27,37 @@
       <td class="muted">{{ lead.industry|default:"—" }}</td>
       <td class="muted">{{ lead.source|default:"—" }}</td>
       <td class="muted">{% if lead.estimated_value %}{{ lead.currency }} {{ lead.estimated_value|floatformat:0 }}{% else %}—{% endif %}</td>
-      <td>{% if lead.status == 'converted' %}<span class="chip ok">Converted</span>
+      <td>{% if lead.status == 'converted' %}<span class="chip ok">{% trans "Converted" %}</span>
         {% elif lead.status == 'lost' or lead.status == 'unqualified' %}<span class="chip bad">{{ lead.get_status_display }}</span>
         {% else %}<span class="chip">{{ lead.get_status_display }}</span>{% endif %}</td>
     </tr>
-    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">No leads yet.</td></tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">{% trans "No leads yet." %}</td></tr>
     {% endfor %}
   </table>
 </div>
 
 {% if can_manage %}
 <details class="add-collapse">
-  <summary class="btn">+ Capture a lead</summary>
+  <summary class="btn">{% trans "+ Capture a lead" %}</summary>
   <div class="card" style="margin-top:12px;">
-  <h2 style="margin-top:0;">Capture a lead</h2>
+  <h2 style="margin-top:0;">{% trans "Capture a lead" %}</h2>
   <form method="post" action="{% url 'web:crm_lead_create' %}">{% csrf_token %}
     <div class="two">
-      <div><label>Company / organisation *</label><input type="text" name="company_name" required placeholder="Prospect Mining"></div>
-      <div><label>Contact person</label><input type="text" name="contact_name" placeholder="Thabo Ncube"></div>
-      <div><label>Job title</label><input type="text" name="job_title"></div>
-      <div><label>Email</label><input type="email" name="email"></div>
-      <div><label>Telephone</label><input type="text" name="telephone"></div>
-      <div><label>Mobile</label><input type="text" name="mobile"></div>
-      <div><label>Industry</label><input type="text" name="industry" placeholder="Mining"></div>
-      <div><label>Customer type</label><select name="customer_type"><option value="">—</option>
+      <div><label>{% trans "Company / organisation *" %}</label><input type="text" name="company_name" required placeholder="Prospect Mining"></div>
+      <div><label>{% trans "Contact person" %}</label><input type="text" name="contact_name" placeholder="Thabo Ncube"></div>
+      <div><label>{% trans "Job title" %}</label><input type="text" name="job_title"></div>
+      <div><label>{% trans "Email" %}</label><input type="email" name="email"></div>
+      <div><label>{% trans "Telephone" %}</label><input type="text" name="telephone"></div>
+      <div><label>{% trans "Mobile" %}</label><input type="text" name="mobile"></div>
+      <div><label>{% trans "Industry" %}</label><input type="text" name="industry" placeholder="Mining"></div>
+      <div><label>{% trans "Customer type" %}</label><select name="customer_type"><option value="">—</option>
         {% for v, l in types %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
-      <div><label>City</label><input type="text" name="city"></div>
-      <div><label>Source</label><select name="source"><option value="">—</option>
+      <div><label>{% trans "City" %}</label><input type="text" name="city"></div>
+      <div><label>{% trans "Source" %}</label><select name="source"><option value="">—</option>
         {% for s in sources %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select></div>
-      <div><label>Estimated value</label><input type="text" name="estimated_value" placeholder="250000"></div>
+      <div><label>{% trans "Estimated value" %}</label><input type="text" name="estimated_value" placeholder="250000"></div>
     </div>
-    <div style="margin-top:12px;"><button class="btn primary" type="submit">Add lead</button></div>
+    <div style="margin-top:12px;"><button class="btn primary" type="submit">{% trans "Add lead" %}</button></div>
   </form>
   </div>
 </details>

@@ -1,14 +1,13 @@
 {% extends "web/base.html" %}
-{% block title %}CRM{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "CRM" %}{% endblock %}
 {% block content %}
 
 <div class="pagehead">
   <div>
-    <h1>Customer Relationship Management</h1>
-    <p class="sub" style="margin:0;">The selling layer over your customer master:
-      Lead → Opportunity → Quotation → Won → Customer. Company records live in
-      <a href="{% url 'web:procurement_clients' %}">Purchasing → Our Clients</a> and are
-      reused everywhere — CRM never keeps a second copy.</p>
+    <h1>{% trans "Customer Relationship Management" %}</h1>
+    {% url 'web:procurement_clients' as clients_url %}
+    <p class="sub" style="margin:0;">{% blocktrans %}The selling layer over your customer master: Lead → Opportunity → Quotation → Won → Customer. Company records live in <a href="{{ clients_url }}">Purchasing → Our Clients</a> and are reused everywhere — CRM never keeps a second copy.{% endblocktrans %}</p>
   </div>
 </div>
 
@@ -16,42 +15,42 @@
 
 <div class="crm-areas">
   <div class="card area">
-    <div class="area-h">🎯 Sales</div>
-    <p class="muted">Turn enquiries into won work.</p>
+    <div class="area-h">🎯 {% trans "Sales" %}</div>
+    <p class="muted">{% trans "Turn enquiries into won work." %}</p>
     <div class="area-links">
-      <a href="{% url 'web:crm_leads' %}">Leads</a>
-      <a href="{% url 'web:crm_pipeline' %}">Opportunities &amp; pipeline</a>
-      <a href="{% url 'web:quotations' %}">Quotations</a>
-      <a href="{% url 'web:crm_activities' %}">Follow-ups &amp; activities</a>
-      <span class="soon">Sales forecast</span>
+      <a href="{% url 'web:crm_leads' %}">{% trans "Leads" %}</a>
+      <a href="{% url 'web:crm_pipeline' %}">{% trans "Opportunities & pipeline" %}</a>
+      <a href="{% url 'web:quotations' %}">{% trans "Quotations" %}</a>
+      <a href="{% url 'web:crm_activities' %}">{% trans "Follow-ups & activities" %}</a>
+      <span class="soon">{% trans "Sales forecast" %}</span>
     </div>
   </div>
   <div class="card area">
-    <div class="area-h">🤝 Relationships</div>
-    <p class="muted">The history behind every customer.</p>
+    <div class="area-h">🤝 {% trans "Relationships" %}</div>
+    <p class="muted">{% trans "The history behind every customer." %}</p>
     <div class="area-links">
-      <a href="{% url 'web:crm_activities' %}">Calls &amp; meetings</a>
-      <a href="{% url 'web:procurement_clients' %}">Client records</a>
-      <span class="soon">Communication history</span>
+      <a href="{% url 'web:crm_activities' %}">{% trans "Calls & meetings" %}</a>
+      <a href="{% url 'web:procurement_clients' %}">{% trans "Client records" %}</a>
+      <span class="soon">{% trans "Communication history" %}</span>
     </div>
   </div>
   <div class="card area">
-    <div class="area-h">📣 Marketing</div>
-    <p class="muted">Reach the right customers.</p>
+    <div class="area-h">📣 {% trans "Marketing" %}</div>
+    <p class="muted">{% trans "Reach the right customers." %}</p>
     <div class="area-links">
-      <a href="{% url 'web:marketing_campaigns' %}">Campaigns</a>
-      <a href="{% url 'web:marketing_segments' %}">Segments</a>
-      <a href="{% url 'web:marketing_lead_sources' %}">Lead sources</a>
-      <a href="{% url 'web:marketing_analytics' %}">Analytics</a>
-      <span class="soon">WhatsApp</span>
+      <a href="{% url 'web:marketing_campaigns' %}">{% trans "Campaigns" %}</a>
+      <a href="{% url 'web:marketing_segments' %}">{% trans "Segments" %}</a>
+      <a href="{% url 'web:marketing_lead_sources' %}">{% trans "Lead sources" %}</a>
+      <a href="{% url 'web:marketing_analytics' %}">{% trans "Analytics" %}</a>
+      <span class="soon">{% trans "WhatsApp" %}</span>
     </div>
   </div>
   <div class="card area">
-    <div class="area-h">📊 Analytics</div>
-    <p class="muted">How sales are really performing.</p>
+    <div class="area-h">📊 {% trans "Analytics" %}</div>
+    <p class="muted">{% trans "How sales are really performing." %}</p>
     <div class="area-links">
-      <a href="{% url 'web:crm_reports' %}">Pipeline &amp; conversion</a>
-      <span class="soon">Sales by salesperson / customer / industry</span>
+      <a href="{% url 'web:crm_reports' %}">{% trans "Pipeline & conversion" %}</a>
+      <span class="soon">{% trans "Sales by salesperson / customer / industry" %}</span>
     </div>
   </div>
 </div>
@@ -65,18 +64,19 @@
 
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">◎</div>
-    <div><div class="cap">Open opportunities</div><strong>{{ pipeline.open_count }}</strong></div></div>
+    <div><div class="cap">{% trans "Open opportunities" %}</div><strong>{{ pipeline.open_count }}</strong></div></div>
   <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">R</div>
-    <div><div class="cap">Pipeline value</div><strong>{{ pipeline.open_value|floatformat:0 }}</strong></div></div>
+    <div><div class="cap">{% trans "Pipeline value" %}</div><strong>{{ pipeline.open_value|floatformat:0 }}</strong></div></div>
   <div class="tile"><div class="ic" style="background:var(--purple-t);color:#7c3fb8;">≈</div>
-    <div><div class="cap">Weighted forecast</div><strong>{{ pipeline.weighted_value|floatformat:0 }}</strong></div></div>
+    <div><div class="cap">{% trans "Weighted forecast" %}</div><strong>{{ pipeline.weighted_value|floatformat:0 }}</strong></div></div>
   <div class="tile"><div class="ic" style="background:var(--orange-t);color:#b9711a;">%</div>
-    <div><div class="cap">Win rate</div><strong>{% if reports.conversion_rate is not None %}{{ reports.conversion_rate }}%{% else %}—{% endif %}</strong></div></div>
+    <div><div class="cap">{% trans "Win rate" %}</div><strong>{% if reports.conversion_rate is not None %}{{ reports.conversion_rate }}%{% else %}—{% endif %}</strong></div></div>
 </div>
 
 <div class="people-head">
-  <h2 style="margin:0;">People we work with{% if people_total %} <span class="muted" style="font-weight:400;font-size:14px;">· {{ people_total }}</span>{% endif %}</h2>
-  <span class="muted" style="font-size:12.5px;">The real humans at your clients — kept on each <a href="{% url 'web:procurement_clients' %}">client record</a>.</span>
+  <h2 style="margin:0;">{% trans "People we work with" %}{% if people_total %} <span class="muted" style="font-weight:400;font-size:14px;">· {{ people_total }}</span>{% endif %}</h2>
+  {% url 'web:procurement_clients' as clients_url %}
+  <span class="muted" style="font-size:12.5px;">{% blocktrans %}The real humans at your clients — kept on each <a href="{{ clients_url }}">client record</a>.{% endblocktrans %}</span>
 </div>
 {% if people %}
 <div class="people-grid">
@@ -84,22 +84,22 @@
   <a class="person-card" href="{% url 'web:customer_contact_detail' p.id %}">
     <span class="av init" style="width:42px;height:42px;font-size:16px;">{{ p.full_name|slice:":1"|upper }}</span>
     <div style="min-width:0;flex:1;">
-      <div class="pc-name">{{ p.full_name }}{% if p.is_primary %} <span class="chip info" style="font-size:9.5px;padding:1px 6px;">Primary</span>{% endif %}</div>
-      <div class="muted pc-role">{{ p.job_title|default:"Contact" }}{% if p.customer %} · {{ p.customer.display_name }}{% endif %}</div>
+      <div class="pc-name">{{ p.full_name }}{% if p.is_primary %} <span class="chip info" style="font-size:9.5px;padding:1px 6px;">{% trans "Primary" %}</span>{% endif %}</div>
+      <div class="muted pc-role">{% if p.job_title %}{{ p.job_title }}{% else %}{% trans "Contact" %}{% endif %}{% if p.customer %} · {{ p.customer.display_name }}{% endif %}</div>
       <div class="pc-links">
-        {% if p.email %}<span title="{{ p.email }}">✉ Email</span>{% endif %}
-        {% if p.mobile or p.telephone %}<span title="{{ p.mobile|default:p.telephone }}">✆ Call</span>{% endif %}
-        {% if p.whatsapp %}<span title="{{ p.whatsapp }}">WhatsApp</span>{% endif %}
+        {% if p.email %}<span title="{{ p.email }}">{% trans "✉ Email" %}</span>{% endif %}
+        {% if p.mobile or p.telephone %}<span title="{{ p.mobile|default:p.telephone }}">{% trans "✆ Call" %}</span>{% endif %}
+        {% if p.whatsapp %}<span title="{{ p.whatsapp }}">{% trans "WhatsApp" %}</span>{% endif %}
       </div>
     </div>
   </a>
   {% endfor %}
 </div>
-{% if people_total > 12 %}<p style="margin:0 0 20px;"><a class="btn ghost" href="{% url 'web:procurement_clients' %}">See all clients &amp; their people →</a></p>{% endif %}
+{% if people_total > 12 %}<p style="margin:0 0 20px;"><a class="btn ghost" href="{% url 'web:procurement_clients' %}">{% trans "See all clients & their people →" %}</a></p>{% endif %}
 {% else %}
 <div class="card" style="margin-bottom:20px;">
-  <p class="muted" style="margin:0;">No contacts yet. Add the people you deal with on each
-    <a href="{% url 'web:procurement_clients' %}">client record</a> — they'll show up here.</p>
+  {% url 'web:procurement_clients' as clients_url %}
+  <p class="muted" style="margin:0;">{% blocktrans %}No contacts yet. Add the people you deal with on each <a href="{{ clients_url }}">client record</a> — they'll show up here.{% endblocktrans %}</p>
 </div>
 {% endif %}
 <style>
@@ -115,7 +115,7 @@
 
 <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-top:18px;">
   <div>
-    <h2>Pipeline by stage</h2>
+    <h2>{% trans "Pipeline by stage" %}</h2>
     <div class="card">
       {% for s in pipeline.stages %}
       <div class="barrow">
@@ -123,13 +123,13 @@
         <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:{% widthratio s.count pipeline.open_count 100 %}%;"></div></div>
         <div class="right muted" style="min-width:120px;text-align:right;">{{ s.count }} · {{ s.value|floatformat:0 }}</div>
       </div>
-      {% empty %}<p class="muted" style="padding:14px;">No open opportunities yet.</p>{% endfor %}
+      {% empty %}<p class="muted" style="padding:14px;">{% trans "No open opportunities yet." %}</p>{% endfor %}
     </div>
 
-    <h2>New leads</h2>
+    <h2>{% trans "New leads" %}</h2>
     <div class="card" style="padding:0;overflow-x:auto;">
       <table>
-        <tr><th>Company</th><th>Contact</th><th>Source</th><th>Status</th><th>Value</th></tr>
+        <tr><th>{% trans "Company" %}</th><th>{% trans "Contact" %}</th><th>{% trans "Source" %}</th><th>{% trans "Status" %}</th><th>{% trans "Value" %}</th></tr>
         {% for lead in recent_leads %}
         <tr>
           <td><a href="{% url 'web:crm_lead_detail' lead.id %}"><strong>{{ lead.company_name }}</strong></a></td>
@@ -138,14 +138,14 @@
           <td><span class="chip">{{ lead.get_status_display }}</span></td>
           <td class="muted">{% if lead.estimated_value %}{{ lead.currency }} {{ lead.estimated_value|floatformat:0 }}{% else %}—{% endif %}</td>
         </tr>
-        {% empty %}<tr><td colspan="5" class="muted" style="padding:18px;">No open leads. <a href="{% url 'web:crm_leads' %}">Capture one →</a></td></tr>
+        {% empty %}<tr><td colspan="5" class="muted" style="padding:18px;">{% trans "No open leads." %} <a href="{% url 'web:crm_leads' %}">{% trans "Capture one →" %}</a></td></tr>
         {% endfor %}
       </table>
     </div>
   </div>
 
   <div>
-    <h2>My open activities</h2>
+    <h2>{% trans "My open activities" %}</h2>
     <div class="card">
       {% for a in my_activities %}
       <div style="display:flex;justify-content:space-between;gap:8px;padding:9px 2px;border-bottom:1px solid var(--line);">
@@ -157,12 +157,12 @@
           </div>
         </div>
         <div class="right muted" style="font-size:12.5px;white-space:nowrap;">
-          {% if a.due_at %}{% if a.is_overdue %}<span class="chip bad">Due {{ a.due_at|date:"d M" }}</span>{% else %}{{ a.due_at|date:"d M" }}{% endif %}{% endif %}
+          {% if a.due_at %}{% if a.is_overdue %}<span class="chip bad">{% blocktrans with d=a.due_at|date:"d M" %}Due {{ d }}{% endblocktrans %}</span>{% else %}{{ a.due_at|date:"d M" }}{% endif %}{% endif %}
         </div>
       </div>
-      {% empty %}<p class="muted" style="padding:6px 2px;">Nothing scheduled. You're clear.</p>{% endfor %}
+      {% empty %}<p class="muted" style="padding:6px 2px;">{% trans "Nothing scheduled. You're clear." %}</p>{% endfor %}
     </div>
-    <p style="margin-top:10px;"><a class="btn ghost" href="{% url 'web:crm_activities' %}">All activities →</a></p>
+    <p style="margin-top:10px;"><a class="btn ghost" href="{% url 'web:crm_activities' %}">{% trans "All activities →" %}</a></p>
   </div>
 </div>
 

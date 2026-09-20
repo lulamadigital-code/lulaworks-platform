@@ -1,40 +1,41 @@
 {% extends "web/base.html" %}
-{% block title %}{{ lead.company_name }} · Lead{% endblock %}
+{% load i18n %}
+{% block title %}{{ lead.company_name }} · {% trans "Lead" %}{% endblock %}
 {% block content %}
 
 <div class="pagehead">
   <div>
     <h1>{{ lead.company_name }}</h1>
-    <p class="sub" style="margin:0;">Lead · <span class="chip">{{ lead.get_status_display }}</span>
-      {% if lead.source %}· from {{ lead.source }}{% endif %}</p>
+    <p class="sub" style="margin:0;">{% trans "Lead" %} · <span class="chip">{{ lead.get_status_display }}</span>
+      {% if lead.source %}· {% blocktrans with s=lead.source %}from {{ s }}{% endblocktrans %}{% endif %}</p>
   </div>
-  <div><a class="btn ghost" href="{% url 'web:crm_leads' %}">← Leads</a></div>
+  <div><a class="btn ghost" href="{% url 'web:crm_leads' %}">{% trans "← Leads" %}</a></div>
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 2fr;gap:18px;">
   <div class="card">
-    <h3 style="margin-top:0;">Details</h3>
-    <p><span class="muted">Contact:</span> {{ lead.display_contact }}</p>
-    {% if lead.job_title %}<p><span class="muted">Title:</span> {{ lead.job_title }}</p>{% endif %}
-    {% if lead.email %}<p><span class="muted">Email:</span> {{ lead.email }}</p>{% endif %}
-    {% if lead.mobile %}<p><span class="muted">Mobile:</span> {{ lead.mobile }}</p>{% endif %}
-    {% if lead.telephone %}<p><span class="muted">Tel:</span> {{ lead.telephone }}</p>{% endif %}
-    {% if lead.industry %}<p><span class="muted">Industry:</span> {{ lead.industry }}</p>{% endif %}
-    {% if lead.estimated_value %}<p><span class="muted">Est. value:</span> {{ lead.currency }} {{ lead.estimated_value|floatformat:0 }}</p>{% endif %}
+    <h3 style="margin-top:0;">{% trans "Details" %}</h3>
+    <p><span class="muted">{% trans "Contact:" %}</span> {{ lead.display_contact }}</p>
+    {% if lead.job_title %}<p><span class="muted">{% trans "Title:" %}</span> {{ lead.job_title }}</p>{% endif %}
+    {% if lead.email %}<p><span class="muted">{% trans "Email:" %}</span> {{ lead.email }}</p>{% endif %}
+    {% if lead.mobile %}<p><span class="muted">{% trans "Mobile:" %}</span> {{ lead.mobile }}</p>{% endif %}
+    {% if lead.telephone %}<p><span class="muted">{% trans "Tel:" %}</span> {{ lead.telephone }}</p>{% endif %}
+    {% if lead.industry %}<p><span class="muted">{% trans "Industry:" %}</span> {{ lead.industry }}</p>{% endif %}
+    {% if lead.estimated_value %}<p><span class="muted">{% trans "Est. value:" %}</span> {{ lead.currency }} {{ lead.estimated_value|floatformat:0 }}</p>{% endif %}
 
     {% if lead.converted_customer %}
-      <p style="margin-top:14px;"><span class="chip ok">Converted</span>
+      <p style="margin-top:14px;"><span class="chip ok">{% trans "Converted" %}</span>
         → <a href="{% url 'web:customer_detail' lead.converted_customer.id %}">{{ lead.converted_customer.display_name }}</a></p>
     {% elif can_manage and lead.is_open %}
     <hr style="border:none;border-top:1px solid var(--line);margin:14px 0;">
     <form method="post" action="{% url 'web:crm_lead_convert' lead.id %}">{% csrf_token %}
-      <label style="font-weight:400;"><input type="checkbox" name="create_opportunity" checked> Also open an opportunity</label>
-      <input type="text" name="opportunity_title" placeholder="Opportunity title (optional)" style="margin-top:8px;">
-      <button class="btn primary" type="submit" style="margin-top:10px;width:100%;">Convert to customer</button>
+      <label style="font-weight:400;"><input type="checkbox" name="create_opportunity" checked> {% trans "Also open an opportunity" %}</label>
+      <input type="text" name="opportunity_title" placeholder="{% trans 'Opportunity title (optional)' %}" style="margin-top:8px;">
+      <button class="btn primary" type="submit" style="margin-top:10px;width:100%;">{% trans "Convert to customer" %}</button>
     </form>
     <form method="post" action="{% url 'web:crm_lead_lost' lead.id %}" style="margin-top:8px;">{% csrf_token %}
-      <input type="text" name="reason" placeholder="Reason (optional)">
-      <button class="btn ghost" type="submit" style="margin-top:8px;width:100%;">Mark lost</button>
+      <input type="text" name="reason" placeholder="{% trans 'Reason (optional)' %}">
+      <button class="btn ghost" type="submit" style="margin-top:8px;width:100%;">{% trans "Mark lost" %}</button>
     </form>
     {% endif %}
   </div>
