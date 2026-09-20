@@ -1,59 +1,67 @@
 {% extends "marketing/base.html" %}
+{% load i18n %}
 {% block content %}
 <section class="section tight">
   <div class="wrap">
     <div class="grid g2" style="align-items:start;">
       <div>
-        <span class="eyebrow">Start free trial</span>
-        <h1>Start your 30-day free trial</h1>
-        <p class="lead">Everything you need to run your first jobs on Lulaworks — no credit card required.</p>
+        <span class="eyebrow">{% trans "Start free trial" %}</span>
+        <h1>{% trans "Start your 30-day free trial" %}</h1>
+        <p class="lead">{% trans "Everything you need to run your first jobs on Lulaworks — no credit card required." %}</p>
         <ul style="list-style:none;padding:0;">
-          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> 30 days free</li>
-          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> No credit card required</li>
-          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> Professional features included</li>
-          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> 2 users</li>
-          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> Unlimited employees</li>
-          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> 100 AI credits</li>
-          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> 2 GB storage</li>
+          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> {% trans "30 days free" %}</li>
+          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> {% trans "No credit card required" %}</li>
+          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> {% trans "Professional features included" %}</li>
+          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> {% trans "2 users" %}</li>
+          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> {% trans "Unlimited employees" %}</li>
+          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> {% trans "100 AI credits" %}</li>
+          <li style="padding:8px 0;font-weight:600;"><span class="tick">✔</span> {% trans "2 GB storage" %}</li>
         </ul>
-        <p class="muted">Already have an account? <a href="{% url 'web:login' %}">Log in</a>.</p>
+        {% url 'web:login' as login_url %}
+        <p class="muted">{% blocktrans %}Already have an account? <a href="{{ login_url }}">Log in</a>.{% endblocktrans %}</p>
       </div>
       <div class="card">
-        <h3>Create your company</h3>
+        <h3>{% trans "Create your company" %}</h3>
         <form method="post">
           {% csrf_token %}
-          <div class="field"><label>Company name *</label><input name="company" required value="{{ form.company|default:'' }}"></div>
-          <div class="field"><label>Full name *</label><input name="full_name" required value="{{ form.full_name|default:'' }}"></div>
-          <div class="field"><label>Work email *</label><input type="email" name="email" required value="{{ form.email|default:'' }}"></div>
-          <div class="field"><label>Password *</label>
+          <div class="field"><label>{% trans "Company name" %} *</label><input name="company" required value="{{ form.company|default:'' }}"></div>
+          <div class="field"><label>{% trans "Full name" %} *</label><input name="full_name" required value="{{ form.full_name|default:'' }}"></div>
+          <div class="field"><label>{% trans "Work email" %} *</label><input type="email" name="email" required value="{{ form.email|default:'' }}"></div>
+          <div class="field"><label>{% trans "Password" %} *</label>
             <div style="position:relative;">
               <input type="password" name="password" id="tp-pw" required minlength="8" style="padding-right:60px;">
-              <button type="button" aria-label="Show password"
-                onclick="var i=document.getElementById('tp-pw');var s=i.type==='password';i.type=s?'text':'password';this.textContent=s?'Hide':'Show';"
-                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:#17a2b8;font-size:12.5px;font-weight:600;cursor:pointer;padding:4px;">Show</button>
+              <button type="button" aria-label="{% trans 'Show password' %}"
+                data-show="{% trans 'Show' %}" data-hide="{% trans 'Hide' %}"
+                onclick="var i=document.getElementById('tp-pw');var s=i.type==='password';i.type=s?'text':'password';this.textContent=s?this.dataset.hide:this.dataset.show;"
+                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:#17a2b8;font-size:12.5px;font-weight:600;cursor:pointer;padding:4px;">{% trans "Show" %}</button>
             </div>
           </div>
-          <div class="field"><label>Confirm password *</label>
+          <div class="field"><label>{% trans "Confirm password" %} *</label>
             <div style="position:relative;">
               <input type="password" name="confirm_password" id="tp-pw2" required minlength="8" style="padding-right:60px;">
-              <button type="button" aria-label="Show password"
-                onclick="var i=document.getElementById('tp-pw2');var s=i.type==='password';i.type=s?'text':'password';this.textContent=s?'Hide':'Show';"
-                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:#17a2b8;font-size:12.5px;font-weight:600;cursor:pointer;padding:4px;">Show</button>
+              <button type="button" aria-label="{% trans 'Show password' %}"
+                data-show="{% trans 'Show' %}" data-hide="{% trans 'Hide' %}"
+                onclick="var i=document.getElementById('tp-pw2');var s=i.type==='password';i.type=s?'text':'password';this.textContent=s?this.dataset.hide:this.dataset.show;"
+                style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:#17a2b8;font-size:12.5px;font-weight:600;cursor:pointer;padding:4px;">{% trans "Show" %}</button>
             </div>
           </div>
           <div class="two">
-            <div class="field"><label>Phone</label><input name="phone" value="{{ form.phone|default:'' }}"></div>
-            <div class="field"><label>Industry</label>
+            <div class="field"><label>{% trans "Phone" %}</label><input name="phone" value="{{ form.phone|default:'' }}"></div>
+            <div class="field"><label>{% trans "Industry" %}</label>
               <select name="industry">
-                <option value="">Select…</option>
-                <option>General contracting</option><option>Mechanical / engineering</option>
-                <option>Mining contractor</option><option>Maintenance services</option>
-                <option>Industrial services</option><option>Construction</option><option>Other</option>
+                <option value="">{% trans "Select…" %}</option>
+                <option value="General contracting">{% trans "General contracting" %}</option>
+                <option value="Mechanical / engineering">{% trans "Mechanical / engineering" %}</option>
+                <option value="Mining contractor">{% trans "Mining contractor" %}</option>
+                <option value="Maintenance services">{% trans "Maintenance services" %}</option>
+                <option value="Industrial services">{% trans "Industrial services" %}</option>
+                <option value="Construction">{% trans "Construction" %}</option>
+                <option value="Other">{% trans "Other" %}</option>
               </select></div>
           </div>
-          <button class="btn" style="width:100%;" type="submit">Create Company &amp; Start Trial</button>
-          <p class="muted" style="font-size:13px;margin:12px 0 0;">By creating an account you agree to our
-            <a href="{% url 'marketing:terms' %}">Terms</a> and <a href="{% url 'marketing:privacy' %}">Privacy Policy</a>.</p>
+          <button class="btn" style="width:100%;" type="submit">{% trans "Create Company & Start Trial" %}</button>
+          {% url 'marketing:terms' as terms_url %}{% url 'marketing:privacy' as privacy_url %}
+          <p class="muted" style="font-size:13px;margin:12px 0 0;">{% blocktrans %}By creating an account you agree to our <a href="{{ terms_url }}">Terms</a> and <a href="{{ privacy_url }}">Privacy Policy</a>.{% endblocktrans %}</p>
         </form>
       </div>
     </div>
