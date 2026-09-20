@@ -1,50 +1,51 @@
 {% extends "web/base.html" %}
-{% block title %}WhatsApp connection{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "WhatsApp connection" %}{% endblock %}
 {% block content %}
 <div class="pagehead">
-  <div><h1>WhatsApp Business</h1>
-    <p class="sub" style="margin:0;">Connect your own WhatsApp Business number — campaigns send from you, not Lulaworks.</p></div>
-  <a class="btn ghost" href="{% url 'web:marketing' %}">← Marketing</a>
+  <div><h1>{% trans "WhatsApp Business" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "Connect your own WhatsApp Business number — campaigns send from you, not Lulaworks." %}</p></div>
+  <a class="btn ghost" href="{% url 'web:marketing' %}">{% trans "← Marketing" %}</a>
 </div>
 
 <div class="card" style="max-width:680px;">
   <div class="sec-head" style="margin-bottom:12px;">
-    <strong>Status</strong>
-    {% if conn.is_connected %}<span class="chip ok">Connected</span>
-    {% else %}<span class="chip warn">Not connected</span>{% endif %}
+    <strong>{% trans "Status" %}</strong>
+    {% if conn.is_connected %}<span class="chip ok">{% trans "Connected" %}</span>
+    {% else %}<span class="chip warn">{% trans "Not connected" %}</span>{% endif %}
   </div>
 
   {% if embedded_configured %}
   <div style="margin-bottom:16px;">
     <button type="button" class="btn" onclick="launchWhatsAppSignup()" style="background:#1877f2;box-shadow:none;">
-      {% if conn.is_connected %}Reconnect with Facebook{% else %}Connect with Facebook{% endif %}
+      {% if conn.is_connected %}{% trans "Reconnect with Facebook" %}{% else %}{% trans "Connect with Facebook" %}{% endif %}
     </button>
-    <p class="muted" style="font-size:12px;margin:8px 0 0;">The quickest way — log in to your Meta account and pick your WhatsApp number (about two minutes). We never see your Meta password.</p>
+    <p class="muted" style="font-size:12px;margin:8px 0 0;">{% trans "The quickest way — log in to your Meta account and pick your WhatsApp number (about two minutes). We never see your Meta password." %}</p>
     <div id="wa-signup-msg" class="muted" style="font-size:12.5px;margin-top:8px;"></div>
   </div>
   {% endif %}
 
   <details {% if conn.is_connected or not embedded_configured %}open{% endif %}>
-    <summary class="muted" style="cursor:pointer;font-size:13px;margin:6px 0 12px;">Enter connection details manually</summary>
+    <summary class="muted" style="cursor:pointer;font-size:13px;margin:6px 0 12px;">{% trans "Enter connection details manually" %}</summary>
   <form method="post" action="{% url 'web:marketing_whatsapp' %}">
     {% csrf_token %}
-    <label>Display number</label>
+    <label>{% trans "Display number" %}</label>
     <input type="text" name="display_number" value="{{ conn.display_number }}" placeholder="+27 61 234 5678">
     <div class="two" style="margin-top:4px;">
-      <div><label>Phone number ID</label>
-        <input type="text" name="phone_number_id" value="{{ conn.phone_number_id }}" placeholder="From Meta → WhatsApp → API Setup"></div>
-      <div><label>WhatsApp Business Account ID</label>
-        <input type="text" name="waba_id" value="{{ conn.waba_id }}" placeholder="WABA id (optional)"></div>
+      <div><label>{% trans "Phone number ID" %}</label>
+        <input type="text" name="phone_number_id" value="{{ conn.phone_number_id }}" placeholder="{% trans 'From Meta → WhatsApp → API Setup' %}"></div>
+      <div><label>{% trans "WhatsApp Business Account ID" %}</label>
+        <input type="text" name="waba_id" value="{{ conn.waba_id }}" placeholder="{% trans 'WABA id (optional)' %}"></div>
     </div>
-    <label>Access token</label>
-    <input type="password" name="access_token" value="{% if has_token %}********{% endif %}" placeholder="Permanent access token" autocomplete="off">
-    <span class="muted" style="font-size:11.5px;">Stored securely and never shown again. Leave as •••• to keep the current one.</span>
+    <label>{% trans "Access token" %}</label>
+    <input type="password" name="access_token" value="{% if has_token %}********{% endif %}" placeholder="{% trans 'Permanent access token' %}" autocomplete="off">
+    <span class="muted" style="font-size:11.5px;">{% trans "Stored securely and never shown again. Leave as •••• to keep the current one." %}</span>
 
     <div class="secbtns" style="margin-top:20px;">
-      <button class="btn" type="submit">Save connection</button>
+      <button class="btn" type="submit">{% trans "Save connection" %}</button>
       {% if conn.is_connected %}
       <button class="btn ghost" name="action" value="disconnect" type="submit" style="color:var(--red);"
-              data-confirm="Disconnect WhatsApp? Campaigns won't be able to send until you reconnect.">Disconnect</button>
+              data-confirm="{% trans "Disconnect WhatsApp? Campaigns won't be able to send until you reconnect." %}">{% trans "Disconnect" %}</button>
       {% endif %}
     </div>
   </form>
@@ -54,6 +55,13 @@
 {% if embedded_configured %}
 <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
 <script>
+  var WA_MSG = {
+    loading: "{% trans 'Still loading Facebook… try again in a second.' %}",
+    cancelled: "{% trans 'Connection cancelled.' %}",
+    finishing: "{% trans 'Finishing connection…' %}",
+    failManual: "{% trans 'Could not connect — please try manual entry.' %}",
+    net: "{% trans 'Network error — please try again.' %}"
+  };
   window.fbAsyncInit = function () {
     FB.init({ appId: '{{ meta_app_id }}', autoLogAppEvents: true, xfbml: true, version: '{{ api_version }}' });
   };
@@ -70,32 +78,32 @@
   function _cookie(n){var m=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)');return m?m.pop():'';}
   function launchWhatsAppSignup() {
     var msg = document.getElementById('wa-signup-msg');
-    if (typeof FB === 'undefined') { if(msg) msg.textContent='Still loading Facebook… try again in a second.'; return; }
+    if (typeof FB === 'undefined') { if(msg) msg.textContent=WA_MSG.loading; return; }
     FB.login(function (resp) {
       var code = resp && resp.authResponse && resp.authResponse.code;
-      if (!code) { if(msg) msg.textContent = 'Connection cancelled.'; return; }
-      if(msg) msg.textContent = 'Finishing connection…';
+      if (!code) { if(msg) msg.textContent = WA_MSG.cancelled; return; }
+      if(msg) msg.textContent = WA_MSG.finishing;
       fetch('{% url "web:marketing_whatsapp_finish" %}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': _cookie('csrftoken') },
         body: JSON.stringify({ code: code, phone_number_id: WA_ES.phone_number_id, waba_id: WA_ES.waba_id })
       }).then(function (r) { return r.json(); }).then(function (d) {
         if (d.ok) { location.reload(); }
-        else if (msg) { msg.textContent = d.error || 'Could not connect — please try manual entry.'; }
-      }).catch(function () { if(msg) msg.textContent = 'Network error — please try again.'; });
+        else if (msg) { msg.textContent = d.error || WA_MSG.failManual; }
+      }).catch(function () { if(msg) msg.textContent = WA_MSG.net; });
     }, { config_id: '{{ wa_config_id }}', response_type: 'code', override_default_response_type: true, extras: { setup: {} } });
   }
 </script>
 {% endif %}
 
-<h2>How to connect</h2>
+<h2>{% trans "How to connect" %}</h2>
 <div class="card" style="max-width:680px;">
   <ol class="muted" style="margin:0;padding-left:18px;font-size:13.5px;line-height:1.9;">
-    <li>In <strong>Meta Business</strong>, create/verify your business and add <strong>WhatsApp</strong>.</li>
-    <li>Add a <strong>dedicated phone number</strong> for WhatsApp Business (not one already on the WhatsApp app).</li>
-    <li>Copy the <strong>Phone number ID</strong> and a <strong>permanent access token</strong> (Meta → API Setup) into the form above.</li>
-    <li>Create and get <strong>message templates approved</strong> by Meta — a campaign references an approved template by name.</li>
+    <li>{% blocktrans %}In <strong>Meta Business</strong>, create/verify your business and add <strong>WhatsApp</strong>.{% endblocktrans %}</li>
+    <li>{% blocktrans %}Add a <strong>dedicated phone number</strong> for WhatsApp Business (not one already on the WhatsApp app).{% endblocktrans %}</li>
+    <li>{% blocktrans %}Copy the <strong>Phone number ID</strong> and a <strong>permanent access token</strong> (Meta → API Setup) into the form above.{% endblocktrans %}</li>
+    <li>{% blocktrans %}Create and get <strong>message templates approved</strong> by Meta — a campaign references an approved template by name.{% endblocktrans %}</li>
   </ol>
-  <p class="muted" style="font-size:12px;margin:12px 0 0;">Uses the Meta Cloud API ({{ api_version }}). Marketing messages to a new contact must use an approved template; free text only works inside a 24-hour reply window.</p>
+  <p class="muted" style="font-size:12px;margin:12px 0 0;">{% blocktrans with v=api_version %}Uses the Meta Cloud API ({{ v }}). Marketing messages to a new contact must use an approved template; free text only works inside a 24-hour reply window.{% endblocktrans %}</p>
 </div>
 {% endblock %}

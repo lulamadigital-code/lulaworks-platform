@@ -1,4 +1,5 @@
 {% extends "web/base.html" %}
+{% load i18n %}
 {% block title %}{{ campaign.name }}{% endblock %}
 {% block content %}
 <div class="pagehead">
@@ -8,116 +9,116 @@
     </h1>
     <p class="sub" style="margin:0;">{{ campaign.get_channel_display }}{% if campaign.objective %} · {{ campaign.objective }}{% endif %}</p>
   </div>
-  <a class="btn ghost" href="{% url 'web:marketing_campaigns' %}">← Campaigns</a>
+  <a class="btn ghost" href="{% url 'web:marketing_campaigns' %}">{% trans "← Campaigns" %}</a>
 </div>
 
 <div class="grid2">
   <div>
     <div class="card">
-      <div class="teamrow"><span class="muted" style="width:120px;">Audience</span>
-        <span style="flex:1;">{% if campaign.segment %}<a href="{% url 'web:marketing_segments' %}">{{ campaign.segment.name }}</a>{% if audience_count is not None %} · {{ audience_count }} in segment now{% endif %}{% else %}<span class="muted">No segment set</span>{% endif %}</span></div>
-      <div class="teamrow"><span class="muted" style="width:120px;">Sender</span>
+      <div class="teamrow"><span class="muted" style="width:120px;">{% trans "Audience" %}</span>
+        <span style="flex:1;">{% if campaign.segment %}<a href="{% url 'web:marketing_segments' %}">{{ campaign.segment.name }}</a>{% if audience_count is not None %} · {% blocktrans with n=audience_count %}{{ n }} in segment now{% endblocktrans %}{% endif %}{% else %}<span class="muted">{% trans "No segment set" %}</span>{% endif %}</span></div>
+      <div class="teamrow"><span class="muted" style="width:120px;">{% trans "Sender" %}</span>
         <span style="flex:1;">{% if campaign.sender %}{{ campaign.sender.get_full_name|default:campaign.sender.email }}{% else %}—{% endif %}</span></div>
-      <div class="teamrow"><span class="muted" style="width:120px;">Scheduled</span>
-        <span style="flex:1;">{% if campaign.scheduled_at %}{{ campaign.scheduled_at|date:"d M Y H:i" }}{% else %}<span class="muted">Not scheduled</span>{% endif %}</span></div>
-      {% if campaign.subject %}<div class="teamrow"><span class="muted" style="width:120px;">Subject</span><span style="flex:1;">{{ campaign.subject }}</span></div>{% endif %}
+      <div class="teamrow"><span class="muted" style="width:120px;">{% trans "Scheduled" %}</span>
+        <span style="flex:1;">{% if campaign.scheduled_at %}{{ campaign.scheduled_at|date:"d M Y H:i" }}{% else %}<span class="muted">{% trans "Not scheduled" %}</span>{% endif %}</span></div>
+      {% if campaign.subject %}<div class="teamrow"><span class="muted" style="width:120px;">{% trans "Subject" %}</span><span style="flex:1;">{{ campaign.subject }}</span></div>{% endif %}
     </div>
 
     {% if campaign.content %}
-    <h2>Message</h2>
+    <h2>{% trans "Message" %}</h2>
     <div class="card"><div style="white-space:pre-wrap;">{{ campaign.content }}</div></div>
     {% endif %}
 
-    <h2>Results</h2>
+    <h2>{% trans "Results" %}</h2>
     <div class="card">
-      <p class="muted" style="margin:0 0 12px;font-size:12.5px;">Populated once channel sending is enabled (email / WhatsApp phases).</p>
+      <p class="muted" style="margin:0 0 12px;font-size:12.5px;">{% trans "Populated once channel sending is enabled (email / WhatsApp phases)." %}</p>
       <div class="grid">
-        <div class="tile"><div class="n">{{ campaign.sent }}</div><div class="l">Sent</div></div>
-        <div class="tile"><div class="n">{{ campaign.delivered }}</div><div class="l">Delivered</div></div>
-        <div class="tile"><div class="n">{{ campaign.opened }}</div><div class="l">Opened</div></div>
-        <div class="tile"><div class="n">{{ campaign.clicked }}</div><div class="l">Clicked</div></div>
-        <div class="tile"><div class="n">{{ campaign.replied }}</div><div class="l">Replied</div></div>
-        <div class="tile"><div class="n">{{ campaign.converted }}</div><div class="l">Converted</div></div>
+        <div class="tile"><div class="n">{{ campaign.sent }}</div><div class="l">{% trans "Sent" %}</div></div>
+        <div class="tile"><div class="n">{{ campaign.delivered }}</div><div class="l">{% trans "Delivered" %}</div></div>
+        <div class="tile"><div class="n">{{ campaign.opened }}</div><div class="l">{% trans "Opened" %}</div></div>
+        <div class="tile"><div class="n">{{ campaign.clicked }}</div><div class="l">{% trans "Clicked" %}</div></div>
+        <div class="tile"><div class="n">{{ campaign.replied }}</div><div class="l">{% trans "Replied" %}</div></div>
+        <div class="tile"><div class="n">{{ campaign.converted }}</div><div class="l">{% trans "Converted" %}</div></div>
       </div>
     </div>
   </div>
 
   <div>
     {% if campaign.channel == 'email' %}
-    <h2>Send</h2>
+    <h2>{% trans "Send" %}</h2>
     <div class="card">
       {% if campaign.segment %}
         <p class="muted" style="font-size:12.5px;margin:0 0 10px;">
-          {{ recipient_count }} recipient{{ recipient_count|pluralize }} with an email in <strong>{{ campaign.segment.name }}</strong>.</p>
+          {% blocktrans count n=recipient_count with seg=campaign.segment.name %}{{ n }} recipient with an email in <strong>{{ seg }}</strong>.{% plural %}{{ n }} recipients with an email in <strong>{{ seg }}</strong>.{% endblocktrans %}</p>
         <form method="post" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">{% csrf_token %}
           <input type="email" name="test_email" placeholder="you@company.co.za" style="flex:1;">
-          <button class="btn ghost" name="action" value="send_test">Send test</button>
+          <button class="btn ghost" name="action" value="send_test">{% trans "Send test" %}</button>
         </form>
         {% if campaign.can_send %}
-        <form method="post" data-confirm="Send this campaign to {{ recipient_count }} recipient{{ recipient_count|pluralize }}?">{% csrf_token %}
-          <button class="btn" name="action" value="send" style="width:100%;">Send campaign now</button>
+        <form method="post" data-confirm="{% blocktrans count n=recipient_count %}Send this campaign to {{ n }} recipient?{% plural %}Send this campaign to {{ n }} recipients?{% endblocktrans %}">{% csrf_token %}
+          <button class="btn" name="action" value="send" style="width:100%;">{% trans "Send campaign now" %}</button>
         </form>
-        <p class="muted" style="font-size:11.5px;margin:8px 0 0;">Unsubscribed contacts are skipped automatically. Delivery runs in the background.</p>
+        <p class="muted" style="font-size:11.5px;margin:8px 0 0;">{% trans "Unsubscribed contacts are skipped automatically. Delivery runs in the background." %}</p>
         {% else %}
-        <p class="muted" style="font-size:12.5px;margin:0;">This campaign has already been sent.</p>
+        <p class="muted" style="font-size:12.5px;margin:0;">{% trans "This campaign has already been sent." %}</p>
         {% endif %}
       {% else %}
-        <p class="muted" style="font-size:12.5px;margin:0;">Add an audience segment to send this campaign.
-          <a href="{% url 'web:marketing_segments' %}">Segments</a></p>
+        <p class="muted" style="font-size:12.5px;margin:0;">{% trans "Add an audience segment to send this campaign." %}
+          <a href="{% url 'web:marketing_segments' %}">{% trans "Segments" %}</a></p>
       {% endif %}
     </div>
     {% elif campaign.channel == 'whatsapp' %}
-    <h2>Send</h2>
+    <h2>{% trans "Send" %}</h2>
     <div class="card">
       {% if not wa_connected %}
         {% if can_admin %}
-        <p class="muted" style="font-size:12.5px;margin:0;">WhatsApp isn't connected for your company.
-          <a href="{% url 'web:marketing_whatsapp' %}">Connect your number</a> to send.</p>
+        <p class="muted" style="font-size:12.5px;margin:0;">{% trans "WhatsApp isn't connected for your company." %}
+          <a href="{% url 'web:marketing_whatsapp' %}">{% trans "Connect your number" %}</a> {% trans "to send." %}</p>
         {% else %}
-        <p class="muted" style="font-size:12.5px;margin:0;">WhatsApp isn't connected yet — ask your company admin to connect your number.</p>
+        <p class="muted" style="font-size:12.5px;margin:0;">{% trans "WhatsApp isn't connected yet — ask your company admin to connect your number." %}</p>
         {% endif %}
       {% elif campaign.segment %}
         <p class="muted" style="font-size:12.5px;margin:0 0 10px;">
-          {{ recipient_count }} recipient{{ recipient_count|pluralize }} with a phone number in <strong>{{ campaign.segment.name }}</strong>.</p>
+          {% blocktrans count n=recipient_count with seg=campaign.segment.name %}{{ n }} recipient with a phone number in <strong>{{ seg }}</strong>.{% plural %}{{ n }} recipients with a phone number in <strong>{{ seg }}</strong>.{% endblocktrans %}</p>
         <form method="post" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">{% csrf_token %}
           <input type="text" name="test_phone" placeholder="+27 61 234 5678" style="flex:1;">
-          <button class="btn ghost" name="action" value="send_test">Send test</button>
+          <button class="btn ghost" name="action" value="send_test">{% trans "Send test" %}</button>
         </form>
         {% if campaign.can_send %}
-        <form method="post" data-confirm="Send this WhatsApp campaign to {{ recipient_count }} recipient{{ recipient_count|pluralize }}?">{% csrf_token %}
-          <button class="btn" name="action" value="send" style="width:100%;">Send WhatsApp now</button>
+        <form method="post" data-confirm="{% blocktrans count n=recipient_count %}Send this WhatsApp campaign to {{ n }} recipient?{% plural %}Send this WhatsApp campaign to {{ n }} recipients?{% endblocktrans %}">{% csrf_token %}
+          <button class="btn" name="action" value="send" style="width:100%;">{% trans "Send WhatsApp now" %}</button>
         </form>
         <p class="muted" style="font-size:11.5px;margin:8px 0 0;">
-          {% if campaign.wa_template_name %}Sends approved template “{{ campaign.wa_template_name }}”.{% else %}No template set — free text only reaches contacts inside a 24-hour reply window.{% endif %}</p>
+          {% if campaign.wa_template_name %}{% blocktrans with tpl=campaign.wa_template_name %}Sends approved template “{{ tpl }}”.{% endblocktrans %}{% else %}{% trans "No template set — free text only reaches contacts inside a 24-hour reply window." %}{% endif %}</p>
         {% else %}
-        <p class="muted" style="font-size:12.5px;margin:0;">This campaign has already been sent.</p>
+        <p class="muted" style="font-size:12.5px;margin:0;">{% trans "This campaign has already been sent." %}</p>
         {% endif %}
       {% else %}
-        <p class="muted" style="font-size:12.5px;margin:0;">Add an audience segment to send.
-          <a href="{% url 'web:marketing_segments' %}">Segments</a></p>
+        <p class="muted" style="font-size:12.5px;margin:0;">{% trans "Add an audience segment to send." %}
+          <a href="{% url 'web:marketing_segments' %}">{% trans "Segments" %}</a></p>
       {% endif %}
     </div>
     {% endif %}
 
-    <h2>Status</h2>
+    <h2>{% trans "Status" %}</h2>
     <div class="card">
-      <p class="muted" style="font-size:12.5px;margin:0 0 12px;">Sending isn't wired yet — these move the campaign through its lifecycle for now.</p>
+      <p class="muted" style="font-size:12.5px;margin:0 0 12px;">{% trans "Sending isn't wired yet — these move the campaign through its lifecycle for now." %}</p>
       <form method="post" style="display:flex;flex-direction:column;gap:8px;">{% csrf_token %}
         {% if campaign.status == 'draft' %}
-          <button class="btn" name="action" value="schedule">Mark scheduled</button>
-          <button class="btn ghost" name="action" value="run">Mark running</button>
+          <button class="btn" name="action" value="schedule">{% trans "Mark scheduled" %}</button>
+          <button class="btn ghost" name="action" value="run">{% trans "Mark running" %}</button>
         {% elif campaign.status == 'scheduled' %}
-          <button class="btn" name="action" value="run">Mark running</button>
-          <button class="btn ghost" name="action" value="reopen">Back to draft</button>
+          <button class="btn" name="action" value="run">{% trans "Mark running" %}</button>
+          <button class="btn ghost" name="action" value="reopen">{% trans "Back to draft" %}</button>
         {% elif campaign.status == 'running' %}
-          <button class="btn" name="action" value="complete">Mark completed</button>
+          <button class="btn" name="action" value="complete">{% trans "Mark completed" %}</button>
         {% elif campaign.status == 'completed' or campaign.status == 'cancelled' %}
-          <button class="btn ghost" name="action" value="reopen">Reopen as draft</button>
+          <button class="btn ghost" name="action" value="reopen">{% trans "Reopen as draft" %}</button>
         {% endif %}
         {% if campaign.status != 'cancelled' and campaign.status != 'completed' %}
-          <button class="btn ghost" name="action" value="cancel" style="color:var(--red);">Cancel campaign</button>
+          <button class="btn ghost" name="action" value="cancel" style="color:var(--red);">{% trans "Cancel campaign" %}</button>
         {% endif %}
-        <button class="btn ghost" name="action" value="delete" data-confirm="Delete “{{ campaign.name|escapejs }}”?" style="color:var(--red);">Delete</button>
+        <button class="btn ghost" name="action" value="delete" data-confirm="{% blocktrans with name=campaign.name %}Delete “{{ name }}”?{% endblocktrans %}" style="color:var(--red);">{% trans "Delete" %}</button>
       </form>
     </div>
   </div>

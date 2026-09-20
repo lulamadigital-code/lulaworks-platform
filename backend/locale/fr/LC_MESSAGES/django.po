@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 23:00+0000\n"
+"POT-Creation-Date: 2026-09-20 23:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4601,6 +4601,614 @@ msgstr "Nouveau sur Lulaworks ?"
 msgid "Book a demo →"
 msgstr "Réserver une démo →"
 
+msgid "Marketing analytics"
+msgstr "Analyses marketing"
+
+msgid "Analytics & ROI"
+msgstr "Analyses et ROI"
+
+msgid ""
+"The funnel, email performance and the revenue your marketing actually "
+"produced."
+msgstr ""
+"L'entonnoir, la performance des e-mails et le chiffre d'affaires réellement "
+"généré par votre marketing."
+
+msgid "← Marketing"
+msgstr "← Marketing"
+
+msgid "Funnel"
+msgstr "Entonnoir"
+
+msgid "Qualified"
+msgstr "Qualifiés"
+
+msgid "Won"
+msgstr "Gagnés"
+
+msgid "Revenue (won)"
+msgstr "Chiffre d'affaires (gagné)"
+
+msgid "Lead → Opportunity"
+msgstr "Prospect → Opportunité"
+
+msgid "Opportunity → Won"
+msgstr "Opportunité → Gagnée"
+
+msgid "Email performance"
+msgstr "Performance des e-mails"
+
+msgid "Delivered"
+msgstr "Délivrés"
+
+msgid "Opened"
+msgstr "Ouverts"
+
+msgid "Open rate"
+msgstr "Taux d'ouverture"
+
+msgid "Unsubscribed"
+msgstr "Désabonnés"
+
+msgid "Revenue by lead source"
+msgstr "Chiffre d'affaires par source de prospects"
+
+msgid ""
+"No revenue data yet — win some opportunities and this shows which sources "
+"pay."
+msgstr ""
+"Aucune donnée de chiffre d'affaires pour le moment — gagnez des opportunités"
+" et ceci montrera quelles sources rapportent."
+
+msgid "Revenue by campaign"
+msgstr "Chiffre d'affaires par campagne"
+
+msgid "Campaign"
+msgstr "Campagne"
+
+msgid "Influenced opps"
+msgstr "Opp. influencées"
+
+msgid "ROI"
+msgstr "ROI"
+
+msgid ""
+"No campaigns yet. Revenue is attributed to a campaign via its recipients' "
+"opportunities; set a campaign cost to see ROI."
+msgstr ""
+"Aucune campagne pour le moment. Le chiffre d'affaires est attribué à une "
+"campagne via les opportunités de ses destinataires ; définissez un coût de "
+"campagne pour voir le ROI."
+
+msgid ""
+"Revenue is attributed to a campaign through the opportunities its recipients"
+" opened after it was sent. ROI needs a campaign cost."
+msgstr ""
+"Le chiffre d'affaires est attribué à une campagne via les opportunités "
+"ouvertes par ses destinataires après son envoi. Le ROI nécessite un coût de "
+"campagne."
+
+msgid "← Campaigns"
+msgstr "← Campagnes"
+
+msgid "Audience"
+msgstr "Audience"
+
+#, python-format
+msgid "%(n)s in segment now"
+msgstr "%(n)s dans le segment actuellement"
+
+msgid "No segment set"
+msgstr "Aucun segment défini"
+
+msgid "Sender"
+msgstr "Expéditeur"
+
+msgid "Scheduled"
+msgstr "Programmée"
+
+msgid "Not scheduled"
+msgstr "Non programmée"
+
+msgid "Results"
+msgstr "Résultats"
+
+msgid "Populated once channel sending is enabled (email / WhatsApp phases)."
+msgstr ""
+"Renseigné une fois l'envoi par canal activé (phases e-mail / WhatsApp)."
+
+msgid "Clicked"
+msgstr "Cliqués"
+
+msgid "Replied"
+msgstr "Répondu"
+
+msgid "Send"
+msgstr "Envoyer"
+
+#, python-format
+msgid "%(n)s recipient with an email in <strong>%(seg)s</strong>."
+msgid_plural "%(n)s recipients with an email in <strong>%(seg)s</strong>."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Send test"
+msgstr "Envoyer un test"
+
+#, python-format
+msgid "Send this campaign to %(n)s recipient?"
+msgid_plural "Send this campaign to %(n)s recipients?"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Send campaign now"
+msgstr "Envoyer la campagne maintenant"
+
+msgid ""
+"Unsubscribed contacts are skipped automatically. Delivery runs in the "
+"background."
+msgstr ""
+"Les contacts désabonnés sont ignorés automatiquement. L'envoi s'exécute en "
+"arrière-plan."
+
+msgid "This campaign has already been sent."
+msgstr "Cette campagne a déjà été envoyée."
+
+msgid "Add an audience segment to send this campaign."
+msgstr "Ajoutez un segment d'audience pour envoyer cette campagne."
+
+msgid "WhatsApp isn't connected for your company."
+msgstr "WhatsApp n'est pas connecté pour votre entreprise."
+
+msgid "Connect your number"
+msgstr "Connectez votre numéro"
+
+msgid "to send."
+msgstr "pour envoyer."
+
+msgid ""
+"WhatsApp isn't connected yet — ask your company admin to connect your "
+"number."
+msgstr ""
+"WhatsApp n'est pas encore connecté — demandez à l'administrateur de votre "
+"entreprise de connecter votre numéro."
+
+#, python-format
+msgid "%(n)s recipient with a phone number in <strong>%(seg)s</strong>."
+msgid_plural ""
+"%(n)s recipients with a phone number in <strong>%(seg)s</strong>."
+msgstr[0] ""
+msgstr[1] ""
+
+#, python-format
+msgid "Send this WhatsApp campaign to %(n)s recipient?"
+msgid_plural "Send this WhatsApp campaign to %(n)s recipients?"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Send WhatsApp now"
+msgstr "Envoyer le WhatsApp maintenant"
+
+#, python-format
+msgid "Sends approved template “%(tpl)s”."
+msgstr "Envoie le modèle approuvé « %(tpl)s »."
+
+msgid ""
+"No template set — free text only reaches contacts inside a 24-hour reply "
+"window."
+msgstr ""
+"Aucun modèle défini — le texte libre n'atteint les contacts que dans une "
+"fenêtre de réponse de 24 heures."
+
+msgid "Add an audience segment to send."
+msgstr "Ajoutez un segment d'audience pour envoyer."
+
+msgid ""
+"Sending isn't wired yet — these move the campaign through its lifecycle for "
+"now."
+msgstr ""
+"L'envoi n'est pas encore relié — pour l'instant, ceci fait progresser la "
+"campagne dans son cycle de vie."
+
+msgid "Mark scheduled"
+msgstr "Marquer programmée"
+
+msgid "Mark running"
+msgstr "Marquer en cours"
+
+msgid "Back to draft"
+msgstr "Revenir au brouillon"
+
+msgid "Mark completed"
+msgstr "Marquer terminée"
+
+msgid "Reopen as draft"
+msgstr "Rouvrir en brouillon"
+
+msgid "Cancel campaign"
+msgstr "Annuler la campagne"
+
+#, python-format
+msgid "Delete “%(name)s”?"
+msgstr "Supprimer « %(name)s » ?"
+
+msgid "Delete"
+msgstr "Supprimer"
+
+msgid "New campaign"
+msgstr "Nouvelle campagne"
+
+msgid ""
+"Create a campaign as a draft — you can review it before anything is sent."
+msgstr ""
+"Créez une campagne en brouillon — vous pouvez la vérifier avant tout envoi."
+
+msgid "Campaign name"
+msgstr "Nom de la campagne"
+
+msgid "e.g. Mining Maintenance — Q4"
+msgstr "ex. Maintenance minière — T4"
+
+msgid "Objective"
+msgstr "Objectif"
+
+msgid "e.g. Reactivate mining leads with no contact in 60 days"
+msgstr "ex. Réactiver les prospects miniers sans contact depuis 60 jours"
+
+msgid "Audience segment"
+msgstr "Segment d'audience"
+
+msgid "— choose a segment —"
+msgstr "— choisir un segment —"
+
+msgid "Subject / title"
+msgstr "Objet / titre"
+
+msgid "Email subject line, or a title for the campaign"
+msgstr "Ligne d'objet de l'e-mail, ou un titre pour la campagne"
+
+#, python-format
+msgid ""
+"Hello %(fn)s, Lulaworks is currently accepting maintenance projects for Q4…"
+msgstr ""
+"Bonjour %(fn)s, Lulaworks accepte actuellement des projets de maintenance "
+"pour le T4…"
+
+#, python-format
+msgid ""
+"Tip: use placeholders like <code>%(ph)s</code> — they'll be filled per "
+"recipient when sending is enabled."
+msgstr ""
+"Astuce : utilisez des variables comme <code>%(ph)s</code> — elles seront "
+"remplies pour chaque destinataire lorsque l'envoi sera activé."
+
+msgid "WhatsApp template name"
+msgstr "Nom du modèle WhatsApp"
+
+msgid "(WhatsApp only)"
+msgstr "(WhatsApp uniquement)"
+
+msgid "Name of your Meta-approved template"
+msgstr "Nom de votre modèle approuvé par Meta"
+
+msgid ""
+"Required to reach new WhatsApp contacts. Leave blank for email campaigns."
+msgstr ""
+"Requis pour atteindre de nouveaux contacts WhatsApp. Laissez vide pour les "
+"campagnes e-mail."
+
+msgid "Schedule (optional)"
+msgstr "Programmation (facultatif)"
+
+msgid "Campaign cost (optional)"
+msgstr "Coût de la campagne (facultatif)"
+
+msgid "Ad spend / list / agency — used for ROI."
+msgstr "Dépenses pub / liste / agence — utilisé pour le ROI."
+
+#, python-format
+msgid ""
+"No segments yet — you can still create the campaign, then <a "
+"href=\"%(seg_new_url)s\">build a segment</a> to target."
+msgstr ""
+"Aucun segment pour le moment — vous pouvez tout de même créer la campagne, "
+"puis <a href=\"%(seg_new_url)s\">créer un segment</a> à cibler."
+
+msgid "Create draft"
+msgstr "Créer le brouillon"
+
+msgid "Email & WhatsApp campaigns to your segments."
+msgstr "Campagnes e-mail et WhatsApp vers vos segments."
+
+msgid "+ New campaign"
+msgstr "+ Nouvelle campagne"
+
+msgid "All"
+msgstr "Toutes"
+
+msgid "Segment"
+msgstr "Segment"
+
+msgid "No campaigns yet — create your first to reach a segment."
+msgstr ""
+"Aucune campagne pour le moment — créez la première pour atteindre un "
+"segment."
+
+msgid ""
+"Where your business actually comes from — leads, opportunities and wins by "
+"source."
+msgstr ""
+"D'où vient réellement votre activité — prospects, opportunités et gains par "
+"source."
+
+msgid "Total leads"
+msgstr "Total des prospects"
+
+msgid ""
+"No lead data yet — as you capture leads with a source in the CRM, this shows"
+" which channels convert."
+msgstr ""
+"Aucune donnée de prospects pour le moment — à mesure que vous saisissez des "
+"prospects avec une source dans le CRM, ceci montre quels canaux "
+"convertissent."
+
+msgid "Reach the right customers and turn relationships into opportunities."
+msgstr ""
+"Touchez les bons clients et transformez les relations en opportunités."
+
+msgid "Active campaigns"
+msgstr "Campagnes actives"
+
+msgid "Leads this month"
+msgstr "Prospects ce mois-ci"
+
+msgid "Qualified leads"
+msgstr "Prospects qualifiés"
+
+msgid "Best lead source"
+msgstr "Meilleure source de prospects"
+
+msgid "Create and run email & WhatsApp campaigns."
+msgstr "Créez et lancez des campagnes e-mail et WhatsApp."
+
+msgid "Saved slices of your CRM to target."
+msgstr "Des tranches enregistrées de votre CRM à cibler."
+
+msgid "Where your customers actually come from."
+msgstr "D'où viennent réellement vos clients."
+
+msgid "Funnel, email performance and revenue by campaign."
+msgstr ""
+"Entonnoir, performance des e-mails et chiffre d'affaires par campagne."
+
+msgid "Connect your WhatsApp Business number to run campaigns."
+msgstr "Connectez votre numéro WhatsApp Business pour lancer des campagnes."
+
+msgid "Top lead sources"
+msgstr "Principales sources de prospects"
+
+msgid ""
+"No lead data yet — capture leads in the CRM and their sources appear here."
+msgstr ""
+"Aucune donnée de prospects pour le moment — saisissez des prospects dans le "
+"CRM et leurs sources apparaîtront ici."
+
+msgid "Recent campaigns"
+msgstr "Campagnes récentes"
+
+msgid "New segment"
+msgstr "Nouveau segment"
+
+msgid ""
+"Filter your CRM into a reusable audience. The count updates as you build."
+msgstr ""
+"Filtrez votre CRM en une audience réutilisable. Le compte se met à jour au "
+"fur et à mesure."
+
+msgid "← Segments"
+msgstr "← Segments"
+
+msgid "Segment name"
+msgstr "Nom du segment"
+
+msgid "e.g. Mining prospects needing follow-up"
+msgstr "ex. Prospects miniers à relancer"
+
+msgid "Optional — what this segment is for"
+msgstr "Facultatif — à quoi sert ce segment"
+
+msgid "Lead status"
+msgstr "Statut du prospect"
+
+msgid "Any"
+msgstr "Tous"
+
+msgid "Industry contains"
+msgstr "Le secteur contient"
+
+msgid "e.g. Mining"
+msgstr "ex. Mines"
+
+msgid "Country contains"
+msgstr "Le pays contient"
+
+msgid "City contains"
+msgstr "La ville contient"
+
+msgid "No contact in (days)"
+msgstr "Sans contact depuis (jours)"
+
+msgid "e.g. 30"
+msgstr "ex. 30"
+
+msgid "Only leads never contacted (status = New)"
+msgstr "Uniquement les prospects jamais contactés (statut = Nouveau)"
+
+msgid "Customer status"
+msgstr "Statut du client"
+
+msgid "No activity in (days)"
+msgstr "Sans activité depuis (jours)"
+
+msgid "e.g. 90"
+msgstr "ex. 90"
+
+msgid "records match this segment right now."
+msgstr "enregistrements correspondent à ce segment actuellement."
+
+msgid "Save segment"
+msgstr "Enregistrer le segment"
+
+msgid ""
+"Saved slices of your CRM — evaluated live, so they always reflect reality."
+msgstr ""
+"Des tranches enregistrées de votre CRM — évaluées en direct, elles reflètent"
+" toujours la réalité."
+
+msgid "+ New segment"
+msgstr "+ Nouveau segment"
+
+msgid "Members now"
+msgstr "Membres actuels"
+
+msgid ""
+"No segments yet — build one to target a campaign, e.g. “Mining leads, no "
+"contact in 30 days”."
+msgstr ""
+"Aucun segment pour le moment — créez-en un pour cibler une campagne, ex. « "
+"Prospects miniers, sans contact depuis 30 jours »."
+
+msgid "WhatsApp connection"
+msgstr "Connexion WhatsApp"
+
+msgid "WhatsApp Business"
+msgstr "WhatsApp Business"
+
+msgid ""
+"Connect your own WhatsApp Business number — campaigns send from you, not "
+"Lulaworks."
+msgstr ""
+"Connectez votre propre numéro WhatsApp Business — les campagnes partent de "
+"vous, pas de Lulaworks."
+
+msgid "Connected"
+msgstr "Connecté"
+
+msgid "Not connected"
+msgstr "Non connecté"
+
+msgid "Reconnect with Facebook"
+msgstr "Reconnecter avec Facebook"
+
+msgid "Connect with Facebook"
+msgstr "Connecter avec Facebook"
+
+msgid ""
+"The quickest way — log in to your Meta account and pick your WhatsApp number"
+" (about two minutes). We never see your Meta password."
+msgstr ""
+"Le moyen le plus rapide — connectez-vous à votre compte Meta et choisissez "
+"votre numéro WhatsApp (environ deux minutes). Nous ne voyons jamais votre "
+"mot de passe Meta."
+
+msgid "Enter connection details manually"
+msgstr "Saisir les détails de connexion manuellement"
+
+msgid "Display number"
+msgstr "Numéro affiché"
+
+msgid "Phone number ID"
+msgstr "ID du numéro de téléphone"
+
+msgid "From Meta → WhatsApp → API Setup"
+msgstr "Depuis Meta → WhatsApp → Configuration de l'API"
+
+msgid "WhatsApp Business Account ID"
+msgstr "ID du compte WhatsApp Business"
+
+msgid "WABA id (optional)"
+msgstr "ID WABA (facultatif)"
+
+msgid "Access token"
+msgstr "Jeton d'accès"
+
+msgid "Permanent access token"
+msgstr "Jeton d'accès permanent"
+
+msgid ""
+"Stored securely and never shown again. Leave as •••• to keep the current "
+"one."
+msgstr ""
+"Stocké de façon sécurisée et jamais réaffiché. Laissez •••• pour conserver "
+"l'actuel."
+
+msgid "Save connection"
+msgstr "Enregistrer la connexion"
+
+msgid ""
+"Disconnect WhatsApp? Campaigns won't be able to send until you reconnect."
+msgstr ""
+"Déconnecter WhatsApp ? Les campagnes ne pourront plus envoyer tant que vous "
+"ne reconnectez pas."
+
+msgid "Disconnect"
+msgstr "Déconnecter"
+
+msgid "Still loading Facebook… try again in a second."
+msgstr ""
+"Facebook est encore en cours de chargement… réessayez dans une seconde."
+
+msgid "Connection cancelled."
+msgstr "Connexion annulée."
+
+msgid "Finishing connection…"
+msgstr "Finalisation de la connexion…"
+
+msgid "Could not connect — please try manual entry."
+msgstr "Connexion impossible — veuillez essayer la saisie manuelle."
+
+msgid "How to connect"
+msgstr "Comment se connecter"
+
+msgid ""
+"In <strong>Meta Business</strong>, create/verify your business and add "
+"<strong>WhatsApp</strong>."
+msgstr ""
+"Dans <strong>Meta Business</strong>, créez/vérifiez votre entreprise et "
+"ajoutez <strong>WhatsApp</strong>."
+
+msgid ""
+"Add a <strong>dedicated phone number</strong> for WhatsApp Business (not one"
+" already on the WhatsApp app)."
+msgstr ""
+"Ajoutez un <strong>numéro de téléphone dédié</strong> pour WhatsApp Business"
+" (pas un déjà utilisé sur l'application WhatsApp)."
+
+msgid ""
+"Copy the <strong>Phone number ID</strong> and a <strong>permanent access "
+"token</strong> (Meta → API Setup) into the form above."
+msgstr ""
+"Copiez l'<strong>ID du numéro de téléphone</strong> et un <strong>jeton "
+"d'accès permanent</strong> (Meta → Configuration de l'API) dans le "
+"formulaire ci-dessus."
+
+msgid ""
+"Create and get <strong>message templates approved</strong> by Meta — a "
+"campaign references an approved template by name."
+msgstr ""
+"Créez et faites <strong>approuver des modèles de message</strong> par Meta —"
+" une campagne référence un modèle approuvé par son nom."
+
+#, python-format
+msgid ""
+"Uses the Meta Cloud API (%(v)s). Marketing messages to a new contact must "
+"use an approved template; free text only works inside a 24-hour reply "
+"window."
+msgstr ""
+"Utilise l'API Meta Cloud (%(v)s). Les messages marketing vers un nouveau "
+"contact doivent utiliser un modèle approuvé ; le texte libre ne fonctionne "
+"que dans une fenêtre de réponse de 24 heures."
+
 msgid ""
 "Your company's members. Everyone here is assignable to jobs — active members"
 " fill every team picker."
@@ -5363,9 +5971,6 @@ msgstr "Valeur du pipeline ouvert"
 msgid "Across %(n)s live quotation(s)"
 msgstr "Sur %(n)s devis en cours"
 
-msgid "Won"
-msgstr "Gagnés"
-
 #, python-format
 msgid "%(n)s awarded"
 msgstr "%(n)s attribués"
@@ -5942,9 +6547,6 @@ msgstr "Joindre une photo"
 
 msgid "Message the field…"
 msgstr "Envoyer un message au terrain…"
-
-msgid "Send"
-msgstr "Envoyer"
 
 msgid "live"
 msgstr "en direct"

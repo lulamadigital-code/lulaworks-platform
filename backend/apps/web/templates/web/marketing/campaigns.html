@@ -1,16 +1,17 @@
 {% extends "web/base.html" %}
-{% block title %}Campaigns{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Campaigns" %}{% endblock %}
 {% block content %}
 <div class="pagehead">
   <div>
-    <h1>Campaigns</h1>
-    <p class="sub" style="margin:0;">Email &amp; WhatsApp campaigns to your segments.</p>
+    <h1>{% trans "Campaigns" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "Email & WhatsApp campaigns to your segments." %}</p>
   </div>
-  <a class="btn" href="{% url 'web:marketing_campaign_new' %}">+ New campaign</a>
+  <a class="btn" href="{% url 'web:marketing_campaign_new' %}">{% trans "+ New campaign" %}</a>
 </div>
 
 <div class="filterbar" style="margin-bottom:14px;">
-  <a class="chip {% if not status %}info{% endif %}" href="{% url 'web:marketing_campaigns' %}">All</a>
+  <a class="chip {% if not status %}info{% endif %}" href="{% url 'web:marketing_campaigns' %}">{% trans "All" %}</a>
   {% for value, label in statuses %}
   <a class="chip {% if status == value %}info{% endif %}" href="?status={{ value }}">{{ label }}</a>
   {% endfor %}
@@ -19,7 +20,7 @@
 <div class="card" style="padding:0;">
   <div style="overflow-x:auto;">
     <table>
-      <tr><th>Campaign</th><th>Channel</th><th>Segment</th><th class="right">Sent</th><th class="right">Converted</th><th>Status</th></tr>
+      <tr><th>{% trans "Campaign" %}</th><th>{% trans "Channel" %}</th><th>{% trans "Segment" %}</th><th class="right">{% trans "Sent" %}</th><th class="right">{% trans "Converted" %}</th><th>{% trans "Status" %}</th></tr>
       {% for c in campaigns %}
       <tr onclick="location.href='{% url 'web:marketing_campaign_detail' c.id %}'" style="cursor:pointer;">
         <td><strong>{{ c.name }}</strong>{% if c.objective %}<br><span class="muted" style="font-size:12px;">{{ c.objective }}</span>{% endif %}</td>
@@ -30,7 +31,7 @@
         <td><span class="chip {% if c.status == 'completed' %}ok{% elif c.status == 'running' %}info{% elif c.status == 'cancelled' %}bad{% elif c.status == 'scheduled' %}warn{% endif %}">{{ c.get_status_display }}</span></td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" class="muted" style="padding:22px;">No campaigns yet — create your first to reach a segment.</td></tr>
+      <tr><td colspan="6" class="muted" style="padding:22px;">{% trans "No campaigns yet — create your first to reach a segment." %}</td></tr>
       {% endfor %}
     </table>
   </div>
