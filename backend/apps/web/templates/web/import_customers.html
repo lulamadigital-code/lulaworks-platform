@@ -1,39 +1,39 @@
 {% extends "web/base.html" %}
-{% block title %}Customers Discovered{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Customers Discovered" %}{% endblock %}
 {% block content %}
 <div class="pagehead">
   <div>
-    <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_centre' %}">← Business history</a></p>
-    <h1>Customers discovered</h1>
-    <p class="sub" style="margin:0;">The real customers Lulaworks found in your historical documents.
-      Once added to your CRM, open one to see its live record.</p>
+    <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_centre' %}">{% trans "← Business history" %}</a></p>
+    <h1>{% trans "Customers discovered" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "The real customers Lulaworks found in your historical documents. Once added to your CRM, open one to see its live record." %}</p>
   </div>
 </div>
 
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Customer</th><th class="right">Mentions</th><th>Status</th><th class="right"></th></tr>
+    <tr><th>{% trans "Customer" %}</th><th class="right">{% trans "Mentions" %}</th><th>{% trans "Status" %}</th><th class="right"></th></tr>
     {% for c in customers %}
     <tr>
       <td><strong>{{ c.name }}</strong>
-        {% if c.confidence %}<span class="muted" style="font-size:11.5px;"> · {{ c.confidence }} match</span>{% endif %}</td>
+        {% if c.confidence %}<span class="muted" style="font-size:11.5px;"> · {% blocktrans with m=c.confidence %}{{ m }} match{% endblocktrans %}</span>{% endif %}</td>
       <td style="text-align:right;">{{ c.mentions }}</td>
       <td>
-        {% if c.in_crm %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">In CRM</span>
-        {% elif c.verdict == 'matched' %}<span class="chip info">Matches existing</span>
-        {% else %}<span class="chip">Awaiting review</span>{% endif %}
+        {% if c.in_crm %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">{% trans "In CRM" %}</span>
+        {% elif c.verdict == 'matched' %}<span class="chip info">{% trans "Matches existing" %}</span>
+        {% else %}<span class="chip">{% trans "Awaiting review" %}</span>{% endif %}
       </td>
       <td style="text-align:right;white-space:nowrap;">
         {% if c.in_crm and c.resolved_id %}
-          <a class="btn ghost" href="{% url 'web:customer_detail' c.resolved_id %}" style="padding:3px 10px;">Open customer →</a>
+          <a class="btn ghost" href="{% url 'web:customer_detail' c.resolved_id %}" style="padding:3px 10px;">{% trans "Open customer →" %}</a>
         {% else %}
-          <span class="muted" style="font-size:12px;">Review to add</span>
+          <span class="muted" style="font-size:12px;">{% trans "Review to add" %}</span>
         {% endif %}
       </td>
     </tr>
     {% empty %}
     <tr><td colspan="4" style="padding:22px;color:var(--muted);">
-      No customers discovered yet — upload documents on an import and review the matches.</td></tr>
+      {% trans "No customers discovered yet — upload documents on an import and review the matches." %}</td></tr>
     {% endfor %}
   </table>
 </div>

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 22:55+0000\n"
+"POT-Creation-Date: 2026-09-20 23:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4068,6 +4068,468 @@ msgid "Every project is compliance-ready."
 msgstr "Chaque projet est prêt pour la conformité."
 
 msgid ""
+"Every email Lulaworks has sent for this company — invitations, documents, "
+"receipts and notifications. Failed messages can be resent."
+msgstr ""
+"Chaque e-mail envoyé par Lulaworks pour cette entreprise — invitations, "
+"documents, reçus et notifications. Les messages en échec peuvent être "
+"renvoyés."
+
+msgid "← Company"
+msgstr "← Entreprise"
+
+#, python-format
+msgid "All (%(n)s)"
+msgstr "Tous (%(n)s)"
+
+msgid "Resend"
+msgstr "Renvoyer"
+
+msgid "No email sent yet."
+msgstr "Aucun e-mail envoyé pour le moment."
+
+msgid "← Prev"
+msgstr "← Précédent"
+
+#, python-format
+msgid "Page %(num)s of %(total)s"
+msgstr "Page %(num)s sur %(total)s"
+
+msgid "Next →"
+msgstr "Suivant →"
+
+msgid "SMS"
+msgstr "SMS"
+
+#, python-format
+msgid "Short operational alerts to field staff (opt-in). Latest %(n)s."
+msgstr ""
+"Brèves alertes opérationnelles au personnel de terrain (sur option). %(n)s "
+"plus récents."
+
+msgid "Message"
+msgstr "Message"
+
+msgid "Import"
+msgstr "Import"
+
+msgid "← Business history"
+msgstr "← Historique d'activité"
+
+msgid "Untitled import"
+msgstr "Import sans titre"
+
+msgid "Upload documents, then confirm the companies and people we found."
+msgstr ""
+"Téléversez des documents, puis confirmez les entreprises et les personnes "
+"trouvées."
+
+#, python-format
+msgid "Processing %(n)s document in the background."
+msgid_plural "Processing %(n)s documents in the background."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "You can leave and come back — this page refreshes itself."
+msgstr ""
+"Vous pouvez quitter et revenir — cette page se rafraîchit d'elle-même."
+
+msgid "Documents"
+msgstr "Documents"
+
+msgid "Processing"
+msgstr "En traitement"
+
+msgid "Duplicates"
+msgstr "Doublons"
+
+msgid "People"
+msgstr "Personnes"
+
+msgid "Upload & process"
+msgstr "Téléverser et traiter"
+
+msgid ""
+"Quotes, POs, invoices, supplier quotations, delivery notes, RFQs — PDF, "
+"Word, Excel, CSV, email or images. You can upload in batches, or drop a "
+"<strong>.zip</strong> of a whole folder and we'll unpack and import every "
+"document inside it."
+msgstr ""
+"Devis, bons de commande, factures, devis fournisseurs, bons de livraison, "
+"appels d'offres — PDF, Word, Excel, CSV, e-mail ou images. Vous pouvez "
+"téléverser par lots, ou déposer un <strong>.zip</strong> d'un dossier entier"
+" : nous le décompressons et importons chaque document qu'il contient."
+
+#, python-format
+msgid "Review — <span id=\"pending-count\">%(cnt)s</span> to confirm"
+msgstr "Révision — <span id=\"pending-count\">%(cnt)s</span> à confirmer"
+
+#, python-format
+msgid "%(n)s auto-matched"
+msgstr "%(n)s rapprochés automatiquement"
+
+#, python-format
+msgid "Add %(n)s customers to CRM"
+msgstr "Ajouter %(n)s clients au CRM"
+
+#, python-format
+msgid "Add %(n)s suppliers"
+msgstr "Ajouter %(n)s fournisseurs"
+
+msgid ""
+"Tick two or more rows that are the same real company/person, then merge"
+msgstr ""
+"Cochez deux lignes ou plus correspondant à la même entreprise/personne "
+"réelle, puis fusionnez"
+
+msgid "Merge selected"
+msgstr "Fusionner la sélection"
+
+msgid "Auto-merge obvious duplicates across documents"
+msgstr "Fusionner automatiquement les doublons évidents entre documents"
+
+msgid "Auto-merge"
+msgstr "Fusion auto"
+
+msgid "Found"
+msgstr "Trouvé"
+
+msgid "Best match"
+msgstr "Meilleure correspondance"
+
+msgid "Confidence"
+msgstr "Confiance"
+
+msgid "Decide"
+msgstr "Décider"
+
+#, python-format
+msgid "%(n)s docs"
+msgstr "%(n)s docs"
+
+msgid "Strong"
+msgstr "Forte"
+
+msgid "New"
+msgstr "Nouveau"
+
+msgid "Link"
+msgstr "Associer"
+
+msgid "Which customer is this person at?"
+msgstr "Chez quel client se trouve cette personne ?"
+
+msgid "Under customer…"
+msgstr "Sous le client…"
+
+msgid "Create"
+msgstr "Créer"
+
+msgid "Approve a customer first"
+msgstr "Approuvez d'abord un client"
+
+msgid "Create new"
+msgstr "Créer nouveau"
+
+msgid "Reject & remove from the list"
+msgstr "Rejeter et retirer de la liste"
+
+msgid "Reject"
+msgstr "Rejeter"
+
+msgid "Nothing left to review — every entity has been handled. 🎉"
+msgstr "Plus rien à réviser — toutes les entités ont été traitées. 🎉"
+
+msgid "Upload some documents above to get started."
+msgstr "Téléversez des documents ci-dessus pour commencer."
+
+#, python-format
+msgid "Handled (%(n)s)"
+msgstr "Traitées (%(n)s)"
+
+msgid "Entity"
+msgstr "Entité"
+
+msgid "Outcome"
+msgstr "Résultat"
+
+msgid "Linked to existing"
+msgstr "Associée à une existante"
+
+msgid "Created new"
+msgstr "Nouvelle créée"
+
+msgid "Skipped"
+msgstr "Ignorée"
+
+msgid "Reconstructed jobs"
+msgstr "Chantiers reconstruits"
+
+msgid "Re-scan for jobs"
+msgstr "Rechercher à nouveau des chantiers"
+
+msgid "Find jobs in these documents"
+msgstr "Trouver des chantiers dans ces documents"
+
+msgid "Evidence"
+msgstr "Éléments probants"
+
+#, python-format
+msgid "Ref %(ref)s"
+msgstr "Réf. %(ref)s"
+
+msgid "Confirmed"
+msgstr "Confirmé"
+
+msgid "Confirm job"
+msgstr "Confirmer le chantier"
+
+msgid "Not a job"
+msgstr "Pas un chantier"
+
+msgid ""
+"Documents that share a quote, PO or invoice number get stitched into one "
+"past job. Click <strong>Find jobs</strong> to scan."
+msgstr ""
+"Les documents partageant un numéro de devis, de bon de commande ou de "
+"facture sont regroupés en un chantier passé. Cliquez sur <strong>Trouver des"
+" chantiers</strong> pour lancer l'analyse."
+
+#, python-format
+msgid "Documents (%(n)s)"
+msgstr "Documents (%(n)s)"
+
+#, python-format
+msgid "%(n)s duplicate hidden"
+msgid_plural "%(n)s duplicates hidden"
+msgstr[0] "%(n)s en retard"
+msgstr[1] "%(n)s en retard"
+
+msgid "Remove duplicate documents? The originals are kept."
+msgstr "Supprimer les documents en double ? Les originaux sont conservés."
+
+#, python-format
+msgid "Remove %(n)s duplicate"
+msgid_plural "Remove %(n)s duplicates"
+msgstr[0] "Supprimer %(n)s ?"
+msgstr[1] "Supprimer %(n)s ?"
+
+msgid "Detected type"
+msgstr "Type détecté"
+
+#, python-format
+msgid "Already imported — duplicate of %(other)s"
+msgstr "Déjà importé — doublon de %(other)s"
+
+msgid "Duplicate"
+msgstr "Doublon"
+
+msgid "Try again"
+msgstr "Réessayer"
+
+msgid "Could not complete that action."
+msgstr "Impossible d'effectuer cette action."
+
+msgid "Network error — please try again."
+msgstr "Erreur réseau — veuillez réessayer."
+
+msgid "Choose the customer this person belongs to first."
+msgstr "Choisissez d'abord le client auquel appartient cette personne."
+
+msgid "Bring Your Business History"
+msgstr "Importez votre historique d'activité"
+
+msgid "Bring your business history"
+msgstr "Importez votre historique d'activité"
+
+msgid ""
+"Upload your old quotes, POs, invoices and supplier documents. Lulaworks "
+"reads them, finds the companies and people you've worked with, and matches "
+"them to your records — you confirm before anything is saved."
+msgstr ""
+"Téléversez vos anciens devis, bons de commande, factures et documents "
+"fournisseurs. Lulaworks les lit, trouve les entreprises et les personnes "
+"avec qui vous avez travaillé, et les rapproche de vos fiches — vous "
+"confirmez avant tout enregistrement."
+
+msgid "+ New import"
+msgstr "+ Nouvel import"
+
+msgid "Processed"
+msgstr "Traités"
+
+msgid "To review"
+msgstr "À réviser"
+
+#, python-format
+msgid "%(n)s in CRM"
+msgstr "%(n)s dans le CRM"
+
+msgid "Historical jobs"
+msgstr "Chantiers passés"
+
+msgid "Prices & items"
+msgstr "Prix et articles"
+
+msgid "Imports"
+msgstr "Imports"
+
+msgid "Entities found"
+msgstr "Entités trouvées"
+
+msgid "Started"
+msgstr "Démarré"
+
+msgid "Committed"
+msgstr "Enregistré"
+
+msgid "Ready for review"
+msgstr "Prêt pour révision"
+
+msgid ""
+"No imports yet. Click <strong>New import</strong> to bring in your existing "
+"business documents."
+msgstr ""
+"Aucun import pour le moment. Cliquez sur <strong>Nouvel import</strong> pour"
+" importer vos documents d'activité existants."
+
+msgid "Customers Discovered"
+msgstr "Clients découverts"
+
+msgid "Customers discovered"
+msgstr "Clients découverts"
+
+msgid ""
+"The real customers Lulaworks found in your historical documents. Once added "
+"to your CRM, open one to see its live record."
+msgstr ""
+"Les vrais clients que Lulaworks a trouvés dans vos documents historiques. "
+"Une fois ajoutés à votre CRM, ouvrez-en un pour voir sa fiche en direct."
+
+msgid "Mentions"
+msgstr "Mentions"
+
+#, python-format
+msgid "%(m)s match"
+msgstr "correspondance %(m)s"
+
+msgid "In CRM"
+msgstr "Dans le CRM"
+
+msgid "Matches existing"
+msgstr "Correspond à un existant"
+
+msgid "Awaiting review"
+msgstr "En attente de révision"
+
+msgid "Open customer →"
+msgstr "Ouvrir le client →"
+
+msgid "Review to add"
+msgstr "Réviser pour ajouter"
+
+msgid ""
+"No customers discovered yet — upload documents on an import and review the "
+"matches."
+msgstr ""
+"Aucun client découvert pour le moment — téléversez des documents dans un "
+"import et révisez les correspondances."
+
+msgid "← Historical documents"
+msgstr "← Documents historiques"
+
+#, python-format
+msgid "dated %(d)s"
+msgstr "daté du %(d)s"
+
+#, python-format
+msgid "%(conf)s confidence"
+msgstr "confiance %(conf)s"
+
+#, python-format
+msgid "import “%(lbl)s”"
+msgstr "import « %(lbl)s »"
+
+msgid "Open original ↗"
+msgstr "Ouvrir l'original ↗"
+
+msgid "This file type can't be previewed here."
+msgstr "Ce type de fichier ne peut pas être prévisualisé ici."
+
+#, python-format
+msgid "Download %(fn)s ↗"
+msgstr "Télécharger %(fn)s ↗"
+
+msgid "The original file isn't stored for this document"
+msgstr "Le fichier original n'est pas conservé pour ce document"
+
+msgid "(it's a duplicate of another)"
+msgstr "(c'est un doublon d'un autre)"
+
+msgid "Re-upload it to keep a previewable copy."
+msgstr "Re-téléversez-le pour en conserver une copie prévisualisable."
+
+msgid "Processing failed"
+msgstr "Échec du traitement"
+
+msgid "Historical Documents"
+msgstr "Documents historiques"
+
+msgid "Historical documents"
+msgstr "Documents historiques"
+
+msgid ""
+"Every document you've imported. Search the text, filter by type, and open "
+"one to see what Lulaworks understood from it."
+msgstr ""
+"Chaque document que vous avez importé. Recherchez dans le texte, filtrez par"
+" type, et ouvrez-en un pour voir ce que Lulaworks en a compris."
+
+msgid "Search filename or content…"
+msgstr "Rechercher un nom de fichier ou du contenu…"
+
+msgid "All types"
+msgstr "Tous les types"
+
+msgid "Clear"
+msgstr "Effacer"
+
+msgid "Document date"
+msgstr "Date du document"
+
+msgid "No date found in the document"
+msgstr "Aucune date trouvée dans le document"
+
+msgid "Needs review"
+msgstr "À réviser"
+
+msgid "No documents match."
+msgstr "Aucun document ne correspond."
+
+msgid "No documents imported yet."
+msgstr "Aucun document importé pour le moment."
+
+msgid ""
+"The business graph Lulaworks reconstructed — each historical job, its "
+"customer, and the documents that make it up."
+msgstr ""
+"Le graphe d'activité que Lulaworks a reconstruit — chaque chantier passé, "
+"son client, et les documents qui le composent."
+
+msgid "Open in import →"
+msgstr "Ouvrir dans l'import →"
+
+msgid ""
+"No relationships reconstructed yet. On an import with several documents, use"
+" <strong>Find jobs</strong> to stitch a quotation, PO and invoice that share"
+" a reference into one historical job."
+msgstr ""
+"Aucune relation reconstruite pour le moment. Sur un import comportant "
+"plusieurs documents, utilisez <strong>Trouver des chantiers</strong> pour "
+"regrouper un devis, un bon de commande et une facture partageant une "
+"référence en un seul chantier passé."
+
+msgid ""
 "Create a customer invoice from scratch, or raise a tax invoice from an "
 "approved quotation."
 msgstr ""
@@ -4138,9 +4600,6 @@ msgstr "Nouveau sur Lulaworks ?"
 
 msgid "Book a demo →"
 msgstr "Réserver une démo →"
-
-msgid "People"
-msgstr "Personnes"
 
 msgid ""
 "Your company's members. Everyone here is assignable to jobs — active members"
@@ -4289,9 +4748,6 @@ msgstr ""
 
 msgid "Search an item — e.g. hydraulic hose, diesel, cement"
 msgstr "Rechercher un article — ex. tuyau hydraulique, diesel, ciment"
-
-msgid "Clear"
-msgstr "Effacer"
 
 msgid "All items"
 msgstr "Tous les articles"
@@ -4950,9 +5406,6 @@ msgstr "← Précédent"
 msgid "Page %(cur)s of %(total)s"
 msgstr "Page %(cur)s sur %(total)s"
 
-msgid "Next →"
-msgstr "Suivant →"
-
 msgid "← Requests"
 msgstr "← Demandes"
 
@@ -4978,9 +5431,6 @@ msgstr "Total estimé"
 
 msgid "Reason for rejecting…"
 msgstr "Motif du rejet…"
-
-msgid "Reject"
-msgstr "Rejeter"
 
 msgid "Mark as purchased"
 msgstr "Marquer comme acheté"
@@ -5149,9 +5599,6 @@ msgstr "Fiscalité"
 msgid "VAT number, tax settings and jurisdictions."
 msgstr "Numéro de TVA, paramètres fiscaux et juridictions."
 
-msgid "Documents"
-msgstr "Documents"
-
 msgid "Document templates"
 msgstr "Modèles de documents"
 
@@ -5246,6 +5693,40 @@ msgstr "Téléverser"
 msgid "No documents yet."
 msgstr "Aucun document pour le moment."
 
+msgid "Import invoice"
+msgstr "Importer une facture"
+
+msgid "Review before saving"
+msgstr "Vérifier avant d'enregistrer"
+
+#, python-format
+msgid ""
+"Extracted from <strong>%(fn)s</strong>. Check the supplier and prices, then "
+"confirm — this back-fills your Suppliers database."
+msgstr ""
+"Extrait de <strong>%(fn)s</strong>. Vérifiez le fournisseur et les prix, "
+"puis confirmez — cela enrichit votre base de données Fournisseurs."
+
+msgid "Supplier name *"
+msgstr "Nom du fournisseur *"
+
+msgid "Invoice date"
+msgstr "Date de la facture"
+
+msgid "Items & prices"
+msgstr "Articles et prix"
+
+msgid "Add an item…"
+msgstr "Ajouter un article…"
+
+msgid "Only rows with a description and a price above zero are recorded."
+msgstr ""
+"Seules les lignes avec une description et un prix supérieur à zéro sont "
+"enregistrées."
+
+msgid "Save to Suppliers"
+msgstr "Enregistrer dans les Fournisseurs"
+
 msgid ""
 "Everyone you buy from — added automatically when you attach a receipt, or "
 "added by hand."
@@ -5277,9 +5758,6 @@ msgstr "Ajouter un fournisseur"
 
 msgid "✕ Close"
 msgstr "✕ Fermer"
-
-msgid "Supplier name *"
-msgstr "Nom du fournisseur *"
 
 msgid "Terms (e.g. credit / COD)"
 msgstr "Conditions (ex. crédit / paiement à la livraison)"
@@ -5591,9 +6069,6 @@ msgstr "Phase"
 
 msgid "Estimated"
 msgstr "Estimé"
-
-msgid "Started"
-msgstr "Démarré"
 
 msgid "Billable"
 msgstr "Facturable"

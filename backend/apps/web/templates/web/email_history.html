@@ -1,18 +1,18 @@
 {% extends "web/base.html" %}
-{% block title %}Email history{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Email history" %}{% endblock %}
 {% block content %}
 
 <div class="pagehead">
   <div>
-    <h1>Email history</h1>
-    <p class="sub" style="margin:0;">Every email Lulaworks has sent for this company —
-      invitations, documents, receipts and notifications. Failed messages can be resent.</p>
+    <h1>{% trans "Email history" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "Every email Lulaworks has sent for this company — invitations, documents, receipts and notifications. Failed messages can be resent." %}</p>
   </div>
-  <div><a class="btn ghost" href="{% url 'web:company_profile' %}">← Company</a></div>
+  <div><a class="btn ghost" href="{% url 'web:company_profile' %}">{% trans "← Company" %}</a></div>
 </div>
 
 <div class="filterbar">
-  <a class="btn {% if not status %}primary{% else %}ghost{% endif %}" href="?">All ({{ total }})</a>
+  <a class="btn {% if not status %}primary{% else %}ghost{% endif %}" href="?">{% blocktrans with n=total %}All ({{ n }}){% endblocktrans %}</a>
   {% for t in tabs %}
   <a class="btn {% if status == t.value %}primary{% else %}ghost{% endif %}" href="?status={{ t.value }}">{{ t.label }} ({{ t.count }})</a>
   {% endfor %}
@@ -20,48 +20,48 @@
 
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>To</th><th>Subject</th><th>Type</th><th>Status</th><th>When</th><th></th></tr>
+    <tr><th>{% trans "To" %}</th><th>{% trans "Subject" %}</th><th>{% trans "Type" %}</th><th>{% trans "Status" %}</th><th>{% trans "When" %}</th><th></th></tr>
     {% for log in page %}
     <tr>
       <td><a href="{% url 'web:email_detail' log.id %}">{{ log.to_email }}</a>
         {% if log.to_name %}<br><span class="muted" style="font-size:12px;">{{ log.to_name }}</span>{% endif %}</td>
       <td>{{ log.subject|truncatechars:48 }}</td>
       <td class="muted">{{ log.get_category_display }}</td>
-      <td>{% if log.status == 'sent' %}<span class="chip ok">Sent</span>
-        {% elif log.status == 'failed' %}<span class="chip bad">Failed</span>
+      <td>{% if log.status == 'sent' %}<span class="chip ok">{% trans "Sent" %}</span>
+        {% elif log.status == 'failed' %}<span class="chip bad">{% trans "Failed" %}</span>
         {% else %}<span class="chip">{{ log.get_status_display }}</span>{% endif %}</td>
       <td class="muted">{{ log.created_at|date:"d M H:i" }}</td>
       <td>{% if log.status == 'failed' %}
         <form method="post" action="{% url 'web:email_resend' log.id %}" style="display:inline;">{% csrf_token %}
-          <button class="btn ghost" type="submit" style="padding:3px 10px;">Resend</button>
+          <button class="btn ghost" type="submit" style="padding:3px 10px;">{% trans "Resend" %}</button>
         </form>{% endif %}</td>
     </tr>
-    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">No email sent yet.</td></tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">{% trans "No email sent yet." %}</td></tr>
     {% endfor %}
   </table>
 </div>
 
 {% if page.has_other_pages %}
 <div class="filterbar" style="margin-top:12px;">
-  {% if page.has_previous %}<a class="btn ghost" href="?status={{ status }}&page={{ page.previous_page_number }}">← Prev</a>{% endif %}
-  <span class="muted" style="align-self:center;">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
-  {% if page.has_next %}<a class="btn ghost" href="?status={{ status }}&page={{ page.next_page_number }}">Next →</a>{% endif %}
+  {% if page.has_previous %}<a class="btn ghost" href="?status={{ status }}&page={{ page.previous_page_number }}">{% trans "← Prev" %}</a>{% endif %}
+  <span class="muted" style="align-self:center;">{% blocktrans with num=page.number total=page.paginator.num_pages %}Page {{ num }} of {{ total }}{% endblocktrans %}</span>
+  {% if page.has_next %}<a class="btn ghost" href="?status={{ status }}&page={{ page.next_page_number }}">{% trans "Next →" %}</a>{% endif %}
 </div>
 {% endif %}
 
 {% if sms_total %}
-<h2 style="margin-top:24px;">SMS <span class="muted" style="font-weight:400;font-size:14px;">· {{ sms_total }}</span></h2>
-<p class="sub" style="margin-top:0;">Short operational alerts to field staff (opt-in). Latest {{ sms_logs|length }}.</p>
+<h2 style="margin-top:24px;">{% trans "SMS" %} <span class="muted" style="font-weight:400;font-size:14px;">· {{ sms_total }}</span></h2>
+<p class="sub" style="margin-top:0;">{% blocktrans with n=sms_logs|length %}Short operational alerts to field staff (opt-in). Latest {{ n }}.{% endblocktrans %}</p>
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>To</th><th>Message</th><th>Type</th><th>Status</th><th>When</th></tr>
+    <tr><th>{% trans "To" %}</th><th>{% trans "Message" %}</th><th>{% trans "Type" %}</th><th>{% trans "Status" %}</th><th>{% trans "When" %}</th></tr>
     {% for s in sms_logs %}
     <tr>
       <td class="muted">{{ s.to_number }}</td>
       <td>{{ s.body|truncatechars:60 }}</td>
       <td class="muted">{{ s.get_category_display }}</td>
-      <td>{% if s.status == 'sent' %}<span class="chip ok">Sent</span>
-        {% elif s.status == 'failed' %}<span class="chip bad">Failed</span>
+      <td>{% if s.status == 'sent' %}<span class="chip ok">{% trans "Sent" %}</span>
+        {% elif s.status == 'failed' %}<span class="chip bad">{% trans "Failed" %}</span>
         {% else %}<span class="chip">{{ s.get_status_display }}</span>{% endif %}</td>
       <td class="muted">{{ s.created_at|date:"d M H:i" }}</td>
     </tr>

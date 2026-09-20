@@ -1,20 +1,21 @@
 {% extends "web/base.html" %}
+{% load i18n %}
 {% block title %}{{ doc.filename }}{% endblock %}
 {% block content %}
 <div class="pagehead">
   <div>
-    <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_documents' %}">← Historical documents</a></p>
+    <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_documents' %}">{% trans "← Historical documents" %}</a></p>
     <h1 style="word-break:break-all;">{{ doc.filename }}</h1>
     <p class="sub" style="margin:0;">
-      {{ doc.get_doc_type_display }}{% if doc.document_date %} · dated {{ doc.document_date|date:"j M Y" }}{% endif %}
-      {% if doc.doc_type_confidence %} · {{ doc.doc_type_confidence }} confidence{% endif %}
-      · {{ doc.get_status_display }}{% if doc.batch %} · import “{{ doc.batch.label|default:'Untitled' }}”{% endif %}</p>
+      {{ doc.get_doc_type_display }}{% if doc.document_date %} · {% blocktrans with d=doc.document_date|date:"j M Y" %}dated {{ d }}{% endblocktrans %}{% endif %}
+      {% if doc.doc_type_confidence %} · {% blocktrans with conf=doc.doc_type_confidence %}{{ conf }} confidence{% endblocktrans %}{% endif %}
+      · {{ doc.get_status_display }}{% if doc.batch %} · {% blocktrans with lbl=doc.batch.label|default:'Untitled' %}import “{{ lbl }}”{% endblocktrans %}{% endif %}</p>
   </div>
-  {% if doc.file %}<a class="btn ghost" href="{{ doc.file.url }}" target="_blank" rel="noopener">Open original ↗</a>{% endif %}
+  {% if doc.file %}<a class="btn ghost" href="{{ doc.file.url }}" target="_blank" rel="noopener">{% trans "Open original ↗" %}</a>{% endif %}
 </div>
 
 {# Original document preview. #}
-<h2 style="font-size:15px;margin:0 0 10px;">Document</h2>
+<h2 style="font-size:15px;margin:0 0 10px;">{% trans "Document" %}</h2>
 {% if file_kind == 'pdf' %}
 <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">
   <iframe src="{{ doc.file.url }}" title="{{ doc.filename }}" loading="lazy"
@@ -26,19 +27,19 @@
 </div>
 {% elif file_kind == 'other' %}
 <div class="card" style="margin-bottom:20px;">
-  <p class="muted" style="margin:0;">This file type can't be previewed here.
-    <a href="{{ doc.file.url }}" target="_blank" rel="noopener">Download {{ doc.filename }} ↗</a></p>
+  <p class="muted" style="margin:0;">{% trans "This file type can't be previewed here." %}
+    <a href="{{ doc.file.url }}" target="_blank" rel="noopener">{% blocktrans with fn=doc.filename %}Download {{ fn }} ↗{% endblocktrans %}</a></p>
 </div>
 {% else %}
 <div class="card" style="margin-bottom:20px;">
-  <p class="muted" style="margin:0;">The original file isn't stored for this document{% if doc.status == 'duplicate' %} (it's a duplicate of another){% endif %}.
-    Re-upload it to keep a previewable copy.</p>
+  <p class="muted" style="margin:0;">{% trans "The original file isn't stored for this document" %}{% if doc.status == 'duplicate' %} {% trans "(it's a duplicate of another)" %}{% endif %}.
+    {% trans "Re-upload it to keep a previewable copy." %}</p>
 </div>
 {% endif %}
 
 {% if doc.status == 'failed' and doc.processing_error %}
 <div class="card" style="margin-bottom:18px;background:#fdecea;border-color:#f5c6cb;">
-  <strong style="color:#c0392b;">Processing failed</strong>
+  <strong style="color:#c0392b;">{% trans "Processing failed" %}</strong>
   <p class="muted" style="margin:6px 0 0;">{{ doc.processing_error }}</p>
 </div>
 {% endif %}

@@ -1,11 +1,12 @@
 {% extends "web/base.html" %}
-{% block title %}{{ batch.label|default:"Import" }}{% endblock %}
+{% load i18n %}
+{% block title %}{% if batch.label %}{{ batch.label }}{% else %}{% trans "Import" %}{% endif %}{% endblock %}
 {% block content %}
 <div class="pagehead">
   <div>
-    <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_centre' %}">← Business history</a></p>
-    <h1>{{ batch.label|default:"Untitled import" }}</h1>
-    <p class="sub" style="margin:0;">Upload documents, then confirm the companies and people we found.</p>
+    <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_centre' %}">{% trans "← Business history" %}</a></p>
+    <h1>{% if batch.label %}{{ batch.label }}{% else %}{% trans "Untitled import" %}{% endif %}</h1>
+    <p class="sub" style="margin:0;">{% trans "Upload documents, then confirm the companies and people we found." %}</p>
   </div>
 </div>
 
@@ -14,8 +15,8 @@
 {% if summary.processing %}
 <div class="card" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;background:var(--primary-t);border-color:var(--primary);">
   <div class="spinner" style="width:18px;height:18px;border:2px solid var(--primary);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-  <div><strong>Processing {{ summary.processing }} document{{ summary.processing|pluralize }} in the background.</strong>
-    <span class="muted" style="font-size:12.5px;">You can leave and come back — this page refreshes itself.</span></div>
+  <div><strong>{% blocktrans count n=summary.processing %}Processing {{ n }} document in the background.{% plural %}Processing {{ n }} documents in the background.{% endblocktrans %}</strong>
+    <span class="muted" style="font-size:12.5px;">{% trans "You can leave and come back — this page refreshes itself." %}</span></div>
 </div>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 <meta http-equiv="refresh" content="6">
@@ -24,19 +25,19 @@
 {# Pipeline status (§18). #}
 <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:12px;">
   {% with s=summary %}
-  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">▤</div><div class="n">{{ s.documents }}</div><div class="l">Documents</div></div>
-  <div class="tile"><div class="ic" style="background:#fbe9d6;color:#9a6a12;">◷</div><div class="n">{{ s.processing }}</div><div class="l">Processing</div></div>
-  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">⧉</div><div class="n">{{ s.duplicates }}</div><div class="l">Duplicates</div></div>
-  <div class="tile"><div class="ic" style="background:{% if s.doc_failed %}#fdecea;color:#c0392b{% else %}#eef0f5;color:var(--muted){% endif %};">⚠</div><div class="n">{{ s.doc_failed }}</div><div class="l">Failed</div></div>
+  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">▤</div><div class="n">{{ s.documents }}</div><div class="l">{% trans "Documents" %}</div></div>
+  <div class="tile"><div class="ic" style="background:#fbe9d6;color:#9a6a12;">◷</div><div class="n">{{ s.processing }}</div><div class="l">{% trans "Processing" %}</div></div>
+  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">⧉</div><div class="n">{{ s.duplicates }}</div><div class="l">{% trans "Duplicates" %}</div></div>
+  <div class="tile"><div class="ic" style="background:{% if s.doc_failed %}#fdecea;color:#c0392b{% else %}#eef0f5;color:var(--muted){% endif %};">⚠</div><div class="n">{{ s.doc_failed }}</div><div class="l">{% trans "Failed" %}</div></div>
   {% endwith %}
 </div>
 {# Discovered entities. #}
 <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;">
   {% with s=summary %}
-  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div><div class="n">{{ s.completed }}</div><div class="l">Completed</div></div>
-  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">◎</div><div class="n">{{ s.customers }}</div><div class="l">Customers</div></div>
-  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">▣</div><div class="n">{{ s.suppliers }}</div><div class="l">Suppliers</div></div>
-  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">☺</div><div class="n">{{ s.contacts }}</div><div class="l">People</div></div>
+  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">✓</div><div class="n">{{ s.completed }}</div><div class="l">{% trans "Completed" %}</div></div>
+  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">◎</div><div class="n">{{ s.customers }}</div><div class="l">{% trans "Customers" %}</div></div>
+  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">▣</div><div class="n">{{ s.suppliers }}</div><div class="l">{% trans "Suppliers" %}</div></div>
+  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">☺</div><div class="n">{{ s.contacts }}</div><div class="l">{% trans "People" %}</div></div>
   {% endwith %}
 </div>
 
@@ -46,36 +47,34 @@
     <input type="file" name="documents" multiple
            accept=".pdf,.docx,.xlsx,.csv,.txt,.eml,.zip,.png,.jpg,.jpeg" required
            style="flex:1;min-width:220px;">
-    <button class="btn" type="submit">Upload &amp; process</button>
+    <button class="btn" type="submit">{% trans "Upload & process" %}</button>
   </form>
   <p class="muted" style="margin:10px 0 0;font-size:12.5px;">
-    Quotes, POs, invoices, supplier quotations, delivery notes, RFQs — PDF, Word, Excel,
-    CSV, email or images. You can upload in batches, or drop a <strong>.zip</strong> of a whole
-    folder and we'll unpack and import every document inside it.</p>
+    {% trans "Quotes, POs, invoices, supplier quotations, delivery notes, RFQs — PDF, Word, Excel, CSV, email or images. You can upload in batches, or drop a <strong>.zip</strong> of a whole folder and we'll unpack and import every document inside it." %}</p>
 </div>
 
 {# The review queue — the human decision. #}
 <div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;gap:12px;flex-wrap:wrap;">
-  <h2 style="font-size:15px;margin:0;">Review — <span id="pending-count">{{ pending|length }}</span> to confirm
-    {% if summary.auto_matched %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {{ summary.auto_matched }} auto-matched</span>{% endif %}</h2>
+  <h2 style="font-size:15px;margin:0;">{% blocktrans with cnt=pending|length %}Review — <span id="pending-count">{{ cnt }}</span> to confirm{% endblocktrans %}
+    {% if summary.auto_matched %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {% blocktrans with n=summary.auto_matched %}{{ n }} auto-matched{% endblocktrans %}</span>{% endif %}</h2>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
     {% if pending_customers %}
     <form method="post" action="{% url 'web:import_commit_all' batch.pk %}" class="js-bulk" style="margin:0;">{% csrf_token %}
       <input type="hidden" name="kind" value="customer">
-      <button class="btn" type="submit" style="padding:6px 12px;font-size:12.5px;">Add {{ pending_customers }} customers to CRM</button>
+      <button class="btn" type="submit" style="padding:6px 12px;font-size:12.5px;">{% blocktrans with n=pending_customers %}Add {{ n }} customers to CRM{% endblocktrans %}</button>
     </form>
     {% endif %}
     {% if pending_suppliers %}
     <form method="post" action="{% url 'web:import_commit_all' batch.pk %}" class="js-bulk" style="margin:0;">{% csrf_token %}
       <input type="hidden" name="kind" value="supplier">
-      <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;">Add {{ pending_suppliers }} suppliers</button>
+      <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;">{% blocktrans with n=pending_suppliers %}Add {{ n }} suppliers{% endblocktrans %}</button>
     </form>
     {% endif %}
     <button class="btn ghost" type="submit" form="mergeform" style="padding:6px 12px;font-size:12.5px;"
-      title="Tick two or more rows that are the same real company/person, then merge">Merge selected</button>
+      title="{% trans 'Tick two or more rows that are the same real company/person, then merge' %}">{% trans "Merge selected" %}</button>
     <form method="post" action="{% url 'web:import_consolidate' batch.pk %}" class="js-bulk" style="margin:0;">{% csrf_token %}
       <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;"
-        title="Auto-merge obvious duplicates across documents">Auto-merge</button>
+        title="{% trans 'Auto-merge obvious duplicates across documents' %}">{% trans "Auto-merge" %}</button>
     </form>
   </div>
 </div>
@@ -84,54 +83,54 @@
 {% if pending %}
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th></th><th>Found</th><th>Type</th><th>Best match</th><th>Confidence</th><th class="right">Decide</th></tr>
+    <tr><th></th><th>{% trans "Found" %}</th><th>{% trans "Type" %}</th><th>{% trans "Best match" %}</th><th>{% trans "Confidence" %}</th><th class="right">{% trans "Decide" %}</th></tr>
     {% for e in pending %}
     <tr>
       <td><input type="checkbox" name="entity_ids" value="{{ e.pk }}" form="mergeform"></td>
       <td>
         <strong>{{ e.raw_name }}</strong>
-        {% if e.mentions > 1 %}<span class="muted" style="font-size:11.5px;"> · {{ e.mentions }} docs</span>{% endif %}
+        {% if e.mentions > 1 %}<span class="muted" style="font-size:11.5px;"> · {% blocktrans with n=e.mentions %}{{ n }} docs{% endblocktrans %}</span>{% endif %}
         {% if e.email %}<div class="muted" style="font-size:12px;">{{ e.email }}</div>{% endif %}
       </td>
       <td><span class="chip">{{ e.get_kind_display }}</span></td>
       <td>
-        {% if e.match_label %}{{ e.match_label }}{% else %}<span class="muted">— none —</span>{% endif %}
+        {% if e.match_label %}{{ e.match_label }}{% else %}<span class="muted">{% trans "— none —" %}</span>{% endif %}
       </td>
       <td>
-        {% if e.verdict == 'matched' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Strong</span>
-        {% elif e.verdict == 'review' %}<span class="chip warn">Review</span>
-        {% else %}<span class="chip info">New</span>{% endif %}
+        {% if e.verdict == 'matched' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">{% trans "Strong" %}</span>
+        {% elif e.verdict == 'review' %}<span class="chip warn">{% trans "Review" %}</span>
+        {% else %}<span class="chip info">{% trans "New" %}</span>{% endif %}
       </td>
       <td style="text-align:right;white-space:nowrap;">
         {% if e.match_id %}
         <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" class="js-commit" style="display:inline;">{% csrf_token %}
           <input type="hidden" name="decision" value="link">
-          <button class="btn" type="submit" style="padding:5px 11px;font-size:12.5px;">Link</button>
+          <button class="btn" type="submit" style="padding:5px 11px;font-size:12.5px;">{% trans "Link" %}</button>
         </form>
         {% endif %}
         {% if e.kind == 'contact' %}
           {% if customers %}
           <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" class="js-commit" style="display:inline-flex;gap:6px;align-items:center;">{% csrf_token %}
             <input type="hidden" name="decision" value="create">
-            <select name="customer_id" required title="Which customer is this person at?"
+            <select name="customer_id" required title="{% trans 'Which customer is this person at?' %}"
                     style="padding:5px 8px;font-size:12.5px;border:1px solid var(--line);border-radius:7px;max-width:180px;">
-              <option value="">Under customer…</option>
+              <option value="">{% trans "Under customer…" %}</option>
               {% for c in customers %}<option value="{{ c.id }}" {% if c.id|stringformat:'s' == e.suggested_customer_id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
             </select>
-            <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">Create</button>
+            <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">{% trans "Create" %}</button>
           </form>
           {% else %}
-          <span class="muted" style="font-size:12px;">Approve a customer first</span>
+          <span class="muted" style="font-size:12px;">{% trans "Approve a customer first" %}</span>
           {% endif %}
         {% else %}
         <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" class="js-commit" style="display:inline;">{% csrf_token %}
           <input type="hidden" name="decision" value="create">
-          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">Create new</button>
+          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">{% trans "Create new" %}</button>
         </form>
         {% endif %}
         <form method="post" action="{% url 'web:import_commit' batch.pk e.pk %}" class="js-commit" style="display:inline;">{% csrf_token %}
           <input type="hidden" name="decision" value="reject">
-          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;color:#c0392b;" title="Reject & remove from the list">Reject</button>
+          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;color:#c0392b;" title="{% trans 'Reject & remove from the list' %}">{% trans "Reject" %}</button>
         </form>
       </td>
     </tr>
@@ -140,23 +139,23 @@
 </div>
 {% else %}
 <div class="card"><p class="muted" style="margin:0;">
-  {% if summary.documents %}Nothing left to review — every entity has been handled. 🎉
-  {% else %}Upload some documents above to get started.{% endif %}</p></div>
+  {% if summary.documents %}{% trans "Nothing left to review — every entity has been handled. 🎉" %}
+  {% else %}{% trans "Upload some documents above to get started." %}{% endif %}</p></div>
 {% endif %}
 
 {% if done %}
-<h2 style="font-size:15px;margin:24px 0 10px;">Handled ({{ done|length }})</h2>
+<h2 style="font-size:15px;margin:24px 0 10px;">{% blocktrans with n=done|length %}Handled ({{ n }}){% endblocktrans %}</h2>
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Entity</th><th>Type</th><th>Outcome</th></tr>
+    <tr><th>{% trans "Entity" %}</th><th>{% trans "Type" %}</th><th>{% trans "Outcome" %}</th></tr>
     {% for e in done %}
     <tr>
       <td>{{ e.raw_name }}</td>
       <td><span class="chip">{{ e.get_kind_display }}</span></td>
       <td>
-        {% if e.review_status == 'linked' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Linked to existing</span>
-        {% elif e.review_status == 'created' %}<span class="chip info">Created new</span>
-        {% else %}<span class="chip">Skipped</span>{% endif %}
+        {% if e.review_status == 'linked' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">{% trans "Linked to existing" %}</span>
+        {% elif e.review_status == 'created' %}<span class="chip info">{% trans "Created new" %}</span>
+        {% else %}<span class="chip">{% trans "Skipped" %}</span>{% endif %}
       </td>
     </tr>
     {% endfor %}
@@ -167,36 +166,36 @@
 {# Reconstructed historical jobs (§12) — documents stitched into one past job. #}
 {% if summary.documents > 1 %}
 <div style="display:flex;align-items:center;justify-content:space-between;margin:26px 0 10px;gap:12px;flex-wrap:wrap;">
-  <h2 style="font-size:15px;margin:0;">Reconstructed jobs</h2>
+  <h2 style="font-size:15px;margin:0;">{% trans "Reconstructed jobs" %}</h2>
   <form method="post" action="{% url 'web:import_reconstruct' batch.pk %}" style="margin:0;">{% csrf_token %}
     <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;">
-      {% if jobs %}Re-scan for jobs{% else %}Find jobs in these documents{% endif %}</button>
+      {% if jobs %}{% trans "Re-scan for jobs" %}{% else %}{% trans "Find jobs in these documents" %}{% endif %}</button>
   </form>
 </div>
 {% if jobs %}
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Job</th><th>Evidence</th><th>Confidence</th><th class="right">Decide</th></tr>
+    <tr><th>{% trans "Job" %}</th><th>{% trans "Evidence" %}</th><th>{% trans "Confidence" %}</th><th class="right">{% trans "Decide" %}</th></tr>
     {% for j in jobs %}
     <tr>
       <td>
         <strong>{{ j.title }}</strong>
-        {% if j.reference %}<div class="muted" style="font-size:12px;">Ref {{ j.reference|upper }}</div>{% endif %}
+        {% if j.reference %}<div class="muted" style="font-size:12px;">{% blocktrans with ref=j.reference|upper %}Ref {{ ref }}{% endblocktrans %}</div>{% endif %}
       </td>
       <td class="muted" style="font-size:12.5px;">{{ j.evidence }}</td>
       <td>
-        {% if j.status == 'confirmed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Confirmed</span>
+        {% if j.status == 'confirmed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">{% trans "Confirmed" %}</span>
         {% else %}<span class="chip info">{{ j.confidence }}</span>{% endif %}
       </td>
       <td style="text-align:right;white-space:nowrap;">
         {% if j.status != 'confirmed' %}
         <form method="post" action="{% url 'web:import_job' batch.pk j.pk %}" style="display:inline;">{% csrf_token %}
           <input type="hidden" name="decision" value="confirm">
-          <button class="btn" type="submit" style="padding:5px 11px;font-size:12.5px;">Confirm job</button>
+          <button class="btn" type="submit" style="padding:5px 11px;font-size:12.5px;">{% trans "Confirm job" %}</button>
         </form>
         <form method="post" action="{% url 'web:import_job' batch.pk j.pk %}" style="display:inline;">{% csrf_token %}
           <input type="hidden" name="decision" value="dismiss">
-          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">Not a job</button>
+          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">{% trans "Not a job" %}</button>
         </form>
         {% else %}<span class="muted">✓</span>{% endif %}
       </td>
@@ -205,43 +204,42 @@
   </table>
 </div>
 {% else %}
-<div class="card"><p class="muted" style="margin:0;">Documents that share a quote, PO or
-  invoice number get stitched into one past job. Click <strong>Find jobs</strong> to scan.</p></div>
+<div class="card"><p class="muted" style="margin:0;">{% trans "Documents that share a quote, PO or invoice number get stitched into one past job. Click <strong>Find jobs</strong> to scan." %}</p></div>
 {% endif %}
 {% endif %}
 
 {# Documents processed. #}
 {% if documents %}
 <div style="display:flex;align-items:center;justify-content:space-between;margin:24px 0 10px;gap:12px;flex-wrap:wrap;">
-  <h2 style="font-size:15px;margin:0;">Documents ({{ documents|length }})
-    {% if duplicate_count %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {{ duplicate_count }} duplicate{{ duplicate_count|pluralize }} hidden</span>{% endif %}</h2>
+  <h2 style="font-size:15px;margin:0;">{% blocktrans with n=documents|length %}Documents ({{ n }}){% endblocktrans %}
+    {% if duplicate_count %}<span class="muted" style="font-weight:400;font-size:12.5px;">· {% blocktrans count n=duplicate_count %}{{ n }} duplicate hidden{% plural %}{{ n }} duplicates hidden{% endblocktrans %}</span>{% endif %}</h2>
   {% if duplicate_count %}
   <form method="post" action="{% url 'web:import_remove_duplicates' batch.pk %}" style="margin:0;"
-        onsubmit="return confirm('Remove {{ duplicate_count }} duplicate document{{ duplicate_count|pluralize }}? The originals are kept.');">{% csrf_token %}
-    <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;">Remove {{ duplicate_count }} duplicate{{ duplicate_count|pluralize }}</button>
+        onsubmit="return confirm('{% trans "Remove duplicate documents? The originals are kept." %}');">{% csrf_token %}
+    <button class="btn ghost" type="submit" style="padding:6px 12px;font-size:12.5px;">{% blocktrans count n=duplicate_count %}Remove {{ n }} duplicate{% plural %}Remove {{ n }} duplicates{% endblocktrans %}</button>
   </form>
   {% endif %}
 </div>
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>File</th><th>Status</th><th>Detected type</th><th class="right"></th></tr>
+    <tr><th>{% trans "File" %}</th><th>{% trans "Status" %}</th><th>{% trans "Detected type" %}</th><th class="right"></th></tr>
     {% for d in documents %}
     <tr>
       <td>{{ d.filename }}
-        {% if d.status == 'duplicate' and d.duplicate_of_id %}<div class="muted" style="font-size:12px;">Already imported — <a href="#">duplicate of {{ d.duplicate_of.filename }}</a></div>{% endif %}
+        {% if d.status == 'duplicate' and d.duplicate_of_id %}<div class="muted" style="font-size:12px;">{% blocktrans with other=d.duplicate_of.filename %}Already imported — duplicate of {{ other }}{% endblocktrans %}</div>{% endif %}
         {% if d.status == 'failed' and d.processing_error %}<div class="muted" style="font-size:12px;color:#c0392b;">{{ d.processing_error|truncatechars:80 }}</div>{% endif %}
       </td>
       <td>
-        {% if d.status == 'completed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Completed</span>
-        {% elif d.status == 'duplicate' %}<span class="chip">Duplicate</span>
-        {% elif d.status == 'failed' %}<span class="chip warn" style="background:#fdecea;color:#c0392b;">Failed</span>
+        {% if d.status == 'completed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">{% trans "Completed" %}</span>
+        {% elif d.status == 'duplicate' %}<span class="chip">{% trans "Duplicate" %}</span>
+        {% elif d.status == 'failed' %}<span class="chip warn" style="background:#fdecea;color:#c0392b;">{% trans "Failed" %}</span>
         {% else %}<span class="chip info">{{ d.get_status_display }}…</span>{% endif %}
       </td>
       <td>{% if d.status == 'completed' %}{{ d.get_doc_type_display }}{% if d.doc_type_confidence %} <span class="muted" style="font-size:12px;">· {{ d.doc_type_confidence }}</span>{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
       <td style="text-align:right;">
         {% if d.status == 'failed' %}
         <form method="post" action="{% url 'web:import_document_retry' batch.pk d.pk %}" style="display:inline;">{% csrf_token %}
-          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">Try again</button>
+          <button class="btn ghost" type="submit" style="padding:5px 11px;font-size:12.5px;">{% trans "Try again" %}</button>
         </form>
         {% endif %}
       </td>
@@ -257,6 +255,12 @@
             font-size:13px;box-shadow:0 8px 30px rgba(41,47,76,.25);"></div>
 <script>
 (function () {
+  var MSG = {
+    done: "{% trans 'Done' %}",
+    fail: "{% trans 'Could not complete that action.' %}",
+    net: "{% trans 'Network error — please try again.' %}",
+    pickCustomer: "{% trans 'Choose the customer this person belongs to first.' %}"
+  };
   function toast(msg, bad) {
     var t = document.getElementById('toast');
     if (!t) return;
@@ -278,12 +282,12 @@
     }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
         if (res.ok && res.d.ok) {
-          toast(res.d.message || 'Done');
+          toast(res.d.message || MSG.done);
           setTimeout(function () { location.reload(); }, 700);
         } else {
-          toast((res.d && res.d.error) || 'Could not complete that action.', true);
+          toast((res.d && res.d.error) || MSG.fail, true);
         }
-      }).catch(function () { toast('Network error — please try again.', true); });
+      }).catch(function () { toast(MSG.net, true); });
   });
   // Approve / Link / Reject a single row without reloading the whole page.
   document.addEventListener('submit', function (ev) {
@@ -292,7 +296,7 @@
     ev.preventDefault();
     // A contact needs a customer chosen before it can be created.
     var sel = f.querySelector('select[name="customer_id"]');
-    if (sel && !sel.value) { toast('Choose the customer this person belongs to first.', true); sel.focus(); return; }
+    if (sel && !sel.value) { toast(MSG.pickCustomer, true); sel.focus(); return; }
     var row = f.closest('tr');
     var btns = f.querySelectorAll('button'); btns.forEach(function (b) { b.disabled = true; });
     fetch(f.action, {
@@ -302,18 +306,18 @@
     }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
         if (res.ok && res.d.ok) {
-          toast(res.d.message || 'Done');
+          toast(res.d.message || MSG.done);
           if (row) { row.style.transition = 'opacity .25s'; row.style.opacity = '0';
                      setTimeout(function () { row.remove(); }, 250); }
           var c = document.getElementById('pending-count');
           if (c) { var n = Math.max(0, (parseInt(c.textContent, 10) || 1) - 1); c.textContent = n;
                    if (n === 0) setTimeout(function () { location.reload(); }, 400); }
         } else {
-          toast((res.d && res.d.error) || 'Could not complete that action.', true);
+          toast((res.d && res.d.error) || MSG.fail, true);
           btns.forEach(function (b) { b.disabled = false; });
         }
       }).catch(function () {
-        toast('Network error — please try again.', true);
+        toast(MSG.net, true);
         btns.forEach(function (b) { b.disabled = false; });
       });
   });

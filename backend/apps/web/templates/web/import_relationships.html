@@ -1,12 +1,12 @@
 {% extends "web/base.html" %}
-{% block title %}Relationships{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Relationships" %}{% endblock %}
 {% block content %}
 <div class="pagehead">
   <div>
-    <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_centre' %}">← Business history</a></p>
-    <h1>Relationships</h1>
-    <p class="sub" style="margin:0;">The business graph Lulaworks reconstructed — each historical job,
-      its customer, and the documents that make it up.</p>
+    <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_centre' %}">{% trans "← Business history" %}</a></p>
+    <h1>{% trans "Relationships" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "The business graph Lulaworks reconstructed — each historical job, its customer, and the documents that make it up." %}</p>
   </div>
 </div>
 
@@ -16,10 +16,10 @@
   <div class="card" style="margin:0;">
     <div style="display:flex;justify-content:space-between;gap:8px;align-items:start;">
       <strong style="font-size:14px;">{{ g.job.customer_name|default:g.job.title }}</strong>
-      {% if g.job.status == 'confirmed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">Confirmed</span>
+      {% if g.job.status == 'confirmed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">{% trans "Confirmed" %}</span>
       {% else %}<span class="chip info">{{ g.job.confidence }}</span>{% endif %}
     </div>
-    {% if g.job.reference %}<div class="muted" style="font-size:12px;margin-top:2px;">Ref {{ g.job.reference|upper }}</div>{% endif %}
+    {% if g.job.reference %}<div class="muted" style="font-size:12px;margin-top:2px;">{% blocktrans with ref=g.job.reference|upper %}Ref {{ ref }}{% endblocktrans %}</div>{% endif %}
     <div style="margin-top:10px;border-left:2px solid var(--line);padding-left:12px;">
       {% for d in g.documents %}
       <div style="display:flex;gap:8px;align-items:center;padding:3px 0;">
@@ -30,13 +30,11 @@
       {% endfor %}
     </div>
     <a class="muted" style="font-size:12px;display:inline-block;margin-top:8px;"
-       href="{% url 'web:import_batch' g.job.batch_id %}">Open in import →</a>
+       href="{% url 'web:import_batch' g.job.batch_id %}">{% trans "Open in import →" %}</a>
   </div>
   {% endfor %}
 </div>
 {% else %}
-<div class="card"><p class="muted" style="margin:0;">No relationships reconstructed yet.
-  On an import with several documents, use <strong>Find jobs</strong> to stitch a quotation,
-  PO and invoice that share a reference into one historical job.</p></div>
+<div class="card"><p class="muted" style="margin:0;">{% trans "No relationships reconstructed yet. On an import with several documents, use <strong>Find jobs</strong> to stitch a quotation, PO and invoice that share a reference into one historical job." %}</p></div>
 {% endif %}
 {% endblock %}
