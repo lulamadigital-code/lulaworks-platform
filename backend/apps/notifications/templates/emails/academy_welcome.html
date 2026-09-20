@@ -1,15 +1,13 @@
 {% extends "emails/base.html" %}
+{% load i18n %}
 {% block content %}
-<p style="margin:0 0 14px;">Hi{% if name %} {{ name }}{% endif %},</p>
-<p style="margin:0 0 14px;">Thanks for joining the <strong>Lulaworks Academy</strong> — welcome!
-  You'll get practical, no-fluff guides, free tools and templates to help you win
-  more work, quote more professionally and get paid faster.</p>
-<p style="margin:0 0 8px;">Here's where to start:</p>
+<p style="margin:0 0 14px;">{% if name %}{% blocktrans with n=name %}Hi {{ n }},{% endblocktrans %}{% else %}{% trans "Hi," %}{% endif %}</p>
+<p style="margin:0 0 14px;">{% blocktrans %}Thanks for joining the <strong>Lulaworks Academy</strong> — welcome! You'll get practical, no-fluff guides, free tools and templates to help you win more work, quote more professionally and get paid faster.{% endblocktrans %}</p>
+<p style="margin:0 0 8px;">{% trans "Here's where to start:" %}</p>
 <ul style="margin:0 0 14px;padding-left:20px;">
-  <li style="margin:4px 0;"><a href="{{ learn_url }}" style="color:{{ brand_color|default:'#0E6E6E' }};">Guides &amp; the Academy</a></li>
-  <li style="margin:4px 0;"><a href="{{ tools_url }}" style="color:{{ brand_color|default:'#0E6E6E' }};">Free calculators</a> — job profit, markup, VAT, break-even</li>
-  <li style="margin:4px 0;"><a href="{{ templates_url }}" style="color:{{ brand_color|default:'#0E6E6E' }};">Free templates</a> — quotation, invoice, RFQ, checklists</li>
+  <li style="margin:4px 0;"><a href="{{ learn_url }}" style="color:{{ brand_color|default:'#0E6E6E' }};">{% trans "Guides & the Academy" %}</a></li>
+  <li style="margin:4px 0;"><a href="{{ tools_url }}" style="color:{{ brand_color|default:'#0E6E6E' }};">{% trans "Free calculators" %}</a> — {% trans "job profit, markup, VAT, break-even" %}</li>
+  <li style="margin:4px 0;"><a href="{{ templates_url }}" style="color:{{ brand_color|default:'#0E6E6E' }};">{% trans "Free templates" %}</a> — {% trans "quotation, invoice, RFQ, checklists" %}</li>
 </ul>
-<p style="margin:0;">When you're ready to put it into practice, your free Lulaworks
-  account quotes, invoices and tracks jobs in one place.</p>
+<p style="margin:0;">{% trans "When you're ready to put it into practice, your free Lulaworks account quotes, invoices and tracks jobs in one place." %}</p>
 {% endblock %}

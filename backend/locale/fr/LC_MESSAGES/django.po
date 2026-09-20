@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 18:20+0000\n"
+"POT-Creation-Date: 2026-09-20 18:35+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -146,13 +146,63 @@ msgid ""
 msgid_plural ""
 "This password is too short. It must contain at least %(min)d characters."
 msgstr[0] ""
+"Ce mot de passe est trop court. Il doit contenir au moins %(min)d caractère."
 msgstr[1] ""
+"Ce mot de passe est trop court. Il doit contenir au moins %(min)d "
+"caractères."
 
 #, python-format
 msgid "Your password must contain at least %(min)d character."
 msgid_plural "Your password must contain at least %(min)d characters."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Votre mot de passe doit contenir au moins %(min)d caractère."
+msgstr[1] "Votre mot de passe doit contenir au moins %(min)d caractères."
+
+msgid "Get the contractor's growth kit"
+msgstr "Recevez le kit de croissance de l'entrepreneur"
+
+msgid ""
+"New guides, tools and templates for running a more profitable business. No "
+"spam — unsubscribe any time."
+msgstr ""
+"De nouveaux guides, outils et modèles pour gérer une entreprise plus "
+"rentable. Pas de spam — désabonnement à tout moment."
+
+msgid "Your name (optional)"
+msgstr "Votre nom (facultatif)"
+
+msgid "Company (optional)"
+msgstr "Entreprise (facultatif)"
+
+msgid "Industry (optional)"
+msgstr "Secteur (facultatif)"
+
+msgid "Join free"
+msgstr "Rejoindre gratuitement"
+
+msgid "Open it in Lulaworks"
+msgstr "Ouvrir dans Lulaworks"
+
+msgid "You're signed in — head straight to your dashboard."
+msgstr "Vous êtes connecté — accédez directement à votre tableau de bord."
+
+msgid "Go to your Dashboard →"
+msgstr "Aller à votre tableau de bord →"
+
+msgid "Put this into practice with Lulaworks"
+msgstr "Mettez-le en pratique avec Lulaworks"
+
+msgid "Start free — no card required."
+msgstr "Commencez gratuitement — sans carte bancaire."
+
+msgid "Start Free with Lulaworks"
+msgstr "Commencer gratuitement avec Lulaworks"
+
+#, python-format
+msgid "%(m)s min"
+msgstr "%(m)s min"
+
+msgid "Read →"
+msgstr "Lire →"
 
 msgid "About us"
 msgstr "À propos de nous"
@@ -892,6 +942,78 @@ msgstr ""
 "Démarrez votre essai gratuit de 30 jours dès aujourd'hui. Sans carte "
 "bancaire."
 
+msgid "You're on the list"
+msgstr "Vous êtes inscrit"
+
+msgid ""
+"Thanks for joining. The fastest way to put this into practice is a free "
+"Lulaworks account — quote, invoice and track your jobs in one place, with "
+"the admin done for you."
+msgstr ""
+"Merci de votre inscription. Le moyen le plus rapide de le mettre en pratique"
+" est un compte Lulaworks gratuit — devis, factures et suivi de vos chantiers"
+" au même endroit, avec l'administratif géré pour vous."
+
+msgid "← Back to the Academy"
+msgstr "← Retour à l'Académie"
+
+msgid "Lulaworks Academy"
+msgstr "Académie Lulaworks"
+
+msgid "Learn to win more work, quote better and get paid"
+msgstr "Apprenez à décrocher plus de contrats, mieux chiffrer et être payé"
+
+msgid ""
+"Free guides, tools and templates for contractors and suppliers — how to run "
+"a more profitable business, and how Lulaworks helps you do it. No fluff, no "
+"hard sell."
+msgstr ""
+"Des guides, outils et modèles gratuits pour les entrepreneurs et les "
+"fournisseurs — comment gérer une entreprise plus rentable, et comment "
+"Lulaworks vous y aide. Sans blabla, sans pression commerciale."
+
+msgid "Guided learning paths"
+msgstr "Parcours d'apprentissage guidés"
+
+msgid "Start path →"
+msgstr "Commencer le parcours →"
+
+msgid "Free calculators"
+msgstr "Calculatrices gratuites"
+
+msgid "Job profit, markup, VAT and break-even — no signup."
+msgstr ""
+"Marge de chantier, marge commerciale, TVA et seuil de rentabilité — sans "
+"inscription."
+
+msgid "Open →"
+msgstr "Ouvrir →"
+
+msgid "Free templates"
+msgstr "Modèles gratuits"
+
+msgid "Quotation, invoice, RFQ, checklists and follow-up emails."
+msgstr ""
+"Devis, facture, appel d'offres, listes de contrôle et e-mails de relance."
+
+msgid "Featured"
+msgstr "À la une"
+
+msgid "Latest"
+msgstr "Les plus récents"
+
+msgid "New guides, tools and templates are on their way — check back soon."
+msgstr "De nouveaux guides, outils et modèles arrivent — revenez bientôt."
+
+msgid "← Academy"
+msgstr "← Académie"
+
+msgid "Learning path"
+msgstr "Parcours d'apprentissage"
+
+msgid "Keep reading"
+msgstr "Poursuivez la lecture"
+
 msgid "Simple, transparent pricing"
 msgstr "Une tarification simple et transparente"
 
@@ -948,6 +1070,111 @@ msgstr ""
 "Prix affichés en %(currency)s, selon votre localisation. Tous les forfaits "
 "incluent un essai gratuit de 30 jours — sans carte bancaire."
 
+msgid "← Free templates"
+msgstr "← Modèles gratuits"
+
+#, python-format
+msgid "%(k)s template"
+msgstr "Modèle : %(k)s"
+
+msgid "What a good one includes"
+msgstr "Ce qu'un bon modèle contient"
+
+msgid "The checklist"
+msgstr "La liste de contrôle"
+
+msgid "Copy"
+msgstr "Copier"
+
+#, python-format
+msgid "Replace the %(ph)s with your details before sending."
+msgstr "Remplacez les %(ph)s par vos informations avant l'envoi."
+
+msgid ""
+"Start free — no card required. Lulaworks creates it for you, branded and "
+"numbered, in seconds."
+msgstr ""
+"Commencez gratuitement — sans carte bancaire. Lulaworks le crée pour vous, à"
+" votre image et numéroté, en quelques secondes."
+
+msgid "Get more free templates & guides"
+msgstr "Recevez plus de modèles et de guides gratuits"
+
+msgid "Send me templates"
+msgstr "Envoyez-moi des modèles"
+
+msgid "More templates"
+msgstr "Plus de modèles"
+
+msgid "Copied ✓"
+msgstr "Copié ✓"
+
+msgid "Free business templates for contractors"
+msgstr "Modèles d'entreprise gratuits pour les entrepreneurs"
+
+msgid ""
+"Professional quotation, invoice, delivery note, RFQ and purchase-order "
+"templates — plus ready-to-use checklists and payment-reminder emails. Create"
+" the documents free in Lulaworks, no static files to wrestle with."
+msgstr ""
+"Des modèles professionnels de devis, facture, bon de livraison, appel "
+"d'offres et bon de commande — ainsi que des listes de contrôle prêtes à "
+"l'emploi et des e-mails de relance de paiement. Créez les documents "
+"gratuitement dans Lulaworks, sans fichiers statiques à manipuler."
+
+msgid "← Free tools"
+msgstr "← Outils gratuits"
+
+msgid "Free tool"
+msgstr "Outil gratuit"
+
+msgid "Currency:"
+msgstr "Devise :"
+
+msgid "Calculate"
+msgstr "Calculer"
+
+msgid "Result"
+msgstr "Résultat"
+
+msgid ""
+"Enter your numbers and press <strong>Calculate</strong> to see the result."
+msgstr ""
+"Saisissez vos chiffres et appuyez sur <strong>Calculer</strong> pour voir le"
+" résultat."
+
+msgid ""
+"Start free — no card required. Lulaworks tracks this for every quote and job"
+" automatically."
+msgstr ""
+"Commencez gratuitement — sans carte bancaire. Lulaworks le suit "
+"automatiquement pour chaque devis et chantier."
+
+msgid "Get more free tools & guides"
+msgstr "Recevez plus d'outils et de guides gratuits"
+
+msgid "Send me tools"
+msgstr "Envoyez-moi des outils"
+
+msgid "More free tools"
+msgstr "Plus d'outils gratuits"
+
+msgid "Free calculators for contractors"
+msgstr "Calculatrices gratuites pour les entrepreneurs"
+
+msgid ""
+"Quick, genuinely useful tools — no signup required. Work out your job "
+"profit, markup, VAT and break-even, then let Lulaworks do it automatically "
+"for every job."
+msgstr ""
+"Des outils rapides et réellement utiles — sans inscription. Calculez la "
+"marge de votre chantier, votre marge commerciale, la TVA et le seuil de "
+"rentabilité, puis laissez Lulaworks le faire automatiquement pour chaque "
+"chantier."
+
+msgid "Open tool →"
+msgstr "Ouvrir l'outil →"
+
 msgid "Start free trial"
 msgstr "Essai gratuit"
 
@@ -986,10 +1213,8 @@ msgstr "Vous avez déjà un compte ? <a href=\"%(login_url)s\">Connectez-vous</a
 msgid "Create your company"
 msgstr "Créez votre entreprise"
 
-#, fuzzy
-#| msgid "Company Management"
 msgid "Company name"
-msgstr "Gestion de l'entreprise"
+msgstr "Nom de l'entreprise"
 
 msgid "Full name"
 msgstr "Nom complet"
@@ -1031,7 +1256,7 @@ msgid "Construction"
 msgstr "Construction"
 
 msgid "Other"
-msgstr ""
+msgstr "Autre"
 
 msgid "Create Company & Start Trial"
 msgstr "Créer l'entreprise et démarrer l'essai"
@@ -1044,6 +1269,34 @@ msgstr ""
 "En créant un compte, vous acceptez nos <a "
 "href=\"%(terms_url)s\">Conditions</a> et notre <a "
 "href=\"%(privacy_url)s\">Politique de confidentialité</a>."
+
+msgid "You've been unsubscribed"
+msgstr "Vous avez été désabonné"
+
+#, python-format
+msgid "%(email)s has been removed from Lulaworks Academy emails."
+msgstr "%(email)s a été retiré des e-mails de l'Académie Lulaworks."
+
+msgid "You won't receive Academy emails any more."
+msgstr "Vous ne recevrez plus les e-mails de l'Académie."
+
+msgid "You can still browse everything freely."
+msgstr "Vous pouvez toujours tout consulter librement."
+
+msgid "Link expired or invalid"
+msgstr "Lien expiré ou invalide"
+
+msgid ""
+"We couldn't process that unsubscribe link. If you keep getting emails you "
+"don't want, contact <a "
+"href=\"mailto:support@lulaworks.com\">support@lulaworks.com</a>."
+msgstr ""
+"Nous n'avons pas pu traiter ce lien de désabonnement. Si vous continuez à "
+"recevoir des e-mails non souhaités, contactez <a "
+"href=\"mailto:support@lulaworks.com\">support@lulaworks.com</a>."
+
+msgid "Back to the Academy"
+msgstr "Retour à l'Académie"
 
 msgid "Quotation Management"
 msgstr "Gestion des devis"
@@ -1384,6 +1637,111 @@ msgstr "Accès depuis ordinateur, tablette et mobile"
 msgid "Automatic backups and no software to install"
 msgstr "Sauvegardes automatiques et aucun logiciel à installer"
 
+msgid "Open in Lulaworks"
+msgstr "Ouvrir dans Lulaworks"
+
+#, python-format
+msgid "Hi %(n)s,"
+msgstr "Bonjour %(n)s,"
+
+msgid "Hi,"
+msgstr "Bonjour,"
+
+msgid ""
+"Thanks for joining the <strong>Lulaworks Academy</strong> — welcome! You'll "
+"get practical, no-fluff guides, free tools and templates to help you win "
+"more work, quote more professionally and get paid faster."
+msgstr ""
+"Merci d'avoir rejoint l'<strong>Académie Lulaworks</strong> — bienvenue ! "
+"Vous recevrez des guides pratiques et sans blabla, des outils et des modèles"
+" gratuits pour vous aider à décrocher plus de contrats, chiffrer de façon "
+"plus professionnelle et être payé plus vite."
+
+msgid "Here's where to start:"
+msgstr "Voici par où commencer :"
+
+msgid "Guides & the Academy"
+msgstr "Guides et Académie"
+
+msgid "job profit, markup, VAT, break-even"
+msgstr "marge de chantier, marge commerciale, TVA, seuil de rentabilité"
+
+msgid "quotation, invoice, RFQ, checklists"
+msgstr "devis, facture, appel d'offres, listes de contrôle"
+
+msgid ""
+"When you're ready to put it into practice, your free Lulaworks account "
+"quotes, invoices and tracks jobs in one place."
+msgstr ""
+"Quand vous serez prêt à le mettre en pratique, votre compte Lulaworks "
+"gratuit établit les devis, les factures et suit vos chantiers au même "
+"endroit."
+
+msgid "Open"
+msgstr "Ouverts"
+
+msgid "Powered by Lulaworks."
+msgstr "Propulsé par Lulaworks."
+
+msgid "Unsubscribe"
+msgstr "Se désabonner"
+
+msgid "document"
+msgstr "document"
+
+#, python-format
+msgid "📎 The %(dl)s (%(ref)s) is attached as a PDF."
+msgstr "📎 Le %(dl)s (%(ref)s) est joint au format PDF."
+
+#, python-format
+msgid "📎 The %(dl)s is attached as a PDF."
+msgstr "📎 Le %(dl)s est joint au format PDF."
+
+#, python-format
+msgid ""
+"<strong>%(who)s</strong> has invited you to join <strong>%(co)s</strong> on "
+"Lulaworks."
+msgstr ""
+"<strong>%(who)s</strong> vous a invité à rejoindre <strong>%(co)s</strong> "
+"sur Lulaworks."
+
+#, python-format
+msgid "You've been invited to join <strong>%(co)s</strong> on Lulaworks."
+msgstr ""
+"Vous avez été invité à rejoindre <strong>%(co)s</strong> sur Lulaworks."
+
+#, python-format
+msgid "You'll join as <strong>%(r)s</strong>."
+msgstr "Vous rejoindrez en tant que <strong>%(r)s</strong>."
+
+msgid ""
+"Click the button below to set your own password and activate your account. "
+"For your security, we never send passwords by email."
+msgstr ""
+"Cliquez sur le bouton ci-dessous pour définir votre mot de passe et activer "
+"votre compte. Pour votre sécurité, nous n'envoyons jamais de mots de passe "
+"par e-mail."
+
+#, python-format
+msgid "You received this because you're a contact of %(co)s."
+msgstr "Vous recevez ceci car vous êtes un contact de %(co)s."
+
+#, python-format
+msgid ""
+"We received a request to reset the password for your Lulaworks account "
+"(<strong>%(em)s</strong>)."
+msgstr ""
+"Nous avons reçu une demande de réinitialisation du mot de passe de votre "
+"compte Lulaworks (<strong>%(em)s</strong>)."
+
+msgid ""
+"Click the button below to choose a new password. If you didn't request this,"
+" you can safely ignore this email — your password won't change."
+msgstr ""
+"Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe. Si "
+"vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail"
+" — votre mot de passe ne changera pas."
+
 msgid "Pending compliance"
 msgstr "Conformité en attente"
 
@@ -1432,68 +1790,54 @@ msgstr "Expiré"
 msgid "Intelligence"
 msgstr "Intelligence"
 
-#, fuzzy
-#| msgid "Historical data"
 msgid "Historical activity"
-msgstr "Données historiques"
+msgstr "Activité passée"
 
-#, fuzzy
-#| msgid "Reconstructed from imported history"
 msgid "from your imported business history"
-msgstr "Reconstruit à partir de l'historique importé"
+msgstr "d'après votre historique d'activité importé"
 
-#, fuzzy
-#| msgid "← Previous"
 msgid "Previous jobs"
-msgstr "← Précédent"
+msgstr "Chantiers précédents"
 
-#, fuzzy
-#| msgid "Historical data"
 msgid "Historical priced items"
-msgstr "Données historiques"
+msgstr "Articles tarifés (historique)"
 
-#, fuzzy
-#| msgid "Start job"
 msgid "Similar jobs"
-msgstr "Démarrer la tâche"
+msgstr "Chantiers similaires"
 
-#, fuzzy
-#| msgid "Historical data"
 msgid "Historical value"
-msgstr "Données historiques"
+msgstr "Valeur historique"
 
-#, fuzzy
-#| msgid "Start job"
 msgid "Last job"
-msgstr "Démarrer la tâche"
+msgstr "Dernier chantier"
 
 msgid "Open the source document"
-msgstr ""
+msgstr "Ouvrir le document source"
 
 msgid "What you historically quoted / charged them"
-msgstr ""
+msgstr "Ce que vous leur avez chiffré / facturé par le passé"
 
 msgid ""
 "Historical information is advisory — it never changes a new quotation, price"
 " or job on its own."
 msgstr ""
+"Les informations historiques sont indicatives — elles ne modifient jamais "
+"d'elles-mêmes un nouveau devis, prix ou chantier."
 
 msgid "What you historically charged customers"
-msgstr ""
+msgstr "Ce que vous avez facturé aux clients par le passé"
 
 msgid "Sale / quote lines"
-msgstr ""
+msgstr "Lignes de vente / devis"
 
 msgid "Average charged"
-msgstr ""
+msgstr "Montant moyen facturé"
 
 msgid "Item"
 msgstr "Article"
 
-#, fuzzy
-#| msgid "Edit profile"
 msgid "Unit price"
-msgstr "Modifier le profil"
+msgstr "Prix unitaire"
 
 msgid "Date"
 msgstr "Date"
@@ -1505,12 +1849,14 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "You don't have permission to view sale values."
-msgstr ""
+msgstr "Vous n'avez pas l'autorisation de voir les montants de vente."
 
 msgid ""
 "Historical prices are advisory — a reference for what you charged before. "
 "They never set a new quotation on their own."
 msgstr ""
+"Les prix historiques sont indicatifs — une référence de ce que vous avez "
+"facturé auparavant. Ils ne définissent jamais d'eux-mêmes un nouveau devis."
 
 msgid "Language"
 msgstr "Langue"
@@ -1519,72 +1865,94 @@ msgid "Change"
 msgstr "Changer"
 
 msgid "Price behaviour &amp; outlook"
-msgstr ""
+msgstr "Évolution des prix et perspective"
 
-#, fuzzy
-#| msgid "Reconstructed from imported history"
 msgid "purchase prices from your imported history"
-msgstr "Reconstruit à partir de l'historique importé"
+msgstr "prix d'achat d'après votre historique importé"
 
-#, fuzzy
-#| msgid "Part-paid"
 msgid "Latest paid"
-msgstr "Partiellement payée"
+msgstr "Dernier payé"
 
 msgid "Average"
-msgstr ""
+msgstr "Moyenne"
 
 msgid "Lowest"
-msgstr ""
+msgstr "Le plus bas"
 
 msgid "Trend"
-msgstr ""
+msgstr "Tendance"
 
 msgid "Likely next price"
-msgstr ""
+msgstr "Prochain prix probable"
 
 msgid "rising"
-msgstr ""
+msgstr "en hausse"
 
 msgid "easing"
-msgstr ""
+msgstr "en baisse"
 
-#, fuzzy
-#| msgid "Ready"
 msgid "steady"
-msgstr "Prêt"
+msgstr "stable"
 
 #, python-format
 msgid "confidence %(c)s · based on %(b)s"
-msgstr ""
+msgstr "confiance %(c)s · d'après %(b)s"
 
 msgid ""
 "A forecast needs at least three dated prices — showing behaviour so far."
 msgstr ""
+"Une prévision nécessite au moins trois prix datés — voici l'évolution "
+"jusqu'à présent."
 
 msgid "Price over time"
-msgstr ""
+msgstr "Prix dans le temps"
 
 msgid "solid = history · dashed = projection"
-msgstr ""
+msgstr "trait plein = historique · pointillés = projection"
 
 msgid "Every recorded purchase price"
-msgstr ""
+msgstr "Tous les prix d'achat enregistrés"
 
-#, fuzzy
-#| msgid "Suppliers"
 msgid "Supplier"
-msgstr "Fournisseurs"
+msgstr "Fournisseur"
 
-#, fuzzy
-#| msgid "Pricing"
 msgid "Price"
-msgstr "Tarifs"
+msgstr "Prix"
 
 msgid ""
 "The projection is a transparent trend estimate from your own purchase "
 "history — advisory only. It never sets a purchase order or quote on its own."
 msgstr ""
+"La projection est une estimation de tendance transparente établie à partir "
+"de votre propre historique d'achats — indicative uniquement. Elle ne crée "
+"jamais d'elle-même un bon de commande ou un devis."
+
+msgid "Overview"
+msgstr "Vue d'ensemble"
+
+msgid "Your clients — from the shared customer master"
+msgstr "Vos clients — issus du référentiel client partagé"
+
+msgid "Our clients"
+msgstr "Nos clients"
+
+msgid "Requests"
+msgstr "Demandes"
+
+msgid "Purchase orders"
+msgstr "Bons de commande"
+
+msgid "Trends, movers and a price forecast"
+msgstr "Tendances, variations et prévision des prix"
+
+msgid "Price analytics"
+msgstr "Analyse des prix"
+
+msgid "Every price point, newest first"
+msgstr "Chaque point de prix, du plus récent au plus ancien"
+
+msgid "Price ledger"
+msgstr "Registre des prix"
 
 msgid "Ready (overridden)"
 msgstr "Prêt (dérogation)"
@@ -1602,10 +1970,8 @@ msgstr "Bloquant (%(n)s)"
 msgid "Related records"
 msgstr "Enregistrements liés"
 
-#, fuzzy
-#| msgid "Start job"
 msgid "Similar past jobs"
-msgstr "Démarrer la tâche"
+msgstr "Chantiers passés similaires"
 
 msgid "Type"
 msgstr "Type"
@@ -1620,37 +1986,33 @@ msgid ""
 "Shown for reference — comparable work you did before. It never changes this "
 "quotation or job on its own."
 msgstr ""
+"Affiché à titre de référence — des travaux comparables que vous avez déjà "
+"réalisés. Cela ne modifie jamais de soi-même ce devis ou ce chantier."
 
-#, fuzzy
-#| msgid "Historical data"
 msgid "Historical purchasing"
-msgstr "Données historiques"
+msgstr "Achats passés"
 
-#, fuzzy
-#| msgid "Pipeline"
 msgid "Priced lines"
-msgstr "Pipeline"
+msgstr "Lignes tarifées"
 
 msgid "Distinct items"
-msgstr ""
+msgstr "Articles distincts"
 
-#, fuzzy
-#| msgid "Last name"
 msgid "Last purchase"
-msgstr "Nom"
+msgstr "Dernier achat"
 
 msgid "What you historically bought from them"
-msgstr ""
+msgstr "Ce que vous leur avez acheté par le passé"
 
 msgid ""
 "Historical prices are advisory — the last price you paid, for reference. "
 "They never set a new purchase order or quote on their own."
 msgstr ""
+"Les prix historiques sont indicatifs — le dernier prix payé, à titre de "
+"référence. Ils ne créent jamais d'eux-mêmes un bon de commande ou un devis."
 
-#, fuzzy
-#| msgid "Billing"
 msgid "falling"
-msgstr "Facturation"
+msgstr "en baisse"
 
 msgid "Search customers, jobs…"
 msgstr "Rechercher clients, travaux…"
@@ -1942,9 +2304,6 @@ msgstr "Bon de commande"
 
 msgid "PO number"
 msgstr "N° de bon de commande"
-
-msgid "Open"
-msgstr "Ouverts"
 
 #, python-format
 msgid ""
@@ -2618,9 +2977,6 @@ msgstr ""
 "s'appliqueront lors de l'enregistrement. Vos informations existantes sont "
 "conservées — rien n'est supprimé automatiquement."
 
-msgid "Overview"
-msgstr "Vue d'ensemble"
-
 msgid "Sales"
 msgstr "Ventes"
 
@@ -3204,168 +3560,138 @@ msgstr ""
 " La désactivation retire immédiatement toutes les autorisations et la retire"
 " de tous les sélecteurs d'affectation."
 
-#, fuzzy
-#| msgid "Reports & Analytics"
 msgid "Items & Price Analytics"
-msgstr "Rapports et analyses"
+msgstr "Articles et analyse des prix"
 
 msgid "Items &amp; price analytics"
-msgstr ""
+msgstr "Articles et analyse des prix"
 
 msgid ""
 "What you pay across suppliers and time — trends, movers and a forecast, from"
 " your recorded purchases."
 msgstr ""
+"Ce que vous payez selon les fournisseurs et dans le temps — tendances, "
+"variations et prévision, d'après vos achats enregistrés."
 
 msgid "Search an item — e.g. hydraulic hose, diesel, cement"
-msgstr ""
+msgstr "Rechercher un article — ex. tuyau hydraulique, diesel, ciment"
 
 msgid "Clear"
-msgstr ""
+msgstr "Effacer"
 
-#, fuzzy
-#| msgid "All statuses"
 msgid "All items"
-msgstr "Tous les statuts"
+msgstr "Tous les articles"
 
-#, fuzzy, python-format
-#| msgid "%(n)s active"
+#, python-format
 msgid "%(n)s matching item"
 msgid_plural "%(n)s matching items"
 msgstr[0] "%(n)s actifs"
 msgstr[1] "%(n)s actifs"
 
 msgid "Matching items"
-msgstr ""
+msgstr "Articles correspondants"
 
-#, fuzzy
-#| msgid "Services"
 msgid "Prices"
-msgstr "Services"
-
-msgid "Latest"
-msgstr ""
+msgstr "Prix"
 
 msgid "Avg"
-msgstr ""
+msgstr "Moy."
 
-#, fuzzy
-#| msgid "Suppliers"
 msgid "By supplier"
-msgstr "Fournisseurs"
+msgstr "Par fournisseur"
 
 msgid "(live price ledger)"
-msgstr ""
+msgstr "(registre des prix en direct)"
 
-#, fuzzy
-#| msgid "Timeline"
 msgid "Times"
-msgstr "Chronologie"
+msgstr "Fois"
 
-#, fuzzy
-#| msgid "Last name"
 msgid "Last seen"
-msgstr "Nom"
+msgstr "Vu pour la dernière fois"
 
 msgid "cheapest"
-msgstr ""
+msgstr "le moins cher"
 
 #, python-format
 msgid ""
 "No recorded prices for “%(q)s”. Import supplier invoices/quotes on the "
 "Business history page, or capture a supplier quote, to build price history."
 msgstr ""
+"Aucun prix enregistré pour « %(q)s ». Importez des factures/devis "
+"fournisseurs sur la page Historique d'activité, ou saisissez un devis "
+"fournisseur, pour constituer un historique des prix."
 
 msgid "Items tracked"
-msgstr ""
+msgstr "Articles suivis"
 
-#, fuzzy
-#| msgid "Pricing"
 msgid "Price points"
-msgstr "Tarifs"
+msgstr "Points de prix"
 
-#, fuzzy
-#| msgid "Suppliers"
 msgid "Suppliers seen"
-msgstr "Fournisseurs"
+msgstr "Fournisseurs recensés"
 
-#, fuzzy
-#| msgid "Record payment"
 msgid "Recorded spend"
-msgstr "Enregistrer un paiement"
+msgstr "Dépense enregistrée"
 
 msgid "Period covered"
-msgstr ""
+msgstr "Période couverte"
 
 msgid "Biggest price risers"
-msgstr ""
+msgstr "Plus fortes hausses de prix"
 
-#, fuzzy
-#| msgid "Services"
 msgid "prices"
-msgstr "Services"
+msgstr "prix"
 
-#, fuzzy
-#| msgid "No customers yet."
 msgid "Not enough history yet."
-msgstr "Aucun client pour le moment."
+msgstr "Pas encore assez d'historique."
 
 msgid "Biggest price drops"
-msgstr ""
+msgstr "Plus fortes baisses de prix"
 
 msgid "— click any item for its trend & forecast"
-msgstr ""
+msgstr "— cliquez sur un article pour sa tendance et sa prévision"
 
-#, fuzzy
-#| msgid "Last name"
 msgid "Last"
-msgstr "Nom"
+msgstr "Dernier"
 
 msgid ""
 "No price history yet. Import supplier invoices/quotes on the Business "
 "history page to build it."
 msgstr ""
-
-msgid "Price ledger"
-msgstr ""
+"Pas encore d'historique des prix. Importez des factures/devis fournisseurs "
+"sur la page Historique d'activité pour le constituer."
 
 msgid ""
 "Every purchase price we've paid — live captures and imported history "
 "combined, newest first."
 msgstr ""
+"Tous les prix d'achat payés — saisies en direct et historique importé "
+"combinés, du plus récent au plus ancien."
 
 msgid "See trends & forecast →"
-msgstr ""
+msgstr "Voir les tendances et la prévision →"
 
-#, fuzzy
-#| msgid "Search CRM…"
 msgid "Search an item…"
-msgstr "Rechercher dans le CRM…"
+msgstr "Rechercher un article…"
 
 msgid "Unit"
-msgstr ""
+msgstr "Unité"
 
-#, fuzzy
-#| msgid "Resources"
 msgid "Source"
-msgstr "Ressources"
+msgstr "Source"
 
 msgid "imported"
-msgstr ""
+msgstr "importé"
 
-#, fuzzy
-#| msgid "Features"
 msgid "captured"
-msgstr "Fonctionnalités"
+msgstr "saisi"
 
 #, python-format
 msgid "No prices match “%(q)s”."
-msgstr ""
+msgstr "Aucun prix ne correspond à « %(q)s »."
 
-#, fuzzy
-#| msgid "No payments recorded yet."
 msgid "No prices recorded yet."
-msgstr "Aucun paiement enregistré pour le moment."
+msgstr "Aucun prix enregistré pour le moment."
 
 msgid ""
 "Your photo and details. Everyone can edit their own profile, whatever their "
@@ -3691,12 +4017,6 @@ msgstr "C'est le PDF exact que le client reçoit. Pour le modifier, utilisez"
 
 msgid "(available while the quotation is still in preparation)"
 msgstr "(disponible tant que le devis est encore en préparation)"
-
-msgid "Purchase orders"
-msgstr "Bons de commande"
-
-msgid "document"
-msgstr "document"
 
 msgid ""
 "Attach the customer's PO document — its number, date, value and payment "

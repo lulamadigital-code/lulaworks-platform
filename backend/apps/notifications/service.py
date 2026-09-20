@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils import translation
 from django.utils.html import strip_tags
 
 from .models import EmailCategory, EmailLog, EmailStatus
@@ -57,22 +58,33 @@ def _branding(company) -> dict:
     return ctx
 
 
-def render_email(template: str, context: dict, company=None) -> tuple[str, str]:
+def render_email(template: str, context: dict, company=None, lang=None) -> tuple[str, str]:
     """Render (html, text) for a template. `template` is a name under emails/,
     with or without the .html suffix. The branded shell is applied automatically
-    for the generic template; specific templates extend base.html themselves."""
+    for the generic template; specific templates extend base.html themselves.
+
+    `lang` renders the email in the RECIPIENT's language (AI OS / i18n §16): the
+    labels around the content localise, business data passed in the context does
+    not. When None, the currently-active language is used."""
     name = template if template.endswith(".html") else f"emails/{template}.html"
     full = {**_branding(company), **context}
-    html = render_to_string(name, full)
-    text = context.get("text_body") or strip_tags(
-        render_to_string(name, full)).strip()
-    return html, text
+
+    def _do():
+        html = render_to_string(name, full)
+        text = context.get("text_body") or strip_tags(render_to_string(name, full)).strip()
+        return html, text
+
+    if lang:
+        with translation.override(lang):
+            full.setdefault("LANGUAGE_CODE", lang)
+            return _do()
+    return _do()
 
 
 def send_email(*, to, subject, template="generic", context=None, company=None,
                to_name="", category=EmailCategory.SYSTEM, sent_by=None,
                related=None, cc=None, reply_to="", attachment_specs=None,
-               now=False) -> EmailLog:
+               lang=None, now=False) -> EmailLog:
     """Queue a branded email and record it. Returns the EmailLog.
 
     `related` is any model instance the email concerns (stamped as entity_type/
@@ -83,7 +95,10 @@ def send_email(*, to, subject, template="generic", context=None, company=None,
     """
     context = dict(context or {})
     context.setdefault("subject", subject)
-    html, text = render_email(template, context, company)
+    # Localise to the recipient's language when known (explicit arg or context),
+    # so the surrounding labels match the reader — not the sender's UI language.
+    lang = lang or context.get("to_language")
+    html, text = render_email(template, context, company, lang=lang)
 
     # "Sent on behalf of" the tenant: platform mail all goes out from the one
     # authenticated address (DEFAULT_FROM_EMAIL), but a recipient who replies

@@ -1,14 +1,15 @@
 {% comment %}Content→product CTA card, aware of auth. Logged-in users already have
 an account, so they get "Go to Dashboard" instead of "Start Free".
 Params: label (heading), url (signup/deep-link), note (sub-text).{% endcomment %}
+{% load i18n %}
 <div class="card" style="margin-top:26px;background:linear-gradient(135deg,var(--primary-t),#fff);">
   {% if request.user.is_authenticated %}
-  <h3 style="margin-top:0;">Open it in Lulaworks</h3>
-  <p style="color:var(--muted);margin:6px 0 14px;">You're signed in — head straight to your dashboard.</p>
-  <a class="btn" href="{% url 'web:dashboard' %}">Go to your Dashboard →</a>
+  <h3 style="margin-top:0;">{% trans "Open it in Lulaworks" %}</h3>
+  <p style="color:var(--muted);margin:6px 0 14px;">{% trans "You're signed in — head straight to your dashboard." %}</p>
+  <a class="btn" href="{% url 'web:dashboard' %}">{% trans "Go to your Dashboard →" %}</a>
   {% else %}
-  <h3 style="margin-top:0;">{{ label|default:"Put this into practice with Lulaworks" }}</h3>
-  <p style="color:var(--muted);margin:6px 0 14px;">{{ note|default:"Start free — no card required." }}</p>
-  <a class="btn" href="{{ url|default:'/start-free-trial/' }}">Start Free with Lulaworks</a>
+  <h3 style="margin-top:0;">{% if label %}{{ label }}{% else %}{% trans "Put this into practice with Lulaworks" %}{% endif %}</h3>
+  <p style="color:var(--muted);margin:6px 0 14px;">{% if note %}{{ note }}{% else %}{% trans "Start free — no card required." %}{% endif %}</p>
+  <a class="btn" href="{{ url|default:'/start-free-trial/' }}">{% trans "Start Free with Lulaworks" %}</a>
   {% endif %}
 </div>

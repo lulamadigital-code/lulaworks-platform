@@ -1,8 +1,9 @@
 {% extends "marketing/base.html" %}
+{% load i18n %}
 {% block content %}
 <section class="section tight">
   <div class="wrap prose" style="max-width:760px;margin:0 auto;">
-    <p><a href="{% url 'marketing:learn' %}" style="color:var(--muted);">← Academy</a></p>
+    <p><a href="{% url 'marketing:learn' %}" style="color:var(--muted);">{% trans "← Academy" %}</a></p>
     <span class="eyebrow">{{ resource.get_kind_display }}{% if resource.category %} · {{ resource.category.name }}{% endif %}</span>
     <h1>{{ resource.title }}</h1>
     {% if resource.summary %}<p class="lead">{{ resource.summary }}</p>{% endif %}
@@ -14,7 +15,7 @@
     {% include "marketing/_product_cta.html" with label=resource.cta_label url=resource.cta_url %}
 
     {% if related %}
-    <h2 style="margin-top:44px;">Keep reading</h2>
+    <h2 style="margin-top:44px;">{% trans "Keep reading" %}</h2>
     <div class="grid g2" style="margin-top:16px;">
       {% for r in related %}{% include "marketing/_resource_card.html" %}{% endfor %}
     </div>

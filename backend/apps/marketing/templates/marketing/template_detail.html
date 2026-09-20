@@ -1,9 +1,10 @@
 {% extends "marketing/base.html" %}
+{% load i18n %}
 {% block content %}
 <section class="section tight">
   <div class="wrap" style="max-width:820px;margin:0 auto;">
-    <p><a href="{% url 'marketing:templates' %}" style="color:var(--muted);">← Free templates</a></p>
-    <span class="eyebrow">{{ tpl.kind }} template</span>
+    <p><a href="{% url 'marketing:templates' %}" style="color:var(--muted);">{% trans "← Free templates" %}</a></p>
+    <span class="eyebrow">{% blocktrans with k=tpl.kind %}{{ k }} template{% endblocktrans %}</span>
     <h1>{{ tpl.title }}</h1>
     <p class="lead">{{ tpl.summary }}</p>
 
@@ -11,7 +12,7 @@
 
     {% if tpl.kind == 'document' %}
     <div class="card" style="margin-top:18px;">
-      <h3 style="margin-top:0;">What a good one includes</h3>
+      <h3 style="margin-top:0;">{% trans "What a good one includes" %}</h3>
       <ul class="tpl-list">
         {% for line in tpl.includes %}<li><span class="tick">✓</span> {{ line }}</li>{% endfor %}
       </ul>
@@ -20,8 +21,8 @@
     {% elif tpl.kind == 'checklist' %}
     <div class="card" style="margin-top:18px;">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-        <h3 style="margin:0;">The checklist</h3>
-        <button type="button" class="btn ghost" data-copy="#tpl-copy">Copy</button>
+        <h3 style="margin:0;">{% trans "The checklist" %}</h3>
+        <button type="button" class="btn ghost" data-copy="#tpl-copy">{% trans "Copy" %}</button>
       </div>
       <ul class="tpl-list" id="tpl-copy">
         {% for item in tpl.items %}<li><span class="box">☐</span> {{ item }}</li>{% endfor %}
@@ -33,24 +34,25 @@
     <div class="card" style="margin-top:18px;">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
         <h3 style="margin:0;font-size:17px;">{{ s.title }}</h3>
-        <button type="button" class="btn ghost" data-copy="#email-{{ forloop.counter }}">Copy</button>
+        <button type="button" class="btn ghost" data-copy="#email-{{ forloop.counter }}">{% trans "Copy" %}</button>
       </div>
       <pre id="email-{{ forloop.counter }}" class="tpl-pre">{{ s.text }}</pre>
     </div>
     {% endfor %}
-    <p style="color:var(--muted);font-size:13px;margin-top:8px;">Replace the
-      {{ '{placeholders}' }} with your details before sending.</p>
+    <p style="color:var(--muted);font-size:13px;margin-top:8px;">{% blocktrans with ph='{placeholders}' %}Replace the {{ ph }} with your details before sending.{% endblocktrans %}</p>
     {% endif %}
 
     {# ── CTA ──────────────────────────────────────────────────────────────── #}
-    {% include "marketing/_product_cta.html" with label=tpl.cta_label url=tpl.cta_url note="Start free — no card required. Lulaworks creates it for you, branded and numbered, in seconds." %}
+    {% trans "Start free — no card required. Lulaworks creates it for you, branded and numbered, in seconds." as tpl_cta_note %}
+    {% include "marketing/_product_cta.html" with label=tpl.cta_label url=tpl.cta_url note=tpl_cta_note %}
 
     {% if not request.user.is_authenticated %}
-    {% include "marketing/_lead_form.html" with source=tpl.slug event="template_used" heading="Get more free templates & guides" button="Send me templates" %}
+    {% trans "Get more free templates & guides" as tpl_lead_heading %}{% trans "Send me templates" as tpl_lead_button %}
+    {% include "marketing/_lead_form.html" with source=tpl.slug event="template_used" heading=tpl_lead_heading button=tpl_lead_button %}
     {% endif %}
 
     {% if others %}
-    <h2 style="margin-top:40px;">More templates</h2>
+    <h2 style="margin-top:40px;">{% trans "More templates" %}</h2>
     <div class="grid g3" style="margin-top:16px;">
       {% for t in others %}
       <a class="card" href="{% url 'marketing:template_detail' t.slug %}"
@@ -75,12 +77,13 @@
 </style>
 <script>
 (function () {
+  var COPIED = "{% trans 'Copied ✓' %}";
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-copy]'); if (!b) return;
     var el = document.querySelector(b.getAttribute('data-copy')); if (!el) return;
     var text = (el.innerText || el.textContent || '').trim();
     navigator.clipboard.writeText(text).then(function () {
-      var old = b.textContent; b.textContent = 'Copied ✓';
+      var old = b.textContent; b.textContent = COPIED;
       setTimeout(function () { b.textContent = old; }, 1600);
     }).catch(function () {});
   });

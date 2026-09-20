@@ -66,15 +66,20 @@ def notify(company, user, *, title, body="", url="", category=EmailCategory.SYST
 
     # Email — when the channel is on for this user + category.
     if email and _email_allowed(user, category):
+        from django.utils.translation import gettext_lazy as _
         ctx = {"heading": title, "body": body}
         if url:
-            ctx.update({"cta_url": url, "cta_label": "Open in Lulaworks"})
+            # Lazy so it resolves in the recipient's language at render time.
+            ctx.update({"cta_url": url, "cta_label": _("Open in Lulaworks")})
         ctx.update(email_context or {})
+        # Render the email's chrome in the recipient's own language (§16).
+        recipient_lang = (getattr(user, "preferred_language", "") or "").strip() or None
         try:
             result["email"] = send_email(
                 to=user.email, subject=email_subject or title,
                 template=email_template, context=ctx, company=company,
-                to_name=(user.get_full_name() or "").strip(), category=category)
+                to_name=(user.get_full_name() or "").strip(), category=category,
+                lang=recipient_lang)
         except Exception as exc:  # noqa: BLE001 - never break the caller
             logger.warning("Notification email failed: %s", exc)
 

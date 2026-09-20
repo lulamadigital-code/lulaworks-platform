@@ -1,9 +1,10 @@
 {% extends "marketing/base.html" %}
+{% load i18n %}
 {% block content %}
 <section class="section tight">
   <div class="wrap" style="max-width:820px;margin:0 auto;">
-    <p><a href="{% url 'marketing:learn' %}" style="color:var(--muted);">← Academy</a></p>
-    <span class="eyebrow">Learning path</span>
+    <p><a href="{% url 'marketing:learn' %}" style="color:var(--muted);">{% trans "← Academy" %}</a></p>
+    <span class="eyebrow">{% trans "Learning path" %}</span>
     <h1>{{ path.title }}</h1>
     {% if path.summary %}<p class="lead">{{ path.summary }}</p>{% endif %}
 
@@ -22,9 +23,9 @@
     </ol>
 
     {% if request.user.is_authenticated %}
-    <a class="btn" href="{% url 'web:dashboard' %}" style="margin-top:22px;">Go to your Dashboard →</a>
+    <a class="btn" href="{% url 'web:dashboard' %}" style="margin-top:22px;">{% trans "Go to your Dashboard →" %}</a>
     {% else %}
-    <a class="btn" href="{% url 'marketing:trial' %}" style="margin-top:22px;">Start Free with Lulaworks</a>
+    <a class="btn" href="{% url 'marketing:trial' %}" style="margin-top:22px;">{% trans "Start Free with Lulaworks" %}</a>
     {% endif %}
   </div>
 </section>

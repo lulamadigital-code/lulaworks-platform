@@ -1,14 +1,15 @@
 {% extends "marketing/base.html" %}
+{% load i18n %}
 {% block content %}
 <section class="section tight">
   <div class="wrap" style="max-width:820px;margin:0 auto;">
-    <p><a href="{% url 'marketing:tools' %}" style="color:var(--muted);">← Free tools</a></p>
-    <span class="eyebrow">Free tool</span>
+    <p><a href="{% url 'marketing:tools' %}" style="color:var(--muted);">{% trans "← Free tools" %}</a></p>
+    <span class="eyebrow">{% trans "Free tool" %}</span>
     <h1>{{ tool.title }}</h1>
     <p class="lead">{{ tool.summary }}</p>
 
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;margin:2px 0 4px;">
-      <span style="color:var(--muted);">Currency:</span>
+      <span style="color:var(--muted);">{% trans "Currency:" %}</span>
       {% for code, sym in currencies %}
       <a href="?currency={{ code }}"
          style="padding:3px 10px;border-radius:999px;text-decoration:none;font-weight:700;
@@ -41,13 +42,13 @@
           {% endif %}
         </div>
         {% endfor %}
-        <button class="btn" type="submit" style="width:100%;margin-top:4px;">Calculate</button>
+        <button class="btn" type="submit" style="width:100%;margin-top:4px;">{% trans "Calculate" %}</button>
       </form>
 
       {# ── Result ─────────────────────────────────────────────────────────── #}
       <div class="card" style="margin:0;{% if not results %}background:var(--bg);{% endif %}">
         {% if results %}
-          <h3 style="margin-top:0;">Result</h3>
+          <h3 style="margin-top:0;">{% trans "Result" %}</h3>
           {% for row in results %}
             {% if row.error %}
             <p style="color:#b21f36;font-weight:600;">{{ row.error }}</p>
@@ -60,27 +61,28 @@
             {% endif %}
           {% endfor %}
         {% else %}
-          <p style="color:var(--muted);margin:0;">Enter your numbers and press
-            <strong>Calculate</strong> to see the result.</p>
+          <p style="color:var(--muted);margin:0;">{% blocktrans %}Enter your numbers and press <strong>Calculate</strong> to see the result.{% endblocktrans %}</p>
         {% endif %}
       </div>
     </div>
 
     {# ── Teach ────────────────────────────────────────────────────────────── #}
     <div class="prose" style="max-width:none;margin-top:26px;">
-      <h2>How it works</h2>
+      <h2>{% trans "How it works" %}</h2>
       {{ tool.explainer|safe }}
     </div>
 
     {# ── CTA ──────────────────────────────────────────────────────────────── #}
-    {% include "marketing/_product_cta.html" with label=tool.cta_label url=tool.cta_url note="Start free — no card required. Lulaworks tracks this for every quote and job automatically." %}
+    {% trans "Start free — no card required. Lulaworks tracks this for every quote and job automatically." as tool_cta_note %}
+    {% include "marketing/_product_cta.html" with label=tool.cta_label url=tool.cta_url note=tool_cta_note %}
 
     {% if not request.user.is_authenticated %}
-    {% include "marketing/_lead_form.html" with source=tool.slug event="tool_used" heading="Get more free tools & guides" button="Send me tools" %}
+    {% trans "Get more free tools & guides" as tool_lead_heading %}{% trans "Send me tools" as tool_lead_button %}
+    {% include "marketing/_lead_form.html" with source=tool.slug event="tool_used" heading=tool_lead_heading button=tool_lead_button %}
     {% endif %}
 
     {% if other_tools %}
-    <h2 style="margin-top:40px;">More free tools</h2>
+    <h2 style="margin-top:40px;">{% trans "More free tools" %}</h2>
     <div class="grid g3" style="margin-top:16px;">
       {% for t in other_tools %}
       <a class="card" href="{% url 'marketing:tool' t.slug %}"

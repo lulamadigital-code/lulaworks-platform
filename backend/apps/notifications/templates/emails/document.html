@@ -1,9 +1,10 @@
 {% extends "emails/base.html" %}
+{% load i18n %}
 {% comment %}A document email: an optional personal message from the sender, then
 the standard "here's your document" body. The PDF is attached.{% endcomment %}
 {% block content %}
 {% if message %}<p>{{ message|linebreaksbr }}</p><hr style="border:none;border-top:1px solid #eef1f4;margin:16px 0;">{% endif %}
 <p>{{ body }}</p>
-<p style="font-size:13px;color:#8a97a1;">📎 The {{ doc_label|default:"document" }}{% if reference %}
-   ({{ reference }}){% endif %} is attached as a PDF.</p>
+{% trans "document" as default_doc %}
+<p style="font-size:13px;color:#8a97a1;">{% if reference %}{% blocktrans with dl=doc_label|default:default_doc ref=reference %}📎 The {{ dl }} ({{ ref }}) is attached as a PDF.{% endblocktrans %}{% else %}{% blocktrans with dl=doc_label|default:default_doc %}📎 The {{ dl }} is attached as a PDF.{% endblocktrans %}{% endif %}</p>
 {% endblock %}

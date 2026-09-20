@@ -1,15 +1,14 @@
 {% extends "marketing/base.html" %}
+{% load i18n %}
 {% block content %}
 <section class="section tight">
   <div class="wrap">
-    <span class="eyebrow">Lulaworks Academy</span>
-    <h1>Learn to win more work, quote better and get paid</h1>
-    <p class="lead" style="max-width:640px;">Free guides, tools and templates for
-      contractors and suppliers — how to run a more profitable business, and how
-      Lulaworks helps you do it. No fluff, no hard sell.</p>
+    <span class="eyebrow">{% trans "Lulaworks Academy" %}</span>
+    <h1>{% trans "Learn to win more work, quote better and get paid" %}</h1>
+    <p class="lead" style="max-width:640px;">{% trans "Free guides, tools and templates for contractors and suppliers — how to run a more profitable business, and how Lulaworks helps you do it. No fluff, no hard sell." %}</p>
 
     {% if paths %}
-    <h2 style="margin-top:38px;">Guided learning paths</h2>
+    <h2 style="margin-top:38px;">{% trans "Guided learning paths" %}</h2>
     <div class="grid g3" style="margin-top:16px;">
       {% for p in paths %}
       <a class="card" href="{% url 'marketing:learn_path' p.slug %}"
@@ -17,7 +16,7 @@
         <div class="ic">{{ p.icon|default:"🎯" }}</div>
         <h3 style="margin:10px 0 6px;">{{ p.title }}</h3>
         <p style="color:var(--muted);font-size:14px;margin:0 0 10px;">{{ p.summary }}</p>
-        <span style="font-weight:700;color:var(--primary-d);">Start path →</span>
+        <span style="font-weight:700;color:var(--primary-d);">{% trans "Start path →" %}</span>
       </a>
       {% endfor %}
     </div>
@@ -29,27 +28,25 @@
                 background:linear-gradient(135deg,var(--primary-t),#fff);">
         <div class="ic">🧮</div>
         <div style="flex:1;">
-          <h3 style="margin:0;">Free calculators</h3>
-          <p style="color:var(--muted);margin:2px 0 0;font-size:14px;">Job profit, markup,
-            VAT and break-even — no signup.</p>
+          <h3 style="margin:0;">{% trans "Free calculators" %}</h3>
+          <p style="color:var(--muted);margin:2px 0 0;font-size:14px;">{% trans "Job profit, markup, VAT and break-even — no signup." %}</p>
         </div>
-        <span style="font-weight:700;color:var(--primary-d);white-space:nowrap;">Open →</span>
+        <span style="font-weight:700;color:var(--primary-d);white-space:nowrap;">{% trans "Open →" %}</span>
       </a>
       <a class="card" href="{% url 'marketing:templates' %}"
          style="display:flex;align-items:center;gap:16px;text-decoration:none;color:inherit;
                 background:linear-gradient(135deg,var(--primary-t),#fff);">
         <div class="ic">📄</div>
         <div style="flex:1;">
-          <h3 style="margin:0;">Free templates</h3>
-          <p style="color:var(--muted);margin:2px 0 0;font-size:14px;">Quotation, invoice,
-            RFQ, checklists and follow-up emails.</p>
+          <h3 style="margin:0;">{% trans "Free templates" %}</h3>
+          <p style="color:var(--muted);margin:2px 0 0;font-size:14px;">{% trans "Quotation, invoice, RFQ, checklists and follow-up emails." %}</p>
         </div>
-        <span style="font-weight:700;color:var(--primary-d);white-space:nowrap;">Open →</span>
+        <span style="font-weight:700;color:var(--primary-d);white-space:nowrap;">{% trans "Open →" %}</span>
       </a>
     </div>
 
     {% if featured %}
-    <h2 style="margin-top:46px;">Featured</h2>
+    <h2 style="margin-top:46px;">{% trans "Featured" %}</h2>
     <div class="grid g3" style="margin-top:16px;">
       {% for r in featured %}{% include "marketing/_resource_card.html" %}{% endfor %}
     </div>
@@ -65,7 +62,7 @@
     {% endfor %}
 
     {% if latest %}
-    <h2 style="margin-top:46px;">Latest</h2>
+    <h2 style="margin-top:46px;">{% trans "Latest" %}</h2>
     <div class="grid g3" style="margin-top:16px;">
       {% for r in latest %}{% include "marketing/_resource_card.html" %}{% endfor %}
     </div>
@@ -73,8 +70,7 @@
 
     {% if not featured and not categories and not paths and not latest %}
     <div class="card" style="margin-top:26px;">
-      <p style="color:var(--muted);margin:0;">New guides, tools and templates are on
-        their way — check back soon.</p>
+      <p style="color:var(--muted);margin:0;">{% trans "New guides, tools and templates are on their way — check back soon." %}</p>
     </div>
     {% endif %}
 

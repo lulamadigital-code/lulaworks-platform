@@ -1,8 +1,7 @@
 {% extends "emails/base.html" %}
+{% load i18n %}
 {% block content %}
-<p>{% if inviter %}<strong>{{ inviter }}</strong> has invited you{% else %}You've been invited{% endif %}
-   to join <strong>{{ company_name_display|default:company_name }}</strong> on Lulaworks{% if role %}
-   as <strong>{{ role }}</strong>{% endif %}.</p>
-<p>Click the button below to set your own password and activate your account.
-   For your security, we never send passwords by email.</p>
+<p>{% if inviter %}{% blocktrans with who=inviter co=company_name_display|default:company_name %}<strong>{{ who }}</strong> has invited you to join <strong>{{ co }}</strong> on Lulaworks.{% endblocktrans %}{% else %}{% blocktrans with co=company_name_display|default:company_name %}You've been invited to join <strong>{{ co }}</strong> on Lulaworks.{% endblocktrans %}{% endif %}
+   {% if role %}{% blocktrans with r=role %}You'll join as <strong>{{ r }}</strong>.{% endblocktrans %}{% endif %}</p>
+<p>{% trans "Click the button below to set your own password and activate your account. For your security, we never send passwords by email." %}</p>
 {% endblock %}
