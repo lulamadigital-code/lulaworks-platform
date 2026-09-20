@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 23:07+0000\n"
+"POT-Creation-Date: 2026-09-20 23:50+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2019,24 +2019,6 @@ msgstr "Rechercher clients, travaux…"
 
 msgid "Attention"
 msgstr "Attention"
-
-msgid "Win"
-msgstr "Gagner"
-
-msgid "Deliver"
-msgstr "Réaliser"
-
-msgid "Buy"
-msgstr "Acheter"
-
-msgid "Money"
-msgstr "Argent"
-
-msgid "Knowledge"
-msgstr "Connaissances"
-
-msgid "System"
-msgstr "Système"
 
 msgid "My profile"
 msgstr "Mon profil"
@@ -4846,14 +4828,14 @@ msgstr ""
 msgid "Campaign name"
 msgstr "Nom de la campagne"
 
-msgid "e.g. Mining Maintenance — Q4"
-msgstr "ex. Maintenance minière — T4"
+msgid "e.g. Maintenance push — Q4"
+msgstr "ex. Campagne de maintenance — T4"
 
 msgid "Objective"
 msgstr "Objectif"
 
-msgid "e.g. Reactivate mining leads with no contact in 60 days"
-msgstr "ex. Réactiver les prospects miniers sans contact depuis 60 jours"
+msgid "e.g. Reactivate leads with no contact in 60 days"
+msgstr "ex. Réactiver les prospects sans contact depuis 60 jours"
 
 msgid "Audience segment"
 msgstr "Segment d'audience"
@@ -5011,8 +4993,8 @@ msgstr "← Segments"
 msgid "Segment name"
 msgstr "Nom du segment"
 
-msgid "e.g. Mining prospects needing follow-up"
-msgstr "ex. Prospects miniers à relancer"
+msgid "e.g. Prospects needing follow-up"
+msgstr "ex. Prospects à relancer"
 
 msgid "Optional — what this segment is for"
 msgstr "Facultatif — à quoi sert ce segment"
@@ -5026,8 +5008,8 @@ msgstr "Tous"
 msgid "Industry contains"
 msgstr "Le secteur contient"
 
-msgid "e.g. Mining"
-msgstr "ex. Mines"
+msgid "e.g. Construction"
+msgstr "ex. Construction"
 
 msgid "Country contains"
 msgstr "Le pays contient"
@@ -6779,6 +6761,27 @@ msgstr "« %(name)s » a été retiré de vos clients."
 
 msgid "You don't have access to price history."
 msgstr "Vous n'avez pas accès à l'historique des prix."
+
+#~ msgid "Win"
+#~ msgstr "Gagner"
+
+#~ msgid "Deliver"
+#~ msgstr "Réaliser"
+
+#~ msgid "Buy"
+#~ msgstr "Acheter"
+
+#~ msgid "Money"
+#~ msgstr "Argent"
+
+#~ msgid "Knowledge"
+#~ msgstr "Connaissances"
+
+#~ msgid "System"
+#~ msgstr "Système"
+
+#~ msgid "e.g. Mining"
+#~ msgstr "ex. Mines"
 
 #~ msgid "Job Card"
 #~ msgstr "Fiche de travail"

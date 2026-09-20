@@ -409,7 +409,7 @@
       <label>{% trans "Specialisations (comma separated)" %}</label>
       <input type="text" name="specialisations" value="{{ company.specialisations|join:', ' }}">
       <label>{% trans "Industries served (comma separated)" %}</label>
-      <input type="text" name="industries_served" value="{{ company.industries_served|join:', ' }}" placeholder="Mining, Petrochemical">
+      <input type="text" name="industries_served" value="{{ company.industries_served|join:', ' }}" placeholder="Construction, Manufacturing">
       <div class="two" style="margin-top:4px;">
         <div><label>{% trans "Employees" %}</label><input type="number" name="employee_count" min="0" value="{{ company.employee_count|default_if_none:'' }}"></div>
         <div><label>{% trans "Vehicles" %}</label><input type="number" name="vehicle_count" min="0" value="{{ company.vehicle_count|default_if_none:'' }}"></div>

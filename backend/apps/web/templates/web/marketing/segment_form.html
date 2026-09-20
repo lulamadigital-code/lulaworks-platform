@@ -12,7 +12,7 @@
   <form method="post" action="{% url 'web:marketing_segment_new' %}" id="segform">
     {% csrf_token %}
     <label>{% trans "Segment name" %}</label>
-    <input type="text" name="name" required placeholder="{% trans 'e.g. Mining prospects needing follow-up' %}">
+    <input type="text" name="name" required placeholder="{% trans 'e.g. Prospects needing follow-up' %}">
     <label>{% trans "Description" %}</label>
     <input type="text" name="description" placeholder="{% trans 'Optional — what this segment is for' %}">
 
@@ -30,7 +30,7 @@
         <div><label>{% trans "Source" %}</label>
           <select name="source"><option value="">{% trans "Any" %}</option>
             {% for s in sources %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select></div>
-        <div><label>{% trans "Industry contains" %}</label><input type="text" name="industry" placeholder="{% trans 'e.g. Mining' %}"></div>
+        <div><label>{% trans "Industry contains" %}</label><input type="text" name="industry" placeholder="{% trans 'e.g. Construction' %}"></div>
         <div><label>{% trans "Country contains" %}</label><input type="text" name="country"></div>
         <div><label>{% trans "City contains" %}</label><input type="text" name="city"></div>
         <div><label>{% trans "No contact in (days)" %}</label><input type="number" name="no_contact_days" min="1" placeholder="{% trans 'e.g. 30' %}"></div>
@@ -48,7 +48,7 @@
         <div><label>{% trans "Type" %}</label>
           <select name="customer_type"><option value="">{% trans "Any" %}</option>
             {% for v, l in customer_types %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
-        <div><label>{% trans "Industry contains" %}</label><input type="text" name="cust_industry" placeholder="{% trans 'e.g. Mining' %}"></div>
+        <div><label>{% trans "Industry contains" %}</label><input type="text" name="cust_industry" placeholder="{% trans 'e.g. Construction' %}"></div>
         <div><label>{% trans "Country contains" %}</label><input type="text" name="cust_country"></div>
         <div><label>{% trans "City contains" %}</label><input type="text" name="cust_city"></div>
         <div><label>{% trans "No activity in (days)" %}</label><input type="number" name="no_activity_days" min="1" placeholder="{% trans 'e.g. 90' %}"></div>

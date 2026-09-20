@@ -12,9 +12,9 @@
   <form method="post" action="{% url 'web:marketing_campaign_new' %}">
     {% csrf_token %}
     <label>{% trans "Campaign name" %}</label>
-    <input type="text" name="name" required placeholder="{% trans 'e.g. Mining Maintenance — Q4' %}">
+    <input type="text" name="name" required placeholder="{% trans 'e.g. Maintenance push — Q4' %}">
     <label>{% trans "Objective" %}</label>
-    <input type="text" name="objective" placeholder="{% trans 'e.g. Reactivate mining leads with no contact in 60 days' %}">
+    <input type="text" name="objective" placeholder="{% trans 'e.g. Reactivate leads with no contact in 60 days' %}">
     <div class="two" style="margin-top:4px;">
       <div><label>{% trans "Channel" %}</label>
         <select name="channel">{% for v, l in channels %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>

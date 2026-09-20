@@ -55,8 +55,8 @@
   <form method="post" action="{% url 'web:customer_create' %}">{% csrf_token %}
     <div class="two">
       <div><label>{% trans "Registered company name" %}</label><input type="text" name="name" required
-             placeholder="Harmony Mining"></div>
-      <div><label>{% trans "Industry" %}</label><input type="text" name="industry" placeholder="Gold mining"></div>
+             placeholder="Acme Holdings"></div>
+      <div><label>{% trans "Industry" %}</label><input type="text" name="industry" placeholder="Construction"></div>
       <div><label>{% trans "General email" %}</label><input type="email" name="email"></div>
       <div><label>{% trans "Main telephone" %}</label><input type="text" name="telephone"></div>
       <div><label>{% trans "City" %}</label><input type="text" name="city"></div>

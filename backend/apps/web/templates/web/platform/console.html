@@ -169,8 +169,8 @@
   <h2 style="margin-top:6px;">Create a tenant</h2>
   <form method="post" action="{% url 'web:platform_create_tenant' %}">{% csrf_token %}
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:12px;">
-      <div><label>Company name</label><input type="text" name="company_name" required placeholder="ABC Mining Ltd"></div>
-      <div><label>Owner email</label><input type="email" name="owner_email" required placeholder="owner@abcmining.co.za"></div>
+      <div><label>Company name</label><input type="text" name="company_name" required placeholder="Acme Holdings Ltd"></div>
+      <div><label>Owner email</label><input type="email" name="owner_email" required placeholder="owner@example.co.za"></div>
       <div><label>Owner name</label><input type="text" name="owner_name" placeholder="Thabo Nkosi"></div>
     </div>
     <button class="btn" type="submit">Create &amp; invite owner</button>

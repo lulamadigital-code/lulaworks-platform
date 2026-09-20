@@ -43,13 +43,13 @@
   <h2 style="margin-top:0;">{% trans "Capture a lead" %}</h2>
   <form method="post" action="{% url 'web:crm_lead_create' %}">{% csrf_token %}
     <div class="two">
-      <div><label>{% trans "Company / organisation *" %}</label><input type="text" name="company_name" required placeholder="Prospect Mining"></div>
+      <div><label>{% trans "Company / organisation *" %}</label><input type="text" name="company_name" required placeholder="Acme Holdings"></div>
       <div><label>{% trans "Contact person" %}</label><input type="text" name="contact_name" placeholder="Thabo Ncube"></div>
       <div><label>{% trans "Job title" %}</label><input type="text" name="job_title"></div>
       <div><label>{% trans "Email" %}</label><input type="email" name="email"></div>
       <div><label>{% trans "Telephone" %}</label><input type="text" name="telephone"></div>
       <div><label>{% trans "Mobile" %}</label><input type="text" name="mobile"></div>
-      <div><label>{% trans "Industry" %}</label><input type="text" name="industry" placeholder="Mining"></div>
+      <div><label>{% trans "Industry" %}</label><input type="text" name="industry" placeholder="Construction"></div>
       <div><label>{% trans "Customer type" %}</label><select name="customer_type"><option value="">—</option>
         {% for v, l in types %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
       <div><label>{% trans "City" %}</label><input type="text" name="city"></div>

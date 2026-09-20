@@ -16,7 +16,13 @@
       <label>{% trans "Email" %}</label>
       <input type="email" name="email" autocomplete="username" autofocus required>
       <label>{% trans "Password" %}</label>
-      <input type="password" name="password" autocomplete="current-password" required>
+      <div style="position:relative;">
+        <input type="password" name="password" id="lg-pw" autocomplete="current-password" required style="padding-right:60px;">
+        <button type="button" aria-label="{% trans 'Show password' %}"
+          data-show="{% trans 'Show' %}" data-hide="{% trans 'Hide' %}"
+          onclick="var i=document.getElementById('lg-pw');var s=i.type==='password';i.type=s?'text':'password';this.textContent=s?this.dataset.hide:this.dataset.show;"
+          style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;color:#17a2b8;font-size:12.5px;font-weight:600;cursor:pointer;padding:4px;">{% trans "Show" %}</button>
+      </div>
       <button class="btn" style="width:100%; margin-top:20px;" type="submit">{% trans "Sign in" %}</button>
     </form>
     <p style="margin-top:14px;text-align:center;font-size:13px;">
