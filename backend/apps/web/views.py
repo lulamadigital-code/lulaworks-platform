@@ -19,6 +19,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_POST
 
@@ -686,7 +687,7 @@ def _work_guard(request, pk, code="work.edit"):
     the granular permission it needs; `execution.manage` covers them all."""
     task = get_object_or_404(Task.objects.all(), pk=pk)
     if not has_work_perm(request.user, code):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return task, False
     return task, True
 
@@ -780,7 +781,7 @@ def work_checklist_toggle(request, pk, item_id):
     if can_modify(task, request.user):
         toggle_checklist_item(item, request.user)
     else:
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
     return redirect("web:work_detail", pk=pk)
 
 
@@ -1034,7 +1035,7 @@ def notification_open(request, pk):
 def project_phase_add(request, pk):
     project = get_object_or_404(Project.objects.all(), pk=pk)
     if not has_work_perm(request.user, "work.edit"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
     elif request.POST.get("seed"):
         ensure_default_phases(project, request.user)
         messages.success(request, "Default phases added.")
@@ -1687,7 +1688,7 @@ def company_hours(request):
     )
     company = request.user.active_company
     if not request.user.has_perm_code("company.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:company_hours_page")
 
     action = request.POST.get("action", "week")
@@ -1777,7 +1778,7 @@ def company_bank(request):
     action is deliberately explicit rather than inline-editable."""
     company = request.user.active_company
     if not request.user.has_perm_code("company.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:company_profile")
 
     action = request.POST.get("action", "add")
@@ -1830,7 +1831,7 @@ def company_bank(request):
 def company_contact(request):
     company = request.user.active_company
     if not request.user.has_perm_code("company.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:company_profile")
 
     action = request.POST.get("action", "add")
@@ -1874,7 +1875,7 @@ def company_contact(request):
 def company_document(request):
     company = request.user.active_company
     if not request.user.has_perm_code("company.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:company_profile")
     if request.POST.get("action") == "delete":
         doc = get_object_or_404(CompanyDocument.objects.filter(company=company),
@@ -2810,7 +2811,7 @@ def supplier_create(request):
     """Add a supplier by hand."""
     from apps.core.audit import audit
     if not request.user.has_perm_code("procurement.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:suppliers")
     fields = _supplier_fields(request.POST)
     if not fields["name"]:
@@ -2834,7 +2835,7 @@ def supplier_edit(request, pk):
     """Edit a supplier's details."""
     supplier = get_object_or_404(Supplier.objects.all(), pk=pk)
     if not request.user.has_perm_code("procurement.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:supplier_detail", pk=pk)
     fields = _supplier_fields(request.POST)
     if not fields["name"]:
@@ -2858,7 +2859,7 @@ def supplier_document(request, pk):
 
     supplier = get_object_or_404(Supplier.objects.all(), pk=pk)
     if not request.user.has_perm_code("procurement.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:supplier_detail", pk=pk)
     upload = request.FILES.get("file")
     if upload is None:
@@ -2890,7 +2891,7 @@ def supplier_import(request):
         extract_text_from_upload,
     )
     if not request.user.has_perm_code("procurement.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:suppliers")
     upload = request.FILES.get("file")
     if upload is None:
@@ -2921,7 +2922,7 @@ def supplier_import_confirm(request):
     from apps.procurement.services import learn_from_receipt
 
     if not request.user.has_perm_code("procurement.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:suppliers")
     name = (request.POST.get("supplier_name") or "").strip()
     if not name:
@@ -2986,7 +2987,7 @@ def product_edit(request, pk):
 
     product = get_object_or_404(Product.objects.all(), pk=pk)
     if not request.user.has_perm_code("procurement.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:product_detail", pk=pk)
     name = (request.POST.get("name") or "").strip()
     if name:
@@ -3006,7 +3007,7 @@ def product_alias(request, pk):
 
     product = get_object_or_404(Product.objects.all(), pk=pk)
     if not request.user.has_perm_code("procurement.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:product_detail", pk=pk)
     label = (request.POST.get("label") or "").strip()
     if label:
@@ -3024,7 +3025,7 @@ def product_merge(request, pk):
 
     keep = get_object_or_404(Product.objects.all(), pk=pk)
     if not request.user.has_perm_code("procurement.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:product_detail", pk=pk)
     drop = Product.objects.filter(pk=request.POST.get("drop")).first()
     if drop and drop.id != keep.id:
@@ -3076,7 +3077,7 @@ def request_new(request):
             for i, d in enumerate(descriptions) if d.strip()
         ]
         if not lines:
-            messages.error(request, "Add at least one item.")
+            messages.error(request, _("Add at least one item."))
             return redirect("web:request_new")
         req = create_request(
             request.user.active_company, request.user,
@@ -3084,7 +3085,7 @@ def request_new(request):
             task=task, notes=(request.POST.get("notes") or "").strip(),
             needed_by=request.POST.get("needed_by") or None, lines=lines)
         submit_request(req, request.user)
-        messages.success(request, f"Request {req.number} created.")
+        messages.success(request, _("Request %(n)s created.") % {"n": req.number})
         return redirect("web:request_detail", pk=req.id)
 
     task = Task.objects.filter(pk=request.GET.get("task")).first()
@@ -3109,7 +3110,7 @@ def _request_guard(request, pk, *, need_manage=False):
     from apps.procurement.models import ProcurementRequest
     req = get_object_or_404(ProcurementRequest.objects.all(), pk=pk)
     if need_manage and not request.user.has_perm_code("procurement.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return req, False
     return req, True
 
@@ -3121,7 +3122,7 @@ def request_approve(request, pk):
     req, ok = _request_guard(request, pk, need_manage=True)
     if ok:
         approve_request(req, request.user)
-        messages.success(request, f"Approved {req.number}.")
+        messages.success(request, _("Approved %(n)s.") % {"n": req.number})
     return redirect("web:request_detail", pk=pk)
 
 
@@ -3132,7 +3133,7 @@ def request_reject(request, pk):
     req, ok = _request_guard(request, pk, need_manage=True)
     if ok:
         reject_request(req, request.user, reason=request.POST.get("reason", ""))
-        messages.info(request, f"Rejected {req.number}.")
+        messages.info(request, _("Rejected %(n)s.") % {"n": req.number})
     return redirect("web:request_detail", pk=pk)
 
 
@@ -3143,7 +3144,7 @@ def request_fulfil(request, pk):
     req, ok = _request_guard(request, pk, need_manage=True)
     if ok:
         fulfil_request(req, request.user)
-        messages.success(request, f"{req.number} marked as purchased.")
+        messages.success(request, _("%(n)s marked as purchased.") % {"n": req.number})
     return redirect("web:request_detail", pk=pk)
 
 
@@ -3159,7 +3160,7 @@ def request_settings(request):
     )
     company = request.user.active_company
     if not request.user.has_perm_code("company.manage"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:requests")
     s, _ = CompanySettings.objects.get_or_create(company=company)
     if request.method == "POST":
@@ -3174,7 +3175,7 @@ def request_settings(request):
         rules["procurement_threshold"] = str(thr if thr > 0 else Decimal("0"))
         s.approval_rules = rules
         s.save(update_fields=["approval_rules", "updated_at"])
-        messages.success(request, "Purchase request settings updated.")
+        messages.success(request, _("Purchase request settings updated."))
         return redirect("web:request_settings")
     approvers = [m.user for m in company_members(company, include_inactive=False)
                  if m.user.has_perm_code("procurement.manage")]
@@ -3244,12 +3245,12 @@ def procurement_client_delete(request, pk):
 
     if not (request.user.has_perm_code("customers.manage")
             or request.user.has_perm_code("projects.create")):
-        messages.error(request, "You don't have permission to delete clients.")
+        messages.error(request, _("You don't have permission to delete clients."))
         return redirect("web:procurement_clients")
     client = get_object_or_404(Customer.objects.all(), pk=pk)
     name = client.display_name
     client.delete()   # soft-delete on TenantBaseModel
-    messages.success(request, f"“{name}” removed from your clients.")
+    messages.success(request, _("“%(name)s” removed from your clients.") % {"name": name})
     return redirect("web:procurement_clients")
 
 
@@ -3261,7 +3262,7 @@ def price_history(request):
     Search an item: its behaviour + forecast, per-supplier breakdown, every
     price point, and what we historically charged customers for it."""
     if not request.user.has_perm_code("procurement.manage"):
-        messages.error(request, "You don't have access to price history.")
+        messages.error(request, _("You don't have access to price history."))
         return redirect("web:dashboard")
 
     q = (request.GET.get("q") or "").strip()
@@ -3894,7 +3895,7 @@ def customer_contact_save(request, pk):
     from apps.customers.models import Customer, CustomerContact, CustomerDepartment
     customer = get_object_or_404(Customer.objects.all(), pk=pk)
     if not request.user.has_perm_code("projects.create"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:customer_detail", pk=pk)
 
     action = request.POST.get("action", "add")
@@ -3952,7 +3953,7 @@ def customer_department(request, pk):
     from apps.customers.models import Customer, CustomerDepartment
     customer = get_object_or_404(Customer.objects.all(), pk=pk)
     if not request.user.has_perm_code("projects.create"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
     elif request.POST.get("action") == "delete":
         dept = get_object_or_404(CustomerDepartment.objects.filter(customer=customer),
                                  pk=request.POST.get("department"))
@@ -4452,7 +4453,7 @@ def quotation_revise(request, pk):
     from apps.quotes.services import create_revision
     quote = get_object_or_404(Quotation.objects.all(), pk=pk)
     if not request.user.has_perm_code("quotes.create"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:quotation_detail", pk=pk)
     revised = create_revision(quote, request.user,
                               reason=request.POST.get("reason", ""))
@@ -4474,7 +4475,7 @@ def quotation_po(request, pk):
     from apps.quotes.services import QuotationError, record_purchase_order
     quote = get_object_or_404(Quotation.objects.all(), pk=pk)
     if not request.user.has_perm_code("quotes.create"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:quotation_detail", pk=pk)
     f = request.FILES.get("document")
     if not f:
@@ -4605,7 +4606,7 @@ def quotation_create_invoice(request, pk):
     from apps.quotes.services import QuotationError, create_invoice_document
     quote = get_object_or_404(Quotation.objects.all(), pk=pk)
     if not request.user.has_perm_code("quotes.create"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:quotation_detail", pk=pk)
     try:
         doc = create_invoice_document(quote, request.user)
@@ -4625,7 +4626,7 @@ def quotation_create_delivery(request, pk):
     from apps.quotes.services import QuotationError, create_delivery_document
     quote = get_object_or_404(Quotation.objects.all(), pk=pk)
     if not request.user.has_perm_code("quotes.create"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect("web:quotation_detail", pk=pk)
     try:
         doc = create_delivery_document(
@@ -4818,7 +4819,7 @@ def quotation_suggest(request, pk):
 
     quote = get_object_or_404(Quotation.objects.all(), pk=pk)
     if not request.user.has_perm_code("quotes.create"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect(_edit_url(pk))
 
     if request.method == "POST":
@@ -4875,7 +4876,7 @@ def quotation_document(request, pk):
     from apps.quotes.models import QuotationDocument
     quote = get_object_or_404(Quotation.objects.all(), pk=pk)
     if not request.user.has_perm_code("quotes.create"):
-        messages.error(request, "You do not have permission.")
+        messages.error(request, _("You do not have permission."))
         return redirect(_edit_url(pk))
 
     if request.POST.get("action") == "delete":

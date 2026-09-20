@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 18:35+0000\n"
+"POT-Creation-Date: 2026-09-20 18:39+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4148,6 +4148,181 @@ msgstr "Page %(cur)s sur %(total)s"
 msgid "Next →"
 msgstr "Suivant →"
 
+msgid "← Requests"
+msgstr "← Demandes"
+
+#, python-format
+msgid "needed by %(d)s"
+msgstr "requis pour le %(d)s"
+
+#, python-format
+msgid "by %(who)s"
+msgstr "par %(who)s"
+
+msgid "Rejected:"
+msgstr "Rejetée :"
+
+msgid "Qty"
+msgstr "Qté"
+
+msgid "Est. price"
+msgstr "Prix est."
+
+msgid "Est. line"
+msgstr "Ligne est."
+
+msgid "Estimated total"
+msgstr "Total estimé"
+
+msgid "Reason for rejecting…"
+msgstr "Motif du rejet…"
+
+msgid "Reject"
+msgstr "Rejeter"
+
+msgid "Mark as purchased"
+msgstr "Marquer comme acheté"
+
+msgid ""
+"Then capture the receipt on the task — it feeds the Suppliers database."
+msgstr ""
+"Saisissez ensuite le reçu sur la tâche — il alimente la base de données "
+"Fournisseurs."
+
+msgid "No actions for this status."
+msgstr "Aucune action pour ce statut."
+
+msgid "New request"
+msgstr "Nouvelle demande"
+
+msgid "New procurement request"
+msgstr "Nouvelle demande d'achat"
+
+msgid "e.g. Materials for pump repair"
+msgstr "ex. Matériel pour réparation de pompe"
+
+msgid "For task (optional)"
+msgstr "Pour la tâche (facultatif)"
+
+msgid "Needed by"
+msgstr "Requis pour le"
+
+msgid "Notes"
+msgstr "Notes"
+
+msgid "Anything the approver/buyer should know"
+msgstr "Toute information utile à l'approbateur/acheteur"
+
+msgid "Items needed"
+msgstr "Articles nécessaires"
+
+msgid "e.g. Hydraulic Pipe 50mm"
+msgstr "ex. Tuyau hydraulique 50 mm"
+
+msgid "auto"
+msgstr "auto"
+
+msgid "Leave the price blank to use the last price you paid for that item."
+msgstr ""
+"Laissez le prix vide pour utiliser le dernier prix payé pour cet article."
+
+msgid "Create request"
+msgstr "Créer la demande"
+
+msgid "Purchase request settings"
+msgstr "Paramètres des demandes d'achat"
+
+msgid "Control when a purchase needs approval before it can be bought."
+msgstr ""
+"Définissez quand un achat nécessite une approbation avant de pouvoir être "
+"effectué."
+
+msgid "Require approval before purchases"
+msgstr "Exiger une approbation avant les achats"
+
+msgid ""
+"Off = small teams buy directly (every request auto-approves). On = a request"
+" must be approved before it's turned into an order."
+msgstr ""
+"Désactivé = les petites équipes achètent directement (chaque demande est "
+"auto-approuvée). Activé = une demande doit être approuvée avant d'être "
+"transformée en commande."
+
+#, python-format
+msgid "Approval threshold (%(cur)s)"
+msgstr "Seuil d'approbation (%(cur)s)"
+
+msgid ""
+"Requests <strong>below</strong> this value auto-approve; those at or above "
+"it need approval. Leave <strong>0</strong> to require approval for every "
+"request. Only applies while “Require approval” is on."
+msgstr ""
+"Les demandes <strong>inférieures</strong> à cette valeur sont auto-"
+"approuvées ; celles égales ou supérieures nécessitent une approbation. "
+"Laissez <strong>0</strong> pour exiger une approbation pour chaque demande. "
+"Ne s'applique que lorsque « Exiger une approbation » est activé."
+
+msgid "Save settings"
+msgstr "Enregistrer les paramètres"
+
+msgid "Who can approve"
+msgstr "Qui peut approuver"
+
+msgid ""
+"Members with the <strong>Procurement</strong> permission can approve or "
+"reject requests:"
+msgstr ""
+"Les membres disposant de l'autorisation <strong>Achats</strong> peuvent "
+"approuver ou rejeter les demandes :"
+
+#, python-format
+msgid ""
+"No one currently has the Procurement permission — grant it on the <a "
+"href=\"%(people_url)s\">People</a> page so requests can be approved."
+msgstr ""
+"Personne ne dispose actuellement de l'autorisation Achats — accordez-la sur "
+"la page <a href=\"%(people_url)s\">Personnes</a> pour que les demandes "
+"puissent être approuvées."
+
+msgid "Procurement requests"
+msgstr "Demandes d'achat"
+
+msgid "What a task needs — raised before anything is bought."
+msgstr "Ce dont une tâche a besoin — établi avant tout achat."
+
+msgid "+ New request"
+msgstr "+ Nouvelle demande"
+
+msgid "On"
+msgstr "Activé"
+
+msgid "Off"
+msgstr "Désactivé"
+
+msgid "Approval required"
+msgstr "Approbation requise"
+
+msgid "Approval is <strong>on</strong> for purchases."
+msgstr "L'approbation est <strong>activée</strong> pour les achats."
+
+msgid "Approval is <strong>off</strong> for purchases."
+msgstr "L'approbation est <strong>désactivée</strong> pour les achats."
+
+msgid "Approval settings"
+msgstr "Paramètres d'approbation"
+
+msgid "Requested by"
+msgstr "Demandé par"
+
+msgid "Needed"
+msgstr "Requis pour"
+
+msgid "Est. value"
+msgstr "Valeur est."
+
+msgid "No requests yet."
+msgstr "Aucune demande pour le moment."
+
 msgid "Settings"
 msgstr "Paramètres"
 
@@ -4202,9 +4377,6 @@ msgstr "État du fournisseur d'IA, modèle, santé et utilisation."
 
 msgid "Every email sent, delivery status and resend."
 msgstr "Chaque e-mail envoyé, statut de livraison et renvoi."
-
-msgid "Purchase request settings"
-msgstr "Paramètres des demandes d'achat"
 
 msgid ""
 "Whether purchases need approval, and the value threshold that triggers it."
@@ -4594,3 +4766,38 @@ msgstr "Calendrier"
 
 msgid "Workload"
 msgstr "Charge de travail"
+
+msgid "You do not have permission."
+msgstr "Vous n'avez pas l'autorisation."
+
+msgid "Add at least one item."
+msgstr "Ajoutez au moins un article."
+
+#, python-format
+msgid "Request %(n)s created."
+msgstr "Demande %(n)s créée."
+
+#, python-format
+msgid "Approved %(n)s."
+msgstr "%(n)s approuvée."
+
+#, python-format
+msgid "Rejected %(n)s."
+msgstr "%(n)s rejetée."
+
+#, python-format
+msgid "%(n)s marked as purchased."
+msgstr "%(n)s marquée comme achetée."
+
+msgid "Purchase request settings updated."
+msgstr "Paramètres des demandes d'achat mis à jour."
+
+msgid "You don't have permission to delete clients."
+msgstr "Vous n'avez pas l'autorisation de supprimer des clients."
+
+#, python-format
+msgid "“%(name)s” removed from your clients."
+msgstr "« %(name)s » a été retiré de vos clients."
+
+msgid "You don't have access to price history."
+msgstr "Vous n'avez pas accès à l'historique des prix."

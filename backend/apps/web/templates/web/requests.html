@@ -1,43 +1,44 @@
 {% extends "web/base.html" %}
-{% block title %}Procurement requests{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Procurement requests" %}{% endblock %}
 {% block content %}
 <div class="pagehead">
   <div>
-    <h1>Procurement requests</h1>
-    <p class="sub" style="margin:0;">What a task needs — raised before anything is bought.</p>
+    <h1>{% trans "Procurement requests" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "What a task needs — raised before anything is bought." %}</p>
   </div>
-  <a class="btn" href="{% url 'web:request_new' %}">+ New request</a>
+  <a class="btn" href="{% url 'web:request_new' %}">{% trans "+ New request" %}</a>
 </div>
 {% include "web/_procurement_nav.html" %}
 
 <div class="grid">
-  <div class="tile"><div class="n">{{ awaiting }}</div><div class="l">Awaiting approval</div></div>
-  <div class="tile"><div class="n">{% if approval_required %}On{% else %}Off{% endif %}</div><div class="l">Approval required</div></div>
+  <div class="tile"><div class="n">{{ awaiting }}</div><div class="l">{% trans "Awaiting approval" %}</div></div>
+  <div class="tile"><div class="n">{% if approval_required %}{% trans "On" %}{% else %}{% trans "Off" %}{% endif %}</div><div class="l">{% trans "Approval required" %}</div></div>
 </div>
 
 {% if can_config %}
 <div class="card row" style="gap:10px;align-items:center;">
   <span class="muted" style="font-size:13px;">
-    Approval is <strong>{% if approval_required %}on{% else %}off{% endif %}</strong> for purchases.</span>
+    {% if approval_required %}{% trans "Approval is <strong>on</strong> for purchases." %}{% else %}{% trans "Approval is <strong>off</strong> for purchases." %}{% endif %}</span>
   <span class="sp"></span>
-  <a class="btn ghost" href="{% url 'web:request_settings' %}">Approval settings</a>
+  <a class="btn ghost" href="{% url 'web:request_settings' %}">{% trans "Approval settings" %}</a>
 </div>
 {% endif %}
 
 <form method="get" class="filterbar">
   <select name="status">
-    <option value="">Any status</option>
+    <option value="">{% trans "Any status" %}</option>
     {% for value, label in statuses %}
     <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select>
-  <button class="btn ghost" type="submit">Filter</button>
+  <button class="btn ghost" type="submit">{% trans "Filter" %}</button>
 </form>
 
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>Request</th><th>For</th><th>Requested by</th><th>Needed</th>
-        <th class="right">Est. value</th><th>Status</th></tr>
+    <tr><th>{% trans "Request" %}</th><th>{% trans "For" %}</th><th>{% trans "Requested by" %}</th><th>{% trans "Needed" %}</th>
+        <th class="right">{% trans "Est. value" %}</th><th>{% trans "Status" %}</th></tr>
     {% for r in requests %}
     <tr>
       <td><a href="{% url 'web:request_detail' r.id %}"><strong>{{ r.number }}</strong></a>
@@ -47,14 +48,14 @@
       <td class="muted">{{ r.needed_by|date:"d M Y"|default:"—" }}</td>
       <td class="right">{{ CURRENCY_SYMBOL }}{{ r.est_total }}</td>
       <td>
-        {% if r.status == 'approved' %}<span class="chip ok">Approved</span>
-        {% elif r.status == 'submitted' %}<span class="chip warn">Awaiting approval</span>
-        {% elif r.status == 'rejected' %}<span class="chip bad">Rejected</span>
-        {% elif r.status == 'fulfilled' %}<span class="chip ok">Fulfilled</span>
+        {% if r.status == 'approved' %}<span class="chip ok">{% trans "Approved" %}</span>
+        {% elif r.status == 'submitted' %}<span class="chip warn">{% trans "Awaiting approval" %}</span>
+        {% elif r.status == 'rejected' %}<span class="chip bad">{% trans "Rejected" %}</span>
+        {% elif r.status == 'fulfilled' %}<span class="chip ok">{% trans "Fulfilled" %}</span>
         {% else %}<span class="chip">{{ r.get_status_display }}</span>{% endif %}
       </td>
     </tr>
-    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">No requests yet.</td></tr>
+    {% empty %}<tr><td colspan="6" class="muted" style="padding:20px;">{% trans "No requests yet." %}</td></tr>
     {% endfor %}
   </table>
 </div>
