@@ -293,27 +293,33 @@ class LanguageService:
         from .models import Language
         return list(Language.objects.filter(active=True))
 
+    #: The languages we offer in the switcher, in display order. A curated
+    #: product decision (not a pure catalog-ratio scan): English is the source;
+    #: Afrikaans + French are fully translated; Spanish + Portuguese are offered
+    #: and fall back to English for any not-yet-translated string until their
+    #: catalogs are filled. Order is intentional. Arabic is intentionally not
+    #: offered here (RTL is handled by the engine but not surfaced on the
+    #: public site). Add a code here to offer it; the `_scan_ui_ready_codes`
+    #: ratio helper remains for diagnostics.
+    UI_OFFER_ORDER = ["en", "af", "fr", "es", "pt"]
+
     @staticmethod
     def ui_ready_codes() -> set:
-        """The set of language codes actually translated enough to offer."""
-        global _UI_READY_CACHE
-        if _UI_READY_CACHE is None:
-            _UI_READY_CACHE = _scan_ui_ready_codes()
-        return _UI_READY_CACHE
+        """The set of language codes offered in the UI."""
+        return set(LanguageService.UI_OFFER_ORDER)
 
     @staticmethod
     def ui_ready():
-        """Active languages whose UI is actually translated — for the switcher
-        and language pickers, so users are never offered a language that does
-        not change the interface."""
-        codes = LanguageService.ui_ready_codes()
+        """Active languages offered in the switcher, in the curated order — so
+        users are offered exactly the intended set, consistently ordered."""
         from .models import Language
-        return [l for l in Language.objects.filter(active=True) if l.code in codes]
+        by_code = {l.code: l for l in Language.objects.filter(active=True)}
+        return [by_code[c] for c in LanguageService.UI_OFFER_ORDER if c in by_code]
 
     @staticmethod
     def is_ui_ready(code) -> bool:
-        codes = LanguageService.ui_ready_codes()
-        return bool(code) and (code in codes or _primary(code) in codes)
+        offered = LanguageService.UI_OFFER_ORDER
+        return bool(code) and (code in offered or _primary(code) in offered)
 
     @staticmethod
     def get(code):
