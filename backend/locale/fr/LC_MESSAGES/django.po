@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 19:48+0000\n"
+"POT-Creation-Date: 2026-09-20 22:55+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2019,6 +2019,24 @@ msgstr "Rechercher clients, travaux…"
 
 msgid "Attention"
 msgstr "Attention"
+
+msgid "Win"
+msgstr "Gagner"
+
+msgid "Deliver"
+msgstr "Réaliser"
+
+msgid "Buy"
+msgstr "Acheter"
+
+msgid "Money"
+msgstr "Argent"
+
+msgid "Knowledge"
+msgstr "Connaissances"
+
+msgid "System"
+msgstr "Système"
 
 msgid "My profile"
 msgstr "Mon profil"
@@ -5611,12 +5629,6 @@ msgstr "Contrôle du projet"
 msgid "%(n)s item(s) blocking — <a href=\"%(proj_url)s\">review →</a>"
 msgstr "%(n)s élément(s) bloquant(s) — <a href=\"%(proj_url)s\">examiner →</a>"
 
-msgid "Job Card"
-msgstr "Fiche de travail"
-
-msgid "Tax Invoice"
-msgstr "Facture"
-
 msgid "Finance"
 msgstr "Finance"
 
@@ -5690,3 +5702,9 @@ msgstr "« %(name)s » a été retiré de vos clients."
 
 msgid "You don't have access to price history."
 msgstr "Vous n'avez pas accès à l'historique des prix."
+
+#~ msgid "Job Card"
+#~ msgstr "Fiche de travail"
+
+#~ msgid "Tax Invoice"
+#~ msgstr "Facture"
