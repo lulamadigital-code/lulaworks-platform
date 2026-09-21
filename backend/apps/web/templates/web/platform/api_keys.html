@@ -1,0 +1,84 @@
+{% extends "web/base.html" %}
+{% block title %}API keys · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="api_keys" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em}
+  .sub{color:var(--muted);margin:0 0 18px} .muted{color:var(--muted)}
+  .head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin:6px 0 18px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .tile .n{font-size:28px;font-weight:800;letter-spacing:-.02em} .tile .l{color:var(--muted);font-size:13px;margin-top:3px;font-weight:600}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .filters input,.filters select{padding:8px 11px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;background:#fff}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;background:#fafbfd}
+  tbody tr:hover td{background:#fafbfd} tr:last-child td{border-bottom:0}
+  .chip{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:700}
+  .chip.ok{background:#e7f7ef;color:#0a8f57} .chip.off{background:#eef0f5;color:var(--muted)}
+  .btn.ghost{background:#fff;color:var(--primary-d);border:1px solid var(--line)}
+  .btn.ghost svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .pager{display:flex;justify-content:center;gap:12px;align-items:center;margin-top:16px}
+  code{font-size:12px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="head-row">
+  <div>
+    <h1>API keys</h1>
+    <p class="sub">Programmatic API keys across every tenant. The token itself is never stored or shown — only its prefix.</p>
+  </div>
+  <a class="btn ghost" href="/admin/enterprise/apikey/"><svg viewBox="0 0 24 24"><path d="M14 3h7v7M21 3l-9 9M10 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/></svg> Open in Django admin</a>
+</div>
+
+<div class="grid">
+  <div class="tile"><div class="n">{{ kpis.total }}</div><div class="l">Total keys</div></div>
+  <div class="tile"><div class="n">{{ kpis.active }}</div><div class="l">Active</div></div>
+  <div class="tile"><div class="n">{{ kpis.revoked }}</div><div class="l">Revoked</div></div>
+</div>
+
+<form class="filters" method="get">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search company, name or prefix…">
+  <select name="status" onchange="this.form.submit()">
+    <option value="">All</option>
+    <option value="active" {% if f_status == 'active' %}selected{% endif %}>Active</option>
+    <option value="revoked" {% if f_status == 'revoked' %}selected{% endif %}>Revoked</option>
+  </select>
+  <button class="btn ghost" type="submit">Filter</button>
+</form>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <thead><tr><th>Company</th><th>Name</th><th>Key</th><th>Created by</th><th>Created</th><th>Last used</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.company }}</td>
+        <td>{{ r.name }}</td>
+        <td class="muted"><code>{{ r.prefix }}</code></td>
+        <td class="muted">{{ r.created_by }}</td>
+        <td class="muted" style="white-space:nowrap;">{{ r.created|date:"d M Y" }}</td>
+        <td class="muted" style="white-space:nowrap;">{% if r.last_used %}{{ r.last_used|date:"d M Y H:i" }}{% else %}Never{% endif %}</td>
+        <td>{% if r.active %}<span class="chip ok">Active</span>{% else %}<span class="chip off">Revoked</span>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" style="padding:18px;color:var(--muted);text-align:center;">No API keys match.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page.has_other_pages %}
+<div class="pager">
+  {% if page.has_previous %}<a class="btn ghost" href="?{% if q %}q={{ q }}&{% endif %}{% if f_status %}status={{ f_status }}&{% endif %}page={{ page.previous_page_number }}">Previous</a>{% endif %}
+  <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a class="btn ghost" href="?{% if q %}q={{ q }}&{% endif %}{% if f_status %}status={{ f_status }}&{% endif %}page={{ page.next_page_number }}">Next</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

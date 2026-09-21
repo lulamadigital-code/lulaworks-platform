@@ -43,6 +43,8 @@ urlpatterns = [
     path("platform/emails/", views_platform.platform_list, {"section": "emails"}, name="platform_emails"),
     path("platform/audit/", views_platform.platform_list, {"section": "audit"}, name="platform_audit"),
     path("platform/governance/", views_platform.platform_governance, name="platform_governance"),
+    path("platform/governance/api-keys/", views_platform.platform_api_keys, name="platform_api_keys"),
+    path("platform/governance/sso/", views_platform.platform_sso, name="platform_sso"),
     path("settings/", views.settings_home, name="settings"),
     # Help & Support (tenant side)
     path("support/", views_support.support_home, name="support_home"),

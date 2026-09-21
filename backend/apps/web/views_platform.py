@@ -550,6 +550,91 @@ def platform_governance(request):
     })
 
 
+@login_required
+def platform_api_keys(request):
+    """Cross-tenant view of programmatic API keys (Enterprise). Read-only — never
+    exposes the token (only its prefix). Platform staff only."""
+    if not request.user.platform_level:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+
+    from apps.core.context import system_scope
+    from apps.enterprise.models import ApiKey
+
+    status = request.GET.get("status", "")
+    q = request.GET.get("q", "").strip()
+    with system_scope():
+        qs = ApiKey.all_objects.select_related("company", "created_by")
+        if status == "active":
+            qs = qs.filter(revoked_at__isnull=True)
+        elif status == "revoked":
+            qs = qs.filter(revoked_at__isnull=False)
+        if q:
+            qs = qs.filter(Q(company__name__icontains=q) | Q(name__icontains=q)
+                           | Q(token_prefix__icontains=q))
+        page = Paginator(qs, 60).get_page(request.GET.get("page"))
+        allt = ApiKey.all_objects
+        kpis = {
+            "total": allt.count(),
+            "active": allt.filter(revoked_at__isnull=True).count(),
+            "revoked": allt.filter(revoked_at__isnull=False).count(),
+        }
+        rows = [{
+            "company": k.company.name if k.company else "—", "name": k.name,
+            "prefix": f"{k.token_prefix}…{k.last_four}",
+            "created": k.created_at, "created_by": getattr(k.created_by, "email", "") or "—",
+            "last_used": k.last_used_at, "active": k.is_active,
+        } for k in page]
+
+    return render(request, "web/platform/api_keys.html", {
+        "active": "api_keys", "rows": rows, "page": page, "kpis": kpis,
+        "f_status": status, "q": q,
+    })
+
+
+@login_required
+def platform_sso(request):
+    """Cross-tenant view of SSO configurations (Enterprise). Read-only — never
+    exposes the client secret. Platform staff only."""
+    if not request.user.platform_level:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+
+    from apps.core.context import system_scope
+    from apps.enterprise.models import SSOConfig, SSOStatus
+
+    status = request.GET.get("status", "")
+    q = request.GET.get("q", "").strip()
+    with system_scope():
+        qs = SSOConfig.all_objects.select_related("company", "requested_by")
+        if status:
+            qs = qs.filter(status=status)
+        if q:
+            qs = qs.filter(Q(company__name__icontains=q) | Q(allowed_domains__icontains=q)
+                           | Q(oidc_issuer__icontains=q) | Q(saml_idp_entity_id__icontains=q))
+        page = Paginator(qs, 60).get_page(request.GET.get("page"))
+        allt = SSOConfig.all_objects
+        kpis = {
+            "total": allt.count(),
+            "active": allt.filter(status=SSOStatus.ACTIVE).count(),
+            "requested": allt.filter(status=SSOStatus.ACTIVATION_REQUESTED).count(),
+        }
+        rows = [{
+            "company": c.company.name if c.company else "—",
+            "protocol": c.get_protocol_display(), "status": c.status,
+            "status_label": c.get_status_display(), "is_active": c.is_active,
+            "requested": c.is_requested, "domains": c.allowed_domains or "—",
+            "detail": (c.oidc_issuer if c.protocol == "oidc" else c.saml_idp_entity_id) or "—",
+            "has_secret": c.has_client_secret,
+            "requested_at": c.requested_at,
+        } for c in page]
+
+    return render(request, "web/platform/sso.html", {
+        "active": "sso", "rows": rows, "page": page, "kpis": kpis,
+        "statuses": SSOStatus.choices, "f_status": status, "q": q,
+    })
+
+
 # Rough estimates — tune to your real numbers. AI `cost` is logged in USD by the
 # provider; storage priced at typical object-store rates. FX is approximate.
 _FX_TO_ZAR = {"ZAR": 1, "USD": 18.5, "EUR": 20.0, "GBP": 23.5, "AUD": 12.2}
