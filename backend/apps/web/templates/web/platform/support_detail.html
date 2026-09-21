@@ -58,6 +58,22 @@
     </div>
 
     <div class="card">
+      <h2 style="margin-top:0;font-size:15px;">SLA
+        <span style="float:right;font-size:11px;font-weight:700;{% if sla.tier == 'dedicated' %}color:var(--primary-d);{% else %}color:var(--muted);{% endif %}">{{ sla.tier_label }}</span></h2>
+      <table class="kv" style="width:100%;">
+        <tr><td class="k">First response</td><td>
+          {% if sla.response_met %}<span class="chip" style="background:{% if sla.response_on_time %}#e7f7ef;color:#0a8f57{% else %}#fdecef;color:#c22a41{% endif %};">{% if sla.response_on_time %}On time{% else %}Late{% endif %}</span>
+          {% elif sla.response_breached %}<span class="chip" style="background:#fdecef;color:#c22a41;">⚠ Breached</span>
+          {% else %}<span class="chip" style="background:#e7f7ef;color:#0a8f57;">{{ sla.hours_to_response_due|floatformat:0 }}h left</span>{% endif %}</td></tr>
+        <tr><td class="k">Target</td><td class="muted">{{ sla.response_target_hours }}h · due {{ sla.response_due_at|date:"d M, H:i" }}</td></tr>
+        <tr><td class="k">Resolution</td><td>
+          {% if sla.resolved %}<span class="chip" style="background:{% if sla.resolution_on_time %}#e7f7ef;color:#0a8f57{% else %}#fdecef;color:#c22a41{% endif %};">{% if sla.resolution_on_time %}On time{% else %}Late{% endif %}</span>
+          {% elif sla.resolution_breached %}<span class="chip" style="background:#fdecef;color:#c22a41;">⚠ Overdue</span>
+          {% else %}<span class="muted">Target {{ sla.resolution_target_hours }}h</span>{% endif %}</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
       <h2 style="margin-top:0;font-size:15px;">Actions</h2>
       <form class="inlineform" method="post">{% csrf_token %}<input type="hidden" name="action" value="status">
         <select name="status">{% for value, label in statuses %}<option value="{{ value }}" {% if ticket.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>

@@ -24,6 +24,11 @@
   .s.waiting_customer{background:var(--orange-t);color:#b9711a} .s.resolved{background:var(--green-t);color:#0a8f57}
   .s.closed{background:#eef0f5;color:var(--muted)}
   .p.high,.p.urgent{color:#c22a41;font-weight:700} .p.normal,.p.low{color:var(--muted)}
+  .sla{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .sla.breached{background:#fdecef;color:#c22a41} .sla.due-soon{background:var(--orange-t,#fff3e0);color:#b9711a}
+  .sla.on-track{background:var(--green-t,#e7f7ef);color:#0a8f57} .sla.met{background:#eef0f5;color:var(--muted)} .sla.closed{background:#eef0f5;color:var(--muted)}
+  .tier{font-size:11px;color:var(--muted);margin-top:3px}
+  .tier.dedicated{color:var(--primary-d);font-weight:700}
 </style>
 {% endblock %}
 
@@ -35,8 +40,10 @@
   <div class="tile"><div class="n">{{ kpis.open }}</div><div class="l">Open</div></div>
   <div class="tile hi"><div class="n">{{ kpis.high }}</div><div class="l">High priority</div></div>
   <div class="tile"><div class="n">{{ kpis.waiting }}</div><div class="l">Waiting on customer</div></div>
+  <div class="tile {% if kpis.sla_breaches %}hi{% endif %}"><div class="n">{{ kpis.sla_breaches }}</div><div class="l">SLA breaches</div></div>
   <div class="tile"><div class="n">{{ kpis.resolved_today }}</div><div class="l">Resolved today</div></div>
 </div>
+<p class="muted" style="margin:-8px 0 16px;font-size:12.5px;">Ordered by SLA urgency — breaches and soonest-due first. Targets scale with each tenant's plan; Enterprise (Dedicated) is tightest.</p>
 
 <form class="filters" method="get">
   <input type="text" name="q" value="{{ q }}" placeholder="Search number or subject…">
@@ -57,19 +64,27 @@
 
 <div class="card" style="padding:0;overflow-x:auto;">
   <table class="tk">
-    <tr><th>Ticket</th><th>Subject</th><th>Company</th><th>Priority</th><th>Status</th><th>Agent</th><th>Updated</th></tr>
+    <tr><th>Ticket</th><th>Subject</th><th>Company</th><th>Priority</th><th>SLA</th><th>Status</th><th>Agent</th><th>Updated</th></tr>
     {% for t in tickets %}
     <tr>
       <td><a class="subj" href="{% url 'web:platform_support_detail' t.id %}">{{ t.number }}</a></td>
       <td><a class="subj" href="{% url 'web:platform_support_detail' t.id %}">{{ t.subject }}</a>
         <div class="muted" style="font-size:12px;">{{ t.get_category_display }}</div></td>
-      <td class="muted">{{ t.company.name }}</td>
+      <td class="muted">{{ t.company.name }}
+        <div class="tier {{ t.sla.tier }}">{{ t.sla.tier_label }}</div></td>
       <td><span class="p {{ t.priority }}">{{ t.get_priority_display }}</span></td>
+      <td>
+        {% if t.sla.badge == 'breached' %}<span class="sla breached" title="First response due {{ t.sla.response_due_at|date:'d M, H:i' }}">⚠ Breached</span>
+        {% elif t.sla.badge == 'due-soon' %}<span class="sla due-soon" title="Target {{ t.sla.response_target_hours }}h">Due in {{ t.sla.hours_to_response_due|floatformat:0 }}h</span>
+        {% elif t.sla.badge == 'on-track' %}<span class="sla on-track" title="Target {{ t.sla.response_target_hours }}h">{{ t.sla.hours_to_response_due|floatformat:0 }}h left</span>
+        {% elif t.sla.badge == 'met' %}<span class="sla met">Responded</span>
+        {% else %}<span class="sla closed">—</span>{% endif %}
+      </td>
       <td><span class="s {{ t.status }}">{{ t.get_status_display }}</span></td>
       <td class="muted">{% if t.assigned_agent %}{{ t.assigned_agent.get_full_name|default:t.assigned_agent.email }}{% else %}—{% endif %}</td>
       <td class="muted">{{ t.last_activity_at|date:"d M, H:i" }}</td>
     </tr>
-    {% empty %}<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--muted);">No tickets match.</td></tr>{% endfor %}
+    {% empty %}<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--muted);">No tickets match.</td></tr>{% endfor %}
   </table>
 </div>
 {% endblock %}

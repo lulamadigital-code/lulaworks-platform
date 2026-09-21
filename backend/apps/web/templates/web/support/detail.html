@@ -31,6 +31,11 @@
     <p class="sub" style="margin:8px 0 0;">Opened {{ ticket.created_at|date:"d M Y, H:i" }}
       by {{ ticket.created_by.get_full_name|default:ticket.created_by.email }}
       {% if ticket.assigned_agent %} · handled by Lulaworks Support{% endif %}</p>
+    <p class="sub" style="margin:6px 0 0;">
+      {% if sla.response_met %}✓ First response given{% if sla.response_on_time %} within your {{ sla.response_target_hours }}h target{% endif %}.
+      {% elif sla.is_open %}<strong>{{ sla.tier_label }} support</strong> — first response targeted within {{ sla.response_target_hours }}h{% if sla.response_breached %} <span style="color:#c22a41;font-weight:700;">(overdue — we're on it)</span>{% endif %}.
+      {% endif %}
+    </p>
   </div>
 </div>
 

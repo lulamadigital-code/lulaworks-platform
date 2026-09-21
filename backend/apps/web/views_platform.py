@@ -971,13 +971,30 @@ def platform_support(request):
 
     now = timezone.now()
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # SLA routing — annotate each ticket with its live SLA position (tier from the
+    # tenant's plan) and order the board so breaches and soonest-due surface first.
+    from apps.support import sla
+    tiers = sla.tier_map([t.company for t in tickets])
+    for t in tickets:
+        t.sla = sla.snapshot(t, tier=tiers.get(t.company_id), now=now)
+    tickets.sort(key=lambda t: sla.route_key(t, t.sla))
+
     allt = SupportTicket.all_objects
+    # Breach KPI over ALL open tickets (independent of the current filter).
+    open_tickets = list(allt.filter(status__in=OPEN_STATUSES)
+                        .select_related("company")[:500])
+    otiers = sla.tier_map([t.company for t in open_tickets])
+    sla_breaches = sum(1 for t in open_tickets
+                       if sla.snapshot(t, tier=otiers.get(t.company_id), now=now).breached)
+
     kpis = {
         "open": allt.filter(status__in=OPEN_STATUSES).count(),
         "high": allt.filter(status__in=OPEN_STATUSES,
                             priority__in=["high", "urgent"]).count(),
         "waiting": allt.filter(status=TicketStatus.WAITING_CUSTOMER).count(),
         "resolved_today": allt.filter(resolved_at__gte=today).count(),
+        "sla_breaches": sla_breaches,
     }
     return render(request, "web/platform/support.html", {
         "active": "support", "tickets": tickets, "kpis": kpis,
@@ -1050,9 +1067,11 @@ def platform_support_detail(request, pk):
     with system_scope():
         thread = list(ticket.messages.select_related("sender").prefetch_related("attachments"))
     from django.urls import reverse
+    from apps.support import sla
     return render(request, "web/platform/support_detail.html", {
         "active": "support", "ticket": ticket, "thread": thread, "agents": agents,
         "statuses": TicketStatus.choices, "priorities": TicketPriority.choices,
+        "sla": sla.snapshot(ticket),
         "poll_url": reverse("web:platform_support_messages", args=[ticket.id]),
         "send_url": reverse("web:platform_support_send", args=[ticket.id]),
         "is_support": True,
@@ -1269,10 +1288,10 @@ def platform_support_sla(request):
         messages.error(request, "The support desk is for platform staff only.")
         return redirect("web:dashboard")
 
-    from apps.support.models import OPEN_STATUSES, SupportTicket, TicketPriority
+    from collections import defaultdict
 
-    # First-response SLA targets (hours) — the basis for future paid SLAs.
-    TARGETS = {"urgent": 1, "high": 4, "normal": 24, "low": 48}
+    from apps.support import sla
+    from apps.support.models import OPEN_STATUSES, SupportTicket, TicketPriority
 
     now = timezone.now()
     d30 = now - timedelta(days=30)
@@ -1280,26 +1299,43 @@ def platform_support_sla(request):
     def _avg_hours(deltas):
         return round(sum(deltas) / len(deltas), 1) if deltas else None
 
-    rows, breaches_total = [], 0
-    all_open = 0
+    # SLA targets now scale with each tenant's plan tier — breach is judged
+    # against the ticket's OWN target, not a flat number.
+    all_tickets = list(SupportTicket.all_objects.select_related("company"))
+    tiers = sla.tier_map({t.company for t in all_tickets if t.company_id})
+    byp = defaultdict(list)
+    for t in all_tickets:
+        byp[t.priority].append(t)
+
+    rows, breaches_total, all_open = [], 0, 0
     for value, label in TicketPriority.choices:
-        tks = list(SupportTicket.all_objects.filter(priority=value))
+        tks = byp.get(value, [])
         resp = [(t.first_response_at - t.created_at).total_seconds() / 3600
                 for t in tks if t.first_response_at]
         res = [(t.resolved_at - t.created_at).total_seconds() / 3600
                for t in tks if t.resolved_at]
-        target = TARGETS.get(value, 24)
-        # Breaching = still open, no first response, and past the target.
-        breaching = [t for t in tks if t.status in OPEN_STATUSES and not t.first_response_at
-                     and (now - t.created_at).total_seconds() / 3600 > target]
+        breaching = sum(1 for t in tks
+                        if sla.snapshot(t, tier=tiers.get(t.company_id), now=now).breached)
         open_n = sum(1 for t in tks if t.status in OPEN_STATUSES)
         all_open += open_n
-        breaches_total += len(breaching)
+        breaches_total += breaching
         rows.append({
             "label": label, "value": value, "count": len(tks), "open": open_n,
-            "target": target, "avg_response": _avg_hours(resp),
-            "avg_resolution": _avg_hours(res), "breaching": len(breaching),
+            # Target range across tiers: Dedicated (fastest) → Standard (entry).
+            "target_min": sla.response_target_hours("dedicated", value),
+            "target_max": sla.response_target_hours("email", value),
+            "avg_response": _avg_hours(resp),
+            "avg_resolution": _avg_hours(res), "breaching": breaching,
         })
+
+    # SLA policy matrix (tier × priority first-response hours) for reference.
+    matrix = [{
+        "tier": tier, "label": sla.tier_label(tier),
+        "urgent": sla.response_target_hours(tier, "urgent"),
+        "high": sla.response_target_hours(tier, "high"),
+        "normal": sla.response_target_hours(tier, "normal"),
+        "low": sla.response_target_hours(tier, "low"),
+    } for tier in reversed(sla.TIERS)]   # Dedicated first
 
     allt = SupportTicket.all_objects
     resolved_30 = allt.filter(resolved_at__gte=d30)
@@ -1312,7 +1348,7 @@ def platform_support_sla(request):
         "avg_response": _avg_hours(all_resp), "avg_resolution": _avg_hours(all_res),
     }
     return render(request, "web/platform/support_sla.html", {
-        "active": "support", "rows": rows, "kpis": kpis})
+        "active": "support", "rows": rows, "kpis": kpis, "matrix": matrix})
 
 
 @login_required

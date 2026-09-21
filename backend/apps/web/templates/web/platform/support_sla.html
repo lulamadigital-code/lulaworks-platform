@@ -41,13 +41,28 @@
       <td><span class="p {{ r.value }}">{{ r.label }}</span></td>
       <td class="r muted">{{ r.count }}</td>
       <td class="r muted">{{ r.open }}</td>
-      <td class="r muted">{{ r.target }}h</td>
-      <td class="r">{% if r.avg_response %}<span class="{% if r.avg_response <= r.target %}ok{% else %}warn{% endif %}">{{ r.avg_response }}h</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="r muted">{{ r.target_min }}–{{ r.target_max }}h</td>
+      <td class="r">{% if r.avg_response %}<span class="{% if r.avg_response <= r.target_max %}ok{% else %}warn{% endif %}">{{ r.avg_response }}h</span>{% else %}<span class="muted">—</span>{% endif %}</td>
       <td class="r muted">{% if r.avg_resolution %}{{ r.avg_resolution }}h{% else %}—{% endif %}</td>
       <td class="r">{% if r.breaching %}<span class="warn">{{ r.breaching }}</span>{% else %}<span class="ok">0</span>{% endif %}</td>
     </tr>
     {% endfor %}
   </table>
 </div>
-<p class="muted" style="font-size:12px;margin-top:12px;">Targets are the built-in defaults (Urgent 1h · High 4h · Normal 24h · Low 48h) — the foundation for formal, plan-based SLAs later.</p>
+<p class="muted" style="font-size:12px;margin-top:12px;">Each ticket is judged against its <strong>own tenant's plan tier</strong> — the range shows Dedicated (fastest) → Standard (entry). Breaches count open tickets past their tier's first-response target.</p>
+
+<h2 style="font-size:16px;margin:24px 0 6px;">SLA policy — first response (hours) by plan tier</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table class="sla">
+    <tr><th>Plan tier</th><th class="r p urgent">Urgent</th><th class="r">High</th><th class="r">Normal</th><th class="r">Low</th></tr>
+    {% for m in matrix %}
+    <tr>
+      <td><strong{% if m.tier == 'dedicated' %} style="color:var(--primary-d);"{% endif %}>{{ m.label }}</strong></td>
+      <td class="r">{{ m.urgent }}h</td><td class="r">{{ m.high }}h</td>
+      <td class="r">{{ m.normal }}h</td><td class="r">{{ m.low }}h</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+<p class="muted" style="font-size:12px;margin-top:12px;">Resolution targets scale from the first-response target per tier. Enterprise (Dedicated) tickets also route to the top of the triage board.</p>
 {% endblock %}

@@ -171,8 +171,10 @@ def support_detail(request, pk):
     # Customers never see internal support notes.
     thread = list(ticket.messages.filter(is_internal=False)
                   .select_related("sender").prefetch_related("attachments"))
+    from apps.support import sla
     return render(request, "web/support/detail.html", {
         "nav_section": "support", "ticket": ticket, "thread": thread,
+        "sla": sla.snapshot(ticket, tier=sla.company_tier(request.user.active_company)),
         "can_reopen": ticket.status in {TicketStatus.RESOLVED, TicketStatus.CLOSED},
         "poll_url": reverse("web:support_messages", args=[ticket.id]),
         "send_url": reverse("web:support_send", args=[ticket.id]),
