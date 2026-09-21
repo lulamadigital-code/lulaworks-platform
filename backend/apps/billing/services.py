@@ -281,6 +281,11 @@ def send_enterprise_agreement(company) -> int:
         f"• Storage: {_gb(ov.get('storage_quota_bytes'))}",
         f"• Price: {price}",
     ]
+    if ov.get("contract_term_months"):
+        term_line = f"• Term: {ov['contract_term_months']} months"
+        if ov.get("contract_end"):
+            term_line += f" (renews {ov['contract_end']})"
+        lines.append(term_line)
     if ov.get("contract_note"):
         lines.append(f"• Terms: {ov['contract_note']}")
     lines += ["",

@@ -5,7 +5,7 @@ design system: KPI tiles, a signups chart, and section cards that link into the
 Django admin for the raw CRUD. This is the pretty front door; the admin stays
 the tool behind it.
 """
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib import messages
@@ -336,6 +336,19 @@ def platform_tenant(request, pk):
                         ov["monthly_ai_credits"] = cr
                     ov["contract_price"] = price          # display/record only
                     ov["contract_note"] = note[:500]
+                    # Contract term (commitment length) → records the term and a
+                    # computed renewal/end date. Metadata only; doesn't change
+                    # billing enforcement.
+                    term = _num("ov_term_months")
+                    if term and term > 0:
+                        import calendar as _cal
+                        start = timezone.localdate()
+                        tot = start.month - 1 + term
+                        y, mo = start.year + tot // 12, tot % 12 + 1
+                        day = min(start.day, _cal.monthrange(y, mo)[1])
+                        ov["contract_term_months"] = term
+                        ov["contract_start"] = start.isoformat()
+                        ov["contract_end"] = date(y, mo, day).isoformat()
                     # System contract reference — generated & confirmed by the
                     # admin (distinct from the customer's own external PO number).
                     if ref:

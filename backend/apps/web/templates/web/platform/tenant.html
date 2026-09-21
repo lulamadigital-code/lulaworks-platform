@@ -118,6 +118,7 @@
     {% if sub.overrides.storage_quota_bytes %}{{ sub.overrides.storage_quota_bytes|filesizeformat }} · {% endif %}
     {% if sub.overrides.monthly_ai_credits %}{{ sub.overrides.monthly_ai_credits }} credits/mo · {% endif %}
     {% if sub.overrides.contract_price %}price {{ sub.overrides.contract_price }}{% endif %}
+    {% if sub.overrides.contract_term_months %}<br>Term: <strong>{{ sub.overrides.contract_term_months }} months</strong>{% if sub.overrides.contract_end %} · renews {{ sub.overrides.contract_end }}{% endif %}{% endif %}
     {% if sub.overrides.contract_ref %}<br>Ref: <strong>{{ sub.overrides.contract_ref }}</strong>{% endif %}
     {% if sub.overrides.contract_note %}<br>Note: {{ sub.overrides.contract_note }}{% endif %}
   </p>
@@ -133,6 +134,10 @@
       <div><label>Agreed price (record only)</label>
         <input type="text" name="ov_price" value="{{ sub.overrides.contract_price|default:'' }}" placeholder="e.g. R25,000 / mo"></div>
     </div>
+    <label style="margin-top:8px;">Contract term (months) <span class="sub" style="font-weight:400;font-size:12px;">— commitment length; sets a renewal date</span></label>
+    <input type="number" name="ov_term_months" min="1" step="1" list="term-opts"
+           value="{{ sub.overrides.contract_term_months|default:'' }}" placeholder="e.g. 12">
+    <datalist id="term-opts"><option value="12"><option value="24"><option value="36"></datalist>
     <label style="margin-top:8px;">Contract reference <span class="sub" style="font-weight:400;font-size:12px;">— our internal deal ref (auto-suggested; confirm or edit)</span></label>
     <input type="text" name="ov_ref" value="{{ suggested_ref }}" placeholder="LW-ENT-2026-0001">
     <label style="margin-top:8px;">Contract note <span class="sub" style="font-weight:400;font-size:12px;">— customer PO, term, billing arrangement</span></label>
