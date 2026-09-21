@@ -377,7 +377,7 @@ def platform_tenant(request, pk):
 
         ctx["ph"] = {
             "seat_value": float(biz_seat or 99),
-            "credit_rate": round(best_rate, 3) if best_rate else 0.30,
+            "credit_rate": round(best_rate, 3) if best_rate else 0.60,
             "storage_retail": 4.0,      # retail R/GB/mo (well above cost)
             "storage_cost_gb": round(_STORAGE_USD_PER_GB_MO * _FX_TO_ZAR["USD"], 3),
             "ai_cost_per_credit": ai_cost,
