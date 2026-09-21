@@ -313,7 +313,7 @@
     <a class="lk" href="{% url 'web:platform_emails' %}"><div class="t">Email logs</div><div class="d">Delivery history</div></a>
     <a class="lk" href="{% url 'web:platform_audit' %}"><div class="t">Audit logs</div><div class="d">Security &amp; change trail</div></a>
     <a class="lk" href="/admin/administration/featureflag/"><div class="t">Feature flags</div><div class="d">Platform-wide toggles</div></a>
-    <a class="lk" href="/admin/enterprise/auditevent/"><div class="t">Tenant audit events</div><div class="d">Enterprise: sign-ins, roles, API keys, SSO</div></a>
+    <a class="lk" href="{% url 'web:platform_governance' %}"><div class="t">Enterprise governance</div><div class="d">Tenant audit trail — sign-ins, roles, API keys, SSO</div></a>
     <a class="lk" href="/admin/enterprise/apikey/"><div class="t">API keys</div><div class="d">Enterprise: tenant API keys</div></a>
     <a class="lk" href="/admin/enterprise/ssoconfig/"><div class="t">SSO configurations</div><div class="d">Enterprise: tenant SSO / OIDC setup</div></a>
   </div>

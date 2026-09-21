@@ -10,6 +10,7 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db.models import Count, Q, Sum
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -498,6 +499,55 @@ def platform_list(request, section):
             return redirect("web:platform_home")
 
     return render(request, "web/platform/list.html", ctx)
+
+
+@login_required
+def platform_governance(request):
+    """Enterprise governance — the per-tenant audit trail (sign-ins, role changes,
+    API keys, SSO, plan changes) across every tenant, in the branded console.
+    Read-only; full detail is one click away in Django admin. Platform staff only."""
+    if not request.user.platform_level:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+
+    from apps.core.context import system_scope
+    from apps.enterprise.models import AuditAction, AuditEvent, SECURITY_ACTIONS
+
+    action = request.GET.get("action", "")
+    q = request.GET.get("q", "").strip()
+    now = timezone.now()
+    d30 = now - timedelta(days=30)
+    d1 = now - timedelta(days=1)
+
+    with system_scope():
+        qs = AuditEvent.all_objects.select_related("company", "actor")
+        if action:
+            qs = qs.filter(action=action)
+        if q:
+            qs = qs.filter(Q(company__name__icontains=q) | Q(actor_label__icontains=q)
+                           | Q(summary__icontains=q))
+        page = Paginator(qs, 60).get_page(request.GET.get("page"))
+        allt = AuditEvent.all_objects
+        kpis = {
+            "total": allt.count(),
+            "security_24h": allt.filter(action__in=SECURITY_ACTIONS,
+                                        created_at__gte=d1).count(),
+            "failed_30d": allt.filter(action=AuditAction.LOGIN_FAILED,
+                                      created_at__gte=d30).count(),
+        }
+        # Snapshot rows while inside system_scope so template access is safe.
+        rows = [{
+            "when": e.created_at, "company": e.company.name if e.company else "—",
+            "action_label": e.get_action_display(), "action": e.action,
+            "is_security": e.is_security, "actor": e.actor_label or "—",
+            "summary": e.summary, "ip": e.ip or "—",
+        } for e in page]
+
+    return render(request, "web/platform/governance.html", {
+        "active": "governance", "rows": rows, "page": page, "kpis": kpis,
+        "actions": [{"value": a.value, "label": a.label} for a in AuditAction],
+        "f_action": action, "q": q,
+    })
 
 
 # Rough estimates — tune to your real numbers. AI `cost` is logged in USD by the

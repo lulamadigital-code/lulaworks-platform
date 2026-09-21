@@ -24,6 +24,7 @@
   <a {% if active == 'subscriptions' %}class="active"{% endif %} href="{% url 'web:platform_subscriptions' %}"><svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg>Subscriptions</a>
   <a {% if active == 'emails' %}class="active"{% endif %} href="{% url 'web:platform_emails' %}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg>Email logs</a>
   <a {% if active == 'audit' %}class="active"{% endif %} href="{% url 'web:platform_audit' %}"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3zM9.5 12l1.8 1.8L15 10"/></svg>Audit logs</a>
+  <a {% if active == 'governance' %}class="active"{% endif %} href="{% url 'web:platform_governance' %}"><svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>Enterprise governance</a>
   <span class="nav-group">Learning centre</span>
   <a {% if active == 'learn' %}class="active"{% endif %} href="{% url 'web:platform_learn' %}"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v14H6.5A2.5 2.5 0 0 0 4 19.5zM4 19.5A2.5 2.5 0 0 0 6.5 22H20"/><path d="M9 7h7M9 11h5"/></svg>Articles &amp; guides</a>
   <a class="subnav {% if active == 'tools' %}active{% endif %}" href="{% url 'web:platform_tools' %}"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5 5L3 18v3h3l6.7-6.7a4 4 0 0 0 5-5l-2.4 2.4-2.1-.6-.6-2.1z"/></svg>Free tools</a>

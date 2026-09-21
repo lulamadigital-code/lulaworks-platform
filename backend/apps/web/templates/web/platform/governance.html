@@ -1,0 +1,82 @@
+{% extends "web/base.html" %}
+{% block title %}Enterprise governance · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="governance" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em}
+  .sub{color:var(--muted);margin:0 0 18px} .muted{color:var(--muted)}
+  .head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin:6px 0 18px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .tile .n{font-size:28px;font-weight:800;letter-spacing:-.02em} .tile .l{color:var(--muted);font-size:13px;margin-top:3px;font-weight:600}
+  .tile.hi .n{color:#c22a41}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .filters input,.filters select{padding:8px 11px;border:1px solid var(--line);border-radius:9px;font-size:13.5px;background:#fff}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;background:#fafbfd}
+  tbody tr:hover td{background:#fafbfd} tr:last-child td{border-bottom:0}
+  .chip{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap;background:#eef0f5;color:var(--muted)}
+  .chip.sec{background:#fdecef;color:#c22a41}
+  .btn.ghost{background:#fff;color:var(--primary-d);border:1px solid var(--line)}
+  .btn.ghost svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .pager{display:flex;justify-content:center;gap:12px;align-items:center;margin-top:16px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="head-row">
+  <div>
+    <h1>Enterprise governance</h1>
+    <p class="sub">The per-tenant security &amp; change trail — sign-ins, role changes, API keys, SSO and plan changes across every tenant.</p>
+  </div>
+  <a class="btn ghost" href="/admin/enterprise/auditevent/"><svg viewBox="0 0 24 24"><path d="M14 3h7v7M21 3l-9 9M10 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/></svg> Open in Django admin</a>
+</div>
+
+<div class="grid">
+  <div class="tile"><div class="n">{{ kpis.total }}</div><div class="l">Total events</div></div>
+  <div class="tile {% if kpis.security_24h %}hi{% endif %}"><div class="n">{{ kpis.security_24h }}</div><div class="l">Security events · 24h</div></div>
+  <div class="tile {% if kpis.failed_30d %}hi{% endif %}"><div class="n">{{ kpis.failed_30d }}</div><div class="l">Failed sign-ins · 30d</div></div>
+</div>
+
+<form class="filters" method="get">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search company, person or detail…">
+  <select name="action" onchange="this.form.submit()">
+    <option value="">All actions</option>
+    {% for a in actions %}<option value="{{ a.value }}" {% if f_action == a.value %}selected{% endif %}>{{ a.label }}</option>{% endfor %}
+  </select>
+  <button class="btn ghost" type="submit">Filter</button>
+</form>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <thead><tr><th>When</th><th>Company</th><th>Action</th><th>Who</th><th>Details</th><th>IP</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td class="muted" style="white-space:nowrap;">{{ r.when|date:"d M Y H:i" }}</td>
+        <td>{{ r.company }}</td>
+        <td>{% if r.is_security %}<span class="chip sec">{{ r.action_label }}</span>{% else %}<span class="chip">{{ r.action_label }}</span>{% endif %}</td>
+        <td class="muted">{{ r.actor }}</td>
+        <td>{{ r.summary }}</td>
+        <td class="muted">{{ r.ip }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="padding:18px;color:var(--muted);text-align:center;">No audit events match.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page.has_other_pages %}
+<div class="pager">
+  {% if page.has_previous %}<a class="btn ghost" href="?{% if q %}q={{ q }}&{% endif %}{% if f_action %}action={{ f_action }}&{% endif %}page={{ page.previous_page_number }}">Previous</a>{% endif %}
+  <span class="muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a class="btn ghost" href="?{% if q %}q={{ q }}&{% endif %}{% if f_action %}action={{ f_action }}&{% endif %}page={{ page.next_page_number }}">Next</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}
