@@ -73,7 +73,12 @@
     /* ---- Cards / widgets ---- */
     .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
           padding:20px;margin-bottom:18px;box-shadow:var(--shadow)}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:18px}
+    /* Tiles all fit on one row (equal width, shrink to fit); wrap only on
+       narrow screens so they stay readable. Flex ignores any inline
+       grid-template-columns a page may still set — same one-row result. */
+    .grid{display:flex;flex-wrap:nowrap;gap:16px;margin-bottom:18px}
+    .grid>*{flex:1 1 0;min-width:0}
+    @media(max-width:760px){.grid{flex-wrap:wrap}.grid>*{flex:1 1 140px}}
     .tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px;
           box-shadow:var(--shadow);position:relative;overflow:hidden}
     .tile .n{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
@@ -348,7 +353,9 @@
     .login-logo .word{font-size:34px;font-weight:800;letter-spacing:-.03em}
     /* Section link cards (Settings, Marketing overview, …) — global so every
        page that uses them renders the cards, not plain links. */
-    .setgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin:4px 0 8px;}
+    .setgrid{display:flex;flex-wrap:nowrap;gap:14px;margin:4px 0 8px;}
+    .setgrid>*{flex:1 1 0;min-width:0;}
+    @media(max-width:760px){.setgrid{flex-wrap:wrap;}.setgrid>*{flex:1 1 200px;}}
     .setcard{display:block;background:var(--surface);border:1px solid var(--line);border-radius:14px;
              padding:16px 18px;box-shadow:var(--shadow);color:var(--ink);transition:box-shadow .15s ease,border-color .15s ease,transform .15s ease;}
     .setcard:hover{text-decoration:none;box-shadow:var(--shadow-lg);border-color:var(--primary);transform:translateY(-2px);}
