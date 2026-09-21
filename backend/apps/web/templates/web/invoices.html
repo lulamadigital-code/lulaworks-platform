@@ -50,9 +50,9 @@
 
 <div class="card">
   <h3 style="margin:0 0 12px;">{% trans "Your invoices" %}</h3>
-  {% if invoices %}
   <input type="search" class="js-live-search" data-target="#invoice-list" placeholder="{% trans 'Search invoice number, customer or status…' %}" aria-label="{% trans 'Search invoices' %}"
     style="width:100%;max-width:420px;box-sizing:border-box;padding:10px 13px;margin-bottom:12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--bg,#f7f8fa);color:var(--ink);">
+  {% if invoices %}
   <div id="invoice-list" style="overflow-x:auto;">
   <table>
     <thead>
