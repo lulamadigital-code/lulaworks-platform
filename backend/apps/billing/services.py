@@ -51,10 +51,26 @@ def _subscription(company):
     return getattr(company, "subscription", None)
 
 
+def _seat_price(sub) -> Decimal:
+    """Per-user overage rate in force (0 = hard cap, no overage)."""
+    if sub is None:
+        return Decimal("0")
+    return Decimal(sub.limit("per_seat_price", sub.plan.per_seat_price) or 0)
+
+
 def check_user_seat(company, current_user_count: int) -> EntitlementResult:
     sub = _subscription(company)
-    limit = sub.limit("max_users", company.max_users) if sub else company.max_users
+    limit = int(sub.limit("max_users", company.max_users) if sub else company.max_users)
+    seat_price = _seat_price(sub)
     if current_user_count >= limit:
+        # Over the included seats: allow with a billing note when the plan has
+        # per-seat overage; otherwise it's a hard cap (must upgrade).
+        if seat_price > 0:
+            sym = sub.currency_symbol if sub else "R"
+            return EntitlementResult(
+                True, warn=True,
+                reason=f"Beyond your {limit} included seats — extra users are "
+                       f"billed at {sym}{seat_price:g}/user/month.")
         return EntitlementResult(
             False, reason=f"User limit ({limit}) reached — upgrade to add more."
         )
@@ -400,9 +416,10 @@ def recompute_over_limit(company) -> bool:
     sub = getattr(company, "subscription", None)
     if sub is None:
         return False
-    over = (active_user_count(company) > company.max_users) or (
-        company.storage_used_bytes > company.storage_quota_bytes
-    )
+    # With per-seat overage, exceeding the user cap is billed, not a lock — only
+    # storage (and users on a hard-cap plan) trip the over-limit state.
+    users_over = active_user_count(company) > company.max_users and _seat_price(sub) <= 0
+    over = users_over or (company.storage_used_bytes > company.storage_quota_bytes)
     if sub.is_over_limit != over:
         sub.is_over_limit = over
         sub.save(update_fields=["is_over_limit", "updated_at"])
@@ -414,15 +431,44 @@ def recompute_over_limit(company) -> bool:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def can_add_user(company) -> EntitlementResult:
-    """Gate on inviting a new licensed user (seat limit + over-limit lock)."""
+    """Gate on inviting a new licensed user (seat limit + over-limit lock).
+    With per-seat overage, extra users are allowed and billed rather than blocked."""
     sub = _subscription(company)
-    if sub is not None and sub.is_over_limit:
+    # The post-downgrade lock still applies only when there's no overage; if the
+    # plan bills extra seats, adding users is always allowed (they're charged).
+    if sub is not None and sub.is_over_limit and _seat_price(sub) <= 0:
         return EntitlementResult(
             False,
             reason="You're over your plan's user limit after a downgrade — "
                    "upgrade or remove a user before adding more.",
         )
     return check_user_seat(company, active_user_count(company))
+
+
+def included_seats(company) -> int:
+    sub = _subscription(company)
+    return int(sub.limit("max_users", company.max_users) if sub else company.max_users)
+
+
+def billable_extra_seats(company) -> int:
+    """Active users beyond the included seats (0 unless over on an overage plan)."""
+    return max(0, active_user_count(company) - included_seats(company))
+
+
+def effective_monthly_price(company) -> Decimal:
+    """Recurring monthly-equivalent charge: base plan price + billed overage
+    seats, in the subscription's currency. Enterprise (price 0) contributes its
+    recorded contract price via the base being 0 here (handled by callers)."""
+    sub = _subscription(company)
+    if sub is None:
+        return Decimal("0")
+    if sub.plan.price == 0:
+        base = Decimal("0")
+    elif sub.billing_cycle == "annual" and sub.plan.annual_price:
+        base = Decimal(sub.plan.price_in(sub.currency, "annual")) / 12
+    else:
+        base = Decimal(sub.plan.price_in(sub.currency, "monthly"))
+    return base + Decimal(billable_extra_seats(company)) * _seat_price(sub)
 
 
 def storage_status(company) -> dict:
@@ -453,6 +499,7 @@ def priced_plans(currency: str) -> list:
             "is_popular": p.is_popular, "features": p.features,
             "max_users": p.max_users, "monthly_ai_credits": p.monthly_ai_credits,
             "storage_quota_bytes": p.storage_quota_bytes,
+            "per_seat_price": p.per_seat_price,
             "symbol": p.symbol_for(currency),
             "monthly": p.price_in(currency, "monthly"),
             "annual": p.price_in(currency, "annual"),
@@ -503,6 +550,11 @@ def subscription_overview(company) -> dict:
         "storage": storage,
         "user_count": users,
         "user_limit": company.max_users,
+        "included_seats": included_seats(company),
+        "extra_seats": billable_extra_seats(company),
+        "per_seat_price": _seat_price(sub),
+        "extra_seat_cost": Decimal(billable_extra_seats(company)) * _seat_price(sub),
+        "effective_monthly": effective_monthly_price(company),
         "employee_count": employee_count(company),
         "plans": priced_plans(currency),
         "packs": list(CreditPack.objects.filter(is_active=True).order_by("price")),

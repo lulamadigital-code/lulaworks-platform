@@ -37,7 +37,10 @@ class Plan(PlatformBaseModel):
     # bigger plan. Leaves gaps so an Enterprise tier can slot in later.
     tier = models.PositiveSmallIntegerField(default=0)
     is_popular = models.BooleanField(default=False)  # the "Most Popular" card
-    max_users = models.PositiveIntegerField(default=4)
+    max_users = models.PositiveIntegerField(default=4)     # seats INCLUDED in the price
+    # Monthly charge per user beyond `max_users`. 0 = hard cap (no overage,
+    # must upgrade). >0 = extra seats are allowed and billed at this rate.
+    per_seat_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     storage_quota_bytes = models.BigIntegerField(default=1_073_741_824)
     monthly_ai_credits = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     api_access = models.BooleanField(default=False)

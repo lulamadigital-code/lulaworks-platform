@@ -30,7 +30,7 @@
         {% endif %}
         <ul>
           {% if p.contact_sales %}<li><strong>{% blocktrans with n=p.max_users %}From {{ n }} users{% endblocktrans %}</strong></li>
-          {% else %}<li><strong>{% blocktrans with n=p.max_users %}{{ n }} users{% endblocktrans %}</strong></li>{% endif %}
+          {% else %}<li><strong>{% blocktrans with n=p.max_users %}{{ n }} users{% endblocktrans %}</strong>{% if p.per_seat_price %} <span class="muted" style="font-size:12.5px;">{% blocktrans with sym=p.symbol each=p.per_seat_price|floatformat:0 %}· +{{ sym }}{{ each }}/extra user{% endblocktrans %}</span>{% endif %}</li>{% endif %}
           <li>{% trans "Unlimited employees" %}</li>
           <li>{% blocktrans with c=p.monthly_ai_credits|floatformat:0 %}{{ c }} AI credits / month{% endblocktrans %}</li>
           <li>{% blocktrans with s=p.storage_quota_bytes|filesizeformat %}{{ s }} storage{% endblocktrans %}</li>

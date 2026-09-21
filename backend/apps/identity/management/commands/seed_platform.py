@@ -99,7 +99,7 @@ _ENTERPRISE_ENTITLEMENTS = _BUSINESS_ENTITLEMENTS + [
 
 PLANS = [
     {
-        "code": "starter", "name": "Starter", "tier": 1, "is_popular": False,
+        "code": "starter", "name": "Starter", "tier": 1, "is_popular": False, "per_seat_price": 150,
         "price": 299, "annual_price": 2990, "max_users": 2,
         "storage_quota_bytes": 5 * GB, "monthly_ai_credits": 300,
         "support_level": "email", "module_entitlements": _STARTER_ENTITLEMENTS,
@@ -111,7 +111,7 @@ PLANS = [
         ],
     },
     {
-        "code": "professional", "name": "Professional", "tier": 2, "is_popular": True,
+        "code": "professional", "name": "Professional", "tier": 2, "is_popular": True, "per_seat_price": 120,
         "price": 1299, "annual_price": 12990, "max_users": 10,
         "storage_quota_bytes": 50 * GB, "monthly_ai_credits": 2000,
         "support_level": "priority", "module_entitlements": _PRO_ENTITLEMENTS,
@@ -124,7 +124,7 @@ PLANS = [
         ],
     },
     {
-        "code": "business", "name": "Business", "tier": 3, "is_popular": False,
+        "code": "business", "name": "Business", "tier": 3, "is_popular": False, "per_seat_price": 99,
         "price": 3999, "annual_price": 39990, "max_users": 50,
         "storage_quota_bytes": 200 * GB, "monthly_ai_credits": 8000,
         "support_level": "highest", "module_entitlements": _BUSINESS_ENTITLEMENTS,

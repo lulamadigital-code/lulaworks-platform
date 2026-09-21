@@ -520,7 +520,11 @@ def platform_margin(request):
     with system_scope():
         from apps.ai_platform.models import AIUsageLog
         from apps.billing.models import Subscription
-        from apps.billing.services import effective_monthly_credits
+        from apps.billing.services import (
+            billable_extra_seats,
+            effective_monthly_credits,
+            effective_monthly_price,
+        )
 
         cutoff = timezone.now() - timedelta(days=30)
         usage = {u["company"]: u for u in AIUsageLog.objects.filter(created_at__gte=cutoff)
@@ -535,10 +539,10 @@ def platform_margin(request):
                 cp = (sub.overrides or {}).get("contract_price", "")
                 d = _re.sub(r"[^\d.]", "", cp or "")
                 base = Decimal(d) if d else Decimal("0")
+                # Overage still applies on top of a custom base.
+                base += Decimal(billable_extra_seats(sub.company)) * Decimal(sub.plan.per_seat_price or 0)
             else:
-                base = sub.plan.price_in(cur, sub.billing_cycle) or Decimal("0")
-                if sub.billing_cycle == "annual" and base:
-                    base = base / 12
+                base = effective_monthly_price(sub.company)   # base + per-seat overage
             return _zar(base, cur)
 
         rows, by_plan = [], {}

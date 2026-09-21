@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-21 13:25+0000\n"
+"POT-Creation-Date: 2026-09-21 14:08+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1032,6 +1032,10 @@ msgstr "Vanaf %(n)s gebruikers"
 #, python-format
 msgid "%(n)s users"
 msgstr "%(n)s gebruikers"
+
+#, python-format
+msgid "· +%(sym)s%(each)s/extra user"
+msgstr "· +%(sym)s%(each)s/ekstra gebruiker"
 
 msgid "Unlimited employees"
 msgstr "Onbeperkte werknemers"
@@ -2062,8 +2066,29 @@ msgstr "Berging"
 msgid "Users (licensed)"
 msgstr "Gebruikers (gelisensieer)"
 
+#, python-format
+msgid "%(n)s extra"
+msgstr "%(n)s ekstra"
+
 msgid "Employees (unlimited)"
 msgstr "Werknemers (onbeperk)"
+
+#, python-format
+msgid ""
+"%(n)s seat(s) beyond your plan are billed at %(sym)s%(each)s/user/month — "
+"%(sym)s%(total)s/month added. Your recurring total is %(sym)s%(recurring)s."
+msgstr ""
+"%(n)s sitplek(ke) bo jou plan word teen %(sym)s%(each)s/gebruiker/maand "
+"gehef — %(sym)s%(total)s/maand bygevoeg. Jou herhalende totaal is "
+"%(sym)s%(recurring)s."
+
+#, python-format
+msgid ""
+"Need more seats? Add users any time at %(sym)s%(each)s/user/month — no "
+"upgrade required."
+msgstr ""
+"Meer sitplekke nodig? Voeg enige tyd gebruikers by teen "
+"%(sym)s%(each)s/gebruiker/maand — geen opgradering nodig nie."
 
 #, python-format
 msgid "⚠ Storage is %(pct)s%% full — free up space or upgrade for more."

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-21 13:25+0000\n"
+"POT-Creation-Date: 2026-09-21 14:08+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1061,6 +1061,10 @@ msgstr "À partir de %(n)s utilisateurs"
 msgid "%(n)s users"
 msgstr "%(n)s utilisateurs"
 
+#, python-format
+msgid "· +%(sym)s%(each)s/extra user"
+msgstr "· +%(sym)s%(each)s/utilisateur supp."
+
 msgid "Unlimited employees"
 msgstr "Employés illimités"
 
@@ -2105,8 +2109,29 @@ msgstr "Stockage"
 msgid "Users (licensed)"
 msgstr "Utilisateurs (sous licence)"
 
+#, python-format
+msgid "%(n)s extra"
+msgstr "%(n)s en plus"
+
 msgid "Employees (unlimited)"
 msgstr "Employés (illimité)"
+
+#, python-format
+msgid ""
+"%(n)s seat(s) beyond your plan are billed at %(sym)s%(each)s/user/month — "
+"%(sym)s%(total)s/month added. Your recurring total is %(sym)s%(recurring)s."
+msgstr ""
+"%(n)s siège(s) au-delà de votre forfait sont facturés "
+"%(sym)s%(each)s/utilisateur/mois — %(sym)s%(total)s/mois ajoutés. Votre "
+"total récurrent est de %(sym)s%(recurring)s."
+
+#, python-format
+msgid ""
+"Need more seats? Add users any time at %(sym)s%(each)s/user/month — no "
+"upgrade required."
+msgstr ""
+"Besoin de plus de sièges ? Ajoutez des utilisateurs à tout moment pour "
+"%(sym)s%(each)s/utilisateur/mois — sans changer de forfait."
 
 #, python-format
 msgid "⚠ Storage is %(pct)s%% full — free up space or upgrade for more."
