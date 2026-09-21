@@ -31,6 +31,7 @@ urlpatterns = [
     path("platform/new-tenant/", views_platform.platform_create_tenant, name="platform_create_tenant"),
     path("platform/settings/", views_platform.platform_settings, name="platform_settings"),
     path("platform/analytics/", views_platform.platform_analytics, name="platform_analytics"),
+    path("platform/margin/", views_platform.platform_margin, name="platform_margin"),
     path("platform/analytics/retention/", views_platform.platform_analytics_retention, name="platform_analytics_retention"),
     path("platform/analytics/health/", views_platform.platform_analytics_health, name="platform_analytics_health"),
     path("platform/analytics/live.json", views_platform.platform_analytics_live, name="platform_analytics_live"),

@@ -485,6 +485,117 @@ def platform_list(request, section):
     return render(request, "web/platform/list.html", ctx)
 
 
+# Rough estimates — tune to your real numbers. AI `cost` is logged in USD by the
+# provider; storage priced at typical object-store rates. FX is approximate.
+_FX_TO_ZAR = {"ZAR": 1, "USD": 18.5, "EUR": 20.0, "GBP": 23.5, "AUD": 12.2}
+_STORAGE_USD_PER_GB_MO = 0.023
+
+
+@login_required
+def platform_margin(request):
+    """Margin & cost — revenue vs actual AI + storage cost per plan and per
+    tenant, so 'can we make money' is answered with numbers. AI cost comes from
+    the real per-call USD logged in AIUsageLog; revenue from active subscriptions
+    (normalised to ZAR-equivalent). Superuser / billing access only."""
+    import re as _re
+    from datetime import timedelta
+    from decimal import Decimal
+
+    from django.db.models import Sum
+
+    if not request.user.platform_level:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+    if not request.user.can_platform("billing"):
+        messages.error(request, "You don't have billing access.")
+        return redirect("web:platform_home")
+
+    from apps.core.context import system_scope
+
+    GB = 1024 ** 3
+
+    def _zar(amount, currency):
+        return Decimal(str(amount or 0)) * Decimal(str(_FX_TO_ZAR.get(currency or "ZAR", 1)))
+
+    with system_scope():
+        from apps.ai_platform.models import AIUsageLog
+        from apps.billing.models import Subscription
+        from apps.billing.services import effective_monthly_credits
+
+        cutoff = timezone.now() - timedelta(days=30)
+        usage = {u["company"]: u for u in AIUsageLog.objects.filter(created_at__gte=cutoff)
+                 .values("company").annotate(cost=Sum("cost"), credits=Sum("credits_used"))}
+
+        subs = list(Subscription.objects.select_related("company", "plan")
+                    .exclude(status="cancelled").order_by("company__name"))
+
+        def _mrr_zar(sub):
+            cur = getattr(sub, "currency", "") or "ZAR"
+            if sub.plan.price == 0:                      # Enterprise / custom deal
+                cp = (sub.overrides or {}).get("contract_price", "")
+                d = _re.sub(r"[^\d.]", "", cp or "")
+                base = Decimal(d) if d else Decimal("0")
+            else:
+                base = sub.plan.price_in(cur, sub.billing_cycle) or Decimal("0")
+                if sub.billing_cycle == "annual" and base:
+                    base = base / 12
+            return _zar(base, cur)
+
+        rows, by_plan = [], {}
+        tot = {"mrr": Decimal("0"), "ai": Decimal("0"), "storage": Decimal("0"),
+               "trial_ai": Decimal("0")}
+        for sub in subs:
+            co = sub.company
+            u = usage.get(co.id, {})
+            ai_zar = _zar(u.get("cost"), "USD")
+            gb = Decimal((co.storage_used_bytes or 0)) / GB
+            storage_zar = gb * Decimal(str(_STORAGE_USD_PER_GB_MO)) * Decimal(str(_FX_TO_ZAR["USD"]))
+            mrr = _mrr_zar(sub)
+            cost = ai_zar + storage_zar
+            is_trial = sub.status == "trial"
+            margin_pct = (float((mrr - cost) / mrr * 100) if mrr > 0 else None)
+            rows.append({
+                "company": co, "company_id": co.id, "plan": sub.plan.name,
+                "status": sub.status, "is_trial": is_trial,
+                "mrr": mrr, "ai": ai_zar, "storage": storage_zar, "cost": cost,
+                "margin_pct": (round(margin_pct, 1) if margin_pct is not None else None),
+                "credits_used": u.get("credits") or Decimal("0"),
+                "credits_allowed": effective_monthly_credits(sub),
+                "gb": round(float(gb), 2),
+                "thin": (margin_pct is not None and margin_pct < 50) or (mrr == 0 and cost > 0),
+            })
+            tot["mrr"] += mrr
+            tot["ai"] += ai_zar
+            tot["storage"] += storage_zar
+            if is_trial:
+                tot["trial_ai"] += ai_zar
+            p = by_plan.setdefault(sub.plan.name, {
+                "plan": sub.plan.name, "tier": sub.plan.tier, "tenants": 0,
+                "mrr": Decimal("0"), "ai": Decimal("0"), "storage": Decimal("0")})
+            p["tenants"] += 1
+            p["mrr"] += mrr
+            p["ai"] += ai_zar
+            p["storage"] += storage_zar
+
+    for p in by_plan.values():
+        c = p["ai"] + p["storage"]
+        p["cost"] = c
+        p["margin_pct"] = (round(float((p["mrr"] - c) / p["mrr"] * 100), 1)
+                           if p["mrr"] > 0 else None)
+    tot_cost = tot["ai"] + tot["storage"]
+    blended = (round(float((tot["mrr"] - tot_cost) / tot["mrr"] * 100), 1)
+               if tot["mrr"] > 0 else None)
+    rows.sort(key=lambda r: (r["margin_pct"] is None, r["margin_pct"] if r["margin_pct"] is not None else 999))
+
+    return render(request, "web/platform/margin.html", {
+        "active": "analytics",
+        "rows": rows,
+        "by_plan": sorted(by_plan.values(), key=lambda x: x["tier"]),
+        "tot": tot, "tot_cost": tot_cost, "blended": blended,
+        "count": len(rows),
+    })
+
+
 @login_required
 def platform_settings(request):
     """Platform Settings — environment/integration status (relevant info) plus

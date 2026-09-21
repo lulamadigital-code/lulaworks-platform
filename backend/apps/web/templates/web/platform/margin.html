@@ -1,0 +1,88 @@
+{% extends "web/base.html" %}
+{% block title %}Margin & cost · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="margin" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em} .sub{color:var(--muted);margin:0 0 18px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+  .tile .n{font-size:24px;font-weight:800;letter-spacing:-.02em} .tile .l{color:var(--muted);font-size:12px;margin-top:3px;font-weight:600}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:9px 12px;border-bottom:1px solid var(--line);font-size:13.5px;text-align:left}
+  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .mchip{font-weight:800;font-size:12.5px;padding:2px 9px;border-radius:20px}
+  .m-good{background:var(--green-t,#e6f7ef);color:#0a8f57}
+  .m-ok{background:#fbe9d6;color:#9a6a12}
+  .m-bad{background:#fdecea;color:#c0392b}
+  .trow.thin{background:#fff7f6}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Margin &amp; cost</h1>
+<p class="sub">Revenue vs actual AI + storage cost, last 30 days — so “can we make money” is a number, not a guess.
+  AI cost is the real per-call USD logged by the providers; revenue is active subscriptions, all normalised to ZAR-equivalent.</p>
+
+<div class="grid">
+  <div class="tile"><div class="n">R{{ tot.mrr|floatformat:0 }}</div><div class="l">Monthly revenue (MRR)</div></div>
+  <div class="tile"><div class="n">R{{ tot.ai|floatformat:0 }}</div><div class="l">AI cost · 30 days</div></div>
+  <div class="tile"><div class="n">R{{ tot.storage|floatformat:0 }}</div><div class="l">Storage cost · 30 days</div></div>
+  <div class="tile"><div class="n">R{{ tot_cost|floatformat:0 }}</div><div class="l">Total variable cost</div></div>
+  <div class="tile"><div class="n">
+    {% if blended is not None %}<span class="mchip {% if blended >= 60 %}m-good{% elif blended >= 30 %}m-ok{% else %}m-bad{% endif %}">{{ blended }}%</span>{% else %}—{% endif %}
+  </div><div class="l">Blended gross margin</div></div>
+  {% if tot.trial_ai %}<div class="tile"><div class="n">R{{ tot.trial_ai|floatformat:0 }}</div><div class="l">Trial AI cost (no revenue)</div></div>{% endif %}
+</div>
+
+<p class="sub" style="margin:-6px 0 18px;font-size:12.5px;">
+  Gross margin here = (MRR − AI − storage) ÷ MRR. It excludes fixed costs (infra, salaries, support, payment fees ≈ 3%) —
+  those are covered by <strong>volume</strong>, so the real break-even question is “enough tenants at this margin”.</p>
+
+<h2 style="font-size:16px;margin:0 0 8px;">By plan</h2>
+<div class="card" style="padding:0;overflow-x:auto;margin-bottom:24px;">
+  <table>
+    <tr><th>Plan</th><th class="num">Tenants</th><th class="num">MRR</th><th class="num">AI cost</th><th class="num">Storage</th><th class="num">Cost</th><th class="num">Gross margin</th></tr>
+    {% for p in by_plan %}
+    <tr>
+      <td><strong>{{ p.plan }}</strong></td>
+      <td class="num">{{ p.tenants }}</td>
+      <td class="num">R{{ p.mrr|floatformat:0 }}</td>
+      <td class="num">R{{ p.ai|floatformat:0 }}</td>
+      <td class="num">R{{ p.storage|floatformat:0 }}</td>
+      <td class="num">R{{ p.cost|floatformat:0 }}</td>
+      <td class="num">{% if p.margin_pct is not None %}<span class="mchip {% if p.margin_pct >= 60 %}m-good{% elif p.margin_pct >= 30 %}m-ok{% else %}m-bad{% endif %}">{{ p.margin_pct }}%</span>{% else %}<span class="muted">trial / n/a</span>{% endif %}</td>
+    </tr>
+    {% empty %}<tr><td colspan="7" class="muted" style="padding:18px;">No subscriptions yet.</td></tr>{% endfor %}
+  </table>
+</div>
+
+<h2 style="font-size:16px;margin:0 0 8px;">By tenant <span class="muted" style="font-weight:400;font-size:13px;">· {{ count }} · thinnest margin first</span></h2>
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <tr><th>Company</th><th>Plan</th><th class="num">MRR</th><th class="num">AI cost</th><th class="num">Storage</th><th class="num">Credits (used / mo)</th><th class="num">Gross margin</th></tr>
+    {% for r in rows %}
+    <tr class="trow {% if r.thin %}thin{% endif %}">
+      <td><a href="{% url 'web:platform_tenant' r.company_id %}"><strong>{{ r.company.name }}</strong></a></td>
+      <td class="muted">{{ r.plan }}{% if r.is_trial %} · <span style="color:#9a6a12;">trial</span>{% endif %}</td>
+      <td class="num">{% if r.mrr %}R{{ r.mrr|floatformat:0 }}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="num">R{{ r.ai|floatformat:2 }}</td>
+      <td class="num">R{{ r.storage|floatformat:2 }}</td>
+      <td class="num">{{ r.credits_used|floatformat:0 }} / {{ r.credits_allowed|floatformat:0 }}</td>
+      <td class="num">
+        {% if r.margin_pct is not None %}<span class="mchip {% if r.margin_pct >= 60 %}m-good{% elif r.margin_pct >= 30 %}m-ok{% else %}m-bad{% endif %}">{{ r.margin_pct }}%</span>
+        {% elif r.cost %}<span class="mchip m-bad">cost only</span>{% else %}<span class="muted">—</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="7" class="muted" style="padding:18px;">No subscriptions yet.</td></tr>{% endfor %}
+  </table>
+</div>
+
+<p class="sub" style="font-size:12px;margin-top:14px;">
+  Estimates: AI cost is exact (logged USD); storage ≈ $0.023/GB·mo; FX ≈ R18.5/$ (adjust in <code>views_platform._FX_TO_ZAR</code>).
+  Rows highlighted red = margin under 50% or cost with no revenue (e.g. a heavy trial) — the tenants to watch.</p>
+{% endblock %}
