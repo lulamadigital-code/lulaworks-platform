@@ -60,6 +60,37 @@
 </div>
 
 <div class="card">
+  <h2 style="margin-top:0;">Custom terms <span class="sub" style="font-weight:400;font-size:13px;">— Enterprise / negotiated deals</span></h2>
+  <p class="sub" style="font-size:12.5px;margin:0 0 12px;">Set this tenant's limits and record the agreed price without creating a new plan — this is how you charge & size a per-customer Enterprise deal. Blank = keep the plan's value; saved values take effect immediately for seat & storage enforcement, and for the monthly AI-credit allowance on renewal.</p>
+  {% if sub and sub.overrides %}
+  <p class="sub" style="font-size:12.5px;margin:0 0 12px;padding:8px 10px;background:var(--primary-t);border-radius:8px;">
+    <strong>Current overrides:</strong>
+    {% if sub.overrides.max_users %}{{ sub.overrides.max_users }} users · {% endif %}
+    {% if sub.overrides.storage_quota_bytes %}{{ sub.overrides.storage_quota_bytes|filesizeformat }} · {% endif %}
+    {% if sub.overrides.monthly_ai_credits %}{{ sub.overrides.monthly_ai_credits }} credits/mo · {% endif %}
+    {% if sub.overrides.contract_price %}price {{ sub.overrides.contract_price }}{% endif %}
+    {% if sub.overrides.contract_note %}<br>Note: {{ sub.overrides.contract_note }}{% endif %}
+  </p>
+  {% endif %}
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="set_enterprise_terms">
+    <div class="two">
+      <div><label>Max users</label>
+        <input type="number" name="ov_max_users" min="1" step="1" value="{{ sub.overrides.max_users|default:'' }}" placeholder="e.g. 1000"></div>
+      <div><label>Storage (GB)</label>
+        <input type="number" name="ov_storage_gb" min="1" step="1" placeholder="e.g. 4000 · current {{ company.storage_quota_bytes|filesizeformat }}"></div>
+      <div><label>AI credits / month</label>
+        <input type="number" name="ov_credits" min="0" step="1" value="{{ sub.overrides.monthly_ai_credits|default:'' }}" placeholder="e.g. 100000"></div>
+      <div><label>Agreed price (record only)</label>
+        <input type="text" name="ov_price" value="{{ sub.overrides.contract_price|default:'' }}" placeholder="e.g. R25,000 / mo"></div>
+    </div>
+    <label style="margin-top:8px;">Contract note</label>
+    <textarea name="ov_note" rows="2" placeholder="PO number, term, billing arrangement…">{{ sub.overrides.contract_note|default:'' }}</textarea>
+    <div style="margin-top:12px;"><button class="btn" type="submit"{% if not sub %} disabled{% endif %}>Save custom terms</button></div>
+    {% if not sub %}<p class="sub" style="font-size:12px;margin:8px 0 0;">Put the company on a plan (e.g. Enterprise) above first, then set custom terms.</p>{% endif %}
+  </form>
+</div>
+
+<div class="card">
   <h2 style="margin-top:0;">Account actions</h2>
   <div style="display:flex;gap:10px;flex-wrap:wrap;">
     <form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle_active">

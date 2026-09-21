@@ -241,7 +241,8 @@ def platform_tenant(request, pk):
             _cap_for = {
                 "invite_user": "tenants", "member_status": "tenants",
                 "toggle_active": "tenants", "grant_credits": "billing",
-                "change_plan": "billing", "cancel_subscription": "billing"}
+                "change_plan": "billing", "cancel_subscription": "billing",
+                "set_enterprise_terms": "billing"}
             need = _cap_for.get(action)
             if need and not request.user.can_platform(need):
                 messages.error(request, "You don't have access for that action.")
@@ -274,6 +275,39 @@ def platform_tenant(request, pk):
                     billing.change_plan(company, request.POST.get("plan_code", ""),
                                         actor=request.user)
                     messages.success(request, "Plan changed.")
+                elif action == "set_enterprise_terms":
+                    # Per-contract Enterprise terms: custom limits + the agreed
+                    # price/note, stored on the subscription's overrides. The
+                    # cached company limits are synced so enforcement uses them.
+                    sub_obj = getattr(company, "subscription", None)
+                    if sub_obj is None:
+                        raise ValueError("Put the company on a plan first, then set custom terms.")
+
+                    def _num(name):
+                        v = (request.POST.get(name) or "").strip().replace(",", "")
+                        return int(float(v)) if v else None
+
+                    ov = dict(sub_obj.overrides or {})
+                    mu, gb, cr = _num("ov_max_users"), _num("ov_storage_gb"), _num("ov_credits")
+                    price = (request.POST.get("ov_price") or "").strip()
+                    note = (request.POST.get("ov_note") or "").strip()
+                    if mu is not None:
+                        ov["max_users"] = mu
+                    if gb is not None:
+                        ov["storage_quota_bytes"] = gb * (1024 ** 3)
+                    if cr is not None:
+                        ov["monthly_ai_credits"] = cr
+                    ov["contract_price"] = price          # display/record only
+                    ov["contract_note"] = note[:500]
+                    sub_obj.overrides = ov
+                    sub_obj.save(update_fields=["overrides", "updated_at"])
+                    # Sync cached limits to the effective (override) values so
+                    # seat/storage enforcement honours the custom deal.
+                    company.max_users = ov.get("max_users", sub_obj.plan.max_users)
+                    company.storage_quota_bytes = ov.get(
+                        "storage_quota_bytes", sub_obj.plan.storage_quota_bytes)
+                    company.save(update_fields=["max_users", "storage_quota_bytes", "updated_at"])
+                    messages.success(request, "Custom Enterprise terms saved.")
                 elif action == "toggle_active":
                     company.is_active = not company.is_active
                     company.save(update_fields=["is_active", "updated_at"])

@@ -99,11 +99,14 @@ def employee_count(company) -> int:
 
 
 def effective_monthly_credits(subscription) -> Decimal:
-    """The monthly AI-credit allowance in force (trial is capped at 100)."""
+    """The monthly AI-credit allowance in force (trial is capped at 100). Honours
+    a per-tenant `monthly_ai_credits` override — how a custom Enterprise deal gets
+    a bespoke allowance without a new plan."""
     from .models import SubscriptionStatus
     if subscription.status == SubscriptionStatus.TRIAL:
         return TRIAL_CREDITS
-    return Decimal(subscription.plan.monthly_ai_credits)
+    return Decimal(subscription.limit("monthly_ai_credits",
+                                      subscription.plan.monthly_ai_credits))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
