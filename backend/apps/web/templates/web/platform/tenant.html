@@ -59,6 +59,52 @@
   </div>
 </div>
 
+<div class="card" id="price-helper">
+  <h2 style="margin-top:0;">💡 Enterprise price helper <span class="sub" style="font-weight:400;font-size:13px;">— estimate what to charge</span></h2>
+  <p class="sub" style="font-size:12.5px;margin:0 0 12px;">Enter what this customer needs. The helper prices it two ways — value-based and cost-plus-margin — and suggests the higher. Every rate is an editable assumption. Then push the numbers into Custom terms below.</p>
+
+  <div class="two">
+    <div><label>Users (seats)</label><input type="number" id="ph-seats" min="1" step="1" value="40"></div>
+    <div><label>AI credits / month</label><input type="number" id="ph-credits" min="0" step="500" value="30000"></div>
+    <div><label>Storage (GB)</label><input type="number" id="ph-gb" min="0" step="10" value="200"></div>
+    <div><label>Support tier</label>
+      <select id="ph-tier">
+        <option value="standard">Standard</option>
+        <option value="priority">Priority</option>
+        <option value="dedicated" selected>Dedicated (SLA)</option>
+      </select></div>
+    <div><label>Target gross margin (%)</label><input type="number" id="ph-margin" min="0" max="95" step="1" value="{{ ph.target_margin }}"></div>
+  </div>
+
+  <details style="margin:10px 0;">
+    <summary style="cursor:pointer;font-size:12.5px;color:var(--primary-d);font-weight:600;">Rate assumptions (edit if needed)</summary>
+    <div class="two" style="margin-top:10px;">
+      <div><label>Seat value ({{ ph.sym }}/user/mo)</label><input type="number" id="ph-seatval" min="0" step="1" value="{{ ph.seat_value|floatformat:0 }}"></div>
+      <div><label>Credit price ({{ ph.sym }}/credit)</label><input type="number" id="ph-creditrate" min="0" step="0.05" value="{{ ph.credit_rate }}"></div>
+      <div><label>Storage retail ({{ ph.sym }}/GB/mo)</label><input type="number" id="ph-storageretail" min="0" step="0.5" value="{{ ph.storage_retail }}"></div>
+      <div><label>Platform + SLA fee ({{ ph.sym }}/mo)</label><input type="number" id="ph-platformfee" min="0" step="500" value="{{ ph.platform_fee }}"></div>
+      <div><label>AI cost to serve ({{ ph.sym }}/credit)</label><input type="number" id="ph-aicost" min="0" step="0.01" value="{{ ph.ai_cost_per_credit }}"></div>
+      <div><label>Storage cost ({{ ph.sym }}/GB/mo)</label><input type="number" id="ph-storagecost" min="0" step="0.01" value="{{ ph.storage_cost_gb }}"></div>
+    </div>
+    <p class="sub" style="font-size:11.5px;margin:6px 0 0;">Support cost/mo — Standard {{ ph.sym }}{{ ph.support_standard }} · Priority {{ ph.sym }}{{ ph.support_priority }} · Dedicated {{ ph.sym }}{{ ph.support_dedicated }} (ops/SLA time).</p>
+  </details>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0 6px;">
+    <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;">
+      <div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;">Value-based</div>
+      <div id="ph-value" style="font-size:20px;font-weight:800;">—</div></div>
+    <div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;">
+      <div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;">Cost to serve</div>
+      <div id="ph-cost" style="font-size:20px;font-weight:800;">—</div></div>
+    <div style="background:var(--primary-t);border:1px solid var(--primary,#17a2b8);border-radius:10px;padding:12px;">
+      <div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--primary-d);">Suggested / mo</div>
+      <div id="ph-suggested" style="font-size:22px;font-weight:800;color:var(--primary-d);">—</div>
+      <div id="ph-implied" class="sub" style="font-size:11.5px;"></div></div>
+  </div>
+
+  <div style="margin-top:10px;"><button class="btn" type="button" id="ph-use">↧ Use these numbers in Custom terms</button></div>
+</div>
+
 <div class="card">
   <h2 style="margin-top:0;">Custom terms <span class="sub" style="font-weight:400;font-size:13px;">— Enterprise / negotiated deals</span></h2>
   <p class="sub" style="font-size:12.5px;margin:0 0 12px;">Set this tenant's limits and record the agreed price without creating a new plan — this is how you charge & size a per-customer Enterprise deal. Blank = keep the plan's value; saved values take effect immediately for seat & storage enforcement, and for the monthly AI-credit allowance on renewal.</p>
@@ -171,4 +217,56 @@
     {% empty %}<tr><td colspan="4" style="padding:16px;color:var(--muted);">No billing history yet.</td></tr>{% endfor %}
   </table>
 </div>
+
+<script>
+(function () {
+  var SYM = "{{ ph.sym|default:'R'|escapejs }}";
+  var SUPPORT = {standard: {{ ph.support_standard }}, priority: {{ ph.support_priority }}, dedicated: {{ ph.support_dedicated }}};
+  function el(id){ return document.getElementById(id); }
+  function num(id){ var v = parseFloat(el(id) && el(id).value); return isNaN(v) ? 0 : v; }
+  function money(n){ return SYM + Math.round(n).toLocaleString(); }
+
+  var ids = ["ph-seats","ph-credits","ph-gb","ph-tier","ph-margin","ph-seatval",
+             "ph-creditrate","ph-storageretail","ph-platformfee","ph-aicost","ph-storagecost"];
+  var last = {price: 0, seats: 0, credits: 0, gb: 0};
+
+  function calc(){
+    var seats = num("ph-seats"), credits = num("ph-credits"), gb = num("ph-gb");
+    var margin = Math.min(num("ph-margin"), 95) / 100;
+    var tier = (el("ph-tier") || {}).value || "dedicated";
+
+    var value = seats*num("ph-seatval") + credits*num("ph-creditrate")
+              + gb*num("ph-storageretail") + num("ph-platformfee");
+    var cost = credits*num("ph-aicost") + gb*num("ph-storagecost") + (SUPPORT[tier] || 0);
+    var costPlus = margin < 1 ? cost / (1 - margin) : cost;
+    var suggested = Math.max(value, costPlus);
+    var implied = suggested > 0 ? (suggested - cost) / suggested * 100 : 0;
+
+    el("ph-value").textContent = money(value);
+    el("ph-cost").textContent = money(cost);
+    el("ph-suggested").textContent = money(suggested) + " / mo";
+    el("ph-implied").textContent = "≈ " + implied.toFixed(0) + "% margin at this price";
+    last = {price: Math.round(suggested), seats: seats, credits: credits, gb: gb};
+  }
+
+  ids.forEach(function(id){
+    var e = el(id);
+    if (e){ e.addEventListener("input", calc); e.addEventListener("change", calc); }
+  });
+  calc();
+
+  var useBtn = el("ph-use");
+  if (useBtn) useBtn.addEventListener("click", function(){
+    function set(name, val){ var f = document.querySelector('[name="'+name+'"]'); if (f) f.value = val; }
+    set("ov_max_users", last.seats);
+    set("ov_credits", last.credits);
+    set("ov_storage_gb", last.gb);
+    set("ov_price", SYM + last.price.toLocaleString() + " / mo");
+    var ct = document.querySelector('[name="ov_price"]');
+    if (ct){ ct.scrollIntoView({behavior:"smooth", block:"center"});
+             ct.style.transition="background .3s"; ct.style.background="#fff6d6";
+             setTimeout(function(){ ct.style.background=""; }, 1200); }
+  });
+})();
+</script>
 {% endblock %}

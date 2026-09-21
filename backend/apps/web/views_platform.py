@@ -354,6 +354,23 @@ def platform_tenant(request, pk):
         }
         from apps.enterprise.models import SSOConfig
         ctx["sso"] = SSOConfig.all_objects.filter(company=company).first()
+
+        # Enterprise price helper — real cost/value constants, editable in the UI.
+        # storage cost is the platform's true cost/GB/mo (USD rate × FX); seat
+        # value comes from the Business plan's per-seat rate.
+        biz_seat = (Plan.objects.filter(code="business")
+                    .values_list("per_seat_price", flat=True).first())
+        ctx["ph"] = {
+            "seat_value": float(biz_seat or 99),
+            "credit_rate": 0.30,        # retail R/credit at volume (10k pack)
+            "storage_retail": 4.0,      # retail R/GB/mo (well above cost)
+            "storage_cost_gb": round(_STORAGE_USD_PER_GB_MO * _FX_TO_ZAR["USD"], 3),
+            "ai_cost_per_credit": 0.10,  # assumed cost to serve per credit
+            "support_standard": 500, "support_priority": 1500, "support_dedicated": 4000,
+            "platform_fee": 5000,       # Enterprise capability/SLA premium
+            "target_margin": 75,
+            "sym": getattr(sub, "currency_symbol", "R") if sub else "R",
+        }
     return render(request, "web/platform/tenant.html", ctx)
 
 
