@@ -3372,6 +3372,24 @@ def invoices(request):
         .prefetch_related("quotation__lines", "payments")
         .order_by("-created_at"))
 
+    # Search across the full set (tiles stay portfolio totals; only the list
+    # below narrows). Tokenised: each typed word must appear somewhere.
+    q = (request.GET.get("q") or "").strip()
+    tokens = q.lower().split()
+
+    def _match(d):
+        if not tokens:
+            return True
+        cust = ""
+        if d.quotation_id:
+            cust = str(getattr(d.quotation, "customer", "") or
+                       getattr(d.quotation, "client_name", "") or "")
+        hay = " ".join([d.number or "", cust, d.get_status_display() or "",
+                        getattr(d, "payment_state", "") or ""]).lower()
+        return all(t in hay for t in tokens)
+
+    shown = [d for d in all_invoices if _match(d)]
+
     # Report tiles — the same shape the quotations page uses.
     today = timezone.localdate()
     total_value = sum((d.quotation.invoice_total for d in all_invoices), Decimal("0"))
@@ -3416,7 +3434,8 @@ def invoices(request):
         if q.id not in invoiced_ids and q.invoice_total > 0
     ]
     return render(request, "web/invoices.html", {
-        "invoices": all_invoices[:100],
+        "invoices": shown[:100],
+        "q": q,
         "report": report,
         "eligible": eligible,
         "can_create": _can_invoice(request.user),

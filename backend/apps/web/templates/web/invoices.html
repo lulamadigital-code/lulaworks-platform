@@ -11,8 +11,15 @@
   {% if can_create %}<a class="btn primary" href="{% url 'web:invoice_new' %}">{% trans "+ New invoice" %}</a>{% endif %}
 </div>
 
-<input type="search" class="js-live-search" data-target="#invoice-list" placeholder="{% trans 'Search invoice number, customer or status…' %}" aria-label="{% trans 'Search invoices' %}"
-  style="width:100%;max-width:520px;box-sizing:border-box;padding:11px 14px;margin:0 0 18px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--bg,#f7f8fa);color:var(--ink);">
+<form method="get" action="{% url 'web:invoices' %}" role="search" style="display:flex;gap:8px;margin:0 0 18px;max-width:560px;">
+  <input type="search" name="q" value="{{ q }}" class="js-live-search" data-target="#invoice-list" placeholder="{% trans 'Search invoice number, customer or status…' %}" aria-label="{% trans 'Search invoices' %}"
+    style="flex:1;min-width:0;box-sizing:border-box;padding:11px 14px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--bg,#f7f8fa);color:var(--ink);">
+  <button type="submit"
+    style="flex:0 0 auto;padding:11px 22px;border:2px solid var(--primary);border-radius:10px;background:var(--primary);color:#fff;font-weight:700;font-size:14px;cursor:pointer;transition:background .15s ease;"
+    onmouseover="this.style.background='var(--primary-d)';this.style.borderColor='var(--primary-d)';"
+    onmouseout="this.style.background='var(--primary)';this.style.borderColor='var(--primary)';">{% trans "Search" %}</button>
+  {% if q %}<a class="btn ghost" href="{% url 'web:invoices' %}" style="padding:11px 16px;">{% trans "Clear" %}</a>{% endif %}
+</form>
 
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▤</div>
