@@ -157,6 +157,7 @@ def nav_flags(request):
     # SSO activation requests awaiting the platform team — same guard (staff, on
     # /platform pages only, so the cross-tenant query never runs on tenant pages).
     sso_activation_count = 0
+    enterprise_enquiry_count = 0
     if (signed_in and request.path.startswith("/platform")
             and getattr(user, "platform_level", False)):
         from apps.core.context import system_scope
@@ -167,6 +168,12 @@ def nav_flags(request):
                     status=SSOStatus.ACTIVATION_REQUESTED).count()
         except Exception:                                # noqa: BLE001
             sso_activation_count = 0
+        try:
+            from apps.marketing.models import DemoRequest
+            enterprise_enquiry_count = DemoRequest.objects.filter(
+                interest="enterprise", handled=False).count()
+        except Exception:                                # noqa: BLE001
+            enterprise_enquiry_count = 0
 
     # Attention Centre badge — critical+warning count, CACHED per user (90s) so
     # the cross-module detector runs at most once a minute-and-a-half, not on
@@ -196,6 +203,7 @@ def nav_flags(request):
             "unread_notifications": unread,
             "support_open_count": support_open,
             "sso_activation_count": sso_activation_count,
+            "enterprise_enquiry_count": enterprise_enquiry_count,
             "attention_count": attention_count,
             "attention_critical": attention_critical,
             "idle_timeout": getattr(_s, "SESSION_IDLE_TIMEOUT", 0),

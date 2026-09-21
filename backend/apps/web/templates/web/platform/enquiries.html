@@ -1,0 +1,74 @@
+{% extends "web/base.html" %}
+{% block title %}Enquiries · Platform{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="enquiries" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:24px;margin:0 0 2px;letter-spacing:-.02em} .sub{color:var(--muted);margin:0 0 18px} .muted{color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin:6px 0 16px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .tile .n{font-size:28px;font-weight:800;letter-spacing:-.02em} .tile .l{color:var(--muted);font-size:13px;margin-top:3px;font-weight:600}
+  .tile.hi .n{color:var(--primary-d)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .fchip{padding:6px 12px;border:1px solid var(--line);border-radius:20px;font-size:13px;color:var(--muted);text-decoration:none;background:#fff}
+  .fchip.on{background:var(--primary-t);color:var(--primary-d);border-color:var(--primary,#17a2b8);font-weight:700}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;background:#fafbfd}
+  tbody tr:hover td{background:#fafbfd} tr:last-child td{border-bottom:0}
+  .tag{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+  .tag.ent{background:var(--primary-t);color:var(--primary-d)} .tag.done{background:#e7f7ef;color:#0a8f57} .tag.open{background:#fff3e0;color:#b9711a}
+  .lk{color:var(--primary-d);text-decoration:none} .lk:hover{text-decoration:underline}
+  .btn-sm{padding:5px 11px;font-size:12.5px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink,#333);cursor:pointer;}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Sales enquiries</h1>
+<p class="sub">Demo &amp; Enterprise enquiries from the website. Enterprise leads are flagged and sorted first.</p>
+
+<div class="grid">
+  <div class="tile hi"><div class="n">{{ kpis.ent_open }}</div><div class="l">Enterprise · open</div></div>
+  <div class="tile"><div class="n">{{ kpis.open }}</div><div class="l">All open</div></div>
+  <div class="tile"><div class="n">{{ kpis.total }}</div><div class="l">Total enquiries</div></div>
+</div>
+
+<div class="chips">
+  <a class="fchip {% if not scope %}on{% endif %}" href="{% url 'web:platform_enquiries' %}">All</a>
+  <a class="fchip {% if scope == 'enterprise' %}on{% endif %}" href="?f=enterprise">Enterprise</a>
+  <a class="fchip {% if scope == 'open' %}on{% endif %}" href="?f=open">Open</a>
+</div>
+
+<div class="card" style="padding:0;overflow-x:auto;">
+  <table>
+    <thead><tr><th>When</th><th>Company</th><th>Contact</th><th>Size</th><th>Notes</th><th>Type</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td class="muted" style="white-space:nowrap;">{{ r.created_at|date:"d M Y H:i" }}</td>
+        <td><strong>{{ r.company }}</strong></td>
+        <td><a class="lk" href="mailto:{{ r.email }}">{{ r.email }}</a>{% if r.phone %}<div class="muted">{{ r.phone }}</div>{% endif %}
+          <div class="muted">{{ r.name }}</div></td>
+        <td class="muted">{{ r.employees|default:"—" }}{% if r.industry %}<div>{{ r.industry }}</div>{% endif %}</td>
+        <td class="muted" style="max-width:260px;">{{ r.notes|default:"—"|truncatechars:160 }}
+          {% if r.preferred_date %}<div>Prefers: {{ r.preferred_date|date:"d M" }} {{ r.preferred_time }}</div>{% endif %}</td>
+        <td>{% if r.is_enterprise %}<span class="tag ent">Enterprise</span>{% else %}<span class="muted">Demo</span>{% endif %}</td>
+        <td>{% if r.handled %}<span class="tag done">Handled</span>{% else %}<span class="tag open">Open</span>{% endif %}</td>
+        <td>
+          <form method="post" style="margin:0;">{% csrf_token %}
+            <input type="hidden" name="pk" value="{{ r.pk }}">
+            <input type="hidden" name="handled" value="{% if r.handled %}0{% else %}1{% endif %}">
+            <button class="btn-sm" type="submit">{% if r.handled %}Reopen{% else %}Mark handled{% endif %}</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="padding:18px;color:var(--muted);text-align:center;">No enquiries yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

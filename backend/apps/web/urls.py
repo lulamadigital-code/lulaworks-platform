@@ -30,6 +30,7 @@ urlpatterns = [
     path("platform/tenants.csv", views_platform.platform_tenants_csv, name="platform_tenants_csv"),
     path("platform/tenant/<uuid:pk>/", views_platform.platform_tenant, name="platform_tenant"),
     path("platform/new-tenant/", views_platform.platform_create_tenant, name="platform_create_tenant"),
+    path("platform/enquiries/", views_platform.platform_enquiries, name="platform_enquiries"),
     path("platform/settings/", views_platform.platform_settings, name="platform_settings"),
     path("platform/analytics/", views_platform.platform_analytics, name="platform_analytics"),
     path("platform/margin/", views_platform.platform_margin, name="platform_margin"),

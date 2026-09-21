@@ -37,7 +37,7 @@
           {% for f in p.features %}<li>{{ f }}</li>{% endfor %}
         </ul>
         {% if p.contact_sales %}
-        <a class="btn" style="width:100%;" href="{% url 'marketing:demo' %}">{% trans "Contact sales" %}</a>
+        <a class="btn" style="width:100%;" href="{% url 'marketing:demo' %}?interest=enterprise">{% trans "Contact sales" %}</a>
         {% else %}
         <a class="btn {% if not p.is_popular %}ghost{% endif %}" style="width:100%;" href="{% url 'marketing:trial' %}">{% trans "Start Free Trial" %}</a>
         {% endif %}

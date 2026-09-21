@@ -206,7 +206,11 @@ _DEMO_EMPLOYEES = ["1–10", "11–50", "51–200", "200+"]
 
 @require_http_methods(["GET", "POST"])
 def demo(request):
-    demo_ctx = {"industry_opts": _DEMO_INDUSTRIES, "employee_opts": _DEMO_EMPLOYEES}
+    interest = ("enterprise"
+                if (request.GET.get("interest") or request.POST.get("interest")) == "enterprise"
+                else "")
+    demo_ctx = {"industry_opts": _DEMO_INDUSTRIES, "employee_opts": _DEMO_EMPLOYEES,
+                "interest": interest}
     if request.method == "POST":
         from apps.core.validation import InputError, clean_email, clean_str
         raw_date = request.POST.get("preferred_date") or None
@@ -221,6 +225,7 @@ def demo(request):
                 preferred_date=raw_date or None,
                 preferred_time=clean_str(request.POST.get("preferred_time"), field="Preferred time", max_length=40),
                 notes=clean_str(request.POST.get("notes"), field="Notes", max_length=2000),
+                interest="enterprise" if request.POST.get("interest") == "enterprise" else "",
             )
         except InputError as exc:
             messages.error(request, str(exc))

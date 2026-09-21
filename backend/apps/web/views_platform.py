@@ -391,6 +391,43 @@ def platform_tenant(request, pk):
 
 
 @login_required
+def platform_enquiries(request):
+    """Sales enquiries from the website (demo requests), with Enterprise 'Contact
+    sales' leads flagged and surfaced first. Mark handled once actioned."""
+    if not request.user.platform_level:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+
+    from apps.marketing.models import DemoRequest
+
+    if request.method == "POST":
+        pk = request.POST.get("pk")
+        req = DemoRequest.objects.filter(pk=pk).first()
+        if req is not None:
+            req.handled = (request.POST.get("handled") == "1")
+            req.save(update_fields=["handled"])
+            messages.success(request, "Enquiry updated.")
+        return redirect(request.get_full_path())
+
+    scope = request.GET.get("f", "")   # ''=all, 'enterprise', 'open'
+    qs = DemoRequest.objects.all()
+    if scope == "enterprise":
+        qs = qs.filter(interest="enterprise")
+    elif scope == "open":
+        qs = qs.filter(handled=False)
+    # Enterprise + unhandled first, then newest.
+    rows = sorted(qs[:300], key=lambda r: (r.handled, not r.is_enterprise))
+    kpis = {
+        "ent_open": DemoRequest.objects.filter(interest="enterprise", handled=False).count(),
+        "open": DemoRequest.objects.filter(handled=False).count(),
+        "total": DemoRequest.objects.count(),
+    }
+    return render(request, "web/platform/enquiries.html", {
+        "active": "enquiries", "rows": rows, "kpis": kpis, "scope": scope,
+    })
+
+
+@login_required
 def platform_create_tenant(request):
     """Onboard a new tenant from the console — creates the company on a trial
     and invites the owner by activation link (no password is ever set/emailed)."""

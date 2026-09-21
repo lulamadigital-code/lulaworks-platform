@@ -5,9 +5,9 @@
   <div class="wrap">
     <div class="grid g2" style="align-items:start;">
       <div>
-        <span class="eyebrow">{% trans "Book a demo" %}</span>
-        <h1>{% trans "See Lulaworks on your own jobs" %}</h1>
-        <p class="lead">{% trans "Book a personalised 30-minute walkthrough. We'll show you how Lulaworks fits your workflow — from quotation to payment — and answer every question." %}</p>
+        <span class="eyebrow">{% if interest == 'enterprise' %}{% trans "Enterprise enquiry" %}{% else %}{% trans "Book a demo" %}{% endif %}</span>
+        <h1>{% if interest == 'enterprise' %}{% trans "Let's build your Enterprise plan" %}{% else %}{% trans "See Lulaworks on your own jobs" %}{% endif %}</h1>
+        <p class="lead">{% if interest == 'enterprise' %}{% trans "Tell us about your team and we'll tailor an Enterprise plan — custom limits, SSO, API access, audit log and dedicated support. We'll be in touch to set it up with you." %}{% else %}{% trans "Book a personalised 30-minute walkthrough. We'll show you how Lulaworks fits your workflow — from quotation to payment — and answer every question." %}{% endif %}</p>
         <ul style="list-style:none;padding:0;color:var(--muted);">
           <li style="padding:6px 0;"><span class="tick">✔</span> {% trans "A live, tailored walkthrough" %}</li>
           <li style="padding:6px 0;"><span class="tick">✔</span> {% trans "Honest answers on pricing and fit" %}</li>
@@ -19,6 +19,7 @@
         <h3>{% trans "Request your demo" %}</h3>
         <form method="post">
           {% csrf_token %}
+          {% if interest == 'enterprise' %}<input type="hidden" name="interest" value="enterprise">{% endif %}
           <div class="two">
             <div class="field"><label>{% trans "Company" %} *</label><input name="company" required maxlength="200" value="{{ form.company|default:'' }}"></div>
             <div class="field"><label>{% trans "Your name" %} *</label><input name="name" required maxlength="200" value="{{ form.name|default:'' }}"></div>

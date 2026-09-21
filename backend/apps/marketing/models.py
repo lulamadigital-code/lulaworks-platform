@@ -18,6 +18,9 @@ class DemoRequest(models.Model):
     preferred_date = models.DateField(null=True, blank=True)
     preferred_time = models.CharField(max_length=40, blank=True)
     notes = models.TextField(blank=True)
+    # What the enquiry is about — "enterprise" when it came from the Enterprise
+    # "Contact sales" CTA, so sales can prioritise it. Blank = a general demo.
+    interest = models.CharField(max_length=20, blank=True, db_index=True)
     handled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -26,6 +29,10 @@ class DemoRequest(models.Model):
 
     def __str__(self):
         return f"Demo · {self.company} ({self.email})"
+
+    @property
+    def is_enterprise(self) -> bool:
+        return self.interest == "enterprise"
 
 
 class ContactMessage(models.Model):
