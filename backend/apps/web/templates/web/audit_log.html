@@ -1,0 +1,59 @@
+{% extends "web/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Audit log" %}{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>{% trans "Audit log" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "A tamper-evident record of security-relevant activity in your account — sign-ins, role changes, API keys and plan changes." %}</p>
+  </div>
+</div>
+
+{% if not entitled %}
+<div class="card" style="border-color:var(--brand,#17a2b8);">
+  <h2 style="margin:0 0 6px;">🔒 {% trans "Audit log is an Enterprise feature" %}</h2>
+  <p class="muted" style="margin:0 0 12px;">{% trans "Your account already records this activity. Upgrade to Enterprise to view and export the full history." %}</p>
+  <a class="btn" href="{% url 'web:billing' %}">{% trans "See Enterprise" %}</a>
+</div>
+{% else %}
+
+<div class="row" style="flex-wrap:wrap;gap:6px;margin:6px 0 14px;">
+  <a href="{% url 'web:audit_log' %}" class="chip {% if not action %}ok{% endif %}">{% trans "All" %}</a>
+  {% for a in actions %}
+  <a href="?action={{ a.value }}" class="chip {% if action == a.value %}ok{% endif %}">{{ a.label }}</a>
+  {% endfor %}
+</div>
+
+<div class="card" style="padding:0;">
+  <table>
+    <tr>
+      <th>{% trans "When" %}</th>
+      <th>{% trans "Action" %}</th>
+      <th>{% trans "Who" %}</th>
+      <th>{% trans "Details" %}</th>
+      <th>{% trans "IP" %}</th>
+    </tr>
+    {% for e in page %}
+    <tr>
+      <td class="muted" style="white-space:nowrap;">{{ e.created_at|date:"d M Y H:i" }}</td>
+      <td>{% if e.is_security %}<span class="chip bad">{{ e.get_action_display }}</span>{% else %}<span class="chip">{{ e.get_action_display }}</span>{% endif %}</td>
+      <td>{{ e.actor_label|default:"—" }}</td>
+      <td>{{ e.summary }}</td>
+      <td class="muted">{{ e.ip|default:"—" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="muted" style="padding:16px;">{% trans "No activity recorded yet." %}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% if page.has_other_pages %}
+<div class="row" style="justify-content:center;gap:12px;margin-top:14px;">
+  {% if page.has_previous %}<a class="btn ghost" href="?{% if action %}action={{ action }}&{% endif %}page={{ page.previous_page_number }}">{% trans "Previous" %}</a>{% endif %}
+  <span class="muted" style="align-self:center;">{% blocktrans with n=page.number t=page.paginator.num_pages %}Page {{ n }} of {{ t }}{% endblocktrans %}</span>
+  {% if page.has_next %}<a class="btn ghost" href="?{% if action %}action={{ action }}&{% endif %}page={{ page.next_page_number }}">{% trans "Next" %}</a>{% endif %}
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

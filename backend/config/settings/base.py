@@ -60,6 +60,7 @@ LOCAL_APPS = [
     "apps.analytics",
     "apps.education",
     "apps.campaigns",
+    "apps.enterprise",
     "apps.web",
     "apps.marketing",
     "apps.payments",
@@ -189,6 +190,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # --- DRF / API (IMPLEMENTATION_READINESS §7) ---
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        # Programmatic API keys (Enterprise `api_access`) — tried first, but only
+        # engages on an `Api-Key`/`X-Api-Key` header; otherwise falls through to
+        # the first-party JWT the web & mobile apps use (open to every plan).
+        "apps.enterprise.authentication.ApiKeyAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [

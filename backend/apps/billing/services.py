@@ -345,6 +345,14 @@ def change_plan(company, plan_code: str, billing_cycle: str = "monthly",
         body=(f"Your subscription has been {direction} the {plan.name} plan "
               f"({billing_cycle}), billed at {currency} {price:,.2f}. Your new "
               f"period runs to {sub.current_period_end:%d %B %Y}."))
+    try:
+        from apps.enterprise.services import record
+        from apps.enterprise.models import AuditAction
+        record(AuditAction.PLAN_CHANGED, company=company, actor=actor,
+               summary=f"Plan {direction} {plan.name} ({billing_cycle})",
+               plan=plan.code, cycle=billing_cycle, currency=currency)
+    except Exception:
+        pass
     return sub
 
 

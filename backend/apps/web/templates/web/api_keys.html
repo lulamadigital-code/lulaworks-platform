@@ -1,0 +1,73 @@
+{% extends "web/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "API keys" %}{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>{% trans "API keys" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "Programmatic access to the Lulaworks API for your own scripts and integrations. Keys act with the permissions of the admin who created them." %}</p>
+  </div>
+</div>
+
+{% if not entitled %}
+<div class="card" style="border-color:var(--brand,#17a2b8);">
+  <h2 style="margin:0 0 6px;">🔒 {% trans "API access is an Enterprise feature" %}</h2>
+  <p class="muted" style="margin:0 0 12px;">{% trans "Generate API keys and integrate Lulaworks with your other systems on the Enterprise plan. The mobile app works on every plan." %}</p>
+  <a class="btn" href="{% url 'web:billing' %}">{% trans "See Enterprise" %}</a>
+</div>
+{% else %}
+
+{% if new_token %}
+<div class="card" style="border-color:var(--ok,#3a3);background:var(--okbg,#f0fff4);">
+  <strong>{% trans "Your new API key" %}</strong>
+  <p class="muted" style="margin:6px 0;">{% trans "Copy it now — for your security it will never be shown again." %}</p>
+  <code style="display:block;padding:12px;background:#0b1020;color:#7CFCB4;border-radius:8px;word-break:break-all;font-size:13px;">{{ new_token }}</code>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2 style="margin:0 0 10px;">{% trans "Create a key" %}</h2>
+  <form method="post" action="{% url 'web:api_key_create' %}" class="row" style="gap:8px;flex-wrap:wrap;">
+    {% csrf_token %}
+    <input type="text" name="name" maxlength="120" placeholder="{% trans 'Name (e.g. Zapier integration)' %}"
+           style="flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--line,#e5e5e5);border-radius:8px;">
+    <button class="btn" type="submit">{% trans "Generate key" %}</button>
+  </form>
+  <p class="muted" style="margin:10px 0 0;font-size:12.5px;">{% blocktrans %}Send the key as an <code>Authorization: Api-Key &lt;token&gt;</code> header to any <code>/api/v1/</code> endpoint.{% endblocktrans %}</p>
+</div>
+
+<div class="card" style="padding:0;margin-top:16px;">
+  <table>
+    <tr>
+      <th>{% trans "Name" %}</th>
+      <th>{% trans "Key" %}</th>
+      <th>{% trans "Created" %}</th>
+      <th>{% trans "Last used" %}</th>
+      <th>{% trans "Status" %}</th>
+      <th></th>
+    </tr>
+    {% for k in keys %}
+    <tr>
+      <td>{{ k.name }}</td>
+      <td class="muted"><code>{{ k.token_prefix }}…{{ k.last_four }}</code></td>
+      <td class="muted">{{ k.created_at|date:"d M Y" }}</td>
+      <td class="muted">{% if k.last_used_at %}{{ k.last_used_at|date:"d M Y H:i" }}{% else %}{% trans "Never" %}{% endif %}</td>
+      <td>{% if k.is_active %}<span class="chip ok">{% trans "Active" %}</span>{% else %}<span class="chip">{% trans "Revoked" %}</span>{% endif %}</td>
+      <td class="right">
+        {% if k.is_active %}
+        <form method="post" action="{% url 'web:api_key_revoke' k.pk %}"
+              data-confirm="{% trans 'Revoke this key? Anything using it will stop working immediately.' %}">
+          {% csrf_token %}
+          <button class="btn" type="submit" style="padding:5px 12px;font-size:12.5px;background:transparent;color:var(--bad,#e5484d);border:1px solid var(--bad,#e5484d);">{% trans "Revoke" %}</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="muted" style="padding:16px;">{% trans "No API keys yet." %}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endif %}
+{% endblock %}

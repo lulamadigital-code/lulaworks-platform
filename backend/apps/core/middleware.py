@@ -29,6 +29,12 @@ class TenantMiddleware:
 def set_tenant_from_request(request) -> None:
     """Called by the DRF base viewset after authentication resolves the user —
     guarantees the tenant is bound even though DRF authenticates inside the view."""
+    # An API-key request binds the tenant to the key's company (request.auth is
+    # the ApiKey instance), never the owner user's currently-active company.
+    key_company = getattr(getattr(request, "auth", None), "company_id", None)
+    if key_company is not None:
+        set_current_company(key_company)
+        return
     user = getattr(request, "user", None)
     if user is not None and getattr(user, "is_authenticated", False):
         set_current_company(getattr(user, "company_id", None))

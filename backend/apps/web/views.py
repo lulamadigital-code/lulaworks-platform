@@ -1101,9 +1101,13 @@ def settings_home(request):
     procurement and account. Each card links to the page that owns it; those
     pages enforce their own permissions."""
     u = request.user
+    from apps.billing.services import has_feature
+    co = u.active_company
     return render(request, "web/settings.html", {
         "can_company": u.has_perm_code("company.manage"),
         "can_money": u.has_perm_code("finance.view_money"),
+        "ent_audit": has_feature(co, "audit_log") if co else False,
+        "ent_api": has_feature(co, "api_access") if co else False,
     })
 
 

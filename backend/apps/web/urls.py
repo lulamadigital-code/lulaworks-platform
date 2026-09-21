@@ -11,6 +11,7 @@ from . import (
     views_ai_centre,
     views_automations,
     views_email,
+    views_enterprise,
     views_import,
     views_marketing,
     views_platform,
@@ -196,6 +197,12 @@ urlpatterns = [
     path("company/ai/<str:provider>/test/", views_ai_settings.ai_provider_test,
          name="ai_provider_test"),
     # Email history — the audit trail of everything Lulaworks sent
+    # Enterprise governance — audit trail & programmatic API keys (entitlement-gated)
+    path("company/audit/", views_enterprise.audit_log, name="audit_log"),
+    path("company/api-keys/", views_enterprise.api_keys, name="api_keys"),
+    path("company/api-keys/new/", views_enterprise.api_key_create, name="api_key_create"),
+    path("company/api-keys/<uuid:pk>/revoke/", views_enterprise.api_key_revoke,
+         name="api_key_revoke"),
     path("company/emails/", views_email.email_history, name="email_history"),
     path("company/emails/<uuid:pk>/", views_email.email_detail, name="email_detail"),
     path("company/emails/<uuid:pk>/resend/", views_email.email_resend,

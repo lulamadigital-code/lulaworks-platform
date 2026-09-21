@@ -49,6 +49,18 @@
     <div class="d">{% trans "Whether purchases need approval, and the value threshold that triggers it." %}</div></a>
 </div>
 
+{% if can_company %}
+<h2>{% trans "Security & Enterprise" %}</h2>
+<div class="setgrid">
+  <a class="setcard" href="{% url 'web:audit_log' %}">
+    <div class="t">🛡 {% trans "Audit log" %}{% if not ent_audit %} <span class="chip" style="font-size:10px;">{% trans "Enterprise" %}</span>{% endif %}</div>
+    <div class="d">{% trans "Security history — sign-ins, role changes, API keys and plan changes." %}</div></a>
+  <a class="setcard" href="{% url 'web:api_keys' %}">
+    <div class="t">🔑 {% trans "API keys" %}{% if not ent_api %} <span class="chip" style="font-size:10px;">{% trans "Enterprise" %}</span>{% endif %}</div>
+    <div class="d">{% trans "Programmatic access to the Lulaworks API for your integrations." %}</div></a>
+</div>
+{% endif %}
+
 <h2>{% trans "Account" %}</h2>
 <div class="setgrid">
   <a class="setcard" href="{% url 'web:people' %}">
