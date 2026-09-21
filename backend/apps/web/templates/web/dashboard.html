@@ -2,6 +2,10 @@
 {% load i18n %}
 {% block title %}{% trans "Dashboard" %}{% endblock %}
 {% block content %}
+<form method="get" action="{% url 'web:search' %}" role="search" style="margin:0 0 18px;">
+  <input type="search" name="q" value="{{ request.GET.q|default:'' }}" placeholder="{% trans 'Search customers, jobs…' %}" aria-label="{% trans 'Search' %}"
+    style="width:100%;max-width:520px;box-sizing:border-box;padding:11px 14px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--bg,#f7f8fa);color:var(--ink);">
+</form>
 <h1>{% trans "Operations dashboard" %}</h1>
 <p class="sub">{% trans "Your whole business at a glance." %}</p>
 
