@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 23:50+0000\n"
+"POT-Creation-Date: 2026-09-21 09:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2014,9 +2014,6 @@ msgstr ""
 msgid "falling"
 msgstr "en baisse"
 
-msgid "Search customers, jobs…"
-msgstr "Rechercher clients, travaux…"
-
 msgid "Attention"
 msgstr "Attention"
 
@@ -3959,6 +3956,9 @@ msgstr ""
 
 msgid "Dashboard"
 msgstr "Tableau de bord"
+
+msgid "Search customers, jobs…"
+msgstr "Rechercher clients, travaux…"
 
 msgid "Operations dashboard"
 msgstr "Tableau de bord des opérations"
@@ -6231,6 +6231,14 @@ msgstr "Abonnement, crédits IA et factures."
 
 msgid "Your own name, avatar and password."
 msgstr "Votre nom, avatar et mot de passe."
+
+msgid "Display language"
+msgstr "Langue d'affichage"
+
+msgid "Choose the language for your dashboard, forms and documents."
+msgstr ""
+"Choisissez la langue de votre tableau de bord, de vos formulaires et de vos "
+"documents."
 
 msgid "← Suppliers"
 msgstr "← Fournisseurs"

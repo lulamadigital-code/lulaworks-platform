@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 23:32+0000\n"
+"POT-Creation-Date: 2026-09-21 09:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1974,33 +1974,8 @@ msgstr ""
 msgid "falling"
 msgstr "Fakturering"
 
-msgid "Search customers, jobs…"
-msgstr "Soek kliënte, take…"
-
 msgid "Attention"
 msgstr "Aandag"
-
-#, fuzzy
-#| msgid "Won"
-msgid "Win"
-msgstr "Gewen"
-
-#, fuzzy
-#| msgid "Delivery"
-msgid "Deliver"
-msgstr "Aflewering"
-
-msgid "Buy"
-msgstr ""
-
-msgid "Money"
-msgstr ""
-
-msgid "Knowledge"
-msgstr ""
-
-msgid "System"
-msgstr ""
 
 msgid "My profile"
 msgstr "My profiel"
@@ -4105,6 +4080,9 @@ msgstr ""
 msgid "Dashboard"
 msgstr "Kontroleskerm"
 
+msgid "Search customers, jobs…"
+msgstr "Soek kliënte, take…"
+
 msgid "Operations dashboard"
 msgstr "Bedryfskontroleskerm"
 
@@ -5055,7 +5033,7 @@ msgstr ""
 msgid "Campaign name"
 msgstr "Veldtogte en meer"
 
-msgid "e.g. Mining Maintenance — Q4"
+msgid "e.g. Maintenance push — Q4"
 msgstr ""
 
 #, fuzzy
@@ -5063,7 +5041,7 @@ msgstr ""
 msgid "Objective"
 msgstr "Aktief"
 
-msgid "e.g. Reactivate mining leads with no contact in 60 days"
+msgid "e.g. Reactivate leads with no contact in 60 days"
 msgstr ""
 
 msgid "Audience segment"
@@ -5226,7 +5204,7 @@ msgstr ""
 msgid "Segment name"
 msgstr "Afdelingsnaam"
 
-msgid "e.g. Mining prospects needing follow-up"
+msgid "e.g. Prospects needing follow-up"
 msgstr ""
 
 msgid "Optional — what this segment is for"
@@ -5246,9 +5224,9 @@ msgid "Industry contains"
 msgstr "Bedryf"
 
 #, fuzzy
-#| msgid "Remaining"
-msgid "e.g. Mining"
-msgstr "Oorblywend"
+#| msgid "Construction"
+msgid "e.g. Construction"
+msgstr "Konstruksie"
 
 #, fuzzy
 #| msgid "Country"
@@ -6535,6 +6513,12 @@ msgstr "Intekening, KI-krediete en fakture."
 msgid "Your own name, avatar and password."
 msgstr "Jou eie naam, avatar en wagwoord."
 
+msgid "Display language"
+msgstr "Vertoontaal"
+
+msgid "Choose the language for your dashboard, forms and documents."
+msgstr "Kies die taal vir jou paneelbord, vorms en dokumente."
+
 #, fuzzy
 #| msgid "Suppliers"
 msgid "← Suppliers"
@@ -7112,6 +7096,18 @@ msgstr ""
 
 msgid "You don't have access to price history."
 msgstr ""
+
+#, fuzzy
+#~ msgid "Win"
+#~ msgstr "Gewen"
+
+#, fuzzy
+#~ msgid "Deliver"
+#~ msgstr "Aflewering"
+
+#, fuzzy
+#~ msgid "e.g. Mining"
+#~ msgstr "Oorblywend"
 
 #~ msgid "Job Card"
 #~ msgstr "Werkskaart"

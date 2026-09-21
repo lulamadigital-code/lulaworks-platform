@@ -62,6 +62,15 @@
     <div class="d">{% trans "Your own name, avatar and password." %}</div></a>
 </div>
 
+<h2>{% trans "Language" %}</h2>
+<div class="setgrid">
+  <div class="setcard" style="cursor:default;">
+    <div class="t">🌐 {% trans "Display language" %}</div>
+    <div class="d" style="margin-bottom:10px;">{% trans "Choose the language for your dashboard, forms and documents." %}</div>
+    {% include "web/_language_switcher.html" %}
+  </div>
+</div>
+
 <style>
 .setgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:8px;}
 .setcard{display:block;background:var(--surface);border:1px solid var(--line);border-radius:14px;
