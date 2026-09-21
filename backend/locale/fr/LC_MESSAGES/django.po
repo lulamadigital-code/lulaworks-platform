@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-21 10:41+0000\n"
+"POT-Creation-Date: 2026-09-21 13:25+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1037,15 +1037,25 @@ msgstr "· économisez ~2 mois"
 msgid "MOST POPULAR"
 msgstr "LE PLUS POPULAIRE"
 
+msgid "Custom"
+msgstr "Sur mesure"
+
 msgid "/yr"
 msgstr "/an"
 
 msgid "/mo"
 msgstr "/mois"
 
+msgid "Tailored to your team — let's talk."
+msgstr "Adapté à votre équipe — parlons-en."
+
 #, python-format
 msgid "Save %(sym)s%(amt)s a year"
 msgstr "Économisez %(sym)s%(amt)s par an"
+
+#, python-format
+msgid "From %(n)s users"
+msgstr "À partir de %(n)s utilisateurs"
 
 #, python-format
 msgid "%(n)s users"
@@ -1061,6 +1071,9 @@ msgstr "%(c)s crédits IA / mois"
 #, python-format
 msgid "%(s)s storage"
 msgstr "%(s)s de stockage"
+
+msgid "Contact sales"
+msgstr "Contacter le service commercial"
 
 #, python-format
 msgid ""
@@ -4521,6 +4534,12 @@ msgstr ""
 msgid "+ New invoice"
 msgstr "+ Nouvelle facture"
 
+msgid "Search invoice number, customer or status…"
+msgstr "Rechercher un numéro de facture, un client ou un statut…"
+
+msgid "Search invoices"
+msgstr "Rechercher des factures"
+
 msgid "Approved"
 msgstr "Approuvées"
 
@@ -4546,12 +4565,6 @@ msgstr "Total"
 
 msgid "Your invoices"
 msgstr "Vos factures"
-
-msgid "Search invoice number, customer or status…"
-msgstr "Rechercher un numéro de facture, un client ou un statut…"
-
-msgid "Search invoices"
-msgstr "Rechercher des factures"
 
 msgid "No invoices match your search."
 msgstr "Aucune facture ne correspond à votre recherche."

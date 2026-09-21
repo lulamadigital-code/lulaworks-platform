@@ -114,10 +114,13 @@
     {% if p.is_popular %}<span class="chip ok" style="position:absolute;top:-10px;left:16px;">{% trans "Most popular" %}</span>{% endif %}
     <h3 style="margin:0 0 2px;">{{ p.name }}</h3>
     <div style="font-size:28px;font-weight:800;">
-      {% if selected_cycle == 'annual' %}{{ p.symbol }}{{ p.annual|floatformat:0 }}<span class="muted" style="font-size:14px;font-weight:400;">{% trans "/yr" %}</span>
+      {% if p.contact_sales %}{% trans "Custom" %}
+      {% elif selected_cycle == 'annual' %}{{ p.symbol }}{{ p.annual|floatformat:0 }}<span class="muted" style="font-size:14px;font-weight:400;">{% trans "/yr" %}</span>
       {% else %}{{ p.symbol }}{{ p.monthly|floatformat:0 }}<span class="muted" style="font-size:14px;font-weight:400;">{% trans "/mo" %}</span>{% endif %}
     </div>
-    {% if selected_cycle == 'annual' and p.annual_saving > 0 %}
+    {% if p.contact_sales %}
+      <p class="muted" style="margin:2px 0 0;font-size:12.5px;">{% trans "Tailored to your team — let's talk." %}</p>
+    {% elif selected_cycle == 'annual' and p.annual_saving > 0 %}
       <p class="muted" style="margin:2px 0 0;color:var(--ok,#3a3);">{% blocktrans with sym=p.symbol amt=p.annual_saving|floatformat:0 %}Save {{ sym }}{{ amt }} a year{% endblocktrans %}</p>
     {% endif %}
     <ul style="list-style:none;padding:0;margin:14px 0;font-size:13.5px;line-height:1.9;">
@@ -125,6 +128,8 @@
     </ul>
     {% if p.id == current_plan_id and not is_trialing %}
       <button class="btn" disabled style="width:100%;opacity:.6;">{% trans "Current plan" %}</button>
+    {% elif p.contact_sales %}
+      <a class="btn" href="mailto:sales@lulaworks.com?subject=Enterprise%20plan%20enquiry" style="width:100%;display:block;text-align:center;box-sizing:border-box;">{% trans "Contact sales" %}</a>
     {% elif can_manage %}
     <form method="post" action="{% url 'web:billing_change_plan' %}">
       {% csrf_token %}

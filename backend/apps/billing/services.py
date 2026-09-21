@@ -454,6 +454,9 @@ def priced_plans(currency: str) -> list:
             "monthly": p.price_in(currency, "monthly"),
             "annual": p.price_in(currency, "annual"),
             "annual_saving": p.annual_saving_in(currency),
+            # A zero-priced plan is sold per contract ("Contact sales"), not
+            # self-serve — the UI shows a Contact button instead of a price.
+            "contact_sales": (p.price == 0 and p.annual_price == 0),
         })
     return rows
 

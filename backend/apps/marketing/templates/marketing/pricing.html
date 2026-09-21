@@ -13,26 +13,34 @@
       <a href="?cycle=annual" class="{% if annual == 'annual' %}on{% endif %}">{% trans "Annual" %} {% trans "· save ~2 months" %}</a>
     </div>
 
-    <div class="grid g3" style="margin-top:34px;text-align:left;align-items:start;">
+    <div class="grid g4" style="margin-top:34px;text-align:left;align-items:start;">
       {% for p in plans %}
       <div class="card plan {% if p.is_popular %}popular{% endif %}">
         {% if p.is_popular %}<span class="tag">{% trans "MOST POPULAR" %}</span>{% endif %}
         <h3>{{ p.name }}</h3>
         <div class="price">
-          {% if annual == 'annual' %}{{ p.symbol }}{{ p.annual|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">{% trans "/yr" %}</span>
+          {% if p.contact_sales %}<span style="font-size:24px;">{% trans "Custom" %}</span>
+          {% elif annual == 'annual' %}{{ p.symbol }}{{ p.annual|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">{% trans "/yr" %}</span>
           {% else %}{{ p.symbol }}{{ p.monthly|floatformat:0 }}<span class="muted" style="font-size:15px;font-weight:400;">{% trans "/mo" %}</span>{% endif %}
         </div>
-        {% if annual == 'annual' and p.annual_saving > 0 %}
+        {% if p.contact_sales %}
+          <p class="muted" style="margin:2px 0 0;font-size:13px;">{% trans "Tailored to your team — let's talk." %}</p>
+        {% elif annual == 'annual' and p.annual_saving > 0 %}
           <p style="margin:2px 0 0;color:var(--green);font-weight:700;">{% blocktrans with sym=p.symbol amt=p.annual_saving|floatformat:0 %}Save {{ sym }}{{ amt }} a year{% endblocktrans %}</p>
         {% endif %}
         <ul>
-          <li><strong>{% blocktrans with n=p.max_users %}{{ n }} users{% endblocktrans %}</strong></li>
+          {% if p.contact_sales %}<li><strong>{% blocktrans with n=p.max_users %}From {{ n }} users{% endblocktrans %}</strong></li>
+          {% else %}<li><strong>{% blocktrans with n=p.max_users %}{{ n }} users{% endblocktrans %}</strong></li>{% endif %}
           <li>{% trans "Unlimited employees" %}</li>
           <li>{% blocktrans with c=p.monthly_ai_credits|floatformat:0 %}{{ c }} AI credits / month{% endblocktrans %}</li>
           <li>{% blocktrans with s=p.storage_quota_bytes|filesizeformat %}{{ s }} storage{% endblocktrans %}</li>
           {% for f in p.features %}<li>{{ f }}</li>{% endfor %}
         </ul>
+        {% if p.contact_sales %}
+        <a class="btn" style="width:100%;" href="{% url 'marketing:demo' %}">{% trans "Contact sales" %}</a>
+        {% else %}
         <a class="btn {% if not p.is_popular %}ghost{% endif %}" style="width:100%;" href="{% url 'marketing:trial' %}">{% trans "Start Free Trial" %}</a>
+        {% endif %}
       </div>
       {% endfor %}
     </div>

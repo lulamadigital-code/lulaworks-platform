@@ -91,6 +91,11 @@ _BUSINESS_ENTITLEMENTS = _PRO_ENTITLEMENTS + [
     "approval_workflows", "compliance_management", "procurement_analytics",
     "advanced_reporting", "multi_team",
 ]
+# Enterprise unlocks everything Business has, plus enterprise-only capability
+# keys that specific features can gate on later (SSO, API, dedicated SLA).
+_ENTERPRISE_ENTITLEMENTS = _BUSINESS_ENTITLEMENTS + [
+    "sso", "api_access", "dedicated_support", "custom_contract", "audit_log",
+]
 
 PLANS = [
     {
@@ -128,6 +133,21 @@ PLANS = [
             "200 GB storage", "Advanced approval workflows", "Compliance management",
             "Advanced procurement analytics", "Advanced reporting",
             "Multi-team management", "Highest-priority support",
+        ],
+    },
+    {
+        # Enterprise is priced per contract (price 0 → "Contact sales" in the UI).
+        # Generous defaults; each real deal is tuned via Subscription.overrides.
+        "code": "enterprise", "name": "Enterprise", "tier": 4, "is_popular": False,
+        "price": 0, "annual_price": 0, "max_users": 500,
+        "storage_quota_bytes": 2000 * GB, "monthly_ai_credits": 30000,
+        "api_access": True, "support_level": "dedicated",
+        "module_entitlements": _ENTERPRISE_ENTITLEMENTS,
+        "features": [
+            "Everything in Business, plus:", "Unlimited-scale users (from 500)",
+            "2 TB storage", "30,000 AI credits / month", "API access",
+            "Single sign-on (SSO)", "Audit log", "Custom limits & contract",
+            "Dedicated support & SLA", "Onboarding & migration assistance",
         ],
     },
 ]

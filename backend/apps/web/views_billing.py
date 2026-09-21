@@ -62,6 +62,14 @@ def billing_change_plan(request):
     cycle = request.POST.get("billing_cycle", "monthly")
     if cycle not in dict(BillingCycle.choices):
         cycle = "monthly"
+    # Contact-sales plans (price 0, e.g. Enterprise) are sold per contract, not
+    # self-served — a platform admin sets them up with custom limits.
+    from apps.billing.models import Plan
+    _p = Plan.objects.filter(code=plan_code, is_active=True).first()
+    if _p is not None and _p.price == 0 and _p.annual_price == 0:
+        messages.info(request, "Enterprise is tailored to your team — contact "
+                               "sales@lulaworks.com and we'll set you up.")
+        return redirect("web:billing")
     try:
         session = begin_subscription_checkout(request, _company(request), plan_code, cycle)
     except Exception:

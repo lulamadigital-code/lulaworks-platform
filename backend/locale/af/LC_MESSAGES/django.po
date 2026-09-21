@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-21 10:41+0000\n"
+"POT-Creation-Date: 2026-09-21 13:25+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1009,15 +1009,25 @@ msgstr "· bespaar ~2 maande"
 msgid "MOST POPULAR"
 msgstr "GEWILDSTE"
 
+msgid "Custom"
+msgstr "Pasgemaak"
+
 msgid "/yr"
 msgstr "/jr"
 
 msgid "/mo"
 msgstr "/md"
 
+msgid "Tailored to your team — let's talk."
+msgstr "Aangepas vir jou span — kom ons gesels."
+
 #, python-format
 msgid "Save %(sym)s%(amt)s a year"
 msgstr "Bespaar %(sym)s%(amt)s per jaar"
+
+#, python-format
+msgid "From %(n)s users"
+msgstr "Vanaf %(n)s gebruikers"
 
 #, python-format
 msgid "%(n)s users"
@@ -1033,6 +1043,9 @@ msgstr "%(c)s KI-krediete / maand"
 #, python-format
 msgid "%(s)s storage"
 msgstr "%(s)s berging"
+
+msgid "Contact sales"
+msgstr "Kontak verkope"
 
 #, python-format
 msgid ""
@@ -4701,6 +4714,12 @@ msgstr ""
 msgid "+ New invoice"
 msgstr "+ Nuwe faktuur"
 
+msgid "Search invoice number, customer or status…"
+msgstr "Soek faktuurnommer, kliënt of status…"
+
+msgid "Search invoices"
+msgstr "Soek fakture"
+
 msgid "Approved"
 msgstr "Goedgekeur"
 
@@ -4728,12 +4747,6 @@ msgstr "Totaal"
 
 msgid "Your invoices"
 msgstr "Jou fakture"
-
-msgid "Search invoice number, customer or status…"
-msgstr "Soek faktuurnommer, kliënt of status…"
-
-msgid "Search invoices"
-msgstr "Soek fakture"
 
 msgid "No invoices match your search."
 msgstr "Geen fakture stem met jou soektog ooreen nie."
