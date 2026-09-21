@@ -383,15 +383,15 @@
 
       {# Utility items, set apart with a subtle gap (no label). #}
       <span class="nav-gap"></span>
-      {% if perms_ai %}{% include "web/_navlink.html" with url='web:ai_centre' key='ai_centre' label='Intelligence' icon='spark' %}{% endif %}
-      {% if perms_ai %}{% include "web/_navlink.html" with url='web:automations' key='automations' label='Automations' icon='spark' %}{% endif %}
-      {% include "web/_navlink.html" with url='web:settings' key='settings' label='Settings' icon='gear' %}
-      {% include "web/_navlink.html" with url='web:support_home' key='support' label='Help & Support' icon='help' %}
       <a class="{% if nav_section == 'attention' %}active{% endif %}" href="{% url 'web:attention' %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
         {% trans "Attention" %}
         {% if attention_count %}<span style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;font-size:11px;font-weight:800;line-height:18px;text-align:center;color:#fff;background:{% if attention_critical %}#e2445c{% else %}#f0a020{% endif %};">{{ attention_count }}</span>{% endif %}
       </a>
+      {% if perms_ai %}{% include "web/_navlink.html" with url='web:ai_centre' key='ai_centre' label='Intelligence' icon='spark' %}{% endif %}
+      {% if perms_ai %}{% include "web/_navlink.html" with url='web:automations' key='automations' label='Automations' icon='spark' %}{% endif %}
+      {% include "web/_navlink.html" with url='web:settings' key='settings' label='Settings' icon='gear' %}
+      {% include "web/_navlink.html" with url='web:support_home' key='support' label='Help & Support' icon='help' %}
     </nav>
     {% endblock %}
     <div class="side-foot">
