@@ -1974,6 +1974,12 @@ def people_add(request):
         messages.error(request, str(exc))
         return redirect("web:people")
 
+    from apps.enterprise.services import record as audit_record
+    from apps.enterprise.models import AuditAction
+    audit_record(AuditAction.USER_INVITED, company=request.user.active_company,
+                 actor=request.user, request=request,
+                 summary=f"Invited {membership.user.email} as {role.name}",
+                 target=membership, email=membership.user.email, role=role.name)
     if token is not None:
         # An invitation link was emailed — no password is ever created or shown.
         messages.success(
@@ -2002,7 +2008,15 @@ def people_role(request, pk):
     elif not can_assign_role(request.user, role):
         messages.error(request, "You can't assign a role with more access than your own.")
     else:
+        old_role = membership.role.name if membership.role else "—"
         set_member_role(membership, role)
+        from apps.enterprise.services import record as audit_record
+        from apps.enterprise.models import AuditAction
+        audit_record(AuditAction.ROLE_CHANGED, company=request.user.active_company,
+                     actor=request.user, request=request,
+                     summary=f"Changed {membership.user.email} from {old_role} to {role.name}",
+                     target=membership, email=membership.user.email,
+                     old_role=old_role, new_role=role.name)
         messages.success(request, f"{membership.user.email} is now {role.name}.")
     return redirect("web:people")
 
@@ -2023,6 +2037,14 @@ def people_status(request, pk):
     except MemberError as exc:
         messages.error(request, str(exc))
     else:
+        from apps.enterprise.services import record as audit_record
+        from apps.enterprise.models import AuditAction
+        audit_record(
+            AuditAction.USER_INVITED if activate else AuditAction.USER_REMOVED,
+            company=request.user.active_company, actor=request.user, request=request,
+            summary=("Restored access for " if activate else "Deactivated ")
+                    + membership.user.email,
+            target=membership, email=membership.user.email, active=activate)
         messages.success(
             request,
             f"{membership.user.email} " + ("restored." if activate else "deactivated."))

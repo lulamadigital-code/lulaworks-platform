@@ -248,21 +248,34 @@ def platform_tenant(request, pk):
                 messages.error(request, "You don't have access for that action.")
                 return redirect("web:platform_tenant", pk=pk)
             try:
+                from apps.enterprise.services import record as audit_record
+                from apps.enterprise.models import AuditAction
                 if action == "invite_user":
                     role = Role.objects.filter(pk=request.POST.get("role")).first()
-                    identity.invite_member(
+                    m, _tok = identity.invite_member(
                         company, request.user,
                         email=request.POST.get("email", ""), role=role,
                         first_name=request.POST.get("first_name", "").strip(),
                         last_name=request.POST.get("last_name", "").strip())
+                    audit_record(AuditAction.USER_INVITED, company=company,
+                                 actor=request.user, request=request,
+                                 summary=f"Lulaworks staff invited {m.user.email}"
+                                         + (f" as {role.name}" if role else ""),
+                                 target=m, email=m.user.email, by_platform_staff=True)
                     messages.success(request, "Invitation sent.")
                     return redirect("web:platform_tenant", pk=pk)
                 if action == "member_status":
                     m = Membership.objects.filter(company=company,
                                                   pk=request.POST.get("membership")).first()
                     if m:
-                        identity.set_member_status(
-                            m, request.user, active=request.POST.get("active") == "1")
+                        active = request.POST.get("active") == "1"
+                        identity.set_member_status(m, request.user, active=active)
+                        audit_record(
+                            AuditAction.USER_INVITED if active else AuditAction.USER_REMOVED,
+                            company=company, actor=request.user, request=request,
+                            summary=("Lulaworks staff restored " if active
+                                     else "Lulaworks staff deactivated ") + m.user.email,
+                            target=m, email=m.user.email, by_platform_staff=True)
                         messages.success(request, "Member updated.")
                     return redirect("web:platform_tenant", pk=pk)
                 if action == "grant_credits":
