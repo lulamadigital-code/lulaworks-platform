@@ -154,6 +154,20 @@ def nav_flags(request):
         except Exception:
             support_open = 0
 
+    # SSO activation requests awaiting the platform team — same guard (staff, on
+    # /platform pages only, so the cross-tenant query never runs on tenant pages).
+    sso_activation_count = 0
+    if (signed_in and request.path.startswith("/platform")
+            and getattr(user, "platform_level", False)):
+        from apps.core.context import system_scope
+        try:
+            from apps.enterprise.models import SSOConfig, SSOStatus
+            with system_scope():
+                sso_activation_count = SSOConfig.all_objects.filter(
+                    status=SSOStatus.ACTIVATION_REQUESTED).count()
+        except Exception:                                # noqa: BLE001
+            sso_activation_count = 0
+
     # Attention Centre badge — critical+warning count, CACHED per user (90s) so
     # the cross-module detector runs at most once a minute-and-a-half, not on
     # every page render. Colour turns red only when something is critical.
@@ -181,6 +195,7 @@ def nav_flags(request):
             "logo_static": logo_static_name(), "nav_section": section,
             "unread_notifications": unread,
             "support_open_count": support_open,
+            "sso_activation_count": sso_activation_count,
             "attention_count": attention_count,
             "attention_critical": attention_critical,
             "idle_timeout": getattr(_s, "SESSION_IDLE_TIMEOUT", 0),
