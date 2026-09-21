@@ -83,7 +83,9 @@
       <div><label>Credit price ({{ ph.sym }}/credit)</label><input type="number" id="ph-creditrate" min="0" step="0.05" value="{{ ph.credit_rate }}"></div>
       <div><label>Storage retail ({{ ph.sym }}/GB/mo)</label><input type="number" id="ph-storageretail" min="0" step="0.5" value="{{ ph.storage_retail }}"></div>
       <div><label>Platform + SLA fee ({{ ph.sym }}/mo)</label><input type="number" id="ph-platformfee" min="0" step="500" value="{{ ph.platform_fee }}"></div>
-      <div><label>AI cost to serve ({{ ph.sym }}/credit)</label><input type="number" id="ph-aicost" min="0" step="0.01" value="{{ ph.ai_cost_per_credit }}"></div>
+      <div><label>AI cost to serve ({{ ph.sym }}/credit)
+        <span class="sub" style="font-size:10.5px;font-weight:400;">{% if ph.ai_cost_real %}· from your usage{% else %}· assumed (no usage yet){% endif %}</span></label>
+        <input type="number" id="ph-aicost" min="0" step="0.01" value="{{ ph.ai_cost_per_credit }}"></div>
       <div><label>Storage cost ({{ ph.sym }}/GB/mo)</label><input type="number" id="ph-storagecost" min="0" step="0.01" value="{{ ph.storage_cost_gb }}"></div>
     </div>
     <p class="sub" style="font-size:11.5px;margin:6px 0 0;">Support cost/mo — Standard {{ ph.sym }}{{ ph.support_standard }} · Priority {{ ph.sym }}{{ ph.support_priority }} · Dedicated {{ ph.sym }}{{ ph.support_dedicated }} (ops/SLA time).</p>
@@ -102,6 +104,7 @@
       <div id="ph-implied" class="sub" style="font-size:11.5px;"></div></div>
   </div>
 
+  <p id="ph-warn" style="display:none;margin:10px 0 0;padding:8px 10px;border-radius:8px;background:#fdecef;color:#c22a41;font-size:12.5px;font-weight:600;"></p>
   <div style="margin-top:10px;"><button class="btn" type="button" id="ph-use">↧ Use these numbers in Custom terms</button></div>
 </div>
 
@@ -247,6 +250,22 @@
     el("ph-suggested").textContent = money(suggested) + " / mo";
     el("ph-implied").textContent = "≈ " + implied.toFixed(0) + "% margin at this price";
     last = {price: Math.round(suggested), seats: seats, credits: credits, gb: gb};
+
+    // Guard: credits are the only line that can go negative — warn if the AI
+    // cost to serve a credit meets or beats what you charge for it.
+    var warn = el("ph-warn"), aiCost = num("ph-aicost"), creditRate = num("ph-creditrate");
+    var rc = function(n){ return SYM + n.toFixed(2); };
+    if (credits > 0 && aiCost >= creditRate) {
+      warn.textContent = "⚠ AI cost/credit (" + rc(aiCost) + ") ≥ your credit price ("
+        + rc(creditRate) + ") — you'd lose money on credits. Raise the credit price or cut the allowance.";
+      warn.style.display = "block";
+    } else if (credits > 0 && aiCost > creditRate * 0.7) {
+      warn.textContent = "⚠ Thin credit margin: AI cost " + rc(aiCost) + "/credit vs "
+        + rc(creditRate) + " charged. Check the AI cost is realistic.";
+      warn.style.display = "block";
+    } else {
+      warn.style.display = "none";
+    }
   }
 
   ids.forEach(function(id){

@@ -228,7 +228,8 @@ def platform_tenant(request, pk):
     with system_scope():
         from apps.ai_platform.gateway import credit_balance, topup_credits
         from apps.billing import services as billing
-        from apps.billing.models import BillingTransaction, Plan
+        from apps.ai_platform.models import AIUsageLog
+        from apps.billing.models import BillingTransaction, CreditPack, Plan
         from apps.identity import services as identity
         from apps.identity.models import Company, Membership, Role
 
@@ -355,17 +356,32 @@ def platform_tenant(request, pk):
         from apps.enterprise.models import SSOConfig
         ctx["sso"] = SSOConfig.all_objects.filter(company=company).first()
 
-        # Enterprise price helper — real cost/value constants, editable in the UI.
-        # storage cost is the platform's true cost/GB/mo (USD rate × FX); seat
-        # value comes from the Business plan's per-seat rate.
+        # Enterprise price helper — defaults grounded in the platform's REAL cost
+        # model, editable in the UI. seat value = Business per-seat rate; storage
+        # cost = true $/GB/mo × FX; credit retail = cheapest live pack's rate; AI
+        # cost-to-serve = actual USD logged per credit × FX (falls back to an
+        # assumption only when there's no usage yet).
         biz_seat = (Plan.objects.filter(code="business")
                     .values_list("per_seat_price", flat=True).first())
+
+        best_rate = None
+        for p in CreditPack.objects.filter(is_active=True):
+            if p.credits:
+                r = float(p.price) / float(p.credits)
+                best_rate = r if best_rate is None else min(best_rate, r)
+
+        agg = AIUsageLog.objects.aggregate(c=Sum("cost"), cr=Sum("credits_used"))
+        ai_cost_real = bool(agg["cr"] and float(agg["cr"]) > 0)
+        ai_cost = (round(float(agg["c"] or 0) / float(agg["cr"]) * _FX_TO_ZAR["USD"], 3)
+                   if ai_cost_real else 0.10)
+
         ctx["ph"] = {
             "seat_value": float(biz_seat or 99),
-            "credit_rate": 0.30,        # retail R/credit at volume (10k pack)
+            "credit_rate": round(best_rate, 3) if best_rate else 0.30,
             "storage_retail": 4.0,      # retail R/GB/mo (well above cost)
             "storage_cost_gb": round(_STORAGE_USD_PER_GB_MO * _FX_TO_ZAR["USD"], 3),
-            "ai_cost_per_credit": 0.10,  # assumed cost to serve per credit
+            "ai_cost_per_credit": ai_cost,
+            "ai_cost_real": ai_cost_real,
             "support_standard": 500, "support_priority": 1500, "support_dedicated": 4000,
             "platform_fee": 5000,       # Enterprise capability/SLA premium
             "target_margin": 75,
