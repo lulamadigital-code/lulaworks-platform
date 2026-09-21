@@ -51,7 +51,9 @@
 <div class="card">
   <h3 style="margin:0 0 12px;">{% trans "Your invoices" %}</h3>
   {% if invoices %}
-  <div style="overflow-x:auto;">
+  <input type="search" class="js-live-search" data-target="#invoice-list" placeholder="{% trans 'Search invoice number, customer or status…' %}" aria-label="{% trans 'Search invoices' %}"
+    style="width:100%;max-width:420px;box-sizing:border-box;padding:10px 13px;margin-bottom:12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--bg,#f7f8fa);color:var(--ink);">
+  <div id="invoice-list" style="overflow-x:auto;">
   <table>
     <thead>
       <tr><th>{% trans "Invoice" %}</th><th>{% trans "Customer" %}</th><th>{% trans "Date" %}</th><th class="num">{% trans "Total" %}</th>
@@ -73,6 +75,7 @@
     </tbody>
   </table>
   </div>
+  <p data-live-empty class="muted" hidden style="margin:12px 0 0;">{% trans "No invoices match your search." %}</p>
   {% else %}
   <div style="text-align:center;padding:26px 14px;">
     <p class="muted" style="margin:0;">{% trans "No invoices yet." %}</p>

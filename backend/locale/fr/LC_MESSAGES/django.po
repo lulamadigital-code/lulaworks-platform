@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-21 09:58+0000\n"
+"POT-Creation-Date: 2026-09-21 10:41+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4546,6 +4546,15 @@ msgstr "Total"
 
 msgid "Your invoices"
 msgstr "Vos factures"
+
+msgid "Search invoice number, customer or status…"
+msgstr "Rechercher un numéro de facture, un client ou un statut…"
+
+msgid "Search invoices"
+msgstr "Rechercher des factures"
+
+msgid "No invoices match your search."
+msgstr "Aucune facture ne correspond à votre recherche."
 
 msgid "No invoices yet."
 msgstr "Aucune facture pour le moment."
