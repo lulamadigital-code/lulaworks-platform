@@ -11,7 +11,7 @@
 </div>
 
 <form method="get" action="{% url 'web:import_documents' %}" style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
-  <input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Search filename or content…' %}"
+  <input type="search" class="js-live-search" name="q" value="{{ q }}" placeholder="{% trans 'Search filename or content…' %}"
     style="flex:1;min-width:240px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg,#f7f8fa);color:var(--ink);">
   <select name="type" style="padding:9px 12px;border:1px solid var(--line);border-radius:9px;">
     <option value="">{% trans "All types" %}</option>

@@ -11,7 +11,7 @@
 </div>
 
 <form method="get" class="filterbar" style="margin-bottom:16px;">
-  <input type="search" name="q" value="{{ q }}"
+  <input type="search" class="js-live-search" name="q" value="{{ q }}"
          placeholder="{% trans 'Search a supplier, or an item you buy (e.g. pipes)…' %}" style="flex:2;min-width:200px;">
   <button class="btn primary" type="submit">{% trans "Search" %}</button>
   {% if q %}<a class="btn ghost" href="{% url 'web:suppliers' %}">{% trans "Clear" %}</a>{% endif %}

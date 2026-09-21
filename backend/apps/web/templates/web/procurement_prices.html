@@ -8,7 +8,7 @@
 {% include "web/_procurement_nav.html" %}
 
 <form method="get" class="filterbar">
-  <input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Search an item…' %}" style="flex:2;min-width:180px;">
+  <input type="search" class="js-live-search" name="q" value="{{ q }}" placeholder="{% trans 'Search an item…' %}" style="flex:2;min-width:180px;">
   <button class="btn ghost" type="submit">{% trans "Search" %}</button>
   {% if q %}<a class="btn ghost" href="{% url 'web:procurement_prices' %}">{% trans "Clear" %}</a>{% endif %}
 </form>

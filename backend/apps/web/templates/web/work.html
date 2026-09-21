@@ -33,7 +33,7 @@
 
 <form method="get" class="filterbar">
   <input type="hidden" name="view" value="{{ view }}">
-  <input type="search" name="q" value="{{ f.q|default:'' }}" placeholder="{% trans 'Search jobs…' %}" style="flex:2;min-width:150px;">
+  <input type="search" class="js-live-search" name="q" value="{{ f.q|default:'' }}" placeholder="{% trans 'Search jobs…' %}" style="flex:2;min-width:150px;">
   <select name="origin">
     <option value="">{% trans "All origins" %}</option>
     {% for value, label in origins %}

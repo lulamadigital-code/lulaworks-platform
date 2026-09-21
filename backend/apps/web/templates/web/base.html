@@ -566,5 +566,39 @@
   })();
   </script>
   {% endif %}
+
+  <script>
+  // Reusable live "search-as-you-type" for list pages. Any search input with
+  // class "js-live-search" filters the rows of its table(s) as you type — no
+  // per-row markup needed (it matches on each row's visible text). Matching is
+  // tokenised: every typed word must appear somewhere in the row, in any order,
+  // so partial words and words out of order still match (no full word needed).
+  // The form's normal submit still runs the server-side search to reach rows
+  // beyond the page. Scope: the input's `data-target` selector if set, else all
+  // data rows on the page.
+  (function () {
+    document.querySelectorAll('input.js-live-search').forEach(function (input) {
+      input.setAttribute('autocomplete', 'off');
+      var scope = input.dataset.target ? document.querySelector(input.dataset.target) : document;
+      if (!scope) return;
+      var rows = Array.prototype.slice.call(scope.querySelectorAll('table tr'))
+                   .filter(function (r) { return r.querySelector('td'); });
+      if (!rows.length) return;
+      var empty = document.querySelector('[data-live-empty]');
+      function apply() {
+        var toks = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+        var visible = 0;
+        rows.forEach(function (r) {
+          var hay = (r.textContent || '').toLowerCase();
+          var ok = toks.every(function (t) { return hay.indexOf(t) !== -1; });
+          r.style.display = ok ? '' : 'none';
+          if (ok) visible++;
+        });
+        if (empty) empty.hidden = (visible !== 0 || toks.length === 0);
+      }
+      input.addEventListener('input', apply);
+    });
+  })();
+  </script>
 </body>
 </html>

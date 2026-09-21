@@ -46,7 +46,7 @@
 {% endif %}
 
 <form method="get" class="filterbar">
-  <input type="search" name="q" value="{{ f.q|default:'' }}" placeholder="{% trans 'Quotation number…' %}" style="flex:2;min-width:150px;">
+  <input type="search" class="js-live-search" name="q" value="{{ f.q|default:'' }}" placeholder="{% trans 'Quotation number…' %}" style="flex:2;min-width:150px;">
   <select name="status">
     <option value="">{% trans "Any status" %}</option>
     {% for value, label in statuses %}

@@ -16,7 +16,7 @@
 {% endif %}
 
 <form method="get" class="filterbar">
-  <input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Search a product (name or spelling)…' %}" style="flex:2;min-width:180px;">
+  <input type="search" class="js-live-search" name="q" value="{{ q }}" placeholder="{% trans 'Search a product (name or spelling)…' %}" style="flex:2;min-width:180px;">
   <select name="category">
     <option value="">{% trans "Any category" %}</option>
     {% for value, label in categories %}

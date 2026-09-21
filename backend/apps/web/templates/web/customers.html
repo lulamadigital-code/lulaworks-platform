@@ -13,7 +13,7 @@
 {% include "web/crm/_tabs.html" with active='customers' %}
 
 <form method="get" class="filterbar">
-  <input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Search customers…' %}" style="flex:2;min-width:160px;">
+  <input type="search" class="js-live-search" name="q" value="{{ q }}" placeholder="{% trans 'Search customers…' %}" style="flex:2;min-width:160px;">
   <select name="status">
     <option value="">{% trans "Any status" %}</option>
     {% for value, label in statuses %}
