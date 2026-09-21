@@ -118,6 +118,7 @@
     {% if sub.overrides.storage_quota_bytes %}{{ sub.overrides.storage_quota_bytes|filesizeformat }} · {% endif %}
     {% if sub.overrides.monthly_ai_credits %}{{ sub.overrides.monthly_ai_credits }} credits/mo · {% endif %}
     {% if sub.overrides.contract_price %}price {{ sub.overrides.contract_price }}{% endif %}
+    {% if sub.overrides.contract_ref %}<br>Ref: <strong>{{ sub.overrides.contract_ref }}</strong>{% endif %}
     {% if sub.overrides.contract_note %}<br>Note: {{ sub.overrides.contract_note }}{% endif %}
   </p>
   {% endif %}
@@ -132,8 +133,10 @@
       <div><label>Agreed price (record only)</label>
         <input type="text" name="ov_price" value="{{ sub.overrides.contract_price|default:'' }}" placeholder="e.g. R25,000 / mo"></div>
     </div>
-    <label style="margin-top:8px;">Contract note</label>
-    <textarea name="ov_note" rows="2" placeholder="PO number, term, billing arrangement…">{{ sub.overrides.contract_note|default:'' }}</textarea>
+    <label style="margin-top:8px;">Contract reference <span class="sub" style="font-weight:400;font-size:12px;">— our internal deal ref (auto-suggested; confirm or edit)</span></label>
+    <input type="text" name="ov_ref" value="{{ suggested_ref }}" placeholder="LW-ENT-2026-0001">
+    <label style="margin-top:8px;">Contract note <span class="sub" style="font-weight:400;font-size:12px;">— customer PO, term, billing arrangement</span></label>
+    <textarea name="ov_note" rows="2" placeholder="Customer PO number, term, billing arrangement…">{{ sub.overrides.contract_note|default:'' }}</textarea>
     <div style="margin-top:12px;"><button class="btn" type="submit"{% if not sub %} disabled{% endif %}>Save custom terms</button></div>
     {% if not sub %}<p class="sub" style="font-size:12px;margin:8px 0 0;">Put the company on a plan (e.g. Enterprise) above first, then set custom terms.</p>{% endif %}
   </form>

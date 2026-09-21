@@ -213,6 +213,26 @@ def _donut_segments(items):
     return {"segments": segs, "total": total}
 
 
+def _suggest_contract_ref() -> str:
+    """Next internal contract reference, e.g. LW-ENT-2026-0007 — the highest
+    existing sequence for the year + 1. This is Lulaworks' own deal reference,
+    not the customer's external PO number."""
+    import re as _re
+    from apps.billing.models import Subscription
+    from apps.core.context import system_scope
+    year = timezone.now().year
+    prefix = f"LW-ENT-{year}-"
+    mx = 0
+    with system_scope():
+        for ov in Subscription.all_objects.values_list("overrides", flat=True):
+            ref = (ov or {}).get("contract_ref", "") if isinstance(ov, dict) else ""
+            if ref.startswith(prefix):
+                m = _re.search(r"(\d+)$", ref)
+                if m:
+                    mx = max(mx, int(m.group(1)))
+    return f"{prefix}{mx + 1:04d}"
+
+
 @login_required
 def platform_tenant(request, pk):
     """Branded management page for one tenant — plan, credits, status — so the
@@ -306,6 +326,7 @@ def platform_tenant(request, pk):
                     mu, gb, cr = _num("ov_max_users"), _num("ov_storage_gb"), _num("ov_credits")
                     price = (request.POST.get("ov_price") or "").strip()
                     note = (request.POST.get("ov_note") or "").strip()
+                    ref = (request.POST.get("ov_ref") or "").strip()
                     if mu is not None:
                         ov["max_users"] = mu
                     if gb is not None:
@@ -314,6 +335,12 @@ def platform_tenant(request, pk):
                         ov["monthly_ai_credits"] = cr
                     ov["contract_price"] = price          # display/record only
                     ov["contract_note"] = note[:500]
+                    # System contract reference — generated & confirmed by the
+                    # admin (distinct from the customer's own external PO number).
+                    if ref:
+                        ov["contract_ref"] = ref[:40]
+                    elif not ov.get("contract_ref"):
+                        ov["contract_ref"] = _suggest_contract_ref()
                     sub_obj.overrides = ov
                     sub_obj.save(update_fields=["overrides", "updated_at"])
                     # Sync cached limits to the effective (override) values so
@@ -355,6 +382,10 @@ def platform_tenant(request, pk):
         }
         from apps.enterprise.models import SSOConfig
         ctx["sso"] = SSOConfig.all_objects.filter(company=company).first()
+
+        # Contract reference — show the existing one, or suggest the next.
+        _ov = (sub.overrides or {}) if sub else {}
+        ctx["suggested_ref"] = _ov.get("contract_ref") or _suggest_contract_ref()
 
         # Enterprise price helper — defaults grounded in the platform's REAL cost
         # model, editable in the UI. seat value = Business per-seat rate; storage
