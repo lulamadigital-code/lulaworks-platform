@@ -154,9 +154,11 @@ PLANS = [
 
 # Optional one-off AI credit top-ups (spec).
 CREDIT_PACKS = [
-    ("pack_500", "500 AI Credits", 500, 199),
-    ("pack_2000", "2,000 AI Credits", 2000, 699),
-    ("pack_10000", "10,000 AI Credits", 10000, 2999),
+    # Priced with a clean volume discount: R0.70 → R0.65 → R0.60/credit (best
+    # rate at the 10k tier). ~2× the previous rate; raised 2026-09-21.
+    ("pack_500", "500 AI Credits", 500, 350),
+    ("pack_2000", "2,000 AI Credits", 2000, 1300),
+    ("pack_10000", "10,000 AI Credits", 10000, 6000),
 ]
 
 # Regional pricing per plan: {code: {currency: (monthly, annual)}}. These are
