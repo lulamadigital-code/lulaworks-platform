@@ -21,7 +21,7 @@
 
 {# Search + status filter. #}
 <form method="get" action="{% url 'web:customer_pos' %}" role="search" style="display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap;">
-  <input type="search" name="q" value="{{ q }}" placeholder="Search PO number, customer or site…" aria-label="Search purchase orders"
+  <input type="search" name="q" id="po-search" value="{{ q }}" autocomplete="off" placeholder="Search PO number, customer or site…" aria-label="Search purchase orders"
     style="flex:1;min-width:220px;box-sizing:border-box;padding:11px 14px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--bg,#f7f8fa);color:var(--ink);">
   {% if bucket %}<input type="hidden" name="bucket" value="{{ bucket }}">{% endif %}
   <button type="submit"
@@ -43,7 +43,8 @@
   <table>
     <tr><th>PO number</th><th>Customer</th><th class="right">Value</th><th>Status</th><th>Date</th></tr>
     {% for r in rows %}
-    <tr onclick="location.href='{% url 'web:customer_po_detail' r.po.pk %}'" style="cursor:pointer;">
+    <tr data-search="{{ r.po.po_number|lower }} {{ r.po.customer_display|lower }} {{ r.po.site|lower }}"
+        onclick="location.href='{% url 'web:customer_po_detail' r.po.pk %}'" style="cursor:pointer;">
       <td><strong>{{ r.po.po_number }}</strong></td>
       <td>{{ r.po.customer_display }}</td>
       <td style="text-align:right;">{{ r.po.value|floatformat:2 }}</td>
@@ -62,5 +63,30 @@
   </table>
 </div>
 {% if shown > 100 or rows|length == 100 %}<p class="muted" style="font-size:12px;margin:10px 0 0;">Showing the first 100 — refine your search to narrow it.</p>{% endif %}
+<p id="po-nomatch" class="muted" hidden style="padding:14px 2px;">No purchase orders match your search on this page. Press <strong>Search</strong> to look across all POs.</p>
 <style>.tile-on{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary) inset;}</style>
+<script>
+(function () {
+  // Live "search-as-you-type" over the rows on this page — tokenised so partial
+  // words in any order match (no full word needed). Enter / the Search button
+  // still runs the server search to reach POs beyond this page.
+  var input = document.getElementById('po-search');
+  var rows = Array.prototype.slice.call(document.querySelectorAll('tr[data-search]'));
+  var none = document.getElementById('po-nomatch');
+  if (!input || !rows.length) return;
+  function apply() {
+    var toks = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+    var visible = 0;
+    rows.forEach(function (r) {
+      var hay = r.getAttribute('data-search') || '';
+      var ok = toks.every(function (t) { return hay.indexOf(t) !== -1; });
+      r.style.display = ok ? '' : 'none';
+      if (ok) visible++;
+    });
+    if (none) none.hidden = visible !== 0;
+  }
+  input.addEventListener('input', apply);
+  input.addEventListener('keyup', apply);
+})();
+</script>
 {% endblock %}

@@ -86,17 +86,19 @@ def customer_pos(request):
     # Counts always reflect the whole workspace (the summary tiles); the table
     # below is what search + the status filter narrow.
     counts = {"unmatched": 0, "matched": 0, "converted": 0, "closed": 0}
-    ql = q.lower()
+    # Tokenised match: every typed word must appear somewhere in the PO's text,
+    # in any order — so partial words (no full match needed) still find it.
+    tokens = q.lower().split()
     rows = []
     for po in pos:
         b = bucket(po)
         counts[b] += 1
         if fbucket and b != fbucket:
             continue
-        if ql:
+        if tokens:
             hay = " ".join([po.po_number or "", po.client_name or "", po.site or "",
                             po.customer_display or ""]).lower()
-            if ql not in hay:
+            if not all(t in hay for t in tokens):
                 continue
         rows.append({"po": po, "bucket": b})
     return render(request, "web/customer_pos.html", {
