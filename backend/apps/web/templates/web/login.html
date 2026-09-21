@@ -27,6 +27,10 @@
     </form>
     <p style="margin-top:14px;text-align:center;font-size:13px;">
       <a href="{% url 'web:password_reset_request' %}">{% trans "Forgot your password?" %}</a></p>
+    <div style="display:flex;align-items:center;gap:10px;margin:16px 0 4px;color:var(--muted,#888);font-size:12px;">
+      <span style="flex:1;height:1px;background:var(--line,#e5e5e5);"></span>{% trans "or" %}<span style="flex:1;height:1px;background:var(--line,#e5e5e5);"></span>
+    </div>
+    <a class="btn" href="{% url 'web:sso_login' %}" style="width:100%;box-sizing:border-box;display:block;text-align:center;background:transparent;color:#17a2b8;border:1px solid #17a2b8;">🔐 {% trans "Sign in with SSO" %}</a>
   </div>
 
   {# New visitors — there's no self-serve signup, so route them to a demo. #}

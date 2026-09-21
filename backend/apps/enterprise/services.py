@@ -120,6 +120,39 @@ def revoke_api_key(key, actor=None):
 
 # ── SSO configuration (config surface only — no live handshake) ───────────────
 
+def _email_domain(email: str) -> str:
+    return email.rsplit("@", 1)[-1].strip().lower() if "@" in (email or "") else ""
+
+
+def active_sso_for_email(email: str):
+    """The live OIDC SSOConfig whose allowed-domains include this email's domain,
+    or None. Only ACTIVE, OIDC-ready configs are considered — the entry point for
+    the sign-in flow."""
+    from apps.billing.services import has_feature
+    from .models import SSOConfig, SSOProtocol, SSOStatus
+    domain = _email_domain(email)
+    if not domain:
+        return None
+    for cfg in (SSOConfig.all_objects.select_related("company")
+                .filter(status=SSOStatus.ACTIVE, protocol=SSOProtocol.OIDC)):
+        # Entitlement checked per sign-in: a tenant that leaves Enterprise cleanly
+        # loses SSO without its config being deleted (mirrors API-key behaviour).
+        if (domain in cfg.domain_list() and cfg.oidc_ready
+                and has_feature(cfg.company, "sso")):
+            return cfg
+    return None
+
+
+def sso_member_for(company, email: str):
+    """The active membership of `company` for this email, or None. This is the
+    authorization gate: SSO only signs in people an admin already added."""
+    from apps.identity.models import Membership
+    return (Membership.all_objects
+            .select_related("user")
+            .filter(company=company, user__email__iexact=email.strip(),
+                    status="active").first())
+
+
 def sso_sp_details(request, company):
     """The Service-Provider values a tenant enters into their IdP. Derived from
     the request's own origin so they are correct for this deployment. Marked

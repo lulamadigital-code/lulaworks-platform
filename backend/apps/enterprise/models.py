@@ -102,9 +102,7 @@ class SSOStatus(models.TextChoices):
     NOT_CONFIGURED = "not_configured", "Not configured"
     CONFIGURED = "configured", "Configured (draft)"
     ACTIVATION_REQUESTED = "activation_requested", "Activation requested"
-    # "active" is deliberately absent: there is no live handshake yet, so the
-    # surface never claims SSO is enforcing logins. Lulaworks completes wiring
-    # against a real IdP library before that state can honestly exist.
+    ACTIVE = "active", "Active"   # OIDC live: members of allowed domains can sign in via SSO
 
 
 class SSOConfig(TenantBaseModel):
@@ -127,9 +125,12 @@ class SSOConfig(TenantBaseModel):
     saml_idp_sso_url = models.URLField(max_length=500, blank=True)
     saml_idp_x509_cert = models.TextField(blank=True)   # PEM/base64 signing cert
 
-    # OIDC (issuer + client id are not secrets; the client secret is NOT stored)
+    # OIDC. Issuer + client id are not secrets; the client secret is stored
+    # ENCRYPTED (Fernet, key derived from SECRET_KEY) and only ever read to sign
+    # the server-side token exchange — never displayed.
     oidc_issuer = models.URLField(max_length=500, blank=True)
     oidc_client_id = models.CharField(max_length=300, blank=True)
+    oidc_client_secret_enc = models.TextField(blank=True)
 
     # Email domains whose users are expected to sign in via SSO (comma-separated).
     allowed_domains = models.CharField(max_length=500, blank=True)
@@ -152,5 +153,27 @@ class SSOConfig(TenantBaseModel):
     def is_requested(self) -> bool:
         return self.status == SSOStatus.ACTIVATION_REQUESTED
 
+    @property
+    def is_active(self) -> bool:
+        return self.status == SSOStatus.ACTIVE
+
     def domain_list(self):
         return [d.strip().lower() for d in self.allowed_domains.split(",") if d.strip()]
+
+    # ── OIDC client secret (encrypted at rest) ────────────────────────────────
+    @property
+    def has_client_secret(self) -> bool:
+        return bool(self.oidc_client_secret_enc)
+
+    def set_client_secret(self, raw: str):
+        from .crypto import encrypt
+        self.oidc_client_secret_enc = encrypt(raw) if raw else ""
+
+    def get_client_secret(self) -> str:
+        from .crypto import decrypt
+        return decrypt(self.oidc_client_secret_enc)
+
+    @property
+    def oidc_ready(self) -> bool:
+        """Enough OIDC detail present to attempt a real handshake."""
+        return bool(self.oidc_issuer and self.oidc_client_id and self.oidc_client_secret_enc)

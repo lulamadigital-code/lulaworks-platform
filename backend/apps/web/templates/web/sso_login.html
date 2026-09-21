@@ -1,0 +1,26 @@
+{% extends "web/base.html" %}
+{% load static i18n %}
+{% block title %}{% trans "Sign in with SSO" %}{% endblock %}
+{% block content %}
+<div style="max-width:380px; margin:8vh auto;">
+  <div style="text-align:center; margin-bottom:20px;">
+    <div class="login-logo">
+      {% if has_logo %}<img src="{% static logo_static %}" class="brand-img" alt="Lulaworks">
+      {% else %}{% include "web/_mark.svg" %}<span class="word">lulaworks</span>{% endif %}
+    </div>
+    <div class="muted" style="margin-top:6px;">{% trans "Single Sign-On" %}</div>
+  </div>
+  <div class="card">
+    <form method="post" action="{% url 'web:sso_login' %}">
+      {% csrf_token %}
+      <label>{% trans "Work email" %}</label>
+      <input type="email" name="email" value="{{ email|default:'' }}" autocomplete="username" autofocus required
+             placeholder="you@yourcompany.com">
+      <p class="muted" style="margin:8px 0 0;font-size:12.5px;">{% trans "We'll send you to your company's identity provider to sign in." %}</p>
+      <button class="btn" style="width:100%; margin-top:18px;" type="submit">{% trans "Continue" %}</button>
+    </form>
+    <p style="margin-top:14px;text-align:center;font-size:13px;">
+      <a href="{% url 'web:login' %}">{% trans "← Back to email & password sign-in" %}</a></p>
+  </div>
+</div>
+{% endblock %}

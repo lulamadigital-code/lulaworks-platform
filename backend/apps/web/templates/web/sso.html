@@ -17,16 +17,27 @@
 </div>
 {% else %}
 
-{# Honest status banner — SSO is being configured, not yet enforcing logins. #}
-<div class="card" style="border-color:var(--warn,#f5a623);background:var(--warnbg,#fffaf0);">
-  {% if cfg and cfg.status == 'activation_requested' %}
-    <strong>{% trans "Activation requested" %}</strong>
-    <p class="muted" style="margin:6px 0 0;">{% blocktrans with when=cfg.requested_at|date:"d M Y" %}You requested activation on {{ when }}. Lulaworks will complete the secure setup with you and confirm when SSO goes live. Your team continues to sign in with email and password until then.{% endblocktrans %}</p>
-  {% else %}
-    <strong>{% trans "Set-up mode" %}</strong>
-    <p class="muted" style="margin:6px 0 0;">{% trans "Enter your identity provider details below and request activation. SSO does not enforce logins yet — Lulaworks completes the secure connection with you before it goes live. Nothing here changes how your team signs in today." %}</p>
-  {% endif %}
+{# Status banner. #}
+{% if cfg and cfg.status == 'active' %}
+<div class="card" style="border-color:var(--ok,#3a3);background:var(--okbg,#f0fff4);">
+  <strong>✓ {% trans "SSO is live" %}</strong>
+  <p class="muted" style="margin:6px 0 0;">{% trans "Members with your configured email domains can sign in through your identity provider. Password sign-in still works, and only people already invited to this workspace can sign in." %}</p>
+  <form method="post" action="{% url 'web:sso_settings' %}" style="margin-top:10px;">
+    {% csrf_token %}<input type="hidden" name="action" value="disable">
+    <button class="btn" type="submit" style="background:transparent;color:var(--bad,#e5484d);border:1px solid var(--bad,#e5484d);">{% trans "Disable SSO" %}</button>
+  </form>
 </div>
+{% elif cfg and cfg.status == 'activation_requested' %}
+<div class="card" style="border-color:var(--warn,#f5a623);background:var(--warnbg,#fffaf0);">
+  <strong>{% trans "Activation requested" %}</strong>
+  <p class="muted" style="margin:6px 0 0;">{% blocktrans with when=cfg.requested_at|date:"d M Y" %}You requested activation on {{ when }}. For OIDC you can enable it yourself below once issuer, client ID and secret are saved. For SAML, Lulaworks completes the secure setup with you.{% endblocktrans %}</p>
+</div>
+{% else %}
+<div class="card" style="border-color:var(--warn,#f5a623);background:var(--warnbg,#fffaf0);">
+  <strong>{% trans "Set-up mode" %}</strong>
+  <p class="muted" style="margin:6px 0 0;">{% trans "Enter your identity provider details below. OIDC can be enabled directly once issuer, client ID and secret are saved. SAML stays a request to the Lulaworks team. Nothing here changes how your team signs in today." %}</p>
+</div>
+{% endif %}
 
 {# What the customer's IdP needs from us — provisional until activation. #}
 <div class="card">
@@ -82,7 +93,14 @@
         <input type="text" name="oidc_client_id" value="{{ cfg.oidc_client_id }}" placeholder="lulaworks-abc123"
                style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line,#e5e5e5);border-radius:8px;">
       </div>
-      <p class="muted" style="margin:-4px 0 8px;font-size:12.5px;">{% trans "Your client secret is exchanged securely with Lulaworks during activation — never stored in this form." %}</p>
+      <div style="margin-bottom:6px;">
+        <label style="display:block;margin-bottom:6px;font-weight:600;font-size:13px;">{% trans "OIDC Client secret" %}
+          {% if cfg.has_client_secret %}<span class="chip ok" style="font-size:10px;">{% trans "set" %}</span>{% endif %}</label>
+        <input type="password" name="oidc_client_secret" autocomplete="new-password"
+               placeholder="{% if cfg.has_client_secret %}{% trans '•••••••• — leave blank to keep' %}{% else %}{% trans 'Paste your client secret' %}{% endif %}"
+               style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line,#e5e5e5);border-radius:8px;">
+        <p class="muted" style="margin:6px 0 0;font-size:12px;">{% trans "Stored encrypted at rest and used only server-side to complete sign-in. Never shown again." %}</p>
+      </div>
     </div>
 
     <div style="margin-bottom:14px;">
@@ -97,10 +115,15 @@
       <textarea name="notes" rows="3" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line,#e5e5e5);border-radius:8px;">{{ cfg.notes }}</textarea>
     </div>
 
-    <div class="row" style="gap:10px;margin-top:14px;">
+    <div class="row" style="gap:10px;margin-top:14px;flex-wrap:wrap;">
       <button class="btn" type="submit" name="action" value="save" style="background:var(--ink,#333);">{% trans "Save configuration" %}</button>
-      <button class="btn" type="submit" name="action" value="request">{% trans "Request activation" %}</button>
+      {% if cfg.protocol == 'oidc' and cfg.oidc_ready and cfg.status != 'active' %}
+        <button class="btn" type="submit" name="action" value="enable">{% trans "Enable SSO" %}</button>
+      {% elif cfg.protocol != 'oidc' or not cfg.oidc_ready %}
+        <button class="btn" type="submit" name="action" value="request">{% trans "Request activation" %}</button>
+      {% endif %}
     </div>
+    <p class="muted" style="margin:10px 0 0;font-size:12px;">{% trans "Tip: register the OIDC Redirect URI above with your provider before enabling." %}</p>
   </div>
 </form>
 
