@@ -42,13 +42,43 @@
 {# What the customer's IdP needs from us — provisional until activation. #}
 <div class="card">
   <h2 style="margin:0 0 4px;">{% trans "Service Provider details" %}</h2>
-  <p class="muted" style="margin:0 0 12px;font-size:12.5px;">{% trans "Give these to your identity provider. Provisional until Lulaworks confirms activation." %}</p>
+  <p class="muted" style="margin:0 0 12px;font-size:12.5px;">{% trans "Give these to your identity provider when you register Lulaworks as an app." %}</p>
   <table>
     <tr><td class="muted" style="white-space:nowrap;">{% trans "SP Entity ID" %}</td><td><code>{{ sp.sp_entity_id }}</code></td></tr>
     <tr><td class="muted">{% trans "SAML ACS URL" %}</td><td><code>{{ sp.saml_acs_url }}</code></td></tr>
     <tr><td class="muted">{% trans "OIDC Redirect URI" %}</td><td><code>{{ sp.oidc_redirect_uri }}</code></td></tr>
   </table>
 </div>
+
+{# ── Setup guide ─────────────────────────────────────────────────────────── #}
+<details class="card" style="padding:0;">
+  <summary style="cursor:pointer;padding:16px 18px;font-weight:700;list-style:none;">
+    📘 {% trans "How to set up SSO" %} <span class="muted" style="font-weight:400;font-size:12.5px;">— {% trans "step-by-step for OpenID Connect" %}</span>
+  </summary>
+  <div style="padding:0 18px 18px;font-size:13.5px;line-height:1.7;">
+    <p class="muted" style="margin:0 0 12px;">{% blocktrans %}SSO lets your team sign in with your company's identity provider instead of a Lulaworks password. Set it up once below. Password sign-in keeps working, and only people you've already invited to this workspace can sign in via SSO.{% endblocktrans %}</p>
+
+    <ol style="margin:0;padding-left:18px;">
+      <li style="margin-bottom:10px;">{% blocktrans %}<strong>Create an OIDC app</strong> in your identity provider and set its <em>redirect URI</em> to exactly:{% endblocktrans %}
+        <div style="margin:6px 0;"><code style="display:inline-block;padding:6px 10px;background:#0b1020;color:#7CFCB4;border-radius:6px;word-break:break-all;">{{ sp.oidc_redirect_uri }}</code></div>
+      </li>
+      <li style="margin-bottom:10px;">{% blocktrans %}Copy the <strong>Issuer URL</strong>, <strong>Client ID</strong> and <strong>Client secret</strong> your provider gives you into the form below, add your team's <strong>email domain(s)</strong>, and <strong>Save</strong>.{% endblocktrans %}</li>
+      <li style="margin-bottom:10px;">{% blocktrans %}Click <strong>Enable SSO</strong>. Then sign out and use <strong>“Sign in with SSO”</strong> on the login page with your work email to test it.{% endblocktrans %}</li>
+    </ol>
+
+    <p style="margin:14px 0 6px;font-weight:700;">{% trans "Provider-specific notes" %}</p>
+    <table style="font-size:13px;">
+      <tr><td style="vertical-align:top;padding:6px 10px 6px 0;white-space:nowrap;"><strong>Google Workspace</strong></td>
+          <td style="padding:6px 0;">{% blocktrans %}Issuer <code>https://accounts.google.com</code>. Create the client under Google Cloud Console → APIs &amp; Services → Credentials → OAuth client ID → <em>Web application</em>; add the redirect URI there.{% endblocktrans %}</td></tr>
+      <tr><td style="vertical-align:top;padding:6px 10px 6px 0;white-space:nowrap;"><strong>Microsoft Entra ID</strong></td>
+          <td style="padding:6px 0;">{% blocktrans %}Issuer <code>https://login.microsoftonline.com/&lt;tenant-id&gt;/v2.0</code>. Register the app under Entra ID → App registrations; add the redirect URI under <em>Authentication</em>, and create the secret under <em>Certificates &amp; secrets</em>.{% endblocktrans %}</td></tr>
+      <tr><td style="vertical-align:top;padding:6px 10px 6px 0;white-space:nowrap;"><strong>Okta</strong></td>
+          <td style="padding:6px 0;">{% blocktrans %}Issuer <code>https://&lt;your-org&gt;.okta.com</code> (or your custom authorization server). Create an <em>OIDC Web</em> app and add the redirect URI to its Sign-in redirect URIs.{% endblocktrans %}</td></tr>
+    </table>
+
+    <p class="muted" style="margin:14px 0 0;font-size:12.5px;">{% blocktrans %}Your client secret is stored encrypted and only used server-side — it's never shown again after you save it. Prefer SAML? Fill in the SAML fields and use “Request activation” — the Lulaworks team completes that setup with you.{% endblocktrans %}</p>
+  </div>
+</details>
 
 <form method="post" action="{% url 'web:sso_settings' %}">
   {% csrf_token %}
