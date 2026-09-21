@@ -11,6 +11,9 @@
   {% if can_create %}<a class="btn primary" href="{% url 'web:invoice_new' %}">{% trans "+ New invoice" %}</a>{% endif %}
 </div>
 
+<input type="search" class="js-live-search" data-target="#invoice-list" placeholder="{% trans 'Search invoice number, customer or status…' %}" aria-label="{% trans 'Search invoices' %}"
+  style="width:100%;max-width:520px;box-sizing:border-box;padding:11px 14px;margin:0 0 18px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--bg,#f7f8fa);color:var(--ink);">
+
 <div class="grid">
   <div class="tile"><div class="ic" style="background:var(--blue-t);color:#2f6fd0;">▤</div>
     <div class="n">{{ report.count }}</div><div class="l">{% trans "Invoices" %}</div></div>
@@ -50,8 +53,6 @@
 
 <div class="card">
   <h3 style="margin:0 0 12px;">{% trans "Your invoices" %}</h3>
-  <input type="search" class="js-live-search" data-target="#invoice-list" placeholder="{% trans 'Search invoice number, customer or status…' %}" aria-label="{% trans 'Search invoices' %}"
-    style="width:100%;max-width:420px;box-sizing:border-box;padding:10px 13px;margin-bottom:12px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--bg,#f7f8fa);color:var(--ink);">
   {% if invoices %}
   <div id="invoice-list" style="overflow-x:auto;">
   <table>
