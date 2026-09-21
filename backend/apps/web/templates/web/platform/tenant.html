@@ -140,6 +140,14 @@
     <div style="margin-top:12px;"><button class="btn" type="submit"{% if not sub %} disabled{% endif %}>Save custom terms</button></div>
     {% if not sub %}<p class="sub" style="font-size:12px;margin:8px 0 0;">Put the company on a plan (e.g. Enterprise) above first, then set custom terms.</p>{% endif %}
   </form>
+  {% if sub and sub.overrides.contract_price %}
+  <form method="post" style="margin-top:10px;border-top:1px solid var(--line);padding-top:12px;"
+        data-confirm="Email the agreed terms to this customer's admins to confirm?">
+    {% csrf_token %}<input type="hidden" name="action" value="send_enterprise_agreement">
+    <button class="btn" type="submit" style="background:#fff;color:var(--primary-d);border:1px solid var(--primary,#17a2b8);">✉ Send agreement to customer</button>
+    <p class="sub" style="font-size:12px;margin:8px 0 0;">Emails the agreed terms (users, credits, storage, price, reference) to the customer's admins to confirm by reply. You choose when — nothing is sent automatically.</p>
+  </form>
+  {% endif %}
 </div>
 
 {% if sso %}

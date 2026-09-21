@@ -259,6 +259,44 @@ def _notify_billing(company, *, subject, heading, body, cta_url="", cta_label=""
             pass
 
 
+def send_enterprise_agreement(company) -> int:
+    """Email the tenant's admins the agreed Enterprise terms to confirm by reply.
+    Reads the negotiated terms from the subscription overrides. Returns the number
+    of recipients; raises ValueError if there's nothing agreed to send yet."""
+    sub = getattr(company, "subscription", None)
+    ov = (sub.overrides if sub else None) or {}
+    price = str(ov.get("contract_price") or "").strip()
+    if not price:
+        raise ValueError("Set the agreed price in Custom terms before sending the agreement.")
+
+    def _gb(b):
+        return f"{int(b) / (1024 ** 3):.0f} GB" if b else "—"
+
+    lines = ["Here are the agreed terms for your Lulaworks Enterprise plan:", ""]
+    if ov.get("contract_ref"):
+        lines.append(f"• Agreement reference: {ov['contract_ref']}")
+    lines += [
+        f"• Users (seats): {ov.get('max_users', '—')}",
+        f"• AI credits per month: {ov.get('monthly_ai_credits', '—')}",
+        f"• Storage: {_gb(ov.get('storage_quota_bytes'))}",
+        f"• Price: {price}",
+    ]
+    if ov.get("contract_note"):
+        lines.append(f"• Terms: {ov['contract_note']}")
+    lines += ["",
+              "Please reply to this email to confirm these terms are correct, and "
+              "we'll finalise your account. If anything needs changing, just let us "
+              "know and we'll update it.",
+              "", "Thank you for choosing Lulaworks."]
+    body = "\n".join(lines)
+
+    recipients = list(_billing_admins(company))
+    _notify_billing(
+        company, subject="Your Lulaworks Enterprise agreement — please confirm",
+        heading="Your Enterprise plan — agreed terms", body=body)
+    return len(recipients)
+
+
 #: How many days before a trial ends to send the reminder.
 TRIAL_REMINDER_DAYS = 3
 
@@ -339,12 +377,20 @@ def change_plan(company, plan_code: str, billing_cycle: str = "monthly",
     direction = ("upgraded to" if plan.tier > prev_tier
                  else "changed to" if plan.tier == prev_tier or prev_tier < 0
                  else "moved to")
+    # Contact-sales plans (Enterprise) have a R0 list price — never state that.
+    # Pricing is the negotiated contract, sent separately via the agreement email.
+    if plan.price == 0 and plan.annual_price == 0:
+        _body = (f"Your subscription has been {direction} the {plan.name} plan. "
+                 f"Your agreed pricing and terms are confirmed separately by your "
+                 f"account manager. Your current period runs to "
+                 f"{sub.current_period_end:%d %B %Y}.")
+    else:
+        _body = (f"Your subscription has been {direction} the {plan.name} plan "
+                 f"({billing_cycle}), billed at {currency} {price:,.2f}. Your new "
+                 f"period runs to {sub.current_period_end:%d %B %Y}.")
     _notify_billing(
         company, subject=f"Your Lulaworks plan: {plan.name}",
-        heading=f"You're now on {plan.name}",
-        body=(f"Your subscription has been {direction} the {plan.name} plan "
-              f"({billing_cycle}), billed at {currency} {price:,.2f}. Your new "
-              f"period runs to {sub.current_period_end:%d %B %Y}."))
+        heading=f"You're now on {plan.name}", body=_body)
     try:
         from apps.enterprise.services import record
         from apps.enterprise.models import AuditAction

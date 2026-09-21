@@ -264,7 +264,8 @@ def platform_tenant(request, pk):
                 "invite_user": "tenants", "member_status": "tenants",
                 "toggle_active": "tenants", "grant_credits": "billing",
                 "change_plan": "billing", "cancel_subscription": "billing",
-                "set_enterprise_terms": "billing"}
+                "set_enterprise_terms": "billing",
+                "send_enterprise_agreement": "billing"}
             need = _cap_for.get(action)
             if need and not request.user.can_platform(need):
                 messages.error(request, "You don't have access for that action.")
@@ -350,6 +351,16 @@ def platform_tenant(request, pk):
                         "storage_quota_bytes", sub_obj.plan.storage_quota_bytes)
                     company.save(update_fields=["max_users", "storage_quota_bytes", "updated_at"])
                     messages.success(request, "Custom Enterprise terms saved.")
+                elif action == "send_enterprise_agreement":
+                    n = billing.send_enterprise_agreement(company)
+                    from apps.enterprise.services import record as _audit
+                    from apps.enterprise.models import AuditAction
+                    _audit(AuditAction.SETTINGS_CHANGED, company=company,
+                           actor=request.user, request=request,
+                           summary="Sent Enterprise agreement email to customer")
+                    messages.success(
+                        request, f"Agreement email sent to {n} admin"
+                        + ("s." if n != 1 else "."))
                 elif action == "toggle_active":
                     company.is_active = not company.is_active
                     company.save(update_fields=["is_active", "updated_at"])
