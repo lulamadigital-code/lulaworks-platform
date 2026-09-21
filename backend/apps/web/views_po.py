@@ -66,6 +66,9 @@ def customer_pos(request):
     from apps.projects.models import Project
     from apps.quotes.models import CustomerPurchaseOrder
 
+    q = (request.GET.get("q") or "").strip()
+    fbucket = (request.GET.get("bucket") or "").strip()
+
     pos = list(CustomerPurchaseOrder.objects.select_related(
         "quotation", "quotation__customer").all())
     job_quote_ids = set(Project.objects.filter(quotation__isnull=False)
@@ -80,14 +83,25 @@ def customer_pos(request):
             return "converted"
         return "matched"
 
+    # Counts always reflect the whole workspace (the summary tiles); the table
+    # below is what search + the status filter narrow.
     counts = {"unmatched": 0, "matched": 0, "converted": 0, "closed": 0}
+    ql = q.lower()
     rows = []
     for po in pos:
         b = bucket(po)
         counts[b] += 1
+        if fbucket and b != fbucket:
+            continue
+        if ql:
+            hay = " ".join([po.po_number or "", po.client_name or "", po.site or "",
+                            po.customer_display or ""]).lower()
+            if ql not in hay:
+                continue
         rows.append({"po": po, "bucket": b})
     return render(request, "web/customer_pos.html", {
-        "rows": rows[:50], "counts": counts, "total": len(pos),
+        "rows": rows[:100], "counts": counts, "total": len(pos),
+        "q": q, "bucket": fbucket, "shown": len(rows),
         "can_edit": _can_edit(request.user)})
 
 

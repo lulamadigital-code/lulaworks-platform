@@ -9,13 +9,34 @@
   {% if can_edit %}<a class="btn" href="{% url 'web:customer_po_add' %}">+ Add Purchase Order</a>{% endif %}
 </div>
 
-<div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
+{# Summary tiles double as status filters. #}
+<div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;">
   {% with c=counts %}
-  <div class="tile"><div class="ic" style="background:#fbe9d6;color:#9a6a12;">◷</div><div class="n">{{ c.unmatched }}</div><div class="l">Unmatched</div></div>
-  <div class="tile"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">🔗</div><div class="n">{{ c.matched }}</div><div class="l">Matched</div></div>
-  <div class="tile"><div class="ic" style="background:var(--green-t);color:#0a8f57;">⚙</div><div class="n">{{ c.converted }}</div><div class="l">Converted to jobs</div></div>
-  <div class="tile"><div class="ic" style="background:#eef0f5;color:var(--muted);">✓</div><div class="n">{{ c.closed }}</div><div class="l">Closed</div></div>
+  <a class="tile{% if bucket == 'unmatched' %} tile-on{% endif %}" href="?bucket=unmatched{% if q %}&q={{ q|urlencode }}{% endif %}" style="text-decoration:none;color:inherit;"><div class="ic" style="background:#fbe9d6;color:#9a6a12;">◷</div><div class="n">{{ c.unmatched }}</div><div class="l">Unmatched</div></a>
+  <a class="tile{% if bucket == 'matched' %} tile-on{% endif %}" href="?bucket=matched{% if q %}&q={{ q|urlencode }}{% endif %}" style="text-decoration:none;color:inherit;"><div class="ic" style="background:var(--primary-t);color:var(--primary-d);">🔗</div><div class="n">{{ c.matched }}</div><div class="l">Matched</div></a>
+  <a class="tile{% if bucket == 'converted' %} tile-on{% endif %}" href="?bucket=converted{% if q %}&q={{ q|urlencode }}{% endif %}" style="text-decoration:none;color:inherit;"><div class="ic" style="background:var(--green-t);color:#0a8f57;">⚙</div><div class="n">{{ c.converted }}</div><div class="l">Converted to jobs</div></a>
+  <a class="tile{% if bucket == 'closed' %} tile-on{% endif %}" href="?bucket=closed{% if q %}&q={{ q|urlencode }}{% endif %}" style="text-decoration:none;color:inherit;"><div class="ic" style="background:#eef0f5;color:var(--muted);">✓</div><div class="n">{{ c.closed }}</div><div class="l">Closed</div></a>
   {% endwith %}
+</div>
+
+{# Search + status filter. #}
+<form method="get" action="{% url 'web:customer_pos' %}" role="search" style="display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap;">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search PO number, customer or site…" aria-label="Search purchase orders"
+    style="flex:1;min-width:220px;box-sizing:border-box;padding:11px 14px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--bg,#f7f8fa);color:var(--ink);">
+  {% if bucket %}<input type="hidden" name="bucket" value="{{ bucket }}">{% endif %}
+  <button type="submit"
+    style="flex:0 0 auto;padding:11px 22px;border:2px solid var(--primary);border-radius:10px;background:var(--primary);color:#fff;font-weight:700;font-size:14px;cursor:pointer;transition:background .15s ease;"
+    onmouseover="this.style.background='var(--primary-d)';this.style.borderColor='var(--primary-d)';"
+    onmouseout="this.style.background='var(--primary)';this.style.borderColor='var(--primary)';">Search</button>
+  {% if q or bucket %}<a class="btn ghost" href="{% url 'web:customer_pos' %}" style="padding:11px 16px;">Clear</a>{% endif %}
+</form>
+
+<div class="filterbar" style="margin-bottom:14px;gap:6px;flex-wrap:wrap;">
+  <a class="chip {% if not bucket %}info{% endif %}" href="{% if q %}?q={{ q|urlencode }}{% else %}{% url 'web:customer_pos' %}{% endif %}">All</a>
+  <a class="chip {% if bucket == 'unmatched' %}info{% endif %}" href="?bucket=unmatched{% if q %}&q={{ q|urlencode }}{% endif %}">Unmatched</a>
+  <a class="chip {% if bucket == 'matched' %}info{% endif %}" href="?bucket=matched{% if q %}&q={{ q|urlencode }}{% endif %}">Matched</a>
+  <a class="chip {% if bucket == 'converted' %}info{% endif %}" href="?bucket=converted{% if q %}&q={{ q|urlencode }}{% endif %}">Converted</a>
+  <a class="chip {% if bucket == 'closed' %}info{% endif %}" href="?bucket=closed{% if q %}&q={{ q|urlencode }}{% endif %}">Closed</a>
 </div>
 
 <div class="card" style="padding:0;overflow-x:auto;">
@@ -35,8 +56,11 @@
       <td class="muted">{{ r.po.po_date|default:"—" }}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="5" style="padding:20px;color:var(--muted);">No purchase orders yet. {% if can_edit %}<a href="{% url 'web:customer_po_add' %}">Add the first one</a>.{% endif %}</td></tr>
+    <tr><td colspan="5" style="padding:20px;color:var(--muted);">
+      {% if q or bucket %}No purchase orders match.{% else %}No purchase orders yet. {% if can_edit %}<a href="{% url 'web:customer_po_add' %}">Add the first one</a>.{% endif %}{% endif %}</td></tr>
     {% endfor %}
   </table>
 </div>
+{% if shown > 100 or rows|length == 100 %}<p class="muted" style="font-size:12px;margin:10px 0 0;">Showing the first 100 — refine your search to narrow it.</p>{% endif %}
+<style>.tile-on{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary) inset;}</style>
 {% endblock %}
