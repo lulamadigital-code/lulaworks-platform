@@ -90,6 +90,28 @@
   </form>
 </div>
 
+{% if sso %}
+<div class="card" {% if sso.status == 'activation_requested' %}style="border-color:#f5a623;background:#fffaf0;"{% endif %}>
+  <h2 style="margin-top:0;">Single Sign-On
+    {% if sso.status == 'activation_requested' %}<span class="chip" style="background:#fdecef;color:#c22a41;">Activation requested</span>{% else %}<span class="chip">{{ sso.get_status_display }}</span>{% endif %}</h2>
+  <p class="sub" style="font-size:12.5px;margin:0 0 10px;">The tenant configured SSO in their settings. There is no live handshake yet — complete the secure connection with them, then mark it live once real IdP wiring exists.</p>
+  <table class="kv" style="width:100%;">
+    <tr><td class="k">Protocol</td><td>{{ sso.get_protocol_display }}</td></tr>
+    {% if sso.protocol == 'saml' %}
+    <tr><td class="k">IdP Entity ID</td><td class="muted">{{ sso.saml_idp_entity_id|default:"—" }}</td></tr>
+    <tr><td class="k">IdP SSO URL</td><td class="muted">{{ sso.saml_idp_sso_url|default:"—" }}</td></tr>
+    <tr><td class="k">Signing cert</td><td class="muted">{% if sso.saml_idp_x509_cert %}✓ provided{% else %}—{% endif %}</td></tr>
+    {% else %}
+    <tr><td class="k">OIDC Issuer</td><td class="muted">{{ sso.oidc_issuer|default:"—" }}</td></tr>
+    <tr><td class="k">OIDC Client ID</td><td class="muted">{{ sso.oidc_client_id|default:"—" }}</td></tr>
+    {% endif %}
+    <tr><td class="k">Email domains</td><td class="muted">{{ sso.allowed_domains|default:"—" }}</td></tr>
+    {% if sso.requested_at %}<tr><td class="k">Requested</td><td class="muted">{{ sso.requested_at|date:"d M Y, H:i" }} by {{ sso.requested_by.email|default:"—" }}</td></tr>{% endif %}
+    {% if sso.notes %}<tr><td class="k">Notes</td><td class="muted">{{ sso.notes }}</td></tr>{% endif %}
+  </table>
+</div>
+{% endif %}
+
 <div class="card">
   <h2 style="margin-top:0;">Account actions</h2>
   <div style="display:flex;gap:10px;flex-wrap:wrap;">

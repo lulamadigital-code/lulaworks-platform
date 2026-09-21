@@ -1,0 +1,123 @@
+{% extends "web/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Single Sign-On" %}{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>{% trans "Single Sign-On (SSO)" %}</h1>
+    <p class="sub" style="margin:0;">{% trans "Let your team sign in with your company identity provider — Okta, Microsoft Entra ID, Google Workspace or any SAML / OIDC provider." %}</p>
+  </div>
+</div>
+
+{% if not entitled %}
+<div class="card" style="border-color:var(--brand,#17a2b8);">
+  <h2 style="margin:0 0 6px;">🔒 {% trans "SSO is an Enterprise feature" %}</h2>
+  <p class="muted" style="margin:0 0 12px;">{% trans "Federate Lulaworks with your identity provider on the Enterprise plan." %}</p>
+  <a class="btn" href="{% url 'web:billing' %}">{% trans "See Enterprise" %}</a>
+</div>
+{% else %}
+
+{# Honest status banner — SSO is being configured, not yet enforcing logins. #}
+<div class="card" style="border-color:var(--warn,#f5a623);background:var(--warnbg,#fffaf0);">
+  {% if cfg and cfg.status == 'activation_requested' %}
+    <strong>{% trans "Activation requested" %}</strong>
+    <p class="muted" style="margin:6px 0 0;">{% blocktrans with when=cfg.requested_at|date:"d M Y" %}You requested activation on {{ when }}. Lulaworks will complete the secure setup with you and confirm when SSO goes live. Your team continues to sign in with email and password until then.{% endblocktrans %}</p>
+  {% else %}
+    <strong>{% trans "Set-up mode" %}</strong>
+    <p class="muted" style="margin:6px 0 0;">{% trans "Enter your identity provider details below and request activation. SSO does not enforce logins yet — Lulaworks completes the secure connection with you before it goes live. Nothing here changes how your team signs in today." %}</p>
+  {% endif %}
+</div>
+
+{# What the customer's IdP needs from us — provisional until activation. #}
+<div class="card">
+  <h2 style="margin:0 0 4px;">{% trans "Service Provider details" %}</h2>
+  <p class="muted" style="margin:0 0 12px;font-size:12.5px;">{% trans "Give these to your identity provider. Provisional until Lulaworks confirms activation." %}</p>
+  <table>
+    <tr><td class="muted" style="white-space:nowrap;">{% trans "SP Entity ID" %}</td><td><code>{{ sp.sp_entity_id }}</code></td></tr>
+    <tr><td class="muted">{% trans "SAML ACS URL" %}</td><td><code>{{ sp.saml_acs_url }}</code></td></tr>
+    <tr><td class="muted">{% trans "OIDC Redirect URI" %}</td><td><code>{{ sp.oidc_redirect_uri }}</code></td></tr>
+  </table>
+</div>
+
+<form method="post" action="{% url 'web:sso_settings' %}">
+  {% csrf_token %}
+  <div class="card">
+    <h2 style="margin:0 0 12px;">{% trans "Your identity provider" %}</h2>
+
+    <label style="display:block;margin-bottom:6px;font-weight:600;font-size:13px;">{% trans "Protocol" %}</label>
+    <select name="protocol" id="sso-protocol" style="padding:9px 12px;border:1px solid var(--line,#e5e5e5);border-radius:8px;margin-bottom:16px;">
+      {% for value, label in protocols %}
+      <option value="{{ value }}" {% if cfg.protocol == value or not cfg and value == 'saml' %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    {# SAML fields #}
+    <div class="sso-saml">
+      <div style="margin-bottom:14px;">
+        <label style="display:block;margin-bottom:6px;font-weight:600;font-size:13px;">{% trans "IdP Entity ID / Issuer" %}</label>
+        <input type="text" name="saml_idp_entity_id" value="{{ cfg.saml_idp_entity_id }}" placeholder="https://idp.example.com/metadata"
+               style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line,#e5e5e5);border-radius:8px;">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;margin-bottom:6px;font-weight:600;font-size:13px;">{% trans "IdP SSO URL (Sign-in endpoint)" %}</label>
+        <input type="text" name="saml_idp_sso_url" value="{{ cfg.saml_idp_sso_url }}" placeholder="https://idp.example.com/sso/saml"
+               style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line,#e5e5e5);border-radius:8px;">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;margin-bottom:6px;font-weight:600;font-size:13px;">{% trans "IdP X.509 signing certificate" %}</label>
+        <textarea name="saml_idp_x509_cert" rows="5" placeholder="-----BEGIN CERTIFICATE-----&#10;…&#10;-----END CERTIFICATE-----"
+               style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line,#e5e5e5);border-radius:8px;font-family:monospace;font-size:12px;">{{ cfg.saml_idp_x509_cert }}</textarea>
+      </div>
+    </div>
+
+    {# OIDC fields #}
+    <div class="sso-oidc">
+      <div style="margin-bottom:14px;">
+        <label style="display:block;margin-bottom:6px;font-weight:600;font-size:13px;">{% trans "OIDC Issuer URL" %}</label>
+        <input type="text" name="oidc_issuer" value="{{ cfg.oidc_issuer }}" placeholder="https://accounts.example.com"
+               style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line,#e5e5e5);border-radius:8px;">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;margin-bottom:6px;font-weight:600;font-size:13px;">{% trans "OIDC Client ID" %}</label>
+        <input type="text" name="oidc_client_id" value="{{ cfg.oidc_client_id }}" placeholder="lulaworks-abc123"
+               style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line,#e5e5e5);border-radius:8px;">
+      </div>
+      <p class="muted" style="margin:-4px 0 8px;font-size:12.5px;">{% trans "Your client secret is exchanged securely with Lulaworks during activation — never stored in this form." %}</p>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="display:block;margin-bottom:6px;font-weight:600;font-size:13px;">{% trans "Email domains for SSO" %}</label>
+      <input type="text" name="allowed_domains" value="{{ cfg.allowed_domains }}" placeholder="example.com, example.co.za"
+             style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line,#e5e5e5);border-radius:8px;">
+      <p class="muted" style="margin:6px 0 0;font-size:12px;">{% trans "Comma-separated. Users with these email domains will sign in through your provider once live." %}</p>
+    </div>
+
+    <div style="margin-bottom:6px;">
+      <label style="display:block;margin-bottom:6px;font-weight:600;font-size:13px;">{% trans "Notes for the Lulaworks team" %}</label>
+      <textarea name="notes" rows="3" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line,#e5e5e5);border-radius:8px;">{{ cfg.notes }}</textarea>
+    </div>
+
+    <div class="row" style="gap:10px;margin-top:14px;">
+      <button class="btn" type="submit" name="action" value="save" style="background:var(--ink,#333);">{% trans "Save configuration" %}</button>
+      <button class="btn" type="submit" name="action" value="request">{% trans "Request activation" %}</button>
+    </div>
+  </div>
+</form>
+
+<script>
+  (function () {
+    var sel = document.getElementById('sso-protocol');
+    var saml = document.querySelector('.sso-saml');
+    var oidc = document.querySelector('.sso-oidc');
+    function sync() {
+      var v = sel.value;
+      saml.hidden = (v !== 'saml');
+      oidc.hidden = (v !== 'oidc');
+    }
+    sel.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+
+{% endif %}
+{% endblock %}

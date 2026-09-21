@@ -203,6 +203,7 @@ urlpatterns = [
     path("company/api-keys/new/", views_enterprise.api_key_create, name="api_key_create"),
     path("company/api-keys/<uuid:pk>/revoke/", views_enterprise.api_key_revoke,
          name="api_key_revoke"),
+    path("company/sso/", views_enterprise.sso_settings, name="sso_settings"),
     path("company/emails/", views_email.email_history, name="email_history"),
     path("company/emails/<uuid:pk>/", views_email.email_detail, name="email_detail"),
     path("company/emails/<uuid:pk>/resend/", views_email.email_resend,

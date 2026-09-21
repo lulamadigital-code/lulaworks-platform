@@ -91,3 +91,66 @@ class ApiKey(TenantBaseModel):
     @property
     def is_active(self) -> bool:
         return self.revoked_at is None
+
+
+class SSOProtocol(models.TextChoices):
+    SAML = "saml", "SAML 2.0"
+    OIDC = "oidc", "OpenID Connect"
+
+
+class SSOStatus(models.TextChoices):
+    NOT_CONFIGURED = "not_configured", "Not configured"
+    CONFIGURED = "configured", "Configured (draft)"
+    ACTIVATION_REQUESTED = "activation_requested", "Activation requested"
+    # "active" is deliberately absent: there is no live handshake yet, so the
+    # surface never claims SSO is enforcing logins. Lulaworks completes wiring
+    # against a real IdP library before that state can honestly exist.
+
+
+class SSOConfig(TenantBaseModel):
+    """A tenant's Single Sign-On configuration — the metadata their identity
+    provider (Okta/Azure AD/Google/etc.) needs to federate with Lulaworks.
+
+    This is a CONFIGURATION SURFACE only: it captures and stores IdP details and
+    lets an admin request activation. It does NOT itself authenticate anyone —
+    no SAML/OIDC handshake is wired yet — so it never reports SSO as live. Only
+    non-secret metadata is stored here (SAML is public metadata; the OIDC client
+    secret is exchanged directly with Lulaworks at activation, never persisted in
+    this draft)."""
+    protocol = models.CharField(max_length=8, choices=SSOProtocol.choices,
+                                default=SSOProtocol.SAML)
+    status = models.CharField(max_length=24, choices=SSOStatus.choices,
+                              default=SSOStatus.NOT_CONFIGURED)
+
+    # SAML (all public metadata — safe to store)
+    saml_idp_entity_id = models.CharField(max_length=300, blank=True)
+    saml_idp_sso_url = models.URLField(max_length=500, blank=True)
+    saml_idp_x509_cert = models.TextField(blank=True)   # PEM/base64 signing cert
+
+    # OIDC (issuer + client id are not secrets; the client secret is NOT stored)
+    oidc_issuer = models.URLField(max_length=500, blank=True)
+    oidc_client_id = models.CharField(max_length=300, blank=True)
+
+    # Email domains whose users are expected to sign in via SSO (comma-separated).
+    allowed_domains = models.CharField(max_length=500, blank=True)
+    notes = models.TextField(blank=True)
+
+    requested_at = models.DateTimeField(null=True, blank=True)
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["company"], name="one_sso_config_per_company"),
+        ]
+
+    def __str__(self):
+        return f"SSO ({self.get_protocol_display()}) — {self.company_id}"
+
+    @property
+    def is_requested(self) -> bool:
+        return self.status == SSOStatus.ACTIVATION_REQUESTED
+
+    def domain_list(self):
+        return [d.strip().lower() for d in self.allowed_domains.split(",") if d.strip()]

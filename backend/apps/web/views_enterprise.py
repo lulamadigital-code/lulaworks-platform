@@ -13,8 +13,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
+from django.utils import timezone
+
 from apps.billing.services import has_feature
-from apps.enterprise.models import ApiKey, AuditAction, AuditEvent
+from apps.enterprise.models import (
+    ApiKey, AuditAction, AuditEvent, SSOConfig, SSOProtocol, SSOStatus,
+)
 from apps.enterprise import services as gov
 
 
@@ -97,3 +101,63 @@ def api_key_revoke(request, pk):
                target=key)
     messages.success(request, _("API key revoked."))
     return redirect("web:api_keys")
+
+
+# ── Single Sign-On (config surface only) ──────────────────────────────────────
+
+@login_required
+def sso_settings(request):
+    if not _can(request.user):
+        messages.error(request, _("SSO is available to company administrators."))
+        return redirect("web:settings")
+    company = request.user.active_company
+    entitled = has_feature(company, "sso")
+    cfg = SSOConfig.objects.filter(company=company).first() if entitled else None
+
+    if request.method == "POST" and entitled:
+        action = request.POST.get("action", "save")
+        if cfg is None:
+            cfg = SSOConfig(company=company)
+        cfg.protocol = (request.POST.get("protocol") or SSOProtocol.SAML)
+        cfg.saml_idp_entity_id = request.POST.get("saml_idp_entity_id", "").strip()
+        cfg.saml_idp_sso_url = request.POST.get("saml_idp_sso_url", "").strip()
+        cfg.saml_idp_x509_cert = request.POST.get("saml_idp_x509_cert", "").strip()
+        cfg.oidc_issuer = request.POST.get("oidc_issuer", "").strip()
+        cfg.oidc_client_id = request.POST.get("oidc_client_id", "").strip()
+        cfg.allowed_domains = request.POST.get("allowed_domains", "").strip()
+        cfg.notes = request.POST.get("notes", "").strip()
+
+        # Has the admin supplied enough to be considered "configured"?
+        has_saml = cfg.saml_idp_entity_id and cfg.saml_idp_sso_url and cfg.saml_idp_x509_cert
+        has_oidc = cfg.oidc_issuer and cfg.oidc_client_id
+        configured = has_saml if cfg.protocol == SSOProtocol.SAML else has_oidc
+
+        if action == "request":
+            if not configured:
+                messages.error(request, _("Fill in your identity provider details before requesting activation."))
+                cfg.save()
+                return redirect("web:sso_settings")
+            cfg.status = SSOStatus.ACTIVATION_REQUESTED
+            cfg.requested_at = timezone.now()
+            cfg.requested_by = request.user
+            cfg.save()
+            gov.record(AuditAction.SSO_CONFIGURED, company=company, actor=request.user,
+                       request=request, summary=_("Requested SSO activation (%(p)s)")
+                       % {"p": cfg.get_protocol_display()}, target=cfg,
+                       protocol=cfg.protocol)
+            messages.success(request, _("Activation requested. Lulaworks will complete the secure setup with you and confirm when SSO is live."))
+        else:
+            if cfg.status == SSOStatus.NOT_CONFIGURED and configured:
+                cfg.status = SSOStatus.CONFIGURED
+            cfg.save()
+            gov.record(AuditAction.SSO_CONFIGURED, company=company, actor=request.user,
+                       request=request, summary=_("Updated SSO configuration"),
+                       target=cfg, protocol=cfg.protocol)
+            messages.success(request, _("SSO configuration saved."))
+        return redirect("web:sso_settings")
+
+    return render(request, "web/sso.html", {
+        "nav_section": "settings", "entitled": entitled, "cfg": cfg,
+        "protocols": SSOProtocol.choices,
+        "sp": gov.sso_sp_details(request, company) if entitled else None,
+    })

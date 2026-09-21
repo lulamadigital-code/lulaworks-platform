@@ -58,6 +58,9 @@
   <a class="setcard" href="{% url 'web:api_keys' %}">
     <div class="t">🔑 {% trans "API keys" %}{% if not ent_api %} <span class="chip" style="font-size:10px;">{% trans "Enterprise" %}</span>{% endif %}</div>
     <div class="d">{% trans "Programmatic access to the Lulaworks API for your integrations." %}</div></a>
+  <a class="setcard" href="{% url 'web:sso_settings' %}">
+    <div class="t">🔐 {% trans "Single Sign-On" %}{% if not ent_sso %} <span class="chip" style="font-size:10px;">{% trans "Enterprise" %}</span>{% endif %}</div>
+    <div class="d">{% trans "Let your team sign in with your company identity provider (SAML / OIDC)." %}</div></a>
 </div>
 {% endif %}
 

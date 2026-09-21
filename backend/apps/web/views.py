@@ -1108,6 +1108,7 @@ def settings_home(request):
         "can_money": u.has_perm_code("finance.view_money"),
         "ent_audit": has_feature(co, "audit_log") if co else False,
         "ent_api": has_feature(co, "api_access") if co else False,
+        "ent_sso": has_feature(co, "sso") if co else False,
     })
 
 

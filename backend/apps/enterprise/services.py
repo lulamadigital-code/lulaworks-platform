@@ -116,3 +116,19 @@ def revoke_api_key(key, actor=None):
         key.revoked_at = timezone.now()
         key.save(update_fields=["revoked_at"])
     return key
+
+
+# ── SSO configuration (config surface only — no live handshake) ───────────────
+
+def sso_sp_details(request, company):
+    """The Service-Provider values a tenant enters into their IdP. Derived from
+    the request's own origin so they are correct for this deployment. Marked
+    provisional in the UI — these become live only once Lulaworks activates SSO
+    against a real IdP library."""
+    base = request.build_absolute_uri("/").rstrip("/")
+    cid = getattr(company, "id", "")
+    return {
+        "sp_entity_id": f"{base}/sso/metadata/{cid}/",
+        "saml_acs_url": f"{base}/sso/saml/acs/",
+        "oidc_redirect_uri": f"{base}/sso/oidc/callback/",
+    }

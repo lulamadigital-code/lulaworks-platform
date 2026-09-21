@@ -24,7 +24,8 @@ class GovernanceTests(TestCase):
         with system_scope():
             cls.ent_plan = Plan.objects.create(
                 code="ent_test", name="Ent", tier=4, price=0, annual_price=0,
-                max_users=500, module_entitlements=["api_access", "audit_log"])
+                max_users=500,
+                module_entitlements=["api_access", "audit_log", "sso"])
             cls.free_plan = Plan.objects.create(
                 code="free_test", name="Free", tier=1, price=100, annual_price=1000,
                 max_users=2, module_entitlements=["dashboards"])
@@ -87,6 +88,50 @@ class GovernanceTests(TestCase):
         self._subscribe(self.free_plan)
         with self.assertRaises(AuthenticationFailed):
             auth.authenticate(_rf(token))
+
+    # ── SSO config surface ───────────────────────────────────────────────────
+    def test_sso_config_gated_and_persists(self):
+        from apps.enterprise.models import SSOConfig, SSOStatus
+        from django.test import Client
+        self.owner.set_password("pw"); self.owner.save()
+        # Grant company.manage so the surface is reachable.
+        self.owner.is_superuser = True
+        self.owner.save()
+        c = Client(); c.force_login(self.owner)
+
+        # Not entitled → upgrade prompt, no config written.
+        self._subscribe(self.free_plan)
+        r = c.get("/company/sso/")
+        self.assertContains(r, "Enterprise feature")
+        c.post("/company/sso/", {"action": "save", "protocol": "saml",
+                                 "saml_idp_entity_id": "x"})
+        with system_scope():
+            self.assertFalse(SSOConfig.all_objects.filter(company=self.company).exists())
+
+        # Entitled → save then request activation.
+        self._subscribe(self.ent_plan)
+        c.post("/company/sso/", {
+            "action": "request", "protocol": "saml",
+            "saml_idp_entity_id": "https://idp/meta",
+            "saml_idp_sso_url": "https://idp/sso",
+            "saml_idp_x509_cert": "CERT", "allowed_domains": "acme.com, x.co"})
+        with system_scope():
+            cfg = SSOConfig.all_objects.get(company=self.company)
+        self.assertEqual(cfg.status, SSOStatus.ACTIVATION_REQUESTED)
+        self.assertIsNotNone(cfg.requested_at)
+        self.assertEqual(cfg.domain_list(), ["acme.com", "x.co"])
+
+    def test_sso_request_needs_details(self):
+        from apps.enterprise.models import SSOConfig, SSOStatus
+        from django.test import Client
+        self.owner.is_superuser = True; self.owner.save()
+        self._subscribe(self.ent_plan)
+        c = Client(); c.force_login(self.owner)
+        # Request with no IdP details → stays un-requested.
+        c.post("/company/sso/", {"action": "request", "protocol": "saml"})
+        with system_scope():
+            cfg = SSOConfig.all_objects.filter(company=self.company).first()
+        self.assertTrue(cfg is None or cfg.status != SSOStatus.ACTIVATION_REQUESTED)
 
     def test_touch_throttled(self):
         with system_scope():

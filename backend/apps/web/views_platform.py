@@ -338,6 +338,8 @@ def platform_tenant(request, pk):
             "roles": list(Role.objects.filter(Q(company=company) | Q(company=None))
                           .order_by("name")),
         }
+        from apps.enterprise.models import SSOConfig
+        ctx["sso"] = SSOConfig.all_objects.filter(company=company).first()
     return render(request, "web/platform/tenant.html", ctx)
 
 
