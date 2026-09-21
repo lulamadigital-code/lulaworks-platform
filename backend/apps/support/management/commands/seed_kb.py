@@ -37,6 +37,36 @@ ARTICLES = [
      "Progress claim for staged billing). Line items and the customer carry over. "
      "Review the VAT and banking details, then generate the PDF.",
      "invoice, billing, job, commercial, progress claim, create"),
+    ("How to set up Single Sign-On (SSO)", "account",
+     "Enterprise admins can let their team sign in with the company identity "
+     "provider (OpenID Connect / SAML).",
+     "Single Sign-On (SSO) lets your team sign in with your company's identity "
+     "provider — such as Google Workspace, Microsoft Entra ID (Azure AD) or Okta "
+     "— instead of a separate Lulaworks password. SSO is an Enterprise feature. "
+     "Password sign-in keeps working alongside it, and only people you've already "
+     "invited to the workspace can sign in via SSO (no accounts are auto-created).\n\n"
+     "Set it up in Settings > Security & Enterprise > Single Sign-On:\n\n"
+     "1. In your identity provider, create an OpenID Connect (OIDC) app and set its "
+     "redirect URI to the exact value shown on the SSO settings page — it ends in "
+     "/sso/oidc/callback/.\n"
+     "2. Copy the Issuer URL, Client ID and Client secret from your provider into the "
+     "form, add your team's email domain(s), and click Save.\n"
+     "3. Click Enable SSO. Then sign out and use 'Sign in with SSO' on the login page "
+     "with your work email to test it.\n\n"
+     "Provider notes:\n"
+     "- Google Workspace: Issuer https://accounts.google.com. Create the client under "
+     "Google Cloud Console > APIs & Services > Credentials > OAuth client ID (Web "
+     "application), and add the redirect URI there.\n"
+     "- Microsoft Entra ID: Issuer https://login.microsoftonline.com/<tenant-id>/v2.0. "
+     "Register the app under Entra ID > App registrations; add the redirect URI under "
+     "Authentication and create the secret under Certificates & secrets.\n"
+     "- Okta: Issuer https://<your-org>.okta.com. Create an OIDC Web app and add the "
+     "redirect URI to its Sign-in redirect URIs.\n\n"
+     "Your client secret is stored encrypted and used only server-side — it is never "
+     "shown again after you save it. If your provider only supports SAML, fill in the "
+     "SAML fields instead and use 'Request activation'; the Lulaworks team completes "
+     "that setup with you.",
+     "sso, single sign-on, oidc, saml, okta, google workspace, azure, entra, login, identity provider, enterprise"),
     ("A document upload keeps failing", "technical",
      "Uploads must be under the size limit and a supported type (PDF, image, Excel).",
      "If a file won't upload, check it's a supported type (PDF, PNG/JPG, or Excel) and "
