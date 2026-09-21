@@ -290,11 +290,34 @@ def send_enterprise_agreement(company) -> int:
               "", "Thank you for choosing Lulaworks."]
     body = "\n".join(lines)
 
-    recipients = list(_billing_admins(company))
-    _notify_billing(
-        company, subject="Your Lulaworks Enterprise agreement — please confirm",
-        heading="Your Enterprise plan — agreed terms", body=body)
-    return len(recipients)
+    from apps.notifications.dispatch import _email_allowed
+    from apps.notifications.models import EmailCategory
+    from apps.notifications.service import send_email
+
+    admins = [u for u in _billing_admins(company)
+              if _email_allowed(u, EmailCategory.BILLING)]
+    if not admins:
+        raise ValueError("This customer has no billing admin who can receive email.")
+
+    # CC sales (a copy for our records) and route replies there too, so the
+    # customer's confirmation lands in the sales inbox.
+    sales = ""
+    try:
+        from apps.administration.models import PlatformSettings
+        sales = (PlatformSettings.load().sales_email or "").strip()
+    except Exception:  # noqa: BLE001
+        sales = ""
+    cc = ([sales] if sales else []) + [u.email for u in admins[1:]]
+
+    primary = admins[0]
+    send_email(
+        to=primary.email, to_name=(primary.get_full_name() or "").strip(),
+        subject="Your Lulaworks Enterprise agreement — please confirm",
+        template="generic",
+        context={"heading": "Your Enterprise plan — agreed terms", "body": body},
+        company=company, category=EmailCategory.BILLING,
+        cc=cc, reply_to=sales)
+    return len(admins) + (1 if sales else 0)
 
 
 #: How many days before a trial ends to send the reminder.
