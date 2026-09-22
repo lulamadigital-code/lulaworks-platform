@@ -58,9 +58,14 @@ def build_context(document, doc_type: str) -> dict:
     from .pdf import _customer_address, _initials_surname, _name, _scope_text
 
     company = document.company
+    # The quotation is the source of the lines/totals/scope an invoice or delivery
+    # note renders from. Guard it up front so a CommercialDocument with no backing
+    # quotation fails with a clear message, not a cryptic AttributeError mid-render.
+    quote = document if doc_type == "quotation" else getattr(document, "quotation", None)
+    if quote is None:
+        raise ValueError("This document has no backing quotation to render from.")
     header = document_header(company, kind=doc_type)
     sym = _ccy_symbol(company)
-    quote = document if doc_type == "quotation" else document.quotation
 
     prep = quote.prepared_by
     prepared_by = ""
@@ -423,6 +428,25 @@ def _spec_design(spec) -> dict:
     return spec or DEFAULT_DESIGN      # a bare design dict, or None
 
 
+def _data_only_url_fetcher(url, *args, **kwargs):
+    """WeasyPrint resource fetcher that permits ONLY `data:` URIs (our controlled,
+    inline logo) and refuses every http(s)/file reference.
+
+    The CSS/HTML scrubbers already strip `url()`, `@import` and resource tags, but
+    they are string-level and can be edged (a token filled into a `style` after
+    scrubbing, a CSS-escaped `\\75rl(...)`). This fetcher is the backstop at the
+    engine boundary: even if a live reference survives scrubbing, the render can
+    never trigger a server-side fetch (SSRF / local-file read) — it raises instead.
+    Applied to every `write_pdf` path; a no-op cost on the structured engine, which
+    only emits a `data:` logo and escaped text."""
+    if not (url or "").strip().lower().startswith("data:"):
+        raise ValueError(
+            "External resources aren't allowed in a document template — only the "
+            "company logo (embedded) is fetched.")
+    from weasyprint import default_url_fetcher
+    return default_url_fetcher(url, *args, **kwargs)
+
+
 def render_html_pdf(document, doc_type: str, spec) -> bytes:
     """Render `document` with the HTML engine. `spec` is either a bare `design`
     dict (structured engine) or {design, html, css} — when it carries raw `html`,
@@ -434,7 +458,7 @@ def render_html_pdf(document, doc_type: str, spec) -> bytes:
     html, css = _spec_html_css(spec)
     doc_html = (fill_raw_template(html, css, context) if html
                 else design_to_html(_spec_design(spec), context))
-    return HTML(string=doc_html).write_pdf()
+    return HTML(string=doc_html, url_fetcher=_data_only_url_fetcher).write_pdf()
 
 
 def render_design_preview_pdf(company, doc_type: str, design: dict, *,
@@ -447,7 +471,7 @@ def render_design_preview_pdf(company, doc_type: str, design: dict, *,
 
     html = design_to_html(design or DEFAULT_DESIGN,
                           sample_context(company, doc_type), compact=compact)
-    return HTML(string=html).write_pdf()
+    return HTML(string=html, url_fetcher=_data_only_url_fetcher).write_pdf()
 
 
 def render_raw_preview_pdf(company, doc_type: str, html: str, css: str) -> bytes:
@@ -456,7 +480,7 @@ def render_raw_preview_pdf(company, doc_type: str, html: str, css: str) -> bytes
     from weasyprint import HTML
 
     doc_html = fill_raw_template(html, css, sample_context(company, doc_type))
-    return HTML(string=doc_html).write_pdf()
+    return HTML(string=doc_html, url_fetcher=_data_only_url_fetcher).write_pdf()
 
 
 def render_raw_preview_html(company, doc_type: str, html: str, css: str) -> str:

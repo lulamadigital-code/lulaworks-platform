@@ -491,3 +491,45 @@ class StructuralLooksTests(TestCase):
             dt.clean_design({"table_style": "rainbow"})
         with self.assertRaises(dt.TemplateError):
             dt.clean_design({"totals_style": "sparkle"})
+
+
+class DataOnlyFetcherTests(SimpleTestCase):
+    """The WeasyPrint resource fetcher is the engine-boundary backstop: it must
+    refuse every non-data: reference so a url() that edges the CSS/HTML scrubbers
+    can never trigger a server-side fetch (SSRF / local-file read)."""
+
+    def test_blocks_external_and_local_references(self):
+        from .html_render import _data_only_url_fetcher
+        for url in ("http://169.254.169.254/latest/meta-data/",
+                    "https://evil.example/track.png",
+                    "file:///etc/passwd",
+                    "//evil.example/x", "", "   "):
+            with self.assertRaises(ValueError):
+                _data_only_url_fetcher(url)
+
+    def test_allows_data_uri(self):
+        # The accept path delegates to WeasyPrint's own fetcher; skip where the
+        # native libs aren't installed (dev Macs) — it runs in CI/prod.
+        try:
+            from weasyprint import default_url_fetcher  # noqa: F401
+        except Exception:  # noqa: BLE001
+            self.skipTest("weasyprint native libs unavailable on this host")
+        from .html_render import _data_only_url_fetcher
+        res = _data_only_url_fetcher(
+            "data:image/svg+xml;base64,PHN2Zy8+")  # <svg/>
+        self.assertIsInstance(res, dict)
+
+
+class BuildContextGuardTests(SimpleTestCase):
+    """An invoice/delivery renders from its backing quotation; a document without
+    one must fail with a clear message, not a cryptic AttributeError mid-render."""
+
+    def test_missing_quotation_raises_clear_error(self):
+        from .html_render import build_context
+
+        class _Doc:
+            company = None
+            quotation = None
+
+        with self.assertRaisesMessage(ValueError, "no backing quotation"):
+            build_context(_Doc(), "invoice")
