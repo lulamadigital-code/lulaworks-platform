@@ -245,10 +245,18 @@ class EnterpriseAgreement(PlatformBaseModel):
         ACTIVATED = "activated", "Activated"
         MISMATCH = "mismatch", "Mismatch"
 
+    class ChangeType(models.TextChoices):
+        NEW = "new", "New contract"
+        RENEWAL = "renewal", "Renewal"
+        AMENDMENT = "amendment", "Amendment"
+        EXPANSION = "expansion", "Expansion"
+
     company = models.ForeignKey(
         "identity.Company", on_delete=models.CASCADE, related_name="enterprise_agreements")
     version = models.PositiveIntegerField(default=1)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    change_type = models.CharField(max_length=12, choices=ChangeType.choices,
+                                   default=ChangeType.NEW)
     contract_ref = models.CharField(max_length=40, blank=True)
 
     #: Frozen snapshot of the terms this version represents (price, currency,

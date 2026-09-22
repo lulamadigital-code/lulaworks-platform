@@ -87,7 +87,27 @@
   <a href="#ent-agreement" style="padding:5px 11px;border:1px solid var(--line);border-radius:20px;color:var(--primary-d);text-decoration:none;">Agreement</a>
   <a href="#ent-docs" style="padding:5px 11px;border:1px solid var(--line);border-radius:20px;color:var(--primary-d);text-decoration:none;">Documents</a>
   <a href="#ent-billing" style="padding:5px 11px;border:1px solid var(--line);border-radius:20px;color:var(--primary-d);text-decoration:none;">Billing</a>
+  <a href="#ent-activity" style="padding:5px 11px;border:1px solid var(--line);border-radius:20px;color:var(--primary-d);text-decoration:none;">Activity</a>
 </div>
+
+{% if signals %}
+<div class="card" id="ent-signals" style="border-left:3px solid var(--primary,#17a2b8);">
+  <h2 style="margin-top:0;font-size:15px;">Signals <span class="sub" style="font-weight:400;font-size:12.5px;">— factual, informational only</span></h2>
+  {% for s in signals %}
+  <div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;font-size:13.5px;">
+    <span>{% if s.level == 'bad' %}🔴{% elif s.level == 'warn' %}🟠{% else %}🔵{% endif %}</span>
+    <span>{{ s.text }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if pending_change %}
+<div class="card" style="border-color:#f5a623;background:#fffaf0;">
+  <strong>{{ pending_change|capfirst }} in progress</strong>
+  <p class="sub" style="margin:6px 0 0;font-size:12.5px;">The draft below is seeded from the current live terms. Edit the changes, then <strong>Send agreement</strong> to issue a new version — the existing accepted agreement stays on record until the customer accepts the new one.</p>
+</div>
+{% endif %}
 
 {% if usage %}
 <div class="card" id="ent-usage">
@@ -278,6 +298,14 @@
     {% endfor %}
   </table>
   <p class="sub" style="font-size:12px;margin:10px 0 0;">Each “Send agreement” creates a new immutable version. Accepted versions record who accepted, when, from which IP — the chain of evidence.</p>
+  {% if agr_finalized and not pending_change %}
+  <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:14px;border-top:1px solid var(--line);padding-top:12px;">
+    <form method="post" style="margin:0;">{% csrf_token %}<input type="hidden" name="action" value="start_change"><input type="hidden" name="change_kind" value="renewal"><button class="btn ghost" type="submit">↻ Start renewal</button></form>
+    <form method="post" style="margin:0;">{% csrf_token %}<input type="hidden" name="action" value="start_change"><input type="hidden" name="change_kind" value="expansion"><button class="btn ghost" type="submit">＋ Expansion</button></form>
+    <form method="post" style="margin:0;">{% csrf_token %}<input type="hidden" name="action" value="start_change"><input type="hidden" name="change_kind" value="amendment"><button class="btn ghost" type="submit">✎ Amendment</button></form>
+  </div>
+  <p class="sub" style="font-size:12px;margin:8px 0 0;">Each seeds a new draft from the current live terms and issues a new version — the original stays on record.</p>
+  {% endif %}
 </div>
 {% endif %}
 
@@ -425,6 +453,21 @@
     <p class="sub" style="font-size:12px;margin:10px 0 0;">Sends a secure activation link — no password is ever set or emailed.</p>
   </form>
 </div>
+
+{% if timeline %}
+<div class="card" id="ent-activity">
+  <h2 style="margin-top:0;">Enterprise activity <span class="sub" style="font-weight:400;font-size:13px;">— the lifecycle history</span></h2>
+  <div style="border-left:2px solid var(--line);margin-left:6px;padding-left:16px;">
+    {% for e in timeline %}
+    <div style="position:relative;padding:7px 0;font-size:13.5px;">
+      <span style="position:absolute;left:-24px;">{{ e.icon }}</span>
+      <strong>{{ e.label }}</strong>{% if e.detail %} <span class="muted">· {{ e.detail }}</span>{% endif %}
+      <div class="muted" style="font-size:11.5px;">{{ e.when|date:"d M Y, H:i" }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 <h2>Billing history</h2>
 <div class="card" style="padding:0;">

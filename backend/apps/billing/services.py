@@ -306,10 +306,23 @@ def create_agreement_version(company, actor=None):
     # all_objects: version never reuses a number, even past a (soft-)deleted row.
     n = (EnterpriseAgreement.all_objects.filter(company=company)
          .aggregate(m=Max("version"))["m"] or 0) + 1
+    # A pending renewal/amendment/expansion tags this version; else it's the first
+    # (new) or a re-sent revision of an existing deal.
+    ctype = ov.get("pending_change_type")
+    if not ctype:
+        ctype = (EnterpriseAgreement.ChangeType.AMENDMENT
+                 if EnterpriseAgreement.objects.filter(
+                     company=company, status=EnterpriseAgreement.Status.ACCEPTED).exists()
+                 else EnterpriseAgreement.ChangeType.NEW)
     agr = EnterpriseAgreement.objects.create(
         company=company, version=n, status=EnterpriseAgreement.Status.SENT,
-        contract_ref=ov.get("contract_ref", ""), snapshot=terms_snapshot(company, ov),
-        created_by=actor, sent_at=timezone.now())
+        change_type=ctype, contract_ref=ov.get("contract_ref", ""),
+        snapshot=terms_snapshot(company, ov), created_by=actor, sent_at=timezone.now())
+    if ov.get("pending_change_type") and sub is not None:
+        nov = dict(sub.overrides or {})
+        nov.pop("pending_change_type", None)
+        sub.overrides = nov
+        sub.save(update_fields=["overrides", "updated_at"])
     # Supersede prior draft/sent/change-requested versions (keep accepted history);
     # exclude the row we just created.
     (EnterpriseAgreement.objects
@@ -455,6 +468,131 @@ def record_enterprise_payment(invoice, *, amount, method="eft", reference="",
         invoice.status = EnterpriseInvoice.Status.PARTIAL
     invoice.save(update_fields=["status", "updated_at"])
     return pay
+
+
+def start_change(company, kind, actor=None):
+    """Begin a renewal / amendment / expansion: seed the draft proposal from the
+    CURRENT LIVE terms so the admin edits only the delta, and mark the pending
+    change type. The original (accepted) agreement is preserved untouched — the
+    next Send creates a new version tagged with this type."""
+    from .models import EnterpriseAgreement
+    if kind not in EnterpriseAgreement.ChangeType.values:
+        raise ValueError("Unknown change type.")
+    sub = getattr(company, "subscription", None)
+    if sub is None:
+        raise ValueError("This company has no subscription.")
+    ov = dict(sub.overrides or {})
+    live = {k: ov.get(k) for k in ("max_users", "storage_quota_bytes", "monthly_ai_credits")}
+    ov["proposed_limits"] = {k: v for k, v in live.items() if v is not None}
+    ov["pending_change_type"] = kind
+    # A renewal rolls the term forward from today.
+    if kind == "renewal" and ov.get("contract_term_months"):
+        import calendar as _cal
+        term = int(ov["contract_term_months"])
+        start = timezone.localdate()
+        tot = start.month - 1 + term
+        y, mo = start.year + tot // 12, tot % 12 + 1
+        day = min(start.day, _cal.monthrange(y, mo)[1])
+        ov["contract_start"] = start.isoformat()
+        ov["contract_end"] = date(y, mo, day).isoformat()
+    sub.overrides = ov
+    sub.save(update_fields=["overrides", "updated_at"])
+    return ov
+
+
+def enterprise_timeline(company, limit=40):
+    """The authoritative Enterprise lifecycle history — merged, newest-first, from
+    the agreement versions, invoices, payments and documents (read-only)."""
+    from .models import (EnterpriseAgreement, EnterpriseDocument,
+                         EnterpriseInvoice, EnterprisePayment)
+    ev = []
+
+    def add(when, icon, label, detail=""):
+        if when:
+            ev.append({"when": when, "icon": icon, "label": label, "detail": detail})
+
+    for a in EnterpriseAgreement.objects.filter(company=company):
+        tag = a.get_change_type_display()
+        add(a.sent_at, "📄", f"{tag} v{a.version} sent", a.contract_ref)
+        add(a.opened_at, "👁", f"Agreement v{a.version} opened")
+        if a.status == EnterpriseAgreement.Status.CHANGE_REQUESTED:
+            add(a.change_requested_at, "⟳", f"Change requested on v{a.version}",
+                (a.change_request_message or "")[:120])
+        add(a.accepted_at, "✓", f"Agreement v{a.version} accepted",
+            a.accepted_by_email or "")
+        add(a.finalized_at, "⚡", f"v{a.version} finalized & activated",
+            a.get_provisioning_status_display())
+    for i in EnterpriseInvoice.objects.filter(company=company):
+        add(i.created_at, "🧾", f"Invoice {i.number} raised",
+            f"{i.currency} {i.amount:.0f}")
+    for p in EnterprisePayment.objects.filter(invoice__company=company).select_related("invoice"):
+        add(p.created_at, "💰", f"Payment on {p.invoice.number}",
+            f"{p.invoice.currency} {p.amount:.0f} · {p.get_method_display()}")
+    for d in EnterpriseDocument.objects.filter(company=company):
+        add(d.created_at, "📎", f"{d.get_kind_display()} uploaded", d.name)
+
+    ev.sort(key=lambda e: e["when"], reverse=True)
+    return ev[:limit]
+
+
+def enterprise_signals(company):
+    """Factual, evidence-backed signals for the account (LulaAI grounding). Purely
+    informational — never changes pricing, limits, entitlements or status."""
+    sigs = []
+
+    def sig(level, text):
+        sigs.append({"level": level, "text": text})
+
+    sub = getattr(company, "subscription", None)
+    ov = (sub.overrides if sub else None) or {}
+
+    # Contract expiry
+    end = ov.get("contract_end")
+    if end:
+        try:
+            days = (date.fromisoformat(end) - timezone.localdate()).days
+            if days < 0:
+                sig("bad", f"Contract expired {-days} days ago ({end}).")
+            elif days <= 90:
+                sig("warn" if days <= 30 else "info",
+                    f"Contract renews in {days} days ({end}).")
+        except (ValueError, TypeError):
+            pass
+
+    # Usage thresholds
+    try:
+        u = enterprise_usage(company)
+        for key, label in (("seats", "Seats"), ("storage", "Storage"),
+                           ("credits", "AI credits")):
+            m = u[key]
+            if m.get("over"):
+                sig("bad", f"{label} over the contracted amount "
+                    f"({m['used']:.0f}/{m['contracted']:.0f}).")
+            elif m.get("pct", 0) >= 85 and m.get("contracted"):
+                sig("warn", f"{label} at {m['pct']}% of contract "
+                    f"({m['used']:.0f}/{m['contracted']:.0f}).")
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Overdue / outstanding invoices
+    try:
+        from .models import EnterpriseInvoice
+        overdue = [i for i in EnterpriseInvoice.objects.filter(company=company)
+                   if i.is_overdue]
+        if overdue:
+            total = sum((i.balance for i in overdue), __import__("decimal").Decimal("0"))
+            sig("bad", f"{len(overdue)} overdue invoice(s), "
+                f"{overdue[0].currency} {total:.0f} outstanding.")
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Change requested awaiting action
+    from .models import EnterpriseAgreement
+    if EnterpriseAgreement.objects.filter(
+            company=company, status=EnterpriseAgreement.Status.CHANGE_REQUESTED).exists():
+        sig("warn", "Customer requested a change to the agreement — awaiting a revised offer.")
+
+    return sigs
 
 
 def enterprise_usage(company) -> dict:

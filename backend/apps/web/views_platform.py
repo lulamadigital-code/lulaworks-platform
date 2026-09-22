@@ -271,7 +271,8 @@ def platform_tenant(request, pk):
                 "delete_enterprise_doc": "billing",
                 "create_enterprise_invoice": "billing",
                 "record_enterprise_payment": "billing",
-                "set_account_owner": "tenants"}
+                "set_account_owner": "tenants",
+                "start_change": "billing"}
             need = _cap_for.get(action)
             if need and not request.user.can_platform(need):
                 messages.error(request, "You don't have access for that action.")
@@ -461,6 +462,12 @@ def platform_tenant(request, pk):
                         reference=request.POST.get("pay_reference", ""),
                         paid_date=request.POST.get("pay_date") or None, actor=request.user)
                     messages.success(request, "Payment recorded.")
+                elif action == "start_change":
+                    kind = request.POST.get("change_kind", "amendment")
+                    billing.start_change(company, kind, actor=request.user)
+                    messages.success(
+                        request, f"Started a {kind}. The draft is seeded from the current "
+                        "live terms — edit the changes below, then Send the agreement.")
                 elif action == "set_account_owner":
                     from apps.identity.models import User as _U
                     sub_obj = getattr(company, "subscription", None)
@@ -557,6 +564,15 @@ def platform_tenant(request, pk):
         # Outstanding invoice balance for the overview.
         ctx["outstanding"] = sum((i.balance for i in ctx["invoices"]
                                   if i.effective_status != "paid"), Decimal("0"))
+        # P6: lifecycle timeline, factual signals, in-progress change type, and
+        # original-vs-current (from the first accepted agreement) for expansion.
+        ctx["timeline"] = billing.enterprise_timeline(company)
+        ctx["signals"] = billing.enterprise_signals(company)
+        ctx["pending_change"] = _ov.get("pending_change_type")
+        _first = (EnterpriseAgreement.objects.filter(
+            company=company, status=EnterpriseAgreement.Status.ACCEPTED)
+            .order_by("version").first())
+        ctx["original_limits"] = (_first.snapshot or {}).get("limits", {}) if _first else {}
 
         # Enterprise price helper — defaults grounded in the platform's REAL cost
         # model, editable in the UI. seat value = Business per-seat rate; storage
