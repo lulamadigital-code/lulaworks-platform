@@ -1273,7 +1273,13 @@ def subscription_overview(company) -> dict:
         "plans": priced_plans(currency),
         "packs": list(CreditPack.objects.filter(is_active=True).order_by("price")),
         "history": list(company.billing_transactions.all()[:20]),
+        "capabilities": _entitlement_capabilities(company),
     }
+
+
+def _entitlement_capabilities(company):
+    from .entitlements import entitlements_for
+    return entitlements_for(company).capabilities()
 
 
 def BillingTransaction_kind(name: str):

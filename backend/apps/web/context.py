@@ -131,6 +131,18 @@ def nav_flags(request):
     rm = getattr(request, "resolver_match", None)
     section = _SECTIONS.get(rm.url_name, "") if rm else ""
 
+    # Effective entitlements for the UI — one map templates read to hide/gate a
+    # feature the backend would reject (`{% if caps.ai_extraction %}`). The
+    # backend stays authoritative; this only keeps the UI honest.
+    caps = {}
+    if signed_in and getattr(user, "active_company_id", None):
+        try:
+            from apps.billing.entitlements import entitlements_for
+            caps = {c["code"]: c["enabled"]
+                    for c in entitlements_for(user.active_company).capabilities()}
+        except Exception:                                # noqa: BLE001
+            caps = {}
+
     # Unread is a tenant-scoped query — only run it when the user actually has
     # an active company. A platform superuser browsing /admin/ has no tenant in
     # context, so guard against it (and fail soft) rather than 500 the page.
@@ -212,6 +224,7 @@ def nav_flags(request):
             "sso_activation_count": sso_activation_count,
             "enterprise_enquiry_count": enterprise_enquiry_count,
             "renewal_count": renewal_count,
+            "caps": caps,
             "attention_count": attention_count,
             "attention_critical": attention_critical,
             "idle_timeout": getattr(_s, "SESSION_IDLE_TIMEOUT", 0),

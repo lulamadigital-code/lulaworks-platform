@@ -568,6 +568,8 @@ def platform_tenant(request, pk):
             EnterpriseAgreement.objects.filter(company=company).order_by("-version")[:8])
         # The three distinct Enterprise states (never collapsed).
         ctx["ent_state"] = billing.enterprise_state(company)
+        from apps.billing.entitlements import entitlements_for
+        ctx["capabilities"] = entitlements_for(company).capabilities()
         # Commercial terms / deal contacts (draft) + contract documents.
         ctx["commercial"] = _ov.get("commercial") or {}
         ctx["contacts"] = _ov.get("contacts") or {}

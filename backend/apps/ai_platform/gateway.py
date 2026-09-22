@@ -115,7 +115,19 @@ def run_task(company, user, task: str, prompt: str, *, agent="", prompt_name="",
     AllProvidersFailedError is raised and the caller keeps its deterministic
     result.
     """
-    from .routing import route, task_for_feature
+    from .routing import TaskType, route, task_for_feature
+
+    category = task_for_feature(task)
+    # AI document extraction is a Professional+ capability — gate it here (before
+    # the credit check, so a plan message beats a credits message) so every
+    # extraction path (RFQ, PO, invoice, scope, receipt, delivery note) is covered
+    # in one place. Basic AI (generation/suggestions) stays on every plan within
+    # its credit allowance.
+    if category == TaskType.EXTRACTION:
+        from apps.billing.services import has_feature
+        if not has_feature(company, "ai_extraction"):
+            from apps.billing.entitlements import PlanFeatureRequired
+            raise PlanFeatureRequired("ai_extraction")
 
     if credit_balance(company) <= 0:
         raise InsufficientCreditsError("No AI credits remaining — top up to continue.")
@@ -123,7 +135,6 @@ def run_task(company, user, task: str, prompt: str, *, agent="", prompt_name="",
     from .providers import get_provider  # local: avoids import cycle at load
 
     request_id = uuid.uuid4()
-    category = task_for_feature(task)
     chain = route(task)
     if not chain:
         raise AllProvidersFailedError(f"No AI provider available for '{task}'.")

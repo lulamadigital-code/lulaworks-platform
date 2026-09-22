@@ -68,6 +68,20 @@
   </div>
 </div>
 
+{% if capabilities %}
+<div class="card">
+  <h2 style="margin:0 0 10px;">{% trans "What your plan includes" %}</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:4px 16px;">
+    {% for c in capabilities %}
+    <div style="font-size:13.5px;padding:2px 0;{% if not c.enabled %}color:var(--muted);{% endif %}">
+      {% if c.enabled %}<span style="color:var(--green,#0a8f57);">✓</span> {{ c.label }}
+      {% else %}<span class="muted">○</span> {{ c.label }} <span class="chip" style="font-size:10px;">{{ c.plan }}+</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 {% if extra_seats %}
 <p class="muted" style="margin:-6px 0 14px;">{% blocktrans with n=extra_seats sym=currency_symbol each=per_seat_price|floatformat:0 total=extra_seat_cost|floatformat:0 recurring=effective_monthly|floatformat:0 %}{{ n }} seat(s) beyond your plan are billed at {{ sym }}{{ each }}/user/month — {{ sym }}{{ total }}/month added. Your recurring total is {{ sym }}{{ recurring }}.{% endblocktrans %}</p>
 {% elif per_seat_price %}
