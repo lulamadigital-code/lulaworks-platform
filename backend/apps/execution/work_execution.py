@@ -148,7 +148,16 @@ def create_task_report(task, user, *, kind=ReportKind.PROGRESS, title, event="",
     """Record an operational event on a task and verify where it happened.
 
     Financial reports (fuel/material/expense) booked against an allocation
-    re-reconcile it so ``amount_spent`` stays live."""
+    re-reconcile it so ``amount_spent`` stays live.
+
+    The report itself is CORE — every plan may file field evidence — but the
+    GPS-coordinate portion is the Professional ``gps_checkin`` capability: on a
+    plan without it the report is still recorded (who/when/what), just without
+    location. The whole capture stays a single choke point so web, API and the
+    Flutter app can never drift on the gate."""
+    from apps.billing.services import has_feature
+    if not has_feature(task.company, "gps_checkin"):
+        latitude = longitude = gps_accuracy_m = None
     report = TaskReport(
         company=task.company, task=task, kind=kind, title=title, event=event,
         notes=notes, employee=employee or user,

@@ -556,3 +556,95 @@ class WesApiTests(APITestCase):
         self.assertFalse(resp.data["can_view_money"])
         # The rest of the hub still works (team, timeline, outstanding).
         self.assertIn("timeline", resp.data)
+
+
+class GpsPerFieldGatingTests(APITestCase):
+    """The task report is CORE on every plan, but its GPS-coordinate portion is
+    the Professional `gps_checkin` capability — stripped per-field on a plan
+    without it, while the report (who/when/what) is still recorded."""
+
+    @classmethod
+    def setUpTestData(cls):
+        from django.core.management import call_command
+        from apps.core.context import system_scope
+        with system_scope():
+            call_command("seed_platform")
+
+    def _company_on(self, code):
+        from apps.billing.models import Plan, Subscription, SubscriptionStatus
+        c = make_company(f"Co {code}")
+        plan = Plan.objects.get(code=code)
+        Subscription.objects.create(company=c, plan=plan, currency="ZAR",
+                                    status=SubscriptionStatus.ACTIVE)
+        c.refresh_from_db()
+        return c
+
+    def _task(self, company):
+        with tenant_scope(company.id):
+            return Task.objects.create(company=company, name="Deliver hoses",
+                                       site_latitude=Decimal(str(SITE[0])),
+                                       site_longitude=Decimal(str(SITE[1])))
+
+    def test_starter_strips_gps_but_keeps_report(self):
+        co = self._company_on("starter")
+        with tenant_scope(co.id):
+            report = create_task_report(
+                self._task(co), None, title="On site",
+                latitude=Decimal(str(NEARBY[0])), longitude=Decimal(str(NEARBY[1])),
+                gps_accuracy_m=5)
+            self.assertIsNone(report.latitude)
+            self.assertIsNone(report.longitude)
+            self.assertIsNone(report.gps_accuracy_m)
+            # The evidence row itself is still recorded.
+            self.assertEqual(report.title, "On site")
+            self.assertTrue(TaskReport.objects.filter(pk=report.pk).exists())
+
+    def test_professional_keeps_gps(self):
+        co = self._company_on("professional")
+        with tenant_scope(co.id):
+            report = create_task_report(
+                self._task(co), None, title="On site",
+                latitude=Decimal(str(NEARBY[0])), longitude=Decimal(str(NEARBY[1])),
+                gps_accuracy_m=5)
+            self.assertIsNotNone(report.latitude)
+            self.assertIsNotNone(report.longitude)
+
+
+class TimeTrackingApiGateTests(APITestCase):
+    """Recording a clock event through the mobile/DRF API requires the
+    Professional `time_tracking` capability (backend-authoritative)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        from django.core.management import call_command
+        from apps.core.context import system_scope
+        with system_scope():
+            call_command("seed_platform")
+
+    def _worker_on(self, code):
+        from apps.billing.models import Plan, Subscription, SubscriptionStatus
+        c = make_company(f"Co {code}")
+        plan = Plan.objects.get(code=code)
+        Subscription.objects.create(company=c, plan=plan, currency="ZAR",
+                                    status=SubscriptionStatus.ACTIVE)
+        c.refresh_from_db()
+        u = User.objects.create_user(f"worker-{code}@lulama.co.za", "x",
+                                     active_company=c)
+        Membership.objects.create(user=u, company=c,
+                                  role=Role.objects.create(name=f"W-{code}"))
+        return c, u
+
+    def _clock_in(self, user):
+        self.client.force_authenticate(user)
+        return self.client.post("/api/v1/attendance-events/",
+                                {"kind": "clock_in"}, format="json")
+
+    def test_starter_blocked_from_clock_in(self):
+        _c, u = self._worker_on("starter")
+        resp = self._clock_in(u)
+        self.assertEqual(resp.status_code, 403)
+
+    def test_professional_can_clock_in(self):
+        _c, u = self._worker_on("professional")
+        resp = self._clock_in(u)
+        self.assertEqual(resp.status_code, 201)

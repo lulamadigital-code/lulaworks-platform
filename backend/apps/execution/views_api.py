@@ -168,6 +168,10 @@ class AttendanceEventViewSet(TenantViewSet):
     serializer_class = AttendanceEventSerializer
     # create is open (self only); reviewing a correction is a manager action.
     required_perms = {"partial_update": ("timesheet.approve", "execution.manage")}
+    # Time & attendance IS the Professional `time_tracking` capability: recording
+    # a clock event requires it. Reading one's own record (list/today) stays open
+    # so a plan that lapses can still view history it already captured.
+    required_features = {"create": "time_tracking"}
 
     def _is_manager(self):
         u = self.request.user
@@ -195,12 +199,22 @@ class AttendanceEventViewSet(TenantViewSet):
 
     def perform_create(self, serializer):
         is_correction = serializer.validated_data.pop("is_correction", False)
+        # The event is time-tracking (already gated); its GPS-coordinate portion
+        # is the separate `gps_checkin` capability — drop coordinates on a plan
+        # without it so the clock event still records, just without location.
+        extra = {}
+        company = getattr(self.request.user, "active_company", None)
+        if company is not None:
+            from apps.billing.services import has_feature
+            if not has_feature(company, "gps_checkin"):
+                extra = {"latitude": None, "longitude": None}
         serializer.save(
             user=self.request.user,
             created_by=self.request.user,
             updated_by=self.request.user,
             status=(AttendanceEvent.Status.PENDING if is_correction
                     else AttendanceEvent.Status.RECORDED),
+            **extra,
         )
 
     def perform_update(self, serializer):

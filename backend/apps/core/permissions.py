@@ -30,3 +30,35 @@ class HasPermission(BasePermission):
         if isinstance(codename, (list, tuple, set)):
             return any(user.has_perm_code(c) for c in codename)
         return user.has_perm_code(codename)
+
+
+class HasPlanFeature(BasePermission):
+    """Plan-entitlement gate for the API/mobile clients — the backend-authoritative
+    mirror of the web `require_feature` decorator.
+
+    A view declares `required_features = {"create": "time_tracking", ...}` (per
+    action) and/or a blanket `required_feature = "..."`. Holding the feature means
+    the company's plan includes it (resolved through the single entitlement
+    engine). Views that declare nothing are unaffected — this is a no-op unless a
+    feature is required, so it can sit on the base viewset for every resource.
+    """
+
+    def has_permission(self, request, view):
+        code = None
+        per_action = getattr(view, "required_features", None)
+        if per_action:
+            code = per_action.get(getattr(view, "action", None))
+        if code is None:
+            code = getattr(view, "required_feature", None)
+        if code is None:
+            return True  # this view/action is core on all plans
+        user = getattr(request, "user", None)
+        company = getattr(user, "active_company", None)
+        if company is None:
+            return True  # unauthenticated/no-company paths are handled elsewhere
+        from apps.billing.entitlements import PlanFeatureRequired, entitlements_for
+        if entitlements_for(company).has(code):
+            return True
+        # Surface the friendly upgrade message instead of a bare 403.
+        self.message = PlanFeatureRequired(code).message
+        return False
