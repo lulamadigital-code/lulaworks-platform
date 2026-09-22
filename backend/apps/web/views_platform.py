@@ -265,6 +265,7 @@ def platform_tenant(request, pk):
                 "toggle_active": "tenants", "grant_credits": "billing",
                 "change_plan": "billing", "cancel_subscription": "billing",
                 "set_enterprise_terms": "billing",
+                "finalize_enterprise": "billing",
                 "send_enterprise_agreement": "billing"}
             need = _cap_for.get(action)
             if need and not request.user.can_platform(need):
@@ -312,9 +313,10 @@ def platform_tenant(request, pk):
                                         actor=request.user)
                     messages.success(request, "Plan changed.")
                 elif action == "set_enterprise_terms":
-                    # Per-contract Enterprise terms: custom limits + the agreed
-                    # price/note, stored on the subscription's overrides. The
-                    # cached company limits are synced so enforcement uses them.
+                    # Save the negotiated terms as a DRAFT proposal — the agreed
+                    # limits are held in `proposed_limits` and NOT applied to the
+                    # live account until an admin clicks Finalize (after the
+                    # customer accepts). Metadata (price/ref/term/note) is recorded.
                     sub_obj = getattr(company, "subscription", None)
                     if sub_obj is None:
                         raise ValueError("Put the company on a plan first, then set custom terms.")
@@ -324,21 +326,17 @@ def platform_tenant(request, pk):
                         return int(float(v)) if v else None
 
                     ov = dict(sub_obj.overrides or {})
+                    prop = dict(ov.get("proposed_limits") or {})
                     mu, gb, cr = _num("ov_max_users"), _num("ov_storage_gb"), _num("ov_credits")
-                    price = (request.POST.get("ov_price") or "").strip()
-                    note = (request.POST.get("ov_note") or "").strip()
-                    ref = (request.POST.get("ov_ref") or "").strip()
                     if mu is not None:
-                        ov["max_users"] = mu
+                        prop["max_users"] = mu
                     if gb is not None:
-                        ov["storage_quota_bytes"] = gb * (1024 ** 3)
+                        prop["storage_quota_bytes"] = gb * (1024 ** 3)
                     if cr is not None:
-                        ov["monthly_ai_credits"] = cr
-                    ov["contract_price"] = price          # display/record only
-                    ov["contract_note"] = note[:500]
-                    # Contract term (commitment length) → records the term and a
-                    # computed renewal/end date. Metadata only; doesn't change
-                    # billing enforcement.
+                        prop["monthly_ai_credits"] = cr
+                    ov["proposed_limits"] = prop
+                    ov["contract_price"] = (request.POST.get("ov_price") or "").strip()
+                    ov["contract_note"] = (request.POST.get("ov_note") or "").strip()[:500]
                     term = _num("ov_term_months")
                     if term and term > 0:
                         import calendar as _cal
@@ -349,20 +347,41 @@ def platform_tenant(request, pk):
                         ov["contract_term_months"] = term
                         ov["contract_start"] = start.isoformat()
                         ov["contract_end"] = date(y, mo, day).isoformat()
-                    # System contract reference — generated & confirmed by the
-                    # admin (distinct from the customer's own external PO number).
+                    ref = (request.POST.get("ov_ref") or "").strip()
                     if ref:
                         ov["contract_ref"] = ref[:40]
                     elif not ov.get("contract_ref"):
                         ov["contract_ref"] = _suggest_contract_ref()
                     sub_obj.overrides = ov
                     sub_obj.save(update_fields=["overrides", "updated_at"])
-                    # Sync cached limits to the effective (override) values so
-                    # seat/storage enforcement honours the custom deal.
+                    messages.success(request, "Terms saved as a draft — not live yet. "
+                                     "Send the agreement, then Finalize to activate the limits.")
+                elif action == "finalize_enterprise":
+                    # Promote the proposed limits to live and sync the company's
+                    # cached limits so seat/storage/credit enforcement uses them.
+                    sub_obj = getattr(company, "subscription", None)
+                    if sub_obj is None:
+                        raise ValueError("Put the company on a plan first.")
+                    ov = dict(sub_obj.overrides or {})
+                    prop = ov.get("proposed_limits") or {}
+                    if not prop:
+                        raise ValueError("Save the agreed terms first, then finalize.")
+                    for k in ("max_users", "storage_quota_bytes", "monthly_ai_credits"):
+                        if prop.get(k) is not None:
+                            ov[k] = prop[k]
+                    ov["agreement_finalized_at"] = timezone.now().isoformat()
+                    sub_obj.overrides = ov
+                    sub_obj.save(update_fields=["overrides", "updated_at"])
                     company.max_users = ov.get("max_users", sub_obj.plan.max_users)
                     company.storage_quota_bytes = ov.get(
                         "storage_quota_bytes", sub_obj.plan.storage_quota_bytes)
                     company.save(update_fields=["max_users", "storage_quota_bytes", "updated_at"])
+                    from apps.enterprise.services import record as _arec
+                    from apps.enterprise.models import AuditAction as _AA
+                    _arec(_AA.SETTINGS_CHANGED, company=company, actor=request.user,
+                          request=request, summary="Finalized Enterprise terms — limits now live")
+                    messages.success(request, "Enterprise terms finalized — the agreed "
+                                     "limits are now live on the account.")
                     messages.success(request, "Custom Enterprise terms saved.")
                 elif action == "send_enterprise_agreement":
                     n = billing.send_enterprise_agreement(company)
@@ -410,6 +429,18 @@ def platform_tenant(request, pk):
         # Contract reference — show the existing one, or suggest the next.
         _ov = (sub.overrides or {}) if sub else {}
         ctx["suggested_ref"] = _ov.get("contract_ref") or _suggest_contract_ref()
+
+        # Proposed (draft) limits vs what's live — drives the form prefill, the
+        # Finalize button and the deal stage.
+        _keys = ("max_users", "storage_quota_bytes", "monthly_ai_credits")
+        _prop = _ov.get("proposed_limits") or {k: _ov.get(k) for k in _keys}
+        ctx["proposed"] = _prop
+        ctx["proposed_gb"] = (int(_prop["storage_quota_bytes"] / (1024 ** 3))
+                              if _prop.get("storage_quota_bytes") else "")
+        ctx["agr_accepted"] = _ov.get("agreement_accepted_at")
+        ctx["agr_finalized"] = _ov.get("agreement_finalized_at")
+        ctx["needs_finalize"] = any(
+            _prop.get(k) is not None and _prop.get(k) != _ov.get(k) for k in _keys)
 
         # Enterprise price helper — defaults grounded in the platform's REAL cost
         # model, editable in the UI. seat value = Business per-seat rate; storage

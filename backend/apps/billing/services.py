@@ -262,16 +262,25 @@ def _notify_billing(company, *, subject, heading, body, cta_url="", cta_label=""
 AGREEMENT_SALT = "enterprise-agreement"
 
 
+def proposed_limits(ov: dict) -> dict:
+    """The agreed (draft) limits — held under `proposed_limits` until finalized,
+    with a fallback to legacy top-level keys for pre-staging deals."""
+    ov = ov or {}
+    return ov.get("proposed_limits") or {
+        k: ov.get(k) for k in ("max_users", "storage_quota_bytes", "monthly_ai_credits")}
+
+
 def agreement_token(company, ov) -> str:
     """A signed, self-contained token carrying the agreed-terms snapshot, so the
     public confirmation page shows exactly what was emailed without a DB lookup
-    or login."""
+    or login. Limits come from the proposed (draft) terms."""
     from django.core import signing
+    p = proposed_limits(ov)
     return signing.dumps({
         "c": str(company.id), "ref": ov.get("contract_ref", ""),
         "price": str(ov.get("contract_price") or ""),
-        "users": ov.get("max_users"), "credits": ov.get("monthly_ai_credits"),
-        "storage": ov.get("storage_quota_bytes"),
+        "users": p.get("max_users"), "credits": p.get("monthly_ai_credits"),
+        "storage": p.get("storage_quota_bytes"),
         "term": ov.get("contract_term_months"), "end": ov.get("contract_end", ""),
         "note": ov.get("contract_note", ""),
     }, salt=AGREEMENT_SALT)
@@ -329,13 +338,14 @@ def send_enterprise_agreement(company) -> int:
             return v or ""
 
     review_url = f"{_site_base()}/agreement/{agreement_token(company, ov)}/"
+    p = proposed_limits(ov)
     primary = admins[0]
     ctx = {
         "heading": "Your Enterprise plan — agreed terms",
         "first_name": (primary.first_name or "").strip(),
-        "ref": ov.get("contract_ref", ""), "users": ov.get("max_users"),
-        "credits": _commafmt(ov.get("monthly_ai_credits")),
-        "storage": _gb(ov.get("storage_quota_bytes")), "price": price,
+        "ref": ov.get("contract_ref", ""), "users": p.get("max_users"),
+        "credits": _commafmt(p.get("monthly_ai_credits")),
+        "storage": _gb(p.get("storage_quota_bytes")), "price": price,
         "term": ov.get("contract_term_months"), "end": ov.get("contract_end", ""),
         "note": ov.get("contract_note", ""),
         "accept_url": f"{review_url}?do=accept",

@@ -113,26 +113,30 @@
   <p class="sub" style="font-size:12.5px;margin:0 0 12px;">Set this tenant's limits and record the agreed price without creating a new plan — this is how you charge & size a per-customer Enterprise deal. Blank = keep the plan's value; saved values take effect immediately for seat & storage enforcement, and for the monthly AI-credit allowance on renewal.</p>
   {% if sub and sub.overrides %}
   <p class="sub" style="font-size:12.5px;margin:0 0 12px;padding:8px 10px;background:var(--primary-t);border-radius:8px;">
-    <strong>Current overrides:</strong>
-    {% if sub.overrides.max_users %}{{ sub.overrides.max_users }} users · {% endif %}
-    {% if sub.overrides.storage_quota_bytes %}{{ sub.overrides.storage_quota_bytes|filesizeformat }} · {% endif %}
-    {% if sub.overrides.monthly_ai_credits %}{{ sub.overrides.monthly_ai_credits }} credits/mo · {% endif %}
+    <strong>Proposed terms:</strong>
+    {% if proposed.max_users %}{{ proposed.max_users }} users · {% endif %}
+    {% if proposed_gb %}{{ proposed_gb }} GB · {% endif %}
+    {% if proposed.monthly_ai_credits %}{{ proposed.monthly_ai_credits }} credits/mo · {% endif %}
     {% if sub.overrides.contract_price %}price {{ sub.overrides.contract_price }}{% endif %}
     {% if sub.overrides.contract_term_months %}<br>Term: <strong>{{ sub.overrides.contract_term_months }} months</strong>{% if sub.overrides.contract_end %} · renews {{ sub.overrides.contract_end }}{% endif %}{% endif %}
     {% if sub.overrides.contract_ref %}<br>Ref: <strong>{{ sub.overrides.contract_ref }}</strong>{% endif %}
     {% if sub.overrides.contract_note %}<br>Note: {{ sub.overrides.contract_note }}{% endif %}
     {% if sub.overrides.agreement_accepted_at %}<br><span style="color:#0a8f57;font-weight:700;">✓ Accepted by customer {{ sub.overrides.agreement_accepted_at|slice:":10" }}</span>
     {% elif sub.overrides.agreement_change_request %}<br><span style="color:#b9711a;font-weight:700;">⟳ Customer requested a change:</span> {{ sub.overrides.agreement_change_request.message }}{% endif %}
+    <br><strong>Status:</strong>
+    {% if needs_finalize %}<span style="color:#b9711a;font-weight:700;">Draft — not live yet{% if agr_accepted %} · customer accepted, ready to finalize{% endif %}</span>
+    {% elif agr_finalized %}<span style="color:#0a8f57;font-weight:700;">● Live — finalized {{ agr_finalized|slice:":10" }}</span>
+    {% else %}<span class="muted">Draft — not live</span>{% endif %}
   </p>
   {% endif %}
   <form method="post">{% csrf_token %}<input type="hidden" name="action" value="set_enterprise_terms">
     <div class="two">
       <div><label>Max users</label>
-        <input type="number" name="ov_max_users" min="1" step="1" value="{{ sub.overrides.max_users|default:'' }}" placeholder="e.g. 1000"></div>
+        <input type="number" name="ov_max_users" min="1" step="1" value="{{ proposed.max_users|default:'' }}" placeholder="e.g. 1000"></div>
       <div><label>Storage (GB)</label>
-        <input type="number" name="ov_storage_gb" min="1" step="1" placeholder="e.g. 4000 · current {{ company.storage_quota_bytes|filesizeformat }}"></div>
+        <input type="number" name="ov_storage_gb" min="1" step="1" value="{{ proposed_gb }}" placeholder="e.g. 4000 · current {{ company.storage_quota_bytes|filesizeformat }}"></div>
       <div><label>AI credits / month</label>
-        <input type="number" name="ov_credits" min="0" step="1" value="{{ sub.overrides.monthly_ai_credits|default:'' }}" placeholder="e.g. 100000"></div>
+        <input type="number" name="ov_credits" min="0" step="1" value="{{ proposed.monthly_ai_credits|default:'' }}" placeholder="e.g. 100000"></div>
       <div><label>Agreed price (record only)</label>
         <input type="text" name="ov_price" value="{{ sub.overrides.contract_price|default:'' }}" placeholder="e.g. R25,000 / mo"></div>
     </div>
@@ -144,16 +148,26 @@
     <input type="text" name="ov_ref" value="{{ suggested_ref }}" placeholder="LW-ENT-2026-0001">
     <label style="margin-top:8px;">Contract note <span class="sub" style="font-weight:400;font-size:12px;">— customer PO, term, billing arrangement</span></label>
     <textarea name="ov_note" rows="2" placeholder="Customer PO number, term, billing arrangement…">{{ sub.overrides.contract_note|default:'' }}</textarea>
-    <div style="margin-top:12px;"><button class="btn" type="submit"{% if not sub %} disabled{% endif %}>Save custom terms</button></div>
-    {% if not sub %}<p class="sub" style="font-size:12px;margin:8px 0 0;">Put the company on a plan (e.g. Enterprise) above first, then set custom terms.</p>{% endif %}
+    <div style="margin-top:12px;"><button class="btn" type="submit"{% if not sub %} disabled{% endif %}>Save as draft</button></div>
+    <p class="sub" style="font-size:12px;margin:8px 0 0;">Saving records the proposal — <strong>it does not go live</strong>. Send the agreement, then Finalize (below) to activate the limits.{% if not sub %} Put the company on a plan (e.g. Enterprise) above first.{% endif %}</p>
   </form>
   {% if sub and sub.overrides.contract_price %}
-  <form method="post" style="margin-top:10px;border-top:1px solid var(--line);padding-top:12px;"
-        data-confirm="Email the agreed terms to this customer's admins to confirm?">
-    {% csrf_token %}<input type="hidden" name="action" value="send_enterprise_agreement">
-    <button class="btn" type="submit" style="background:#fff;color:var(--primary-d);border:1px solid var(--primary,#17a2b8);">✉ Send agreement to customer</button>
-    <p class="sub" style="font-size:12px;margin:8px 0 0;">Emails the agreed terms (users, credits, storage, price, reference) to the customer's admins to confirm by reply. You choose when — nothing is sent automatically.</p>
-  </form>
+  <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+    <form method="post" style="margin:0;" data-confirm="Email the agreed terms to this customer's admins to confirm?">
+      {% csrf_token %}<input type="hidden" name="action" value="send_enterprise_agreement">
+      <button class="btn" type="submit" style="background:#fff;color:var(--primary-d);border:1px solid var(--primary,#17a2b8);">✉ Send agreement</button>
+    </form>
+    {% if needs_finalize %}
+    <form method="post" style="margin:0;" data-confirm="Activate the agreed limits on this account now? This makes the deal live.">
+      {% csrf_token %}<input type="hidden" name="action" value="finalize_enterprise">
+      <button class="btn" type="submit" {% if agr_accepted %}style="background:var(--green,#0a8f57);"{% endif %}>✓ Finalize &amp; activate</button>
+    </form>
+    {% endif %}
+  </div>
+  <p class="sub" style="font-size:12px;margin:8px 0 0;">
+    <strong>Send agreement</strong> emails the terms for the customer to Accept / Request a change.
+    <strong>Finalize &amp; activate</strong> applies the agreed limits to the live account — do this after they accept.{% if agr_accepted and needs_finalize %} <span style="color:#0a8f57;font-weight:700;">Customer has accepted — ready to finalize.</span>{% endif %}
+  </p>
   {% endif %}
 </div>
 
