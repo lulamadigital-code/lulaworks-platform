@@ -453,6 +453,8 @@ def platform_tenant(request, pk):
         from apps.billing.models import EnterpriseAgreement
         ctx["agreements"] = list(
             EnterpriseAgreement.objects.filter(company=company).order_by("-version")[:8])
+        # The three distinct Enterprise states (never collapsed).
+        ctx["ent_state"] = billing.enterprise_state(company)
 
         # Enterprise price helper — defaults grounded in the platform's REAL cost
         # model, editable in the UI. seat value = Business per-seat rate; storage
@@ -523,6 +525,47 @@ def platform_enquiries(request):
     return render(request, "web/platform/enquiries.html", {
         "active": "enquiries", "rows": rows, "kpis": kpis, "scope": scope,
     })
+
+
+@login_required
+def platform_tenant_finalize(request, pk):
+    """Pre-activation verification — show the accepted terms + entitlements and
+    what will change, before an admin confirms activation. The confirm posts back
+    to the tenant page's finalize action (single source of truth)."""
+    if not request.user.platform_level or not request.user.can_platform("billing"):
+        messages.error(request, "You don't have billing access.")
+        return redirect("web:platform_tenant", pk=pk)
+    from apps.core.context import system_scope
+    from apps.billing import services as billing
+    from apps.billing.models import EnterpriseAgreement
+    from apps.identity.models import Company
+    with system_scope():
+        company = Company.objects.filter(pk=pk).first()
+        if company is None:
+            messages.error(request, "Company not found.")
+            return redirect("web:platform_home")
+        agr = (EnterpriseAgreement.objects.filter(
+            company=company, status=EnterpriseAgreement.Status.ACCEPTED)
+            .order_by("-version").first())
+        sub = getattr(company, "subscription", None)
+        ov = (sub.overrides or {}) if sub else {}
+        live = {k: ov.get(k) for k in ("max_users", "storage_quota_bytes", "monthly_ai_credits")}
+        agreed = (agr.snapshot or {}).get("limits", {}) if agr else {}
+        rows = []
+        for key, label in (("max_users", "Users (seats)"),
+                           ("storage_quota_bytes", "Storage"),
+                           ("monthly_ai_credits", "AI credits / month")):
+            a, l = agreed.get(key), live.get(key)
+            if key == "storage_quota_bytes":
+                fmt = lambda v: f"{int(v) / (1024 ** 3):.0f} GB" if v else "—"
+            else:
+                fmt = lambda v: f"{int(v):,}" if v not in (None, "") else "—"
+            rows.append({"label": label, "agreed": fmt(a), "live": fmt(l),
+                         "changes": a is not None and a != l})
+        ents = (agr.snapshot or {}).get("entitlements", []) if agr else []
+    return render(request, "web/platform/finalize.html", {
+        "active": "companies", "company": company, "agr": agr, "rows": rows,
+        "entitlements": ents})
 
 
 @login_required

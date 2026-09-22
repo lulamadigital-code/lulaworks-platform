@@ -59,6 +59,19 @@
   </div>
 </div>
 
+{% if ent_state %}
+<div class="card" style="display:flex;gap:22px;flex-wrap:wrap;align-items:center;">
+  <div><div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;">Agreement</div>
+    <div style="font-weight:800;font-size:15px;">{{ ent_state.agreement }}</div></div>
+  <div style="width:1px;height:34px;background:var(--line);"></div>
+  <div><div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;">Provisioning</div>
+    <div style="font-weight:800;font-size:15px;{% if ent_state.provisioning == 'Mismatch' %}color:#c22a41;{% elif ent_state.provisioning == 'Provisioned' %}color:#0a8f57;{% endif %}">{{ ent_state.provisioning }}</div></div>
+  <div style="width:1px;height:34px;background:var(--line);"></div>
+  <div><div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;">Account</div>
+    <div style="font-weight:800;font-size:15px;{% if ent_state.account == 'Active' %}color:#0a8f57;{% elif ent_state.account == 'Suspended' %}color:#c22a41;{% endif %}">{{ ent_state.account }}</div></div>
+</div>
+{% endif %}
+
 <div class="card" id="price-helper">
   <h2 style="margin-top:0;">💡 Enterprise price helper <span class="sub" style="font-weight:400;font-size:13px;">— estimate what to charge</span></h2>
   <p class="sub" style="font-size:12.5px;margin:0 0 12px;">Enter what this customer needs. The helper prices it two ways — value-based and cost-plus-margin — and suggests the higher. Every rate is an editable assumption. Then push the numbers into Custom terms below.</p>
@@ -158,10 +171,7 @@
       <button class="btn" type="submit" style="background:#fff;color:var(--primary-d);border:1px solid var(--primary,#17a2b8);">✉ Send agreement</button>
     </form>
     {% if needs_finalize %}
-    <form method="post" style="margin:0;" data-confirm="Activate the agreed limits on this account now? This makes the deal live.">
-      {% csrf_token %}<input type="hidden" name="action" value="finalize_enterprise">
-      <button class="btn" type="submit" {% if agr_accepted %}style="background:var(--green,#0a8f57);"{% endif %}>✓ Finalize &amp; activate</button>
-    </form>
+    <a class="btn" href="{% url 'web:platform_tenant_finalize' company.id %}" {% if agr_accepted %}style="background:var(--green,#0a8f57);"{% endif %}>✓ Finalize &amp; activate</a>
     {% endif %}
   </div>
   <p class="sub" style="font-size:12px;margin:8px 0 0;">

@@ -1,0 +1,67 @@
+{% extends "web/base.html" %}
+{% block title %}Finalize · {{ company.name }}{% endblock %}
+{% block logo_href %}{% url 'web:platform_home' %}{% endblock %}
+{% block floating %}{% endblock %}
+{% block sidebar_nav %}{% include "web/platform/_nav.html" with active="companies" %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .nav a svg{stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:23px;margin:0 0 2px;letter-spacing:-.02em} .sub{color:var(--muted);margin:0 0 18px} .muted{color:var(--muted)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow);max-width:640px;}
+  table{width:100%;border-collapse:collapse;margin:6px 0 4px;} th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);font-size:13.5px;}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+  .chip{display:inline-flex;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;background:#eef0f5;color:var(--muted);}
+  .chip.ok{background:#e7f7ef;color:#0a8f57;} .chg{color:#b9711a;font-weight:700;}
+  .btn.ghost{background:#fff;color:var(--primary-d);border:1px solid var(--line);}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Finalize &amp; activate — {{ company.name }}</h1>
+<p class="sub">Review the accepted agreement before applying the agreed limits to the live account.</p>
+
+<div class="card">
+  {% if not agr %}
+    <p><span class="chip">No accepted agreement</span></p>
+    <p class="muted">There's no customer-accepted agreement to finalize. Send the agreement and have the customer accept it first.</p>
+    <a class="btn ghost" href="{% url 'web:platform_tenant' company.id %}">← Back to tenant</a>
+  {% else %}
+    <p style="margin:0 0 14px;">
+      <span class="chip ok">✓ Agreement accepted</span>
+      <span class="chip">v{{ agr.version }}{% if agr.contract_ref %} · {{ agr.contract_ref }}{% endif %}</span>
+    </p>
+    <p class="muted" style="font-size:12.5px;margin:0 0 14px;">
+      Accepted {{ agr.accepted_at|date:"d M Y H:i" }}{% if agr.accepted_by_email %} by {{ agr.accepted_by_email }}{% endif %}{% if agr.acceptance_ip %} · IP {{ agr.acceptance_ip }}{% endif %}.
+    </p>
+
+    <table>
+      <tr><th>Entitlement</th><th>Contracted</th><th>Currently live</th></tr>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.label }}</td>
+        <td><strong>{{ r.agreed }}</strong>{% if r.changes %} <span class="chg">← will apply</span>{% endif %}</td>
+        <td class="muted">{{ r.live }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    {% if entitlements %}
+    <p style="margin:12px 0 2px;font-size:12.5px;color:var(--muted);">Enterprise entitlements: {% for e in entitlements %}<span class="chip" style="margin:2px;">{{ e }}</span>{% endfor %}</p>
+    {% endif %}
+
+    {% if agr.price %}{% endif %}
+    <p style="margin:14px 0 6px;">Price on record: <strong>{{ agr.snapshot.price }}</strong>{% if agr.snapshot.term_months %} · {{ agr.snapshot.term_months }}-month term{% if agr.snapshot.end %}, renews {{ agr.snapshot.end }}{% endif %}{% endif %}</p>
+
+    <div style="margin-top:18px;display:flex;gap:10px;">
+      <form method="post" action="{% url 'web:platform_tenant' company.id %}"
+            data-confirm="Activate the agreed limits on {{ company.name }} now?">
+        {% csrf_token %}<input type="hidden" name="action" value="finalize_enterprise">
+        <button class="btn" type="submit" style="background:var(--green,#0a8f57);">✓ Confirm &amp; activate</button>
+      </form>
+      <a class="btn ghost" href="{% url 'web:platform_tenant' company.id %}">Cancel</a>
+    </div>
+    <p class="muted" style="font-size:12px;margin:12px 0 0;">Activating applies the contracted limits to the live account and records the provisioning against this agreement version.</p>
+  {% endif %}
+</div>
+{% endblock %}

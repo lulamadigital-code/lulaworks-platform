@@ -381,6 +381,55 @@ def finalize_agreement(company, actor=None):
     return agr, matched
 
 
+def enterprise_state(company) -> dict:
+    """The three DISTINCT Enterprise states (never collapsed into one):
+      • agreement   — the commercial contract lifecycle
+      • provisioning — whether the agreed limits have been applied
+      • account      — the tenant's operational state
+    Derived from the agreement of record + subscription + company."""
+    from .models import EnterpriseAgreement, SubscriptionStatus
+    sub = getattr(company, "subscription", None)
+    agr = current_agreement(company)
+
+    ov = (sub.overrides if sub else None) or {}
+    # Agreement
+    if agr is None:
+        agreement = "Draft" if (ov.get("proposed_limits") or ov.get("contract_price")) else "None"
+    elif agr.finalized_at:
+        agreement = "Finalized"
+    else:
+        agreement = agr.get_status_display()
+
+    # Provisioning
+    if agr is None:
+        provisioning = "Not provisioned"
+    elif agr.provisioning_status == EnterpriseAgreement.Provisioning.ACTIVATED:
+        provisioning = "Provisioned"
+    elif agr.provisioning_status == EnterpriseAgreement.Provisioning.MISMATCH:
+        provisioning = "Mismatch"
+    elif agr.status == EnterpriseAgreement.Status.ACCEPTED:
+        provisioning = "Ready"
+    else:
+        provisioning = "Not provisioned"
+
+    # Account
+    if sub is None:
+        account = "No subscription"
+    elif not getattr(company, "is_active", True):
+        account = "Suspended"
+    elif sub.status == SubscriptionStatus.TRIAL:
+        account = "Trial / Onboarding"
+    elif agr is not None and agr.finalized_at:
+        account = "Active"
+    elif sub.status == SubscriptionStatus.ACTIVE:
+        account = "Pending activation"
+    else:
+        account = sub.get_status_display()
+
+    return {"agreement": agreement, "provisioning": provisioning, "account": account,
+            "current": agr}
+
+
 def agreement_token(company, ov, agreement=None, to_email="") -> str:
     """A signed token carrying the agreement version id + a terms snapshot, so the
     public confirmation page shows exactly what was emailed without a login. `a`
