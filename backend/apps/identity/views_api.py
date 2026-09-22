@@ -190,6 +190,23 @@ class RelatedRecordsView(APIView):
         return Response({"sections": related_records(obj, request.user)})
 
 
+class BusinessHistoryView(APIView):
+    """The permission-aware Business-History view of one record — its evidence-
+    backed summary, chronological timeline, and transaction graph, from the
+    single facade every consumer shares. `kind` ∈
+    customer|supplier|job|quotation|customer_po|commercial_document."""
+
+    def get(self, request, kind, pk):
+        from apps.core.middleware import set_tenant_from_request
+        set_tenant_from_request(request)
+        from apps.knowledge.business_history import history_for_kind
+        data = history_for_kind(kind, pk, request.user)
+        if data is None:
+            return Response({"error": {"code": "not_found",
+                             "message": "Unknown record."}}, status=404)
+        return Response(data)
+
+
 class MembershipViewSet(viewsets.ModelViewSet):
     """Team members of the active company. Create = invite by email + role."""
 
