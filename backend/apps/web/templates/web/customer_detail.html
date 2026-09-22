@@ -25,6 +25,14 @@
     <a class="btn ghost" href="{% url 'web:customer_edit' customer.id %}">{% trans "Edit" %}</a>
     <a class="btn" href="#addperson">{% trans "+ Add a person" %}</a>
     {% endif %}
+    {% if can_delete %}
+    <form method="post" action="{% url 'web:customer_delete' customer.id %}"
+          style="display:inline;margin:0;"
+          onsubmit="return confirm('{% trans "Disable this customer? It will be hidden from your lists but kept, and can be restored. Its quotations, jobs and invoices are not affected." %}');">
+      {% csrf_token %}
+      <button class="btn ghost" type="submit" style="color:var(--bad,#b42318);">{% trans "Disable" %}</button>
+    </form>
+    {% endif %}
   </div>
 </div>
 

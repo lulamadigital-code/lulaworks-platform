@@ -3771,18 +3771,31 @@ def customers_list(request):
     from apps.customers.services import customer_overview
 
     query = request.GET.get("q", "").strip()
-    customers = Customer.objects.all().prefetch_related("contacts", "departments")
+    show = request.GET.get("show", "active")
+    if show == "disabled":
+        # Disabled (soft-deleted) customers — recoverable. all_objects sees deleted
+        # rows, so scope it explicitly to this tenant.
+        customers = (Customer.all_objects
+                     .filter(company=request.user.active_company, is_deleted=True)
+                     .prefetch_related("contacts", "departments"))
+    else:
+        customers = Customer.objects.all().prefetch_related("contacts", "departments")
     if query:
         customers = customers.filter(name__icontains=query)
     status = request.GET.get("status")
-    if status:
+    if status and show != "disabled":
         customers = customers.filter(status=status)
 
     rows = [{"customer": c, "stats": customer_overview(c)} for c in customers]
     return render(request, "web/customers.html", {
-        "rows": rows, "q": query, "status": status,
+        "rows": rows, "q": query, "status": status, "show": show,
         "statuses": Customer._meta.get_field("status").choices,
         "can_manage": request.user.has_perm_code("projects.create"),
+        "can_delete": request.user.has_perm_code("customers.manage"),
+        "is_platform_owner": _is_platform_owner(request.user),
+        "disabled_count": (Customer.all_objects
+                           .filter(company=request.user.active_company,
+                                   is_deleted=True).count()),
     })
 
 
@@ -3840,6 +3853,7 @@ def customer_detail(request, pk):
         "next_activity": next_activity,
         "timeline": customer_timeline(customer),
         "can_manage": request.user.has_perm_code("projects.create"),
+        "can_delete": request.user.has_perm_code("customers.manage"),
         # Historical-data provenance: was this customer reconstructed from an
         # imported document? Show a badge + a link to the source documents.
         "history_docs": _customer_history_docs(customer),
@@ -3915,6 +3929,84 @@ def customer_edit(request, pk):
         "customer": customer,
         "statuses": CustomerStatus.choices,
     })
+
+
+def _is_platform_owner(user) -> bool:
+    """A platform administrator (owner/admin) — the only role allowed to REALLY
+    delete a customer. A tenant user can only disable (soft-delete) one."""
+    return getattr(user, "platform_level", None) in ("owner", "admin")
+
+
+@login_required
+@require_POST
+def customer_delete(request, pk):
+    """DISABLE a customer — a recoverable soft-delete, never a real removal. The
+    row is retained (its quotations/jobs/invoices still reference it and the
+    business history stays intact); it simply disappears from the active lists.
+    Only a platform owner can purge it for good (customer_hard_delete)."""
+    from apps.core.events import publish
+    from apps.customers.models import Customer
+
+    if not request.user.has_perm_code("customers.manage"):
+        messages.error(request, "You do not have permission to delete customers.")
+        return redirect("web:customer_detail", pk=pk)
+    customer = get_object_or_404(Customer.objects.all(), pk=pk)   # alive + this tenant
+    name = customer.display_name
+    customer.delete()                                             # soft (is_deleted=True)
+    publish("CustomerDisabled", company=customer.company, subject=customer,
+            actor=request.user, payload={"name": name})
+    messages.success(request, f"{name} was disabled. It can be restored from "
+                              "Customers → Disabled.")
+    return redirect("web:customers")
+
+
+@login_required
+@require_POST
+def customer_restore(request, pk):
+    """Bring a disabled customer back. Same permission as disabling it; scoped to
+    the caller's own tenant so one company can never restore another's record."""
+    from apps.core.events import publish
+    from apps.customers.models import Customer
+
+    if not request.user.has_perm_code("customers.manage"):
+        messages.error(request, "You do not have permission to restore customers.")
+        return redirect("web:customers")
+    company = request.user.active_company
+    customer = get_object_or_404(
+        Customer.all_objects.filter(company=company, is_deleted=True), pk=pk)
+    customer.is_deleted = False
+    customer.deleted_at = None
+    customer.updated_by = request.user
+    customer.save(update_fields=["is_deleted", "deleted_at", "updated_by", "updated_at"])
+    publish("CustomerRestored", company=company, subject=customer, actor=request.user)
+    messages.success(request, f"{customer.display_name} was restored.")
+    return redirect("web:customer_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def customer_hard_delete(request, pk):
+    """PERMANENTLY delete a customer — the real removal, reserved for a platform
+    owner/admin. Allowed only for an already-disabled customer, so purging is
+    always a deliberate two-step (a tenant disables; the platform owner purges)."""
+    from django.urls import reverse
+
+    from apps.core.events import publish
+    from apps.customers.models import Customer
+
+    if not _is_platform_owner(request.user):
+        messages.error(request, "Only a platform administrator can permanently "
+                                "delete a customer. You can disable it instead.")
+        return redirect("web:customers")
+    # Cross-tenant by nature (a platform op); must already be disabled.
+    customer = get_object_or_404(
+        Customer.all_objects.filter(is_deleted=True), pk=pk)
+    name, company = customer.display_name, customer.company
+    publish("CustomerDeleted", company=company, subject=customer, actor=request.user,
+            payload={"name": name})                              # before it's gone
+    customer.delete(hard=True)                                   # real removal
+    messages.success(request, f"{name} was permanently deleted.")
+    return redirect(f"{reverse('web:customers')}?show=disabled")
 
 
 @login_required

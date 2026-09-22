@@ -12,6 +12,11 @@
 
 {% include "web/crm/_tabs.html" with active='customers' %}
 
+<div class="row" style="gap:8px;margin:0 0 12px;">
+  <a class="btn {% if show != 'disabled' %}primary{% else %}ghost{% endif %}" href="{% url 'web:customers' %}">{% trans "Active" %}</a>
+  <a class="btn {% if show == 'disabled' %}primary{% else %}ghost{% endif %}" href="{% url 'web:customers' %}?show=disabled">{% trans "Disabled" %}{% if disabled_count %} ({{ disabled_count }}){% endif %}</a>
+</div>
+
 <form method="get" class="filterbar">
   <input type="search" class="js-live-search" name="q" value="{{ q }}" placeholder="{% trans 'Search customers…' %}" style="flex:2;min-width:160px;">
   <select name="status">
@@ -26,10 +31,10 @@
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
     <tr><th>{% trans "Customer" %}</th><th>{% trans "Code" %}</th><th>{% trans "Vendor no." %}</th><th>{% trans "Contacts" %}</th><th>{% trans "Departments" %}</th>
-        <th>{% trans "Quotations" %}</th><th>{% trans "Projects" %}</th><th>{% trans "Terms" %}</th><th>{% trans "Status" %}</th></tr>
+        <th>{% trans "Quotations" %}</th><th>{% trans "Projects" %}</th><th>{% trans "Terms" %}</th><th>{% trans "Status" %}</th>{% if show == 'disabled' %}<th>{% trans "Actions" %}</th>{% endif %}</tr>
     {% for r in rows %}
     <tr>
-      <td><a href="{% url 'web:customer_detail' r.customer.id %}"><strong>{{ r.customer.display_name }}</strong></a>
+      <td>{% if show == 'disabled' %}<strong>{{ r.customer.display_name }}</strong>{% else %}<a href="{% url 'web:customer_detail' r.customer.id %}"><strong>{{ r.customer.display_name }}</strong></a>{% endif %}
         {% if r.customer.industry %}<br><span class="muted" style="font-size:12.5px;">{{ r.customer.industry }}</span>{% endif %}</td>
       <td class="muted">{{ r.customer.code }}</td>
       <td class="muted">{{ r.customer.vendor_number|default:"—" }}</td>
@@ -41,13 +46,27 @@
       <td>{% if r.customer.status == 'active' %}<span class="chip ok">{% trans "Active" %}</span>
         {% elif r.customer.status == 'blacklisted' %}<span class="chip bad">{% trans "Blacklisted" %}</span>
         {% else %}<span class="chip">{{ r.customer.get_status_display }}</span>{% endif %}</td>
+      {% if show == 'disabled' %}
+      <td class="row" style="gap:6px;">
+        {% if can_delete %}
+        <form method="post" action="{% url 'web:customer_restore' r.customer.id %}" style="display:inline;margin:0;">{% csrf_token %}
+          <button class="btn ghost" type="submit">{% trans "Restore" %}</button></form>
+        {% endif %}
+        {% if is_platform_owner %}
+        <form method="post" action="{% url 'web:customer_hard_delete' r.customer.id %}" style="display:inline;margin:0;"
+              onsubmit="return confirm('{% trans "Permanently delete this customer? This removes the record for good and cannot be undone." %}');">{% csrf_token %}
+          <button class="btn ghost" type="submit" style="color:var(--bad,#b42318);">{% trans "Delete permanently" %}</button></form>
+        {% endif %}
+        {% if not can_delete and not is_platform_owner %}<span class="muted">—</span>{% endif %}
+      </td>
+      {% endif %}
     </tr>
-    {% empty %}<tr><td colspan="9" class="muted" style="padding:20px;">{% trans "No customers yet." %}</td></tr>
+    {% empty %}<tr><td colspan="{% if show == 'disabled' %}10{% else %}9{% endif %}" class="muted" style="padding:20px;">{% if show == 'disabled' %}{% trans "No disabled customers." %}{% else %}{% trans "No customers yet." %}{% endif %}</td></tr>
     {% endfor %}
   </table>
 </div>
 
-{% if can_manage %}
+{% if can_manage and show != 'disabled' %}
 <details class="add-collapse">
   <summary class="btn">{% trans "+ Add customer" %}</summary>
   <div class="card" style="margin-top:12px;">
