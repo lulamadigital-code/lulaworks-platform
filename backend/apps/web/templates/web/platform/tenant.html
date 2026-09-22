@@ -292,12 +292,32 @@
       <td>v{{ a.version }} {% if a.contract_ref %}<span class="muted">· {{ a.contract_ref }}</span>{% endif %}</td>
       <td>{% if a.status == 'accepted' %}<span class="chip ok">Accepted</span>{% elif a.status == 'change_requested' %}<span class="chip" style="background:#fff3e0;color:#b9711a;">Change requested</span>{% elif a.status == 'sent' %}<span class="chip">Sent</span>{% elif a.status == 'superseded' %}<span class="muted">Superseded</span>{% else %}<span class="muted">{{ a.get_status_display }}</span>{% endif %}</td>
       <td class="muted">{{ a.sent_at|date:"d M H:i"|default:"—" }}{% if a.opened_at %} · opened{% endif %}</td>
-      <td class="muted">{% if a.accepted_at %}{{ a.accepted_at|date:"d M H:i" }}{% if a.accepted_by_email %}<br>{{ a.accepted_by_email }}{% endif %}{% if a.acceptance_ip %} · {{ a.acceptance_ip }}{% endif %}{% else %}—{% endif %}</td>
+      <td class="muted">{% if a.accepted_at %}{{ a.accepted_at|date:"d M H:i" }}{% if a.acceptance_method %} · {{ a.acceptance_method }}{% endif %}{% if a.accepted_by_email %}<br>{{ a.accepted_by_email }}{% endif %}{% if a.acceptance_ip %} · {{ a.acceptance_ip }}{% endif %}{% else %}—{% endif %}</td>
       <td>{% if a.provisioning_status == 'activated' %}<span class="chip ok">✓ Provisioned</span>{% elif a.provisioning_status == 'mismatch' %}<span class="chip" style="background:#fdecef;color:#c22a41;">⚠ Mismatch</span>{% else %}<span class="muted">—</span>{% endif %}</td>
     </tr>
     {% endfor %}
   </table>
   <p class="sub" style="font-size:12px;margin:10px 0 0;">Each “Send agreement” creates a new immutable version. Accepted versions record who accepted, when, from which IP — the chain of evidence.</p>
+
+  <details style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px;">
+    <summary style="cursor:pointer;font-size:13px;color:var(--primary-d);font-weight:600;">Signature methods {% if not has_sent_agreement %}<span class="muted">(send an agreement first)</span>{% endif %}</summary>
+    <div style="margin-top:10px;font-size:12.5px;">
+      {% for p in esign_providers %}
+      <div style="padding:3px 0;">{% if p.configured %}✓{% else %}<span class="muted">•</span>{% endif %} {{ p.label }}{% if not p.configured %} <span class="muted">— not configured</span>{% endif %}</div>
+      {% endfor %}
+      <p class="muted" style="margin:8px 0;font-size:12px;">Online click-accept is the default. For an offline signature, upload the counter-signed agreement below to record acceptance. DocuSign activates automatically once its credentials are set in the environment.</p>
+      {% if has_sent_agreement %}
+      <form method="post" enctype="multipart/form-data" class="row" style="gap:6px;flex-wrap:wrap;align-items:flex-end;">
+        {% csrf_token %}<input type="hidden" name="action" value="accept_by_upload">
+        <div><label style="font-size:12px;">Signer name</label><br><input type="text" name="signer_name" placeholder="Full name"></div>
+        <div><label style="font-size:12px;">Signer email</label><br><input type="email" name="signer_email" placeholder="signer@…"></div>
+        <div><input type="file" name="signed_file" required></div>
+        <button class="btn ghost" type="submit">Record signed acceptance</button>
+      </form>
+      {% endif %}
+    </div>
+  </details>
+
   {% if agr_finalized and not pending_change %}
   <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:14px;border-top:1px solid var(--line);padding-top:12px;">
     <form method="post" style="margin:0;">{% csrf_token %}<input type="hidden" name="action" value="start_change"><input type="hidden" name="change_kind" value="renewal"><button class="btn ghost" type="submit">↻ Start renewal</button></form>

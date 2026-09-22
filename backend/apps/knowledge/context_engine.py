@@ -21,7 +21,8 @@ from dataclasses import dataclass, field
 from apps.web.relations import related_records, resolve_subject
 
 # The record kinds the engine can ground on today (keys of relations.resolve_subject).
-KINDS = ("quotation", "customer_po", "job", "commercial_document", "customer")
+KINDS = ("quotation", "customer_po", "job", "commercial_document", "customer",
+         "account")
 
 
 @dataclass
@@ -217,6 +218,72 @@ def _history_for(kind, obj, user) -> dict:
     return {}
 
 
+def _account_context(user, pk) -> Context | None:
+    """Grounding for the tenant's own Enterprise account — plan, contract dates,
+    usage (contracted/used/remaining) and factual signals. Read-only facts; money
+    figures are gated on finance access, and only the user's OWN company resolves
+    (tenant isolation)."""
+    from apps.identity.models import Company
+    own = getattr(user, "active_company_id", None)
+    if own is None or str(pk) != str(own):
+        return None
+    company = Company.objects.filter(pk=own).first()
+    if company is None:
+        return None
+    can_money = _money_ok(user)
+
+    from apps.billing import services as billing
+
+    def _gb(v):
+        return f"{float(v):.0f} GB" if v is not None else "—"
+
+    fields = {}
+    sub = getattr(company, "subscription", None)
+    plan = getattr(getattr(sub, "plan", None), "name", None)
+    if plan:
+        fields["Plan"] = plan
+    try:
+        st = billing.enterprise_state(company)
+        fields["Account status"] = st.get("account")
+        fields["Agreement"] = st.get("agreement")
+    except Exception:                                # noqa: BLE001
+        pass
+    ov = (sub.overrides if sub else None) or {}
+    if ov.get("contract_term_months"):
+        fields["Contract term"] = f"{ov['contract_term_months']} months"
+    if ov.get("contract_end"):
+        fields["Renews / ends"] = ov["contract_end"]
+    if can_money and ov.get("contract_price"):
+        fields["Contract price"] = ov["contract_price"]
+    try:
+        u = billing.enterprise_usage(company)
+        fields["Seats"] = (f"{u['seats']['used']:.0f} used / "
+                           f"{u['seats']['contracted']:.0f} contracted "
+                           f"({u['seats']['remaining']:.0f} remaining)")
+        fields["Storage"] = (f"{_gb(u['storage']['used'])} used / "
+                             f"{_gb(u['storage']['contracted'])} contracted")
+        fields["AI credits"] = (f"{u['credits']['used']:.0f} used / "
+                                f"{u['credits']['contracted']:.0f} this cycle "
+                                f"({u['credits']['remaining']:.0f} remaining)")
+    except Exception:                                # noqa: BLE001
+        pass
+    try:
+        sigs = billing.enterprise_signals(company)
+        if not can_money:
+            sigs = [s for s in sigs if "invoice" not in s["text"].lower()]
+        if sigs:
+            fields["Alerts"] = " · ".join(s["text"] for s in sigs)
+    except Exception:                                # noqa: BLE001
+        pass
+
+    return Context(
+        kind="account", id=str(pk), title=f"{company.name} — account",
+        subtitle="Enterprise account facts (read-only; never changes anything).",
+        fields={k: v for k, v in fields.items() if v not in (None, "")},
+        related=[], money_visible=can_money, history={},
+        scope={"user": str(getattr(user, "id", "")), "money_visible": can_money})
+
+
 def context_for(user, kind, pk) -> Context | None:
     """Build the grounded context bundle for the record `kind`/`pk` as seen by
     `user`. Returns None if the kind is unknown or the record is not visible in
@@ -228,6 +295,8 @@ def context_for(user, kind, pk) -> Context | None:
     LulaAI never confuses historical context with a live record."""
     if kind not in KINDS:
         return None
+    if kind == "account":
+        return _account_context(user, pk)
     obj = resolve_subject(kind, pk)
     if obj is None:
         return None

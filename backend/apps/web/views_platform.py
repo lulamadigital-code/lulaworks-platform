@@ -272,7 +272,8 @@ def platform_tenant(request, pk):
                 "create_enterprise_invoice": "billing",
                 "record_enterprise_payment": "billing",
                 "set_account_owner": "tenants",
-                "start_change": "billing"}
+                "start_change": "billing",
+                "accept_by_upload": "billing"}
             need = _cap_for.get(action)
             if need and not request.user.can_platform(need):
                 messages.error(request, "You don't have access for that action.")
@@ -462,6 +463,32 @@ def platform_tenant(request, pk):
                         reference=request.POST.get("pay_reference", ""),
                         paid_date=request.POST.get("pay_date") or None, actor=request.user)
                     messages.success(request, "Payment recorded.")
+                elif action == "accept_by_upload":
+                    # Offline acceptance: attach the counter-signed document and
+                    # mark the latest sent agreement accepted (method=upload).
+                    from apps.billing.models import EnterpriseAgreement, EnterpriseDocument
+                    agr = (EnterpriseAgreement.objects.filter(
+                        company=company, status=EnterpriseAgreement.Status.SENT)
+                        .order_by("-version").first())
+                    if agr is None:
+                        raise ValueError("No sent agreement to accept. Send the agreement first.")
+                    f = request.FILES.get("signed_file")
+                    if not f:
+                        raise ValueError("Attach the signed agreement document.")
+                    doc = EnterpriseDocument.objects.create(
+                        company=company, agreement=agr,
+                        kind=EnterpriseDocument.Kind.SIGNED,
+                        name=(request.POST.get("signed_name", "").strip() or f.name)[:200],
+                        file=f, uploaded_by=request.user)
+                    billing.accept_agreement(
+                        agr, name=request.POST.get("signer_name", "").strip(),
+                        email=request.POST.get("signer_email", "").strip(),
+                        method="upload", )
+                    agr.acceptance_ref = f"doc:{doc.id}"
+                    agr.save(update_fields=["acceptance_ref", "updated_at"])
+                    billing.record_agreement_response(company, accepted=True,
+                                                      snapshot=agr.snapshot)
+                    messages.success(request, "Recorded acceptance from the signed document.")
                 elif action == "start_change":
                     kind = request.POST.get("change_kind", "amendment")
                     billing.start_change(company, kind, actor=request.user)
@@ -573,6 +600,11 @@ def platform_tenant(request, pk):
             company=company, status=EnterpriseAgreement.Status.ACCEPTED)
             .order_by("version").first())
         ctx["original_limits"] = (_first.snapshot or {}).get("limits", {}) if _first else {}
+        from apps.billing import esign
+        ctx["esign_providers"] = [{"name": p.name, "label": p.label,
+                                   "configured": p.is_configured()} for p in esign.providers()]
+        ctx["has_sent_agreement"] = EnterpriseAgreement.objects.filter(
+            company=company, status=EnterpriseAgreement.Status.SENT).exists()
 
         # Enterprise price helper — defaults grounded in the platform's REAL cost
         # model, editable in the UI. seat value = Business per-seat rate; storage

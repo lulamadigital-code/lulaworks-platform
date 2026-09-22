@@ -379,6 +379,12 @@ PAYMENT_GATEWAY = config("PAYMENT_GATEWAY", default="mock")
 STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY", default="")
 STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY", default="")
 STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET", default="")
+
+# --- E-signature (DocuSign) for Enterprise agreements. Empty = not configured;
+# the signature-provider abstraction reports DocuSign as unavailable until set. ---
+DOCUSIGN_INTEGRATION_KEY = config("DOCUSIGN_INTEGRATION_KEY", default="")
+DOCUSIGN_ACCOUNT_ID = config("DOCUSIGN_ACCOUNT_ID", default="")
+DOCUSIGN_SECRET_KEY = config("DOCUSIGN_SECRET_KEY", default="")
 # Paystack (Africa-focused alternative provider). Webhook auth is HMAC-SHA512
 # with the secret key, so no separate webhook secret is needed.
 PAYSTACK_SECRET_KEY = config("PAYSTACK_SECRET_KEY", default="")
