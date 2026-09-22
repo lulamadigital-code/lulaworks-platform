@@ -277,6 +277,47 @@
     <button class="btn" type="submit">Upload</button>
   </form>
 </div>
+
+<div class="card">
+  <h2 style="margin-top:0;">Enterprise billing <span class="sub" style="font-weight:400;font-size:13px;">— invoices &amp; payments (invoice-based, not auto-charged)</span></h2>
+  {% if invoices %}
+  <table class="kv" style="width:100%;font-size:13px;margin-bottom:12px;">
+    <tr><th style="text-align:left;">Invoice</th><th style="text-align:left;">Period</th><th class="right">Amount</th><th class="right">Balance</th><th style="text-align:left;">Due</th><th style="text-align:left;">Status</th><th></th></tr>
+    {% for i in invoices %}
+    <tr>
+      <td><strong>{{ i.number }}</strong></td>
+      <td class="muted">{% if i.period_start %}{{ i.period_start|date:"d M y" }}–{{ i.period_end|date:"d M y" }}{% else %}—{% endif %}</td>
+      <td class="right">{{ i.currency }} {{ i.amount|floatformat:2 }}</td>
+      <td class="right">{{ i.currency }} {{ i.balance|floatformat:2 }}</td>
+      <td class="muted">{{ i.due_date|date:"d M Y" }}</td>
+      <td>{% if i.effective_status == 'paid' %}<span class="chip ok">Paid</span>{% elif i.effective_status == 'overdue' %}<span class="chip" style="background:#fdecef;color:#c22a41;">Overdue</span>{% elif i.effective_status == 'partial' %}<span class="chip" style="background:#fff3e0;color:#b9711a;">Part-paid</span>{% else %}<span class="chip">Sent</span>{% endif %}</td>
+      <td class="right">{% if i.balance > 0 %}
+        <details><summary style="cursor:pointer;color:var(--primary-d);font-size:12.5px;font-weight:600;">Record payment</summary>
+          <form method="post" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;">
+            {% csrf_token %}<input type="hidden" name="action" value="record_enterprise_payment"><input type="hidden" name="invoice_id" value="{{ i.id }}">
+            <input type="number" step="0.01" name="pay_amount" value="{{ i.balance|floatformat:2 }}" style="width:110px;" placeholder="Amount" required>
+            <select name="pay_method"><option value="eft">EFT</option><option value="card">Card</option><option value="cash">Cash</option><option value="other">Other</option></select>
+            <input type="text" name="pay_reference" placeholder="Reference" style="width:120px;">
+            <input type="date" name="pay_date">
+            <button class="btn" type="submit" style="padding:5px 12px;font-size:12.5px;">Save</button>
+          </form>
+        </details>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="sub" style="font-size:12.5px;">No invoices yet.</p>{% endif %}
+
+  <form method="post" class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end;border-top:1px solid var(--line);padding-top:12px;">
+    {% csrf_token %}<input type="hidden" name="action" value="create_enterprise_invoice">
+    <div><label style="font-size:12px;">Amount</label><br><input type="number" step="0.01" name="inv_amount" value="{{ invoice_suggest }}" placeholder="e.g. 48000" required style="width:120px;"></div>
+    <div><label style="font-size:12px;">Period start</label><br><input type="date" name="inv_period_start"></div>
+    <div><label style="font-size:12px;">Period end</label><br><input type="date" name="inv_period_end"></div>
+    <div style="flex:1;min-width:140px;"><label style="font-size:12px;">Note</label><br><input type="text" name="inv_note" placeholder="e.g. Annual subscription 2026-27" style="width:100%;"></div>
+    <button class="btn" type="submit">Raise invoice</button>
+  </form>
+  <p class="sub" style="font-size:12px;margin:8px 0 0;">Due date is set from the agreed payment terms. Payments are recorded manually — this does not auto-charge or reconcile.</p>
+</div>
 {% endif %}
 
 {% if sso %}

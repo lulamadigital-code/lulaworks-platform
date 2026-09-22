@@ -268,7 +268,9 @@ def platform_tenant(request, pk):
                 "finalize_enterprise": "billing",
                 "send_enterprise_agreement": "billing",
                 "upload_enterprise_doc": "billing",
-                "delete_enterprise_doc": "billing"}
+                "delete_enterprise_doc": "billing",
+                "create_enterprise_invoice": "billing",
+                "record_enterprise_payment": "billing"}
             need = _cap_for.get(action)
             if need and not request.user.can_platform(need):
                 messages.error(request, "You don't have access for that action.")
@@ -439,6 +441,25 @@ def platform_tenant(request, pk):
                     if d:
                         d.delete()
                         messages.success(request, "Document removed.")
+                elif action == "create_enterprise_invoice":
+                    billing.create_enterprise_invoice(
+                        company, amount=request.POST.get("inv_amount", ""),
+                        period_start=request.POST.get("inv_period_start") or None,
+                        period_end=request.POST.get("inv_period_end") or None,
+                        note=request.POST.get("inv_note", ""), actor=request.user)
+                    messages.success(request, "Invoice raised.")
+                elif action == "record_enterprise_payment":
+                    from apps.billing.models import EnterpriseInvoice
+                    inv = EnterpriseInvoice.objects.filter(
+                        company=company, pk=request.POST.get("invoice_id")).first()
+                    if inv is None:
+                        raise ValueError("Invoice not found.")
+                    billing.record_enterprise_payment(
+                        inv, amount=request.POST.get("pay_amount", ""),
+                        method=request.POST.get("pay_method", "eft"),
+                        reference=request.POST.get("pay_reference", ""),
+                        paid_date=request.POST.get("pay_date") or None, actor=request.user)
+                    messages.success(request, "Payment recorded.")
                 elif action == "toggle_active":
                     company.is_active = not company.is_active
                     company.save(update_fields=["is_active", "updated_at"])
@@ -497,9 +518,13 @@ def platform_tenant(request, pk):
         # Commercial terms / deal contacts (draft) + contract documents.
         ctx["commercial"] = _ov.get("commercial") or {}
         ctx["contacts"] = _ov.get("contacts") or {}
-        from apps.billing.models import EnterpriseDocument
+        from apps.billing.models import EnterpriseDocument, EnterpriseInvoice
         ctx["documents"] = list(EnterpriseDocument.objects.filter(company=company))
         ctx["doc_kinds"] = EnterpriseDocument.Kind.choices
+        # Enterprise invoices + a suggested amount parsed from the agreed price.
+        ctx["invoices"] = list(EnterpriseInvoice.objects.filter(company=company)
+                               .prefetch_related("payments")[:12])
+        ctx["invoice_suggest"] = billing.parse_amount(_ov.get("contract_price", ""))
 
         # Enterprise price helper — defaults grounded in the platform's REAL cost
         # model, editable in the UI. seat value = Business per-seat rate; storage

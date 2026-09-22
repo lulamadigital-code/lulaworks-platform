@@ -383,6 +383,80 @@ def finalize_agreement(company, actor=None):
     return agr, matched
 
 
+_NET_DAYS = {"due_on_receipt": 0, "net15": 15, "net30": 30, "net45": 45,
+             "net60": 60, "net90": 90}
+
+
+def _next_invoice_number():
+    import re as _re
+    from django.db.models import Max
+    from .models import EnterpriseInvoice
+    year = timezone.now().year
+    prefix = f"LW-INV-{year}-"
+    mx = 0
+    for num in (EnterpriseInvoice.all_objects.filter(number__startswith=prefix)
+                .values_list("number", flat=True)):
+        m = _re.search(r"(\d+)$", num or "")
+        if m:
+            mx = max(mx, int(m.group(1)))
+    return f"{prefix}{mx + 1:04d}"
+
+
+def parse_amount(text) -> str:
+    """Digits out of a free-text price like 'R48,000 / mo' → '48000' (best-effort
+    prefill for the invoice amount; the admin confirms it)."""
+    import re as _re
+    digits = _re.sub(r"[^\d.]", "", (text or "").split("/")[0])
+    return digits or ""
+
+
+def create_enterprise_invoice(company, *, amount, period_start=None, period_end=None,
+                              note="", actor=None):
+    """Raise an Enterprise invoice. Due date derives from the agreement's payment
+    terms (Net N). Never charges anything — it is a record to send and collect on."""
+    from decimal import Decimal, InvalidOperation
+    from .models import EnterpriseInvoice
+    try:
+        amt = Decimal(str(amount))
+    except (InvalidOperation, TypeError):
+        raise ValueError("Enter a valid invoice amount.")
+    if amt <= 0:
+        raise ValueError("Invoice amount must be greater than zero.")
+    sub = getattr(company, "subscription", None)
+    ov = (sub.overrides if sub else None) or {}
+    terms = (ov.get("commercial", {}) or {}).get("payment_terms", "net30")
+    today = timezone.localdate()
+    return EnterpriseInvoice.objects.create(
+        company=company, agreement=current_agreement(company),
+        number=_next_invoice_number(), status=EnterpriseInvoice.Status.SENT,
+        issue_date=today, due_date=today + timedelta(days=_NET_DAYS.get(terms, 30)),
+        period_start=period_start or None, period_end=period_end or None,
+        currency=getattr(sub, "currency", "ZAR") if sub else "ZAR",
+        amount=amt, payment_terms=terms, note=note[:255], created_by=actor)
+
+
+def record_enterprise_payment(invoice, *, amount, method="eft", reference="",
+                              paid_date=None, actor=None):
+    from decimal import Decimal, InvalidOperation
+    from .models import EnterpriseInvoice, EnterprisePayment
+    try:
+        amt = Decimal(str(amount))
+    except (InvalidOperation, TypeError):
+        raise ValueError("Enter a valid payment amount.")
+    if amt <= 0:
+        raise ValueError("Payment amount must be greater than zero.")
+    pay = EnterprisePayment.objects.create(
+        invoice=invoice, amount=amt, method=method, reference=reference[:120],
+        paid_date=paid_date or timezone.localdate(), recorded_by=actor)
+    # Update invoice status from the running balance.
+    if invoice.balance <= 0:
+        invoice.status = EnterpriseInvoice.Status.PAID
+    elif invoice.amount_paid > 0:
+        invoice.status = EnterpriseInvoice.Status.PARTIAL
+    invoice.save(update_fields=["status", "updated_at"])
+    return pay
+
+
 def enterprise_state(company) -> dict:
     """The three DISTINCT Enterprise states (never collapsed into one):
       • agreement   — the commercial contract lifecycle

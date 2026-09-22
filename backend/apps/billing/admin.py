@@ -37,3 +37,18 @@ class EnterpriseDocumentAdmin(admin.ModelAdmin):
     list_display = ("company", "kind", "name", "created_at")
     list_filter = ("kind",)
     search_fields = ("company__name", "name")
+
+
+from .models import EnterpriseInvoice, EnterprisePayment  # noqa: E402
+
+
+@admin.register(EnterpriseInvoice)
+class EnterpriseInvoiceAdmin(admin.ModelAdmin):
+    list_display = ("number", "company", "amount", "status", "due_date")
+    list_filter = ("status",)
+    search_fields = ("number", "company__name")
+
+
+@admin.register(EnterprisePayment)
+class EnterprisePaymentAdmin(admin.ModelAdmin):
+    list_display = ("invoice", "amount", "method", "paid_date")

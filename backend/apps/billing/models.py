@@ -337,3 +337,96 @@ class EnterpriseDocument(PlatformBaseModel):
 
     def __str__(self):
         return f"{self.get_kind_display()} — {self.name}"
+
+
+class EnterpriseInvoice(PlatformBaseModel):
+    """A platform→tenant invoice for a negotiated Enterprise contract. This is the
+    FIRST platform-side invoice (distinct from a tenant's own client invoices in
+    quotes.CommercialDocument, and from the BillingTransaction event ledger).
+    Invoice-based billing (annual/quarterly), Net terms — never auto-charged."""
+
+    from django.conf import settings as _s
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        SENT = "sent", "Sent"
+        PAID = "paid", "Paid"
+        PARTIAL = "partial", "Part-paid"
+        VOID = "void", "Void"
+
+    company = models.ForeignKey(
+        "identity.Company", on_delete=models.CASCADE, related_name="enterprise_invoices")
+    agreement = models.ForeignKey(
+        "billing.EnterpriseAgreement", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="invoices")
+    number = models.CharField(max_length=32, db_index=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.SENT)
+    issue_date = models.DateField()
+    due_date = models.DateField()
+    period_start = models.DateField(null=True, blank=True)
+    period_end = models.DateField(null=True, blank=True)
+    currency = models.CharField(max_length=3, default="ZAR")
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    payment_terms = models.CharField(max_length=24, blank=True)
+    note = models.CharField(max_length=255, blank=True)
+    created_by = models.ForeignKey(
+        _s.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+
+    class Meta:
+        ordering = ["-issue_date", "-created_at"]
+        constraints = [models.UniqueConstraint(fields=["number"], name="uniq_ent_invoice_number")]
+        indexes = [models.Index(fields=["company", "status"])]
+
+    def __str__(self):
+        return f"{self.number} · {self.company_id} · {self.amount}"
+
+    @property
+    def amount_paid(self):
+        from decimal import Decimal
+        return sum((p.amount for p in self.payments.all()), Decimal("0"))
+
+    @property
+    def balance(self):
+        return self.amount - self.amount_paid
+
+    @property
+    def is_overdue(self) -> bool:
+        from django.utils import timezone
+        return (self.status != self.Status.PAID and self.balance > 0
+                and self.due_date < timezone.localdate())
+
+    @property
+    def effective_status(self) -> str:
+        if self.balance <= 0 and self.amount > 0:
+            return "paid"
+        if self.is_overdue:
+            return "overdue"
+        return self.status
+
+
+class EnterprisePayment(PlatformBaseModel):
+    """A payment recorded against an Enterprise invoice. Manual by default (EFT /
+    bank transfer) — recording it here does NOT mean it was auto-reconciled."""
+
+    from django.conf import settings as _s
+
+    class Method(models.TextChoices):
+        EFT = "eft", "EFT / bank transfer"
+        CARD = "card", "Card"
+        CASH = "cash", "Cash"
+        OTHER = "other", "Other"
+
+    invoice = models.ForeignKey(
+        EnterpriseInvoice, on_delete=models.CASCADE, related_name="payments")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    method = models.CharField(max_length=8, choices=Method.choices, default=Method.EFT)
+    reference = models.CharField(max_length=120, blank=True)
+    paid_date = models.DateField()
+    recorded_by = models.ForeignKey(
+        _s.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+
+    class Meta:
+        ordering = ["-paid_date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.amount} on {self.invoice.number}"
