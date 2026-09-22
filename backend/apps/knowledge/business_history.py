@@ -177,6 +177,50 @@ def change_history(obj, user, *, limit=50) -> list:
     return out
 
 
+def outcomes(obj, user) -> list:
+    """Factual problems/outcomes on a JOB (§20) — never a subjective label like
+    "bad job", only counted facts derived from canonical records: safety/incident
+    reports, delays, being past its due date, and (with finance access) spend
+    over budget. Empty for entities without an outcome signal. Read-only, tenant-
+    scoped; authorised analytics can derive patterns from these facts elsewhere."""
+    from apps.projects.models import Project, ProjectStatus
+    if not isinstance(obj, Project):
+        return []
+
+    from django.db.models import Sum
+    from django.utils import timezone
+
+    from apps.core.context import tenant_scope
+    from apps.execution.models import ReportKind, TaskReport, TaskResourceAllocation
+
+    can_money = _can_money(user)
+    found = []
+    with tenant_scope(obj.company_id):
+        reps = TaskReport.objects.filter(task__project=obj)
+        incidents = reps.filter(kind=ReportKind.INCIDENT).count()
+        if incidents:
+            found.append({"type": "incident", "label": "Safety / incident reports",
+                          "count": incidents})
+        delays = reps.filter(kind=ReportKind.DELAY).count()
+        if delays:
+            found.append({"type": "delay", "label": "Delays / standing time",
+                          "count": delays})
+        today = timezone.localdate()
+        if (obj.due_date and obj.status != ProjectStatus.COMPLETE
+                and obj.due_date < today):
+            found.append({"type": "overdue", "label": "Past due date, not complete",
+                          "due_date": obj.due_date.isoformat(),
+                          "days": (today - obj.due_date).days})
+        if can_money and obj.budget_amount and obj.budget_amount > 0:
+            spent = (TaskResourceAllocation.objects
+                     .filter(task__project=obj, is_monetary=True)
+                     .aggregate(s=Sum("amount_spent"))["s"] or 0)
+            if spent > obj.budget_amount:
+                found.append({"type": "over_budget", "label": "Spend exceeds budget",
+                              "budget": str(obj.budget_amount), "spent": str(spent)})
+    return found
+
+
 def history_for(obj, user, *, kind=None, timeline_limit=60) -> dict:
     """One permission-aware Business-History view of a canonical record.
 
@@ -195,6 +239,7 @@ def history_for(obj, user, *, kind=None, timeline_limit=60) -> dict:
         "summary": _summary(obj, kind, user),
         "timeline": _timeline(obj, kind, user, limit=timeline_limit),
         "changes": change_history(obj, user),
+        "outcomes": outcomes(obj, user),
         "related": related_records(obj, user),
     }
 
