@@ -155,3 +155,57 @@ def history_for_kind(kind, pk, user, **kwargs) -> dict | None:
     if obj is None:
         return None
     return history_for(obj, user, kind=kind, **kwargs)
+
+
+# ── Company-level history (the whole tenant's business, §56/§57) ──────────────
+
+def _rate(n, d) -> dict:
+    """A proportion that always carries its sample size (§52). None value when
+    there's nothing to divide — never a fabricated 0% (§51)."""
+    return {"value": round(100 * n / d, 1) if d else None, "won": n, "of": d}
+
+
+def company_history(company, user) -> dict:
+    """Factual company-wide Business-History metrics, from canonical records.
+
+    Every metric names its sample size; missing data is absent, not a false zero.
+    Financial totals are withheld without `finance.view_money`. Tenant-scoped to
+    `company` regardless of caller context (§47)."""
+    from django.db.models import Sum
+
+    from apps.core.context import tenant_scope
+    from apps.customers.models import Customer
+    from apps.projects.models import Project, ProjectStatus
+    from apps.quotes.models import (CommercialDocument, CommercialDocumentPayment,
+                                    Quotation, QuotationStatus)
+
+    can_money = _can_money(user)
+    won_statuses = [QuotationStatus.AWARDED, QuotationStatus.ACCEPTED]
+
+    with tenant_scope(company.id):
+        customers = Customer.objects.count()
+        q_total = Quotation.objects.count()
+        q_won = Quotation.objects.filter(status__in=won_statuses).count()
+        jobs_total = Project.objects.count()
+        jobs_complete = Project.objects.filter(status=ProjectStatus.COMPLETE).count()
+        jobs_active = Project.objects.exclude(
+            status__in=[ProjectStatus.COMPLETE, ProjectStatus.CANCELLED]).count()
+
+        commercial = {}
+        if can_money:
+            invoices = CommercialDocument.objects.filter(
+                kind=CommercialDocument.Kind.INVOICE).count()
+            paid = CommercialDocumentPayment.objects.aggregate(s=Sum("amount"))["s"]
+            commercial = {
+                "invoice_count": invoices,
+                "payments_received": str(paid) if paid is not None else None,
+            }
+
+    return {
+        "customers": customers,
+        "quotations": {"total": q_total, "won": q_won,
+                       "conversion": _rate(q_won, q_total)},
+        "jobs": {"total": jobs_total, "active": jobs_active, "complete": jobs_complete},
+        "commercial": commercial,
+        "money_visible": can_money,
+    }

@@ -10,9 +10,11 @@ from django.test import TestCase
 from apps.core.context import tenant_scope
 from apps.customers.models import Customer
 from apps.identity.models import Company, Membership, Permission, Role, User
-from apps.knowledge.business_history import history_for, history_for_kind
+from apps.knowledge.business_history import (company_history, history_for,
+                                             history_for_kind)
+from apps.projects.models import Project, ProjectStatus
 from apps.quotes.models import (CommercialDocument, CommercialDocumentPayment,
-                                Quotation)
+                                Quotation, QuotationStatus)
 
 
 def _user(company, codes, email):
@@ -102,3 +104,53 @@ class BusinessHistoryFacadeTests(TestCase):
         self.assertEqual(r.data["kind"], "customer")
         self.assertTrue(r.data["permissions"]["money"])
         self.assertIn("related", r.data)
+
+
+class CompanyHistoryTests(TestCase):
+    """Company-level history (§56/§57): factual, sample-sized, money-gated."""
+
+    def setUp(self):
+        self.c = Company.objects.create(name="Acme")
+        self.finance = _user(self.c, ["finance.view_money"], "cfo2@acme.co")
+        self.field = _user(self.c, ["projects.view"], "worker2@acme.co")
+
+    def _seed(self):
+        with tenant_scope(self.c.id):
+            Customer.objects.create(company=self.c, name="ABC Mining")
+            for i, st in enumerate([QuotationStatus.ACCEPTED, QuotationStatus.AWARDED,
+                                    QuotationStatus.DRAFT]):
+                Quotation.objects.create(company=self.c, number=f"QTN-{i}",
+                                         client_name="ABC", status=st)
+            Project.objects.create(company=self.c, number="JOB-1", client_name="ABC",
+                                   status=ProjectStatus.COMPLETE)
+            Project.objects.create(company=self.c, number="JOB-2", client_name="ABC",
+                                   status=ProjectStatus.PENDING_COMPLIANCE)
+            q = Quotation.objects.create(company=self.c, number="QTN-INV", client_name="ABC")
+            inv = CommercialDocument.objects.create(
+                company=self.c, quotation=q, kind=CommercialDocument.Kind.INVOICE,
+                number="INV-1")
+            CommercialDocumentPayment.objects.create(
+                company=self.c, document=inv, date=date(2026, 1, 15), amount=5000)
+
+    def test_factual_metrics_with_sample_sizes(self):
+        self._seed()
+        h = company_history(self.c, self.finance)
+        self.assertEqual(h["customers"], 1)
+        # 2 of 4 quotations won (accepted + awarded), conversion carries its n.
+        self.assertEqual(h["quotations"]["won"], 2)
+        self.assertEqual(h["quotations"]["conversion"]["of"], 4)
+        self.assertEqual(h["quotations"]["conversion"]["value"], 50.0)
+        self.assertEqual(h["jobs"], {"total": 2, "active": 1, "complete": 1})
+        self.assertEqual(h["commercial"]["invoice_count"], 1)
+        self.assertEqual(h["commercial"]["payments_received"], "5000.00")
+
+    def test_financials_withheld_from_field_worker(self):
+        self._seed()
+        h = company_history(self.c, self.field)
+        self.assertFalse(h["money_visible"])
+        self.assertEqual(h["commercial"], {})
+
+    def test_empty_company_reports_no_false_zero_conversion(self):
+        h = company_history(self.c, self.finance)
+        self.assertEqual(h["quotations"]["total"], 0)
+        self.assertIsNone(h["quotations"]["conversion"]["value"])   # not 0% (§51/§52)
