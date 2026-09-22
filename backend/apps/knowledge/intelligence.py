@@ -57,7 +57,40 @@ def _job_dict(job, money):
         "currency": job.currency,
         "occurred_on": job.occurred_on.isoformat() if job.occurred_on else None,
         "status": job.status,
+        "origin": "imported",              # from the migrated archive (§51 data quality)
         "sources": [d for d in docs if d],
+    }
+
+
+def _live_job_value(project):
+    """A live job's value = the total of its awarded quotation (a property computed
+    from the quote lines). None when there is no quotation yet."""
+    q = getattr(project, "quotation", None)
+    if q is None:
+        return None
+    for attr in ("invoice_total", "total"):
+        val = getattr(q, attr, None)
+        if val is not None:
+            return val
+    return None
+
+
+def _live_job_dict(project, money):
+    """A LIVE job (projects.Project) in the same shape as an imported one, so the
+    two streams merge into one history. The live record IS its own provenance."""
+    q = getattr(project, "quotation", None)
+    when = project.awarded_at or project.created_at
+    val = _live_job_value(project) if money else None
+    return {
+        "id": str(project.id),
+        "title": project.title or (getattr(q, "title", "") if q else "") or project.number,
+        "work_type": project.work_type,
+        "value": (str(val) if val is not None else None),
+        "currency": getattr(getattr(project, "company", None), "currency", "") or "ZAR",
+        "occurred_on": when.date().isoformat() if when else None,
+        "status": project.status,
+        "origin": "live",                  # a current ERP record, not the archive
+        "sources": [{"type": "job", "id": str(project.id), "number": project.number}],
     }
 
 
@@ -78,35 +111,51 @@ def _line_dict(li, money):
 # ── Customer ─────────────────────────────────────────────────────────────────
 def customer_intelligence(customer, user) -> dict:
     """Historical relationship for a customer: previous jobs (count, last, value),
-    similar work, and what we historically quoted/charged them — from the imported
-    archive, evidence-backed."""
+    similar work, and what we historically quoted/charged them — evidence-backed.
+
+    Draws from BOTH the LIVE ERP (projects.Project) and the imported archive
+    (HistoricalJob), merged into one newest-first history and origin-tagged, so
+    the intelligence reflects current business, not just migrated records."""
+    from apps.projects.models import Project
+
     money = can_money(user)
-    jobs = list(HistoricalJob.objects.filter(customer_id=str(customer.pk))
-                .exclude(status=_DISMISSED)
-                .prefetch_related("documents")
-                .order_by("-occurred_on", "-created_at"))
+    live = list(Project.objects.filter(customer=customer)
+                .select_related("quotation").order_by("-awarded_at", "-created_at"))
+    archived = list(HistoricalJob.objects.filter(customer_id=str(customer.pk))
+                    .exclude(status=_DISMISSED)
+                    .prefetch_related("documents")
+                    .order_by("-occurred_on", "-created_at"))
     charged = list(HistoricalLineItem.objects
                    .filter(party_kind=HistoricalLineItem.Party.CUSTOMER,
                            party_id=str(customer.pk), direction__in=_SALE)
                    .select_related("document").order_by("-occurred_on")[:8])
-    if not jobs and not charged:
+    if not live and not archived and not charged:
         return {"found": False}
+
+    # One merged history, newest-first (unknown dates sort last).
+    jobs = ([_live_job_dict(p, money) for p in live]
+            + [_job_dict(j, money) for j in archived])
+    jobs.sort(key=lambda d: d.get("occurred_on") or "", reverse=True)
+
     last = jobs[0] if jobs else None
     total = None
-    if money and jobs:
-        vals = [j.value for j in jobs if j.value is not None]
+    if money:
+        vals = [j.value for j in archived if j.value is not None]
+        vals += [v for v in (_live_job_value(p) for p in live) if v is not None]
         total = str(sum(vals, Decimal("0"))) if vals else None
-    similar = (sum(1 for j in jobs[1:] if last and j.work_type and j.work_type == last.work_type)
-               if last else 0)
+    last_wt = last.get("work_type") if last else None
+    similar = sum(1 for j in jobs[1:] if last_wt and j.get("work_type") == last_wt)
     return {
         "found": True,
         "job_count": len(jobs),
         "similar_count": similar,
-        "last_job": _job_dict(last, money) if last else None,
+        "last_job": last,
         "total_value": total,
         "money_visible": money,
-        "jobs": [_job_dict(j, money) for j in jobs[:6]],
+        "jobs": jobs[:6],
         "charged_items": [_line_dict(li, money) for li in charged],
+        # Data-quality/provenance signal (§51): how much is live vs migrated.
+        "sources_summary": {"live": len(live), "imported": len(archived)},
     }
 
 
