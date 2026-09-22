@@ -325,6 +325,90 @@ def send_enterprise_agreement(company) -> int:
     return len(admins) + (1 if sales else 0)
 
 
+def _enterprise_contracts():
+    """(subscription, contract_end date, overrides) for every subscription that
+    has a stored contract_end (i.e. a negotiated Enterprise deal)."""
+    from datetime import date as _date
+    from .models import Subscription
+    out = []
+    for sub in Subscription.all_objects.select_related("company"):
+        ov = sub.overrides or {}
+        end = ov.get("contract_end")
+        if not end:
+            continue
+        try:
+            out.append((sub, _date.fromisoformat(end), ov))
+        except (ValueError, TypeError):
+            continue
+    return out
+
+
+def upcoming_renewals(within_days: int = 60):
+    """Enterprise contracts renewing within `within_days` (includes overdue, i.e.
+    negative days_left), soonest first — for the console renewals view/badge."""
+    today = timezone.localdate()
+    rows = []
+    for sub, end, ov in _enterprise_contracts():
+        days = (end - today).days
+        if days <= within_days:
+            rows.append({
+                "company": sub.company, "sub": sub, "end": end, "days_left": days,
+                "ref": ov.get("contract_ref", ""), "price": ov.get("contract_price", ""),
+                "term": ov.get("contract_term_months"),
+            })
+    rows.sort(key=lambda r: r["days_left"])
+    return rows
+
+
+#: Remind about renewals this many days out.
+RENEWAL_REMINDER_DAYS = 30
+
+
+def run_renewal_reminders(today=None, window_days: int = RENEWAL_REMINDER_DAYS):
+    """Daily sweep: email sales a digest of Enterprise contracts entering their
+    renewal window. Reminds once per contract_end (a renewed contract, with a new
+    end date, re-arms). Never raises."""
+    today = today or timezone.localdate()
+    due = []
+    for sub, end, ov in _enterprise_contracts():
+        days = (end - today).days
+        if days <= window_days and ov.get("renewal_reminded_for") != end.isoformat():
+            due.append((sub, end, days, ov))
+    if not due:
+        return {"reminded": 0}
+
+    sales = ""
+    try:
+        from apps.administration.models import PlatformSettings
+        sales = (PlatformSettings.load().sales_email or "").strip()
+    except Exception:  # noqa: BLE001
+        sales = ""
+    if sales:
+        lines = ["These Enterprise contracts are up for renewal:", ""]
+        for sub, end, days, ov in due:
+            when = f"overdue by {-days} days" if days < 0 else f"in {days} days"
+            lines.append(f"• {sub.company.name} — renews {end.isoformat()} ({when})"
+                         f"  ·  {ov.get('contract_price', '')}  ·  {ov.get('contract_ref', '')}")
+        lines += ["", "Reach out to confirm renewal terms before the date."]
+        try:
+            from apps.notifications.models import EmailCategory
+            from apps.notifications.service import send_email
+            send_email(to=sales, subject=f"Enterprise renewals due ({len(due)})",
+                       template="generic",
+                       context={"heading": "Upcoming Enterprise renewals",
+                                "body": "\n".join(lines)},
+                       category=EmailCategory.BILLING)
+        except Exception:  # noqa: BLE001
+            pass
+
+    for sub, end, days, ov in due:
+        nov = dict(sub.overrides or {})
+        nov["renewal_reminded_for"] = end.isoformat()
+        sub.overrides = nov
+        sub.save(update_fields=["overrides", "updated_at"])
+    return {"reminded": len(due)}
+
+
 #: How many days before a trial ends to send the reminder.
 TRIAL_REMINDER_DAYS = 3
 

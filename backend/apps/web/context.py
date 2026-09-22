@@ -158,6 +158,7 @@ def nav_flags(request):
     # /platform pages only, so the cross-tenant query never runs on tenant pages).
     sso_activation_count = 0
     enterprise_enquiry_count = 0
+    renewal_count = 0
     if (signed_in and request.path.startswith("/platform")
             and getattr(user, "platform_level", False)):
         from apps.core.context import system_scope
@@ -174,6 +175,12 @@ def nav_flags(request):
                 interest="enterprise", handled=False).count()
         except Exception:                                # noqa: BLE001
             enterprise_enquiry_count = 0
+        try:
+            from apps.billing.services import upcoming_renewals
+            with system_scope():
+                renewal_count = sum(1 for r in upcoming_renewals(within_days=30))
+        except Exception:                                # noqa: BLE001
+            renewal_count = 0
 
     # Attention Centre badge — critical+warning count, CACHED per user (90s) so
     # the cross-module detector runs at most once a minute-and-a-half, not on
@@ -204,6 +211,7 @@ def nav_flags(request):
             "support_open_count": support_open,
             "sso_activation_count": sso_activation_count,
             "enterprise_enquiry_count": enterprise_enquiry_count,
+            "renewal_count": renewal_count,
             "attention_count": attention_count,
             "attention_critical": attention_critical,
             "idle_timeout": getattr(_s, "SESSION_IDLE_TIMEOUT", 0),

@@ -47,6 +47,11 @@ def daily_reminders():
     except Exception as exc:  # noqa: BLE001
         logger.warning("Trial reminders failed: %s", exc)
     try:
+        from apps.billing.services import run_renewal_reminders
+        result["renewals"] = run_renewal_reminders()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Renewal reminders failed: %s", exc)
+    try:
         from apps.execution.services import run_overdue_reminders
         result["overdue"] = run_overdue_reminders()
     except Exception as exc:  # noqa: BLE001

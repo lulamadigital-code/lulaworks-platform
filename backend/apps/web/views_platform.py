@@ -483,6 +483,26 @@ def platform_enquiries(request):
 
 
 @login_required
+def platform_renewals(request):
+    """Enterprise contracts coming up for renewal (and any overdue), soonest
+    first — so deals get renewed before they lapse. Platform staff only."""
+    if not request.user.platform_level:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+    from apps.billing.services import upcoming_renewals
+    from apps.core.context import system_scope
+    with system_scope():
+        rows = upcoming_renewals(within_days=90)
+    kpis = {
+        "overdue": sum(1 for r in rows if r["days_left"] < 0),
+        "d30": sum(1 for r in rows if 0 <= r["days_left"] <= 30),
+        "total": len(rows),
+    }
+    return render(request, "web/platform/renewals.html", {
+        "active": "renewals", "rows": rows, "kpis": kpis})
+
+
+@login_required
 def platform_create_tenant(request):
     """Onboard a new tenant from the console — creates the company on a trial
     and invites the owner by activation link (no password is ever set/emailed)."""
