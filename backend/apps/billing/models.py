@@ -212,6 +212,10 @@ class BillingTransaction(PlatformBaseModel):
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)   # ZAR charged
     credits = models.DecimalField(max_digits=12, decimal_places=2, default=0)  # credits granted
     plan = models.ForeignKey(Plan, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    #: The effective terms at the moment of this event (plan code/name, price,
+    #: currency, cycle, seat/storage/credit limits) — so historical terms are
+    #: reconstructable even after the plan's DATA later changes.
+    snapshot = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["-created_at"]

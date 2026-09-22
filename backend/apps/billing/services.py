@@ -175,12 +175,32 @@ def _reset_credits_to(company, target) -> None:
         allocate_credits(company, delta, source="cycle_reset")
 
 
-def _log(company, kind, description, *, amount=0, credits=0, plan=None):
+def _log(company, kind, description, *, amount=0, credits=0, plan=None, snapshot=None):
     from .models import BillingTransaction
     return BillingTransaction.objects.create(
         company=company, kind=kind, description=description,
         amount=Decimal(amount), credits=Decimal(credits), plan=plan,
+        snapshot=snapshot or {},
     )
+
+
+def _terms_snapshot_for(company, plan, currency, billing_cycle) -> dict:
+    """The effective terms at a plan-change moment, honouring any per-tenant
+    overrides — frozen onto the billing event so history survives plan re-seeds."""
+    sub = getattr(company, "subscription", None)
+
+    def _lim(name, default):
+        return int(sub.limit(name, default)) if sub else default
+    return {
+        "plan_code": plan.code, "plan_name": plan.name,
+        "price": str(plan.price_in(currency, billing_cycle)),
+        "currency": currency, "billing_cycle": billing_cycle,
+        "max_users": _lim("max_users", plan.max_users),
+        "storage_quota_bytes": _lim("storage_quota_bytes", plan.storage_quota_bytes),
+        "monthly_ai_credits": _lim("monthly_ai_credits", plan.monthly_ai_credits),
+        "per_seat_price": str(sub.limit("per_seat_price", plan.per_seat_price) if sub
+                              else plan.per_seat_price),
+    }
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1006,7 +1026,8 @@ def change_plan(company, plan_code: str, billing_cycle: str = "monthly",
         kind = BillingTransaction_kind("DOWNGRADE")
     price = plan.price_in(currency, billing_cycle)
     _log(company, kind, f"Switched to {plan.name} ({billing_cycle}, {currency})",
-         amount=price, plan=plan)
+         amount=price, plan=plan,
+         snapshot=_terms_snapshot_for(company, plan, currency, billing_cycle))
     direction = ("upgraded to" if plan.tier > prev_tier
                  else "changed to" if plan.tier == prev_tier or prev_tier < 0
                  else "moved to")
