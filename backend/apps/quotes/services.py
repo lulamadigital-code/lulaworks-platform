@@ -1321,3 +1321,27 @@ def add_lines_bulk(quote, user, rows, *, section=None) -> int:
         )
         created += 1
     return created
+
+
+def record_payment(doc, user, *, amount, date=None, method="eft", reference=""):
+    """Record a customer payment (POP) against a tax invoice — the SINGLE place
+    both the web view and the DRF API go through, so a payment is created once and
+    always emits its business event (PaymentReceived) exactly once. Feeds the
+    Business-History timeline and the event backbone (§8/§42)."""
+    from django.utils import timezone
+
+    from apps.core.events import publish
+
+    from .models import CommercialDocumentPayment
+
+    payment = CommercialDocumentPayment.objects.create(
+        company=doc.company, document=doc, amount=amount,
+        date=date or timezone.localdate(), method=method or "eft",
+        reference=(reference or "").strip(),
+        created_by=user, updated_by=user)
+    quote = getattr(doc, "quotation", None)
+    customer_id = str(quote.customer_id) if quote and quote.customer_id else None
+    publish("PaymentReceived", company=doc.company, subject=payment, actor=user,
+            payload={"invoice": doc.number, "amount": str(payment.amount),
+                     "outstanding": str(doc.outstanding), "customer_id": customer_id})
+    return payment

@@ -437,6 +437,19 @@ def customer_timeline(customer, limit: int = 60) -> list:
         pass
 
     try:
+        # Customer payments (POP) recorded against invoices — the money actually
+        # coming in, the tail of the commercial chain.
+        from apps.quotes.models import CommercialDocumentPayment
+        for p in (CommercialDocumentPayment.objects
+                  .filter(document__quotation__customer=customer)
+                  .select_related("document").order_by("-created_at")[:40]):
+            add(p.created_at, "💵", "Payment", f"Payment on {p.document.number}",
+                (f"Ref {p.reference}" if p.reference else ""),
+                _rev("commercial_document_detail", p.document_id), p.amount)
+    except Exception:                # noqa: BLE001
+        pass
+
+    try:
         from apps.projects.models import Project
         for p in Project.objects.filter(customer=customer).order_by("-created_at")[:40]:
             add(p.created_at, "🔧", "Job", f"Job {p.number}",
@@ -743,12 +756,21 @@ def log_interaction(company, user, *, summary, channel=Interaction.Channel.NOTE,
     summary = (summary or "").strip()
     if not summary:
         raise CRMError("A logged interaction needs a summary of what was said.")
-    return Interaction.objects.create(
+    interaction = Interaction.objects.create(
         company=company, summary=summary, channel=channel, direction=direction,
         subject=(subject or "").strip(), occurred_at=occurred_at or timezone.now(),
         customer=customer, lead=lead, opportunity=opportunity, contact=contact,
         created_by=user, updated_by=user,
     )
+    # A logged communication is a business event — record it on the backbone so
+    # the Business-History timeline and LulaAI can see the relationship (§8/§44).
+    from apps.core.events import publish
+    publish("CommunicationLogged", company=company,
+            subject=(customer or lead or opportunity or interaction), actor=user,
+            payload={"channel": channel, "direction": direction,
+                     "summary": summary[:200],
+                     "customer_id": str(customer.pk) if customer else None})
+    return interaction
 
 
 # ── Notes ─────────────────────────────────────────────────────────────────────

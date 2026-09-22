@@ -2524,11 +2524,10 @@ def commercial_document_payment(request, pk):
     if amount <= 0:
         messages.error(request, "Enter a payment amount.")
         return redirect("web:commercial_document_detail", pk=pk)
-    CommercialDocumentPayment.objects.create(
-        company=doc.company, document=doc, amount=amount,
-        date=request.POST.get("date") or timezone.localdate(),
-        reference=request.POST.get("reference", "").strip(),
-        created_by=request.user, updated_by=request.user)
+    from apps.quotes.services import record_payment
+    record_payment(doc, request.user, amount=amount,
+                   date=request.POST.get("date") or timezone.localdate(),
+                   reference=request.POST.get("reference", "").strip())
     from apps.core.audit import audit
     audit(request, "invoice.payment_recorded", entity=doc)
     messages.success(request, f"Payment of R{amount} recorded on {doc.number}. "

@@ -144,14 +144,12 @@ class CommercialDocumentViewSet(TenantViewSet):
                              "message": "Only tax invoices take payments."}},
                             status=status.HTTP_400_BAD_REQUEST)
         try:
-            amount = request.data.get("amount")
-            payment = CommercialDocumentPayment.objects.create(
-                company=doc.company, document=doc,
+            from .services import record_payment
+            payment = record_payment(
+                doc, request.user, amount=request.data.get("amount"),
                 date=request.data.get("date") or _date.today(),
-                amount=amount, method=request.data.get("method", "eft"),
-                reference=request.data.get("reference", ""),
-                created_by=request.user, updated_by=request.user,
-            )
+                method=request.data.get("method", "eft"),
+                reference=request.data.get("reference", ""))
         except Exception as exc:  # noqa: BLE001
             return Response({"error": {"code": "invalid", "message": str(exc)}},
                             status=status.HTTP_400_BAD_REQUEST)
