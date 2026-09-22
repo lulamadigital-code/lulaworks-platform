@@ -27,11 +27,11 @@
         <h1>This link is no longer valid</h1>
         <p class="sub">The agreement link has expired or is incorrect. Please contact your Lulaworks account manager for a fresh copy.</p>
       {% elif done == 'accepted' %}
-        <div class="ok">✓ Thank you — your Enterprise agreement is confirmed.</div>
-        <p class="sub" style="margin-top:16px;">We've let our team know and we'll finalise your account. A copy of these terms has been recorded.</p>
+        <div class="ok">✓ Confirmed — your Enterprise agreement is in place.</div>
+        <p class="sub" style="margin-top:16px;">Your account is set up with these terms and ready to use right now — nothing more is needed from you. We've recorded your acceptance and notified our team, and a copy of the terms is on file.</p>
       {% elif done == 'change' %}
-        <div class="ok" style="background:#fff3e0;color:#b9711a;">Thanks — we've sent your request to our team.</div>
-        <p class="sub" style="margin-top:16px;">Your account manager will follow up to adjust the terms and send an updated agreement.</p>
+        <div class="ok" style="background:#fff3e0;color:#b9711a;">Thanks — your change request is with our team.</div>
+        <p class="sub" style="margin-top:16px;">Your account manager will review it and respond <strong>within one business day (24 hours)</strong> with updated terms to confirm.</p>
       {% else %}
         <h1>Your Enterprise agreement</h1>
         <p class="sub">{{ company.name }} — please review the agreed terms and confirm.{% if already %} <br><strong>Note:</strong> these terms were already accepted; confirming again will re-record it.{% endif %}</p>
@@ -58,7 +58,7 @@
             <div style="margin-top:10px;"><button class="btn ghost" type="submit">Send change request</button></div>
           </form>
         </details>
-        <p class="muted" style="margin-top:16px;">Prefer to talk? Reply to the email we sent, or contact your account manager.</p>
+        <p class="muted" style="margin-top:16px;">Accepting confirms your plan immediately — your account is ready to use straight away. Requesting a change sends it to our team, who respond within one business day. Prefer to talk? Reply to the email we sent, or contact your account manager.</p>
       {% endif %}
     </div>
     <div class="foot">© Lulaworks. This is a secure confirmation page.</div>
