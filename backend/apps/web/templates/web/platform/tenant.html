@@ -121,6 +121,8 @@
     {% if sub.overrides.contract_term_months %}<br>Term: <strong>{{ sub.overrides.contract_term_months }} months</strong>{% if sub.overrides.contract_end %} · renews {{ sub.overrides.contract_end }}{% endif %}{% endif %}
     {% if sub.overrides.contract_ref %}<br>Ref: <strong>{{ sub.overrides.contract_ref }}</strong>{% endif %}
     {% if sub.overrides.contract_note %}<br>Note: {{ sub.overrides.contract_note }}{% endif %}
+    {% if sub.overrides.agreement_accepted_at %}<br><span style="color:#0a8f57;font-weight:700;">✓ Accepted by customer {{ sub.overrides.agreement_accepted_at|slice:":10" }}</span>
+    {% elif sub.overrides.agreement_change_request %}<br><span style="color:#b9711a;font-weight:700;">⟳ Customer requested a change:</span> {{ sub.overrides.agreement_change_request.message }}{% endif %}
   </p>
   {% endif %}
   <form method="post">{% csrf_token %}<input type="hidden" name="action" value="set_enterprise_terms">

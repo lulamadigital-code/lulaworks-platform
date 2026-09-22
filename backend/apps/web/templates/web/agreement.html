@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enterprise agreement · Lulaworks</title>
+<style>
+  body{margin:0;background:#f4f6f8;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#22303b;}
+  .wrap{max-width:560px;margin:6vh auto;padding:0 16px;}
+  .card{background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.07);overflow:hidden;}
+  .head{background:#0E6E6E;color:#fff;padding:20px 26px;font-size:19px;font-weight:700;}
+  .body{padding:26px;}
+  h1{font-size:20px;margin:0 0 6px;} .sub{color:#8a97a1;margin:0 0 18px;font-size:14px;}
+  table{width:100%;border:1px solid #eef1f4;border-radius:8px;border-collapse:separate;overflow:hidden;margin:4px 0 20px;}
+  td{padding:9px 14px;font-size:13.5px;} td.k{background:#fafbfc;color:#8a97a1;width:170px;}
+  td.price{font-size:16px;font-weight:700;color:#0E6E6E;}
+  .btn{display:inline-block;padding:12px 24px;font-size:14.5px;font-weight:600;border-radius:8px;text-decoration:none;border:0;cursor:pointer;}
+  .btn.primary{background:#0E6E6E;color:#fff;} .btn.ghost{background:#fff;color:#3a4a57;border:1px solid #cfd8dd;}
+  .ok{background:#e7f7ef;color:#0a8f57;padding:14px 16px;border-radius:10px;font-weight:600;}
+  .muted{color:#8a97a1;font-size:12.5px;} textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cfd8dd;border-radius:8px;font-family:inherit;font-size:14px;}
+  .foot{padding:16px 26px;border-top:1px solid #eef1f4;color:#aeb8c0;font-size:12px;}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="head">Lulaworks</div>
+    <div class="body">
+      {% if invalid %}
+        <h1>This link is no longer valid</h1>
+        <p class="sub">The agreement link has expired or is incorrect. Please contact your Lulaworks account manager for a fresh copy.</p>
+      {% elif done == 'accepted' %}
+        <div class="ok">✓ Thank you — your Enterprise agreement is confirmed.</div>
+        <p class="sub" style="margin-top:16px;">We've let our team know and we'll finalise your account. A copy of these terms has been recorded.</p>
+      {% elif done == 'change' %}
+        <div class="ok" style="background:#fff3e0;color:#b9711a;">Thanks — we've sent your request to our team.</div>
+        <p class="sub" style="margin-top:16px;">Your account manager will follow up to adjust the terms and send an updated agreement.</p>
+      {% else %}
+        <h1>Your Enterprise agreement</h1>
+        <p class="sub">{{ company.name }} — please review the agreed terms and confirm.{% if already %} <br><strong>Note:</strong> these terms were already accepted; confirming again will re-record it.{% endif %}</p>
+        <table>
+          {% if snap.ref %}<tr><td class="k">Agreement reference</td><td><strong>{{ snap.ref }}</strong></td></tr>{% endif %}
+          <tr><td class="k">Users (seats)</td><td>{{ snap.users|default:"—" }}</td></tr>
+          <tr><td class="k">AI credits / month</td><td>{{ credits|default:"—" }}</td></tr>
+          {% if storage %}<tr><td class="k">Storage</td><td>{{ storage }}</td></tr>{% endif %}
+          <tr><td class="k">Price</td><td class="price">{{ snap.price }}</td></tr>
+          {% if snap.term %}<tr><td class="k">Term</td><td>{{ snap.term }} months{% if snap.end %} · renews {{ snap.end }}{% endif %}</td></tr>{% endif %}
+          {% if snap.note %}<tr><td class="k">Terms</td><td>{{ snap.note }}</td></tr>{% endif %}
+        </table>
+
+        <form method="post" style="display:inline;">{% csrf_token %}
+          <input type="hidden" name="action" value="accept">
+          <button class="btn primary" type="submit">✓ Accept these terms</button>
+        </form>
+
+        <details {% if do == 'change' %}open{% endif %} style="margin-top:18px;">
+          <summary style="cursor:pointer;color:#0E6E6E;font-weight:600;font-size:14px;">Request a change instead</summary>
+          <form method="post" style="margin-top:12px;">{% csrf_token %}
+            <input type="hidden" name="action" value="change">
+            <textarea name="message" rows="3" placeholder="Tell us what you'd like adjusted (e.g. users, price, term)…" required></textarea>
+            <div style="margin-top:10px;"><button class="btn ghost" type="submit">Send change request</button></div>
+          </form>
+        </details>
+        <p class="muted" style="margin-top:16px;">Prefer to talk? Reply to the email we sent, or contact your account manager.</p>
+      {% endif %}
+    </div>
+    <div class="foot">© Lulaworks. This is a secure confirmation page.</div>
+  </div>
+</div>
+</body></html>

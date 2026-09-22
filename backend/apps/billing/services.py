@@ -259,41 +259,48 @@ def _notify_billing(company, *, subject, heading, body, cta_url="", cta_label=""
             pass
 
 
+AGREEMENT_SALT = "enterprise-agreement"
+
+
+def agreement_token(company, ov) -> str:
+    """A signed, self-contained token carrying the agreed-terms snapshot, so the
+    public confirmation page shows exactly what was emailed without a DB lookup
+    or login."""
+    from django.core import signing
+    return signing.dumps({
+        "c": str(company.id), "ref": ov.get("contract_ref", ""),
+        "price": str(ov.get("contract_price") or ""),
+        "users": ov.get("max_users"), "credits": ov.get("monthly_ai_credits"),
+        "storage": ov.get("storage_quota_bytes"),
+        "term": ov.get("contract_term_months"), "end": ov.get("contract_end", ""),
+        "note": ov.get("contract_note", ""),
+    }, salt=AGREEMENT_SALT)
+
+
+def read_agreement_token(token: str, max_age_days: int = 90):
+    """Return the terms snapshot from a token, or None if invalid/expired."""
+    from django.core import signing
+    try:
+        return signing.loads(token, salt=AGREEMENT_SALT,
+                             max_age=max_age_days * 86400)
+    except signing.BadSignature:
+        return None
+
+
+def _site_base() -> str:
+    from django.conf import settings
+    return (getattr(settings, "SITE_URL", "") or "https://www.lulaworks.com").rstrip("/")
+
+
 def send_enterprise_agreement(company) -> int:
-    """Email the tenant's admins the agreed Enterprise terms to confirm by reply.
-    Reads the negotiated terms from the subscription overrides. Returns the number
-    of recipients; raises ValueError if there's nothing agreed to send yet."""
+    """Email the tenant's admins the agreed Enterprise terms with Accept /
+    Request-a-change buttons (a secure confirmation page). Returns the recipient
+    count; raises ValueError if there's nothing agreed to send yet."""
     sub = getattr(company, "subscription", None)
     ov = (sub.overrides if sub else None) or {}
     price = str(ov.get("contract_price") or "").strip()
     if not price:
         raise ValueError("Set the agreed price in Custom terms before sending the agreement.")
-
-    def _gb(b):
-        return f"{int(b) / (1024 ** 3):.0f} GB" if b else "—"
-
-    lines = ["Here are the agreed terms for your Lulaworks Enterprise plan:", ""]
-    if ov.get("contract_ref"):
-        lines.append(f"• Agreement reference: {ov['contract_ref']}")
-    lines += [
-        f"• Users (seats): {ov.get('max_users', '—')}",
-        f"• AI credits per month: {ov.get('monthly_ai_credits', '—')}",
-        f"• Storage: {_gb(ov.get('storage_quota_bytes'))}",
-        f"• Price: {price}",
-    ]
-    if ov.get("contract_term_months"):
-        term_line = f"• Term: {ov['contract_term_months']} months"
-        if ov.get("contract_end"):
-            term_line += f" (renews {ov['contract_end']})"
-        lines.append(term_line)
-    if ov.get("contract_note"):
-        lines.append(f"• Terms: {ov['contract_note']}")
-    lines += ["",
-              "Please reply to this email to confirm these terms are correct, and "
-              "we'll finalise your account. If anything needs changing, just let us "
-              "know and we'll update it.",
-              "", "Thank you for choosing Lulaworks."]
-    body = "\n".join(lines)
 
     from apps.notifications.dispatch import _email_allowed
     from apps.notifications.models import EmailCategory
@@ -304,8 +311,6 @@ def send_enterprise_agreement(company) -> int:
     if not admins:
         raise ValueError("This customer has no billing admin who can receive email.")
 
-    # CC sales (a copy for our records) and route replies there too, so the
-    # customer's confirmation lands in the sales inbox.
     sales = ""
     try:
         from apps.administration.models import PlatformSettings
@@ -314,15 +319,77 @@ def send_enterprise_agreement(company) -> int:
         sales = ""
     cc = ([sales] if sales else []) + [u.email for u in admins[1:]]
 
+    def _gb(b):
+        return f"{int(b) / (1024 ** 3):.0f} GB" if b else ""
+
+    def _commafmt(v):
+        try:
+            return f"{int(v):,}"
+        except (TypeError, ValueError):
+            return v or ""
+
+    review_url = f"{_site_base()}/agreement/{agreement_token(company, ov)}/"
     primary = admins[0]
+    ctx = {
+        "heading": "Your Enterprise plan — agreed terms",
+        "first_name": (primary.first_name or "").strip(),
+        "ref": ov.get("contract_ref", ""), "users": ov.get("max_users"),
+        "credits": _commafmt(ov.get("monthly_ai_credits")),
+        "storage": _gb(ov.get("storage_quota_bytes")), "price": price,
+        "term": ov.get("contract_term_months"), "end": ov.get("contract_end", ""),
+        "note": ov.get("contract_note", ""),
+        "accept_url": f"{review_url}?do=accept",
+        "change_url": f"{review_url}?do=change",
+    }
     send_email(
         to=primary.email, to_name=(primary.get_full_name() or "").strip(),
         subject="Your Lulaworks Enterprise agreement — please confirm",
-        template="generic",
-        context={"heading": "Your Enterprise plan — agreed terms", "body": body},
-        company=company, category=EmailCategory.BILLING,
-        cc=cc, reply_to=sales)
+        template="enterprise_agreement", context=ctx, company=company,
+        category=EmailCategory.BILLING, cc=cc, reply_to=sales)
     return len(admins) + (1 if sales else 0)
+
+
+def record_agreement_response(company, *, accepted: bool, message="", snapshot=None):
+    """Record the customer's response on the subscription and notify sales."""
+    sub = getattr(company, "subscription", None)
+    if sub is None:
+        return
+    ov = dict(sub.overrides or {})
+    now = timezone.now().isoformat()
+    if accepted:
+        ov["agreement_accepted_at"] = now
+        ov["agreement_accepted_snapshot"] = snapshot or {}
+        ov.pop("agreement_change_request", None)
+    else:
+        ov["agreement_change_request"] = {"at": now, "message": message[:2000]}
+    sub.overrides = ov
+    sub.save(update_fields=["overrides", "updated_at"])
+
+    sales = ""
+    try:
+        from apps.administration.models import PlatformSettings
+        sales = (PlatformSettings.load().sales_email or "").strip()
+    except Exception:  # noqa: BLE001
+        sales = ""
+    if not sales:
+        return
+    try:
+        from apps.notifications.models import EmailCategory
+        from apps.notifications.service import send_email
+        if accepted:
+            subject = f"✓ {company.name} accepted their Enterprise agreement"
+            body = (f"{company.name} accepted the Enterprise agreement"
+                    f"{' (' + snapshot.get('ref', '') + ')' if snapshot and snapshot.get('ref') else ''}"
+                    f" on {now[:10]}. You can finalise their account.")
+        else:
+            subject = f"{company.name} requested changes to their Enterprise agreement"
+            body = (f"{company.name} asked to change their proposed Enterprise terms:\n\n"
+                    f"{message}\n\nUpdate the terms and re-send the agreement.")
+        send_email(to=sales, subject=subject, template="generic",
+                   context={"heading": subject, "body": body}, company=company,
+                   category=EmailCategory.BILLING)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def _enterprise_contracts():

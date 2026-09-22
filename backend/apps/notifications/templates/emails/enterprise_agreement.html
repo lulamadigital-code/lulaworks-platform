@@ -1,0 +1,30 @@
+{% extends "emails/base.html" %}
+{% comment %}Enterprise agreement — the agreed terms as a table, with Accept /
+Request-a-change buttons that open the secure confirmation page.{% endcomment %}
+{% load i18n %}
+{% block content %}
+<p style="margin:0 0 14px;">Hi{% if first_name %} {{ first_name }}{% endif %}, thank you for choosing Lulaworks. Here are the terms we agreed for your Enterprise plan — please review and confirm.</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #eef1f4;border-radius:8px;border-collapse:separate;overflow:hidden;margin:6px 0 4px;">
+  {% if ref %}<tr><td style="padding:9px 14px;background:#fafbfc;font-size:13px;color:#8a97a1;width:170px;">Agreement reference</td><td style="padding:9px 14px;font-size:13.5px;font-weight:600;">{{ ref }}</td></tr>{% endif %}
+  <tr><td style="padding:9px 14px;background:#fafbfc;font-size:13px;color:#8a97a1;">Users (seats)</td><td style="padding:9px 14px;font-size:13.5px;">{{ users|default:"—" }}</td></tr>
+  <tr><td style="padding:9px 14px;background:#fafbfc;font-size:13px;color:#8a97a1;">AI credits / month</td><td style="padding:9px 14px;font-size:13.5px;">{{ credits|default:"—" }}</td></tr>
+  <tr><td style="padding:9px 14px;background:#fafbfc;font-size:13px;color:#8a97a1;">Storage</td><td style="padding:9px 14px;font-size:13.5px;">{{ storage|default:"—" }}</td></tr>
+  <tr><td style="padding:9px 14px;background:#fafbfc;font-size:13px;color:#8a97a1;">Price</td><td style="padding:9px 14px;font-size:15px;font-weight:700;color:#0E6E6E;">{{ price }}</td></tr>
+  {% if term %}<tr><td style="padding:9px 14px;background:#fafbfc;font-size:13px;color:#8a97a1;">Term</td><td style="padding:9px 14px;font-size:13.5px;">{{ term }} months{% if end %} · renews {{ end }}{% endif %}</td></tr>{% endif %}
+  {% if note %}<tr><td style="padding:9px 14px;background:#fafbfc;font-size:13px;color:#8a97a1;">Terms</td><td style="padding:9px 14px;font-size:13.5px;">{{ note }}</td></tr>{% endif %}
+</table>
+
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px 0 6px;">
+  <tr>
+    <td style="border-radius:8px;background:{{ brand_color|default:'#0E6E6E' }};">
+      <a href="{{ accept_url }}" style="display:inline-block;padding:12px 24px;font-size:14.5px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">✓ Accept these terms</a>
+    </td>
+    <td style="width:10px;">&nbsp;</td>
+    <td style="border-radius:8px;border:1px solid #cfd8dd;">
+      <a href="{{ change_url }}" style="display:inline-block;padding:11px 22px;font-size:14.5px;font-weight:600;color:#3a4a57;text-decoration:none;border-radius:8px;">Request a change</a>
+    </td>
+  </tr>
+</table>
+<p style="font-size:12.5px;color:#8a97a1;margin:10px 0 0;">Accepting opens a secure Lulaworks page to confirm — no login required. Prefer to talk? Just reply to this email.</p>
+{% endblock %}

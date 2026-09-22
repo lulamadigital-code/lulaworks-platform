@@ -10,6 +10,7 @@ from . import (
     views_doctemplates,
     views_ai_centre,
     views_automations,
+    views_agreement,
     views_email,
     views_enterprise,
     views_import,
@@ -210,6 +211,8 @@ urlpatterns = [
          name="api_key_revoke"),
     path("company/sso/", views_enterprise.sso_settings, name="sso_settings"),
     # Public OIDC sign-in flow
+    # Public Enterprise-agreement confirmation (signed token, no login)
+    path("agreement/<str:token>/", views_agreement.agreement_review, name="agreement_review"),
     path("sso/login/", views_enterprise.sso_login, name="sso_login"),
     path("sso/oidc/callback/", views_enterprise.sso_callback, name="sso_callback"),
     path("company/emails/", views_email.email_history, name="email_history"),
