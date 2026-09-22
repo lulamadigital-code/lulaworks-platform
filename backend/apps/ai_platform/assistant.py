@@ -25,6 +25,18 @@ def _item_after(msg, *keywords):
     return m.group(1).strip() if m else ""
 
 
+def _name_after(msg, *keys):
+    """Text after one of the given prepositions — a supplier/customer NAME, e.g.
+    'bought from Hydraulics SA' → 'Hydraulics SA'. Preserves the original case and
+    trims trailing time-filler ('… before', '… previously')."""
+    m = re.search(r"(?:%s)\s+(.+?)(?:\?|\.|$)" % "|".join(keys), msg, re.IGNORECASE)
+    if not m:
+        return ""
+    name = m.group(1).strip().rstrip("?.! ")
+    return re.sub(r"\s+(before|previously|in the past|ever|recently)$", "",
+                  name, flags=re.IGNORECASE).strip()
+
+
 def _days(msg, default=30):
     m = re.search(r"(\d+)\s*day", msg)
     return int(m.group(1)) if m else default
@@ -65,6 +77,19 @@ def classify(message: str, context: dict | None = None) -> tuple[str, dict]:
     if "customer" in m and any(
             w in m for w in ("summar", "relationship", "about", "history")):
         return "customer_summary", {"name": _customer_name(message)}
+
+    # Supplier purchase history — "what have we bought from X", "our history with
+    # supplier X". Structured, sourced, procurement-gated (§32/§34).
+    if (("bought" in m or "buy from" in m or "purchas" in m or "ordered from" in m)
+            and "from" in m) or "supplier history" in m:
+        return "historical_supplier", {"supplier_name": _name_after(
+            message, "from", "with")}
+
+    # Customer relationship history — "have we worked with X before", "dealt with X".
+    if any(p in m for p in ("worked with", "work with", "dealt with", "done work for",
+                            "worked for")):
+        return "historical_customer", {"customer_name": _name_after(
+            message, "with", "for")}
 
     # Graph-aware historical price question — "what did we pay/charge for X",
     # "price history of X", "last price". Answered from STRUCTURED records (paid vs
@@ -133,6 +158,8 @@ _INTENTS = {
     "uncontacted_customers": ("uncontacted_customers", "Customers to follow up", "web:crm_hub"),
     "supplier_prices": ("supplier_prices", "Supplier prices", "web:suppliers"),
     "item_price_history": ("item_price_history", "Price history", "web:price_history"),
+    "historical_supplier": ("historical_supplier", "Supplier history", "web:suppliers"),
+    "historical_customer": ("historical_customer", "Customer history", "web:customers"),
     "job_summary": ("job_summary", "Job summary", None),
 }
 
@@ -174,6 +201,23 @@ def _shape(intent, title, action_route, result, message, company, user) -> dict:
         answer = _job_answer(result)
         return {"answer": answer, "intent": intent, "items": [], "sources": [source],
                 "actions": [], "summary": result, "confidence": "high"}
+
+    if intent in ("historical_supplier", "historical_customer"):
+        if not result.get("found"):
+            return {"answer": f"No history on record for that — {_STOP}",
+                    "intent": intent, "items": [], "sources": [], "actions": [],
+                    "confidence": "high"}
+        if intent == "historical_supplier":
+            hist_items = result.get("items") or []
+            answer = _supplier_history_answer(result)
+        else:
+            hist_items = (result.get("jobs") or []) + (result.get("charged_items") or [])
+            answer = _customer_history_answer(result)
+        sources = _evidence_sources(hist_items)
+        ai = _maybe_phrase(company, user, title, hist_items)
+        return {"answer": ai or answer, "intent": intent, "items": hist_items,
+                "sources": sources or [source], "actions": _actions(action_route),
+                "summary": result, "confidence": "high", "ai_phrased": bool(ai)}
 
     if intent == "item_price_history":
         if not result.get("found"):
@@ -243,6 +287,53 @@ def _price_history_answer(res) -> str:
             s += f" on {slast['occurred_on']}"
         parts.append(s + ".")
     return " ".join(parts) or f"I have records for {q} but no priced lines."
+
+
+def _evidence_sources(items) -> list:
+    """Unique source-document filenames behind a set of history rows (§33). A row
+    carries either a single `source` doc-ref or a `sources` list (jobs)."""
+    out = []
+    for it in items or []:
+        refs = []
+        if isinstance(it.get("source"), dict):
+            refs.append(it["source"])
+        refs += [s for s in (it.get("sources") or []) if isinstance(s, dict)]
+        for r in refs:
+            fn = r.get("filename")
+            if fn and fn not in out:
+                out.append(fn)
+    return out
+
+
+def _supplier_history_answer(res) -> str:
+    name = res.get("name") or "that supplier"
+    n, items = res.get("purchase_count", 0), res.get("item_count", 0)
+    s = (f"Yes — {n} purchase{'s' if n != 1 else ''} from {name} on record"
+         + (f" across {items} item{'s' if items != 1 else ''}" if items else "") + ".")
+    if res.get("last_purchase"):
+        s += f" Last purchase {res['last_purchase']}."
+    rows = res.get("items") or []
+    if rows and rows[0].get("unit_price"):
+        top = rows[0]
+        s += f" Most recent: {top.get('description', 'item')} at R{top['unit_price']}."
+    return s
+
+
+def _customer_history_answer(res) -> str:
+    name = res.get("name") or "that customer"
+    n = res.get("job_count", 0)
+    if not n:
+        return f"We have records for {name}, but no completed jobs yet."
+    s = f"Yes — {n} job{'s' if n != 1 else ''} on record with {name}."
+    last = res.get("last_job") or {}
+    if last.get("title"):
+        s += f" Last: {last['title']}"
+        if last.get("occurred_on"):
+            s += f" ({last['occurred_on']})"
+        s += "."
+    if res.get("total_value"):
+        s += f" Total value R{res['total_value']}."
+    return s
 
 
 def _job_answer(dash) -> str:

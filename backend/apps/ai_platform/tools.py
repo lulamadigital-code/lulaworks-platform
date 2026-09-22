@@ -408,7 +408,8 @@ def _historical_customer(user, *, customer_name="", customer_id=""):
                 or Customer.objects.filter(trading_name__icontains=customer_name).first())
     if cust is None:
         return {"found": False, "source": "Business History"}
-    return {"source": "Business History", **customer_intelligence(cust, user)}
+    return {"source": "Business History", "name": cust.name,
+            **customer_intelligence(cust, user)}
 
 
 @register("historical_item_price", required_perm="procurement.manage",
@@ -434,7 +435,8 @@ def _historical_supplier(user, *, supplier_name="", supplier_id=""):
         sup = Supplier.objects.filter(name__icontains=supplier_name).first()
     if sup is None:
         return {"found": False, "source": "Business History"}
-    return {"source": "Business History", **supplier_intelligence(sup, user)}
+    return {"source": "Business History", "name": sup.name,
+            **supplier_intelligence(sup, user)}
 
 
 @register("similar_historical_jobs", required_perm="projects.view",
