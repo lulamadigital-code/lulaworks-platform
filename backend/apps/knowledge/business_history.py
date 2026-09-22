@@ -127,6 +127,56 @@ def _timeline(obj, kind, user, *, limit) -> list:
 
 # ── The facade ────────────────────────────────────────────────────────────────
 
+#: Payload fields that carry money — withheld from a caller without finance access.
+_MONEY_EVENT_FIELDS = {"revenue_impact", "amount", "total", "value", "outstanding"}
+
+
+def _humanize_event(ev, can_money) -> str:
+    """A human line for one change/activity event (§19). Reads the event's own
+    payload; falls back to spacing the CamelCase type name."""
+    import re
+    t, p = ev.type, (ev.payload or {})
+    if t == "QuotationStatusChanged":
+        return f"Status: {p.get('from', '?')} → {p.get('to', '?')}"
+    if t == "QuotationUpdated":
+        return "Quotation edited"
+    if t == "VariationApproved":
+        s = f"Variation {p.get('number', '')} approved".strip()
+        if can_money and p.get("revenue_impact"):
+            s += f" (R{p['revenue_impact']})"
+        return s
+    if t == "PaymentReceived":
+        return f"Payment received on {p.get('invoice', '')}".strip()
+    return re.sub(r"(?<!^)(?=[A-Z])", " ", t)      # "WorkCreated" -> "Work Created"
+
+
+def change_history(obj, user, *, limit=50) -> list:
+    """The change/activity history of ONE record, reconstructed from the DomainEvent
+    backbone (status changes, edits, variations, payments…) — old→new where the
+    event captured it, who and when (§19). Read-only; money-bearing payload fields
+    are withheld without finance.view_money. Scoped to the record's own company
+    (DomainEvent is not tenant-managed)."""
+    from apps.core.models import DomainEvent
+
+    company = getattr(obj, "company", None)
+    can_money = _can_money(user)
+    rows = (DomainEvent.objects
+            .filter(company=company, subject_type=type(obj).__name__,
+                    subject_id=obj.pk)
+            .select_related("actor").order_by("-occurred_at")[:limit])
+    out = []
+    for ev in rows:
+        payload = {k: v for k, v in (ev.payload or {}).items()
+                   if can_money or k not in _MONEY_EVENT_FIELDS}
+        actor = ""
+        if ev.actor_id:
+            actor = ev.actor.get_full_name() or ev.actor.email
+        out.append({"when": ev.occurred_at.isoformat(), "type": ev.type,
+                    "summary": _humanize_event(ev, can_money),
+                    "actor": actor, "payload": payload})
+    return out
+
+
 def history_for(obj, user, *, kind=None, timeline_limit=60) -> dict:
     """One permission-aware Business-History view of a canonical record.
 
@@ -144,6 +194,7 @@ def history_for(obj, user, *, kind=None, timeline_limit=60) -> dict:
         "permissions": {"money": _can_money(user)},
         "summary": _summary(obj, kind, user),
         "timeline": _timeline(obj, kind, user, limit=timeline_limit),
+        "changes": change_history(obj, user),
         "related": related_records(obj, user),
     }
 

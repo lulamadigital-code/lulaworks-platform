@@ -115,7 +115,11 @@ class DomainEvent(models.Model):
 
     class Meta:
         ordering = ["occurred_at"]
-        indexes = [models.Index(fields=["type", "dispatched_at"])]
+        indexes = [
+            models.Index(fields=["type", "dispatched_at"]),
+            # Business-History reads a record's own change/activity log by subject.
+            models.Index(fields=["company", "subject_type", "subject_id"]),
+        ]
 
     def __str__(self):
         return f"{self.type} @ {self.occurred_at:%Y-%m-%d %H:%M}"
