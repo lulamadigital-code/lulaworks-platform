@@ -307,7 +307,7 @@ def context_for(user, kind, pk) -> Context | None:
 
     related = []
     try:
-        related = related_records(obj)
+        related = related_records(obj, user)
     except Exception:                                # noqa: BLE001
         related = []
 

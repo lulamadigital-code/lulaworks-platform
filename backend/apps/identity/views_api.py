@@ -187,7 +187,7 @@ class RelatedRecordsView(APIView):
         if obj is None:
             return Response({"error": {"code": "not_found",
                              "message": "Unknown record."}}, status=404)
-        return Response({"sections": related_records(obj)})
+        return Response({"sections": related_records(obj, request.user)})
 
 
 class MembershipViewSet(viewsets.ModelViewSet):

@@ -370,7 +370,7 @@ def project_detail(request, pk):
         context["forecast"] = profit_forecast(project)
         context["budget"] = budget_vs_actual(project)
     from apps.web.relations import related_records
-    context["related"] = related_records(project)
+    context["related"] = related_records(project, request.user)
     context.update(_job_hub(project))
     # Job Intelligence: comparable past jobs (same customer / work type / like
     # title) from the imported history. Advisory, evidence-backed, never applied.
@@ -4761,7 +4761,7 @@ def commercial_document_detail(request, pk):
     return render(request, "web/commercial_document_detail.html", {
         "doc": doc,
         "quote": doc.quotation,
-        "related": related_records(doc),
+        "related": related_records(doc, request.user),
         "is_invoice": doc.kind == CommercialDocument.Kind.INVOICE,
         "can_view_money": _can_view_money(request.user),
         # Approve is the single, final step; there is no finalize or send.

@@ -13,6 +13,7 @@
         <span class="muted" style="font-size:11.5px;display:block;">{{ it.sub }}</span>
       </a>
       {% endfor %}
+      {% if sec.more %}<div class="muted" style="font-size:11px;">{% trans "More available…" %}</div>{% endif %}
     </div>
     {% endfor %}
   </div>

@@ -215,7 +215,7 @@ def customer_po_detail(request, pk):
         "po": po, "suggestions": suggestions, "job": job, "variance": variance,
         "line_variance": line_variance, "po_lines": list(po.lines.all()),
         "search": search, "search_results": search_results,
-        "related": related_records(po),
+        "related": related_records(po, request.user),
         "can_edit": _can_edit(request.user),
         "statuses": CustomerPurchaseOrder.Status.choices})
 
