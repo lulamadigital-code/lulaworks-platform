@@ -270,6 +270,29 @@ def proposed_limits(ov: dict) -> dict:
         k: ov.get(k) for k in ("max_users", "storage_quota_bytes", "monthly_ai_credits")}
 
 
+# The ONLY keys allowed in Subscription.overrides — a defined schema so a crafted
+# key can never become a security-sensitive entitlement. Note: Enterprise feature
+# entitlements (SSO/API/audit/SLA) come from the PLAN's module_entitlements, never
+# from overrides — overrides only tune numeric limits + record commercial terms.
+ALLOWED_OVERRIDE_KEYS = frozenset({
+    # live numeric limits (enforcement reads these via sub.limit)
+    "max_users", "storage_quota_bytes", "monthly_ai_credits", "per_seat_price",
+    # draft proposal + agreement lifecycle metadata
+    "proposed_limits", "pending_change_type",
+    "contract_price", "contract_note", "contract_ref",
+    "contract_term_months", "contract_start", "contract_end",
+    "commercial", "contacts", "account_owner",
+    "agreement_accepted_at", "agreement_accepted_snapshot",
+    "agreement_change_request", "agreement_finalized_at", "renewal_reminded_for",
+})
+
+
+def sanitize_overrides(ov: dict) -> dict:
+    """Drop any key not in the override schema — overrides can tune numeric limits
+    and record commercial terms, but never smuggle in an entitlement."""
+    return {k: v for k, v in (ov or {}).items() if k in ALLOWED_OVERRIDE_KEYS}
+
+
 def terms_snapshot(company, ov: dict) -> dict:
     """Freeze the negotiated terms (from the draft proposal) into a snapshot for
     an agreement version — the immutable record of what was offered."""
@@ -1211,6 +1234,12 @@ def subscription_overview(company) -> dict:
         "is_over_limit": bool(sub and sub.is_over_limit),
         "credits_remaining": credits_remaining,
         "credits_monthly": effective_monthly_credits(sub) if sub else Decimal("0"),
+        # Low-credit warning at <10% of the monthly allowance (parity with storage),
+        # separate from the exhausted (<=0) notice.
+        "credits_low": bool(
+            sub and credits_remaining > 0
+            and effective_monthly_credits(sub) > 0
+            and credits_remaining < effective_monthly_credits(sub) * Decimal("0.1")),
         "storage": storage,
         "user_count": users,
         "user_limit": company.max_users,

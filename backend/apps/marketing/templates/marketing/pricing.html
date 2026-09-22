@@ -47,6 +47,7 @@
     {% endwith %}
 
     <p class="muted" style="margin-top:24px;">{% blocktrans with currency=currency %}Prices shown in {{ currency }}, based on your location. All plans include a 30-day free trial — no credit card required.{% endblocktrans %}</p>
+    <p class="muted" style="font-size:12.5px;max-width:640px;margin:8px auto 0;">{% blocktrans %}AI credits and storage are monthly and account allowances respectively. “Unlimited” covers your business records — employees, customers, suppliers, jobs, quotes and invoices — under fair use; metered resources (AI credits, storage) keep their plan limits. Only Enterprise includes a contractual SLA.{% endblocktrans %}</p>
     <div class="cta-row" style="justify-content:center;margin-top:10px;">
       <a class="btn ghost" href="{% url 'marketing:demo' %}">{% trans "Book a Demo" %}</a>
     </div>

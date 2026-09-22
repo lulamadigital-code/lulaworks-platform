@@ -377,7 +377,7 @@ def platform_tenant(request, pk):
                         "procurement": {"name": _s("ov_proc_name"), "email": _s("ov_proc_email")},
                         "technical": {"name": _s("ov_tech_name"), "email": _s("ov_tech_email")},
                     }
-                    sub_obj.overrides = ov
+                    sub_obj.overrides = billing.sanitize_overrides(ov)
                     sub_obj.save(update_fields=["overrides", "updated_at"])
                     messages.success(request, "Terms saved as a draft — not live yet. "
                                      "Send the agreement, then Finalize to activate the limits.")
@@ -395,7 +395,7 @@ def platform_tenant(request, pk):
                         if prop.get(k) is not None:
                             ov[k] = prop[k]
                     ov["agreement_finalized_at"] = timezone.now().isoformat()
-                    sub_obj.overrides = ov
+                    sub_obj.overrides = billing.sanitize_overrides(ov)
                     sub_obj.save(update_fields=["overrides", "updated_at"])
                     company.max_users = ov.get("max_users", sub_obj.plan.max_users)
                     company.storage_quota_bytes = ov.get(

@@ -78,7 +78,13 @@
 <p class="muted" style="margin:-6px 0 14px;color:var(--bad,#e5484d);">{% blocktrans with pct=storage.pct %}⚠ Storage is {{ pct }}% full — free up space or upgrade for more.{% endblocktrans %}</p>
 {% endif %}
 
-{# ── AI credit exhausted notice ──────────────────────────────────────────── #}
+{# ── AI credit low / exhausted notices ───────────────────────────────────── #}
+{% if credits_low %}
+<div class="card" style="border-color:var(--warn,#f5a623);background:var(--warnbg,#fffaf0);">
+  <strong>{% trans "You're running low on AI credits." %}</strong>
+  <p class="muted" style="margin:6px 0 0;">{% blocktrans with n=credits_remaining|floatformat:0 %}{{ n }} left this cycle. Buy a credit pack below to avoid interruption — AI actions pause when credits reach zero, but every non-AI feature keeps working.{% endblocktrans %}</p>
+</div>
+{% endif %}
 {% if credits_remaining <= 0 %}
 <div class="card" style="border-color:var(--warn,#f5a623);">
   <strong>{% trans "You're out of AI credits." %}</strong>
@@ -137,7 +143,7 @@
     {% elif p.contact_sales %}
       <a class="btn" href="mailto:sales@lulaworks.com?subject=Enterprise%20plan%20enquiry" style="width:100%;display:block;text-align:center;box-sizing:border-box;">{% trans "Contact sales" %}</a>
     {% elif can_manage %}
-    <form method="post" action="{% url 'web:billing_change_plan' %}">
+    <form method="post" action="{% url 'web:billing_change_plan' %}"{% if p.tier < current_tier %} data-confirm="{% blocktrans with name=p.name %}Downgrade to {{ name }}? Your data and users are kept — but if you're above the smaller plan's limits, you won't be able to add users until you're back within them (deactivate users under People first). Nothing is deleted.{% endblocktrans %}"{% endif %}>
       {% csrf_token %}
       <input type="hidden" name="plan_code" value="{{ p.code }}">
       <input type="hidden" name="billing_cycle" value="{{ selected_cycle }}">
