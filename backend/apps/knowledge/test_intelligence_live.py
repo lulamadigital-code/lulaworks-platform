@@ -60,3 +60,53 @@ class LiveCustomerIntelligenceTests(TestCase):
         self.assertFalse(intel["money_visible"])
         self.assertIsNone(intel["total_value"])
         self.assertIsNone(intel["last_job"]["value"])   # money gated
+
+
+class LiveSupplierIntelligenceTests(TestCase):
+    """P1: supplier_intelligence projects the LIVE procurement ledger
+    (procurement.SupplierPrice), not just the imported archive."""
+
+    def setUp(self):
+        self.c = Company.objects.create(name="Acme")
+        self.finance = _user(self.c, ["finance.view_money"], "cfo3@acme.co")
+        self.worker = _user(self.c, ["projects.view"], "worker3@acme.co")
+
+    def _supplier_with_live_price(self):
+        from datetime import date
+        from apps.procurement.models import Supplier, SupplierPrice
+        with tenant_scope(self.c.id):
+            sup = Supplier.objects.create(company=self.c, name="Hydraulics SA")
+            SupplierPrice.objects.create(
+                company=self.c, supplier=sup, item_key="hydraulic hose 2in",
+                description='Hydraulic Hose 2"', unit="each", unit_price=470,
+                date=date(2026, 1, 20))
+            return sup
+
+    def test_live_supplier_price_surfaces(self):
+        from apps.knowledge.intelligence import supplier_intelligence
+        sup = self._supplier_with_live_price()
+        with tenant_scope(self.c.id):
+            intel = supplier_intelligence(sup, self.finance)
+        self.assertTrue(intel["found"])
+        self.assertEqual(intel["purchase_count"], 1)
+        self.assertEqual(intel["sources_summary"], {"live": 1, "imported": 0})
+        item = intel["items"][0]
+        self.assertEqual(item["origin"], "live")
+        self.assertEqual(item["unit_price"], "470.00")   # purchase prices always show
+
+    def test_purchase_price_shown_even_without_finance_perm(self):
+        # Purchase prices are procurement's own domain (§10) — a non-finance user
+        # still sees them here.
+        from apps.knowledge.intelligence import supplier_intelligence
+        sup = self._supplier_with_live_price()
+        with tenant_scope(self.c.id):
+            intel = supplier_intelligence(sup, self.worker)
+        self.assertEqual(intel["items"][0]["unit_price"], "470.00")
+
+    def test_empty_supplier_not_found(self):
+        from apps.knowledge.intelligence import supplier_intelligence
+        from apps.procurement.models import Supplier
+        with tenant_scope(self.c.id):
+            sup = Supplier.objects.create(company=self.c, name="Nobody Ltd")
+            intel = supplier_intelligence(sup, self.finance)
+        self.assertFalse(intel["found"])

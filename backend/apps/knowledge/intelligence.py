@@ -105,6 +105,23 @@ def _line_dict(li, money):
         "party": li.party_name,
         "occurred_on": li.occurred_on.isoformat() if li.occurred_on else None,
         "source": _doc_ref(li.document),
+        "origin": "imported",              # _line_dict only ever wraps the archive
+    }
+
+
+def _supplier_price_dict(sp):
+    """A LIVE purchase-price point (procurement.SupplierPrice) in the same shape as
+    an imported purchase line, so the two streams merge into one supplier history.
+    Purchase prices are procurement's own domain, so the price always shows."""
+    return {
+        "description": sp.description, "item_key": sp.item_key,
+        "direction": "purchase", "unit": sp.unit,
+        "unit_price": (str(sp.unit_price) if sp.unit_price is not None else None),
+        "currency": sp.currency,
+        "party": getattr(sp.supplier, "name", "") or "",
+        "occurred_on": sp.date.isoformat() if sp.date else None,
+        "source": None,                    # the live ledger row is its own provenance
+        "origin": "live",
     }
 
 
@@ -162,22 +179,39 @@ def customer_intelligence(customer, user) -> dict:
 # ── Supplier ─────────────────────────────────────────────────────────────────
 def supplier_intelligence(supplier, user) -> dict:
     """Historical purchases from a supplier: items bought, last price per item,
-    last purchase, volume — evidence-backed."""
-    lines = list(HistoricalLineItem.objects
-                 .filter(party_kind=HistoricalLineItem.Party.SUPPLIER,
-                         party_id=str(supplier.pk), direction__in=_PURCHASE)
-                 .select_related("document").order_by("-occurred_on"))
-    if not lines:
+    last purchase, volume — evidence-backed.
+
+    Draws from BOTH the LIVE procurement ledger (procurement.SupplierPrice) and
+    the imported archive (HistoricalLineItem purchases), merged newest-first and
+    origin-tagged, so a supplier we buy from today shows up even with no imports."""
+    from apps.procurement.models import SupplierPrice
+
+    live = list(SupplierPrice.objects.filter(supplier=supplier)
+                .select_related("supplier").order_by("-date"))
+    archived = list(HistoricalLineItem.objects
+                    .filter(party_kind=HistoricalLineItem.Party.SUPPLIER,
+                            party_id=str(supplier.pk), direction__in=_PURCHASE)
+                    .select_related("document").order_by("-occurred_on"))
+    if not live and not archived:
         return {"found": False}
+
+    # One merged purchase history, newest-first. Stable sort keeps live ahead of
+    # imported on an equal date, so a confirmed import's live copy wins the dedup.
+    merged = ([_supplier_price_dict(sp) for sp in live]
+              + [_line_dict(li, True) for li in archived])
+    merged.sort(key=lambda d: d.get("occurred_on") or "", reverse=True)
+
     by_item = {}
-    for li in lines:
-        by_item.setdefault(li.item_key or li.description.lower(), li)  # first = latest
+    for it in merged:
+        by_item.setdefault(it["item_key"] or (it["description"] or "").lower(), it)
     return {
         "found": True,
-        "purchase_count": len(lines),
+        "purchase_count": len(merged),
         "item_count": len(by_item),
-        "last_purchase": lines[0].occurred_on.isoformat() if lines[0].occurred_on else None,
-        "items": [_line_dict(li, True) for li in list(by_item.values())[:12]],
+        "last_purchase": merged[0]["occurred_on"] if merged else None,
+        "items": list(by_item.values())[:12],
+        # Data-quality/provenance signal (§51): how much is live vs migrated.
+        "sources_summary": {"live": len(live), "imported": len(archived)},
     }
 
 
