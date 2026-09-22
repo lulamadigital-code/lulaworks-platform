@@ -457,6 +457,40 @@ def record_enterprise_payment(invoice, *, amount, method="eft", reference="",
     return pay
 
 
+def enterprise_usage(company) -> dict:
+    """Contracted vs used vs remaining for the three metered entitlements — the
+    live figures for the account dashboard."""
+    from decimal import Decimal
+    from apps.ai_platform.gateway import credit_balance
+    sub = getattr(company, "subscription", None)
+    GB = 1024 ** 3
+
+    def block(contracted, used, *, unit=""):
+        contracted = float(contracted or 0)
+        used = max(float(used or 0), 0)
+        remaining = max(contracted - used, 0)
+        pct = min(round(used / contracted * 100), 100) if contracted else 0
+        return {"contracted": contracted, "used": used, "remaining": remaining,
+                "pct": pct, "unit": unit, "over": used > contracted and contracted > 0}
+
+    seats_c = int(sub.limit("max_users", company.max_users)) if sub else company.max_users
+    stor_c = int(sub.limit("storage_quota_bytes", company.storage_quota_bytes)) \
+        if sub else company.storage_quota_bytes
+    cred_c = float(effective_monthly_credits(sub)) if sub else 0.0
+    cred_remaining = float(credit_balance(company) or Decimal("0"))
+
+    return {
+        "seats": block(seats_c, active_user_count(company), unit="seats"),
+        "storage": {**block((stor_c or 0) / GB, (company.storage_used_bytes or 0) / GB,
+                            unit="GB")},
+        "credits": {  # credits: remaining is the ledger balance; used = allowance − balance
+            "contracted": cred_c, "remaining": cred_remaining,
+            "used": max(cred_c - cred_remaining, 0),
+            "pct": min(round((cred_c - cred_remaining) / cred_c * 100), 100) if cred_c else 0,
+            "unit": "credits", "over": False},
+    }
+
+
 def enterprise_state(company) -> dict:
     """The three DISTINCT Enterprise states (never collapsed into one):
       • agreement   — the commercial contract lifecycle

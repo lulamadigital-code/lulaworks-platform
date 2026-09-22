@@ -270,7 +270,8 @@ def platform_tenant(request, pk):
                 "upload_enterprise_doc": "billing",
                 "delete_enterprise_doc": "billing",
                 "create_enterprise_invoice": "billing",
-                "record_enterprise_payment": "billing"}
+                "record_enterprise_payment": "billing",
+                "set_account_owner": "tenants"}
             need = _cap_for.get(action)
             if need and not request.user.can_platform(need):
                 messages.error(request, "You don't have access for that action.")
@@ -460,6 +461,24 @@ def platform_tenant(request, pk):
                         reference=request.POST.get("pay_reference", ""),
                         paid_date=request.POST.get("pay_date") or None, actor=request.user)
                     messages.success(request, "Payment recorded.")
+                elif action == "set_account_owner":
+                    from apps.identity.models import User as _U
+                    sub_obj = getattr(company, "subscription", None)
+                    if sub_obj is None:
+                        raise ValueError("Put the company on a plan first.")
+                    owner = _U.objects.filter(pk=request.POST.get("owner_id")).first() \
+                        if request.POST.get("owner_id") else None
+                    ov = dict(sub_obj.overrides or {})
+                    if owner is not None:
+                        ov["account_owner"] = {
+                            "id": str(owner.id),
+                            "name": (owner.get_full_name() or "").strip() or owner.email,
+                            "email": owner.email}
+                    else:
+                        ov.pop("account_owner", None)
+                    sub_obj.overrides = ov
+                    sub_obj.save(update_fields=["overrides", "updated_at"])
+                    messages.success(request, "Account owner updated.")
                 elif action == "toggle_active":
                     company.is_active = not company.is_active
                     company.save(update_fields=["is_active", "updated_at"])
@@ -525,6 +544,19 @@ def platform_tenant(request, pk):
         ctx["invoices"] = list(EnterpriseInvoice.objects.filter(company=company)
                                .prefetch_related("payments")[:12])
         ctx["invoice_suggest"] = billing.parse_amount(_ov.get("contract_price", ""))
+        # Usage (contracted/used/remaining) + account owner + assignable staff.
+        _u = billing.enterprise_usage(company)
+        ctx["usage"] = _u
+        ctx["usage_list"] = [{**_u["seats"], "label": "Users (seats)"},
+                             {**_u["storage"], "label": "Storage"},
+                             {**_u["credits"], "label": "AI credits (this cycle)"}]
+        ctx["account_owner"] = _ov.get("account_owner")
+        from apps.identity.models import User as _User
+        ctx["staff"] = list(_User.objects.filter(is_active=True)
+                            .exclude(platform_role="").order_by("email")[:100])
+        # Outstanding invoice balance for the overview.
+        ctx["outstanding"] = sum((i.balance for i in ctx["invoices"]
+                                  if i.effective_status != "paid"), Decimal("0"))
 
         # Enterprise price helper — defaults grounded in the platform's REAL cost
         # model, editable in the UI. seat value = Business per-seat rate; storage

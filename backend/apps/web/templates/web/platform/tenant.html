@@ -69,7 +69,43 @@
   <div style="width:1px;height:34px;background:var(--line);"></div>
   <div><div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;">Account</div>
     <div style="font-weight:800;font-size:15px;{% if ent_state.account == 'Active' %}color:#0a8f57;{% elif ent_state.account == 'Suspended' %}color:#c22a41;{% endif %}">{{ ent_state.account }}</div></div>
+  <div style="width:1px;height:34px;background:var(--line);"></div>
+  <div style="flex:1;min-width:180px;"><div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;">Account owner</div>
+    <form method="post" style="margin-top:2px;display:flex;gap:6px;align-items:center;">
+      {% csrf_token %}<input type="hidden" name="action" value="set_account_owner">
+      <select name="owner_id" onchange="this.form.submit()" style="font-size:13px;padding:4px 8px;">
+        <option value="">— Unassigned —</option>
+        {% for s in staff %}<option value="{{ s.id }}" {% if account_owner.id == s.id|stringformat:'s' %}selected{% endif %}>{{ s.get_full_name|default:s.email }}</option>{% endfor %}
+      </select>
+    </form></div>
 </div>
+
+{# Anchor-tab nav for the Enterprise sections. #}
+<div class="row" style="gap:6px;flex-wrap:wrap;margin:2px 0 14px;font-size:13px;">
+  <a href="#ent-usage" style="padding:5px 11px;border:1px solid var(--line);border-radius:20px;color:var(--primary-d);text-decoration:none;">Usage</a>
+  <a href="#price-helper" style="padding:5px 11px;border:1px solid var(--line);border-radius:20px;color:var(--primary-d);text-decoration:none;">Pricing &amp; terms</a>
+  <a href="#ent-agreement" style="padding:5px 11px;border:1px solid var(--line);border-radius:20px;color:var(--primary-d);text-decoration:none;">Agreement</a>
+  <a href="#ent-docs" style="padding:5px 11px;border:1px solid var(--line);border-radius:20px;color:var(--primary-d);text-decoration:none;">Documents</a>
+  <a href="#ent-billing" style="padding:5px 11px;border:1px solid var(--line);border-radius:20px;color:var(--primary-d);text-decoration:none;">Billing</a>
+</div>
+
+{% if usage %}
+<div class="card" id="ent-usage">
+  <h2 style="margin-top:0;">Usage <span class="sub" style="font-weight:400;font-size:13px;">— contracted vs used vs remaining</span></h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+    {% for m in usage_list %}
+    <div>
+      <div class="sub" style="font-size:12px;font-weight:600;">{{ m.label }}</div>
+      <div style="font-size:20px;font-weight:800;{% if m.over %}color:#c22a41;{% endif %}">{{ m.used|floatformat:0 }} <span class="muted" style="font-size:13px;font-weight:400;">/ {{ m.contracted|floatformat:0 }} {{ m.unit }}</span></div>
+      <div style="height:8px;background:#eef0f5;border-radius:6px;overflow:hidden;margin:6px 0 4px;">
+        <div style="height:100%;width:{{ m.pct }}%;background:{% if m.over or m.pct >= 90 %}#c22a41{% elif m.pct >= 75 %}#b9711a{% else %}var(--primary,#17a2b8){% endif %};"></div>
+      </div>
+      <div class="muted" style="font-size:12px;">{{ m.remaining|floatformat:0 }} {{ m.unit }} remaining · {{ m.pct }}% used</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 {% endif %}
 
 <div class="card" id="price-helper">
@@ -227,7 +263,7 @@
 </div>
 
 {% if agreements %}
-<div class="card">
+<div class="card" id="ent-agreement">
   <h2 style="margin-top:0;">Agreement history <span class="sub" style="font-weight:400;font-size:13px;">— versioned record of evidence</span></h2>
   <table class="kv" style="width:100%;font-size:13px;">
     <tr><th style="text-align:left;">Version</th><th style="text-align:left;">Status</th><th style="text-align:left;">Sent</th><th style="text-align:left;">Accepted</th><th style="text-align:left;">Provisioning</th></tr>
@@ -246,7 +282,7 @@
 {% endif %}
 
 {% if sub %}
-<div class="card">
+<div class="card" id="ent-docs">
   <h2 style="margin-top:0;">Contract documents <span class="sub" style="font-weight:400;font-size:13px;">— MSA, Order Form, SLA, DPA, signed copies</span></h2>
   {% if documents %}
   <table class="kv" style="width:100%;font-size:13px;margin-bottom:12px;">
@@ -278,7 +314,7 @@
   </form>
 </div>
 
-<div class="card">
+<div class="card" id="ent-billing">
   <h2 style="margin-top:0;">Enterprise billing <span class="sub" style="font-weight:400;font-size:13px;">— invoices &amp; payments (invoice-based, not auto-charged)</span></h2>
   {% if invoices %}
   <table class="kv" style="width:100%;font-size:13px;margin-bottom:12px;">
