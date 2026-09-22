@@ -27,3 +27,13 @@ class EnterpriseAgreementAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+from .models import EnterpriseDocument  # noqa: E402
+
+
+@admin.register(EnterpriseDocument)
+class EnterpriseDocumentAdmin(admin.ModelAdmin):
+    list_display = ("company", "kind", "name", "created_at")
+    list_filter = ("kind",)
+    search_fields = ("company__name", "name")

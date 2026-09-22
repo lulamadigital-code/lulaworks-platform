@@ -12,6 +12,7 @@ Request-a-change buttons that open the secure confirmation page.{% endcomment %}
   <tr><td style="padding:9px 14px;background:#fafbfc;font-size:13px;color:#8a97a1;">Storage</td><td style="padding:9px 14px;font-size:13.5px;">{{ storage|default:"—" }}</td></tr>
   <tr><td style="padding:9px 14px;background:#fafbfc;font-size:13px;color:#8a97a1;">Price</td><td style="padding:9px 14px;font-size:15px;font-weight:700;color:#0E6E6E;">{{ price }}</td></tr>
   {% if term %}<tr><td style="padding:9px 14px;background:#fafbfc;font-size:13px;color:#8a97a1;">Term</td><td style="padding:9px 14px;font-size:13.5px;">{{ term }} months{% if end %} · renews {{ end }}{% endif %}</td></tr>{% endif %}
+  {% if billing_line %}<tr><td style="padding:9px 14px;background:#fafbfc;font-size:13px;color:#8a97a1;">Billing</td><td style="padding:9px 14px;font-size:13.5px;">{{ billing_line }}</td></tr>{% endif %}
   {% if note %}<tr><td style="padding:9px 14px;background:#fafbfc;font-size:13px;color:#8a97a1;">Terms</td><td style="padding:9px 14px;font-size:13.5px;">{{ note }}</td></tr>{% endif %}
 </table>
 

@@ -35,6 +35,8 @@ urlpatterns = [
     path("platform/renewals/", views_platform.platform_renewals, name="platform_renewals"),
     path("platform/tenant/<uuid:pk>/finalize/", views_platform.platform_tenant_finalize,
          name="platform_tenant_finalize"),
+    path("platform/enterprise-doc/<uuid:pk>/", views_platform.platform_enterprise_doc,
+         name="platform_enterprise_doc"),
     path("platform/settings/", views_platform.platform_settings, name="platform_settings"),
     path("platform/analytics/", views_platform.platform_analytics, name="platform_analytics"),
     path("platform/margin/", views_platform.platform_margin, name="platform_margin"),

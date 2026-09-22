@@ -291,6 +291,8 @@ def terms_snapshot(company, ov: dict) -> dict:
         "start": ov.get("contract_start", ""), "end": ov.get("contract_end", ""),
         "note": ov.get("contract_note", ""), "ref": ov.get("contract_ref", ""),
         "entitlements": ent,
+        "commercial": ov.get("commercial", {}),
+        "contacts": ov.get("contacts", {}),
     }
 
 
@@ -499,6 +501,15 @@ def send_enterprise_agreement(company, actor=None) -> int:
         except (TypeError, ValueError):
             return v or ""
 
+    _FREQ = {"annual": "Annual", "quarterly": "Quarterly", "semi_annual": "Semi-annual",
+             "monthly": "Monthly", "custom": "Custom"}
+    _PAY = {"net30": "Net 30", "due_on_receipt": "Due on receipt", "net15": "Net 15",
+            "net45": "Net 45", "net60": "Net 60", "net90": "Net 90"}
+    _com = ov.get("commercial", {}) or {}
+    billing_line = " · ".join(x for x in [
+        _FREQ.get(_com.get("billing_frequency"), ""),
+        _PAY.get(_com.get("payment_terms"), "")] if x)
+
     agr = create_agreement_version(company, actor=actor)
     primary = admins[0]
     review_url = (f"{_site_base()}/agreement/"
@@ -511,7 +522,7 @@ def send_enterprise_agreement(company, actor=None) -> int:
         "credits": _commafmt(p.get("monthly_ai_credits")),
         "storage": _gb(p.get("storage_quota_bytes")), "price": price,
         "term": ov.get("contract_term_months"), "end": ov.get("contract_end", ""),
-        "note": ov.get("contract_note", ""),
+        "note": ov.get("contract_note", ""), "billing_line": billing_line,
         "accept_url": f"{review_url}?do=accept",
         "change_url": f"{review_url}?do=change",
     }

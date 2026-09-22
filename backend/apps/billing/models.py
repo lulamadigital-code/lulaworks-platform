@@ -298,3 +298,42 @@ class EnterpriseAgreement(PlatformBaseModel):
     def is_immutable(self) -> bool:
         return self.status in (self.Status.ACCEPTED, self.Status.SUPERSEDED,
                                self.Status.CANCELLED, self.Status.EXPIRED)
+
+
+def _enterprise_doc_path(instance, filename):
+    return f"enterprise/{instance.company_id}/{filename}"
+
+
+class EnterpriseDocument(PlatformBaseModel):
+    """A contract document attached to an Enterprise customer — the MSA, Order
+    Form, SLA, DPA, security addendum or other. Stored alongside the versioned
+    agreement as the paper trail."""
+
+    from django.conf import settings as _s
+
+    class Kind(models.TextChoices):
+        MSA = "msa", "Master Service Agreement"
+        ORDER_FORM = "order_form", "Order Form"
+        SLA = "sla", "SLA"
+        DPA = "dpa", "Data Processing Agreement"
+        SECURITY = "security", "Security Addendum"
+        SIGNED = "signed", "Signed agreement"
+        OTHER = "other", "Other"
+
+    company = models.ForeignKey(
+        "identity.Company", on_delete=models.CASCADE, related_name="enterprise_documents")
+    agreement = models.ForeignKey(
+        "billing.EnterpriseAgreement", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="documents")
+    kind = models.CharField(max_length=16, choices=Kind.choices, default=Kind.OTHER)
+    name = models.CharField(max_length=200)
+    file = models.FileField(upload_to=_enterprise_doc_path)
+    uploaded_by = models.ForeignKey(
+        _s.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["company", "kind"])]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} — {self.name}"

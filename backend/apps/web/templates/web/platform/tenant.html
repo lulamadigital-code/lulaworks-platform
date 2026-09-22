@@ -159,6 +159,51 @@
     <datalist id="term-opts"><option value="12"><option value="24"><option value="36"></datalist>
     <label style="margin-top:8px;">Contract reference <span class="sub" style="font-weight:400;font-size:12px;">— our internal deal ref (auto-suggested; confirm or edit)</span></label>
     <input type="text" name="ov_ref" value="{{ suggested_ref }}" placeholder="LW-ENT-2026-0001">
+    <details style="margin-top:10px;">
+      <summary style="cursor:pointer;font-size:13px;color:var(--primary-d);font-weight:600;">Commercial terms (billing, fees, discount)</summary>
+      <div class="two" style="margin-top:10px;">
+        <div><label>Billing frequency</label>
+          <select name="ov_billing_frequency">
+            <option value="annual" {% if commercial.billing_frequency == 'annual' %}selected{% endif %}>Annual</option>
+            <option value="quarterly" {% if commercial.billing_frequency == 'quarterly' %}selected{% endif %}>Quarterly</option>
+            <option value="semi_annual" {% if commercial.billing_frequency == 'semi_annual' %}selected{% endif %}>Semi-annual</option>
+            <option value="monthly" {% if commercial.billing_frequency == 'monthly' %}selected{% endif %}>Monthly</option>
+            <option value="custom" {% if commercial.billing_frequency == 'custom' %}selected{% endif %}>Custom</option>
+          </select></div>
+        <div><label>Payment terms</label>
+          <select name="ov_payment_terms">
+            <option value="net30" {% if commercial.payment_terms == 'net30' %}selected{% endif %}>Net 30</option>
+            <option value="due_on_receipt" {% if commercial.payment_terms == 'due_on_receipt' %}selected{% endif %}>Due on receipt</option>
+            <option value="net15" {% if commercial.payment_terms == 'net15' %}selected{% endif %}>Net 15</option>
+            <option value="net45" {% if commercial.payment_terms == 'net45' %}selected{% endif %}>Net 45</option>
+            <option value="net60" {% if commercial.payment_terms == 'net60' %}selected{% endif %}>Net 60</option>
+            <option value="net90" {% if commercial.payment_terms == 'net90' %}selected{% endif %}>Net 90</option>
+          </select></div>
+        <div><label>Implementation fee (one-off)</label>
+          <input type="text" name="ov_implementation_fee" value="{{ commercial.implementation_fee }}" placeholder="e.g. R15,000"></div>
+        <div><label>Training fee (one-off)</label>
+          <input type="text" name="ov_training_fee" value="{{ commercial.training_fee }}" placeholder="e.g. R8,000"></div>
+        <div><label>Professional services</label>
+          <input type="text" name="ov_professional_services" value="{{ commercial.professional_services }}" placeholder="optional"></div>
+        <div><label>Discount</label>
+          <input type="text" name="ov_discount" value="{{ commercial.discount }}" placeholder="e.g. 10% / R5,000"></div>
+        <div><label>Minimum commitment</label>
+          <input type="text" name="ov_minimum_commitment" value="{{ commercial.minimum_commitment }}" placeholder="e.g. 12 months / R100k"></div>
+      </div>
+    </details>
+    <details style="margin-top:8px;">
+      <summary style="cursor:pointer;font-size:13px;color:var(--primary-d);font-weight:600;">Customer contacts (billing, legal, procurement, technical)</summary>
+      <div class="two" style="margin-top:10px;">
+        <div><label>Billing contact</label><input type="text" name="ov_billing_name" value="{{ contacts.billing.name }}" placeholder="Name"></div>
+        <div><label>Billing email</label><input type="email" name="ov_billing_email" value="{{ contacts.billing.email }}" placeholder="billing@…"></div>
+        <div><label>Legal contact</label><input type="text" name="ov_legal_name" value="{{ contacts.legal.name }}" placeholder="Name"></div>
+        <div><label>Legal email</label><input type="email" name="ov_legal_email" value="{{ contacts.legal.email }}" placeholder="legal@…"></div>
+        <div><label>Procurement contact</label><input type="text" name="ov_proc_name" value="{{ contacts.procurement.name }}" placeholder="Name"></div>
+        <div><label>Procurement email</label><input type="email" name="ov_proc_email" value="{{ contacts.procurement.email }}" placeholder="procurement@…"></div>
+        <div><label>Technical contact</label><input type="text" name="ov_tech_name" value="{{ contacts.technical.name }}" placeholder="Name"></div>
+        <div><label>Technical email</label><input type="email" name="ov_tech_email" value="{{ contacts.technical.email }}" placeholder="it@…"></div>
+      </div>
+    </details>
     <label style="margin-top:8px;">Contract note <span class="sub" style="font-weight:400;font-size:12px;">— customer PO, term, billing arrangement</span></label>
     <textarea name="ov_note" rows="2" placeholder="Customer PO number, term, billing arrangement…">{{ sub.overrides.contract_note|default:'' }}</textarea>
     <div style="margin-top:12px;"><button class="btn" type="submit"{% if not sub %} disabled{% endif %}>Save as draft</button></div>
@@ -197,6 +242,40 @@
     {% endfor %}
   </table>
   <p class="sub" style="font-size:12px;margin:10px 0 0;">Each “Send agreement” creates a new immutable version. Accepted versions record who accepted, when, from which IP — the chain of evidence.</p>
+</div>
+{% endif %}
+
+{% if sub %}
+<div class="card">
+  <h2 style="margin-top:0;">Contract documents <span class="sub" style="font-weight:400;font-size:13px;">— MSA, Order Form, SLA, DPA, signed copies</span></h2>
+  {% if documents %}
+  <table class="kv" style="width:100%;font-size:13px;margin-bottom:12px;">
+    <tr><th style="text-align:left;">Document</th><th style="text-align:left;">Type</th><th style="text-align:left;">Uploaded</th><th></th></tr>
+    {% for d in documents %}
+    <tr>
+      <td><a class="lk" href="{% url 'web:platform_enterprise_doc' d.id %}" style="color:var(--primary-d);font-weight:600;">{{ d.name }}</a></td>
+      <td class="muted">{{ d.get_kind_display }}</td>
+      <td class="muted">{{ d.created_at|date:"d M Y" }}</td>
+      <td class="right">
+        <form method="post" style="margin:0;" data-confirm="Remove this document?">
+          {% csrf_token %}<input type="hidden" name="action" value="delete_enterprise_doc"><input type="hidden" name="doc_id" value="{{ d.id }}">
+          <button class="btn" type="submit" style="padding:4px 10px;font-size:12px;background:transparent;color:var(--bad,#e5484d);border:1px solid var(--bad,#e5484d);">Remove</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}<p class="sub" style="font-size:12.5px;">No documents attached yet.</p>{% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end;border-top:1px solid var(--line);padding-top:12px;">
+    {% csrf_token %}<input type="hidden" name="action" value="upload_enterprise_doc">
+    <div><label style="font-size:12px;">Type</label><br>
+      <select name="doc_kind">{% for v,l in doc_kinds %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+    <div style="flex:1;min-width:160px;"><label style="font-size:12px;">Name (optional)</label><br>
+      <input type="text" name="doc_name" placeholder="e.g. Order Form v2 (signed)" style="width:100%;"></div>
+    <div><input type="file" name="doc_file" required></div>
+    <button class="btn" type="submit">Upload</button>
+  </form>
 </div>
 {% endif %}
 

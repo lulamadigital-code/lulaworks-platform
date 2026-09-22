@@ -266,7 +266,9 @@ def platform_tenant(request, pk):
                 "change_plan": "billing", "cancel_subscription": "billing",
                 "set_enterprise_terms": "billing",
                 "finalize_enterprise": "billing",
-                "send_enterprise_agreement": "billing"}
+                "send_enterprise_agreement": "billing",
+                "upload_enterprise_doc": "billing",
+                "delete_enterprise_doc": "billing"}
             need = _cap_for.get(action)
             if need and not request.user.can_platform(need):
                 messages.error(request, "You don't have access for that action.")
@@ -352,6 +354,24 @@ def platform_tenant(request, pk):
                         ov["contract_ref"] = ref[:40]
                     elif not ov.get("contract_ref"):
                         ov["contract_ref"] = _suggest_contract_ref()
+                    # Commercial terms (metadata / record-only).
+                    def _s(name):
+                        return (request.POST.get(name) or "").strip()[:80]
+                    ov["commercial"] = {
+                        "billing_frequency": _s("ov_billing_frequency"),
+                        "payment_terms": _s("ov_payment_terms"),
+                        "implementation_fee": _s("ov_implementation_fee"),
+                        "training_fee": _s("ov_training_fee"),
+                        "professional_services": _s("ov_professional_services"),
+                        "discount": _s("ov_discount"),
+                        "minimum_commitment": _s("ov_minimum_commitment"),
+                    }
+                    ov["contacts"] = {
+                        "billing": {"name": _s("ov_billing_name"), "email": _s("ov_billing_email")},
+                        "legal": {"name": _s("ov_legal_name"), "email": _s("ov_legal_email")},
+                        "procurement": {"name": _s("ov_proc_name"), "email": _s("ov_proc_email")},
+                        "technical": {"name": _s("ov_tech_name"), "email": _s("ov_tech_email")},
+                    }
                     sub_obj.overrides = ov
                     sub_obj.save(update_fields=["overrides", "updated_at"])
                     messages.success(request, "Terms saved as a draft — not live yet. "
@@ -400,6 +420,25 @@ def platform_tenant(request, pk):
                     messages.success(
                         request, f"Agreement email sent to {n} admin"
                         + ("s." if n != 1 else "."))
+                elif action == "upload_enterprise_doc":
+                    from apps.billing.models import EnterpriseAgreement, EnterpriseDocument
+                    f = request.FILES.get("doc_file")
+                    if not f:
+                        raise ValueError("Choose a file to upload.")
+                    EnterpriseDocument.objects.create(
+                        company=company, kind=request.POST.get("doc_kind", "other"),
+                        name=(request.POST.get("doc_name", "").strip() or f.name)[:200],
+                        file=f, uploaded_by=request.user,
+                        agreement=EnterpriseAgreement.objects.filter(
+                            company=company).order_by("-version").first())
+                    messages.success(request, "Document uploaded.")
+                elif action == "delete_enterprise_doc":
+                    from apps.billing.models import EnterpriseDocument
+                    d = EnterpriseDocument.objects.filter(
+                        company=company, pk=request.POST.get("doc_id")).first()
+                    if d:
+                        d.delete()
+                        messages.success(request, "Document removed.")
                 elif action == "toggle_active":
                     company.is_active = not company.is_active
                     company.save(update_fields=["is_active", "updated_at"])
@@ -455,6 +494,12 @@ def platform_tenant(request, pk):
             EnterpriseAgreement.objects.filter(company=company).order_by("-version")[:8])
         # The three distinct Enterprise states (never collapsed).
         ctx["ent_state"] = billing.enterprise_state(company)
+        # Commercial terms / deal contacts (draft) + contract documents.
+        ctx["commercial"] = _ov.get("commercial") or {}
+        ctx["contacts"] = _ov.get("contacts") or {}
+        from apps.billing.models import EnterpriseDocument
+        ctx["documents"] = list(EnterpriseDocument.objects.filter(company=company))
+        ctx["doc_kinds"] = EnterpriseDocument.Kind.choices
 
         # Enterprise price helper — defaults grounded in the platform's REAL cost
         # model, editable in the UI. seat value = Business per-seat rate; storage
@@ -525,6 +570,24 @@ def platform_enquiries(request):
     return render(request, "web/platform/enquiries.html", {
         "active": "enquiries", "rows": rows, "kpis": kpis, "scope": scope,
     })
+
+
+@login_required
+def platform_enterprise_doc(request, pk):
+    """Gated download of an Enterprise contract document (sensitive — never served
+    publicly). Platform staff only."""
+    if not request.user.platform_level:
+        messages.error(request, "The platform console is for platform administrators only.")
+        return redirect("web:dashboard")
+    from django.http import FileResponse, Http404
+    from apps.billing.models import EnterpriseDocument
+    from apps.core.context import system_scope
+    with system_scope():
+        doc = EnterpriseDocument.objects.filter(pk=pk).first()
+        if doc is None or not doc.file:
+            raise Http404
+        return FileResponse(doc.file.open("rb"), as_attachment=True,
+                            filename=doc.name or doc.file.name.split("/")[-1])
 
 
 @login_required
