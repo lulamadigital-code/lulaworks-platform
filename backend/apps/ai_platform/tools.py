@@ -352,6 +352,15 @@ def _price_intelligence(user, *, item=""):
     return price_intelligence(user.active_company, item)
 
 
+@register("item_price_history", required_perm="procurement.manage",
+          description="Graph-aware price history for an item: what we PAID suppliers "
+                      "and (with finance access) CHARGED customers — last, average and "
+                      "the SOURCE document, from structured records not embeddings")
+def _item_price_history(user, *, item=""):
+    from apps.knowledge.intelligence import item_price_intelligence
+    return item_price_intelligence(item, user)
+
+
 @register("predictions", required_perm="projects.view",
           description="Grounded forward-looking predictions (price rises, repeat "
                       "customers, jobs at risk) with confidence, reasoning and sources")

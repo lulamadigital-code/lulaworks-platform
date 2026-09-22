@@ -66,6 +66,14 @@ def classify(message: str, context: dict | None = None) -> tuple[str, dict]:
             w in m for w in ("summar", "relationship", "about", "history")):
         return "customer_summary", {"name": _customer_name(message)}
 
+    # Graph-aware historical price question — "what did we pay/charge for X",
+    # "price history of X", "last price". Answered from STRUCTURED records (paid vs
+    # charged, evidence-backed), not embeddings (§34). Checked before the generic
+    # supplier-price list so a history question gets the richer, sourced answer.
+    if any(p in m for p in ("what did we pay", "what did we charge", "how much did we",
+                            "price history", "last price", "paid for", "charged for")):
+        return "item_price_history", {"item": _item_after(m)}
+
     if any(w in m for w in ("supplier", "buy", "price", "cheapest", "where do we")):
         return "supplier_prices", {"item": _item_after(m)}
     return "unknown", {}
@@ -124,6 +132,7 @@ _INTENTS = {
     "unpaid_invoices": ("unpaid_invoices", "Unpaid invoices", "web:invoices"),
     "uncontacted_customers": ("uncontacted_customers", "Customers to follow up", "web:crm_hub"),
     "supplier_prices": ("supplier_prices", "Supplier prices", "web:suppliers"),
+    "item_price_history": ("item_price_history", "Price history", "web:price_history"),
     "job_summary": ("job_summary", "Job summary", None),
 }
 
@@ -166,6 +175,25 @@ def _shape(intent, title, action_route, result, message, company, user) -> dict:
         return {"answer": answer, "intent": intent, "items": [], "sources": [source],
                 "actions": [], "summary": result, "confidence": "high"}
 
+    if intent == "item_price_history":
+        if not result.get("found"):
+            return {"answer": f"No price history for that yet — {_STOP}",
+                    "intent": intent, "items": [], "sources": [], "actions": [],
+                    "confidence": "high"}
+        pur, sal = result.get("purchases") or {}, result.get("sales") or {}
+        price_items = (pur.get("items") or []) + (sal.get("items") or [])
+        # Evidence (§33): the source documents behind the figures, openable.
+        sources = []
+        for it in price_items:
+            src = it.get("source")
+            if isinstance(src, dict) and src.get("filename") and src["filename"] not in sources:
+                sources.append(src["filename"])
+        answer = _price_history_answer(result)
+        ai = _maybe_phrase(company, user, title, price_items)
+        return {"answer": ai or answer, "intent": intent, "items": price_items,
+                "sources": sources or [source], "actions": _actions(action_route),
+                "summary": result, "confidence": "high", "ai_phrased": bool(ai)}
+
     if not items:
         return {"answer": f"No {title.lower()} — {_STOP}", "intent": intent,
                 "items": [], "sources": [source], "actions": [], "confidence": "high"}
@@ -189,6 +217,32 @@ def _deterministic_answer(intent, title, items) -> str:
     if intent == "uncontacted_customers":
         return f"{n} customer{'s' if n != 1 else ''} have no recent recorded activity."
     return f"You have {n} {title.lower()}."
+
+
+def _price_history_answer(res) -> str:
+    """A factual, evidence-anchored price answer: what we last paid (and, with
+    finance access, last charged), plus the average — never a guess."""
+    q = res.get("query") or "that item"
+    parts = []
+    pur = res.get("purchases") or {}
+    last = pur.get("last")
+    if last and last.get("unit_price"):
+        s = f"Last paid for {q}: R{last['unit_price']}"
+        if last.get("party"):
+            s += f" from {last['party']}"
+        if last.get("occurred_on"):
+            s += f" on {last['occurred_on']}"
+        parts.append(s + ".")
+    if pur.get("average") and pur.get("count"):
+        parts.append(f"Average paid: R{pur['average']} across {pur['count']} purchase(s).")
+    sal = res.get("sales") or {}
+    slast = sal.get("last")
+    if slast and slast.get("unit_price"):
+        s = f"Last charged customers: R{slast['unit_price']}"
+        if slast.get("occurred_on"):
+            s += f" on {slast['occurred_on']}"
+        parts.append(s + ".")
+    return " ".join(parts) or f"I have records for {q} but no priced lines."
 
 
 def _job_answer(dash) -> str:
