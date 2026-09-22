@@ -171,6 +171,25 @@
   {% endif %}
 </div>
 
+{% if agreements %}
+<div class="card">
+  <h2 style="margin-top:0;">Agreement history <span class="sub" style="font-weight:400;font-size:13px;">— versioned record of evidence</span></h2>
+  <table class="kv" style="width:100%;font-size:13px;">
+    <tr><th style="text-align:left;">Version</th><th style="text-align:left;">Status</th><th style="text-align:left;">Sent</th><th style="text-align:left;">Accepted</th><th style="text-align:left;">Provisioning</th></tr>
+    {% for a in agreements %}
+    <tr>
+      <td>v{{ a.version }} {% if a.contract_ref %}<span class="muted">· {{ a.contract_ref }}</span>{% endif %}</td>
+      <td>{% if a.status == 'accepted' %}<span class="chip ok">Accepted</span>{% elif a.status == 'change_requested' %}<span class="chip" style="background:#fff3e0;color:#b9711a;">Change requested</span>{% elif a.status == 'sent' %}<span class="chip">Sent</span>{% elif a.status == 'superseded' %}<span class="muted">Superseded</span>{% else %}<span class="muted">{{ a.get_status_display }}</span>{% endif %}</td>
+      <td class="muted">{{ a.sent_at|date:"d M H:i"|default:"—" }}{% if a.opened_at %} · opened{% endif %}</td>
+      <td class="muted">{% if a.accepted_at %}{{ a.accepted_at|date:"d M H:i" }}{% if a.accepted_by_email %}<br>{{ a.accepted_by_email }}{% endif %}{% if a.acceptance_ip %} · {{ a.acceptance_ip }}{% endif %}{% else %}—{% endif %}</td>
+      <td>{% if a.provisioning_status == 'activated' %}<span class="chip ok">✓ Provisioned</span>{% elif a.provisioning_status == 'mismatch' %}<span class="chip" style="background:#fdecef;color:#c22a41;">⚠ Mismatch</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p class="sub" style="font-size:12px;margin:10px 0 0;">Each “Send agreement” creates a new immutable version. Accepted versions record who accepted, when, from which IP — the chain of evidence.</p>
+</div>
+{% endif %}
+
 {% if sso %}
 <div class="card" {% if sso.status == 'activation_requested' %}style="border-color:#f5a623;background:#fffaf0;"{% endif %}>
   <h2 style="margin-top:0;">Single Sign-On

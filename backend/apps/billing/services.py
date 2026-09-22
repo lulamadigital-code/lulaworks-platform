@@ -270,14 +270,127 @@ def proposed_limits(ov: dict) -> dict:
         k: ov.get(k) for k in ("max_users", "storage_quota_bytes", "monthly_ai_credits")}
 
 
-def agreement_token(company, ov) -> str:
-    """A signed, self-contained token carrying the agreed-terms snapshot, so the
-    public confirmation page shows exactly what was emailed without a DB lookup
-    or login. Limits come from the proposed (draft) terms."""
+def terms_snapshot(company, ov: dict) -> dict:
+    """Freeze the negotiated terms (from the draft proposal) into a snapshot for
+    an agreement version — the immutable record of what was offered."""
+    p = proposed_limits(ov)
+    ent = []
+    sub = getattr(company, "subscription", None)
+    plan = getattr(sub, "plan", None)
+    if plan is not None:
+        ent = list(plan.module_entitlements or [])
+    return {
+        "price": str(ov.get("contract_price") or ""),
+        "currency": getattr(sub, "currency", "ZAR") if sub else "ZAR",
+        "limits": {
+            "max_users": p.get("max_users"),
+            "storage_quota_bytes": p.get("storage_quota_bytes"),
+            "monthly_ai_credits": p.get("monthly_ai_credits"),
+        },
+        "term_months": ov.get("contract_term_months"),
+        "start": ov.get("contract_start", ""), "end": ov.get("contract_end", ""),
+        "note": ov.get("contract_note", ""), "ref": ov.get("contract_ref", ""),
+        "entitlements": ent,
+    }
+
+
+def create_agreement_version(company, actor=None):
+    """Create a new SENT agreement version from the current draft terms, and
+    supersede any prior non-accepted version. Returns the EnterpriseAgreement."""
+    from django.db.models import Max
+    from .models import EnterpriseAgreement
+    sub = getattr(company, "subscription", None)
+    ov = (sub.overrides if sub else None) or {}
+    # all_objects: version never reuses a number, even past a (soft-)deleted row.
+    n = (EnterpriseAgreement.all_objects.filter(company=company)
+         .aggregate(m=Max("version"))["m"] or 0) + 1
+    agr = EnterpriseAgreement.objects.create(
+        company=company, version=n, status=EnterpriseAgreement.Status.SENT,
+        contract_ref=ov.get("contract_ref", ""), snapshot=terms_snapshot(company, ov),
+        created_by=actor, sent_at=timezone.now())
+    # Supersede prior draft/sent/change-requested versions (keep accepted history);
+    # exclude the row we just created.
+    (EnterpriseAgreement.objects
+     .filter(company=company, status__in=[EnterpriseAgreement.Status.DRAFT,
+                                          EnterpriseAgreement.Status.SENT,
+                                          EnterpriseAgreement.Status.CHANGE_REQUESTED])
+     .exclude(pk=agr.pk)
+     .update(status=EnterpriseAgreement.Status.SUPERSEDED, superseded_by=agr))
+    return agr
+
+
+def current_agreement(company):
+    """The version that matters now: the accepted one if present, else the latest
+    sent/draft."""
+    from .models import EnterpriseAgreement
+    qs = EnterpriseAgreement.objects.filter(company=company)
+    return (qs.filter(status=EnterpriseAgreement.Status.ACCEPTED).order_by("-version").first()
+            or qs.order_by("-version").first())
+
+
+def accept_agreement(agreement, *, name="", email="", ip=None, method="click"):
+    from .models import EnterpriseAgreement
+    if agreement.status == EnterpriseAgreement.Status.ACCEPTED:
+        return agreement
+    agreement.status = EnterpriseAgreement.Status.ACCEPTED
+    agreement.accepted_at = timezone.now()
+    agreement.accepted_by_name = name[:200]
+    agreement.accepted_by_email = email[:254]
+    agreement.acceptance_method = method
+    agreement.acceptance_ip = ip
+    agreement.save(update_fields=["status", "accepted_at", "accepted_by_name",
+                                  "accepted_by_email", "acceptance_method",
+                                  "acceptance_ip", "updated_at"])
+    return agreement
+
+
+def request_agreement_change(agreement, message=""):
+    from .models import EnterpriseAgreement
+    agreement.status = EnterpriseAgreement.Status.CHANGE_REQUESTED
+    agreement.change_requested_at = timezone.now()
+    agreement.change_request_message = (message or "")[:2000]
+    agreement.save(update_fields=["status", "change_requested_at",
+                                  "change_request_message", "updated_at"])
+    return agreement
+
+
+def finalize_agreement(company, actor=None):
+    """Record what was actually provisioned against the accepted agreement and
+    flag a mismatch if the live limits don't match what was accepted. Returns
+    (agreement_or_None, matched_bool)."""
+    from .models import EnterpriseAgreement
+    agr = (EnterpriseAgreement.objects.filter(
+        company=company, status=EnterpriseAgreement.Status.ACCEPTED)
+        .order_by("-version").first())
+    if agr is None:
+        return None, False
+    sub = getattr(company, "subscription", None)
+    ov = (sub.overrides if sub else None) or {}
+    live = {k: ov.get(k) for k in ("max_users", "storage_quota_bytes", "monthly_ai_credits")}
+    agreed = (agr.snapshot or {}).get("limits", {})
+    matched = all(agreed.get(k) == live.get(k) for k in
+                  ("max_users", "storage_quota_bytes", "monthly_ai_credits")
+                  if agreed.get(k) is not None)
+    agr.provisioned_snapshot = live
+    agr.provisioning_status = (EnterpriseAgreement.Provisioning.ACTIVATED if matched
+                               else EnterpriseAgreement.Provisioning.MISMATCH)
+    agr.finalized_at = timezone.now()
+    agr.finalized_by = actor
+    agr.save(update_fields=["provisioned_snapshot", "provisioning_status",
+                            "finalized_at", "finalized_by", "updated_at"])
+    return agr, matched
+
+
+def agreement_token(company, ov, agreement=None, to_email="") -> str:
+    """A signed token carrying the agreement version id + a terms snapshot, so the
+    public confirmation page shows exactly what was emailed without a login. `a`
+    ties acceptance back to the immutable version record; `to` records who it was
+    sent to."""
     from django.core import signing
     p = proposed_limits(ov)
     return signing.dumps({
-        "c": str(company.id), "ref": ov.get("contract_ref", ""),
+        "c": str(company.id), "a": str(agreement.id) if agreement else "",
+        "to": to_email, "ref": ov.get("contract_ref", ""),
         "price": str(ov.get("contract_price") or ""),
         "users": p.get("max_users"), "credits": p.get("monthly_ai_credits"),
         "storage": p.get("storage_quota_bytes"),
@@ -301,10 +414,10 @@ def _site_base() -> str:
     return (getattr(settings, "SITE_URL", "") or "https://www.lulaworks.com").rstrip("/")
 
 
-def send_enterprise_agreement(company) -> int:
-    """Email the tenant's admins the agreed Enterprise terms with Accept /
-    Request-a-change buttons (a secure confirmation page). Returns the recipient
-    count; raises ValueError if there's nothing agreed to send yet."""
+def send_enterprise_agreement(company, actor=None) -> int:
+    """Create a new agreement version and email the tenant's admins the agreed
+    terms with Accept / Request-a-change buttons (a secure confirmation page).
+    Returns the recipient count; raises ValueError if nothing is agreed yet."""
     sub = getattr(company, "subscription", None)
     ov = (sub.overrides if sub else None) or {}
     price = str(ov.get("contract_price") or "").strip()
@@ -337,9 +450,11 @@ def send_enterprise_agreement(company) -> int:
         except (TypeError, ValueError):
             return v or ""
 
-    review_url = f"{_site_base()}/agreement/{agreement_token(company, ov)}/"
-    p = proposed_limits(ov)
+    agr = create_agreement_version(company, actor=actor)
     primary = admins[0]
+    review_url = (f"{_site_base()}/agreement/"
+                  f"{agreement_token(company, ov, agreement=agr, to_email=primary.email)}/")
+    p = proposed_limits(ov)
     ctx = {
         "heading": "Your Enterprise plan — agreed terms",
         "first_name": (primary.first_name or "").strip(),

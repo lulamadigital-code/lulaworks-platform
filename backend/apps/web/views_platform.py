@@ -376,15 +376,22 @@ def platform_tenant(request, pk):
                     company.storage_quota_bytes = ov.get(
                         "storage_quota_bytes", sub_obj.plan.storage_quota_bytes)
                     company.save(update_fields=["max_users", "storage_quota_bytes", "updated_at"])
+                    # Record provisioning against the accepted agreement + verify.
+                    agr, matched = billing.finalize_agreement(company, actor=request.user)
                     from apps.enterprise.services import record as _arec
                     from apps.enterprise.models import AuditAction as _AA
                     _arec(_AA.SETTINGS_CHANGED, company=company, actor=request.user,
                           request=request, summary="Finalized Enterprise terms — limits now live")
-                    messages.success(request, "Enterprise terms finalized — the agreed "
-                                     "limits are now live on the account.")
+                    if agr is not None and not matched:
+                        messages.warning(request, "⚠ Provisioning mismatch — the live limits "
+                                         "differ from the accepted agreement. Re-check before "
+                                         "billing.")
+                    else:
+                        messages.success(request, "Enterprise terms finalized — the agreed "
+                                         "limits are now live on the account.")
                     messages.success(request, "Custom Enterprise terms saved.")
                 elif action == "send_enterprise_agreement":
-                    n = billing.send_enterprise_agreement(company)
+                    n = billing.send_enterprise_agreement(company, actor=request.user)
                     from apps.enterprise.services import record as _audit
                     from apps.enterprise.models import AuditAction
                     _audit(AuditAction.SETTINGS_CHANGED, company=company,
@@ -441,6 +448,11 @@ def platform_tenant(request, pk):
         ctx["agr_finalized"] = _ov.get("agreement_finalized_at")
         ctx["needs_finalize"] = any(
             _prop.get(k) is not None and _prop.get(k) != _ov.get(k) for k in _keys)
+
+        # Agreement history — the versioned record of what was sent/accepted.
+        from apps.billing.models import EnterpriseAgreement
+        ctx["agreements"] = list(
+            EnterpriseAgreement.objects.filter(company=company).order_by("-version")[:8])
 
         # Enterprise price helper — defaults grounded in the platform's REAL cost
         # model, editable in the UI. seat value = Business per-seat rate; storage

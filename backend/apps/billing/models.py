@@ -218,3 +218,83 @@ class BillingTransaction(PlatformBaseModel):
 
     def __str__(self):
         return f"{self.get_kind_display()} · {self.company} · R{self.amount}"
+
+
+class EnterpriseAgreement(PlatformBaseModel):
+    """A versioned, immutable-once-accepted record of a negotiated Enterprise
+    contract — the evidence chain (who agreed to what, which version, when, who
+    finalised, what was provisioned). One row per version; a change after sending
+    creates a NEW version and supersedes the prior one. Distinct from
+    Subscription.overrides (the live enforcement source): this is the commercial
+    record of record, that from the accepted version."""
+
+    from django.conf import settings as _s
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        SENT = "sent", "Sent"
+        ACCEPTED = "accepted", "Accepted"
+        CHANGE_REQUESTED = "change_requested", "Change requested"
+        SUPERSEDED = "superseded", "Superseded"
+        CANCELLED = "cancelled", "Cancelled"
+        EXPIRED = "expired", "Expired"
+
+    class Provisioning(models.TextChoices):
+        PENDING = "pending", "Pending"
+        READY = "ready", "Ready"
+        ACTIVATED = "activated", "Activated"
+        MISMATCH = "mismatch", "Mismatch"
+
+    company = models.ForeignKey(
+        "identity.Company", on_delete=models.CASCADE, related_name="enterprise_agreements")
+    version = models.PositiveIntegerField(default=1)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    contract_ref = models.CharField(max_length=40, blank=True)
+
+    #: Frozen snapshot of the terms this version represents (price, currency,
+    #: limits {max_users, storage_quota_bytes, monthly_ai_credits}, term_months,
+    #: start, end, note, entitlements). Never mutated after ACCEPTED.
+    snapshot = models.JSONField(default=dict, blank=True)
+
+    created_by = models.ForeignKey(
+        _s.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    sent_at = models.DateTimeField(null=True, blank=True)
+    opened_at = models.DateTimeField(null=True, blank=True)
+
+    # Acceptance evidence
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    accepted_by_name = models.CharField(max_length=200, blank=True)
+    accepted_by_email = models.CharField(max_length=254, blank=True)
+    acceptance_method = models.CharField(max_length=24, blank=True)   # click | upload | docusign …
+    acceptance_ref = models.CharField(max_length=120, blank=True)     # provider reference
+    acceptance_ip = models.GenericIPAddressField(null=True, blank=True)
+
+    change_requested_at = models.DateTimeField(null=True, blank=True)
+    change_request_message = models.TextField(blank=True)
+
+    # Finalisation & provisioning
+    finalized_at = models.DateTimeField(null=True, blank=True)
+    finalized_by = models.ForeignKey(
+        _s.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    provisioned_snapshot = models.JSONField(default=dict, blank=True)
+    provisioning_status = models.CharField(
+        max_length=16, choices=Provisioning.choices, default=Provisioning.PENDING)
+
+    superseded_by = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="supersedes")
+
+    class Meta:
+        ordering = ["company", "-version"]
+        constraints = [
+            models.UniqueConstraint(fields=["company", "version"],
+                                    name="uniq_agreement_company_version"),
+        ]
+        indexes = [models.Index(fields=["company", "status"])]
+
+    def __str__(self):
+        return f"{self.contract_ref or 'Agreement'} v{self.version} ({self.status})"
+
+    @property
+    def is_immutable(self) -> bool:
+        return self.status in (self.Status.ACCEPTED, self.Status.SUPERSEDED,
+                               self.Status.CANCELLED, self.Status.EXPIRED)
