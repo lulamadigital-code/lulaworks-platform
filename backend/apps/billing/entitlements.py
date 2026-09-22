@@ -104,6 +104,26 @@ def entitlements_for(company) -> Entitlements:
     return Entitlements(company)
 
 
+class HasFeature:
+    """DRF permission factory for API-level gating: `permission_classes =
+    [HasFeature('compliance_management')]`. Backend-authoritative for API/mobile
+    clients, mirroring the web `require_feature` decorator."""
+
+    def __init__(self, code):
+        self.code = code
+
+    def __call__(self):
+        return self
+
+    def has_permission(self, request, view):
+        company = getattr(getattr(request, "user", None), "active_company", None)
+        return company is None or entitlements_for(company).has(self.code)
+
+    @property
+    def message(self):
+        return PlanFeatureRequired(self.code).message
+
+
 def require_feature(code):
     """View decorator: block a feature the plan doesn't include with a friendly
     upgrade message instead of a bare 403."""

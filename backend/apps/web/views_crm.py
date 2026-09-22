@@ -12,6 +12,8 @@ signed-in user), so `Model.objects.all()` is already scoped to the company.
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
+from apps.billing.entitlements import require_feature
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -432,6 +434,7 @@ def crm_reports(request):
 
 
 @login_required
+@require_feature("advanced_dashboard")
 def crm_analytics(request):
     """Sales analytics — won value by salesperson / customer / industry, the
     won-vs-lost trend, deal size & sales cycle, and customer acquisition. All

@@ -16,6 +16,8 @@ from decimal import Decimal, InvalidOperation
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+
+from apps.billing.entitlements import require_feature
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -966,6 +968,7 @@ def work_chat_messages(request, pk):
 
 
 @login_required
+@require_feature("advanced_reporting")
 def reports_list(request):
     """All field reports across the company's jobs — the manager's review queue,
     with status and how many review comments each has."""
@@ -980,6 +983,7 @@ def reports_list(request):
 
 
 @login_required
+@require_feature("advanced_reporting")
 def report_detail(request, pk):
     """One field report + its review conversation. Reviewers can approve/return;
     anyone in the loop can reply (chat back)."""
@@ -2974,6 +2978,7 @@ def supplier_import_confirm(request):
 
 
 @login_required
+@require_feature("supplier_intelligence")
 def products_list(request):
     """Products we buy, built from the price ledger — with a spend-by-category
     breakdown. Search matches names and aliases."""
@@ -2990,6 +2995,7 @@ def products_list(request):
 
 
 @login_required
+@require_feature("supplier_intelligence")
 def product_detail(request, pk):
     """The product-knowledge page: who sells it, who's cheapest, how often/when we
     bought it, avg/low/high, price trend, aliases and category."""
@@ -3282,6 +3288,7 @@ def procurement_client_delete(request, pk):
 
 
 @login_required
+@require_feature("price_history")
 def price_history(request):
     """Items & Price History — a procurement analytics workspace over the priced
     item ledger. Landing: a portfolio overview (items tracked, price points,
@@ -3649,6 +3656,7 @@ def _to_decimal(raw, default="0"):
 
 @login_required
 @require_POST
+@require_feature("compliance_management")
 def compliance_item_approve(request, pk):
     """Approve a compliance item from the project page — the gate recomputes live."""
     if not request.user.has_perm_code("compliance.override"):
