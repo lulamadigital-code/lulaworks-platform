@@ -156,17 +156,41 @@ def import_document(request, pk):
 @login_required
 def import_relationships(request):
     """Relationships — the reconstructed business graph: each historical job and
-    the customer + documents that make it up (AI OS §12/§5)."""
+    the customer + documents that make it up (AI OS §12/§5).
+
+    Scales to any archive size: server-side SEARCH (customer/reference/title),
+    STATUS filter and PAGINATION (§4.2/§28/§29), and documents are PREFETCHED so
+    the page is a constant two queries regardless of how many jobs exist — never
+    the old N+1 (a query per job) capped at an arbitrary 200."""
+    from django.core.paginator import Paginator
+    from django.db.models import Prefetch, Q
+
     if not _can(request.user):
         messages.error(request, "You don't have permission to import business history.")
         return redirect("web:dashboard")
-    jobs = list(HistoricalJob.objects.exclude(status=HistoricalJob.Status.DISMISSED)
-                .order_by("status", "-confidence")[:200])
-    graph = []
-    for j in jobs:
-        docs = list(j.documents.all().order_by("doc_type")[:20])
-        graph.append({"job": j, "documents": docs})
-    return render(request, "web/import_relationships.html", {"graph": graph})
+
+    qs = HistoricalJob.objects.exclude(status=HistoricalJob.Status.DISMISSED)
+    q = request.GET.get("q", "").strip()
+    if q:
+        qs = qs.filter(Q(customer_name__icontains=q) | Q(title__icontains=q)
+                       | Q(reference__icontains=q))
+    status = request.GET.get("status", "").strip()
+    if status in dict(HistoricalJob.Status.choices):
+        qs = qs.filter(status=status)
+    qs = (qs.select_related("batch")
+          .prefetch_related(Prefetch(
+              "documents",
+              queryset=ImportedDocument.objects.order_by("doc_type")))
+          .order_by("status", "-confidence", "-created_at"))
+
+    page_obj = Paginator(qs, 30).get_page(request.GET.get("page"))
+    # `.documents.all()` is served from the prefetch cache (no extra query); cap
+    # the fan-out shown per card at 20.
+    graph = [{"job": j, "documents": list(j.documents.all())[:20]} for j in page_obj]
+    return render(request, "web/import_relationships.html", {
+        "graph": graph, "page_obj": page_obj, "total": page_obj.paginator.count,
+        "q": q, "status": status, "statuses": HistoricalJob.Status.choices,
+    })
 
 
 @login_required
