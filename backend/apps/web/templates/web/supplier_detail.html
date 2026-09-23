@@ -10,6 +10,7 @@
   {% if supplier.phone %} · {{ supplier.phone }}{% endif %}{% if supplier.email %} · {{ supplier.email }}{% endif %}
 </p>
 {% if supplier.notes %}<p class="muted">{{ supplier.notes }}</p>{% endif %}
+<p><a class="btn ghost" href="{% url 'web:business_history' 'supplier' supplier.id %}">{% trans "Business History" %}</a></p>
 
 {% if can_manage %}
 <details class="card" style="margin-bottom:16px;">

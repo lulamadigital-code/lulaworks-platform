@@ -3871,6 +3871,21 @@ def _customer_intel(customer, user):
         return {"found": False}
 
 
+@login_required
+def business_history_page(request, kind, pk):
+    """The unified Business-History view of one record — summary, timeline,
+    changes, outcomes and the transaction graph — rendered from the single
+    permission-aware facade so web, API, mobile and LulaAI all agree. Works for a
+    customer / job / supplier / quotation / PO / commercial document."""
+    from django.http import Http404
+
+    from apps.knowledge.business_history import history_for_kind
+    data = history_for_kind(kind, pk, request.user)
+    if data is None:
+        raise Http404("Unknown record.")
+    return render(request, "web/business_history.html", {"h": data})
+
+
 def _customer_history_docs(customer):
     """Imported documents whose extracted customer resolved to this record —
     the provenance behind a 'Historical data' badge. Empty if none."""

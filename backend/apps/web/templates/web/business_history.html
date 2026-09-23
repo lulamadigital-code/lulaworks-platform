@@ -1,0 +1,76 @@
+{% extends "web/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Business History" %} · {{ h.entity.label }}{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <h1>{{ h.entity.label }}</h1>
+    <p class="sub" style="margin:0;">{% trans "Business History" %}
+      <span class="chip" style="text-transform:capitalize;">{{ h.kind }}</span></p>
+  </div>
+</div>
+
+{% comment %} Summary — the evidence-backed intelligence for this entity. {% endcomment %}
+{% if h.summary.found %}
+<div class="card" style="margin-bottom:14px;">
+  <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">{% trans "Summary" %}</div>
+  {% if h.kind == 'customer' %}
+    <p style="margin:0;font-weight:600;">{% blocktrans count n=h.summary.job_count %}{{ n }} job on record{% plural %}{{ n }} jobs on record{% endblocktrans %}{% if h.summary.total_value %} · {% trans "total value" %} R{{ h.summary.total_value }}{% endif %}</p>
+    {% if h.summary.last_job %}<p class="muted" style="margin:4px 0 0;">{% trans "Last" %}: {{ h.summary.last_job.title }}{% if h.summary.last_job.occurred_on %} ({{ h.summary.last_job.occurred_on }}){% endif %}</p>{% endif %}
+  {% elif h.kind == 'supplier' %}
+    <p style="margin:0;font-weight:600;">{% blocktrans count n=h.summary.purchase_count %}{{ n }} purchase on record{% plural %}{{ n }} purchases on record{% endblocktrans %}{% if h.summary.item_count %} · {{ h.summary.item_count }} {% trans "items" %}{% endif %}{% if h.summary.last_purchase %} · {% trans "last" %} {{ h.summary.last_purchase }}{% endif %}</p>
+    {% for it in h.summary.items|slice:":6" %}
+      <p class="muted" style="margin:4px 0 0;">{{ it.description }}{% if it.unit_price %} — R{{ it.unit_price }}{% if it.unit %}/{{ it.unit }}{% endif %}{% endif %}</p>
+    {% endfor %}
+  {% endif %}
+  {% if h.summary.sources_summary %}
+  <p class="muted" style="margin:8px 0 0;font-size:11px;">{% blocktrans with l=h.summary.sources_summary.live i=h.summary.sources_summary.imported %}{{ l }} live · {{ i }} imported{% endblocktrans %}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% comment %} Outcomes — factual problems, never labels. {% endcomment %}
+{% if h.outcomes %}
+<div class="card" style="margin-bottom:14px;">
+  <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">{% trans "Outcomes" %}</div>
+  <div class="row" style="gap:8px;flex-wrap:wrap;">
+    {% for o in h.outcomes %}
+    <span class="chip warn">{{ o.label }}{% if o.count %} ({{ o.count }}){% elif o.days %} ({{ o.days }}d){% endif %}{% if o.type == 'over_budget' %} R{{ o.spent }}/R{{ o.budget }}{% endif %}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% comment %} Timeline — the chronological story, each event clickable. {% endcomment %}
+{% if h.timeline %}
+<div class="card" style="margin-bottom:14px;">
+  <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">{% trans "Timeline" %}</div>
+  {% for e in h.timeline %}
+  <div class="row" style="gap:12px;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--line);">
+    <span class="muted" style="min-width:86px;font-size:12px;">{{ e.when|slice:":10" }}</span>
+    <span style="flex:1;">{% if e.url %}<a href="{{ e.url }}" style="font-weight:600;">{{ e.title }}</a>{% else %}<strong>{{ e.title }}</strong>{% endif %}
+      {% if e.amount %} <b>{{ e.amount }}</b>{% endif %}
+      {% if e.detail %}<span class="muted"> — {{ e.detail }}</span>{% endif %}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% comment %} Changes — how the record changed, from the event backbone. {% endcomment %}
+{% if h.changes %}
+<div class="card" style="margin-bottom:14px;">
+  <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">{% trans "Changes" %}</div>
+  {% for c in h.changes %}
+  <div class="row" style="gap:12px;align-items:baseline;padding:4px 0;">
+    <span class="muted" style="min-width:86px;font-size:12px;">{{ c.when|slice:":10" }}</span>
+    <span style="flex:1;">{{ c.summary }}{% if c.actor %} <span class="muted">· {{ c.actor }}</span>{% endif %}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% comment %} Transaction graph — the related records chain. {% endcomment %}
+{% include "web/_related.html" with related=h.related %}
+
+{% endblock %}

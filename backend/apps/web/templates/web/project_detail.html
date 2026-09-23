@@ -5,6 +5,7 @@
 <p class="sub"><a href="{% url 'web:projects' %}">{% trans "← Projects" %}</a></p>
 <h1>{{ project.title|default:project.client_name }}</h1>
 <p class="sub">{{ project.number }} · {{ project.client_name }}{% if project.site %} · {{ project.site }}{% endif %}{% if project.work_type %} · {{ project.work_type }}{% endif %}</p>
+<p><a class="btn ghost" href="{% url 'web:business_history' 'job' project.id %}">{% trans "Business History" %}</a></p>
 
 <h2>{% trans "Readiness" %}</h2>
 {% include "web/_readiness.html" %}

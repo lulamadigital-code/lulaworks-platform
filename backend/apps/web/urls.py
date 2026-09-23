@@ -186,6 +186,8 @@ urlpatterns = [
     path("customers/<uuid:pk>/restore/", views.customer_restore, name="customer_restore"),
     path("customers/<uuid:pk>/purge/", views.customer_hard_delete,
          name="customer_hard_delete"),
+    path("business-history/<str:kind>/<uuid:pk>/", views.business_history_page,
+         name="business_history"),
     path("customers/<uuid:pk>/contacts/", views.customer_contact_save,
          name="customer_contact_save"),
     path("customers/<uuid:pk>/departments/", views.customer_department,

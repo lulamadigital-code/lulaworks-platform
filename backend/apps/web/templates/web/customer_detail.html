@@ -21,6 +21,7 @@
     {% if customer.status == 'active' %}<span class="chip ok">{% trans "Active" %}</span>
     {% elif customer.status == 'blacklisted' %}<span class="chip bad">{% trans "Blacklisted" %}</span>
     {% else %}<span class="chip warn">{{ customer.get_status_display }}</span>{% endif %}
+    <a class="btn ghost" href="{% url 'web:business_history' 'customer' customer.id %}">{% trans "Business History" %}</a>
     {% if can_manage %}
     <a class="btn ghost" href="{% url 'web:customer_edit' customer.id %}">{% trans "Edit" %}</a>
     <a class="btn" href="#addperson">{% trans "+ Add a person" %}</a>
