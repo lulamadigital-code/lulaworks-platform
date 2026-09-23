@@ -35,24 +35,24 @@
 </div>
 {% endif %}
 
-{# Reconstructed jobs — each opens its own detail view. #}
+{# Reconstructed jobs — a list, each row opens its own detail view. #}
 {% if jobs %}
 <div style="display:flex;justify-content:space-between;align-items:baseline;margin:0 0 10px;">
   <h2 style="font-size:15px;margin:0;">{% trans "Reconstructed jobs" %}</h2>
   <a class="muted" style="font-size:12.5px;" href="{% url 'web:import_relationships' %}">{% trans "View all →" %}</a>
 </div>
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:22px;">
-  {% for j in jobs %}
-  <a href="{% url 'web:import_job_detail' j.id %}" class="card" style="margin:0;text-decoration:none;color:inherit;display:block;">
-    <div style="display:flex;justify-content:space-between;gap:8px;align-items:start;">
-      <strong style="font-size:13.5px;">{{ j.customer_name|default:j.title }}</strong>
-      {% if j.status == 'confirmed' %}<span class="chip ok">{% trans "Confirmed" %}</span>
-      {% else %}<span class="chip info">{{ j.confidence }}</span>{% endif %}
-    </div>
-    {% if j.title and j.customer_name %}<div class="muted" style="font-size:12px;margin-top:2px;">{{ j.title }}</div>{% endif %}
-    <div class="muted" style="font-size:11.5px;margin-top:6px;">{% if j.reference %}{{ j.reference|upper }} · {% endif %}{% blocktrans count n=j.doc_count %}{{ n }} document{% plural %}{{ n }} documents{% endblocktrans %}</div>
-  </a>
-  {% endfor %}
+<div class="card" style="padding:0;overflow-x:auto;margin-bottom:22px;">
+  <table>
+    <tr><th>{% trans "Job" %}</th><th>{% trans "Reference" %}</th><th class="right">{% trans "Documents" %}</th><th>{% trans "Status" %}</th></tr>
+    {% for j in jobs %}
+    <tr onclick="location.href='{% url 'web:import_job_detail' j.id %}'" style="cursor:pointer;">
+      <td><strong>{{ j.customer_name|default:j.title }}</strong>{% if j.title and j.customer_name %}<div class="muted" style="font-size:12px;">{{ j.title }}</div>{% endif %}</td>
+      <td class="muted">{% if j.reference %}{{ j.reference|upper }}{% else %}—{% endif %}</td>
+      <td style="text-align:right;">{{ j.doc_count }}</td>
+      <td>{% if j.status == 'confirmed' %}<span class="chip ok">{% trans "Confirmed" %}</span>{% else %}<span class="chip info">{{ j.confidence }}</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
 </div>
 {% endif %}
 
