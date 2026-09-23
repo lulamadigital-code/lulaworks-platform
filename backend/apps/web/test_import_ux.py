@@ -59,6 +59,17 @@ class ImportUXTests(TestCase):
         self.assertEqual(dn.reference_label, "Delivery note no")
         self.assertEqual(dn.extracted_reference, "DN-88")
 
+    # 1b — the import centre lists reconstructed jobs, each linking to its detail
+    def test_import_centre_lists_clickable_jobs(self):
+        with tenant_scope(self.c.id):
+            batch = ImportBatch.objects.create(company=self.c)
+            job = HistoricalJob.objects.create(company=self.c, batch=batch,
+                                               title="Pump overhaul", customer_name="ABC Mining")
+        r = self.client.get("/import/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Reconstructed jobs")
+        self.assertContains(r, f"/import/job/{job.pk}/")   # clickable to detail
+
     # 2 — an unnamed import shows a date-based name, not "Untitled import"
     def test_import_uses_date_name_not_untitled(self):
         with tenant_scope(self.c.id):

@@ -95,8 +95,13 @@ def import_centre(request):
         return redirect("web:dashboard")
     batches = list(ImportBatch.objects.all().order_by("-created_at")[:50])
     overview = imp.history_overview(request.user.active_company)
+    # Recent reconstructed jobs, each openable in detail (not just a count).
+    from django.db.models import Count
+    jobs = list(HistoricalJob.objects.exclude(status=HistoricalJob.Status.DISMISSED)
+                .annotate(doc_count=Count("documents"))
+                .order_by("status", "-confidence", "-created_at")[:12])
     return render(request, "web/import_centre.html",
-                  {"batches": batches, "overview": overview})
+                  {"batches": batches, "overview": overview, "jobs": jobs})
 
 
 @login_required
