@@ -9,6 +9,7 @@ deferred until the pgvector extension is provisioned; the structured DNA is
 captured now.
 """
 
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 
 from apps.core.models import PlatformBaseModel, TenantBaseModel
@@ -324,8 +325,18 @@ class HistoricalJob(TenantBaseModel):
     occurred_on = models.DateField(null=True, blank=True)      # when the work happened
 
     class Meta:
-        indexes = [models.Index(fields=["batch", "status"]),
-                   models.Index(fields=["company", "customer_id", "status"])]
+        indexes = [
+            models.Index(fields=["batch", "status"]),
+            models.Index(fields=["company", "customer_id", "status"]),
+            # Trigram GIN indexes so the Relationships search (icontains on these
+            # fields) stays fast at 100k+ jobs instead of a sequential scan.
+            GinIndex(name="histjob_customer_trgm", fields=["customer_name"],
+                     opclasses=["gin_trgm_ops"]),
+            GinIndex(name="histjob_reference_trgm", fields=["reference"],
+                     opclasses=["gin_trgm_ops"]),
+            GinIndex(name="histjob_title_trgm", fields=["title"],
+                     opclasses=["gin_trgm_ops"]),
+        ]
 
     def __str__(self):
         return self.title or f"Historical job {self.pk}"

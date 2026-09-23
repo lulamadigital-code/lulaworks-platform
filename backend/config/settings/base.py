@@ -25,6 +25,7 @@ DJANGO_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",   # GIN/trigram indexes for search at scale
     "channels",
 ]
 THIRD_PARTY_APPS = [
