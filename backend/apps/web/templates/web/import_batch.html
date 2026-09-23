@@ -5,7 +5,7 @@
 <div class="pagehead">
   <div>
     <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_centre' %}">{% trans "← Business history" %}</a></p>
-    <h1>{% if batch.label %}{{ batch.label }}{% else %}{% trans "Untitled import" %}{% endif %}</h1>
+    <h1>{{ batch.display_label }}</h1>
     <p class="sub" style="margin:0;">{% trans "Upload documents, then confirm the companies and people we found." %}</p>
   </div>
 </div>

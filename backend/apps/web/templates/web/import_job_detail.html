@@ -1,0 +1,65 @@
+{% extends "web/base.html" %}
+{% load i18n %}
+{% block title %}{{ job.customer_name|default:job.title }} · {% trans "Reconstructed job" %}{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <div>
+    <p class="sub" style="margin:0 0 4px;"><a href="{% url 'web:import_relationships' %}">{% trans "← Relationships" %}</a></p>
+    <h1>{{ job.customer_name|default:job.title }}</h1>
+    <p class="sub" style="margin:0;">
+      {% trans "Reconstructed job" %}
+      {% if job.status == 'confirmed' %}<span class="chip ok">{% trans "Confirmed" %}</span>
+      {% elif job.status == 'dismissed' %}<span class="chip bad">{% trans "Dismissed" %}</span>
+      {% else %}<span class="chip info">{% blocktrans with c=job.confidence %}Confidence {{ c }}{% endblocktrans %}</span>{% endif %}
+      · <a href="{% url 'web:import_batch' job.batch_id %}">{{ job.batch.display_label }}</a>
+    </p>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:14px;">
+  <div class="two" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
+    {% if job.title %}<div><div class="muted" style="font-size:11px;">{% trans "Job" %}</div>{{ job.title }}</div>{% endif %}
+    {% if job.reference %}<div><div class="muted" style="font-size:11px;">{% trans "Shared reference" %}</div>{{ job.reference|upper }}</div>{% endif %}
+    {% if job.work_type %}<div><div class="muted" style="font-size:11px;">{% trans "Work type" %}</div>{{ job.work_type }}</div>{% endif %}
+    {% if job.occurred_on %}<div><div class="muted" style="font-size:11px;">{% trans "When" %}</div>{{ job.occurred_on }}</div>{% endif %}
+    {% if job.value %}<div><div class="muted" style="font-size:11px;">{% trans "Value" %}</div>{{ job.currency }} {{ job.value }}</div>{% endif %}
+  </div>
+  {% if job.evidence %}<p class="muted" style="margin:12px 0 0;font-size:12.5px;">{{ job.evidence }}</p>{% endif %}
+</div>
+
+<h2 style="margin:0 0 10px;">{% trans "Documents" %}</h2>
+{% if documents %}
+<div class="card" style="padding:0;overflow-x:auto;margin-bottom:14px;">
+  <table>
+    <tr><th>{% trans "Type" %}</th><th>{% trans "Reference" %}</th><th>{% trans "Date" %}</th><th>{% trans "File" %}</th></tr>
+    {% for d in documents %}
+    <tr>
+      <td><a href="{% url 'web:import_document' d.id %}"><strong>{{ d.get_doc_type_display }}</strong></a></td>
+      <td>{% if d.extracted_reference %}<span class="muted" style="font-size:11px;">{{ d.reference_label }}</span><br>{{ d.extracted_reference }}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="muted">{{ d.document_date|default:"—" }}</td>
+      <td class="muted" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ d.filename }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<div class="card"><p class="muted" style="margin:0;">{% trans "No documents on this job." %}</p></div>
+{% endif %}
+
+{% if job.status != 'confirmed' and job.status != 'dismissed' %}
+<div class="row" style="gap:10px;">
+  <form method="post" action="{% url 'web:import_job' job.batch_id job.id %}">{% csrf_token %}
+    <input type="hidden" name="decision" value="confirm">
+    <input type="hidden" name="next" value="detail">
+    <button class="btn primary" type="submit">{% trans "Confirm this job" %}</button>
+  </form>
+  <form method="post" action="{% url 'web:import_job' job.batch_id job.id %}">{% csrf_token %}
+    <input type="hidden" name="decision" value="dismiss">
+    <input type="hidden" name="next" value="detail">
+    <button class="btn ghost" type="submit">{% trans "Dismiss" %}</button>
+  </form>
+</div>
+{% endif %}
+
+{% endblock %}

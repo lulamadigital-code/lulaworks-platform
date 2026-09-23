@@ -187,7 +187,37 @@ class ImportBatch(TenantBaseModel):
     notes = models.TextField(blank=True)
 
     def __str__(self):
-        return self.label or f"Import {self.pk}"
+        return self.label or self.display_label
+
+    @property
+    def display_label(self) -> str:
+        """A human name for the import — the given label, or a date-based one
+        ("Import 23 Sep 2026") instead of a bare "Untitled import"."""
+        if self.label:
+            return self.label
+        return f"Import {self.created_at:%d %b %Y}" if self.created_at else "New import"
+
+    @property
+    def is_empty(self) -> bool:
+        """No documents attached — safe for a user to discard."""
+        return not self.documents.exists()
+
+
+#: doc_type → the human name for THAT document's own reference number, so each
+#: kind of number is labelled for what it is (§ differentiate extracted numbers).
+_DOC_REF_LABELS = {
+    "quotation": "Quotation number", "customer_po": "PO number",
+    "supplier_quote": "Supplier quote number", "supplier_invoice": "Invoice number",
+    "invoice": "Invoice number", "delivery_note": "Delivery note no",
+    "rfq": "RFQ / tender no", "job_report": "Service / job no",
+}
+#: doc_type → the keyword(s) that precede that number in the document text.
+_DOC_REF_KEYWORDS = {
+    "quotation": r"quotation|quote", "customer_po": r"p\.?\s*o\.?\b|purchase\s+order",
+    "supplier_quote": r"quotation|quote", "supplier_invoice": r"tax\s+invoice|invoice",
+    "invoice": r"tax\s+invoice|invoice", "delivery_note": r"delivery\s+note|del\.?\s*note",
+    "rfq": r"rfq|tender|enquiry", "job_report": r"service\s+report|job\s*card|job",
+}
 
 
 class ImportedDocument(TenantBaseModel):
@@ -242,6 +272,26 @@ class ImportedDocument(TenantBaseModel):
 
     def __str__(self):
         return f"{self.filename} ({self.get_doc_type_display()})"
+
+    @property
+    def reference_label(self) -> str:
+        """What this document's number IS, so a PO number, an invoice number and a
+        delivery-note number are never shown as one undifferentiated 'reference'."""
+        return _DOC_REF_LABELS.get(self.doc_type, "Reference")
+
+    @property
+    def extracted_reference(self) -> str:
+        """Best-effort document number pulled from the extracted text, matched by
+        the document's own type (so an invoice yields the invoice no, a PO the PO
+        no). Empty when none is confidently found — never a guess passed off as one."""
+        import re
+        kw = _DOC_REF_KEYWORDS.get(self.doc_type)
+        if not kw or not self.text:
+            return ""
+        m = re.search(
+            r"(?:%s)\s*(?:number|no|nr|#)?\s*[:#.–\-]?\s*([A-Z0-9][A-Z0-9/\-]{2,20})"
+            % kw, self.text, re.IGNORECASE)
+        return m.group(1).strip(" .-/") if m else ""
 
 
 class StagedEntity(TenantBaseModel):

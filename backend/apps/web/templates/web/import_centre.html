@@ -38,10 +38,10 @@
 <h2 style="font-size:15px;margin:0 0 10px;">{% trans "Imports" %}</h2>
 <div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>{% trans "Import" %}</th><th>{% trans "Status" %}</th><th class="right">{% trans "Documents" %}</th><th class="right">{% trans "Entities found" %}</th><th>{% trans "Started" %}</th></tr>
+    <tr><th>{% trans "Import" %}</th><th>{% trans "Status" %}</th><th class="right">{% trans "Documents" %}</th><th class="right">{% trans "Entities found" %}</th><th>{% trans "Started" %}</th><th></th></tr>
     {% for b in batches %}
     <tr onclick="location.href='{% url 'web:import_batch' b.pk %}'" style="cursor:pointer;">
-      <td><strong>{% if b.label %}{{ b.label }}{% else %}{% trans "Untitled import" %}{% endif %}</strong></td>
+      <td><strong>{{ b.display_label }}</strong></td>
       <td>
         {% if b.status == 'committed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">{% trans "Committed" %}</span>
         {% elif b.status == 'review' %}<span class="chip info">{% trans "Ready for review" %}</span>
@@ -51,9 +51,17 @@
       <td style="text-align:right;">{{ b.document_count }}</td>
       <td style="text-align:right;">{{ b.entity_count }}</td>
       <td class="muted">{{ b.created_at|date:"j M Y" }}</td>
+      <td onclick="event.stopPropagation();" style="text-align:right;">
+        {% if b.document_count == 0 %}
+        <form method="post" action="{% url 'web:import_batch_delete' b.pk %}" style="margin:0;"
+              onsubmit="return confirm('{% trans "Discard this empty import?" %}');">{% csrf_token %}
+          <button class="btn ghost" type="submit" style="padding:4px 10px;font-size:12px;">{% trans "Discard" %}</button>
+        </form>
+        {% endif %}
+      </td>
     </tr>
     {% empty %}
-    <tr><td colspan="5" style="padding:22px;color:var(--muted);">
+    <tr><td colspan="6" style="padding:22px;color:var(--muted);">
       {% trans "No imports yet. Click <strong>New import</strong> to bring in your existing business documents." %}</td></tr>
     {% endfor %}
   </table>

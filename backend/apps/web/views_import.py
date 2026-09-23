@@ -405,7 +405,42 @@ def import_job(request, pk, jid):
         messages.success(request, f"{job.title} — {job.get_status_display().lower()}.")
     except (PermissionError, ValueError) as exc:
         messages.error(request, str(exc))
+    if request.POST.get("next") == "detail":
+        return redirect("web:import_job_detail", jid=job.id)
     return redirect("web:import_batch", pk=pk)
+
+
+@login_required
+def import_job_detail(request, jid):
+    """One reconstructed historical job, in detail — its customer, the documents
+    that make it up (each with its OWN labelled reference number), the evidence for
+    why they belong together, and confirm/dismiss. This is what a job link opens,
+    so a specific job is viewable directly instead of a whole batch list."""
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    job = get_object_or_404(HistoricalJob.objects.select_related("batch"), pk=jid)
+    documents = list(job.documents.all().order_by("doc_type"))
+    return render(request, "web/import_job_detail.html",
+                  {"job": job, "documents": documents})
+
+
+@login_required
+@require_POST
+def import_batch_delete(request, pk):
+    """Discard an EMPTY import (a batch with no documents) — a recoverable soft
+    delete, so an accidental or abandoned upload session can be cleared away. A
+    batch that already holds documents can't be discarded here."""
+    if not _can(request.user):
+        messages.error(request, "You don't have permission to import business history.")
+        return redirect("web:dashboard")
+    batch = get_object_or_404(ImportBatch.objects.all(), pk=pk)
+    if not batch.is_empty:
+        messages.error(request, "Only an empty import (no documents) can be discarded.")
+        return redirect("web:import_batch", pk=pk)
+    batch.delete()      # soft-delete (TenantBaseModel)
+    messages.success(request, "Empty import discarded.")
+    return redirect("web:import_centre")
 
 
 @login_required

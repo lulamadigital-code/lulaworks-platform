@@ -9,7 +9,10 @@
     <p class="sub" style="margin:0;">
       {{ doc.get_doc_type_display }}{% if doc.document_date %} · {% blocktrans with d=doc.document_date|date:"j M Y" %}dated {{ d }}{% endblocktrans %}{% endif %}
       {% if doc.doc_type_confidence %} · {% blocktrans with conf=doc.doc_type_confidence %}{{ conf }} confidence{% endblocktrans %}{% endif %}
-      · {{ doc.get_status_display }}{% if doc.batch %} · {% blocktrans with lbl=doc.batch.label|default:'Untitled' %}import “{{ lbl }}”{% endblocktrans %}{% endif %}</p>
+      · {{ doc.get_status_display }}{% if doc.batch %} · {% blocktrans with lbl=doc.batch.display_label %}import “{{ lbl }}”{% endblocktrans %}{% endif %}</p>
+    {% if doc.extracted_reference %}
+    <p class="sub" style="margin:6px 0 0;"><span class="chip info">{{ doc.reference_label }}: {{ doc.extracted_reference }}</span></p>
+    {% endif %}
   </div>
   {% if doc.file %}<a class="btn ghost" href="{{ doc.file.url }}" target="_blank" rel="noopener">{% trans "Open original ↗" %}</a>{% endif %}
 </div>

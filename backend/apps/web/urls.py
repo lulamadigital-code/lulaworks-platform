@@ -134,6 +134,8 @@ urlpatterns = [
     path("import/<uuid:pk>/merge/", views_import.import_merge, name="import_merge"),
     path("import/<uuid:pk>/commit-all/", views_import.import_commit_all, name="import_commit_all"),
     path("import/<uuid:pk>/job/<uuid:jid>/", views_import.import_job, name="import_job"),
+    path("import/job/<uuid:jid>/", views_import.import_job_detail, name="import_job_detail"),
+    path("import/<uuid:pk>/delete/", views_import.import_batch_delete, name="import_batch_delete"),
 
     # AI command centre.
     path("intelligence/", views_ai_centre.ai_centre, name="ai_centre"),

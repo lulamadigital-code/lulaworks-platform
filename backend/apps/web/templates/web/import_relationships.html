@@ -27,7 +27,7 @@
   {% for g in graph %}
   <div class="card" style="margin:0;">
     <div style="display:flex;justify-content:space-between;gap:8px;align-items:start;">
-      <strong style="font-size:14px;">{{ g.job.customer_name|default:g.job.title }}</strong>
+      <a href="{% url 'web:import_job_detail' g.job.id %}" style="font-size:14px;font-weight:700;">{{ g.job.customer_name|default:g.job.title }}</a>
       {% if g.job.status == 'confirmed' %}<span class="chip" style="background:var(--green-t);color:#0a8f57;">{% trans "Confirmed" %}</span>
       {% else %}<span class="chip info">{{ g.job.confidence }}</span>{% endif %}
     </div>
@@ -41,8 +41,8 @@
       </div>
       {% endfor %}
     </div>
-    <a class="muted" style="font-size:12px;display:inline-block;margin-top:8px;"
-       href="{% url 'web:import_batch' g.job.batch_id %}">{% trans "Open in import →" %}</a>
+    <a style="font-size:12px;display:inline-block;margin-top:8px;font-weight:600;"
+       href="{% url 'web:import_job_detail' g.job.id %}">{% trans "View job →" %}</a>
   </div>
   {% endfor %}
 </div>
