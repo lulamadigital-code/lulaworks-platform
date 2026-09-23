@@ -70,6 +70,21 @@ class ImportUXTests(TestCase):
         self.assertContains(r, "Reconstructed jobs")
         self.assertContains(r, f"/import/job/{job.pk}/")   # clickable to detail
 
+    # 1c — on the batch page, jobs and documents link to their own detail views
+    def test_batch_page_items_link_to_detail(self):
+        with tenant_scope(self.c.id):
+            batch = ImportBatch.objects.create(company=self.c)
+            job = HistoricalJob.objects.create(company=self.c, batch=batch,
+                                               title="Pump overhaul", customer_name="ABC Mining")
+            d1 = ImportedDocument.objects.create(company=self.c, batch=batch, job=job,
+                    doc_type="customer_po", filename="po.pdf", status="completed")
+            ImportedDocument.objects.create(company=self.c, batch=batch,
+                    doc_type="invoice", filename="inv.pdf", status="completed")
+        r = self.client.get(f"/import/{batch.pk}/")
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, f"/import/job/{job.pk}/")            # job clickable
+        self.assertContains(r, f"/import/documents/{d1.pk}/")       # document clickable
+
     # 2 — an unnamed import shows a date-based name, not "Untitled import"
     def test_import_uses_date_name_not_untitled(self):
         with tenant_scope(self.c.id):

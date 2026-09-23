@@ -179,7 +179,7 @@
     {% for j in jobs %}
     <tr>
       <td>
-        <strong>{{ j.title }}</strong>
+        <a href="{% url 'web:import_job_detail' j.pk %}" style="font-weight:700;">{{ j.title|default:j.customer_name|default:"Job" }}</a>
         {% if j.reference %}<div class="muted" style="font-size:12px;">{% blocktrans with ref=j.reference|upper %}Ref {{ ref }}{% endblocktrans %}</div>{% endif %}
       </td>
       <td class="muted" style="font-size:12.5px;">{{ j.evidence }}</td>
@@ -225,7 +225,7 @@
     <tr><th>{% trans "File" %}</th><th>{% trans "Status" %}</th><th>{% trans "Detected type" %}</th><th class="right"></th></tr>
     {% for d in documents %}
     <tr>
-      <td>{{ d.filename }}
+      <td><a href="{% url 'web:import_document' d.pk %}" style="font-weight:600;">{{ d.filename }}</a>
         {% if d.status == 'duplicate' and d.duplicate_of_id %}<div class="muted" style="font-size:12px;">{% blocktrans with other=d.duplicate_of.filename %}Already imported — duplicate of {{ other }}{% endblocktrans %}</div>{% endif %}
         {% if d.status == 'failed' and d.processing_error %}<div class="muted" style="font-size:12px;color:#c0392b;">{{ d.processing_error|truncatechars:80 }}</div>{% endif %}
       </td>
