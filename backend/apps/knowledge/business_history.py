@@ -261,6 +261,54 @@ def _rate(n, d) -> dict:
     return {"value": round(100 * n / d, 1) if d else None, "won": n, "of": d}
 
 
+#: DomainEvent subject_type (a model class name) → the web detail route for it, so
+#: an event in the company feed is clickable. Records with no standalone page are
+#: left un-linked (url "").
+_SUBJECT_ROUTE = {
+    "Quotation": "web:quotation_detail",
+    "Project": "web:project_detail",
+    "CommercialDocument": "web:commercial_document_detail",
+    "CustomerPurchaseOrder": "web:customer_po_detail",
+    "Customer": "web:customer_detail",
+}
+
+
+def company_timeline(company, user, *, limit=50) -> list:
+    """The whole tenant's recent activity as ONE chronological feed, projected from
+    the DomainEvent backbone (§57) — every quotation/job/payment/communication/
+    change event, humanised, actor-attributed and clickable. Money-bearing payload
+    fields are withheld without finance.view_money. Read-only; the canonical
+    records stay the source of truth."""
+    from django.urls import reverse
+
+    from apps.core.context import tenant_scope
+    from apps.core.models import DomainEvent
+
+    can_money = _can_money(user)
+    with tenant_scope(company.id):
+        rows = list(DomainEvent.objects.filter(company=company)
+                    .select_related("actor").order_by("-occurred_at")[:limit])
+    out = []
+    for ev in rows:
+        url = ""
+        route = _SUBJECT_ROUTE.get(ev.subject_type)
+        if route and ev.subject_id:
+            try:
+                url = reverse(route, args=[ev.subject_id])
+            except Exception:                            # noqa: BLE001
+                url = ""
+        payload = {k: v for k, v in (ev.payload or {}).items()
+                   if can_money or k not in _MONEY_EVENT_FIELDS}
+        actor = ""
+        if ev.actor_id:
+            actor = ev.actor.get_full_name() or ev.actor.email
+        out.append({"when": ev.occurred_at.isoformat(), "type": ev.type,
+                    "summary": _humanize_event(ev, can_money),
+                    "subject_type": ev.subject_type, "subject_id": str(ev.subject_id or ""),
+                    "url": url, "actor": actor, "payload": payload})
+    return out
+
+
 def company_history(company, user) -> dict:
     """Factual company-wide Business-History metrics, from canonical records.
 
@@ -304,4 +352,6 @@ def company_history(company, user) -> dict:
         "jobs": {"total": jobs_total, "active": jobs_active, "complete": jobs_complete},
         "commercial": commercial,
         "money_visible": can_money,
+        # The connected business as one recent activity feed (§57).
+        "activity": company_timeline(company, user, limit=20),
     }

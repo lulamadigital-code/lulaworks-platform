@@ -154,3 +154,46 @@ class CompanyHistoryTests(TestCase):
         h = company_history(self.c, self.finance)
         self.assertEqual(h["quotations"]["total"], 0)
         self.assertIsNone(h["quotations"]["conversion"]["value"])   # not 0% (§51/§52)
+
+
+class CompanyTimelineTests(TestCase):
+    """The tenant-wide activity feed (§57), projected from DomainEvent: newest-
+    first, clickable, actor-attributed, money-gated."""
+
+    def setUp(self):
+        self.c = Company.objects.create(name="Acme")
+        self.finance = _user(self.c, ["finance.view_money"], "cfo3@acme.co")
+        self.field = _user(self.c, ["projects.view"], "worker3@acme.co")
+        from apps.core.events import publish
+        with tenant_scope(self.c.id):
+            q = Quotation.objects.create(company=self.c, number="QTN-1",
+                                         client_name="ABC Mining")
+        publish("QuotationStatusChanged", company=self.c, subject=q, actor=self.finance,
+                payload={"from": "draft", "to": "sent"})
+        publish("PaymentReceived", company=self.c, subject=q, actor=self.finance,
+                payload={"invoice": "INV-1", "amount": "5000", "outstanding": "0"})
+
+    def test_feed_is_clickable_and_actor_attributed(self):
+        from apps.knowledge.business_history import company_timeline
+        with tenant_scope(self.c.id):
+            feed = company_timeline(self.c, self.finance)
+        self.assertGreaterEqual(len(feed), 2)
+        quote_rows = [r for r in feed if r["subject_type"] == "Quotation"]
+        self.assertTrue(all(r["url"].endswith("/") for r in quote_rows))  # clickable
+        self.assertTrue(all(r["actor"] == "cfo3@acme.co" for r in feed))
+
+    def test_money_payload_gated(self):
+        from apps.knowledge.business_history import company_timeline
+        with tenant_scope(self.c.id):
+            fin = company_timeline(self.c, self.finance)
+            fld = company_timeline(self.c, self.field)
+        pay_fin = next(r for r in fin if r["type"] == "PaymentReceived")
+        pay_fld = next(r for r in fld if r["type"] == "PaymentReceived")
+        self.assertIn("amount", pay_fin["payload"])          # finance sees money
+        self.assertNotIn("amount", pay_fld["payload"])       # field worker doesn't
+        self.assertIn("invoice", pay_fld["payload"])         # non-money stays
+
+    def test_company_history_includes_activity_feed(self):
+        h = company_history(self.c, self.finance)
+        self.assertIn("activity", h)
+        self.assertTrue(h["activity"])
