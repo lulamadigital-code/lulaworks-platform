@@ -40,6 +40,9 @@ dependencies:
   # Field capture: device GPS for check-ins, camera/gallery for receipts & photos.
   geolocator: ^11.0.0
   image_picker: ^1.1.0
+  # Pick a PDF to upload as an RFQ (image_picker can't select documents).
+  # Pinned to the 6.x line for Flutter 3.19 compatibility.
+  file_picker: ^6.2.0
   # Persist offline-queued report photos until they sync.
   path_provider: ^2.1.0
   # Map preview of captured GPS — OpenStreetMap tiles, no API key.
