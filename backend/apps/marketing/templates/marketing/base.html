@@ -73,22 +73,38 @@
     .btn.lg{padding:16px 28px;font-size:17px}
     .btn.white{background:#fff;color:var(--primary-d)}
 
-    /* Header */
-    header.site{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);
+    /* Header — top nav with grouped dropdowns (HubSpot-style) */
+    header.site{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);
                 backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid var(--line)}
-    .nav{display:flex;align-items:center;gap:18px;height:66px}
-    .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px;color:var(--ink)}
+    .nav{display:flex;align-items:center;gap:10px;height:68px}
+    .brand{display:flex;align-items:center;gap:9px}
     .brand:hover{text-decoration:none}
-    .brand .dot{width:12px;height:12px;border-radius:4px;background:var(--primary);display:inline-block}
     .brand-logo{height:32px;width:auto;display:block}
     @media(max-width:860px){.brand-logo{height:28px}}
-    .nav .links{display:flex;gap:6px;margin-left:14px}
-    .nav .links a{color:var(--muted);font-weight:600;font-size:15px;padding:8px 12px;border-radius:9px}
-    .nav .links a:hover{color:var(--ink);background:var(--bg);text-decoration:none}
+
+    .menu{display:flex;align-items:center;gap:2px;margin-left:18px}
+    .menu .item{position:relative}
+    .menu .top{display:inline-flex;align-items:center;gap:5px;color:var(--ink);font-weight:600;
+               font-size:15px;padding:10px 13px;border-radius:9px;background:none;border:0;
+               cursor:pointer;font-family:inherit}
+    .menu .top:hover{background:var(--bg);text-decoration:none;color:var(--ink)}
+    .menu .top .car{width:14px;height:14px;color:var(--muted);transition:transform .15s}
+    .menu .item:hover .top .car{transform:rotate(180deg)}
+    .menu .panel{position:absolute;top:calc(100% - 3px);left:0;min-width:238px;background:#fff;
+                 border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);
+                 padding:8px;opacity:0;visibility:hidden;transform:translateY(6px);
+                 transition:opacity .14s,transform .14s;z-index:60}
+    .menu .item:hover .panel{opacity:1;visibility:visible;transform:translateY(0)}
+    .menu .panel a{display:flex;flex-direction:column;gap:1px;padding:10px 12px;border-radius:10px;color:var(--ink)}
+    .menu .panel a:hover{background:var(--bg);text-decoration:none}
+    .menu .panel a b{font-weight:700;font-size:14.5px}
+    .menu .panel a small{color:var(--muted);font-size:12.5px;font-weight:500}
     .nav .sp{flex:1}
     .nav .actions{display:flex;align-items:center;gap:10px}
-    .nav .actions .login{color:var(--ink);font-weight:700;padding:8px 12px}
+    .nav .actions .login{color:var(--ink);font-weight:700;padding:9px 13px;border-radius:9px}
+    .nav .actions .login:hover{background:var(--bg);text-decoration:none}
     .menu-toggle,.menu-check{display:none}
+    .mbar{display:none}   /* mobile bottom bar — shown under the mobile breakpoint */
 
     /* Hero */
     .hero{background:radial-gradient(1100px 520px at 50% -140px,var(--primary-t),#fff 70%);
@@ -192,15 +208,28 @@
     footer.site .foot-bottom{border-top:1px solid rgba(255,255,255,.12);margin-top:36px;padding-top:20px;
                              display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;color:#9aa0c0}
 
-    /* Collapse the nav links into the hamburger before the full row (8 links +
-       language switcher + CTAs) can overflow and break the header. */
+    /* Mobile: the grouped menu collapses into the hamburger (an accordion), the
+       primary actions move to a fixed BOTTOM bar. */
     @media(max-width:1024px){
-      .nav{gap:12px}
-      .nav .links{display:none;position:absolute;top:66px;left:0;right:0;background:#fff;
-                  border-bottom:1px solid var(--line);flex-direction:column;padding:10px 16px}
-      .menu-check:checked ~ .links{display:flex}
-      .menu-toggle{display:inline-flex;font-size:24px;background:none;border:0;color:var(--ink);cursor:pointer}
+      .nav{gap:8px}
+      .menu{display:none;position:absolute;top:68px;left:0;right:0;background:#fff;
+            flex-direction:column;align-items:stretch;gap:0;margin:0;padding:8px 12px 12px;
+            border-bottom:1px solid var(--line);box-shadow:var(--shadow-lg);max-height:calc(100vh - 68px);overflow:auto}
+      .menu-check:checked ~ .menu{display:flex}
+      .menu .item{position:static}
+      .menu .top{width:100%;justify-content:space-between;font-size:16px;padding:12px 10px}
+      .menu .top .car{display:none}
+      .menu .panel{position:static;opacity:1;visibility:visible;transform:none;box-shadow:none;
+                   border:0;border-radius:0;padding:0 0 8px 10px;min-width:0}
+      .menu .panel a{padding:8px 10px}
+      .menu-toggle{display:inline-flex;font-size:26px;line-height:1;background:none;border:0;color:var(--ink);cursor:pointer;padding:4px 8px}
       .nav .actions .login{display:none}
+      .nav .actions .btn{display:none}
+      .mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:70;gap:10px;
+            padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:#fff;
+            border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(20,30,60,.09)}
+      .mbar .btn{flex:1;text-align:center;padding:13px 14px}
+      body{padding-bottom:70px}
     }
     @media(max-width:860px){
       .hero .wrap,.g2,.g3,.g4,.two,footer.site .cols{grid-template-columns:1fr}
@@ -234,16 +263,33 @@
         <img src="{% static 'web/logo.png' %}" alt="Lulaworks" class="brand-logo">
       </a>
       <input type="checkbox" id="mc" class="menu-check">
-      <div class="links">
-        <a href="{% url 'marketing:features' %}">{% trans "Features" %}</a>
-        <a href="{% url 'marketing:pricing' %}">{% trans "Pricing" %}</a>
-        <a href="{% url 'marketing:learn' %}">{% trans "Learn" %}</a>
-        <a href="{% url 'marketing:tools' %}">{% trans "Free tools" %}</a>
-        <a href="{% url 'marketing:templates' %}">{% trans "Templates" %}</a>
-        <a href="{% url 'marketing:about' %}">{% trans "About" %}</a>
-        <a href="{% url 'marketing:faq' %}">{% trans "FAQ" %}</a>
-        <a href="{% url 'marketing:contact' %}">{% trans "Contact" %}</a>
+      {% spaceless %}
+      <div class="menu">
+        <div class="item">
+          <span class="top" tabindex="0">{% trans "Product" %}<svg class="car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+          <div class="panel">
+            <a href="{% url 'marketing:features' %}"><b>{% trans "Features" %}</b><small>{% trans "Everything Lulaworks does" %}</small></a>
+            <a href="{% url 'marketing:tools' %}"><b>{% trans "Free tools" %}</b><small>{% trans "Calculators & generators" %}</small></a>
+            <a href="{% url 'marketing:templates' %}"><b>{% trans "Templates" %}</b><small>{% trans "Quote, invoice & job templates" %}</small></a>
+          </div>
+        </div>
+        <div class="item"><a class="top" href="{% url 'marketing:pricing' %}">{% trans "Pricing" %}</a></div>
+        <div class="item">
+          <span class="top" tabindex="0">{% trans "Resources" %}<svg class="car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+          <div class="panel">
+            <a href="{% url 'marketing:learn' %}"><b>{% trans "Learn" %}</b><small>{% trans "Guides & the Learning Centre" %}</small></a>
+            <a href="{% url 'marketing:faq' %}"><b>{% trans "FAQ" %}</b><small>{% trans "Common questions, answered" %}</small></a>
+          </div>
+        </div>
+        <div class="item">
+          <span class="top" tabindex="0">{% trans "Company" %}<svg class="car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+          <div class="panel">
+            <a href="{% url 'marketing:about' %}"><b>{% trans "About" %}</b><small>{% trans "Who we are" %}</small></a>
+            <a href="{% url 'marketing:contact' %}"><b>{% trans "Contact" %}</b><small>{% trans "Talk to our team" %}</small></a>
+          </div>
+        </div>
       </div>
+      {% endspaceless %}
       <span class="sp"></span>
       <div class="actions">
         {% include "web/_language_switcher.html" %}
@@ -257,6 +303,16 @@
       </div>
     </nav>
   </header>
+
+  {# Mobile bottom navigation bar — the primary actions, always reachable. #}
+  <div class="mbar">
+    {% if request.user.is_authenticated %}
+    <a class="btn" href="{% url 'web:dashboard' %}">{% trans "Go to Dashboard" %}</a>
+    {% else %}
+    <a class="btn ghost" href="{% url 'web:login' %}">{% trans "Log in" %}</a>
+    <a class="btn" href="{% url 'marketing:trial' %}">{% trans "Start Free Trial" %}</a>
+    {% endif %}
+  </div>
 
   {% if messages %}
   <div class="notice">
