@@ -553,7 +553,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         physics: const NeverScrollableScrollPhysics(),
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 1.75,
+        childAspectRatio: 1.32,
         children: [for (final k in personal) _kpiTile(context, k)],
       );
     }
@@ -586,7 +586,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
-      childAspectRatio: 1.75,
+      childAspectRatio: 1.32,
       children: [for (final k in tiles) _kpiTile(context, k)],
     );
   }
@@ -602,32 +602,44 @@ class _DashboardScreenState extends State<DashboardScreen>
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: kLine)),
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                     color: (k.accent ? kBrand : kInk).withOpacity(0.06),
                     borderRadius: BorderRadius.circular(9)),
                 child: Icon(k.icon,
                     size: 18, color: k.accent ? kBrandDark : kMuted),
               ),
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(k.value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        fontSize: k.small ? 20 : 26,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
-                        color: k.accent ? kBrandDark : kInk)),
-                Text(k.label,
-                    style: const TextStyle(fontSize: 12.5, color: kMuted)),
-              ]),
+              // Flexible + FittedBox so the value/label can never overflow the
+              // card's bottom, whatever the device's text scale.
+              Flexible(
+                child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(k.value,
+                            maxLines: 1,
+                            style: TextStyle(
+                                fontSize: k.small ? 20 : 26,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.5,
+                                color: k.accent ? kBrandDark : kInk)),
+                      ),
+                      Text(k.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                    ]),
+              ),
             ],
           ),
         ),
