@@ -5,20 +5,41 @@ import '../models.dart';
 import '../theme.dart';
 import '../widgets/related_records.dart';
 import '../widgets/status_pill.dart';
+import 'invoice_form_screen.dart';
 import 'pdf_viewer_screen.dart';
 
 /// Tax invoices & delivery notes over one endpoint (?kind=). Invoices show money
 /// (Golden-Rule gated); delivery notes show quantities only — the backend never
 /// sends prices for them (§15), so there's nothing to leak here.
-class CommercialDocumentsScreen extends StatelessWidget {
+class CommercialDocumentsScreen extends StatefulWidget {
   const CommercialDocumentsScreen({super.key, required this.api});
   final ApiClient api;
+
+  @override
+  State<CommercialDocumentsScreen> createState() =>
+      _CommercialDocumentsScreenState();
+}
+
+class _CommercialDocumentsScreenState extends State<CommercialDocumentsScreen> {
+  int _rev = 0; // bumped to force the invoice list to reload after a create
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        floatingActionButton: widget.api.can('quotes.create')
+            ? FloatingActionButton.extended(
+                onPressed: () async {
+                  final created = await Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => InvoiceFormScreen(api: widget.api)));
+                  if (created != null && mounted) setState(() => _rev++);
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('New invoice'),
+              )
+            : null,
         appBar: AppBar(
           title: const Text('Invoices & delivery'),
           scrolledUnderElevation: 1,
@@ -28,8 +49,8 @@ class CommercialDocumentsScreen extends StatelessWidget {
           ]),
         ),
         body: TabBarView(children: [
-          _DocList(api: api, kind: 'invoice'),
-          _DocList(api: api, kind: 'delivery'),
+          _DocList(key: ValueKey('inv-$_rev'), api: widget.api, kind: 'invoice'),
+          _DocList(api: widget.api, kind: 'delivery'),
         ]),
       ),
     );
@@ -37,7 +58,7 @@ class CommercialDocumentsScreen extends StatelessWidget {
 }
 
 class _DocList extends StatefulWidget {
-  const _DocList({required this.api, required this.kind});
+  const _DocList({super.key, required this.api, required this.kind});
   final ApiClient api;
   final String kind;
 

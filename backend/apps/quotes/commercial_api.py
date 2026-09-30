@@ -19,7 +19,9 @@ from apps.core.api import TenantViewSet
 from .models import CommercialDocument, CommercialDocumentPayment
 from .pdf import delivery_note_pdf_bytes, invoice_pdf_bytes
 from .services import (
+    QuotationError,
     commercial_document_next_statuses,
+    create_direct_invoice,
     transition_commercial_document,
 )
 
@@ -103,6 +105,48 @@ class CommercialDocumentViewSet(TenantViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         return Response(_serialize(self.get_object(), request))
+
+    def create(self, request, *args, **kwargs):
+        """Raise a DIRECT tax invoice (the 'New invoice' flow) — no prior quote.
+        Uses create_direct_invoice, which builds an approved invoice-only quote
+        behind the scenes so the canonical numbering/template/figures apply."""
+        if not request.user.has_perm_code("quotes.create"):
+            return Response({"error": {"code": "forbidden", "message": "Need quotes.create."}},
+                            status=status.HTTP_403_FORBIDDEN)
+        data = request.data
+        client_name = (data.get("client_name") or "").strip()
+        if not client_name:
+            return Response({"error": {"code": "invalid", "message": "A client name is required."}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        customer = None
+        if data.get("customer"):
+            from apps.customers.models import Customer
+            customer = Customer.objects.filter(pk=data["customer"]).first()
+        # Coerce numerics — request.data is raw here (no serializer), and the
+        # invoice is generated in this same request before a DB refetch.
+        from decimal import Decimal, InvalidOperation
+
+        def _dec(v, default=None):
+            try:
+                return Decimal(str(v)) if v not in (None, "") else default
+            except (InvalidOperation, ValueError):
+                return default
+
+        lines = [{"description": l.get("description", ""),
+                  "qty": _dec(l.get("qty"), Decimal("1")),
+                  "unit": l.get("unit", "each"),
+                  "unit_price": _dec(l.get("unit_price"), Decimal("0"))}
+                 for l in (data.get("lines") or [])]
+        try:
+            doc = create_direct_invoice(
+                request.user.active_company, request.user,
+                client_name=client_name, lines=lines,
+                customer=customer, vat_rate=_dec(data.get("vat_rate")),
+                notes=data.get("notes", ""), title=data.get("title", ""))
+        except QuotationError as exc:
+            return Response({"error": {"code": "invalid", "message": str(exc)}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response(_serialize(doc, request), status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["get"])
     def workflow(self, request, pk=None):

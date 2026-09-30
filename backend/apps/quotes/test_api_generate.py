@@ -77,3 +77,25 @@ class QuotationCreateDepthTests(APITestCase):
             self.assertEqual(str(q.vat_rate), '15.00')
             self.assertEqual(q.notes, 'Net 30')
             self.assertEqual(q.lines.count(), 1)
+
+
+class DirectInvoiceApiTests(APITestCase):
+    def setUp(self):
+        self.c = Company.objects.create(name="Acme")
+        self.creator = _user(self.c, ["quotes.create", "finance.view_money"], "inv@acme.co")
+        self.viewer = _user(self.c, ["quotes.download"], "v2@acme.co")
+
+    def test_requires_quotes_create(self):
+        api = APIClient(); api.force_authenticate(self.viewer)
+        r = api.post('/api/v1/commercial-documents/', {'client_name': 'ABC'}, format='json')
+        self.assertEqual(r.status_code, 403)
+
+    def test_creates_direct_invoice(self):
+        api = APIClient(); api.force_authenticate(self.creator)
+        r = api.post('/api/v1/commercial-documents/', {
+            'client_name': 'ABC Mining', 'vat_rate': '15',
+            'lines': [{'description': 'Callout', 'qty': 1, 'unit_price': 1200}],
+        }, format='json')
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.data['kind'], 'invoice')
+        self.assertTrue(r.data['number'])
