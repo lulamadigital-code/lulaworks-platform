@@ -7,6 +7,7 @@ import '../models.dart';
 import '../widgets/related_records.dart';
 import '../theme.dart';
 import '../widgets/status_pill.dart';
+import 'commercial_documents_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'quotation_form_screen.dart';
 
@@ -233,6 +234,36 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     }
   }
 
+  bool _genBusy = false;
+
+  /// Raise a tax invoice / delivery note from this quotation (same backend
+  /// service + rules as web). `kind` is the action: 'invoice' or 'delivery-note'.
+  Future<void> _generate(String kind, String label) async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _genBusy = true);
+    try {
+      final doc = await widget.api
+          .post('/quotations/${widget.quoteId}/$kind/') as Map;
+      _changed = true;
+      if (!mounted) return;
+      messenger.showSnackBar(
+          SnackBar(content: Text('$label ${doc['number'] ?? ''} created')));
+      await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => CommercialDocumentsScreen(api: widget.api)));
+      if (mounted) setState(() => _future = _load());
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(
+          content: Text(e.isForbidden
+              ? "You don't have permission for that."
+              : e.message)));
+    } catch (_) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Could not reach the server.')));
+    } finally {
+      if (mounted) setState(() => _genBusy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<_QuoteDetail>(
@@ -329,6 +360,27 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
               onPressed: () => _transition('${n['value']}', '${n['label']}'),
               child: Text('${n['label']}'),
             ),
+        ]),
+      ],
+      if (widget.api.can('quotes.create')) ...[
+        const SizedBox(height: 22),
+        const Text('GENERATE',
+            style: TextStyle(
+                fontSize: 11.5, fontWeight: FontWeight.w700,
+                letterSpacing: 0.6, color: kMuted)),
+        const SizedBox(height: 10),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          OutlinedButton.icon(
+              onPressed:
+                  _genBusy ? null : () => _generate('invoice', 'Tax invoice'),
+              icon: const Icon(Icons.receipt_long_outlined, size: 18),
+              label: const Text('Tax invoice')),
+          OutlinedButton.icon(
+              onPressed: _genBusy
+                  ? null
+                  : () => _generate('delivery-note', 'Delivery note'),
+              icon: const Icon(Icons.local_shipping_outlined, size: 18),
+              label: const Text('Delivery note')),
         ]),
       ],
       RelatedRecords(api: widget.api, type: 'quotation', id: widget.quoteId),

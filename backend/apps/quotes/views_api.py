@@ -8,7 +8,9 @@ from apps.core.api import TenantViewSet
 from .models import Quotation, QuotationStatus
 from .pdf import quotation_pdf_bytes
 from .serializers import QuotationCreateSerializer, QuotationSerializer
-from .services import create_quotation, next_statuses, transition
+from .services import (QuotationError, create_delivery_document,
+                       create_invoice_document, create_quotation, next_statuses,
+                       transition)
 
 _STATUS_LABELS = dict(QuotationStatus.choices)
 
@@ -75,6 +77,36 @@ class QuotationViewSet(TenantViewSet):
                             status=status.HTTP_409_CONFLICT)
         return Response(
             QuotationSerializer(quote, context={"request": request}).data)
+
+    @action(detail=True, methods=["post"])
+    def invoice(self, request, pk=None):
+        """Raise a tax invoice from this quotation — same service and business
+        rules as the web (quote must be approved; the service enforces it)."""
+        if not request.user.has_perm_code("quotes.create"):
+            return Response({"error": {"code": "forbidden", "message": "Need quotes.create."}},
+                            status=status.HTTP_403_FORBIDDEN)
+        try:
+            doc = create_invoice_document(self.get_object(), request.user)
+        except QuotationError as exc:
+            return Response({"error": {"code": "invalid", "message": str(exc)}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({"id": str(doc.id), "number": doc.number, "kind": doc.kind,
+                         "status": doc.status}, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"], url_path="delivery-note")
+    def delivery_note(self, request, pk=None):
+        """Raise a delivery note from this quotation (the service requires the tax
+        invoice to exist first, and carries quantities only — never prices, §15)."""
+        if not request.user.has_perm_code("quotes.create"):
+            return Response({"error": {"code": "forbidden", "message": "Need quotes.create."}},
+                            status=status.HTTP_403_FORBIDDEN)
+        try:
+            doc = create_delivery_document(self.get_object(), request.user)
+        except QuotationError as exc:
+            return Response({"error": {"code": "invalid", "message": str(exc)}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({"id": str(doc.id), "number": doc.number, "kind": doc.kind,
+                         "status": doc.status}, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["get"])
     def pdf(self, request, pk=None):
