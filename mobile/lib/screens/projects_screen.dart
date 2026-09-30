@@ -6,6 +6,7 @@ import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
 import 'project_detail_screen.dart';
+import 'project_form_screen.dart';
 
 /// Projects (jobs) — searchable list of clean job cards, active first. Matches
 /// the Home/Profile design language: neutral cards, hairline borders, status
@@ -50,6 +51,20 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: widget.api.can('projects.create')
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                final created = await Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_) => ProjectFormScreen(api: widget.api)));
+                if (created != null && mounted) {
+                  setState(() => _future = _load(''));
+                }
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('New job'),
+            )
+          : null,
       appBar: AppBar(
         title: const Text('Projects'),
         scrolledUnderElevation: 1,

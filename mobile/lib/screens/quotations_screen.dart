@@ -8,6 +8,7 @@ import '../widgets/related_records.dart';
 import '../theme.dart';
 import '../widgets/status_pill.dart';
 import 'pdf_viewer_screen.dart';
+import 'quotation_form_screen.dart';
 
 /// Quotations — searchable card list → detail with line items, VAT and totals
 /// (Golden-Rule gated), the status workflow, and the official PDF. Creating a
@@ -48,6 +49,20 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: widget.api.can('quotes.create')
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                final created = await Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_) => QuotationFormScreen(api: widget.api)));
+                if (created != null && mounted) {
+                  setState(() => _future = _load(''));
+                }
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('New'),
+            )
+          : null,
       appBar: AppBar(
         title: const Text('Quotations'),
         scrolledUnderElevation: 1,

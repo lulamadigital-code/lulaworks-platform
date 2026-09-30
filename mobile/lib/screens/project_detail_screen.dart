@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
 import 'projects_screen.dart' show StatusChip;
+import 'task_form_screen.dart';
 import 'task_hub_screen.dart';
 
 /// Project detail — identity, the work-readiness gate, tasks, and the interactive
@@ -43,6 +44,21 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   Widget build(BuildContext context) {
     final p = widget.project;
     return Scaffold(
+      floatingActionButton: widget.api.can('execution.manage')
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                final created = await Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_) => TaskFormScreen(
+                            api: widget.api,
+                            projectId: p.id,
+                            projectName: p.title.isNotEmpty ? p.title : p.clientName)));
+                if (created != null) _reload();
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('New task'),
+            )
+          : null,
       appBar: AppBar(title: Text(p.number), scrolledUnderElevation: 1),
       body: RefreshIndicator(
         color: kBrand,
