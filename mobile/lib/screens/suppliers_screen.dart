@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
+import 'supplier_form_screen.dart';
 
 /// Suppliers — searchable list and a read detail. Sourcing is a field activity,
 /// so this is view-first; editing lives on the web for now.
@@ -19,10 +20,23 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
   Future<List<Map<String, dynamic>>> _load() async =>
       pageResults(await widget.api.get('/suppliers/'));
 
+  Future<void> _create() async {
+    final created = await Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => SupplierFormScreen(api: widget.api)));
+    if (created != null && mounted) setState(() => _future = _load());
+  }
+
   @override
   Widget build(BuildContext context) {
+    final canManage = widget.api.can('procurement.manage');
     return Scaffold(
       appBar: AppBar(title: const Text('Suppliers')),
+      floatingActionButton: canManage
+          ? FloatingActionButton.extended(
+              onPressed: _create,
+              icon: const Icon(Icons.add),
+              label: const Text('New supplier'))
+          : null,
       body: RefreshIndicator(
         onRefresh: () async => setState(() { _future = _load(); }),
         child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -62,8 +76,12 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                       ? Text('${s['performance_score']}',
                           style: const TextStyle(fontWeight: FontWeight.w600))
                       : null,
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => _SupplierDetail(supplier: s))),
+                  onTap: () async {
+                    await Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) =>
+                            _SupplierDetail(api: widget.api, supplier: s)));
+                    if (mounted) setState(() => _future = _load());
+                  },
                 );
               },
             );
@@ -74,9 +92,25 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
   }
 }
 
-class _SupplierDetail extends StatelessWidget {
-  const _SupplierDetail({required this.supplier});
+class _SupplierDetail extends StatefulWidget {
+  const _SupplierDetail({required this.api, required this.supplier});
+  final ApiClient api;
   final Map<String, dynamic> supplier;
+
+  @override
+  State<_SupplierDetail> createState() => _SupplierDetailState();
+}
+
+class _SupplierDetailState extends State<_SupplierDetail> {
+  late Map<String, dynamic> supplier = widget.supplier;
+
+  Future<void> _edit() async {
+    final saved = await Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => SupplierFormScreen(api: widget.api, existing: supplier)));
+    if (saved is Map<String, dynamic> && mounted) {
+      setState(() => supplier = saved);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +125,13 @@ class _SupplierDetail extends StatelessWidget {
       if (s['bee_level'] != null) (Icons.verified_outlined, 'B-BBEE level ${s['bee_level']}'),
     ];
     return Scaffold(
-      appBar: AppBar(title: Text('${s['name']}')),
+      appBar: AppBar(title: Text('${s['name']}'), actions: [
+        if (widget.api.can('procurement.manage'))
+          IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Edit',
+              onPressed: _edit),
+      ]),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         if (cats.isNotEmpty)
           Wrap(spacing: 8, runSpacing: 8, children: [

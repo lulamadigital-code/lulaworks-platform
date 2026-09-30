@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../models.dart';
 import '../widgets/status_pill.dart';
+import 'purchase_order_form_screen.dart';
 
 /// Purchase orders (us → supplier). List + detail, with approve/receive actions
 /// gated by permission (po.approve to approve, procurement.manage to receive).
@@ -22,10 +23,22 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
   Future<List<Map<String, dynamic>>> _load() async =>
       pageResults(await widget.api.get('/purchase-orders/'));
 
+  Future<void> _create() async {
+    final created = await Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => PurchaseOrderFormScreen(api: widget.api)));
+    if (created != null && mounted) setState(() => _future = _load());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Purchase orders')),
+      floatingActionButton: widget.api.canProcurement
+          ? FloatingActionButton.extended(
+              onPressed: _create,
+              icon: const Icon(Icons.add),
+              label: const Text('New PO'))
+          : null,
       body: RefreshIndicator(
         onRefresh: () async => setState(() { _future = _load(); }),
         child: FutureBuilder<List<Map<String, dynamic>>>(
