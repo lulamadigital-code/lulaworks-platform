@@ -39,3 +39,8 @@ class QuotationCreateSerializer(serializers.Serializer):
     title = serializers.CharField(required=False, allow_blank=True)
     site = serializers.CharField(required=False, allow_blank=True)
     lines = serializers.ListField(child=serializers.DictField(), required=False)
+    # Optional commercial depth — link a real customer, set VAT, add notes.
+    customer = serializers.UUIDField(required=False, allow_null=True)
+    vat_rate = serializers.DecimalField(max_digits=5, decimal_places=2,
+                                        required=False, allow_null=True)
+    notes = serializers.CharField(required=False, allow_blank=True)

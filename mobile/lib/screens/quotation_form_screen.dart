@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../models.dart';
 import '../theme.dart';
 import '../widgets/lula_ui.dart';
 
@@ -29,15 +30,34 @@ class _QuotationFormScreenState extends State<QuotationFormScreen> {
   final _client = TextEditingController();
   final _title = TextEditingController();
   final _site = TextEditingController();
+  final _vat = TextEditingController();
+  final _notes = TextEditingController();
   final List<_Line> _lines = [_Line()];
+  String? _customerId;
+  List<Map<String, dynamic>> _customers = const [];
   bool _saving = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCustomers();
+  }
+
+  Future<void> _loadCustomers() async {
+    try {
+      final rows = pageResults(await widget.api.get('/customers/'));
+      if (mounted) setState(() => _customers = rows);
+    } catch (_) {/* customer link stays optional if the list can't load */}
+  }
 
   @override
   void dispose() {
     _client.dispose();
     _title.dispose();
     _site.dispose();
+    _vat.dispose();
+    _notes.dispose();
     for (final l in _lines) {
       l.dispose();
     }
@@ -69,7 +89,11 @@ class _QuotationFormScreenState extends State<QuotationFormScreen> {
       'client_name': _client.text.trim(),
       'title': _title.text.trim(),
       'site': _site.text.trim(),
+      'notes': _notes.text.trim(),
       'lines': lines,
+      if (_customerId != null) 'customer': _customerId,
+      if (_vat.text.trim().isNotEmpty)
+        'vat_rate': double.tryParse(_vat.text.trim()),
     };
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -139,12 +163,47 @@ class _QuotationFormScreenState extends State<QuotationFormScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          if (_customers.isNotEmpty) ...[
+            LulaDropdown<String>(
+              label: 'Customer (optional)',
+              value: _customerId,
+              items: [
+                const DropdownMenuItem(value: null, child: Text('Not linked')),
+                for (final cst in _customers)
+                  DropdownMenuItem(
+                      value: '${cst['id']}',
+                      child: Text('${cst['name'] ?? ''}',
+                          overflow: TextOverflow.ellipsis)),
+              ],
+              onChanged: (v) {
+                setState(() {
+                  _customerId = v;
+                  // Auto-fill the client name from the chosen customer.
+                  if (v != null && _client.text.trim().isEmpty) {
+                    final m = _customers.firstWhere((c) => '${c['id']}' == v,
+                        orElse: () => const {});
+                    _client.text = '${m['name'] ?? ''}';
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
           LulaTextField(
               controller: _client, label: 'Client name', required: true),
           const SizedBox(height: 16),
           LulaTextField(controller: _title, label: 'Title (optional)'),
           const SizedBox(height: 16),
           LulaTextField(controller: _site, label: 'Site (optional)'),
+          const SizedBox(height: 16),
+          LulaTextField(
+              controller: _vat,
+              label: 'VAT % (optional)',
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true)),
+          const SizedBox(height: 16),
+          LulaTextField(
+              controller: _notes, label: 'Notes / terms (optional)', maxLines: 3),
           const SizedBox(height: 22),
           const Text('Line items',
               style: TextStyle(fontWeight: FontWeight.w700, color: kInk)),

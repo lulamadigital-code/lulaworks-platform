@@ -389,18 +389,25 @@ def quotation_number_available(company, number: str, *, exclude=None) -> bool:
 
 
 def create_quotation(company, user, *, client_name, title="", site="", lines=None,
-                     number=None, source=None) -> Quotation:
+                     number=None, source=None, customer=None, vat_rate=None,
+                     notes="") -> Quotation:
     """Create a draft quotation: allocate a number (configurable engine), stamp
     the tenant (ambient), and emit a domain event (outbox).
 
+    `customer` links the quote to a real Customer (so it feeds Related Records and
+    is invoiceable); `vat_rate`/`notes` are optional commercial fields.
     `number` lets an authorised caller override the auto-allocated value (the
     view is responsible for the permission check and for validating format and
     uniqueness); when None the numbering engine allocates the next one."""
     fields = dict(
         company=company, number=number or next_quotation_number(company),
-        client_name=client_name, title=title, site=site,
+        client_name=client_name, title=title, site=site, notes=notes or "",
         created_by=user, updated_by=user,
     )
+    if customer is not None:
+        fields["customer"] = customer
+    if vat_rate is not None:
+        fields["vat_rate"] = vat_rate
     if source is not None:
         fields["source"] = source
     quote = Quotation.objects.create(**fields)

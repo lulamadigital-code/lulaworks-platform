@@ -52,3 +52,28 @@ class QuotationGenerateApiTests(APITestCase):
         r = self._api(self.creator).post(
             f"/api/v1/quotations/{self.q.pk}/delivery-note/")
         self.assertEqual(r.status_code, 400)
+
+
+class QuotationCreateDepthTests(APITestCase):
+    def setUp(self):
+        self.c = Company.objects.create(name="Acme")
+        self.creator = _user(self.c, ["quotes.create", "finance.view_money"], "s@acme.co")
+
+    def test_create_links_customer_and_sets_vat_notes_lines(self):
+        from apps.customers.models import Customer
+        with tenant_scope(self.c.id):
+            cust = Customer.objects.create(company=self.c, name="ABC Mining")
+        api = APIClient()
+        api.force_authenticate(self.creator)
+        r = api.post('/api/v1/quotations/', {
+            'client_name': 'ABC Mining', 'customer': str(cust.pk),
+            'vat_rate': '15.00', 'notes': 'Net 30',
+            'lines': [{'description': 'Pump overhaul', 'qty': 2, 'unit_price': 1500}],
+        }, format='json')
+        self.assertEqual(r.status_code, 201)
+        with tenant_scope(self.c.id):
+            q = Quotation.objects.get(pk=r.data['id'])
+            self.assertEqual(q.customer_id, cust.pk)
+            self.assertEqual(str(q.vat_rate), '15.00')
+            self.assertEqual(q.notes, 'Net 30')
+            self.assertEqual(q.lines.count(), 1)

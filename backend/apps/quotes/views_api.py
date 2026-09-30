@@ -35,8 +35,15 @@ class QuotationViewSet(TenantViewSet):
     def create(self, request, *args, **kwargs):
         payload = QuotationCreateSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
+        data = dict(payload.validated_data)
+        # Resolve the optional customer UUID to the tenant's own Customer.
+        customer = None
+        cid = data.pop("customer", None)
+        if cid:
+            from apps.customers.models import Customer
+            customer = Customer.objects.filter(pk=cid).first()
         quote = create_quotation(
-            request.user.active_company, request.user, **payload.validated_data
+            request.user.active_company, request.user, customer=customer, **data
         )
         return Response(
             QuotationSerializer(quote, context={"request": request}).data,
