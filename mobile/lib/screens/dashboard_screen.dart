@@ -11,6 +11,7 @@ import 'customer_form_screen.dart';
 import 'customers_screen.dart';
 import 'my_tasks_screen.dart';
 import 'notifications_screen.dart';
+import 'search_screen.dart';
 import 'project_detail_screen.dart';
 import 'projects_screen.dart' show StatusChip;
 import 'quotations_screen.dart';
@@ -259,6 +260,8 @@ class _DashboardScreenState extends State<DashboardScreen>
       Row(children: [
         const BrandLogo(height: 24),
         const Spacer(),
+        _searchButton(context),
+        const SizedBox(width: 10),
         _bell(context, h.unread),
       ]),
       const SizedBox(height: 18),
@@ -317,6 +320,22 @@ class _DashboardScreenState extends State<DashboardScreen>
             child: const Icon(Icons.notifications_none, size: 21, color: kInk),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _searchButton(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => _push(SearchScreen(api: api)),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: kLine)),
+        child: const Icon(Icons.search, size: 21, color: kInk),
       ),
     );
   }

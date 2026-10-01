@@ -174,6 +174,22 @@ class AttentionView(APIView):
         return Response(attention_items(request.user.active_company, request.user))
 
 
+class GlobalSearchView(APIView):
+    """Global search over the company's data — the SAME permission-aware,
+    tenant-scoped implementation the web console uses
+    (apps.web.search_service.global_search). GET /api/v1/search/?q= → groups of
+    {type, id, title, sub} the app can open. Each group is only searched when the
+    user is allowed to see it."""
+
+    def get(self, request):
+        from apps.core.middleware import set_tenant_from_request
+        set_tenant_from_request(request)
+        from apps.web.search_service import global_search
+        groups = global_search(request.user, request.query_params.get("q", ""))
+        return Response({"groups": groups,
+                         "total": sum(len(g["items"]) for g in groups)})
+
+
 class RelatedRecordsView(APIView):
     """The business-transaction graph for one record — its upstream + downstream
     related records as {type, id, label, sub}, so the app can open its own
