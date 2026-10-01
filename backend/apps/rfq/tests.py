@@ -141,3 +141,44 @@ class RFQPipelineTests(APITestCase):
         edited = next(f for f in resp.data["fields"] if f["id"] == field_id)
         self.assertEqual(edited["approved_value"], "CORRECTED")
         self.assertEqual(edited["review_status"], "edited")
+
+    # ── Text RFQ path (pasted email / WhatsApp) ──────────────────────────────
+    _RFQ_TEXT = ("RFQ from Sibanye Gold\n"
+                 "Please quote on the following:\n"
+                 "1  Mechanical seal  4  each\n"
+                 "2  Gasket set  2  each\n")
+
+    def test_from_text_extracts_and_enters_review(self):
+        self.client.force_authenticate(self.estimator)
+        resp = self.client.post("/api/v1/rfqs/from-text/",
+                                {"text": self._RFQ_TEXT}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(resp.data["status"], RFQStatus.IN_REVIEW)
+        self.assertEqual(resp.data["doc_class"], "rfq_text")
+
+    def test_from_text_requires_permission(self):
+        nobody = User.objects.create_user("no2@lulama.co.za", "x",
+                                           active_company=self.company)
+        Membership.objects.create(user=nobody, company=self.company,
+                                  role=Role.objects.create(name="None2", is_system=True))
+        self.client.force_authenticate(nobody)
+        resp = self.client.post("/api/v1/rfqs/from-text/",
+                                {"text": self._RFQ_TEXT}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_from_text_rejects_empty(self):
+        self.client.force_authenticate(self.estimator)
+        resp = self.client.post("/api/v1/rfqs/from-text/",
+                                {"text": "   "}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("message", resp.data["error"])
+
+    def test_from_text_can_be_approved(self):
+        self.client.force_authenticate(self.estimator)
+        rfq_id = self.client.post("/api/v1/rfqs/from-text/",
+                                  {"text": self._RFQ_TEXT}, format="json").data["id"]
+        resp = self.client.post(f"/api/v1/rfqs/{rfq_id}/approve/",
+                                {"client_name": "Sibanye"})
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        with tenant_scope(self.company.id):
+            self.assertEqual(Quotation.objects.count(), 1)

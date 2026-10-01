@@ -13,7 +13,7 @@ from .serializers import (
     RFQDocumentSerializer,
     RFQLineItemSerializer,
 )
-from .services import approve_rfq, ingest_rfq
+from .services import approve_rfq, ingest_rfq, ingest_rfq_text
 
 
 class RFQViewSet(TenantViewSet):
@@ -40,6 +40,32 @@ class RFQViewSet(TenantViewSet):
             request.user.active_company, request.user,
             uploaded_file=upload, original_name=upload.name,
         )
+        return Response(
+            RFQDocumentSerializer(rfq, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, methods=["post"], url_path="from-text")
+    def from_text(self, request):
+        """Ingest an RFQ that arrived as TEXT — an email body, a WhatsApp message,
+        a retyped list. Same extraction/review/approval pipeline as an uploaded
+        file; there's just no document to OCR. Gated like create (rfq.upload)."""
+        if not request.user.has_perm_code("rfq.upload"):
+            return Response(
+                {"error": {"code": "forbidden", "message": "Need rfq.upload."}},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        try:
+            rfq = ingest_rfq_text(
+                request.user.active_company, request.user,
+                text=request.data.get("text", ""),
+                original_name=request.data.get("original_name", ""),
+            )
+        except ValueError as exc:
+            return Response(
+                {"error": {"code": "invalid", "message": str(exc)}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response(
             RFQDocumentSerializer(rfq, context={"request": request}).data,
             status=status.HTTP_201_CREATED,

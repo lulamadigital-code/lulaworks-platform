@@ -27,6 +27,43 @@ class _RfqScreenState extends State<RfqScreen> {
   Future<List<Map<String, dynamic>>> _load() async =>
       pageResults(await widget.api.get('/rfqs/'));
 
+  void _showCreateOptions() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: const Icon(Icons.picture_as_pdf_outlined),
+            title: const Text('Upload a PDF'),
+            subtitle: const Text('Client RFQ document'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _upload();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.content_paste),
+            title: const Text('Paste RFQ text'),
+            subtitle: const Text('From an email or WhatsApp message'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _pasteText();
+            },
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _pasteText() async {
+    final rfq = await Navigator.of(context).push<Map<String, dynamic>>(
+        MaterialPageRoute(builder: (_) => _RfqTextEntry(api: widget.api)));
+    if (rfq == null || !mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => _RfqDetail(api: widget.api, rfq: rfq)));
+    if (mounted) setState(() => _future = _load());
+  }
+
   Future<void> _upload() async {
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -66,15 +103,15 @@ class _RfqScreenState extends State<RfqScreen> {
       appBar: AppBar(title: const Text('RFQs')),
       floatingActionButton: canUpload
           ? FloatingActionButton.extended(
-              onPressed: _uploading ? null : _upload,
+              onPressed: _uploading ? null : _showCreateOptions,
               icon: _uploading
                   ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.upload_file),
-              label: Text(_uploading ? 'Uploading…' : 'Upload RFQ'))
+                  : const Icon(Icons.add),
+              label: Text(_uploading ? 'Uploading…' : 'New RFQ'))
           : null,
       body: RefreshIndicator(
         onRefresh: () async => setState(() { _future = _load(); }),
@@ -436,6 +473,103 @@ class _RfqDetailState extends State<_RfqDetail> {
                       const TextInputType.numberWithOptions(decimal: true))),
         ]),
       ]),
+    );
+  }
+}
+
+/// Paste an RFQ that arrived as text (email body / WhatsApp). Posts to
+/// /rfqs/from-text/ (gated rfq.upload); the backend runs the same extraction and
+/// returns a reviewable RFQ, which the caller opens in _RfqDetail.
+class _RfqTextEntry extends StatefulWidget {
+  const _RfqTextEntry({required this.api});
+  final ApiClient api;
+
+  @override
+  State<_RfqTextEntry> createState() => _RfqTextEntryState();
+}
+
+class _RfqTextEntryState extends State<_RfqTextEntry> {
+  final _text = TextEditingController();
+  final _name = TextEditingController();
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _text.dispose();
+    _name.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    FocusScope.of(context).unfocus();
+    if (_text.text.trim().isEmpty) {
+      setState(() => _error = 'Paste the RFQ text first.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    final navigator = Navigator.of(context);
+    try {
+      final rfq = await widget.api.post('/rfqs/from-text/', {
+        'text': _text.text.trim(),
+        'original_name': _name.text.trim(),
+      }) as Map<String, dynamic>;
+      if (!mounted) return;
+      navigator.pop(rfq);
+    } on ApiException catch (e) {
+      setState(() => _error = e.isForbidden
+          ? "You don't have permission to create RFQs."
+          : e.message);
+    } catch (_) {
+      setState(() => _error = 'Could not reach the server.');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Paste RFQ'), scrolledUnderElevation: 1),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          LulaTextField(
+            controller: _name,
+            label: 'Reference / name (optional)',
+          ),
+          const SizedBox(height: 16),
+          const Text('RFQ text',
+              style: TextStyle(fontWeight: FontWeight.w700, color: kInk)),
+          const SizedBox(height: 8),
+          const Text(
+            'Paste the email body or message. The backend extracts the client, '
+            'items and quantities for you to review before approving.',
+            style: TextStyle(color: kMuted, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          LulaTextField(
+            controller: _text,
+            label: 'Paste here',
+            maxLines: 12,
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 16),
+            Text(_error!, style: const TextStyle(color: kRed, fontSize: 13)),
+          ],
+          const SizedBox(height: 22),
+          LulaButton(
+            label: 'Extract RFQ',
+            loadingLabel: 'Extracting…',
+            loading: _saving,
+            onPressed: _save,
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
     );
   }
 }
