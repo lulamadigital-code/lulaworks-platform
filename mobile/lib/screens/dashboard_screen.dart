@@ -53,11 +53,12 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Future<_Home> _load() async {
     // /me is critical (drives the error state); the rest degrade gracefully.
-    final me = (await api.get('/me/')) as Map;
+    // getCached lets the home render from the last sync when offline.
+    final me = (await api.getCached('/me/')).data as Map;
     final r = await Future.wait([
-      api.get('/projects/').catchError((_) => null),
-      api.get('/tasks/?mine=1').catchError((_) => null),
-      api.get('/notifications/').catchError((_) => null),
+      api.getCached('/projects/').then((c) => c.data).catchError((_) => null),
+      api.getCached('/tasks/?mine=1').then((c) => c.data).catchError((_) => null),
+      api.getCached('/notifications/').then((c) => c.data).catchError((_) => null),
       api.get('/notifications/unread/').catchError((_) => null),
       api.canSeeQuotes
           ? api.get('/quotations/').catchError((_) => null)

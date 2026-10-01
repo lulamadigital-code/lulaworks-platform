@@ -20,8 +20,9 @@ class MyTasksScreen extends StatefulWidget {
 class _MyTasksScreenState extends State<MyTasksScreen> {
   late Future<List<Map<String, dynamic>>> _future = _load();
 
+  // getCached: renders the last-synced tasks when offline instead of erroring.
   Future<List<Map<String, dynamic>>> _load() async =>
-      pageResults(await widget.api.get('/tasks/?mine=1'));
+      pageResults((await widget.api.getCached('/tasks/?mine=1')).data);
 
   static const _order = ['in_progress', 'blocked', 'todo', 'done'];
   static const _done = {'completed', 'closed', 'cancelled'};

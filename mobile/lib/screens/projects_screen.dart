@@ -26,10 +26,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   Timer? _debounce;
 
   Future<List<Project>> _load(String q) async {
-    final path = q.trim().isEmpty
-        ? '/projects/'
-        : '/projects/?search=${Uri.encodeQueryComponent(q.trim())}';
-    final list = pageResults(await widget.api.get(path)).map(Project.fromJson).toList();
+    // Cache the base list for offline viewing; searches go live.
+    final dynamic body = q.trim().isEmpty
+        ? (await widget.api.getCached('/projects/')).data
+        : await widget.api.get(
+            '/projects/?search=${Uri.encodeQueryComponent(q.trim())}');
+    final list = pageResults(body).map(Project.fromJson).toList();
     // Active jobs first, then the rest.
     list.sort((a, b) => (a.isReady ? 0 : 1) - (b.isReady ? 0 : 1));
     return list;

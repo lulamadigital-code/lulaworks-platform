@@ -32,6 +32,16 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
+/// A GET result that knows whether it came from the live server or the on-device
+/// read cache (served when the device is offline). `fromCache` drives the
+/// "showing saved data" indicator; `cachedAt` is when that copy was stored.
+class CachedResponse {
+  CachedResponse(this.data, {required this.fromCache, this.cachedAt});
+  final dynamic data;
+  final bool fromCache;
+  final DateTime? cachedAt;
+}
+
 /// Thin JSON-over-HTTP client for the Lulaworks API.
 ///
 /// Handles JWT bearer auth, one-shot access-token refresh on 401, persistence of
@@ -148,10 +158,12 @@ class ApiClient {
     _perms = {};
     _role = null;
 
-    // 3) Clear persisted sensitive state.
+    // 3) Clear persisted sensitive state — tokens, identity, and the offline
+    //    read cache (so the next user never sees the previous user's data).
     await _prefs.remove('access');
     await _prefs.remove('refresh');
     await _prefs.remove('me');
+    await clearReadCache();
 
     // Return to the default (production) server on sign-out, so a stale dev
     // origin doesn't linger; the login screen still lets you change it.
@@ -299,6 +311,64 @@ class ApiClient {
 
   // ── Requests ──────────────────────────────────────────────────────────────
   Future<dynamic> get(String path) => _send('GET', path);
+
+  /// GET with an on-device read cache for offline use. On a live response it
+  /// write-throughs the body and returns it (fromCache:false). When the network
+  /// is unreachable it serves the last cached copy (fromCache:true) if there is
+  /// one — so read screens still render offline. A *server* error (ApiException,
+  /// e.g. 403/404/500) is never masked by stale data: it rethrows. With no cache
+  /// and no network, the original error propagates so the screen can show it.
+  Future<CachedResponse> getCached(String path) async {
+    try {
+      final data = await _send('GET', path);
+      await _cachePut(path, data);
+      return CachedResponse(data, fromCache: false, cachedAt: DateTime.now());
+    } on ApiException {
+      rethrow; // reached the server — a real error, don't serve stale over it
+    } catch (_) {
+      final hit = _cacheGet(path); // offline → fall back to the saved copy
+      if (hit != null) {
+        return CachedResponse(hit.$1, fromCache: true, cachedAt: hit.$2);
+      }
+      rethrow;
+    }
+  }
+
+  static const _cachePrefix = 'readcache:';
+  static const _cacheMaxBytes = 400 * 1024; // don't cache very large payloads
+
+  Future<void> _cachePut(String path, dynamic data) async {
+    try {
+      final encoded = jsonEncode({'at': DateTime.now().toIso8601String(), 'data': data});
+      if (encoded.length > _cacheMaxBytes) {
+        await _prefs.remove('$_cachePrefix$path'); // drop a now-oversized entry
+        return;
+      }
+      await _prefs.setString('$_cachePrefix$path', encoded);
+    } catch (_) {/* caching is best-effort — never fail a request over it */}
+  }
+
+  /// Returns (data, cachedAt) or null if nothing is cached for this path.
+  (dynamic, DateTime?)? _cacheGet(String path) {
+    try {
+      final raw = _prefs.getString('$_cachePrefix$path');
+      if (raw == null || raw.isEmpty) return null;
+      final map = jsonDecode(raw) as Map;
+      return (map['data'], DateTime.tryParse('${map['at'] ?? ''}'));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Wipe the read cache (call on sign-out so the next user never sees stale data
+  /// from the previous session).
+  Future<void> clearReadCache() async {
+    try {
+      for (final k in _prefs.getKeys().where((k) => k.startsWith(_cachePrefix))) {
+        await _prefs.remove(k);
+      }
+    } catch (_) {/* ignore */}
+  }
   Future<dynamic> post(String path, [Map<String, dynamic>? body]) =>
       _send('POST', path, body);
   Future<dynamic> patch(String path, [Map<String, dynamic>? body]) =>

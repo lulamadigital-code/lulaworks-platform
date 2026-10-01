@@ -24,9 +24,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
   Timer? _debounce;
 
   Future<List<Map<String, dynamic>>> _load(String q) async {
-    final path = q.trim().isEmpty
-        ? '/customers/'
-        : '/customers/?search=${Uri.encodeQueryComponent(q.trim())}';
+    // Cache the base list for offline viewing; search queries hit the network
+    // live (caching every term would bloat storage and isn't useful offline).
+    if (q.trim().isEmpty) {
+      return pageResults((await widget.api.getCached('/customers/')).data);
+    }
+    final path = '/customers/?search=${Uri.encodeQueryComponent(q.trim())}';
     return pageResults(await widget.api.get(path));
   }
 
