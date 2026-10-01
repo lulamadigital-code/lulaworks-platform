@@ -49,7 +49,8 @@ void main() {
     expect(personaFor(api), AppPersona.owner);
     expect(tabIds(api), ['home', 'crm', 'jobs', 'purchasing', 'more']);
     // Admin surfaces present in More.
-    expect(moreIds(api), containsAll(['team', 'company', 'finance', 'ai']));
+    expect(moreIds(api),
+        containsAll(['team', 'company', 'finance', 'intelligence', 'billing']));
   });
 
   test('manager → operations, no company admin', () async {

@@ -268,6 +268,45 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
     }
   }
 
+  /// Email this quotation (PDF attached) to the customer — same backend service
+  /// as web. Recipient defaults to the customer's contact; an override is optional.
+  Future<void> _sendToCustomer() async {
+    final to = TextEditingController();
+    final msg = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Send to customer'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('Emails the quotation with its PDF attached. Leave the '
+              'address blank to use the customer’s contact.'),
+          const SizedBox(height: 12),
+          TextField(controller: to, decoration: const InputDecoration(
+              labelText: 'To (optional)'), keyboardType: TextInputType.emailAddress),
+          TextField(controller: msg, decoration: const InputDecoration(
+              labelText: 'Message (optional)'), maxLines: 2),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Send')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final res = await widget.api.post('/quotations/${widget.quoteId}/send/',
+          {'to': to.text.trim(), 'message': msg.text.trim()}) as Map;
+      messenger.showSnackBar(SnackBar(
+          content: Text('Sent to ${res['to'] ?? 'the customer'}')));
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (_) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Could not reach the server.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<_QuoteDetail>(
@@ -313,6 +352,12 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
                         path: '/quotations/${widget.quoteId}/pdf/',
                         title: '${q['number']}'),
                   )),
+                ),
+              if (q != null && widget.api.canCreateQuote)
+                IconButton(
+                  tooltip: 'Send to customer',
+                  icon: const Icon(Icons.send_outlined),
+                  onPressed: _sendToCustomer,
                 ),
             ],
           ),

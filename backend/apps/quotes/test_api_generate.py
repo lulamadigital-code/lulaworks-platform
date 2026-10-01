@@ -53,6 +53,10 @@ class QuotationGenerateApiTests(APITestCase):
             f"/api/v1/quotations/{self.q.pk}/delivery-note/")
         self.assertEqual(r.status_code, 400)
 
+    def test_quotation_send_requires_quotes_create(self):
+        r = self._api(self.viewer).post(f"/api/v1/quotations/{self.q.pk}/send/")
+        self.assertEqual(r.status_code, 403)
+
 
 class QuotationCreateDepthTests(APITestCase):
     def setUp(self):
@@ -88,6 +92,17 @@ class DirectInvoiceApiTests(APITestCase):
     def test_requires_quotes_create(self):
         api = APIClient(); api.force_authenticate(self.viewer)
         r = api.post('/api/v1/commercial-documents/', {'client_name': 'ABC'}, format='json')
+        self.assertEqual(r.status_code, 403)
+
+    def test_send_requires_quotes_create(self):
+        # Create a real invoice, then a viewer without quotes.create can't send it.
+        api = APIClient(); api.force_authenticate(self.creator)
+        doc_id = api.post('/api/v1/commercial-documents/', {
+            'client_name': 'ABC Mining', 'vat_rate': '15',
+            'lines': [{'description': 'Callout', 'qty': 1, 'unit_price': 1200}],
+        }, format='json').data['id']
+        v = APIClient(); v.force_authenticate(self.viewer)
+        r = v.post(f'/api/v1/commercial-documents/{doc_id}/send/')
         self.assertEqual(r.status_code, 403)
 
     def test_creates_direct_invoice(self):

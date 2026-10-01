@@ -201,6 +201,30 @@ class CommercialDocumentViewSet(TenantViewSet):
         return Response({"id": str(payment.id), "outstanding": str(doc.outstanding)},
                         status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=["post"])
+    def send(self, request, pk=None):
+        """Email this invoice/delivery note (PDF attached) to the customer — the
+        same service the web uses, so mobile completes the send loop. Needs
+        quotes.create; progressive company-setup still applies to the PDF."""
+        if not request.user.has_perm_code("quotes.create"):
+            return Response({"error": {"code": "forbidden", "message": "Need quotes.create."}},
+                            status=status.HTTP_403_FORBIDDEN)
+        doc = self.get_object()
+        from apps.identity.company_setup import require_action
+        require_action(request.user.active_company,
+                       "EXPORT_INVOICE_PDF"
+                       if doc.kind == CommercialDocument.Kind.INVOICE
+                       else "EXPORT_DELIVERY_NOTE_PDF")
+        from apps.quotes.email import send_commercial_document
+        try:
+            log = send_commercial_document(
+                doc, request.user, to=request.data.get("to", ""),
+                message=request.data.get("message", ""))
+        except Exception as exc:  # noqa: BLE001 - surface a clean message
+            return Response({"error": {"code": "invalid", "message": str(exc)}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({"sent": True, "to": getattr(log, "to_email", "")})
+
     @action(detail=True, methods=["get"])
     def pdf(self, request, pk=None):
         if not request.user.has_perm_code("quotes.download"):

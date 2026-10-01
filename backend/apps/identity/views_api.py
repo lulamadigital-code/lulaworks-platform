@@ -292,6 +292,16 @@ class MembershipViewSet(viewsets.ModelViewSet):
                 {"error": {"code": "conflict", "message": "Already a member."}},
                 status=status.HTTP_409_CONFLICT,
             )
+        # Plan seat limit (§9): block a new seat when the plan's included users are
+        # used up and the plan has no per-seat overage. Uses the shared billing
+        # entitlement engine, so web and mobile enforce identically.
+        from apps.billing.services import active_user_count, check_user_seat
+        seat = check_user_seat(company, active_user_count(company))
+        if not seat.allowed:
+            return Response(
+                {"error": {"code": "seat_limit", "message": seat.reason}},
+                status=status.HTTP_402_PAYMENT_REQUIRED,
+            )
         membership = Membership.objects.create(
             user=user, company=company, role=data["role"],
             job_title=data.get("job_title", ""), invited_by=request.user,

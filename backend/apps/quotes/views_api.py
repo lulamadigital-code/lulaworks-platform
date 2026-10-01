@@ -100,6 +100,25 @@ class QuotationViewSet(TenantViewSet):
         return Response({"id": str(doc.id), "number": doc.number, "kind": doc.kind,
                          "status": doc.status}, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=["post"])
+    def send(self, request, pk=None):
+        """Email this quotation (PDF attached) to the customer — same service as
+        the web. Needs quotes.create; progressive company-setup applies."""
+        if not request.user.has_perm_code("quotes.create"):
+            return Response({"error": {"code": "forbidden", "message": "Need quotes.create."}},
+                            status=status.HTTP_403_FORBIDDEN)
+        quote = self.get_object()
+        from apps.identity.company_setup import require_action
+        require_action(request.user.active_company, "EXPORT_QUOTATION_PDF")
+        from apps.quotes.email import send_quotation
+        try:
+            log = send_quotation(quote, request.user, to=request.data.get("to", ""),
+                                 message=request.data.get("message", ""))
+        except Exception as exc:  # noqa: BLE001
+            return Response({"error": {"code": "invalid", "message": str(exc)}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({"sent": True, "to": getattr(log, "to_email", "")})
+
     @action(detail=True, methods=["post"], url_path="delivery-note")
     def delivery_note(self, request, pk=None):
         """Raise a delivery note from this quotation (the service requires the tax

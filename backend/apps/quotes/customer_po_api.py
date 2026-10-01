@@ -116,6 +116,9 @@ class CustomerPurchaseOrderViewSet(TenantViewSet):
     serializer_class = _Stub
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     search_fields = ["po_number", "client_name", "quotation__number"]
+    # Plan gate (§9): AI extraction of a PO document is Professional+. Capturing a
+    # PO (typed, or create) stays core on every plan (basic_procurement).
+    required_features = {"extract": "po_extraction"}
 
     def get_queryset(self):
         return (CustomerPurchaseOrder.objects.all()

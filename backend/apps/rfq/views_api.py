@@ -25,6 +25,9 @@ class RFQViewSet(TenantViewSet):
     serializer_class = RFQDocumentSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     required_perms = {"create": "rfq.upload"}
+    # Plan gate (§9): RFQ document/text extraction is a Professional+ capability
+    # (see the published plan matrix). Starter has no RFQ pipeline.
+    required_features = {"create": "rfq_extraction", "from_text": "rfq_extraction"}
 
     def get_queryset(self):
         return RFQDocument.objects.all().prefetch_related("fields", "lines")
