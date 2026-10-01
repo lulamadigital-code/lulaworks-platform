@@ -207,8 +207,10 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
 
   Future<_QuoteDetail> _load() async {
     final id = widget.quoteId;
+    // getCached: the quote itself renders from the last sync when offline; the
+    // workflow (available next-actions) degrades to empty.
     final results = await Future.wait([
-      widget.api.get('/quotations/$id/'),
+      widget.api.getCached('/quotations/$id/').then((c) => c.data),
       widget.api.get('/quotations/$id/workflow/').catchError((_) => null),
     ]);
     return _QuoteDetail(

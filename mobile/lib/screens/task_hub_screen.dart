@@ -99,7 +99,9 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
       await _reportStore.flush(widget.api);
     } catch (_) {/* stay offline-friendly */}
     _pendingReports = await _reportStore.pendingCount();
-    return await widget.api.get('/tasks/${widget.taskId}/operational/')
+    // getCached: the task's operational view renders from the last sync offline,
+    // so a field worker can still see the job and capture reports without signal.
+    return (await widget.api.getCached('/tasks/${widget.taskId}/operational/')).data
         as Map<String, dynamic>;
   }
 

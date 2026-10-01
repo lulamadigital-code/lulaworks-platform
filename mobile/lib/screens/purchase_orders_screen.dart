@@ -111,7 +111,7 @@ class _PODetailState extends State<_PODetail> {
   bool _changed = false;
 
   Future<Map<String, dynamic>> _load() async =>
-      (await widget.api.get('/purchase-orders/${widget.poId}/') as Map)
+      ((await widget.api.getCached('/purchase-orders/${widget.poId}/')).data as Map)
           .cast<String, dynamic>();
 
   Future<void> _action(String path, String label) async {

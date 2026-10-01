@@ -28,10 +28,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   Future<_Detail> _load() async {
     final id = widget.project.id;
+    // The project header comes from the passed-in model (renders offline); its
+    // readiness / compliance / tasks render from the last sync via getCached.
     final results = await Future.wait([
-      widget.api.get('/projects/$id/readiness/').catchError((_) => null),
-      widget.api.get('/compliance-items/?project=$id').catchError((_) => null),
-      widget.api.get('/tasks/?project=$id').catchError((_) => null),
+      widget.api.getCached('/projects/$id/readiness/').then((c) => c.data).catchError((_) => null),
+      widget.api.getCached('/compliance-items/?project=$id').then((c) => c.data).catchError((_) => null),
+      widget.api.getCached('/tasks/?project=$id').then((c) => c.data).catchError((_) => null),
     ]);
     return _Detail(
       readiness: results[0] is Map

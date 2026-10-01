@@ -21,7 +21,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   late Future<Map<String, dynamic>> _future = _load();
 
   Future<Map<String, dynamic>> _load() async {
-    final body = await widget.api.get('/customer-contacts/${widget.contactId}/profile/');
+    final body =
+        (await widget.api.getCached('/customer-contacts/${widget.contactId}/profile/')).data;
     return (body as Map).cast<String, dynamic>();
   }
 

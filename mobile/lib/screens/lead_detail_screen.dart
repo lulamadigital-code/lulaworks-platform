@@ -20,7 +20,8 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
   bool _busy = false;
 
   Future<Map<String, dynamic>> _load() async =>
-      (await widget.api.get('/leads/${widget.leadId}/') as Map).cast<String, dynamic>();
+      ((await widget.api.getCached('/leads/${widget.leadId}/')).data as Map)
+          .cast<String, dynamic>();
 
   bool get _canEdit => widget.api.can('crm.manage');
 

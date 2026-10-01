@@ -217,8 +217,9 @@ class _DocDetailState extends State<_DocDetail> {
 
   Future<_Doc> _load() async {
     final id = widget.docId;
+    // getCached: the document renders from the last sync offline; workflow degrades.
     final results = await Future.wait([
-      widget.api.get('/commercial-documents/$id/'),
+      widget.api.getCached('/commercial-documents/$id/').then((c) => c.data),
       widget.api.get('/commercial-documents/$id/workflow/').catchError((_) => null),
     ]);
     return _Doc(

@@ -125,7 +125,7 @@ class _CustomerPoDetailScreenState extends State<CustomerPoDetailScreen> {
   bool _busy = false;
 
   Future<Map<String, dynamic>> _load() async =>
-      (await widget.api.get('/customer-pos/${widget.poId}/') as Map)
+      ((await widget.api.getCached('/customer-pos/${widget.poId}/')).data as Map)
           .cast<String, dynamic>();
 
   void _reload() => setState(() => _future = _load());

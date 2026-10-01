@@ -25,11 +25,12 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
 
   Future<_CustomerDetail> _load() async {
     final id = widget.customerId;
+    // getCached: the customer + its tabs render from the last sync when offline.
     final results = await Future.wait([
-      widget.api.get('/customers/$id/'),
-      widget.api.get('/customers/$id/overview/').catchError((_) => null),
-      widget.api.get('/customers/$id/contacts/').catchError((_) => null),
-      widget.api.get('/customers/$id/timeline/').catchError((_) => null),
+      widget.api.getCached('/customers/$id/').then((c) => c.data),
+      widget.api.getCached('/customers/$id/overview/').then((c) => c.data).catchError((_) => null),
+      widget.api.getCached('/customers/$id/contacts/').then((c) => c.data).catchError((_) => null),
+      widget.api.getCached('/customers/$id/timeline/').then((c) => c.data).catchError((_) => null),
     ]);
     return _CustomerDetail(
       customer: (results[0] as Map).cast<String, dynamic>(),
