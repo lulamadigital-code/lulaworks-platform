@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
 import 'business_history_screen.dart';
+import 'lulaai_screen.dart';
 import 'projects_screen.dart' show StatusChip;
 import 'task_form_screen.dart';
 import 'task_hub_screen.dart';
@@ -61,6 +62,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             )
           : null,
       appBar: AppBar(title: Text(p.number), scrolledUnderElevation: 1, actions: [
+        if (widget.api.canGenerateAi)
+          IconButton(
+              icon: const Icon(Icons.auto_awesome),
+              tooltip: 'Ask LulaAI',
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => LulaAiScreen(
+                      api: widget.api,
+                      ctxType: 'job',
+                      ctxId: p.id,
+                      ctxLabel: 'job ${p.number}')))),
         IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'Business history',

@@ -9,6 +9,7 @@ import '../theme.dart';
 import '../widgets/status_pill.dart';
 import 'business_history_screen.dart';
 import 'commercial_documents_screen.dart';
+import 'lulaai_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'quotation_form_screen.dart';
 
@@ -277,6 +278,18 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
             scrolledUnderElevation: 1,
             leading: BackButton(onPressed: () => Navigator.pop(context, _changed)),
             actions: [
+              if (widget.api.canGenerateAi)
+                IconButton(
+                  tooltip: 'Ask LulaAI',
+                  icon: const Icon(Icons.auto_awesome),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => LulaAiScreen(
+                        api: widget.api,
+                        ctxType: 'quotation',
+                        ctxId: widget.quoteId,
+                        ctxLabel: 'quotation ${q?['number'] ?? ''}'),
+                  )),
+                ),
               IconButton(
                 tooltip: 'Business history',
                 icon: const Icon(Icons.history),

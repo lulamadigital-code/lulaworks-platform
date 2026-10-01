@@ -9,8 +9,23 @@ import '../api/api_client.dart';
 /// editable draft that only runs on explicit confirmation. Every question and
 /// action is permission-checked server-side by the same assistant the web uses.
 class LulaAiScreen extends StatefulWidget {
-  const LulaAiScreen({super.key, required this.api});
+  const LulaAiScreen({
+    super.key,
+    required this.api,
+    this.ctxType,
+    this.ctxId,
+    this.ctxLabel,
+    this.initialQuestion,
+  });
   final ApiClient api;
+
+  /// Optional record context — when opened from a detail screen, questions are
+  /// grounded on this record (ctx_type ∈ customer|quotation|job|customer_po|
+  /// commercial_document). The server scopes + permission-checks it.
+  final String? ctxType;
+  final String? ctxId;
+  final String? ctxLabel;
+  final String? initialQuestion;
 
   @override
   State<LulaAiScreen> createState() => _LulaAiScreenState();
@@ -28,6 +43,12 @@ class _LulaAiScreenState extends State<LulaAiScreen> {
   void initState() {
     super.initState();
     _loadBrief();
+    if (widget.initialQuestion != null &&
+        widget.initialQuestion!.trim().isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _ask(widget.initialQuestion!);
+      });
+    }
   }
 
   @override
@@ -54,8 +75,13 @@ class _LulaAiScreenState extends State<LulaAiScreen> {
     _message.text = text;
     _setBusy();
     try {
-      final body =
-          await widget.api.post('/ai/assistant/ask/', {'message': text});
+      final body = await widget.api.post('/ai/assistant/ask/', {
+        'message': text,
+        if (widget.ctxType != null && widget.ctxId != null) ...{
+          'ctx_type': widget.ctxType,
+          'ctx_id': widget.ctxId,
+        },
+      });
       _applyResult(body);
     } on ApiException catch (e) {
       setState(() => _error = e.message);
@@ -140,7 +166,26 @@ class _LulaAiScreenState extends State<LulaAiScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            if (_result == null && _brief != null) _briefCard(context),
+            if (widget.ctxLabel != null) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10)),
+                child: Row(children: [
+                  Icon(Icons.link,
+                      size: 16, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                      child: Text('About ${widget.ctxLabel}',
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w600))),
+                ]),
+              ),
+            ],
+            if (widget.ctxLabel == null && _result == null && _brief != null)
+              _briefCard(context),
             _askBox(context),
             const SizedBox(height: 12),
             if (_result == null) _quickChips(context),

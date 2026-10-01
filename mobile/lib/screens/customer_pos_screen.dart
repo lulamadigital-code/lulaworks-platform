@@ -6,6 +6,7 @@ import '../theme.dart';
 import '../widgets/status_pill.dart';
 import 'business_history_screen.dart';
 import 'customer_po_form_screen.dart';
+import 'lulaai_screen.dart';
 
 /// Customer purchase orders — the Sales→Ops bridge. Capture a PO, match it to the
 /// quotation it confirms, then convert it into a job. All rules live server-side
@@ -214,6 +215,18 @@ class _CustomerPoDetailScreenState extends State<CustomerPoDetailScreen> {
           appBar: AppBar(
             title: Text('${po?['po_number'] ?? 'Purchase order'}'),
             actions: [
+              if (po != null && widget.api.canGenerateAi)
+                IconButton(
+                  tooltip: 'Ask LulaAI',
+                  icon: const Icon(Icons.auto_awesome),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => LulaAiScreen(
+                        api: widget.api,
+                        ctxType: 'customer_po',
+                        ctxId: widget.poId,
+                        ctxLabel: 'PO ${po['po_number']}'),
+                  )),
+                ),
               if (po != null)
                 IconButton(
                   tooltip: 'Business history',

@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../theme.dart';
 import 'business_history_screen.dart';
 import 'contact_detail_screen.dart';
+import 'lulaai_screen.dart';
 import 'crm_log_screen.dart';
 import 'customer_form_screen.dart';
 
@@ -89,6 +90,17 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             appBar: AppBar(
               title: Text('${cst['code'] ?? ''}'),
               actions: [
+                if (widget.api.canGenerateAi)
+                  IconButton(
+                      icon: const Icon(Icons.auto_awesome),
+                      tooltip: 'Ask LulaAI',
+                      onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (_) => LulaAiScreen(
+                                  api: widget.api,
+                                  ctxType: 'customer',
+                                  ctxId: widget.customerId,
+                                  ctxLabel: '${cst['name'] ?? cst['code'] ?? 'this customer'}')))),
                 IconButton(
                     icon: const Icon(Icons.history),
                     tooltip: 'Business history',
