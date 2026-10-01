@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../models.dart';
 import '../nav/app_nav.dart';
+import '../nav/deep_link.dart';
 import '../theme.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/company_setup.dart';
@@ -799,7 +800,9 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _activityRow(BuildContext context, Map<String, dynamic> n) {
     final unread = n['is_read'] != true;
     final when = DateTime.tryParse('${n['created_at']}');
-    return Padding(
+    final url = '${n['url'] ?? ''}';
+    final linkable = isDeepLinkable(url);
+    final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Padding(
@@ -818,8 +821,13 @@ class _DashboardScreenState extends State<DashboardScreen>
         const SizedBox(width: 8),
         Text(_ago(when),
             style: const TextStyle(fontSize: 11.5, color: kMuted)),
+        if (linkable) const Padding(
+          padding: EdgeInsets.only(left: 4),
+          child: Icon(Icons.chevron_right, size: 16, color: kMuted)),
       ]),
     );
+    if (!linkable) return row;
+    return InkWell(onTap: () => openDeepLink(context, api, url), child: row);
   }
 
   // ── Small shared bits ───────────────────────────────────────────────────

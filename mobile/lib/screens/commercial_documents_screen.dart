@@ -201,6 +201,12 @@ class _DocCard extends StatelessWidget {
   }
 }
 
+/// Public opener for the (private) commercial-document detail — lets deep links
+/// (notifications, search) jump straight to one invoice/delivery note.
+Widget commercialDocumentDetailScreen(
+        {required ApiClient api, required String docId}) =>
+    _DocDetail(api: api, docId: docId);
+
 // ── Detail ───────────────────────────────────────────────────────────────────
 class _DocDetail extends StatefulWidget {
   const _DocDetail({required this.api, required this.docId});

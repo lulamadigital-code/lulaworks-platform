@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
+import '../nav/deep_link.dart';
 
 /// In-app notifications for the signed-in user. Tapping an unread one marks it
 /// read; the app-bar action clears them all. The unread count drives the bell
@@ -70,6 +71,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 final n = rows[i];
                 final unread = n['is_read'] != true;
                 final when = DateTime.tryParse('${n['created_at']}');
+                final url = '${n['url'] ?? ''}';
+                final linkable = isDeepLinkable(url);
                 return ListTile(
                   leading: Icon(
                     unread ? Icons.circle : Icons.circle_outlined,
@@ -87,7 +90,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     if (when != null) '${when.day}/${when.month}/${when.year}',
                   ].join('\n')),
                   isThreeLine: '${n['body'] ?? ''}'.isNotEmpty,
-                  onTap: unread ? () => _markRead(ids: ['${n['id']}']) : null,
+                  trailing: linkable
+                      ? const Icon(Icons.chevron_right, size: 18)
+                      : null,
+                  // Tapping opens the related record (if any) and marks it read.
+                  onTap: (!unread && !linkable)
+                      ? null
+                      : () async {
+                          if (unread) _markRead(ids: ['${n['id']}']);
+                          if (linkable) await openDeepLink(context, widget.api, url);
+                        },
                 );
               },
             );
