@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
+import '../ui/lw_components.dart';
 import '../widgets/related_records.dart';
 import '../theme.dart';
 import '../widgets/status_pill.dart';
@@ -112,12 +113,17 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
             }
             final rows = snap.data ?? const [];
             if (rows.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 130),
-                Icon(Icons.article_outlined, size: 46, color: kMuted),
-                SizedBox(height: 12),
-                Center(child: Text('No quotations.')),
-              ]);
+              return LwEmptyState(
+                icon: Icons.article_outlined,
+                title: 'No quotations yet',
+                message: 'Create a quotation and manage it from draft through '
+                    'approval, PDF and sending — all in one place.',
+                actionLabel: widget.api.canCreateQuote ? 'New quotation' : null,
+                onAction: widget.api.canCreateQuote
+                    ? () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => QuotationFormScreen(api: widget.api)))
+                    : null,
+              );
             }
             return ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
@@ -319,46 +325,34 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
             scrolledUnderElevation: 1,
             leading: BackButton(onPressed: () => Navigator.pop(context, _changed)),
             actions: [
-              if (widget.api.canGenerateAi)
-                IconButton(
-                  tooltip: 'Ask LulaAI',
-                  icon: const Icon(Icons.auto_awesome),
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => LulaAiScreen(
-                        api: widget.api,
-                        ctxType: 'quotation',
-                        ctxId: widget.quoteId,
-                        ctxLabel: 'quotation ${q?['number'] ?? ''}'),
-                  )),
-                ),
-              IconButton(
-                tooltip: 'Business history',
-                icon: const Icon(Icons.history),
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => BusinessHistoryScreen(
-                      api: widget.api,
-                      kind: 'quotation',
-                      id: widget.quoteId,
-                      title: '${q?['number'] ?? 'Quotation'}'),
-                )),
-              ),
-              if (q != null && widget.api.canDownloadPdf)
-                IconButton(
-                  tooltip: 'View PDF',
-                  icon: const Icon(Icons.picture_as_pdf_outlined),
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => PdfViewerScreen(
-                        api: widget.api,
-                        path: '/quotations/${widget.quoteId}/pdf/',
-                        title: '${q['number']}'),
-                  )),
-                ),
+              // Primary contextual action stays visible; everything secondary
+              // collapses into one overflow menu (design system §8/§10).
               if (q != null && widget.api.canCreateQuote)
                 IconButton(
                   tooltip: 'Send to customer',
                   icon: const Icon(Icons.send_outlined),
                   onPressed: _sendToCustomer,
                 ),
+              LwActionMenu(actions: [
+                if (q != null && widget.api.canDownloadPdf)
+                  LwAction('View PDF', Icons.picture_as_pdf_outlined, () =>
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => PdfViewerScreen(
+                            api: widget.api,
+                            path: '/quotations/${widget.quoteId}/pdf/',
+                            title: '${q['number'] ?? ''}'))) ),
+                LwAction('Business history', Icons.history, () =>
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => BusinessHistoryScreen(
+                          api: widget.api, kind: 'quotation', id: widget.quoteId,
+                          title: '${q?['number'] ?? 'Quotation'}'))) ),
+                if (widget.api.canGenerateAi)
+                  LwAction('Ask LulaAI', Icons.auto_awesome, () =>
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => LulaAiScreen(
+                            api: widget.api, ctxType: 'quotation', ctxId: widget.quoteId,
+                            ctxLabel: 'quotation ${q?['number'] ?? ''}'))) ),
+              ]),
             ],
           ),
           body: q == null
