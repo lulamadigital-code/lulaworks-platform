@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,6 +34,18 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
+/// A device-unique idempotency key for a write operation. Generated once per
+/// logical action and reused across retries (lost response, offline re-send) so
+/// the backend records the operation exactly once. Not a security token — just
+/// unique enough: microsecond clock + two random 32-bit ints.
+String newIdempotencyKey() {
+  final r = Random();
+  final ts = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
+  final a = r.nextInt(1 << 32).toRadixString(16);
+  final b = r.nextInt(1 << 32).toRadixString(16);
+  return '$ts-$a-$b';
+}
+
 /// A GET result that knows whether it came from the live server or the on-device
 /// read cache (served when the device is offline). `fromCache` drives the
 /// "showing saved data" indicator; `cachedAt` is when that copy was stored.
@@ -50,6 +64,14 @@ class ApiClient {
   ApiClient._(this._prefs);
 
   final SharedPreferences _prefs;
+  // JWTs are kept in the OS-backed secure store (Android Keystore / iOS Keychain),
+  // never in plain shared_preferences. Non-secret state (origin, cached /me/,
+  // read cache) stays in _prefs.
+  final FlutterSecureStorage _secure = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+  static const _kAccess = 'access';
+  static const _kRefresh = 'refresh';
   String? _access;
   String? _refresh;
   late String _origin;
@@ -70,8 +92,7 @@ class ApiClient {
     final prefs = await SharedPreferences.getInstance();
     final client = ApiClient._(prefs);
     client._origin = prefs.getString('origin') ?? ApiConfig.defaultOrigin;
-    client._access = prefs.getString('access');
-    client._refresh = prefs.getString('refresh');
+    await client._loadTokens();
     final meStr = prefs.getString('me');
     if (meStr != null) {
       try {
@@ -79,6 +100,35 @@ class ApiClient {
       } catch (_) {/* ignore a corrupt cache */}
     }
     return client;
+  }
+
+  /// Load tokens from secure storage, migrating any left in the legacy plain
+  /// shared_preferences by an older build (then scrubbing them) so upgrading
+  /// users aren't logged out.
+  Future<void> _loadTokens() async {
+    try {
+      _access = await _secure.read(key: _kAccess);
+      _refresh = await _secure.read(key: _kRefresh);
+    } catch (_) {/* keystore unavailable → treated as signed out */}
+    if (_access == null) {
+      final legacyA = _prefs.getString('access');
+      final legacyR = _prefs.getString('refresh');
+      if (legacyA != null) {
+        _access = legacyA;
+        _refresh = legacyR;
+        await _saveTokens(); // re-home into secure storage
+      }
+    }
+    // Always remove any plaintext copy, even after a successful secure read.
+    await _prefs.remove('access');
+    await _prefs.remove('refresh');
+  }
+
+  Future<void> _saveTokens() async {
+    try {
+      if (_access != null) await _secure.write(key: _kAccess, value: _access);
+      if (_refresh != null) await _secure.write(key: _kRefresh, value: _refresh);
+    } catch (_) {/* best-effort; in-memory token still works this session */}
   }
 
   String get origin => _origin;
@@ -124,8 +174,7 @@ class ApiClient {
     final data = _decode(resp) as Map<String, dynamic>;
     _access = data['access'] as String;
     _refresh = data['refresh'] as String?;
-    await _prefs.setString('access', _access!);
-    if (_refresh != null) await _prefs.setString('refresh', _refresh!);
+    await _saveTokens();
     try {
       await refreshMe();               // resolve role + permissions up front
     } catch (_) {/* non-fatal: screens re-fetch /me/ anyway */}
@@ -158,8 +207,13 @@ class ApiClient {
     _perms = {};
     _role = null;
 
-    // 3) Clear persisted sensitive state — tokens, identity, and the offline
-    //    read cache (so the next user never sees the previous user's data).
+    // 3) Clear persisted sensitive state — tokens (secure store + any legacy
+    //    plaintext), identity, and the offline read cache (so the next user
+    //    never sees the previous user's data).
+    try {
+      await _secure.delete(key: _kAccess);
+      await _secure.delete(key: _kRefresh);
+    } catch (_) {/* ignore */}
     await _prefs.remove('access');
     await _prefs.remove('refresh');
     await _prefs.remove('me');
@@ -302,7 +356,7 @@ class ApiClient {
           .timeout(_timeout);
       if (resp.statusCode != 200) return false;
       _access = (_decode(resp) as Map<String, dynamic>)['access'] as String;
-      await _prefs.setString('access', _access!);
+      await _saveTokens();
       return true;
     } catch (_) {
       return false;

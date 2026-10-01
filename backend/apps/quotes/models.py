@@ -788,9 +788,18 @@ class CommercialDocumentPayment(TenantBaseModel):
     amount = models.DecimalField(max_digits=14, decimal_places=2)
     method = models.CharField(max_length=32, default="eft")
     reference = models.CharField(max_length=120, blank=True)   # POP reference
+    # Client-supplied idempotency key — a retry (lost response, offline re-send)
+    # carrying the same key returns the first payment instead of duplicating it.
+    idempotency_key = models.CharField(max_length=64, blank=True, db_index=True)
 
     class Meta:
         ordering = ["-date", "-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "idempotency_key"],
+                condition=models.Q(idempotency_key__gt=""),
+                name="uniq_payment_idempotency_key"),
+        ]
 
     def __str__(self):
         return f"{self.amount} on {self.document.number}"

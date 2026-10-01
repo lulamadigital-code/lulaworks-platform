@@ -197,6 +197,20 @@ class AttendanceEventViewSet(TenantViewSet):
             qs = qs.filter(occurred_at__date=date)
         return qs
 
+    def create(self, request, *args, **kwargs):
+        # Idempotent re-send: an offline clock event flushed twice carries the same
+        # key — return the first instead of recording a duplicate.
+        key = (request.data.get("idempotency_key") or "").strip()
+        if key:
+            company = getattr(request.user, "active_company", None)
+            existing = AttendanceEvent.objects.filter(
+                company=company, user=request.user, idempotency_key=key).first()
+            if existing is not None:
+                return Response(
+                    AttendanceEventSerializer(existing, context={"request": request}).data,
+                    status=status.HTTP_200_OK)
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         is_correction = serializer.validated_data.pop("is_correction", False)
         # The event is time-tracking (already gated); its GPS-coordinate portion
@@ -618,6 +632,7 @@ class TaskReportViewSet(TenantViewSet):
             currency=data.get("currency") or "ZAR", allocation=allocation,
             litres=data.get("litres"), odometer_km=data.get("odometer_km"),
             vehicle=data.get("vehicle", ""),
+            idempotency_key=data.get("idempotency_key", ""),
         )
         for item in data.get("items", []):
             add_report_item(report, description=item["description"],

@@ -83,6 +83,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         'occurred_at': DateTime.now().toUtc().toIso8601String(),
         if (pos != null) 'latitude': pos.latitude.toStringAsFixed(6),
         if (pos != null) 'longitude': pos.longitude.toStringAsFixed(6),
+        // Shared by the online post and the offline re-send so a reconnect flush
+        // can't record a second clock event.
+        'idempotency_key': newIdempotencyKey(),
       };
       try {
         await widget.api.post('/attendance-events/', body);
@@ -438,7 +441,11 @@ class _AttendanceClockStripState extends State<AttendanceClockStrip> {
   Future<void> _quick(String kind) async {
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
-    final body = {'kind': kind, 'occurred_at': DateTime.now().toUtc().toIso8601String()};
+    final body = {
+      'kind': kind,
+      'occurred_at': DateTime.now().toUtc().toIso8601String(),
+      'idempotency_key': newIdempotencyKey(),
+    };
     try {
       try {
         await widget.api.post('/attendance-events/', body);

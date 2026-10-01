@@ -1330,22 +1330,44 @@ def add_lines_bulk(quote, user, rows, *, section=None) -> int:
     return created
 
 
-def record_payment(doc, user, *, amount, date=None, method="eft", reference=""):
+def record_payment(doc, user, *, amount, date=None, method="eft", reference="",
+                   idempotency_key=""):
     """Record a customer payment (POP) against a tax invoice — the SINGLE place
     both the web view and the DRF API go through, so a payment is created once and
     always emits its business event (PaymentReceived) exactly once. Feeds the
-    Business-History timeline and the event backbone (§8/§42)."""
+    Business-History timeline and the event backbone (§8/§42).
+
+    Idempotent when `idempotency_key` is given: a retry (lost response, offline
+    re-send) with the same key returns the original payment and does NOT create a
+    duplicate or re-emit the event — the fix for double-charging on flaky
+    networks."""
     from django.utils import timezone
 
     from apps.core.events import publish
 
     from .models import CommercialDocumentPayment
 
-    payment = CommercialDocumentPayment.objects.create(
-        company=doc.company, document=doc, amount=amount,
-        date=date or timezone.localdate(), method=method or "eft",
-        reference=(reference or "").strip(),
-        created_by=user, updated_by=user)
+    key = (idempotency_key or "").strip()
+    if key:
+        existing = CommercialDocumentPayment.objects.filter(
+            company=doc.company, idempotency_key=key).first()
+        if existing is not None:
+            return existing  # already recorded — never a second payment or event
+
+    try:
+        payment = CommercialDocumentPayment.objects.create(
+            company=doc.company, document=doc, amount=amount,
+            date=date or timezone.localdate(), method=method or "eft",
+            reference=(reference or "").strip(), idempotency_key=key,
+            created_by=user, updated_by=user)
+    except IntegrityError:
+        # Lost the race against a concurrent retry with the same key — return the
+        # row that won, without re-emitting the event.
+        existing = CommercialDocumentPayment.objects.filter(
+            company=doc.company, idempotency_key=key).first()
+        if existing is not None:
+            return existing
+        raise
     quote = getattr(doc, "quotation", None)
     customer_id = str(quote.customer_id) if quote and quote.customer_id else None
     publish("PaymentReceived", company=doc.company, subject=payment, actor=user,

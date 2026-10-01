@@ -20,7 +20,7 @@ from __future__ import annotations
 import math
 from decimal import Decimal, InvalidOperation
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from django.utils import timezone
 
@@ -144,7 +144,7 @@ def create_task_report(task, user, *, kind=ReportKind.PROGRESS, title, event="",
                        supplier="", invoice_number="", document_date=None,
                        amount=0, vat_amount=0, currency="ZAR",
                        allocation=None, litres=None, odometer_km=None, vehicle="",
-                       extraction_status=None):
+                       extraction_status=None, idempotency_key=""):
     """Record an operational event on a task and verify where it happened.
 
     Financial reports (fuel/material/expense) booked against an allocation
@@ -156,6 +156,14 @@ def create_task_report(task, user, *, kind=ReportKind.PROGRESS, title, event="",
     location. The whole capture stays a single choke point so web, API and the
     Flutter app can never drift on the gate."""
     from apps.billing.services import has_feature
+    # Idempotent re-send: an offline report flushed twice carries the same key —
+    # return the first instead of recording a duplicate (no second event).
+    key = (idempotency_key or "").strip()
+    if key:
+        existing = TaskReport.objects.filter(
+            company=task.company, idempotency_key=key).first()
+        if existing is not None:
+            return existing
     if not has_feature(task.company, "gps_checkin"):
         latitude = longitude = gps_accuracy_m = None
     report = TaskReport(
@@ -168,10 +176,18 @@ def create_task_report(task, user, *, kind=ReportKind.PROGRESS, title, event="",
         allocation=allocation,
         litres=litres, odometer_km=odometer_km, vehicle=vehicle or "",
         extraction_status=extraction_status or ExtractionStatus.NONE,
-        created_by=user, updated_by=user,
+        idempotency_key=key, created_by=user, updated_by=user,
     )
     verify_report_location(report)
-    report.save()
+    try:
+        report.save()
+    except IntegrityError:
+        # Concurrent retry won the race — return the row it created.
+        existing = TaskReport.objects.filter(
+            company=task.company, idempotency_key=key).first()
+        if existing is not None:
+            return existing
+        raise
     if allocation is not None:
         reconcile_allocation(allocation)
     publish("TaskReportCreated", company=task.company, subject=task, actor=user,

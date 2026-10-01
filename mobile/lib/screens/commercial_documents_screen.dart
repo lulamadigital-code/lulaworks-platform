@@ -252,6 +252,9 @@ class _DocDetailState extends State<_DocDetail> {
   Future<void> _recordPayment() async {
     final amount = TextEditingController();
     final ref = TextEditingController();
+    // One key per payment attempt — a lost-response retry reuses it, so the
+    // backend records the payment once (never a double-charge).
+    final idemKey = newIdempotencyKey();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -277,8 +280,11 @@ class _DocDetailState extends State<_DocDetail> {
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await widget.api.post('/commercial-documents/${widget.docId}/payment/',
-          {'amount': amount.text.trim(), 'reference': ref.text.trim()});
+      await widget.api.post('/commercial-documents/${widget.docId}/payment/', {
+        'amount': amount.text.trim(),
+        'reference': ref.text.trim(),
+        'idempotency_key': idemKey,
+      });
       _changed = true;
       setState(() { _future = _load(); });
       messenger.showSnackBar(const SnackBar(content: Text('Payment recorded')));

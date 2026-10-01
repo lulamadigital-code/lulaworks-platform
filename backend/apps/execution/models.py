@@ -630,11 +630,20 @@ class AttendanceEvent(TenantBaseModel):
     source = models.CharField(max_length=16, default="mobile")
     reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
                                     null=True, blank=True, related_name="+")
+    # Client idempotency key — an offline clock event re-sent on reconnect carries
+    # the same key and is de-duplicated instead of recording a second event.
+    idempotency_key = models.CharField(max_length=64, blank=True, db_index=True)
 
     class Meta:
         ordering = ["-occurred_at"]
         indexes = [
             models.Index(fields=["company", "user", "occurred_at"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "idempotency_key"],
+                condition=models.Q(idempotency_key__gt=""),
+                name="uniq_attendance_idempotency_key"),
         ]
 
     def __str__(self):
@@ -857,11 +866,21 @@ class TaskReport(TenantBaseModel):
                                     null=True, blank=True, related_name="+")
     reviewed_at = models.DateTimeField(null=True, blank=True)
 
+    # Client idempotency key — an offline report re-sent on reconnect carries the
+    # same key and is de-duplicated instead of creating a second report.
+    idempotency_key = models.CharField(max_length=64, blank=True, db_index=True)
+
     class Meta:
         ordering = ["-reported_at", "-created_at"]
         indexes = [
             models.Index(fields=["company", "task", "kind"]),
             models.Index(fields=["company", "location_flagged"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "idempotency_key"],
+                condition=models.Q(idempotency_key__gt=""),
+                name="uniq_taskreport_idempotency_key"),
         ]
 
     def __str__(self):

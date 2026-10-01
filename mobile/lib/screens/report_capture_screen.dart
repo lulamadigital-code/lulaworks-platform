@@ -247,6 +247,9 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
         'kind': _kind,
         'title': title,
         'notes': _notes.text.trim(),
+        // Stable key shared by the online attempt AND the offline re-send below,
+        // so a lost response or a reconnect flush can't duplicate this report.
+        'idempotency_key': newIdempotencyKey(),
       };
       if (_kind == 'time_event') body['event'] = title;
       if (_pos != null) {

@@ -193,7 +193,8 @@ class CommercialDocumentViewSet(TenantViewSet):
                 doc, request.user, amount=request.data.get("amount"),
                 date=request.data.get("date") or _date.today(),
                 method=request.data.get("method", "eft"),
-                reference=request.data.get("reference", ""))
+                reference=request.data.get("reference", ""),
+                idempotency_key=request.data.get("idempotency_key", ""))
         except Exception as exc:  # noqa: BLE001
             return Response({"error": {"code": "invalid", "message": str(exc)}},
                             status=status.HTTP_400_BAD_REQUEST)

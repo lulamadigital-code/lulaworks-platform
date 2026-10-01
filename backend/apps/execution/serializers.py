@@ -55,7 +55,7 @@ class AttendanceEventSerializer(serializers.ModelSerializer):
         model = AttendanceEvent
         fields = ["id", "user", "user_name", "kind", "kind_display", "occurred_at",
                   "task", "latitude", "longitude", "note", "status", "source",
-                  "created_at", "is_correction"]
+                  "created_at", "is_correction", "idempotency_key"]
         # status is writable so a manager can approve/reject on PATCH; on CREATE
         # the viewset's perform_create overrides it (workers can't set it, and
         # PATCH is manager-gated), so a worker can never self-approve.
@@ -249,6 +249,8 @@ class CreateTaskReportSerializer(serializers.Serializer):
     kind = serializers.ChoiceField(choices=TaskReport._meta.get_field("kind").choices,
                                    default="progress")
     title = serializers.CharField(max_length=200)
+    # Client idempotency key — de-dupes an offline report re-sent on reconnect.
+    idempotency_key = serializers.CharField(max_length=64, required=False, allow_blank=True)
     event = serializers.CharField(max_length=80, required=False, allow_blank=True)
     notes = serializers.CharField(required=False, allow_blank=True)
     reported_at = serializers.DateTimeField(required=False)
