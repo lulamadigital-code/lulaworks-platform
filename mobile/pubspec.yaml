@@ -37,6 +37,8 @@ dependencies:
   cupertino_icons: ^1.0.6
   http: ^1.2.0
   shared_preferences: ^2.2.0
+  # JWTs live in the OS keystore/keychain, not plain shared_preferences.
+  flutter_secure_storage: ^9.0.0
   # Field capture: device GPS for check-ins, camera/gallery for receipts & photos.
   geolocator: ^11.0.0
   image_picker: ^1.1.0
