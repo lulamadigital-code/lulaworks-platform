@@ -65,6 +65,8 @@ urlpatterns = [
     path("api/v1/", include("apps.knowledge.urls")),
     # Support tickets (mobile Help & Support)
     path("api/v1/", include("apps.support.urls")),
+    # Billing summary (read-only, mobile Billing screen)
+    path("api/v1/", include("apps.billing.urls")),
     # OpenAPI
     # API schema + docs expose the whole API surface — restrict to staff
     # (superusers) rather than the public.

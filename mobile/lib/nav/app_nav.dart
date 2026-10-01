@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../screens/billing_screen.dart';
 import '../screens/commercial_documents_screen.dart';
 import '../screens/customer_pos_screen.dart';
 import '../screens/company_settings_screen.dart';
@@ -384,6 +385,14 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
         icon: Icons.business_outlined,
         visible: (a) => a.canManageCompany,
         build: (a, _) => CompanySettingsScreen(api: a),
+      ),
+      MoreItem(
+        id: 'billing',
+        title: 'Billing & usage',
+        subtitle: 'Plan, AI credits, seats & storage',
+        icon: Icons.credit_card_outlined,
+        visible: (a) => a.canManageCompany,
+        build: (a, _) => BillingScreen(api: a),
       ),
       MoreItem(
         id: 'intelligence',
