@@ -100,44 +100,10 @@ class _DashboardScreenState extends State<DashboardScreen>
   void _push(Widget screen) =>
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
 
-  Widget _attentionBanner(BuildContext context, Map<String, dynamic> a) {
-    final counts = (a['counts'] as Map?)?.cast<String, dynamic>() ?? {};
-    final crit = (counts['critical'] as int?) ?? 0;
-    final warn = (counts['warning'] as int?) ?? 0;
-    final total = (a['total'] as int?) ?? 0;
-    final accent = crit > 0 ? const Color(0xFFC0392B) : const Color(0xFF9A6A12);
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: () => _push(AttentionScreen(api: api)),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border(
-            left: BorderSide(color: accent, width: 3),
-            top: const BorderSide(color: kLine), right: const BorderSide(color: kLine),
-            bottom: const BorderSide(color: kLine)),
-        ),
-        child: Row(children: [
-          const Icon(Icons.notifications_active_outlined, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Attention Centre',
-                  style: TextStyle(fontWeight: FontWeight.w700, color: kInk)),
-              Text(
-                '$total item${total == 1 ? '' : 's'} need attention'
-                '${crit > 0 ? ' · $crit critical' : ''}'
-                '${warn > 0 ? ' · $warn to review' : ''}',
-                style: const TextStyle(fontSize: 12.5, color: kMuted)),
-            ]),
-          ),
-          const Icon(Icons.chevron_right, color: kMuted),
-        ]),
-      ),
-    );
-  }
+  /// Whether the cross-module Attention Centre has anything to show (facade total
+  /// > 0), so the Needs-attention section can link to it.
+  bool _hasAttentionCentre(_Home h) =>
+      h.attention != null && ((h.attention!['total'] as int?) ?? 0) > 0;
 
   @override
   Widget build(BuildContext context) {
@@ -178,18 +144,15 @@ class _DashboardScreenState extends State<DashboardScreen>
           const SizedBox(height: 16),
           SetupCard(api: api, status: h.setup!),
         ],
-        if (h.attention != null && ((h.attention!['total'] as int?) ?? 0) > 0) ...[
-          const SizedBox(height: 16),
-          _attentionBanner(context, h.attention!),
-        ],
         const SizedBox(height: 20),
-        _quickActions(context, h),
-        const SizedBox(height: 24),
 
-        // MY WORK
-        _sectionHeader(context, 'My work',
-            actionLabel: attention.isEmpty ? null : 'My tasks',
-            onAction: () => _push(MyTasksScreen(api: api))),
+        // 1 · WHAT NEEDS MY ATTENTION  (§17 — the hero of the dashboard)
+        _sectionHeader(
+            context, attention.isEmpty ? 'Needs attention' : 'Needs attention · ${attention.length}',
+            actionLabel: _hasAttentionCentre(h) ? 'Attention Centre' : null,
+            onAction: _hasAttentionCentre(h)
+                ? () => _push(AttentionScreen(api: api))
+                : null),
         const SizedBox(height: 10),
         if (attention.isEmpty)
           _allCaughtUp(context)
@@ -197,7 +160,13 @@ class _DashboardScreenState extends State<DashboardScreen>
           ...attention.map((a) => _attentionCard(context, a)),
         const SizedBox(height: 24),
 
-        // OVERVIEW
+        // 2 · WHAT SHOULD I DO NEXT  (§17 — quick create/actions)
+        _sectionHeader(context, 'Quick actions'),
+        const SizedBox(height: 10),
+        _quickActions(context, h),
+        const SizedBox(height: 24),
+
+        // 3 · WHAT IS HAPPENING  (§17 — the running picture)
         _sectionHeader(context, 'Overview'),
         const SizedBox(height: 12),
         _kpiGrid(context, h),
