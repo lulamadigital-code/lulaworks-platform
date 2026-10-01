@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../theme.dart';
+import '../ui/lw_components.dart';
 import 'business_history_screen.dart';
 import 'contact_detail_screen.dart';
 import 'lulaai_screen.dart';
@@ -91,36 +92,29 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             appBar: AppBar(
               title: Text('${cst['code'] ?? ''}'),
               actions: [
-                if (widget.api.canGenerateAi)
-                  IconButton(
-                      icon: const Icon(Icons.auto_awesome),
-                      tooltip: 'Ask LulaAI',
-                      onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => LulaAiScreen(
-                                  api: widget.api,
-                                  ctxType: 'customer',
-                                  ctxId: widget.customerId,
-                                  ctxLabel: '${cst['name'] ?? cst['code'] ?? 'this customer'}')))),
-                IconButton(
-                    icon: const Icon(Icons.history),
-                    tooltip: 'Business history',
-                    onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (_) => BusinessHistoryScreen(
-                                api: widget.api,
-                                kind: 'customer',
-                                id: widget.customerId,
-                                title: '${cst['name'] ?? cst['code'] ?? 'Customer'}')))),
-                if (widget.api.can('crm.manage'))
-                  IconButton(
-                      icon: const Icon(Icons.add_business_outlined),
-                      tooltip: 'New opportunity',
-                      onPressed: () => _newOpportunity(cst)),
+                // Primary (Edit) stays visible; secondary actions collapse into
+                // one overflow menu (design system §8/§10).
                 if (widget.api.canManageCustomers)
                   IconButton(
                       icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Edit',
                       onPressed: () => _edit(cst)),
+                LwActionMenu(actions: [
+                  if (widget.api.can('crm.manage'))
+                    LwAction('New opportunity', Icons.add_business_outlined,
+                        () => _newOpportunity(cst)),
+                  LwAction('Business history', Icons.history, () =>
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => BusinessHistoryScreen(
+                              api: widget.api, kind: 'customer', id: widget.customerId,
+                              title: '${cst['name'] ?? cst['code'] ?? 'Customer'}')))),
+                  if (widget.api.canGenerateAi)
+                    LwAction('Ask LulaAI', Icons.auto_awesome, () =>
+                        Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => LulaAiScreen(
+                                api: widget.api, ctxType: 'customer', ctxId: widget.customerId,
+                                ctxLabel: '${cst['name'] ?? cst['code'] ?? 'this customer'}')))),
+                ]),
               ],
               bottom: const TabBar(tabs: [
                 Tab(text: 'Overview'),

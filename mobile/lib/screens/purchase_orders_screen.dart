@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
+import '../ui/lw_components.dart';
 import '../widgets/status_pill.dart';
 import 'purchase_order_form_screen.dart';
 
@@ -55,10 +56,12 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
             }
             final rows = snap.data ?? const [];
             if (rows.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 120),
-                Center(child: Text('No purchase orders yet.')),
-              ]);
+              return const LwEmptyState(
+                icon: Icons.shopping_cart_outlined,
+                title: 'No purchase orders yet',
+                message: 'Purchase orders you raise with suppliers will appear '
+                    'here, with approval and receiving.',
+              );
             }
             return ListView.separated(
               itemCount: rows.length,

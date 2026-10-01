@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
+import '../ui/lw_components.dart';
 import 'business_history_screen.dart';
 import 'lulaai_screen.dart';
 import 'projects_screen.dart' show StatusChip;
@@ -64,25 +65,18 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             )
           : null,
       appBar: AppBar(title: Text(p.number), scrolledUnderElevation: 1, actions: [
-        if (widget.api.canGenerateAi)
-          IconButton(
-              icon: const Icon(Icons.auto_awesome),
-              tooltip: 'Ask LulaAI',
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => LulaAiScreen(
-                      api: widget.api,
-                      ctxType: 'job',
-                      ctxId: p.id,
-                      ctxLabel: 'job ${p.number}')))),
-        IconButton(
-            icon: const Icon(Icons.history),
-            tooltip: 'Business history',
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => BusinessHistoryScreen(
-                    api: widget.api,
-                    kind: 'job',
-                    id: p.id,
-                    title: p.number)))),
+        LwActionMenu(actions: [
+          LwAction('Business history', Icons.history, () =>
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => BusinessHistoryScreen(
+                      api: widget.api, kind: 'job', id: p.id, title: p.number)))),
+          if (widget.api.canGenerateAi)
+            LwAction('Ask LulaAI', Icons.auto_awesome, () =>
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => LulaAiScreen(
+                        api: widget.api, ctxType: 'job', ctxId: p.id,
+                        ctxLabel: 'job ${p.number}')))),
+        ]),
       ]),
       body: RefreshIndicator(
         color: kBrand,

@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../models.dart';
 import '../nav/app_nav.dart';
 import '../nav/deep_link.dart';
+import '../nav/global_create.dart';
 import '../theme.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/company_setup.dart';
@@ -264,6 +265,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         const Spacer(),
         _searchButton(context),
         const SizedBox(width: 10),
+        _createButton(context),
+        const SizedBox(width: 10),
         _bell(context, h.unread),
       ]),
       const SizedBox(height: 18),
@@ -338,6 +341,22 @@ class _DashboardScreenState extends State<DashboardScreen>
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: kLine)),
         child: const Icon(Icons.search, size: 21, color: kInk),
+      ),
+    );
+  }
+
+  /// Global create (§21) — one fast way to start any record the user may create.
+  Widget _createButton(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => showGlobalCreate(context, api),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+            color: kBrand,
+            borderRadius: BorderRadius.circular(12)),
+        child: const Icon(Icons.add, size: 22, color: Colors.white),
       ),
     );
   }

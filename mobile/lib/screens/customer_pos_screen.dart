@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../widgets/status_pill.dart';
+import '../ui/lw_components.dart';
 import 'business_history_screen.dart';
 import 'customer_po_form_screen.dart';
 import 'lulaai_screen.dart';
@@ -62,10 +63,14 @@ class _CustomerPosScreenState extends State<CustomerPosScreen> {
             }
             final rows = snap.data ?? const [];
             if (rows.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 120),
-                Center(child: Text('No customer POs yet.')),
-              ]);
+              return LwEmptyState(
+                icon: Icons.assignment_turned_in_outlined,
+                title: 'No customer POs yet',
+                message: 'Capture a customer purchase order, match it to a '
+                    'quotation, and convert it into a job.',
+                actionLabel: widget.api.canCreateQuote ? 'Add PO' : null,
+                onAction: widget.api.canCreateQuote ? _add : null,
+              );
             }
             return ListView.separated(
               itemCount: rows.length,
@@ -215,30 +220,20 @@ class _CustomerPoDetailScreenState extends State<CustomerPoDetailScreen> {
           appBar: AppBar(
             title: Text('${po?['po_number'] ?? 'Purchase order'}'),
             actions: [
-              if (po != null && widget.api.canGenerateAi)
-                IconButton(
-                  tooltip: 'Ask LulaAI',
-                  icon: const Icon(Icons.auto_awesome),
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => LulaAiScreen(
-                        api: widget.api,
-                        ctxType: 'customer_po',
-                        ctxId: widget.poId,
-                        ctxLabel: 'PO ${po['po_number']}'),
-                  )),
-                ),
               if (po != null)
-                IconButton(
-                  tooltip: 'Business history',
-                  icon: const Icon(Icons.history),
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => BusinessHistoryScreen(
-                        api: widget.api,
-                        kind: 'customer_po',
-                        id: widget.poId,
-                        title: '${po['po_number']}'),
-                  )),
-                ),
+                LwActionMenu(actions: [
+                  LwAction('Business history', Icons.history, () =>
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => BusinessHistoryScreen(
+                            api: widget.api, kind: 'customer_po', id: widget.poId,
+                            title: '${po['po_number']}')))),
+                  if (widget.api.canGenerateAi)
+                    LwAction('Ask LulaAI', Icons.auto_awesome, () =>
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => LulaAiScreen(
+                              api: widget.api, ctxType: 'customer_po', ctxId: widget.poId,
+                              ctxLabel: 'PO ${po['po_number']}')))),
+                ]),
             ],
           ),
           body: po == null

@@ -5,6 +5,7 @@ import '../models.dart';
 import '../theme.dart';
 import '../widgets/related_records.dart';
 import '../widgets/status_pill.dart';
+import '../ui/lw_components.dart';
 import 'business_history_screen.dart';
 import 'invoice_form_screen.dart';
 import 'lulaai_screen.dart';
@@ -344,46 +345,33 @@ class _DocDetailState extends State<_DocDetail> {
             scrolledUnderElevation: 1,
             leading: BackButton(onPressed: () => Navigator.pop(context, _changed)),
             actions: [
-              if (widget.api.canGenerateAi)
-                IconButton(
-                  tooltip: 'Ask LulaAI',
-                  icon: const Icon(Icons.auto_awesome),
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => LulaAiScreen(
-                        api: widget.api,
-                        ctxType: 'commercial_document',
-                        ctxId: widget.docId,
-                        ctxLabel: 'document ${doc?['number'] ?? ''}'),
-                  )),
-                ),
-              IconButton(
-                tooltip: 'Business history',
-                icon: const Icon(Icons.history),
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => BusinessHistoryScreen(
-                      api: widget.api,
-                      kind: 'commercial_document',
-                      id: widget.docId,
-                      title: '${doc?['number'] ?? 'Document'}'),
-                )),
-              ),
-              if (doc != null && widget.api.canDownloadPdf)
-                IconButton(
-                  tooltip: 'View PDF',
-                  icon: const Icon(Icons.picture_as_pdf_outlined),
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => PdfViewerScreen(
-                        api: widget.api,
-                        path: '/commercial-documents/${widget.docId}/pdf/',
-                        title: '${doc['number']}'),
-                  )),
-                ),
+              // Primary (Send) visible; secondary actions in one overflow (§8/§10).
               if (doc != null && widget.api.canCreateQuote)
                 IconButton(
                   tooltip: 'Send to customer',
                   icon: const Icon(Icons.send_outlined),
                   onPressed: _send,
                 ),
+              LwActionMenu(actions: [
+                if (doc != null && widget.api.canDownloadPdf)
+                  LwAction('View PDF', Icons.picture_as_pdf_outlined, () =>
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => PdfViewerScreen(
+                            api: widget.api,
+                            path: '/commercial-documents/${widget.docId}/pdf/',
+                            title: '${doc['number'] ?? ''}')))),
+                LwAction('Business history', Icons.history, () =>
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => BusinessHistoryScreen(
+                          api: widget.api, kind: 'commercial_document', id: widget.docId,
+                          title: '${doc?['number'] ?? 'Document'}')))),
+                if (widget.api.canGenerateAi)
+                  LwAction('Ask LulaAI', Icons.auto_awesome, () =>
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => LulaAiScreen(
+                            api: widget.api, ctxType: 'commercial_document', ctxId: widget.docId,
+                            ctxLabel: 'document ${doc?['number'] ?? ''}')))),
+              ]),
             ],
           ),
           body: doc == null

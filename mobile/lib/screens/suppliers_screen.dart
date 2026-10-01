@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
+import '../ui/lw_components.dart';
 import 'business_history_screen.dart';
 import 'supplier_form_screen.dart';
 
@@ -50,7 +51,16 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
               return _err(context, snap.error);
             }
             final rows = snap.data ?? const [];
-            if (rows.isEmpty) return _empty('No suppliers yet.');
+            if (rows.isEmpty) {
+              return LwEmptyState(
+                icon: Icons.local_shipping_outlined,
+                title: 'No suppliers yet',
+                message: 'Add the suppliers you buy from to track POs, receipts '
+                    'and price history.',
+                actionLabel: canManage ? 'New supplier' : null,
+                onAction: canManage ? _create : null,
+              );
+            }
             return ListView.separated(
               itemCount: rows.length,
               separatorBuilder: (_, __) => const Divider(height: 1),
@@ -127,20 +137,18 @@ class _SupplierDetailState extends State<_SupplierDetail> {
     ];
     return Scaffold(
       appBar: AppBar(title: Text('${s['name']}'), actions: [
-        IconButton(
-            icon: const Icon(Icons.history),
-            tooltip: 'Business history',
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => BusinessHistoryScreen(
-                    api: widget.api,
-                    kind: 'supplier',
-                    id: '${s['id']}',
-                    title: '${s['name'] ?? 'Supplier'}')))),
         if (widget.api.can('procurement.manage'))
           IconButton(
               icon: const Icon(Icons.edit_outlined),
               tooltip: 'Edit',
               onPressed: _edit),
+        LwActionMenu(actions: [
+          LwAction('Business history', Icons.history, () =>
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => BusinessHistoryScreen(
+                      api: widget.api, kind: 'supplier', id: '${s['id']}',
+                      title: '${s['name'] ?? 'Supplier'}')))),
+        ]),
       ]),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         if (cats.isNotEmpty)
@@ -170,5 +178,3 @@ Widget _err(BuildContext context, Object? e) => ListView(children: [
       const SizedBox(height: 100),
       Center(child: Text('$e', textAlign: TextAlign.center)),
     ]);
-Widget _empty(String msg) =>
-    ListView(children: [const SizedBox(height: 120), Center(child: Text(msg))]);
