@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../screens/commercial_documents_screen.dart';
+import '../screens/customer_pos_screen.dart';
 import '../screens/company_settings_screen.dart';
 import '../screens/customers_screen.dart';
 import '../screens/crm_home_screen.dart';
@@ -231,6 +232,14 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
         icon: Icons.receipt_long_outlined,
         visible: (a) => a.canSeeCommercial,
         build: (a, _) => CommercialDocumentsScreen(api: a),
+      ),
+      MoreItem(
+        id: 'customerpos',
+        title: 'Customer POs',
+        subtitle: 'Capture, match & convert to jobs',
+        icon: Icons.assignment_turned_in_outlined,
+        visible: (a) => a.canSeeCustomerPos,
+        build: (a, _) => CustomerPosScreen(api: a),
       ),
       MoreItem(
         id: 'finance',

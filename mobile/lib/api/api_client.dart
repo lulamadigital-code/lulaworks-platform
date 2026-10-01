@@ -257,6 +257,12 @@ class ApiClient {
       can('quotes.create') ||
       can('quotes.approve') ||
       can('quotes.download');
+  // Customer POs (Sales→Ops bridge) — matches the web workspace's _can_see.
+  bool get canSeeCustomerPos =>
+      can('quotes.create') ||
+      can('quotes.approve') ||
+      can('quotes.download') ||
+      can('projects.view');
   // Commercial documents — tax invoices & delivery notes (Phase 7).
   bool get canSeeCommercial =>
       can('finance.view_money') ||
