@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
+import 'business_history_screen.dart';
 import 'projects_screen.dart' show StatusChip;
 import 'task_form_screen.dart';
 import 'task_hub_screen.dart';
@@ -59,7 +60,17 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               label: const Text('New task'),
             )
           : null,
-      appBar: AppBar(title: Text(p.number), scrolledUnderElevation: 1),
+      appBar: AppBar(title: Text(p.number), scrolledUnderElevation: 1, actions: [
+        IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Business history',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => BusinessHistoryScreen(
+                    api: widget.api,
+                    kind: 'job',
+                    id: p.id,
+                    title: p.number)))),
+      ]),
       body: RefreshIndicator(
         color: kBrand,
         onRefresh: () async => _reload(),

@@ -5,6 +5,7 @@ import '../models.dart';
 import '../theme.dart';
 import '../widgets/related_records.dart';
 import '../widgets/status_pill.dart';
+import 'business_history_screen.dart';
 import 'invoice_form_screen.dart';
 import 'pdf_viewer_screen.dart';
 
@@ -292,6 +293,17 @@ class _DocDetailState extends State<_DocDetail> {
             scrolledUnderElevation: 1,
             leading: BackButton(onPressed: () => Navigator.pop(context, _changed)),
             actions: [
+              IconButton(
+                tooltip: 'Business history',
+                icon: const Icon(Icons.history),
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => BusinessHistoryScreen(
+                      api: widget.api,
+                      kind: 'commercial_document',
+                      id: widget.docId,
+                      title: '${doc?['number'] ?? 'Document'}'),
+                )),
+              ),
               if (doc != null && widget.api.canDownloadPdf)
                 IconButton(
                   tooltip: 'View PDF',

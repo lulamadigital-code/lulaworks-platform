@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
+import 'business_history_screen.dart';
 import 'supplier_form_screen.dart';
 
 /// Suppliers — searchable list and a read detail. Sourcing is a field activity,
@@ -126,6 +127,15 @@ class _SupplierDetailState extends State<_SupplierDetail> {
     ];
     return Scaffold(
       appBar: AppBar(title: Text('${s['name']}'), actions: [
+        IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Business history',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => BusinessHistoryScreen(
+                    api: widget.api,
+                    kind: 'supplier',
+                    id: '${s['id']}',
+                    title: '${s['name'] ?? 'Supplier'}')))),
         if (widget.api.can('procurement.manage'))
           IconButton(
               icon: const Icon(Icons.edit_outlined),

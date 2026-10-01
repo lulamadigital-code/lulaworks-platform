@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../theme.dart';
+import 'business_history_screen.dart';
 import 'contact_detail_screen.dart';
 import 'crm_log_screen.dart';
 import 'customer_form_screen.dart';
@@ -88,6 +89,16 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             appBar: AppBar(
               title: Text('${cst['code'] ?? ''}'),
               actions: [
+                IconButton(
+                    icon: const Icon(Icons.history),
+                    tooltip: 'Business history',
+                    onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => BusinessHistoryScreen(
+                                api: widget.api,
+                                kind: 'customer',
+                                id: widget.customerId,
+                                title: '${cst['name'] ?? cst['code'] ?? 'Customer'}')))),
                 if (widget.api.can('crm.manage'))
                   IconButton(
                       icon: const Icon(Icons.add_business_outlined),

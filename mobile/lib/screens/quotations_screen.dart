@@ -7,6 +7,7 @@ import '../models.dart';
 import '../widgets/related_records.dart';
 import '../theme.dart';
 import '../widgets/status_pill.dart';
+import 'business_history_screen.dart';
 import 'commercial_documents_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'quotation_form_screen.dart';
@@ -276,6 +277,17 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
             scrolledUnderElevation: 1,
             leading: BackButton(onPressed: () => Navigator.pop(context, _changed)),
             actions: [
+              IconButton(
+                tooltip: 'Business history',
+                icon: const Icon(Icons.history),
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => BusinessHistoryScreen(
+                      api: widget.api,
+                      kind: 'quotation',
+                      id: widget.quoteId,
+                      title: '${q?['number'] ?? 'Quotation'}'),
+                )),
+              ),
               if (q != null && widget.api.canDownloadPdf)
                 IconButton(
                   tooltip: 'View PDF',
