@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../api/sync_service.dart';
 import '../nav/app_nav.dart';
 import 'lulaai_screen.dart';
 
@@ -20,10 +21,11 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   int _index = 0;
   WebSocket? _notifWs;
   bool _disposed = false;
+  late final SyncService _sync = SyncService(widget.api);
 
   late final NavActions _actions = NavActions(
     onSignOut: widget.onSignOut,
@@ -34,6 +36,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Resolve role/permissions on launch so the bar (and every gated surface)
     // is correct. If they changed (e.g. an admin adjusted this user's role),
     // the next refresh rebuilds the bar — no reinstall needed.
@@ -41,11 +44,20 @@ class _HomeShellState extends State<HomeShell> {
       if (mounted) setState(() {});
     }).catchError((_) {});
     _connectNotifs();
+    _sync.start(); // coordinate the offline outboxes + flush on reconnect
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Coming back to the foreground is a good moment to push anything queued.
+    if (state == AppLifecycleState.resumed) _sync.flushAll();
   }
 
   @override
   void dispose() {
     _disposed = true;
+    WidgetsBinding.instance.removeObserver(this);
+    _sync.dispose();
     _notifWs?.close();
     super.dispose();
   }
@@ -102,10 +114,15 @@ class _HomeShellState extends State<HomeShell> {
     // Guard against a shrinking bar (permissions resolved after first paint).
     final index = _index.clamp(0, tabs.length - 1);
     return Scaffold(
-      body: IndexedStack(
-        index: index,
-        children: [for (final t in tabs) t.build(widget.api, _actions)],
-      ),
+      body: Column(children: [
+        _SyncBanner(sync: _sync),
+        Expanded(
+          child: IndexedStack(
+            index: index,
+            children: [for (final t in tabs) t.build(widget.api, _actions)],
+          ),
+        ),
+      ]),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: (i) => setState(() => _index = i),
@@ -117,6 +134,60 @@ class _HomeShellState extends State<HomeShell> {
                 label: t.label),
         ],
       ),
+    );
+  }
+}
+
+/// A slim status strip shown only when offline or when field work is waiting to
+/// sync. Tapping it retries. Bound to the SyncService's live notifiers, so it
+/// appears/disappears on its own as connectivity and the outbox change.
+class _SyncBanner extends StatelessWidget {
+  const _SyncBanner({required this.sync});
+  final SyncService sync;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([sync.online, sync.pending]),
+      builder: (context, _) {
+        final offline = !sync.online.value;
+        final queued = sync.pending.value;
+        if (!offline && queued == 0) return const SizedBox.shrink();
+        final color = offline ? const Color(0xFF8A6D0B) : const Color(0xFF17a2b8);
+        final bg = offline ? const Color(0xFFFFF7E0) : const Color(0xFFE6F6F9);
+        final text = offline
+            ? (queued > 0
+                ? "Offline — $queued ${queued == 1 ? 'item' : 'items'} will sync when you reconnect"
+                : 'Offline — changes are saved on this device')
+            : "Syncing $queued ${queued == 1 ? 'item' : 'items'}…";
+        return Material(
+          color: bg,
+          child: InkWell(
+            onTap: offline ? null : () => sync.flushAll(),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                child: Row(children: [
+                  Icon(offline ? Icons.cloud_off : Icons.cloud_sync,
+                      size: 16, color: color),
+                  const SizedBox(width: 8),
+                  Expanded(
+                      child: Text(text,
+                          style: TextStyle(fontSize: 12.5, color: color),
+                          maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  if (!offline && queued > 0)
+                    Text('Retry',
+                        style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: color)),
+                ]),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

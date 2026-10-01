@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../api/api_client.dart';
 import '../api/attendance_store.dart';
+import '../api/sync_service.dart';
 import '../theme.dart';
 import '../widgets/lula_ui.dart';
 
@@ -90,6 +91,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         if (e is ApiException) rethrow; // real server rejection — surface it
         // Offline: queue it, it will sync later with its real time.
         await _store.enqueue(body);
+        await SyncService.instance?.refresh();
         messenger.showSnackBar(SnackBar(
             content: Text('${_verb(kind)} — saved offline, will sync.')));
       }
@@ -443,6 +445,7 @@ class _AttendanceClockStripState extends State<AttendanceClockStrip> {
       } catch (e) {
         if (e is ApiException) rethrow;
         await _store.enqueue(body);
+        await SyncService.instance?.refresh();
         messenger.showSnackBar(const SnackBar(content: Text('Saved offline, will sync.')));
       }
       await _load();

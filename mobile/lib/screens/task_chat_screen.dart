@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../api/api_client.dart';
 import '../api/chat_store.dart';
+import '../api/sync_service.dart';
 import '../theme.dart';
 
 /// The task's chat — business-context conversation between the people on a job.
@@ -174,6 +175,7 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
       } catch (e) {
         if (e is ApiException) rethrow;
         await _store.enqueue(widget.taskId, text); // offline → outbox
+        await SyncService.instance?.refresh();
       }
       await _load();
     } on ApiException catch (e) {

@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../api/api_client.dart';
 import '../api/report_store.dart';
+import '../api/sync_service.dart';
 import '../models.dart';
 import '../widgets/mini_map.dart';
 
@@ -285,6 +286,7 @@ class _ReportCaptureScreenState extends State<ReportCaptureScreen> {
         // connectivity failure means "no signal" → queue it to sync later.
         if (e is ApiException) rethrow;
         await ReportStore().enqueue(body, photoPath: _photo?.path);
+        await SyncService.instance?.refresh(); // update the pending-sync badge now
         if (!mounted) return;
         Navigator.pop(context, 'offline');
         return;

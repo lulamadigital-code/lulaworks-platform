@@ -32,6 +32,26 @@ class ChatStore {
     return ((all[taskId] as List?) ?? const []).map((e) => '$e').toList();
   }
 
+  /// Total queued messages across every task — for the global sync indicator.
+  Future<int> totalPending() async {
+    final all = await _all();
+    var n = 0;
+    for (final v in all.values) {
+      if (v is List) n += v.length;
+    }
+    return n;
+  }
+
+  /// Flush every task's queue (for the central SyncService). Returns total sent.
+  Future<int> flushAll(ApiClient api) async {
+    final all = await _all();
+    var sent = 0;
+    for (final taskId in all.keys.toList()) {
+      sent += await flush(api, taskId);
+    }
+    return sent;
+  }
+
   Future<void> enqueue(String taskId, String body) async {
     final all = await _all();
     final list = ((all[taskId] as List?) ?? []).map((e) => '$e').toList()..add(body);

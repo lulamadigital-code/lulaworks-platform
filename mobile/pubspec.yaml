@@ -43,6 +43,9 @@ dependencies:
   # Pick a PDF to upload as an RFQ (image_picker can't select documents).
   # Pinned to the 6.x line for Flutter 3.19 compatibility.
   file_picker: ^6.2.0
+  # Detect connectivity changes to auto-flush the offline outboxes on reconnect.
+  # Pinned to the 5.x line for Flutter 3.19 compatibility.
+  connectivity_plus: ^5.0.2
   # Persist offline-queued report photos until they sync.
   path_provider: ^2.1.0
   # Map preview of captured GPS — OpenStreetMap tiles, no API key.
