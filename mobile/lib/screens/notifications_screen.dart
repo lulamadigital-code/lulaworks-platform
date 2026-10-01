@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter_slidable/flutter_slidable.dart';
+
 import '../api/api_client.dart';
 import '../models.dart';
 import '../nav/deep_link.dart';
@@ -73,7 +75,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 final when = DateTime.tryParse('${n['created_at']}');
                 final url = '${n['url'] ?? ''}';
                 final linkable = isDeepLinkable(url);
-                return ListTile(
+                final tile = ListTile(
                   leading: Icon(
                     unread ? Icons.circle : Icons.circle_outlined,
                     size: 12,
@@ -100,6 +102,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           if (unread) _markRead(ids: ['${n['id']}']);
                           if (linkable) await openDeepLink(context, widget.api, url);
                         },
+                );
+                if (!unread) return tile; // nothing to swipe on a read item
+                // Swipe → Mark read (§31). Safe, non-destructive.
+                return Slidable(
+                  key: ValueKey('${n['id']}'),
+                  endActionPane: ActionPane(
+                    motion: const StretchMotion(),
+                    extentRatio: 0.3,
+                    children: [
+                      SlidableAction(
+                        onPressed: (_) => _markRead(ids: ['${n['id']}']),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        icon: Icons.done_all,
+                        label: 'Mark read',
+                      ),
+                    ],
+                  ),
+                  child: tile,
                 );
               },
             );

@@ -48,6 +48,8 @@ dependencies:
   # Detect connectivity changes to auto-flush the offline outboxes on reconnect.
   # Pinned to the 5.x line for Flutter 3.19 compatibility.
   connectivity_plus: ^5.0.2
+  # Swipe-to-reveal row actions (complete a task, mark a notification read).
+  flutter_slidable: ^3.0.1
   # Persist offline-queued report photos until they sync.
   path_provider: ^2.1.0
   # Map preview of captured GPS — OpenStreetMap tiles, no API key.

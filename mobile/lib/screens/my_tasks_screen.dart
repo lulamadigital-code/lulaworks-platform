@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
+import '../ui/lw_components.dart';
 import '../widgets/lula_ui.dart';
 import 'task_hub_screen.dart';
 
@@ -64,25 +66,12 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
             }
             final tasks = snap.data ?? const [];
             if (tasks.isEmpty) {
-              return ListView(children: [
-                const SizedBox(height: 130),
-                Container(
-                  width: 60, height: 60,
-                  margin: const EdgeInsets.symmetric(horizontal: 160),
-                  decoration: const BoxDecoration(
-                      color: kBrandTint, shape: BoxShape.circle),
-                  child: const Icon(Icons.check, color: kBrandDark, size: 30),
-                ),
-                const SizedBox(height: 14),
-                const Center(
-                    child: Text('No tasks assigned to you',
-                        style: TextStyle(
-                            fontSize: 15.5, fontWeight: FontWeight.w600, color: kInk))),
-                const SizedBox(height: 2),
-                const Center(
-                    child: Text("You're all caught up.",
-                        style: TextStyle(fontSize: 13, color: kMuted))),
-              ]);
+              return const LwEmptyState(
+                icon: Icons.task_alt,
+                title: 'No tasks assigned to you',
+                message: "You're all caught up — new tasks assigned to you will "
+                    'appear here.',
+              );
             }
             final groups = <String, List<Map<String, dynamic>>>{};
             for (final t in tasks) {
@@ -138,9 +127,37 @@ class _TaskCard extends StatelessWidget {
       if (dueTxt.isNotEmpty) dueTxt,
       if (progress != null && '$progress' != '0') '$progress%',
     ].join('  ·  ');
+    final isDone = const {'completed', 'closed', 'cancelled'}.contains('${task['status']}');
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
-      child: Material(
+      child: Slidable(
+        key: ValueKey('${task['id']}'),
+        // Swipe right → Complete (gated; a deliberate tap on the revealed action,
+        // never an auto-dismiss, since it changes state — §31).
+        startActionPane: (!isDone && api.canExecuteWork)
+            ? ActionPane(motion: const StretchMotion(), extentRatio: 0.3, children: [
+                SlidableAction(
+                  onPressed: (ctx) => _complete(ctx),
+                  backgroundColor: kGreen,
+                  foregroundColor: Colors.white,
+                  icon: Icons.check,
+                  label: 'Complete',
+                  borderRadius: BorderRadius.circular(13),
+                ),
+              ])
+            : null,
+        // Swipe left → Open the task hub.
+        endActionPane: ActionPane(motion: const StretchMotion(), extentRatio: 0.3, children: [
+          SlidableAction(
+            onPressed: (ctx) => _open(ctx),
+            backgroundColor: kBrandTint,
+            foregroundColor: kBrandDark,
+            icon: Icons.open_in_new,
+            label: 'Open',
+            borderRadius: BorderRadius.circular(13),
+          ),
+        ]),
+        child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(13),
         child: InkWell(
@@ -200,7 +217,32 @@ class _TaskCard extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
+  }
+
+  Future<void> _open(BuildContext context) async {
+    await Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => TaskHubScreen(
+            api: api, taskId: '${task['id']}', name: '${task['name']}')));
+    onReturn();
+  }
+
+  Future<void> _complete(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await api.post('/tasks/${task['id']}/complete/');
+      messenger.showSnackBar(const SnackBar(content: Text('Task completed')));
+      onReturn();
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(
+          content: Text(e.isForbidden
+              ? "You don't have permission to complete this task."
+              : e.message)));
+    } catch (_) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Could not reach the server.')));
+    }
   }
 }
 
