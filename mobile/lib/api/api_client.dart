@@ -305,6 +305,24 @@ class ApiClient {
       _send('PATCH', path, body);
   Future<dynamic> delete(String path) => _send('DELETE', path);
 
+  /// Register this device's push token with the backend (/me/devices/). Safe to
+  /// call even before FCM is configured server-side — delivery is gated there.
+  /// Best-effort: never throws (push must not break sign-in).
+  Future<void> registerDevice(String token, {String platform = 'android'}) async {
+    if (token.trim().isEmpty) return;
+    try {
+      await post('/me/devices/', {'token': token, 'platform': platform});
+    } catch (_) {/* push registration is best-effort */}
+  }
+
+  /// Deactivate this device's push token (on logout / token refresh).
+  Future<void> unregisterDevice(String token) async {
+    if (token.trim().isEmpty) return;
+    try {
+      await delete('/me/devices/?token=${Uri.encodeQueryComponent(token)}');
+    } catch (_) {/* best-effort */}
+  }
+
   /// Fetch raw bytes (e.g. a generated PDF) with auth + one-shot token refresh.
   Future<Uint8List> getBytes(String path, {bool retry = true}) async {
     final resp = await http.get(_uri(path), headers: _headers());

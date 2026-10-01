@@ -36,16 +36,29 @@ def _email_allowed(user, category) -> bool:
     return True
 
 
+def _push_allowed(user) -> bool:
+    """Whether this user should get a push. Default on; honours the per-user
+    NotificationPreference.push switch when set."""
+    if not user or not getattr(user, "is_active", True):
+        return False
+    try:
+        prefs = user.notification_prefs
+    except Exception:
+        prefs = None
+    return True if prefs is None else bool(prefs.push)
+
+
 def notify(company, user, *, title, body="", url="", category=EmailCategory.SYSTEM,
            email_template="generic", email_subject=None, email_context=None,
-           email=True, task=None, verb=""):
-    """Raise a notification for `user`: always in-app, plus email when allowed.
+           email=True, push=True, task=None, verb=""):
+    """Raise a notification for `user`: always in-app, plus email and push when
+    allowed.
 
-    Returns {"notification": <Notification|None>, "email": <EmailLog|None>}.
-    Never raises on a delivery problem — a notification failing must not break
-    the business action that triggered it.
+    Returns {"notification": <Notification|None>, "email": <EmailLog|None>,
+    "push": <dict|None>}. Never raises on a delivery problem — a notification
+    failing must not break the business action that triggered it.
     """
-    result = {"notification": None, "email": None}
+    result = {"notification": None, "email": None, "push": None}
 
     # In-app — reuse the execution notification store (the canonical inbox). The
     # store is tenant-scoped, so bind the company explicitly: this must work from
@@ -82,5 +95,14 @@ def notify(company, user, *, title, body="", url="", category=EmailCategory.SYST
                 lang=recipient_lang)
         except Exception as exc:  # noqa: BLE001 - never break the caller
             logger.warning("Notification email failed: %s", exc)
+
+    # Push — in-app's real-time companion, to all the user's registered devices.
+    # Honestly gated: a no-op (skipped) until FCM credentials are configured.
+    if push and _push_allowed(user):
+        try:
+            from .push import send_push
+            result["push"] = send_push(user, title=title, body=body, url=url)
+        except Exception as exc:  # noqa: BLE001 - never break the caller
+            logger.warning("Notification push failed: %s", exc)
 
     return result

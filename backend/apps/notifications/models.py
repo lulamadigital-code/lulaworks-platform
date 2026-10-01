@@ -130,3 +130,33 @@ class SmsLog(PlatformBaseModel):
 
     def __str__(self):
         return f"SMS → {self.to_number} [{self.status}]"
+
+
+class PushDevice(PlatformBaseModel):
+    """A registered device token for push notifications (FCM). One row per
+    device per user; the same user may have several (phone + tablet). Tokens
+    rotate, so registration upserts on the token and re-points it at the current
+    user. Deactivated (not deleted) when the provider reports it stale, so the
+    history is auditable — mirrors the EmailLog/SmsLog channel pattern."""
+
+    class Platform(models.TextChoices):
+        ANDROID = "android", "Android"
+        IOS = "ios", "iOS"
+        WEB = "web", "Web"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name="push_devices")
+    company = models.ForeignKey("identity.Company", on_delete=models.SET_NULL,
+                                null=True, blank=True, related_name="+")
+    token = models.CharField(max_length=255, unique=True)
+    platform = models.CharField(max_length=10, choices=Platform.choices,
+                                default=Platform.ANDROID)
+    active = models.BooleanField(default=True, db_index=True)
+    last_seen = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "active"])]
+
+    def __str__(self):
+        return f"{self.get_platform_display()} device for {self.user} [{'on' if self.active else 'off'}]"

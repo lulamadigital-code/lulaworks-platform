@@ -11,6 +11,7 @@ from django.db.models import Q
 from rest_framework import mixins, status, viewsets
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -172,6 +173,36 @@ class AttentionView(APIView):
                              "message": "No active company."}}, status=400)
         from apps.web.attention import attention_items
         return Response(attention_items(request.user.active_company, request.user))
+
+
+class MeDevicesView(APIView):
+    """Register / unregister this user's push-notification device token.
+
+    POST   {token, platform}  → upsert the token for the current user.
+    DELETE {token}            → deactivate it (logout / uninstall).
+    The actual delivery is honestly gated server-side (apps.notifications.push):
+    registering is always safe even before FCM is configured."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from apps.notifications.push import PushError, register_device
+        try:
+            device = register_device(
+                request.user,
+                token=request.data.get("token", ""),
+                platform=request.data.get("platform", "android"))
+        except PushError as exc:
+            return Response({"error": {"code": "invalid", "message": str(exc)}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({"id": str(device.id), "platform": device.platform,
+                         "active": device.active}, status=status.HTTP_201_CREATED)
+
+    def delete(self, request):
+        from apps.notifications.push import unregister_device
+        token = request.data.get("token") or request.query_params.get("token", "")
+        unregister_device(request.user, token=token)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GlobalSearchView(APIView):
