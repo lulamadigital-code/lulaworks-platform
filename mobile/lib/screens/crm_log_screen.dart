@@ -122,6 +122,7 @@ class _CrmLogScreenState extends State<CrmLogScreen> {
                   : 'Due ${_due!.day}/${_due!.month}/${_due!.year}'),
               trailing: _due != null
                   ? IconButton(
+                      tooltip: 'Clear',
                       icon: const Icon(Icons.clear),
                       onPressed: () => setState(() => _due = null))
                   : null,

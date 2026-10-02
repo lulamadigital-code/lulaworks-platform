@@ -299,6 +299,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
           if (_lines.length > 1)
             IconButton(
                 visualDensity: VisualDensity.compact,
+                tooltip: 'Remove item',
                 icon: const Icon(Icons.close, size: 18, color: kMuted),
                 onPressed: () => setState(() {
                       _lines[i].dispose();

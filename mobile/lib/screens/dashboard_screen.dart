@@ -271,27 +271,34 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _bell(BuildContext context, int unread) {
-    return InkResponse(
-      radius: 24,
-      onTap: () async {
-        await Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => NotificationsScreen(api: api)));
-        _refresh(); // refresh the unread badge after reading
-      },
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: kLine)),
-        child: ValueListenableBuilder<int>(
-          valueListenable: api.unread,
-          builder: (_, live, __) => Badge(
-            isLabelVisible: live > 0,
-            label: Text('$live'),
-            offset: const Offset(-6, 6),
-            child: const Icon(Icons.notifications_none, size: 21, color: kInk),
+    return ValueListenableBuilder<int>(
+      valueListenable: api.unread,
+      builder: (_, live, __) => Tooltip(
+        message: live > 0 ? 'Notifications, $live unread' : 'Notifications',
+        child: Semantics(
+          button: true,
+          label: live > 0 ? 'Notifications, $live unread' : 'Notifications',
+          child: InkResponse(
+            radius: 24,
+            onTap: () async {
+              await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => NotificationsScreen(api: api)));
+              _refresh(); // refresh the unread badge after reading
+            },
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: kLine)),
+              child: Badge(
+                isLabelVisible: live > 0,
+                label: Text('$live'),
+                offset: const Offset(-6, 6),
+                child: const Icon(Icons.notifications_none, size: 21, color: kInk),
+              ),
+            ),
           ),
         ),
       ),
@@ -299,33 +306,52 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _searchButton(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
+    return _headerButton(
+      tooltip: 'Search or ask',
       onTap: () => _push(SearchScreen(api: api)),
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: kLine)),
-        child: const Icon(Icons.search, size: 21, color: kInk),
-      ),
+      child: const Icon(Icons.search, size: 21, color: kInk),
+      background: Colors.white,
+      border: true,
     );
   }
 
   /// Global create (§21) — one fast way to start any record the user may create.
   Widget _createButton(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
+    return _headerButton(
+      tooltip: 'Create',
       onTap: () => showGlobalCreate(context, api),
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-            color: kBrand,
-            borderRadius: BorderRadius.circular(12)),
-        child: const Icon(Icons.add, size: 22, color: Colors.white),
+      child: const Icon(Icons.add, size: 22, color: Colors.white),
+      background: kBrand,
+    );
+  }
+
+  /// A labelled, 44pt-min header action — a real button to assistive tech (a11y
+  /// §37/§41), not a bare InkWell.
+  Widget _headerButton({
+    required String tooltip,
+    required VoidCallback onTap,
+    required Widget child,
+    required Color background,
+    bool border = false,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Semantics(
+        button: true,
+        label: tooltip,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+                color: background,
+                borderRadius: BorderRadius.circular(12),
+                border: border ? Border.all(color: kLine) : null),
+            child: child,
+          ),
+        ),
       ),
     );
   }

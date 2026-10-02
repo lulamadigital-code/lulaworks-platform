@@ -412,6 +412,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
                 color: Colors.white, border: Border(top: BorderSide(color: kLine))),
             child: Row(children: [
               IconButton(
+                tooltip: 'Add photo',
                 onPressed: _busy ? null : _sendPhoto,
                 icon: const Icon(Icons.add_a_photo_outlined, color: kBrandDark),
               ),

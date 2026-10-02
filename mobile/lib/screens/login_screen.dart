@@ -173,6 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                           onSubmitted: (_) => _submit(),
                           suffix: IconButton(
+                            tooltip: _obscure ? 'Show password' : 'Hide password',
                             icon: Icon(
                                 _obscure
                                     ? Icons.visibility_outlined

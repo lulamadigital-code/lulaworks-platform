@@ -13,6 +13,7 @@ class BrandLogo extends StatelessWidget {
       dark ? 'assets/images/logo-white.png' : 'assets/images/logo.png',
       height: height,
       fit: BoxFit.contain,
+      semanticLabel: 'Lulaworks',
     );
   }
 }

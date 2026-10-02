@@ -65,6 +65,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     Widget eye() => IconButton(
+          tooltip: _obscure ? 'Show password' : 'Hide password',
           icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
               size: 20, color: kMuted),
           onPressed: () => setState(() => _obscure = !_obscure),

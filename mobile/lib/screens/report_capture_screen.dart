@@ -530,7 +530,7 @@ class _LocationCard extends StatelessWidget {
           subtitle: pos != null
               ? Text('Accuracy ±${pos!.accuracy.toStringAsFixed(0)} m')
               : null,
-          trailing: IconButton(icon: const Icon(Icons.refresh), onPressed: onRetry),
+          trailing: IconButton(tooltip: 'Retry', icon: const Icon(Icons.refresh), onPressed: onRetry),
         ),
         if (pos != null)
           Padding(

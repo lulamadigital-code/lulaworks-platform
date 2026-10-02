@@ -116,6 +116,7 @@ class _SearchScreenState extends State<SearchScreen> {
         actions: [
           if (_ctrl.text.isNotEmpty)
             IconButton(
+              tooltip: 'Clear',
               icon: const Icon(Icons.close),
               onPressed: () {
                 _ctrl.clear();

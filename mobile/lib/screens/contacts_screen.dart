@@ -71,6 +71,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
+                        tooltip: 'Clear',
                         icon: const Icon(Icons.clear, size: 18),
                         onPressed: () {
                           _searchCtl.clear();

@@ -367,6 +367,7 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
             border: Border(top: BorderSide(color: kLine))),
         child: Row(children: [
           IconButton(
+            tooltip: 'Add photo',
             onPressed: _sending ? null : _sendPhoto,
             icon: const Icon(Icons.add_a_photo_outlined, color: kBrandDark),
           ),

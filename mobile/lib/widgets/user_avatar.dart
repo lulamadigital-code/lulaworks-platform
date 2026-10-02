@@ -19,6 +19,14 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Semantics(
+      label: name.trim().isEmpty ? 'User' : name,
+      image: true,
+      child: _avatar(),
+    );
+  }
+
+  Widget _avatar() {
     final fallback = CircleAvatar(
       radius: radius,
       backgroundColor: kBrandTint,
