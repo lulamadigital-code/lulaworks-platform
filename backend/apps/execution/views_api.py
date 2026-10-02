@@ -402,11 +402,13 @@ class TaskViewSet(TenantViewSet):
         data = request.data
         project = (Project.objects.filter(pk=data["project"]).first()
                    if data.get("project") else None)
+        def _people(key):
+            return [u for u in (User.objects.filter(pk=uid).first()
+                                for uid in (data.get(key) or [])) if u]
+
         owner = request.user
         if data.get("owner"):
             owner = User.objects.filter(pk=data["owner"]).first() or request.user
-        executors = [u for u in (User.objects.filter(pk=uid).first()
-                                 for uid in (data.get("executors") or [])) if u]
         try:
             task = create_work(
                 request.user.active_company, request.user,
@@ -418,7 +420,10 @@ class TaskViewSet(TenantViewSet):
                 due_date=data.get("due_date") or None,
                 is_billable=bool(data.get("is_billable")),
                 client_name=data.get("client_name", ""),
-                owner=owner, executors=executors,
+                owner=owner,
+                executors=_people("executors"),
+                watchers=_people("watchers"),
+                approvers=_people("approvers"),
             )
         except Exception as exc:  # noqa: BLE001 - surface a clean message
             return Response({"error": {"code": "invalid", "message": str(exc)}},

@@ -55,3 +55,30 @@ class TaskCreateTests(APITestCase):
         r = self.client.post("/api/v1/tasks/",
                              {"project": str(self.proj.id), "name": "x"}, format="json")
         self.assertEqual(r.status_code, 403)
+
+    def test_standalone_task_without_job(self):
+        # A task can be created with no job (project), like the web.
+        self.client.force_authenticate(self.mgr)
+        r = self.client.post("/api/v1/tasks/", {"name": "Fix the office printer"},
+                             format="json")
+        self.assertEqual(r.status_code, 201)
+        self.assertIsNone(r.data["project"])
+
+    def test_assigns_people_by_role(self):
+        from apps.execution.models import Assignment, Task
+        exec_user = User.objects.create_user("e@acme.co", "x", active_company=self.c)
+        Membership.objects.create(user=exec_user, company=self.c,
+                                  role=_role("Field", ["work.edit"]))
+        self.client.force_authenticate(self.mgr)
+        r = self.client.post("/api/v1/tasks/", {
+            "name": "Install pump", "project": str(self.proj.id),
+            "executors": [str(exec_user.id)],
+            "approvers": [str(self.mgr.id)],
+        }, format="json")
+        self.assertEqual(r.status_code, 201)
+        with tenant_scope(self.c.id):
+            task = Task.objects.get(pk=r.data["id"])
+            roles = {(a.user_id, a.role) for a in task.assignments.all()}
+            self.assertIn((self.mgr.id, Assignment.Role.OWNER), roles)      # creator
+            self.assertIn((exec_user.id, Assignment.Role.EXECUTOR), roles)
+            self.assertIn((self.mgr.id, Assignment.Role.APPROVER), roles)
