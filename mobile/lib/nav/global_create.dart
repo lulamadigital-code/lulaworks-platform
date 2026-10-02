@@ -9,6 +9,7 @@ import '../screens/invoice_form_screen.dart';
 import '../screens/purchase_order_form_screen.dart';
 import '../screens/quotation_form_screen.dart';
 import '../screens/supplier_form_screen.dart';
+import '../screens/task_form_screen.dart';
 
 /// One fast way to create anything (§21). Opens a permission-aware sheet of the
 /// records a user can start standalone, each routed to its real form screen.
@@ -21,6 +22,9 @@ void showGlobalCreate(BuildContext context, ApiClient api) {
     if (api.canCreateQuote)
       _CreateItem('Invoice', Icons.receipt_long_outlined,
           (c) => InvoiceFormScreen(api: api)),
+    if (api.canManageExecution)
+      _CreateItem('Task', Icons.task_alt,
+          (c) => TaskFormScreen(api: api)),
     if (api.canManageCustomers)
       _CreateItem('Customer', Icons.person_add_alt,
           (c) => CustomerFormScreen(api: api)),
