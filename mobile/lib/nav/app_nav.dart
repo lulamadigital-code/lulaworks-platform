@@ -23,6 +23,7 @@ import '../screens/more_screen.dart';
 import '../screens/my_tasks_screen.dart';
 import '../screens/notifications_screen.dart';
 import '../screens/profile_screen.dart';
+import '../screens/settings_screen.dart';
 import '../screens/projects_screen.dart';
 import '../screens/purchase_orders_screen.dart';
 import '../screens/purchasing_screen.dart';
@@ -404,6 +405,14 @@ List<MoreGroup> moreGroupsFor(ApiClient api, Set<String> shownTabIds) {
       ),
     ]),
     MoreGroup('ACCOUNT', [
+      MoreItem(
+        id: 'settings',
+        title: 'Settings',
+        subtitle: 'Company, billing, team & account',
+        icon: Icons.settings_outlined,
+        visible: (a) => true,
+        build: (a, act) => SettingsScreen(api: a, onSignOut: act.onSignOut),
+      ),
       MoreItem(
         id: 'account',
         title: 'Account',

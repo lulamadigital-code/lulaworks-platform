@@ -113,15 +113,44 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final tabs = bottomTabsFor(widget.api);
     // Guard against a shrinking bar (permissions resolved after first paint).
     final index = _index.clamp(0, tabs.length - 1);
+    // Adaptive navigation (§20/§38): a side rail on tablets/landscape, the bottom
+    // bar on phones. Same destinations, shaped to the screen.
+    final wide = MediaQuery.of(context).size.width >= 720;
+    final content = IndexedStack(
+      index: index,
+      children: [for (final t in tabs) t.build(widget.api, _actions)],
+    );
+
+    if (wide) {
+      return Scaffold(
+        body: Column(children: [
+          _SyncBanner(sync: _sync),
+          Expanded(
+            child: Row(children: [
+              NavigationRail(
+                selectedIndex: index,
+                onDestinationSelected: (i) => setState(() => _index = i),
+                labelType: NavigationRailLabelType.all,
+                destinations: [
+                  for (final t in tabs)
+                    NavigationRailDestination(
+                        icon: Icon(t.icon),
+                        selectedIcon: Icon(t.activeIcon),
+                        label: Text(t.label)),
+                ],
+              ),
+              const VerticalDivider(width: 1),
+              Expanded(child: content),
+            ]),
+          ),
+        ]),
+      );
+    }
+
     return Scaffold(
       body: Column(children: [
         _SyncBanner(sync: _sync),
-        Expanded(
-          child: IndexedStack(
-            index: index,
-            children: [for (final t in tabs) t.build(widget.api, _actions)],
-          ),
-        ),
+        Expanded(child: content),
       ]),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,

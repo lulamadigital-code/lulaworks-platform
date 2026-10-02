@@ -104,6 +104,12 @@ class _LulaworksAppState extends State<LulaworksApp> {
       navigatorObservers: [SentryNavigatorObserver()],
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
+      // Pinned to light for now (§42): the colour tokens (kInk/kBg/kLine, white
+      // cards) are hardcoded light values used directly across every screen, so
+      // auto dark mode renders inconsistently. True dark mode is a dedicated pass
+      // that migrates those tokens to the theme ColorScheme — until then we ship
+      // one correct, consistent theme rather than a broken inverted one.
+      themeMode: ThemeMode.light,
       home: _signedIn
           ? HomeShell(api: widget.api, onSignOut: _signOut)
           : LoginScreen(api: widget.api, onSignedIn: _onSignedIn),
