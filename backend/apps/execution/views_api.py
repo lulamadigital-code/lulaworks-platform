@@ -56,6 +56,8 @@ from .services import (
     approve_timesheet,
     can_review_reports,
     complete_task,
+    create_work,
+    has_work_perm,
     mark_notifications_read,
     notify,
     notify_team,
@@ -376,12 +378,53 @@ class TaskViewSet(TenantViewSet):
     # Creating / editing / deleting a task is management (execution.manage).
     # Progressing a task you're working on — start / complete — is field work,
     # so a groundfloor worker (work.edit) can do it too.
-    required_perms = {"create": "execution.manage", "update": "execution.manage",
+    # Create is gated in create() via has_work_perm (work.create OR the
+    # execution.manage umbrella) to match the web New-Work wizard exactly.
+    required_perms = {"update": "execution.manage",
                       "partial_update": "execution.manage", "destroy": "execution.manage",
                       "start": ("work.edit", "execution.manage"),
                       "complete": ("work.edit", "execution.manage"),
                       "pause": ("work.edit", "execution.manage"),
                       "resume": ("work.edit", "execution.manage")}
+
+    def create(self, request, *args, **kwargs):
+        """Create a task through the SAME path as the web (create_work): gated on
+        work.create, assigns the creator as owner by default (so it appears in
+        their My Tasks), sets up the team, computes readiness and notifies — the
+        plain serializer create did none of that, so mobile-made tasks had no
+        assignee and never showed up. Accepts optional owner/executors/priority."""
+        if not has_work_perm(request.user, "work.create"):
+            return Response({"error": {"code": "forbidden",
+                             "message": "You don't have permission to create tasks."}},
+                            status=status.HTTP_403_FORBIDDEN)
+        from apps.identity.models import User
+        from apps.projects.models import Project
+        data = request.data
+        project = (Project.objects.filter(pk=data["project"]).first()
+                   if data.get("project") else None)
+        owner = request.user
+        if data.get("owner"):
+            owner = User.objects.filter(pk=data["owner"]).first() or request.user
+        executors = [u for u in (User.objects.filter(pk=uid).first()
+                                 for uid in (data.get("executors") or [])) if u]
+        try:
+            task = create_work(
+                request.user.active_company, request.user,
+                name=(data.get("name") or "").strip() or "Untitled task",
+                description=data.get("description", ""),
+                project=project,
+                priority=data.get("priority") or None,
+                site=data.get("site", ""),
+                due_date=data.get("due_date") or None,
+                is_billable=bool(data.get("is_billable")),
+                client_name=data.get("client_name", ""),
+                owner=owner, executors=executors,
+            )
+        except Exception as exc:  # noqa: BLE001 - surface a clean message
+            return Response({"error": {"code": "invalid", "message": str(exc)}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response(TaskSerializer(task, context={"request": request}).data,
+                        status=status.HTTP_201_CREATED)
 
     def get_queryset(self):
         qs = _project_filtered(

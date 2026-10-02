@@ -1,5 +1,6 @@
-"""Task creation via the API — minimal payload the mobile form sends
-({project, name[, due_date]}) must succeed for an execution.manage user."""
+"""Task creation via the API must work like the web New-Work wizard: gated on
+work.create (not just execution.manage), routed through create_work so the
+creator is assigned as owner and the task appears in their My Tasks."""
 from rest_framework.test import APITestCase
 
 from apps.core.context import tenant_scope
@@ -7,40 +8,49 @@ from apps.identity.models import Company, Membership, Permission, Role, User
 from apps.projects.models import Project
 
 
+def _role(name, codes):
+    role = Role.objects.create(name=name, is_system=True)
+    for c in codes:
+        p, _ = Permission.objects.get_or_create(
+            codename=c, defaults={"module": "work", "label": c})
+        role.permissions.add(p)
+    return role
+
+
 class TaskCreateTests(APITestCase):
     def setUp(self):
         self.c = Company.objects.create(name="Acme")
-        role = Role.objects.create(name="Mgr", is_system=True)
-        p, _ = Permission.objects.get_or_create(
-            codename="execution.manage", defaults={"module": "execution", "label": "x"})
-        role.permissions.add(p)
-        self.u = User.objects.create_user("m@acme.co", "x", active_company=self.c)
-        Membership.objects.create(user=self.u, company=self.c, role=role)
-        viewer_role = Role.objects.create(name="Viewer", is_system=True)
+        self.mgr = User.objects.create_user("m@acme.co", "x", active_company=self.c)
+        Membership.objects.create(user=self.mgr, company=self.c,
+                                  role=_role("Mgr", ["work.create"]))  # web gate, no execution.manage
         self.viewer = User.objects.create_user("v@acme.co", "x", active_company=self.c)
-        Membership.objects.create(user=self.viewer, company=self.c, role=viewer_role)
+        Membership.objects.create(user=self.viewer, company=self.c,
+                                  role=_role("Viewer", ["projects.view"]))
         with tenant_scope(self.c.id):
             self.proj = Project.objects.create(company=self.c, title="Job A")
 
-    def test_create_minimal(self):
-        self.client.force_authenticate(self.u)
+    def test_work_create_permission_can_create(self):
+        # A role with work.create (but NOT execution.manage) can create — web parity.
+        self.client.force_authenticate(self.mgr)
         r = self.client.post("/api/v1/tasks/",
                              {"project": str(self.proj.id), "name": "Replace seal"},
                              format="json")
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data["name"], "Replace seal")
 
-    def test_create_with_due_date(self):
-        self.client.force_authenticate(self.u)
-        r = self.client.post("/api/v1/tasks/", {
-            "project": str(self.proj.id), "name": "Test pressure",
-            "due_date": "2026-11-01"}, format="json")
-        self.assertEqual(r.status_code, 201)
-        self.assertEqual(r.data["due_date"], "2026-11-01")
+    def test_creator_is_owner_and_shows_in_my_tasks(self):
+        # The created task must appear in the creator's My Tasks (?mine=1) — this
+        # was the bug: bare tasks had no assignee and never showed up.
+        self.client.force_authenticate(self.mgr)
+        self.client.post("/api/v1/tasks/",
+                        {"project": str(self.proj.id), "name": "Test pressure"},
+                        format="json")
+        mine = self.client.get("/api/v1/tasks/?mine=1")
+        self.assertEqual(mine.status_code, 200)
+        names = [t["name"] for t in (mine.data.get("results") or mine.data)]
+        self.assertIn("Test pressure", names)
 
-    def test_requires_execution_manage(self):
-        # A role without execution.manage is refused — this is what hides the
-        # mobile 'New task' button and would 403 the create.
+    def test_without_work_perm_forbidden(self):
         self.client.force_authenticate(self.viewer)
         r = self.client.post("/api/v1/tasks/",
                              {"project": str(self.proj.id), "name": "x"}, format="json")

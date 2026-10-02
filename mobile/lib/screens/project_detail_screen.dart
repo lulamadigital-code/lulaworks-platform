@@ -49,7 +49,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   Widget build(BuildContext context) {
     final p = widget.project;
     return Scaffold(
-      floatingActionButton: widget.api.can('execution.manage')
+      floatingActionButton: widget.api.canCreateWork
           ? FloatingActionButton.extended(
               onPressed: () async {
                 final created = await Navigator.of(context).push(

@@ -22,7 +22,7 @@ void showGlobalCreate(BuildContext context, ApiClient api) {
     if (api.canCreateQuote)
       _CreateItem('Invoice', Icons.receipt_long_outlined,
           (c) => InvoiceFormScreen(api: api)),
-    if (api.canManageExecution)
+    if (api.canCreateWork)
       _CreateItem('Task', Icons.task_alt,
           (c) => TaskFormScreen(api: api)),
     if (api.canManageCustomers)

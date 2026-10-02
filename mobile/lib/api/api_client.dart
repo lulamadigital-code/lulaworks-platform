@@ -286,6 +286,9 @@ class ApiClient {
   bool get canOverrideCompliance => can('compliance.override');
   // Field execution — starting/completing a task and filing task reports.
   bool get canManageExecution => can('execution.manage');
+  // Creating a task — same gate as the web New-Work wizard (work.create, or the
+  // execution.manage umbrella that implies it).
+  bool get canCreateWork => can('work.create') || can('execution.manage');
   // Doing the field work itself (start/complete/report/tick checklist). A
   // groundfloor worker holds work.edit, not the execution.manage umbrella.
   bool get canExecuteWork => can('work.edit') || can('execution.manage');

@@ -54,7 +54,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('My tasks'), scrolledUnderElevation: 1),
-      floatingActionButton: widget.api.canManageExecution
+      floatingActionButton: widget.api.canCreateWork
           ? FloatingActionButton.extended(
               onPressed: _addTask,
               icon: const Icon(Icons.add),
