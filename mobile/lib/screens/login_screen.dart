@@ -220,7 +220,26 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
+                  // New visitors — no self-serve signup, so route them to a demo
+                  // (mirrors the web sign-in page).
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text('New to Lulaworks?  ',
+                          style: TextStyle(fontSize: 13.5, color: kMuted)),
+                      GestureDetector(
+                        onTap: () => _open('https://www.lulaworks.com/demo/'),
+                        child: Text('Book a demo →',
+                            style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: kBrandDark)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                     TextButton(
                         onPressed: () => _open('https://www.lulaworks.com/terms/'),
