@@ -6,6 +6,7 @@ import '../models.dart';
 import '../theme.dart';
 import '../ui/lw_components.dart';
 import '../widgets/lula_ui.dart';
+import 'task_form_screen.dart';
 import 'task_hub_screen.dart';
 
 /// "My tasks" — the field worker's home base. Only the tasks assigned to the
@@ -43,10 +44,22 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
     'done': 'Done',
   };
 
+  Future<void> _addTask() async {
+    final created = await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => TaskFormScreen(api: widget.api)));
+    if (created != null && mounted) setState(() { _future = _load(); });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('My tasks'), scrolledUnderElevation: 1),
+      floatingActionButton: widget.api.canManageExecution
+          ? FloatingActionButton.extended(
+              onPressed: _addTask,
+              icon: const Icon(Icons.add),
+              label: const Text('Add task'))
+          : null,
       body: RefreshIndicator(
         color: kBrand,
         onRefresh: () async => setState(() { _future = _load(); }),
