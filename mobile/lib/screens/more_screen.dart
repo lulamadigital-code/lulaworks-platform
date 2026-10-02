@@ -36,7 +36,7 @@ class MoreScreen extends StatelessWidget {
   Widget _label(String s) => Padding(
         padding: const EdgeInsets.only(left: 4),
         child: Text(s,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 11.5, fontWeight: FontWeight.w700,
                 letterSpacing: 0.6, color: kMuted)),
       );
@@ -61,11 +61,11 @@ class MoreScreen extends StatelessWidget {
               child: Icon(items[i].icon, color: kBrandDark, size: 21),
             ),
             title: Text(items[i].title,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 15, fontWeight: FontWeight.w600, color: kInk)),
             subtitle: Text(items[i].subtitle,
-                style: const TextStyle(fontSize: 12.5, color: kMuted)),
-            trailing: const Icon(Icons.chevron_right, color: kMuted),
+                style: TextStyle(fontSize: 12.5, color: kMuted)),
+            trailing: Icon(Icons.chevron_right, color: kMuted),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => items[i].build(api, actions))),
           ),

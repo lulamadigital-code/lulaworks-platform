@@ -542,10 +542,10 @@ class _RfqTextEntryState extends State<_RfqTextEntry> {
             label: 'Reference / name (optional)',
           ),
           const SizedBox(height: 16),
-          const Text('RFQ text',
+          Text('RFQ text',
               style: TextStyle(fontWeight: FontWeight.w700, color: kInk)),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Paste the email body or message. The backend extracts the client, '
             'items and quantities for you to review before approving.',
             style: TextStyle(color: kMuted, fontSize: 13),
@@ -558,7 +558,7 @@ class _RfqTextEntryState extends State<_RfqTextEntry> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 16),
-            Text(_error!, style: const TextStyle(color: kRed, fontSize: 13)),
+            Text(_error!, style: TextStyle(color: kRed, fontSize: 13)),
           ],
           const SizedBox(height: 22),
           LulaButton(

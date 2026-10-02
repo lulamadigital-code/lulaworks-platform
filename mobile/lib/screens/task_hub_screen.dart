@@ -182,13 +182,13 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Align(
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Text('Completion requirements',
                     style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kInk)),
               ),
               const SizedBox(height: 2),
-              const Align(
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Text('This task can’t be completed until these are done.',
                     style: TextStyle(fontSize: 13, color: kMuted)),
@@ -289,12 +289,12 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             if (snap.hasError) {
               return ListView(children: [
                 const SizedBox(height: 100),
-                const Icon(Icons.cloud_off, size: 44, color: kMuted),
+                Icon(Icons.cloud_off, size: 44, color: kMuted),
                 const SizedBox(height: 12),
                 Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
               ]);
@@ -335,7 +335,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
         if (desc.isNotEmpty) ...[
           const SizedBox(height: 22),
           _sectionTitle('What you need to do'),
-          _card(Text(desc, style: const TextStyle(fontSize: 14.5, height: 1.4, color: kInk))),
+          _card(Text(desc, style: TextStyle(fontSize: 14.5, height: 1.4, color: kInk))),
         ],
 
         if (site.isNotEmpty || task['site_latitude'] != null) ...[
@@ -378,7 +378,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
               label: const Text('Add')),
         ]),
         if (reports.isEmpty)
-          _card(const Text('No reports yet — capture progress, a photo, a purchase '
+          _card(Text('No reports yet — capture progress, a photo, a purchase '
               'or a time event with the Report button.',
               style: TextStyle(fontSize: 13, color: kMuted)))
         else
@@ -430,7 +430,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
       ]),
       if (meta.isNotEmpty) ...[
         const SizedBox(height: 10),
-        Text(meta, style: const TextStyle(fontSize: 13, color: kMuted)),
+        Text(meta, style: TextStyle(fontSize: 13, color: kMuted)),
       ],
     ]);
   }
@@ -508,7 +508,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
                 label: const Text('Pause',
                     maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis),
                 style: OutlinedButton.styleFrom(
-                    foregroundColor: kOrange, side: const BorderSide(color: kLine)),
+                    foregroundColor: kOrange, side: BorderSide(color: kLine)),
               ),
             ),
           ),
@@ -578,13 +578,13 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: kOrange.withOpacity(0.3))),
         child: Row(children: [
-          const Icon(Icons.sync, color: kOrange, size: 18),
+          Icon(Icons.sync, color: kOrange, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
                 '$_pendingReports report${_pendingReports == 1 ? '' : 's'} saved '
                 'offline — pending sync.',
-                style: const TextStyle(fontSize: 13, color: kInk)),
+                style: TextStyle(fontSize: 13, color: kInk)),
           ),
         ]),
       );
@@ -610,12 +610,12 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
         width: 42, height: 42,
         decoration: BoxDecoration(
             color: kBrandTint, borderRadius: BorderRadius.circular(11)),
-        child: const Icon(Icons.place_outlined, color: kBrandDark),
+        child: Icon(Icons.place_outlined, color: kBrandDark),
       ),
       const SizedBox(width: 12),
       Expanded(
         child: Text(site.isEmpty ? 'Site location set' : site,
-            style: const TextStyle(fontSize: 14, color: kInk)),
+            style: TextStyle(fontSize: 14, color: kInk)),
       ),
       const SizedBox(width: 8),
       FilledButton.icon(
@@ -649,7 +649,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
         ),
         const SizedBox(width: 12),
         Text('$doneCount/$total',
-            style: const TextStyle(fontWeight: FontWeight.w700, color: kInk)),
+            style: TextStyle(fontWeight: FontWeight.w700, color: kInk)),
       ]),
       const SizedBox(height: 6),
       for (final item in items)
@@ -699,11 +699,11 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
           SizedBox(
             width: 96,
             child: Text(roleLabels[role] ?? role,
-                style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                style: TextStyle(fontSize: 12.5, color: kMuted)),
           ),
           Expanded(
             child: Text(list.join(', '),
-                style: const TextStyle(fontSize: 14, color: kInk)),
+                style: TextStyle(fontSize: 14, color: kInk)),
           ),
         ]),
       ));
@@ -726,7 +726,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
         const Divider(height: 24),
         Text('Materials: ${widget.api.money(fin['materials_total'])} '
             '(${fin['materials_count']} item(s))',
-            style: const TextStyle(fontSize: 13, color: kMuted)),
+            style: TextStyle(fontSize: 13, color: kMuted)),
       ],
     ]));
   }
@@ -752,7 +752,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
 
   Widget _stat(String label, String value, {Color? color}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 11.5, color: kMuted)),
+      Text(label, style: TextStyle(fontSize: 11.5, color: kMuted)),
       const SizedBox(height: 3),
       Text(value,
           maxLines: 1,
@@ -765,7 +765,7 @@ class _TaskHubScreenState extends State<TaskHubScreen> {
   Widget _sectionTitle(String t) => Padding(
         padding: const EdgeInsets.only(bottom: 8, left: 2),
         child: Text(t.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 11.5, fontWeight: FontWeight.w700,
                 letterSpacing: 0.6, color: kMuted)),
       );
@@ -851,8 +851,8 @@ class _ReportTile extends StatelessWidget {
         if (hasAmount)
           Text('R $amount', style: const TextStyle(fontWeight: FontWeight.bold))
         else if (flagged)
-          const Icon(Icons.warning_amber, color: kRed),
-        if (onTap != null) const Icon(Icons.chevron_right, color: kMuted, size: 18),
+          Icon(Icons.warning_amber, color: kRed),
+        if (onTap != null) Icon(Icons.chevron_right, color: kMuted, size: 18),
       ]),
     );
   }
@@ -870,7 +870,7 @@ class _TimelineTile extends StatelessWidget {
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Column(children: [
           Container(width: 9, height: 9, margin: const EdgeInsets.only(top: 4),
-              decoration: const BoxDecoration(color: kBrand, shape: BoxShape.circle)),
+              decoration: BoxDecoration(color: kBrand, shape: BoxShape.circle)),
           if (!isLast)
             Expanded(child: Container(width: 1.5, color: kLine)),
         ]),
@@ -880,17 +880,17 @@ class _TimelineTile extends StatelessWidget {
             padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${event['label']}',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 13.5, fontWeight: FontWeight.w600, color: kInk)),
               if ('${event['detail'] ?? ''}'.isNotEmpty)
                 Text('${event['detail']}',
-                    style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                    style: TextStyle(fontSize: 12.5, color: kMuted)),
               if (when != null)
                 Text(
                     '${when.day}/${when.month} '
                     '${when.hour.toString().padLeft(2, '0')}:'
                     '${when.minute.toString().padLeft(2, '0')}',
-                    style: const TextStyle(fontSize: 11.5, color: kBorderDot)),
+                    style: TextStyle(fontSize: 11.5, color: kBorderDot)),
             ]),
           ),
         ),

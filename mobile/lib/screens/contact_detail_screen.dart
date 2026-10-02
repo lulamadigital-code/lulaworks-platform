@@ -42,11 +42,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             if (snap.hasError) {
-              return ListView(children: const [
-                SizedBox(height: 120),
+              return ListView(children: [
+                const SizedBox(height: 120),
                 Center(child: Text('Could not load this contact.', style: TextStyle(color: kMuted))),
               ]);
             }
@@ -110,7 +110,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         decoration: BoxDecoration(
             color: kBrand.withOpacity(0.10), borderRadius: BorderRadius.circular(16)),
         child: Text(name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: kBrandDark)),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: kBrandDark)),
       ),
       const SizedBox(width: 14),
       Expanded(
@@ -118,21 +118,21 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           Row(children: [
             Flexible(
               child: Text(name.isEmpty ? 'Unnamed' : name,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: kInk)),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: kInk)),
             ),
             if (isPrimary) ...[
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(color: kBrandTint, borderRadius: BorderRadius.circular(7)),
-                child: const Text('Primary',
+                child: Text('Primary',
                     style: TextStyle(fontSize: 10.5, color: kBrandDark, fontWeight: FontWeight.w700)),
               ),
             ],
           ]),
           const SizedBox(height: 4),
           Text([if (role.isNotEmpty) role, if (company.isNotEmpty) company].join(' · '),
-              style: const TextStyle(fontSize: 13.5, color: kMuted)),
+              style: TextStyle(fontSize: 13.5, color: kMuted)),
         ]),
       ),
     ]);
@@ -153,14 +153,14 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             border: Border.all(color: kLine),
           ),
           child: Row(children: [
-            const Icon(Icons.business_outlined, size: 20, color: kBrandDark),
+            Icon(Icons.business_outlined, size: 20, color: kBrandDark),
             const SizedBox(width: 10),
             Expanded(
               child: Text(name,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kInk)),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kInk)),
             ),
-            const Icon(Icons.chevron_right, color: kMuted, size: 20),
+            Icon(Icons.chevron_right, color: kMuted, size: 20),
           ]),
         ),
       ),
@@ -192,7 +192,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
         foregroundColor: kBrandDark,
-        side: const BorderSide(color: kLine),
+        side: BorderSide(color: kLine),
         padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -222,7 +222,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         Align(
           alignment: Alignment.centerLeft,
           child: Text('Next follow-up: $next',
-              style: const TextStyle(fontSize: 12.5, color: kBrandDark, fontWeight: FontWeight.w600)),
+              style: TextStyle(fontSize: 12.5, color: kBrandDark, fontWeight: FontWeight.w600)),
         ),
       ],
     ]));
@@ -232,9 +232,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     return Expanded(
       flex: wide ? 2 : 1,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(value, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kInk)),
+        Text(value, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kInk)),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 11.5, color: kMuted)),
+        Text(label, style: TextStyle(fontSize: 11.5, color: kMuted)),
       ]),
     );
   }
@@ -245,7 +245,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(color: kBrandTint, borderRadius: BorderRadius.circular(20)),
-          child: Text(it, style: const TextStyle(fontSize: 12, color: kBrandDark, fontWeight: FontWeight.w600)),
+          child: Text(it, style: TextStyle(fontSize: 12, color: kBrandDark, fontWeight: FontWeight.w600)),
         ),
     ]));
   }
@@ -253,15 +253,15 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   Widget _oppsCard(List<Map<String, dynamic>> opps) {
     return _card('Open opportunities', child: Column(children: [
       for (var i = 0; i < opps.length; i++) ...[
-        if (i > 0) const Divider(height: 14, color: kLine),
+        if (i > 0) Divider(height: 14, color: kLine),
         Row(children: [
-          const Icon(Icons.filter_alt_outlined, size: 18, color: kBrandDark),
+          Icon(Icons.filter_alt_outlined, size: 18, color: kBrandDark),
           const SizedBox(width: 10),
           Expanded(
             child: Text('${opps[i]['title']}',
-                style: const TextStyle(fontSize: 13.5, color: kInk, fontWeight: FontWeight.w600)),
+                style: TextStyle(fontSize: 13.5, color: kInk, fontWeight: FontWeight.w600)),
           ),
-          Text('${opps[i]['stage'] ?? ''}', style: const TextStyle(fontSize: 12, color: kMuted)),
+          Text('${opps[i]['stage'] ?? ''}', style: TextStyle(fontSize: 12, color: kMuted)),
         ]),
       ],
     ]));
@@ -269,18 +269,18 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
   Widget _notesCard(String notes) {
     return _card('Notes',
-        child: Text(notes, style: const TextStyle(fontSize: 13.5, color: kInk, height: 1.4)));
+        child: Text(notes, style: TextStyle(fontSize: 13.5, color: kInk, height: 1.4)));
   }
 
   Widget _feedCard(List<Map<String, dynamic>> feed) {
     if (feed.isEmpty) {
       return _card('Activity',
-          child: const Text('Nothing logged with this person yet.',
+          child: Text('Nothing logged with this person yet.',
               style: TextStyle(fontSize: 13, color: kMuted)));
     }
     return _card('Activity', child: Column(children: [
       for (var i = 0; i < feed.length; i++) ...[
-        if (i > 0) const Divider(height: 16, color: kLine),
+        if (i > 0) Divider(height: 16, color: kLine),
         _feedRow(feed[i]),
       ],
     ]));
@@ -296,7 +296,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         margin: const EdgeInsets.only(top: 4),
         width: 8,
         height: 8,
-        decoration: const BoxDecoration(color: kBrand, shape: BoxShape.circle),
+        decoration: BoxDecoration(color: kBrand, shape: BoxShape.circle),
       ),
       const SizedBox(width: 12),
       Expanded(
@@ -304,20 +304,20 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           Row(children: [
             Expanded(
               child: Text(title.isEmpty ? kind : title,
-                  style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: kInk)),
+                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: kInk)),
             ),
             if (when.isNotEmpty)
-              Text(when, style: const TextStyle(fontSize: 11.5, color: kMuted)),
+              Text(when, style: TextStyle(fontSize: 11.5, color: kMuted)),
           ]),
           if (kind.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 1),
-              child: Text(kind, style: const TextStyle(fontSize: 11.5, color: kBrandDark)),
+              child: Text(kind, style: TextStyle(fontSize: 11.5, color: kBrandDark)),
             ),
           if (detail.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 3),
-              child: Text(detail, style: const TextStyle(fontSize: 12.5, color: kMuted, height: 1.35)),
+              child: Text(detail, style: TextStyle(fontSize: 12.5, color: kMuted, height: 1.35)),
             ),
         ]),
       ),
@@ -335,7 +335,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(title,
-            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: kMuted, letterSpacing: 0.3)),
+            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: kMuted, letterSpacing: 0.3)),
         const SizedBox(height: 12),
         child,
       ]),

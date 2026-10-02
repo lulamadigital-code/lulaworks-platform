@@ -48,14 +48,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (snap.hasError) {
               return ListView(children: [
                 const SizedBox(height: 140),
-                const Icon(Icons.cloud_off, size: 44, color: kMuted),
+                Icon(Icons.cloud_off, size: 44, color: kMuted),
                 const SizedBox(height: 12),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Center(
                       child: Text(authErrorMessage(snap.error!),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: kMuted))),
+                          style: TextStyle(color: kMuted))),
                 ),
                 const SizedBox(height: 14),
                 Center(
@@ -97,19 +97,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(name.isEmpty ? email : name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 19, fontWeight: FontWeight.w700, color: kInk)),
               if (jobTitle.isNotEmpty || role.isNotEmpty)
                 Text([jobTitle, role].where((s) => s.isNotEmpty).join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13, color: kMuted)),
+                    style: TextStyle(fontSize: 13, color: kMuted)),
               if ('${company['name'] ?? ''}'.isNotEmpty) ...[
                 const SizedBox(height: 2),
                 Text('${company['name']}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 12.5, fontWeight: FontWeight.w600, color: kBrandDark)),
               ],
             ]),
@@ -125,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           icon: const Icon(Icons.edit_outlined, size: 18),
           label: const Text('Edit profile'),
           style: OutlinedButton.styleFrom(
-              foregroundColor: kBrandDark, side: const BorderSide(color: kLine)),
+              foregroundColor: kBrandDark, side: BorderSide(color: kLine)),
         ),
         const SizedBox(height: 24),
 
@@ -185,12 +185,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           icon: const Icon(Icons.logout, size: 18),
           label: const Text('Log out'),
           style: OutlinedButton.styleFrom(
-              foregroundColor: kRed, side: const BorderSide(color: kLine)),
+              foregroundColor: kRed, side: BorderSide(color: kLine)),
         ),
         const SizedBox(height: 8),
         Center(
           child: Text('Signed in as $email',
-              style: const TextStyle(fontSize: 12, color: kMuted)),
+              style: TextStyle(fontSize: 12, color: kMuted)),
         ),
       ],
     );
@@ -223,12 +223,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                const Icon(Icons.cloud_outlined, size: 18, color: kMuted),
+                Icon(Icons.cloud_outlined, size: 18, color: kMuted),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                     child: Text('Storage', style: TextStyle(fontSize: 14, color: kInk))),
                 Text('${gb(used)} / ${gb(quota)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 13, fontWeight: FontWeight.w600, color: kInk)),
               ]),
               const SizedBox(height: 8),
@@ -256,9 +256,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(children: [
         Icon(icon, size: 18, color: kMuted),
         const SizedBox(width: 10),
-        Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: kInk))),
+        Expanded(child: Text(label, style: TextStyle(fontSize: 14, color: kInk))),
         Text(value,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 13.5, fontWeight: FontWeight.w600, color: kInk)),
       ]),
     );
@@ -268,7 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _sectionLabel(String s) => Padding(
         padding: const EdgeInsets.only(left: 4, bottom: 8),
         child: Text(s.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.6,
@@ -301,15 +301,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Icon(icon, size: 20, color: kBrandDark),
       ),
       title: Text(title,
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 14.5, fontWeight: FontWeight.w500, color: kInk)),
       subtitle: subtitle == null
           ? null
           : Text(subtitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12.5, color: kMuted)),
-      trailing: const Icon(Icons.chevron_right, size: 20, color: kMuted),
+              style: TextStyle(fontSize: 12.5, color: kMuted)),
+      trailing: Icon(Icons.chevron_right, size: 20, color: kMuted),
     );
   }
 
@@ -359,7 +359,7 @@ class _ProfileSkeleton extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
       children: [
         Row(children: [
-          const CircleAvatar(radius: 32, backgroundColor: kLine),
+          CircleAvatar(radius: 32, backgroundColor: kLine),
           const SizedBox(width: 16),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -61,11 +61,11 @@ class _LeadsScreenState extends State<LeadsScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             if (snap.hasError) {
-              return ListView(children: const [
-                SizedBox(height: 120),
+              return ListView(children: [
+                const SizedBox(height: 120),
                 Center(child: Text('Could not load leads.',
                     style: TextStyle(color: kMuted))),
               ]);
@@ -122,13 +122,13 @@ class _LeadsScreenState extends State<LeadsScreen> {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${l['company_name']}',
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: kInk)),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: kInk)),
               if ('${l['contact_name']}'.isNotEmpty)
                 Text('${l['contact_name']}',
-                    style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                    style: TextStyle(fontSize: 12.5, color: kMuted)),
               if (value > 0)
                 Text(widget.api.money(value),
-                    style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                    style: TextStyle(fontSize: 12.5, color: kMuted)),
             ]),
           ),
           _statusPill(status, '${l['status_display'] ?? status}'),
@@ -219,7 +219,7 @@ class _LeadFormState extends State<_LeadForm> {
       padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottom),
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('New lead', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kInk)),
+          Text('New lead', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kInk)),
           const SizedBox(height: 14),
           _field(_company, 'Company name *'),
           _field(_contact, 'Contact name'),

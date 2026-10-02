@@ -174,7 +174,7 @@ class _QuotationFormScreenState extends State<QuotationFormScreen> {
               if (_step == 2) ..._pricingStep(),
               if (_error != null) ...[
                 const SizedBox(height: LwSpace.lg),
-                Text(_error!, style: const TextStyle(color: kRed, fontSize: 13)),
+                Text(_error!, style: TextStyle(color: kRed, fontSize: 13)),
               ],
               const SizedBox(height: LwSpace.xxl),
             ],
@@ -298,7 +298,7 @@ class _QuotationFormScreenState extends State<QuotationFormScreen> {
             IconButton(
                 visualDensity: VisualDensity.compact,
                 tooltip: 'Remove item',
-                icon: const Icon(Icons.close, size: 18, color: kMuted),
+                icon: Icon(Icons.close, size: 18, color: kMuted),
                 onPressed: () => setState(() {
                       _lines[i].dispose();
                       _lines.removeAt(i);
@@ -340,7 +340,7 @@ class _QuotationFormScreenState extends State<QuotationFormScreen> {
       const SizedBox(height: LwSpace.xl),
       Container(
         padding: const EdgeInsets.all(LwSpace.lg),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
             color: kBrandTint, borderRadius: LwRadius.card),
         child: Column(children: [
           _totalRow('Subtotal', _money(_subtotal)),
@@ -355,14 +355,14 @@ class _QuotationFormScreenState extends State<QuotationFormScreen> {
         ]),
       ),
       const SizedBox(height: LwSpace.sm),
-      const Text('Totals are a preview — the server confirms the final figures '
+      Text('Totals are a preview — the server confirms the final figures '
           'on the quotation.', style: LwType.caption),
     ];
   }
 
   Widget _totalRow(String label, String value, {bool strong = false}) {
     final style = strong
-        ? const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kInk)
+        ? TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kInk)
         : LwType.body;
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Text(label, style: style),
@@ -376,7 +376,7 @@ class _QuotationFormScreenState extends State<QuotationFormScreen> {
       top: false,
       child: Container(
         padding: const EdgeInsets.all(LwSpace.lg),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
           border: Border(top: BorderSide(color: kLine)),
         ),

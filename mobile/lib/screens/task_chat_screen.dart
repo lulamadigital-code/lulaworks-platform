@@ -221,7 +221,7 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
             Text(widget.taskName,
                 maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, color: kMuted)),
+                style: TextStyle(fontSize: 12, color: kMuted)),
           ],
         ),
         scrolledUnderElevation: 1,
@@ -235,24 +235,24 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
 
   Widget _body() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: kBrand));
+      return Center(child: CircularProgressIndicator(color: kBrand));
     }
     if (_error != null && _messages.isEmpty) {
       return ListView(children: [
         const SizedBox(height: 120),
-        const Icon(Icons.cloud_off, size: 44, color: kMuted),
+        Icon(Icons.cloud_off, size: 44, color: kMuted),
         const SizedBox(height: 12),
         Center(child: Text(_error!, textAlign: TextAlign.center)),
       ]);
     }
     if (_messages.isEmpty && _pending.isEmpty) {
-      return ListView(children: const [
-        SizedBox(height: 140),
+      return ListView(children: [
+        const SizedBox(height: 140),
         Icon(Icons.forum_outlined, size: 46, color: kMuted),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         Center(child: Text('No messages yet',
             style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: kInk))),
-        SizedBox(height: 2),
+        const SizedBox(height: 2),
         Center(child: Text('Start the conversation for this task.',
             style: TextStyle(fontSize: 13, color: kMuted))),
       ]);
@@ -279,7 +279,7 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
                 color: kLine, borderRadius: BorderRadius.circular(20)),
             child: Text('${m['body']}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: kMuted)),
+                style: TextStyle(fontSize: 12, color: kMuted)),
           ),
         ),
       );
@@ -309,7 +309,7 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 3),
                 child: Text('${m['author_name']}',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 11.5, fontWeight: FontWeight.w700, color: kBrandDark)),
               ),
             if (img != null && '$img'.isNotEmpty) ...[
@@ -362,14 +362,14 @@ class _TaskChatScreenState extends State<TaskChatScreen> {
       top: false,
       child: Container(
         padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
             color: Colors.white,
             border: Border(top: BorderSide(color: kLine))),
         child: Row(children: [
           IconButton(
             tooltip: 'Add photo',
             onPressed: _sending ? null : _sendPhoto,
-            icon: const Icon(Icons.add_a_photo_outlined, color: kBrandDark),
+            icon: Icon(Icons.add_a_photo_outlined, color: kBrandDark),
           ),
           Expanded(
             child: TextField(

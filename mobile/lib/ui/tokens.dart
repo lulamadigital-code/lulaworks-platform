@@ -44,36 +44,37 @@ abstract final class LwRadius {
 /// The Lulaworks type scale. Weight + size + spacing communicate hierarchy:
 /// page title → section → body → metadata. Colour defaults to kInk; pass a
 /// colour for muted/secondary text or use [LwType.muted].
+/// Getters (not const) because the colour token flips with the theme.
 abstract final class LwType {
-  static const TextStyle display = TextStyle(
+  static TextStyle get display => TextStyle(
       fontSize: 26, fontWeight: FontWeight.w700, color: kInk, letterSpacing: -0.5, height: 1.15);
-  static const TextStyle headline = TextStyle(
+  static TextStyle get headline => TextStyle(
       fontSize: 22, fontWeight: FontWeight.w700, color: kInk, letterSpacing: -0.4, height: 1.2);
-  static const TextStyle title = TextStyle(
+  static TextStyle get title => TextStyle(
       fontSize: 17, fontWeight: FontWeight.w700, color: kInk, letterSpacing: -0.2);
-  static const TextStyle section = TextStyle(
+  static TextStyle get section => TextStyle(
       fontSize: 11, fontWeight: FontWeight.w700, color: kMuted, letterSpacing: 0.6);
-  static const TextStyle bodyLg = TextStyle(fontSize: 15.5, color: kInk, height: 1.35);
-  static const TextStyle body = TextStyle(fontSize: 14, color: kInk, height: 1.35);
-  static const TextStyle bodySm = TextStyle(fontSize: 12.5, color: kInk, height: 1.3);
-  static const TextStyle label = TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: kInk);
-  static const TextStyle caption = TextStyle(fontSize: 11.5, color: kMuted);
+  static TextStyle get bodyLg => TextStyle(fontSize: 15.5, color: kInk, height: 1.35);
+  static TextStyle get body => TextStyle(fontSize: 14, color: kInk, height: 1.35);
+  static TextStyle get bodySm => TextStyle(fontSize: 12.5, color: kInk, height: 1.3);
+  static TextStyle get label => TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: kInk);
+  static TextStyle get caption => TextStyle(fontSize: 11.5, color: kMuted);
 
-  static const TextStyle muted = TextStyle(fontSize: 14, color: kMuted, height: 1.35);
+  static TextStyle get muted => TextStyle(fontSize: 14, color: kMuted, height: 1.35);
 }
 
 /// Semantic colour aliases over the theme tokens — read intent at the call site.
 abstract final class LwColor {
-  static const Color primary = kBrand;
-  static const Color primaryDark = kBrandDark;
-  static const Color primaryTint = kBrandTint;
-  static const Color ink = kInk;
-  static const Color muted = kMuted;
-  static const Color border = kLine;
-  static const Color surface = Colors.white;
-  static const Color background = kBg;
-  static const Color success = kGreen;
-  static const Color warning = kOrange;
-  static const Color error = kRed;
-  static const Color info = kInfo;
+  static Color get primary => kBrand;
+  static Color get primaryDark => kBrandDark;
+  static Color get primaryTint => kBrandTint;
+  static Color get ink => kInk;
+  static Color get muted => kMuted;
+  static Color get border => kLine;
+  static Color get surface => kSurface;
+  static Color get background => kBg;
+  static Color get success => kGreen;
+  static Color get warning => kOrange;
+  static Color get error => kRed;
+  static Color get info => kInfo;
 }

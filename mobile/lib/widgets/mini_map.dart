@@ -15,7 +15,7 @@ class MiniMap extends StatelessWidget {
     this.siteLat,
     this.siteLng,
     this.height = 160,
-    this.pointColor = kBrand,
+    this.pointColor,
   });
 
   final double lat;
@@ -23,11 +23,11 @@ class MiniMap extends StatelessWidget {
   final double? siteLat;
   final double? siteLng;
   final double height;
-  final Color pointColor;
+  final Color? pointColor;
 
   /// Build from dynamic (string/num) coords; returns null if either is missing.
   static MiniMap? tryFrom(dynamic lat, dynamic lng,
-      {dynamic siteLat, dynamic siteLng, double height = 160, Color pointColor = kBrand}) {
+      {dynamic siteLat, dynamic siteLng, double height = 160, Color? pointColor}) {
     final a = double.tryParse('$lat');
     final b = double.tryParse('$lng');
     if (a == null || b == null) return null;
@@ -65,9 +65,9 @@ class MiniMap extends StatelessWidget {
               MarkerLayer(markers: [
                 if (site != null)
                   Marker(point: site, width: 30, height: 30,
-                      child: const Icon(Icons.place_outlined, color: kMuted, size: 26)),
+                      child: Icon(Icons.place_outlined, color: kMuted, size: 26)),
                 Marker(point: point, width: 42, height: 42,
-                    child: Icon(Icons.location_on, color: pointColor, size: 38)),
+                    child: Icon(Icons.location_on, color: pointColor ?? kBrand, size: 38)),
               ]),
             ],
           ),
@@ -77,7 +77,7 @@ class MiniMap extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               color: Colors.white70,
-              child: const Text('© OpenStreetMap',
+              child: Text('© OpenStreetMap',
                   style: TextStyle(fontSize: 9, color: kMuted)),
             ),
           ),

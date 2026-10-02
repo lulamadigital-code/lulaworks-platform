@@ -97,7 +97,7 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                const Text('A job is created by awarding a quotation.',
+                Text('A job is created by awarding a quotation.',
                     style: TextStyle(color: kMuted, fontSize: 13)),
                 const SizedBox(height: 16),
                 LulaDropdown<String>(
@@ -127,7 +127,7 @@ class _ProjectFormScreenState extends State<ProjectFormScreen> {
                 if (_error != null) ...[
                   const SizedBox(height: 16),
                   Text(_error!,
-                      style: const TextStyle(color: kRed, fontSize: 13)),
+                      style: TextStyle(color: kRed, fontSize: 13)),
                 ],
                 const SizedBox(height: 22),
                 LulaButton(

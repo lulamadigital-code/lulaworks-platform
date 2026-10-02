@@ -290,7 +290,7 @@ class _ContactTile extends StatelessWidget {
       ].join(' · ')),
       trailing: onTap == null
           ? null
-          : const Icon(Icons.chevron_right, color: kMuted, size: 20),
+          : Icon(Icons.chevron_right, color: kMuted, size: 20),
     );
   }
 

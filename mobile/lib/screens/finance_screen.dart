@@ -97,7 +97,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
                   ...(d['loss_making_projects'] as List).map((p) => ListTile(
                         dense: true,
                         contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.trending_down, color: kRed),
+                        leading: Icon(Icons.trending_down, color: kRed),
                         title: Text('${(p as Map)['name'] ?? p['number'] ?? p}'),
                       )),
                 ],

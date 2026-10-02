@@ -40,8 +40,8 @@ class SettingsScreen extends StatelessWidget {
                 'Invite & manage people',
                 () => TeamScreen(api: api)),
           if (!canCompany && !canTeam)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(LwSpace.lg, LwSpace.xs, LwSpace.lg, LwSpace.md),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(LwSpace.lg, LwSpace.xs, LwSpace.lg, LwSpace.md),
               child: Text('Workspace settings are managed by your company admin.',
                   style: LwType.muted),
             ),
@@ -71,12 +71,12 @@ class SettingsScreen extends StatelessWidget {
       leading: Container(
         width: 38,
         height: 38,
-        decoration: const BoxDecoration(color: kBrandTint, shape: BoxShape.circle),
+        decoration: BoxDecoration(color: kBrandTint, shape: BoxShape.circle),
         child: Icon(icon, size: 20, color: kBrandDark),
       ),
       title: Text(title, style: LwType.label),
       subtitle: Text(subtitle, style: LwType.caption),
-      trailing: const Icon(Icons.chevron_right, size: 18, color: kMuted),
+      trailing: Icon(Icons.chevron_right, size: 18, color: kMuted),
       onTap: () => Navigator.of(context)
           .push(MaterialPageRoute(builder: (_) => builder())),
     );

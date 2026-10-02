@@ -121,7 +121,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Text('Job: ${widget.projectName ?? ''}',
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontWeight: FontWeight.w600, color: kInk)),
                   )
                 else ...[
@@ -168,7 +168,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                 if (_error != null) ...[
                   const SizedBox(height: 16),
                   Text(_error!,
-                      style: const TextStyle(color: kRed, fontSize: 13)),
+                      style: TextStyle(color: kRed, fontSize: 13)),
                 ],
                 const SizedBox(height: 22),
                 LulaButton(

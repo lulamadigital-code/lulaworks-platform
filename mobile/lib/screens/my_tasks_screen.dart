@@ -59,7 +59,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
             if (snap.hasError) {
               return ListView(children: [
                 const SizedBox(height: 120),
-                const Icon(Icons.cloud_off, size: 44, color: kMuted),
+                Icon(Icons.cloud_off, size: 44, color: kMuted),
                 const SizedBox(height: 12),
                 Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
               ]);
@@ -85,7 +85,7 @@ class _MyTasksScreenState extends State<MyTasksScreen> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
                       child: Text('${_label[key]!.toUpperCase()}  ·  ${groups[key]!.length}',
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 11.5, fontWeight: FontWeight.w700,
                               letterSpacing: 0.6, color: kMuted)),
                     ),
@@ -188,14 +188,14 @@ class _TaskCard extends StatelessWidget {
                         Text('${task['name']}',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 14.5, fontWeight: FontWeight.w500, color: kInk)),
                         if (sub.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(sub,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 12, color: kMuted)),
+                              style: TextStyle(fontSize: 12, color: kMuted)),
                         ],
                       ]),
                     ),

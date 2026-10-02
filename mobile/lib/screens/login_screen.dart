@@ -119,13 +119,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
-                  const Text('Welcome back',
+                  Text('Welcome back',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 24, fontWeight: FontWeight.w700, color: kInk,
                           letterSpacing: -0.4)),
                   const SizedBox(height: 4),
-                  const Text('Sign in to your Lulaworks account',
+                  Text('Sign in to your Lulaworks account',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 14, color: kMuted)),
                   const SizedBox(height: 28),
@@ -200,11 +200,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: kRed.withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(10)),
                             child: Row(children: [
-                              const Icon(Icons.error_outline, size: 18, color: kRed),
+                              Icon(Icons.error_outline, size: 18, color: kRed),
                               const SizedBox(width: 8),
                               Expanded(
                                   child: Text(_formError!,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                           fontSize: 13, color: kRed))),
                             ]),
                           ),
@@ -224,12 +224,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                     TextButton(
                         onPressed: () => _open('https://www.lulaworks.com/terms/'),
-                        child: const Text('Terms',
+                        child: Text('Terms',
                             style: TextStyle(fontSize: 12.5, color: kMuted))),
-                    const Text('·', style: TextStyle(color: kMuted)),
+                    Text('·', style: TextStyle(color: kMuted)),
                     TextButton(
                         onPressed: () => _open('https://www.lulaworks.com/privacy/'),
-                        child: const Text('Privacy',
+                        child: Text('Privacy',
                             style: TextStyle(fontSize: 12.5, color: kMuted))),
                   ]),
                 ],

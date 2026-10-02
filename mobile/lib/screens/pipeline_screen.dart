@@ -42,11 +42,11 @@ class _PipelineScreenState extends State<PipelineScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             if (snap.hasError || !snap.hasData) {
-              return ListView(children: const [
-                SizedBox(height: 120),
+              return ListView(children: [
+                const SizedBox(height: 120),
                 Center(child: Text('Could not load the pipeline.',
                     style: TextStyle(color: kMuted))),
               ]);
@@ -57,8 +57,8 @@ class _PipelineScreenState extends State<PipelineScreen> {
                 .where((s) => s['value'] != 'won' && s['value'] != 'lost')
                 .toList();
             if (p.opps.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 120),
+              return ListView(children: [
+                const SizedBox(height: 120),
                 Center(child: Text('No open deals.\nConvert a lead to start one.',
                     textAlign: TextAlign.center, style: TextStyle(color: kMuted))),
               ]);
@@ -85,17 +85,17 @@ class _PipelineScreenState extends State<PipelineScreen> {
         padding: const EdgeInsets.only(top: 8, bottom: 8),
         child: Row(children: [
           Text('${stage['label']}'.toUpperCase(),
-              style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700,
+              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700,
                   letterSpacing: .5, color: kMuted)),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
             decoration: BoxDecoration(color: kBrandTint, borderRadius: BorderRadius.circular(20)),
             child: Text('${deals.length}',
-                style: const TextStyle(fontSize: 11, color: kBrandDark, fontWeight: FontWeight.w700)),
+                style: TextStyle(fontSize: 11, color: kBrandDark, fontWeight: FontWeight.w700)),
           ),
           const Spacer(),
-          Text(widget.api.money(total), style: const TextStyle(fontSize: 12, color: kMuted)),
+          Text(widget.api.money(total), style: TextStyle(fontSize: 12, color: kMuted)),
         ]),
       ),
       for (final d in deals) _dealCard(d),
@@ -120,15 +120,15 @@ class _PipelineScreenState extends State<PipelineScreen> {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${d['title']}',
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: kInk)),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: kInk)),
               Text('${d['customer_name'] ?? ''}',
-                  style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                  style: TextStyle(fontSize: 12.5, color: kMuted)),
               if (value > 0)
                 Text(widget.api.money(value),
-                    style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                    style: TextStyle(fontSize: 12.5, color: kMuted)),
             ]),
           ),
-          if (_canEdit) const Icon(Icons.swap_vert, size: 18, color: kMuted),
+          if (_canEdit) Icon(Icons.swap_vert, size: 18, color: kMuted),
         ]),
       ),
     );
@@ -142,8 +142,8 @@ class _PipelineScreenState extends State<PipelineScreen> {
       context: context,
       builder: (ctx) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Padding(
-            padding: EdgeInsets.all(14),
+          Padding(
+            padding: const EdgeInsets.all(14),
             child: Text('Move deal to…',
                 style: TextStyle(fontWeight: FontWeight.w700, color: kInk)),
           ),
@@ -151,7 +151,7 @@ class _PipelineScreenState extends State<PipelineScreen> {
             ListTile(
               title: Text('${s['label']}'),
               trailing: s['value'] == deal['stage']
-                  ? const Icon(Icons.check, color: kBrand)
+                  ? Icon(Icons.check, color: kBrand)
                   : null,
               onTap: () => Navigator.pop(ctx, '${s['value']}'),
             ),

@@ -98,14 +98,14 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           Row(children: [
             Expanded(
               child: Text('${r['title']}',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 19, fontWeight: FontWeight.w700, color: kInk)),
             ),
             _statusBadge(status),
           ]),
           const SizedBox(height: 2),
           Text('${r['kind_display'] ?? r['kind']}',
-              style: const TextStyle(fontSize: 13, color: kMuted)),
+              style: TextStyle(fontSize: 13, color: kMuted)),
           const SizedBox(height: 16),
 
           _row('Task', widget.taskName),
@@ -129,7 +129,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             const SizedBox(height: 12),
             _label('NOTES'),
             const SizedBox(height: 4),
-            Text('${r['notes']}', style: const TextStyle(fontSize: 14, color: kInk)),
+            Text('${r['notes']}', style: TextStyle(fontSize: 14, color: kInk)),
           ],
 
           if (items.isNotEmpty) ...[
@@ -141,9 +141,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 3),
                 child: Row(children: [
                   Expanded(child: Text('${it['description'] ?? ''}',
-                      style: const TextStyle(fontSize: 13.5, color: kInk))),
+                      style: TextStyle(fontSize: 13.5, color: kInk))),
                   Text('${it['quantity'] ?? ''} ${it['unit'] ?? ''}',
-                      style: const TextStyle(fontSize: 13, color: kMuted)),
+                      style: TextStyle(fontSize: 13, color: kMuted)),
                 ]),
               ),
           ],
@@ -153,7 +153,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           _label('REVIEW'),
           const SizedBox(height: 8),
           if (comments.isEmpty)
-            const Text('No review comments yet.',
+            Text('No review comments yet.',
                 style: TextStyle(fontSize: 13, color: kMuted))
           else
             for (final c in comments) _commentTile(c),
@@ -193,7 +193,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             icon: const Icon(Icons.undo, size: 18),
             label: const Text('Return'),
             style: OutlinedButton.styleFrom(
-                foregroundColor: kOrange, side: const BorderSide(color: kLine)),
+                foregroundColor: kOrange, side: BorderSide(color: kLine)),
           ),
         ),
         const SizedBox(width: 12),
@@ -243,14 +243,14 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Text('${c['author_name'] ?? 'Someone'}',
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 13, fontWeight: FontWeight.w700, color: kBrandDark)),
           const SizedBox(width: 8),
           if (when != null)
-            Text(_fmt(when), style: const TextStyle(fontSize: 11.5, color: kMuted)),
+            Text(_fmt(when), style: TextStyle(fontSize: 11.5, color: kMuted)),
         ]),
         const SizedBox(height: 2),
-        Text('${c['body']}', style: const TextStyle(fontSize: 14, color: kInk)),
+        Text('${c['body']}', style: TextStyle(fontSize: 14, color: kInk)),
       ]),
     );
   }
@@ -259,8 +259,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         padding: const EdgeInsets.symmetric(vertical: 5),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           SizedBox(width: 100,
-              child: Text(k, style: const TextStyle(fontSize: 12.5, color: kMuted))),
-          Expanded(child: Text(v, style: const TextStyle(fontSize: 14, color: kInk))),
+              child: Text(k, style: TextStyle(fontSize: 12.5, color: kMuted))),
+          Expanded(child: Text(v, style: TextStyle(fontSize: 14, color: kInk))),
         ]),
       );
 
@@ -276,7 +276,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   }
 
   Widget _label(String s) => Text(s,
-      style: const TextStyle(
+      style: TextStyle(
           fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.6, color: kMuted));
 
   String _fmt(DateTime t) =>

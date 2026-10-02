@@ -122,13 +122,13 @@ class _PurchaseOrderFormScreenState extends State<PurchaseOrderFormScreen> {
       child: Column(children: [
         Row(children: [
           Text('Item ${i + 1}',
-              style: const TextStyle(fontWeight: FontWeight.w600, color: kInk)),
+              style: TextStyle(fontWeight: FontWeight.w600, color: kInk)),
           const Spacer(),
           if (_lines.length > 1)
             IconButton(
                 visualDensity: VisualDensity.compact,
                 tooltip: 'Remove item',
-                icon: const Icon(Icons.close, size: 18, color: kMuted),
+                icon: Icon(Icons.close, size: 18, color: kMuted),
                 onPressed: () => setState(() {
                       _lines[i].dispose();
                       _lines.removeAt(i);
@@ -171,7 +171,7 @@ class _PurchaseOrderFormScreenState extends State<PurchaseOrderFormScreen> {
               child: LinearProgressIndicator(),
             )
           else if (_suppliers.isEmpty)
-            const Text('No suppliers yet — add a supplier first.',
+            Text('No suppliers yet — add a supplier first.',
                 style: TextStyle(color: kMuted))
           else
             LulaDropdown<String>(
@@ -192,7 +192,7 @@ class _PurchaseOrderFormScreenState extends State<PurchaseOrderFormScreen> {
               label: 'Delivery address (optional)',
               maxLines: 2),
           const SizedBox(height: 22),
-          const Text('Line items',
+          Text('Line items',
               style: TextStyle(fontWeight: FontWeight.w700, color: kInk)),
           const SizedBox(height: 12),
           for (var i = 0; i < _lines.length; i++) _lineCard(i),
@@ -203,7 +203,7 @@ class _PurchaseOrderFormScreenState extends State<PurchaseOrderFormScreen> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 16),
-            Text(_error!, style: const TextStyle(color: kRed, fontSize: 13)),
+            Text(_error!, style: TextStyle(color: kRed, fontSize: 13)),
           ],
           const SizedBox(height: 22),
           LulaButton(

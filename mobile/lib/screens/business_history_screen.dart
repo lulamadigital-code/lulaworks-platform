@@ -71,10 +71,10 @@ class _BusinessHistoryScreenState extends State<BusinessHistoryScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 Text('${entity['label'] ?? widget.title ?? ''}',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 18, fontWeight: FontWeight.w700, color: kInk)),
                 Text('${entity['type'] ?? widget.kind}'.toUpperCase(),
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 11, letterSpacing: .5, color: kMuted)),
                 const SizedBox(height: 16),
                 if (summary['found'] == true) _summaryCard(summary),
@@ -105,20 +105,20 @@ class _BusinessHistoryScreenState extends State<BusinessHistoryScreen> {
         padding: const EdgeInsets.only(top: 6, bottom: 8),
         child: Row(children: [
           Text(title.toUpperCase(),
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   letterSpacing: .5,
                   color: kMuted)),
           const SizedBox(width: 6),
           if (count > 0)
-            Text('($count)', style: const TextStyle(fontSize: 11, color: kMuted)),
+            Text('($count)', style: TextStyle(fontSize: 11, color: kMuted)),
         ]),
       );
 
   Widget _emptyLine(String msg) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Text(msg, style: const TextStyle(color: kMuted, fontSize: 13)),
+        child: Text(msg, style: TextStyle(color: kMuted, fontSize: 13)),
       );
 
   Widget _card({required Widget child}) => Container(
@@ -144,7 +144,7 @@ class _BusinessHistoryScreenState extends State<BusinessHistoryScreen> {
     if (stats.isEmpty && src == null) return const SizedBox.shrink();
     return _card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('SUMMARY',
+        Text('SUMMARY',
             style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -155,15 +155,15 @@ class _BusinessHistoryScreenState extends State<BusinessHistoryScreen> {
           for (final st in stats)
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(st.$2,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 18, fontWeight: FontWeight.w700, color: kInk)),
-              Text(st.$1, style: const TextStyle(fontSize: 11.5, color: kMuted)),
+              Text(st.$1, style: TextStyle(fontSize: 11.5, color: kMuted)),
             ]),
         ]),
         if (src != null) ...[
           const SizedBox(height: 10),
           Text('Sources: ${src['live'] ?? 0} live · ${src['imported'] ?? 0} imported',
-              style: const TextStyle(fontSize: 11.5, color: kMuted)),
+              style: TextStyle(fontSize: 11.5, color: kMuted)),
         ],
       ]),
     );
@@ -172,7 +172,7 @@ class _BusinessHistoryScreenState extends State<BusinessHistoryScreen> {
   Widget _outcomesCard(List<dynamic> outcomes) {
     return _card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('OUTCOMES',
+        Text('OUTCOMES',
             style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -198,7 +198,7 @@ class _BusinessHistoryScreenState extends State<BusinessHistoryScreen> {
       child: Row(children: [
         Icon(Icons.flag_outlined, size: 16, color: color),
         const SizedBox(width: 8),
-        Expanded(child: Text('${o['label'] ?? type}', style: const TextStyle(fontSize: 13.5, color: kInk))),
+        Expanded(child: Text('${o['label'] ?? type}', style: TextStyle(fontSize: 13.5, color: kInk))),
         if (extra.isNotEmpty)
           Text(extra, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color)),
       ]),
@@ -215,26 +215,26 @@ class _BusinessHistoryScreenState extends State<BusinessHistoryScreen> {
             margin: const EdgeInsets.only(top: 4, right: 10),
             width: 8,
             height: 8,
-            decoration: const BoxDecoration(color: kBrand, shape: BoxShape.circle)),
+            decoration: BoxDecoration(color: kBrand, shape: BoxShape.circle)),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Expanded(
                   child: Text('${e['title'] ?? ''}',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontWeight: FontWeight.w600, color: kInk, fontSize: 14))),
               if (amount.isNotEmpty)
                 Text('R$amount',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.w700, color: kInk, fontSize: 13)),
             ]),
             if (detail.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
-                child: Text(detail, style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                child: Text(detail, style: TextStyle(fontSize: 12.5, color: kMuted)),
               ),
             Text(_date(e['when']),
-                style: const TextStyle(fontSize: 11.5, color: kMuted)),
+                style: TextStyle(fontSize: 11.5, color: kMuted)),
           ]),
         ),
       ]),
@@ -247,9 +247,9 @@ class _BusinessHistoryScreenState extends State<BusinessHistoryScreen> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('${c['summary'] ?? c['type'] ?? ''}',
-            style: const TextStyle(fontSize: 13.5, color: kInk)),
+            style: TextStyle(fontSize: 13.5, color: kInk)),
         Text('${_date(c['when'])}${actor.isNotEmpty ? ' · $actor' : ''}',
-            style: const TextStyle(fontSize: 11.5, color: kMuted)),
+            style: TextStyle(fontSize: 11.5, color: kMuted)),
       ]),
     );
   }

@@ -41,8 +41,8 @@ void showGlobalCreate(BuildContext context, ApiClient api) {
     showDragHandle: true,
     builder: (ctx) => SafeArea(
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(LwSpace.xl, LwSpace.xs, LwSpace.xl, LwSpace.sm),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(LwSpace.xl, LwSpace.xs, LwSpace.xl, LwSpace.sm),
           child: Align(alignment: Alignment.centerLeft,
               child: Text('Create', style: LwType.title)),
         ),
@@ -50,7 +50,7 @@ void showGlobalCreate(BuildContext context, ApiClient api) {
           ListTile(
             leading: Container(
               width: 38, height: 38,
-              decoration: const BoxDecoration(color: kBrandTint, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: kBrandTint, shape: BoxShape.circle),
               child: Icon(it.icon, size: 20, color: kBrandDark),
             ),
             title: Text(it.label, style: LwType.label),

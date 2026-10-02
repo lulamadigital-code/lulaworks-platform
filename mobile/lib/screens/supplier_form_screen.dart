@@ -139,7 +139,7 @@ class _SupplierFormScreenState extends State<SupplierFormScreen> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 8),
-            Text(_error!, style: const TextStyle(color: kRed, fontSize: 13)),
+            Text(_error!, style: TextStyle(color: kRed, fontSize: 13)),
           ],
           const SizedBox(height: 22),
           LulaButton(

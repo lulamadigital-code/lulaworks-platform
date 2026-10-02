@@ -46,20 +46,20 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             if (snap.hasError) {
-              return ListView(children: const [
-                SizedBox(height: 120),
+              return ListView(children: [
+                const SizedBox(height: 120),
                 Center(child: Text('Could not load predictions.', style: TextStyle(color: kMuted))),
               ]);
             }
             final preds = snap.data!;
             if (preds.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 100),
+              return ListView(children: [
+                const SizedBox(height: 100),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
                   child: Center(child: Text(
                       'No predictions yet. They appear as Lulaworks builds up price '
                       'history, quoting patterns and job data.',
@@ -100,23 +100,23 @@ class _PredictionsScreenState extends State<PredictionsScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text('${p['subject'] ?? ''}',
-                style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: kInk)),
+                style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700, color: kInk)),
           ),
           _confChip(conf),
         ]),
         const SizedBox(height: 10),
         Text('${p['statement'] ?? ''}',
-            style: const TextStyle(fontSize: 13.5, color: kInk, height: 1.35)),
+            style: TextStyle(fontSize: 13.5, color: kInk, height: 1.35)),
         if (reasoning.isNotEmpty) const SizedBox(height: 8),
         for (final r in reasoning)
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: Text('• $r', style: const TextStyle(fontSize: 12, color: kMuted, height: 1.3)),
+            child: Text('• $r', style: TextStyle(fontSize: 12, color: kMuted, height: 1.3)),
           ),
         if ('${p['source'] ?? ''}'.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text('Source: ${p['source']}',
-              style: const TextStyle(fontSize: 11.5, color: kMuted, fontStyle: FontStyle.italic)),
+              style: TextStyle(fontSize: 11.5, color: kMuted, fontStyle: FontStyle.italic)),
         ],
       ]),
     );

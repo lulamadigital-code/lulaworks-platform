@@ -85,7 +85,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             final d = snap.data;
             return ListView(
@@ -128,7 +128,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       Row(children: [
         Expanded(
           child: Text(p.title.isEmpty ? p.clientName : p.title,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 21, fontWeight: FontWeight.w700, color: kInk,
                   letterSpacing: -0.3)),
         ),
@@ -138,7 +138,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       const SizedBox(height: 6),
       Text([p.clientName, p.site, p.workType]
               .where((s) => s.isNotEmpty).join('  ·  '),
-          style: const TextStyle(fontSize: 13, color: kMuted)),
+          style: TextStyle(fontSize: 13, color: kMuted)),
     ]);
   }
 
@@ -168,14 +168,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 child: Text('${t['name']}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w500, color: kInk)),
               ),
               const SizedBox(width: 8),
               Text(label,
                   style: TextStyle(
                       fontSize: 12, fontWeight: FontWeight.w600, color: c)),
-              const Icon(Icons.chevron_right, size: 19, color: kMuted),
+              Icon(Icons.chevron_right, size: 19, color: kMuted),
             ]),
           ),
         ),
@@ -194,12 +194,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(s.toUpperCase(),
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 11.5, fontWeight: FontWeight.w700,
                   letterSpacing: 0.6, color: kMuted)),
           if (trailing != null)
             Text(trailing,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 12.5, fontWeight: FontWeight.w600, color: kMuted)),
         ],
       );
@@ -228,7 +228,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         child: Row(children: [
           Icon(icon, size: 20, color: kMuted),
           const SizedBox(width: 12),
-          Text(text, style: const TextStyle(fontSize: 13.5, color: kMuted)),
+          Text(text, style: TextStyle(fontSize: 13.5, color: kMuted)),
         ]),
       );
 }
@@ -277,7 +277,7 @@ class _GateCard extends StatelessWidget {
                     fontSize: 16, fontWeight: FontWeight.w700, color: color)),
           ),
           Text('${readiness.overall}%',
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 22, fontWeight: FontWeight.w700, color: kInk)),
         ]),
         const SizedBox(height: 14),
@@ -297,7 +297,7 @@ class _GateCard extends StatelessWidget {
                 SizedBox(
                     width: 104,
                     child: Text(_cap(e.key),
-                        style: const TextStyle(fontSize: 12.5, color: kInk))),
+                        style: TextStyle(fontSize: 12.5, color: kInk))),
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(4),
@@ -314,7 +314,7 @@ class _GateCard extends StatelessWidget {
                     width: 34,
                     child: Text('${e.value}%',
                         textAlign: TextAlign.right,
-                        style: const TextStyle(fontSize: 12, color: kMuted))),
+                        style: TextStyle(fontSize: 12, color: kMuted))),
               ]),
             )),
         if (readiness.blocking.isNotEmpty) ...[
@@ -326,7 +326,7 @@ class _GateCard extends StatelessWidget {
           ...readiness.blocking.map((b) => Padding(
                 padding: const EdgeInsets.only(bottom: 3),
                 child: Text('•  ${b['name']}  (${b['source']})',
-                    style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                    style: TextStyle(fontSize: 12.5, color: kMuted)),
               )),
         ],
       ]),
@@ -355,12 +355,12 @@ class _ChecklistTile extends StatelessWidget {
       onTap: () => _openActions(context),
       leading: Icon(icon, color: color, size: 22),
       title: Text('${item['name']}',
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 14, fontWeight: FontWeight.w500, color: kInk)),
       subtitle: Text('${item['category']} · ${item['status']}'
           '${mandatory ? ' · mandatory' : ''}',
-          style: const TextStyle(fontSize: 12, color: kMuted)),
-      trailing: const Icon(Icons.more_horiz, color: kMuted),
+          style: TextStyle(fontSize: 12, color: kMuted)),
+      trailing: Icon(Icons.more_horiz, color: kMuted),
     );
   }
 
@@ -403,13 +403,13 @@ class _ChecklistTile extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 2),
               child: Text('${item['name']}',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 16, fontWeight: FontWeight.w600, color: kInk)),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: Text('Currently: ${item['status']}',
-                  style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                  style: TextStyle(fontSize: 12.5, color: kMuted)),
             ),
             const Divider(height: 1),
             for (final a in actions)
@@ -423,8 +423,8 @@ class _ChecklistTile extends StatelessWidget {
                 },
               ),
             if (actions.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(20),
+              Padding(
+                padding: const EdgeInsets.all(20),
                 child: Text('No actions available to you for this item.',
                     style: TextStyle(color: kMuted)),
               ),

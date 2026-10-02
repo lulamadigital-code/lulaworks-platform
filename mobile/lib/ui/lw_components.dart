@@ -33,7 +33,7 @@ class LwEmptyState extends StatelessWidget {
           Container(
             width: 64,
             height: 64,
-            decoration: const BoxDecoration(color: kBrandTint, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: kBrandTint, shape: BoxShape.circle),
             child: Icon(icon, color: kBrandDark, size: 30),
           ),
           const SizedBox(height: LwSpace.lg),

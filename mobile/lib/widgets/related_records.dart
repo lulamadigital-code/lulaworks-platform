@@ -59,7 +59,7 @@ class _RelatedRecordsState extends State<RelatedRecords> {
             border: Border.all(color: kLine),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('RELATED RECORDS',
+            Text('RELATED RECORDS',
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
                     letterSpacing: .5, color: kMuted)),
             const SizedBox(height: 8),
@@ -67,7 +67,7 @@ class _RelatedRecordsState extends State<RelatedRecords> {
               Padding(
                 padding: const EdgeInsets.only(top: 6, bottom: 3),
                 child: Text('${(sec as Map)['title']}',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
                         color: kMuted)),
               ),
               for (final raw in (sec['items'] as List? ?? const []))
@@ -90,12 +90,12 @@ class _RelatedRecordsState extends State<RelatedRecords> {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${it['label']}',
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: kInk, fontSize: 13.5)),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: kInk, fontSize: 13.5)),
               Text('${it['sub']}',
-                  style: const TextStyle(fontSize: 11.5, color: kMuted)),
+                  style: TextStyle(fontSize: 11.5, color: kMuted)),
             ]),
           ),
-          if (nav) const Icon(Icons.chevron_right, size: 18, color: kMuted),
+          if (nav) Icon(Icons.chevron_right, size: 18, color: kMuted),
         ]),
       ),
     );

@@ -79,10 +79,10 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 fillColor: kBg,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: kLine)),
+                    borderSide: BorderSide(color: kLine)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: kLine)),
+                    borderSide: BorderSide(color: kLine)),
               ),
             ),
           ),
@@ -106,7 +106,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
             if (snap.hasError) {
               return ListView(children: [
                 const SizedBox(height: 120),
-                const Icon(Icons.cloud_off, size: 44, color: kMuted),
+                Icon(Icons.cloud_off, size: 44, color: kMuted),
                 const SizedBox(height: 12),
                 Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
               ]);
@@ -115,7 +115,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
             if (rows.isEmpty) {
               return ListView(children: [
                 const SizedBox(height: 120),
-                const Icon(Icons.contacts_outlined, size: 46, color: kMuted),
+                Icon(Icons.contacts_outlined, size: 46, color: kMuted),
                 const SizedBox(height: 12),
                 Center(
                     child: Text(_search.text.isEmpty
@@ -180,7 +180,7 @@ class _CustomerCard extends StatelessWidget {
                     color: kBrandTint, borderRadius: BorderRadius.circular(12)),
                 alignment: Alignment.center,
                 child: Text(_initials,
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: kBrandDark, fontWeight: FontWeight.w700, fontSize: 15)),
               ),
               const SizedBox(width: 13),
@@ -189,22 +189,22 @@ class _CustomerCard extends StatelessWidget {
                   Text('${row['name']}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 15, fontWeight: FontWeight.w600, color: kInk)),
                   const SizedBox(height: 2),
                   Text([if ('${row['code'] ?? ''}'.isNotEmpty) '${row['code']}',
                         if (loc.isNotEmpty) loc].join('  ·  '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                      style: TextStyle(fontSize: 12.5, color: kMuted)),
                 ]),
               ),
               if (status.isNotEmpty && status != 'active') ...[
                 const SizedBox(width: 8),
                 Text(status,
-                    style: const TextStyle(fontSize: 11.5, color: kMuted)),
+                    style: TextStyle(fontSize: 11.5, color: kMuted)),
               ],
-              const Icon(Icons.chevron_right, size: 20, color: kMuted),
+              Icon(Icons.chevron_right, size: 20, color: kMuted),
             ]),
           ),
         ),

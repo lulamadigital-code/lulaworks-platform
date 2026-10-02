@@ -61,19 +61,19 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             if (snap.hasError) {
-              return ListView(children: const [
-                SizedBox(height: 120),
+              return ListView(children: [
+                const SizedBox(height: 120),
                 Center(child: Text('Could not load activities.',
                     style: TextStyle(color: kMuted))),
               ]);
             }
             final acts = snap.data!;
             if (acts.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 120),
+              return ListView(children: [
+                const SizedBox(height: 120),
                 Center(child: Text('Nothing due. 🎉', style: TextStyle(color: kMuted))),
               ]);
             }
@@ -113,14 +113,14 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('${a['subject']}',
-                style: const TextStyle(fontWeight: FontWeight.w600, color: kInk)),
+                style: TextStyle(fontWeight: FontWeight.w600, color: kInk)),
             const SizedBox(height: 2),
             Row(children: [
               Text('${a['type_display'] ?? ''}',
-                  style: const TextStyle(fontSize: 12, color: kMuted)),
+                  style: TextStyle(fontSize: 12, color: kMuted)),
               if ('${a['customer_name'] ?? ''}'.isNotEmpty)
                 Text('  ·  ${a['customer_name']}',
-                    style: const TextStyle(fontSize: 12, color: kMuted)),
+                    style: TextStyle(fontSize: 12, color: kMuted)),
             ]),
             if (due.isNotEmpty)
               Text(due,
@@ -132,7 +132,7 @@ class _ActivitiesScreenState extends State<ActivitiesScreen> {
         if (_canEdit)
           IconButton(
             tooltip: 'Complete',
-            icon: const Icon(Icons.check_circle_outline, color: kGreen),
+            icon: Icon(Icons.check_circle_outline, color: kGreen),
             onPressed: () => _complete(a),
           ),
       ]),

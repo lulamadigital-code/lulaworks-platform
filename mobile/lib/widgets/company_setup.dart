@@ -70,13 +70,13 @@ class SetupCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Icon(Icons.rocket_launch_outlined, size: 20, color: kBrandDark),
+          Icon(Icons.rocket_launch_outlined, size: 20, color: kBrandDark),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text('Finish your company setup',
                 style: TextStyle(fontWeight: FontWeight.w700, color: kInk))),
           Text('${s.overallPercentage}%',
-              style: const TextStyle(fontWeight: FontWeight.w700, color: kBrandDark)),
+              style: TextStyle(fontWeight: FontWeight.w700, color: kBrandDark)),
         ]),
         const SizedBox(height: 8),
         ClipRRect(
@@ -85,14 +85,14 @@ class SetupCard extends StatelessWidget {
             value: s.overallPercentage / 100,
             minHeight: 7,
             backgroundColor: kLine,
-            valueColor: const AlwaysStoppedAnimation(kBrand),
+            valueColor: AlwaysStoppedAnimation(kBrand),
           ),
         ),
         const SizedBox(height: 8),
         Text(
           '${s.itemsRemaining} item${s.itemsRemaining == 1 ? '' : 's'} left · '
           'complete your details to unlock invoicing & professional documents.',
-          style: const TextStyle(fontSize: 12.5, color: kMuted)),
+          style: TextStyle(fontSize: 12.5, color: kMuted)),
         if (s.sections.isNotEmpty) ...[
           const SizedBox(height: 10),
           Wrap(spacing: 6, runSpacing: 6, children: [
@@ -157,11 +157,11 @@ Future<void> showCompanySetupDialog(
               Padding(
                 padding: const EdgeInsets.only(top: 3),
                 child: Text('•  ${m['label']}',
-                    style: const TextStyle(color: kInk))),
+                    style: TextStyle(color: kInk))),
           ],
           if (!canEdit) ...[
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'This company setting needs to be completed by a company administrator.',
               style: TextStyle(fontSize: 12.5, color: kMuted)),
           ],

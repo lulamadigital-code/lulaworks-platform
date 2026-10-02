@@ -74,12 +74,12 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
             future: _future,
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: kBrand));
+                return Center(child: CircularProgressIndicator(color: kBrand));
               }
               if (snap.hasError) {
                 return ListView(children: [
                   const SizedBox(height: 140),
-                  const Icon(Icons.cloud_off, size: 44, color: kMuted),
+                  Icon(Icons.cloud_off, size: 44, color: kMuted),
                   const SizedBox(height: 12),
                   Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
                 ]);
@@ -118,7 +118,7 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
         ]),
         const SizedBox(height: 18),
         Text('${_greeting()}, ${widget.api.firstName}'.trim(),
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 24, fontWeight: FontWeight.w700, color: kInk,
                 letterSpacing: -0.4),
             maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -127,7 +127,7 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
             ? "You're all caught up for today."
             : "You have ${active.length} task${active.length == 1 ? '' : 's'} on the go"
                 "${doneToday > 0 ? ' · $doneToday done' : ''}.",
-            style: const TextStyle(fontSize: 13.5, color: kMuted)),
+            style: TextStyle(fontSize: 13.5, color: kMuted)),
         const SizedBox(height: 18),
 
         // Time & attendance — clock in/out at a glance.
@@ -186,7 +186,7 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
               isLabelVisible: live > 0,
               label: Text('$live'),
               offset: const Offset(-6, 6),
-              child: const Icon(Icons.notifications_none, size: 21, color: kInk),
+              child: Icon(Icons.notifications_none, size: 21, color: kInk),
             ),
           ),
         ),
@@ -229,18 +229,18 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
             ]),
             const SizedBox(height: 12),
             Text('${t['name']}',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 19, fontWeight: FontWeight.w700, color: kInk, height: 1.2)),
             if (meta.isNotEmpty) ...[
               const SizedBox(height: 6),
               Row(children: [
-                const Icon(Icons.place_outlined, size: 15, color: kMuted),
+                Icon(Icons.place_outlined, size: 15, color: kMuted),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(meta,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 13, color: kMuted)),
+                      style: TextStyle(fontSize: 13, color: kMuted)),
                 ),
               ]),
             ],
@@ -300,13 +300,13 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text('${t['name']}',
                             maxLines: 2, overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 14.5, fontWeight: FontWeight.w500, color: kInk)),
                         if (sub.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(sub,
                               maxLines: 1, overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 12, color: kMuted)),
+                              style: TextStyle(fontSize: 12, color: kMuted)),
                         ],
                       ]),
                     ),
@@ -341,20 +341,20 @@ class _FieldHomeScreenState extends State<FieldHomeScreen> {
         child: Column(children: [
           Container(
             width: 56, height: 56,
-            decoration: const BoxDecoration(color: kBrandTint, shape: BoxShape.circle),
-            child: const Icon(Icons.check, color: kBrandDark, size: 30),
+            decoration: BoxDecoration(color: kBrandTint, shape: BoxShape.circle),
+            child: Icon(Icons.check, color: kBrandDark, size: 30),
           ),
           const SizedBox(height: 12),
-          const Text('No active tasks',
+          Text('No active tasks',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kInk)),
           const SizedBox(height: 3),
-          const Text('When your manager assigns work, it shows up here.',
+          Text('When your manager assigns work, it shows up here.',
               style: TextStyle(fontSize: 13, color: kMuted)),
         ]),
       );
 
   Widget _sectionTitle(String t) => Text(t.toUpperCase(),
-      style: const TextStyle(
+      style: TextStyle(
           fontSize: 11.5, fontWeight: FontWeight.w700,
           letterSpacing: 0.6, color: kMuted));
 

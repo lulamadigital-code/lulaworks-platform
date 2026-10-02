@@ -53,7 +53,7 @@ class _AttentionScreenState extends State<AttentionScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             if (snap.hasError) {
               return ListView(children: [
@@ -61,7 +61,7 @@ class _AttentionScreenState extends State<AttentionScreen> {
                 Center(child: Text(
                     snap.error is ApiException ? '${snap.error}'
                         : 'Could not load the Attention Centre.',
-                    style: const TextStyle(color: kMuted))),
+                    style: TextStyle(color: kMuted))),
               ]);
             }
             final d = snap.data!;
@@ -83,14 +83,14 @@ class _AttentionScreenState extends State<AttentionScreen> {
                 ]),
                 const SizedBox(height: 16),
                 if (items.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 60),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 60),
                     child: Column(children: [
-                      Text('✅', style: TextStyle(fontSize: 34)),
-                      SizedBox(height: 8),
+                      const Text('✅', style: TextStyle(fontSize: 34)),
+                      const SizedBox(height: 8),
                       Text('All clear',
                           style: TextStyle(fontWeight: FontWeight.w700, color: kInk)),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text('Nothing needs your attention right now.',
                           style: TextStyle(fontSize: 13, color: kMuted)),
                     ]),
@@ -117,7 +117,7 @@ class _AttentionScreenState extends State<AttentionScreen> {
             Text(emoji, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 4),
             Text(n, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: c)),
-            Text(label, style: const TextStyle(fontSize: 11.5, color: kMuted)),
+            Text(label, style: TextStyle(fontSize: 11.5, color: kMuted)),
           ]),
         ),
       );
@@ -131,8 +131,8 @@ class _AttentionScreenState extends State<AttentionScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border(left: BorderSide(color: c, width: 3),
-            top: const BorderSide(color: kLine), right: const BorderSide(color: kLine),
-            bottom: const BorderSide(color: kLine)),
+            top: BorderSide(color: kLine), right: BorderSide(color: kLine),
+            bottom: BorderSide(color: kLine)),
       ),
       padding: const EdgeInsets.all(13),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -141,10 +141,10 @@ class _AttentionScreenState extends State<AttentionScreen> {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('${it['title']}',
-                style: const TextStyle(fontWeight: FontWeight.w600, color: kInk)),
+                style: TextStyle(fontWeight: FontWeight.w600, color: kInk)),
             const SizedBox(height: 2),
             Text('${it['detail']}',
-                style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                style: TextStyle(fontSize: 12.5, color: kMuted)),
           ]),
         ),
         const SizedBox(width: 8),
@@ -153,7 +153,7 @@ class _AttentionScreenState extends State<AttentionScreen> {
           decoration: BoxDecoration(
             color: kBg, borderRadius: BorderRadius.circular(20)),
           child: Text('${it['category']}',
-              style: const TextStyle(fontSize: 10.5, color: kMuted)),
+              style: TextStyle(fontSize: 10.5, color: kMuted)),
         ),
       ]),
     );

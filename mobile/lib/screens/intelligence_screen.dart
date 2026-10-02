@@ -66,8 +66,8 @@ class _IntelligenceScreenState extends State<IntelligenceScreen> {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(2, 2, 2, 12),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(2, 2, 2, 12),
                   child: Text('What your business needs now, what’s coming, and what '
                       'Lulaworks is watching for you.',
                       style: TextStyle(fontSize: 13, color: kMuted, height: 1.4)),
@@ -106,18 +106,18 @@ class _IntelligenceScreenState extends State<IntelligenceScreen> {
           child: Icon(icon, color: kBrandDark, size: 22),
         ),
         title: Text(title,
-            style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: kInk)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12.5, color: kMuted)),
+            style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: kInk)),
+        subtitle: Text(subtitle, style: TextStyle(fontSize: 12.5, color: kMuted)),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
           if (count != null && count > 0)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
               decoration: BoxDecoration(color: kBrandTint, borderRadius: BorderRadius.circular(20)),
               child: Text('$count',
-                  style: const TextStyle(fontSize: 12.5, color: kBrandDark, fontWeight: FontWeight.w700)),
+                  style: TextStyle(fontSize: 12.5, color: kBrandDark, fontWeight: FontWeight.w700)),
             ),
           const SizedBox(width: 6),
-          const Icon(Icons.chevron_right, color: kMuted),
+          Icon(Icons.chevron_right, color: kMuted),
         ]),
         onTap: onTap,
       ),

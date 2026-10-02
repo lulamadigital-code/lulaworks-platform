@@ -34,17 +34,17 @@ class AccessRestricted extends StatelessWidget {
               height: 64,
               decoration: BoxDecoration(
                   color: kBrandTint, borderRadius: BorderRadius.circular(18)),
-              child: const Icon(Icons.lock_outline, color: kBrandDark, size: 30),
+              child: Icon(Icons.lock_outline, color: kBrandDark, size: 30),
             ),
             const SizedBox(height: 18),
             Text(title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 18, fontWeight: FontWeight.w700, color: kInk)),
             const SizedBox(height: 6),
             Text(message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13.5, color: kMuted, height: 1.4)),
+                style: TextStyle(fontSize: 13.5, color: kMuted, height: 1.4)),
             if (inScaffold && Navigator.of(context).canPop()) ...[
               const SizedBox(height: 22),
               OutlinedButton.icon(

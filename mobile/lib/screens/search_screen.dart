@@ -142,25 +142,25 @@ class _SearchScreenState extends State<SearchScreen> {
     // Command landing (empty query): act, don't just search (§50).
     if (_lastQuery.length < 2) {
       return ListView(children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
           child: Text('ACTIONS', style: LwType.section),
         ),
         ListTile(
-          leading: const Icon(Icons.add, color: kBrand),
+          leading: Icon(Icons.add, color: kBrand),
           title: const Text('Create…'),
           subtitle: const Text('Quotation, invoice, customer, PO…'),
           onTap: () => showGlobalCreate(context, widget.api),
         ),
         if (widget.api.canGenerateAi)
           ListTile(
-            leading: const Icon(Icons.auto_awesome, color: kBrand),
+            leading: Icon(Icons.auto_awesome, color: kBrand),
             title: const Text('Ask LulaAI'),
             subtitle: const Text('Summaries, history, unpaid invoices…'),
             onTap: () => _askLula(),
           ),
-        const Padding(
-          padding: EdgeInsets.all(24),
+        Padding(
+          padding: const EdgeInsets.all(24),
           child: Text('Or type to search customers, quotes, jobs, invoices…',
               style: TextStyle(color: kMuted), textAlign: TextAlign.center),
         ),
@@ -172,12 +172,12 @@ class _SearchScreenState extends State<SearchScreen> {
         if (_error != null)
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(_error!, style: const TextStyle(color: kRed)),
+            child: Text(_error!, style: TextStyle(color: kRed)),
           ),
         // Always offer to ask LulaAI about whatever was typed.
         if (widget.api.canGenerateAi)
           ListTile(
-            leading: const Icon(Icons.auto_awesome, color: kBrand),
+            leading: Icon(Icons.auto_awesome, color: kBrand),
             title: Text('Ask LulaAI about “$_lastQuery”'),
             onTap: () => _askLula(_lastQuery),
           ),
@@ -185,13 +185,13 @@ class _SearchScreenState extends State<SearchScreen> {
           Padding(
             padding: const EdgeInsets.all(24),
             child: Text('No records match “$_lastQuery”.',
-                style: const TextStyle(color: kMuted), textAlign: TextAlign.center),
+                style: TextStyle(color: kMuted), textAlign: TextAlign.center),
           ),
         for (final g in _groups) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Text('${g['label']}'.toUpperCase(),
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     letterSpacing: .5,
@@ -216,7 +216,7 @@ class _SearchScreenState extends State<SearchScreen> {
       subtitle: '${it['sub'] ?? ''}'.isEmpty
           ? null
           : Text('${it['sub']}', maxLines: 1, overflow: TextOverflow.ellipsis),
-      trailing: nav ? const Icon(Icons.chevron_right, size: 18, color: kMuted) : null,
+      trailing: nav ? Icon(Icons.chevron_right, size: 18, color: kMuted) : null,
       onTap: nav ? () => _open(type, '${it['id']}') : null,
     );
   }

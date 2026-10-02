@@ -68,25 +68,25 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             if (snap.hasError) {
               return ListView(children: [
                 const SizedBox(height: 120),
-                const Icon(Icons.cloud_off, size: 44, color: kMuted),
+                Icon(Icons.cloud_off, size: 44, color: kMuted),
                 const SizedBox(height: 12),
                 Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
               ]);
             }
             final tickets = snap.data ?? const [];
             if (tickets.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 130),
+              return ListView(children: [
+                const SizedBox(height: 130),
                 Icon(Icons.support_agent_outlined, size: 48, color: kMuted),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Center(child: Text('No requests yet',
                     style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: kInk))),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Center(child: Text('Tap “New request” to log a support ticket.',
                     style: TextStyle(fontSize: 13, color: kMuted))),
               ]);
@@ -121,7 +121,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               Expanded(
                 child: Text('${t['subject']}',
                     maxLines: 2, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 15, fontWeight: FontWeight.w600, color: kInk)),
               ),
               const SizedBox(width: 8),
@@ -139,7 +139,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               '${t['category_display'] ?? ''}',
               if ((t['message_count'] as int? ?? 0) > 0) '${t['message_count']} messages',
             ].where((s) => s.isNotEmpty).join('  ·  '),
-                style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                style: TextStyle(fontSize: 12.5, color: kMuted)),
           ]),
         ),
       ),
@@ -216,7 +216,7 @@ class _NewTicketSheetState extends State<_NewTicketSheet> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
             child: Text('New support request',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: kInk)),
@@ -237,7 +237,7 @@ class _NewTicketSheetState extends State<_NewTicketSheet> {
           LulaTextField(controller: _message, label: 'What happened?', maxLines: 4, required: true),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: kRed, fontSize: 13)),
+            Text(_error!, style: TextStyle(color: kRed, fontSize: 13)),
           ],
           const SizedBox(height: 18),
           LulaButton(label: 'Send request', loadingLabel: 'Sending…',
@@ -378,7 +378,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
             Text('${_t['subject']}',
                 maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, color: kMuted)),
+                style: TextStyle(fontSize: 12, color: kMuted)),
           ],
         ),
         actions: [
@@ -408,13 +408,13 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
           top: false,
           child: Container(
             padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
                 color: Colors.white, border: Border(top: BorderSide(color: kLine))),
             child: Row(children: [
               IconButton(
                 tooltip: 'Add photo',
                 onPressed: _busy ? null : _sendPhoto,
-                icon: const Icon(Icons.add_a_photo_outlined, color: kBrandDark),
+                icon: Icon(Icons.add_a_photo_outlined, color: kBrandDark),
               ),
               Expanded(
                 child: TextField(
@@ -473,7 +473,7 @@ class _SupportTicketScreenState extends State<SupportTicketScreen> {
             Padding(
               padding: const EdgeInsets.only(bottom: 3),
               child: Text('${m['sender_name']?.toString().trim().isNotEmpty == true ? m['sender_name'] : 'Lulaworks support'}',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 11.5, fontWeight: FontWeight.w700, color: kBrandDark)),
             ),
           for (final a in atts)

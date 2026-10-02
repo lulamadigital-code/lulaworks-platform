@@ -85,10 +85,10 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
                 fillColor: kBg,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: kLine)),
+                    borderSide: BorderSide(color: kLine)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: kLine)),
+                    borderSide: BorderSide(color: kLine)),
               ),
             ),
           ),
@@ -106,7 +106,7 @@ class _QuotationsScreenState extends State<QuotationsScreen> {
             if (snap.hasError) {
               return ListView(children: [
                 const SizedBox(height: 120),
-                const Icon(Icons.cloud_off, size: 44, color: kMuted),
+                Icon(Icons.cloud_off, size: 44, color: kMuted),
                 const SizedBox(height: 12),
                 Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
               ]);
@@ -173,7 +173,7 @@ class _QuoteCard extends StatelessWidget {
                   child: Text('${row['number']}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 15, fontWeight: FontWeight.w700, color: kInk)),
                 ),
                 const SizedBox(width: 8),
@@ -184,10 +184,10 @@ class _QuoteCard extends StatelessWidget {
                       .where((s) => '$s'.isNotEmpty).join('  ·  '),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                  style: TextStyle(fontSize: 12.5, color: kMuted)),
               const SizedBox(height: 8),
               Text(api.money(row['total']),
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 15, fontWeight: FontWeight.w700, color: kBrandDark)),
             ]),
           ),
@@ -356,7 +356,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
             ],
           ),
           body: q == null
-              ? const Center(child: CircularProgressIndicator(color: kBrand))
+              ? Center(child: CircularProgressIndicator(color: kBrand))
               : _body(context, snap.data!),
         );
       },
@@ -372,7 +372,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       Row(children: [
         Expanded(
           child: Text('${q['client_name'] ?? ''}',
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 19, fontWeight: FontWeight.w700, color: kInk)),
         ),
         const SizedBox(width: 8),
@@ -383,10 +383,10 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
         if ('${q['title'] ?? ''}'.isNotEmpty) '${q['title']}',
         if ('${q['site'] ?? ''}'.isNotEmpty) 'Site: ${q['site']}',
         if ('${q['validity_date'] ?? ''}'.isNotEmpty) 'Valid to ${q['validity_date']}',
-      ].join('  ·  '), style: const TextStyle(fontSize: 12.5, color: kMuted)),
+      ].join('  ·  '), style: TextStyle(fontSize: 12.5, color: kMuted)),
       const SizedBox(height: 20),
       Text('LINE ITEMS  ·  ${lines.length}',
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 11.5, fontWeight: FontWeight.w700,
               letterSpacing: 0.6, color: kMuted)),
       const SizedBox(height: 10),
@@ -411,11 +411,11 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       ),
       if ('${q['notes'] ?? ''}'.isNotEmpty) ...[
         const SizedBox(height: 16),
-        Text('${q['notes']}', style: const TextStyle(fontSize: 13, color: kInk)),
+        Text('${q['notes']}', style: TextStyle(fontSize: 13, color: kInk)),
       ],
       if (canMove && next.isNotEmpty) ...[
         const SizedBox(height: 22),
-        const Text('MOVE TO',
+        Text('MOVE TO',
             style: TextStyle(
                 fontSize: 11.5, fontWeight: FontWeight.w700,
                 letterSpacing: 0.6, color: kMuted)),
@@ -430,7 +430,7 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
       ],
       if (widget.api.can('quotes.create')) ...[
         const SizedBox(height: 22),
-        const Text('GENERATE',
+        Text('GENERATE',
             style: TextStyle(
                 fontSize: 11.5, fontWeight: FontWeight.w700,
                 letterSpacing: 0.6, color: kMuted)),
@@ -460,15 +460,15 @@ class _QuotationDetailScreenState extends State<QuotationDetailScreen> {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('${l['description'] ?? '—'}',
-                style: const TextStyle(fontSize: 13.5, color: kInk)),
+                style: TextStyle(fontSize: 13.5, color: kInk)),
             const SizedBox(height: 2),
             Text('${l['qty'] ?? ''} ${l['unit'] ?? ''} × ${widget.api.money(l['unit_price'])}',
-                style: const TextStyle(fontSize: 12, color: kMuted)),
+                style: TextStyle(fontSize: 12, color: kMuted)),
           ]),
         ),
         const SizedBox(width: 10),
         Text(widget.api.money(l['line_total']),
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 13.5, fontWeight: FontWeight.w600, color: kInk)),
       ]),
     );

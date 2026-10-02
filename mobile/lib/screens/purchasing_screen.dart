@@ -63,25 +63,25 @@ class PurchasingScreen extends StatelessWidget {
           child: Icon(e.icon, color: kBrandDark, size: 21),
         ),
         title: Text(e.title,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 15, fontWeight: FontWeight.w600, color: kInk)),
         subtitle: Text(e.subtitle,
-            style: const TextStyle(fontSize: 12.5, color: kMuted)),
-        trailing: const Icon(Icons.chevron_right, color: kMuted),
+            style: TextStyle(fontSize: 12.5, color: kMuted)),
+        trailing: Icon(Icons.chevron_right, color: kMuted),
         onTap: () =>
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => e.build())),
       );
 
-  Widget _empty(BuildContext context) => const Center(
+  Widget _empty(BuildContext context) => Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
+          padding: const EdgeInsets.all(32),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Icon(Icons.shopping_cart_outlined, size: 46, color: kMuted),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Text('Nothing here for your role',
                 style: TextStyle(
                     fontSize: 15, fontWeight: FontWeight.w600, color: kInk)),
-            SizedBox(height: 2),
+            const SizedBox(height: 2),
             Text('Procurement tools appear here when you have access.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: kMuted)),

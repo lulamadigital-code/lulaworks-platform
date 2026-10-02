@@ -47,25 +47,25 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             if (snap.hasError) {
               return ListView(children: [
                 const SizedBox(height: 120),
-                const Icon(Icons.cloud_off, size: 44, color: kMuted),
+                Icon(Icons.cloud_off, size: 44, color: kMuted),
                 const SizedBox(height: 12),
                 Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
               ]);
             }
             final threads = snap.data ?? const [];
             if (threads.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 140),
+              return ListView(children: [
+                const SizedBox(height: 140),
                 Icon(Icons.forum_outlined, size: 48, color: kMuted),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Center(child: Text('No conversations yet',
                     style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: kInk))),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Center(child: Text('Task chats you join appear here.',
                     style: TextStyle(fontSize: 13, color: kMuted))),
               ]);
@@ -96,7 +96,7 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
         width: 44, height: 44,
         decoration: BoxDecoration(
             color: kBrandTint, borderRadius: BorderRadius.circular(12)),
-        child: const Icon(Icons.forum_outlined, color: kBrandDark),
+        child: Icon(Icons.forum_outlined, color: kBrandDark),
       ),
       title: Text('${t['task_name']}',
           maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -112,14 +112,14 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
               color: unread > 0 ? kInk : kMuted)),
       trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Text(_time(last['created_at']),
-            style: const TextStyle(fontSize: 11.5, color: kMuted)),
+            style: TextStyle(fontSize: 11.5, color: kMuted)),
         const SizedBox(height: 6),
         if (unread > 0)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
                 color: kBrand, shape: BoxShape.rectangle,
-                borderRadius: BorderRadius.all(Radius.circular(10))),
+                borderRadius: const BorderRadius.all(Radius.circular(10))),
             child: Text('$unread',
                 style: const TextStyle(
                     fontSize: 11, color: Colors.white, fontWeight: FontWeight.w700)),

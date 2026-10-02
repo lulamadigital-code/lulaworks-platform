@@ -110,14 +110,14 @@ class _CustomerPoFormScreenState extends State<CustomerPoFormScreen> {
                 border: Border.all(color: kLine)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                const Icon(Icons.auto_awesome, size: 18, color: kBrandDark),
+                Icon(Icons.auto_awesome, size: 18, color: kBrandDark),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _fileName == null
                         ? 'Upload the PO document — we read the number, value and lines.'
                         : 'Attached: $_fileName',
-                    style: const TextStyle(fontSize: 13, color: kInk),
+                    style: TextStyle(fontSize: 13, color: kInk),
                   ),
                 ),
               ]),
@@ -145,7 +145,7 @@ class _CustomerPoFormScreenState extends State<CustomerPoFormScreen> {
               controller: _notes, label: 'Notes (optional)', maxLines: 2),
           if (_error != null) ...[
             const SizedBox(height: 16),
-            Text(_error!, style: const TextStyle(color: kRed, fontSize: 13)),
+            Text(_error!, style: TextStyle(color: kRed, fontSize: 13)),
           ],
           const SizedBox(height: 22),
           LulaButton(

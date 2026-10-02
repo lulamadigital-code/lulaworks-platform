@@ -84,11 +84,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: kLine),
+                  borderSide: BorderSide(color: kLine),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: kLine),
+                  borderSide: BorderSide(color: kLine),
                 ),
               ),
             ),
@@ -102,11 +102,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             if (snap.hasError) {
-              return ListView(children: const [
-                SizedBox(height: 120),
+              return ListView(children: [
+                const SizedBox(height: 120),
                 Center(child: Text('Could not load contacts.', style: TextStyle(color: kMuted))),
               ]);
             }
@@ -120,7 +120,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                             ? 'No contacts yet. Add the people you deal\nwith on each customer record.'
                             : 'No one matches "$_query".',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: kMuted))),
+                        style: TextStyle(color: kMuted))),
               ]);
             }
             return ListView.separated(
@@ -167,7 +167,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
           decoration: BoxDecoration(
               color: kBrand.withOpacity(0.10), borderRadius: BorderRadius.circular(12)),
           child: Text(name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kBrandDark)),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kBrandDark)),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -176,7 +176,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
               Flexible(
                 child: Text(name.isEmpty ? 'Unnamed' : name,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600, color: kInk, fontSize: 15)),
+                    style: TextStyle(fontWeight: FontWeight.w600, color: kInk, fontSize: 15)),
               ),
               if (isPrimary) ...[
                 const SizedBox(width: 6),
@@ -184,13 +184,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration:
                       BoxDecoration(color: kBrandTint, borderRadius: BorderRadius.circular(6)),
-                  child: const Text('Primary',
+                  child: Text('Primary',
                       style: TextStyle(fontSize: 9.5, color: kBrandDark, fontWeight: FontWeight.w700)),
                 ),
               ],
             ]),
             const SizedBox(height: 2),
-            Text(sub, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12.5, color: kMuted)),
+            Text(sub, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: kMuted)),
           ]),
         ),
         if (email.isNotEmpty)

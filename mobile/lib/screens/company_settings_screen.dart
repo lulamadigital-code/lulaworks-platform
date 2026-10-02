@@ -115,7 +115,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Company profile'), scrolledUnderElevation: 1),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: kBrand))
+          ? Center(child: CircularProgressIndicator(color: kBrand))
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
@@ -146,12 +146,12 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
                     _currency.isEmpty
                         ? 'Currency is set automatically from your country.'
                         : 'Currency: $_currency — set automatically from your country.',
-                    style: const TextStyle(color: kMuted, fontSize: 12.5),
+                    style: TextStyle(color: kMuted, fontSize: 12.5),
                   ),
                   const SizedBox(height: 16),
                 ],
                 if (_error != null) ...[
-                  Text(_error!, style: const TextStyle(color: kRed, fontSize: 13)),
+                  Text(_error!, style: TextStyle(color: kRed, fontSize: 13)),
                   const SizedBox(height: 12),
                 ],
                 const SizedBox(height: 4),

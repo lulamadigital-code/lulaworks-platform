@@ -49,10 +49,10 @@ class LulaTextField extends StatelessWidget {
       RichText(
         text: TextSpan(
           text: label,
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 13, fontWeight: FontWeight.w600, color: kInk),
           children: required
-              ? const [TextSpan(text: ' *', style: TextStyle(color: kRed))]
+              ? [TextSpan(text: ' *', style: TextStyle(color: kRed))]
               : null,
         ),
       ),
@@ -67,10 +67,10 @@ class LulaTextField extends StatelessWidget {
         textInputAction: textInputAction,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
-        style: const TextStyle(fontSize: 15, color: kInk),
+        style: TextStyle(fontSize: 15, color: kInk),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: kMuted, fontSize: 14.5),
+          hintStyle: TextStyle(color: kMuted, fontSize: 14.5),
           errorText: errorText,
           suffixIcon: suffix,
           isDense: true,
@@ -115,10 +115,10 @@ class LulaDropdown<T> extends StatelessWidget {
       RichText(
         text: TextSpan(
           text: label,
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 13, fontWeight: FontWeight.w600, color: kInk),
           children: required
-              ? const [TextSpan(text: ' *', style: TextStyle(color: kRed))]
+              ? [TextSpan(text: ' *', style: TextStyle(color: kRed))]
               : null,
         ),
       ),
@@ -128,8 +128,8 @@ class LulaDropdown<T> extends StatelessWidget {
         items: items,
         onChanged: onChanged,
         isExpanded: true,
-        style: const TextStyle(fontSize: 15, color: kInk),
-        icon: const Icon(Icons.keyboard_arrow_down, color: kMuted),
+        style: TextStyle(fontSize: 15, color: kInk),
+        icon: Icon(Icons.keyboard_arrow_down, color: kMuted),
         decoration: InputDecoration(
           isDense: true,
           filled: true,

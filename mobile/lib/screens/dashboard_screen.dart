@@ -240,13 +240,13 @@ class _DashboardScreenState extends State<DashboardScreen>
       ]),
       const SizedBox(height: 18),
       Text(first.isEmpty ? greet : '$greet, $first',
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 24, fontWeight: FontWeight.w700, color: kInk,
               letterSpacing: -0.4),
           maxLines: 1, overflow: TextOverflow.ellipsis),
       const SizedBox(height: 3),
       Text(_subtitle(company),
-          style: const TextStyle(fontSize: 13.5, color: kMuted),
+          style: TextStyle(fontSize: 13.5, color: kMuted),
           maxLines: 1, overflow: TextOverflow.ellipsis),
     ]);
   }
@@ -296,7 +296,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 isLabelVisible: live > 0,
                 label: Text('$live'),
                 offset: const Offset(-6, 6),
-                child: const Icon(Icons.notifications_none, size: 21, color: kInk),
+                child: Icon(Icons.notifications_none, size: 21, color: kInk),
               ),
             ),
           ),
@@ -309,7 +309,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     return _headerButton(
       tooltip: 'Search or ask',
       onTap: () => _push(SearchScreen(api: api)),
-      child: const Icon(Icons.search, size: 21, color: kInk),
+      child: Icon(Icons.search, size: 21, color: kInk),
       background: Colors.white,
       border: true,
     );
@@ -403,7 +403,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11.5, height: 1.1, color: kInk)),
+              style: TextStyle(fontSize: 11.5, height: 1.1, color: kInk)),
         ]),
       ),
     );
@@ -503,7 +503,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(a.title,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 14.5,
                               fontWeight: FontWeight.w600,
                               color: kInk)),
@@ -512,18 +512,18 @@ class _DashboardScreenState extends State<DashboardScreen>
                         Text(a.subtitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                            style: TextStyle(fontSize: 12.5, color: kMuted)),
                       ],
                     ]),
               ),
               const SizedBox(width: 8),
               Row(mainAxisSize: MainAxisSize.min, children: [
                 Text(a.action,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: kBrandDark)),
-                const Icon(Icons.chevron_right, size: 18, color: kBrandDark),
+                Icon(Icons.chevron_right, size: 18, color: kBrandDark),
               ]),
             ]),
           ),
@@ -539,15 +539,15 @@ class _DashboardScreenState extends State<DashboardScreen>
         Container(
           width: 46,
           height: 46,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
               color: kBrandTint, shape: BoxShape.circle),
-          child: const Icon(Icons.check, color: kBrandDark, size: 24),
+          child: Icon(Icons.check, color: kBrandDark, size: 24),
         ),
         const SizedBox(height: 10),
-        const Text("You're all caught up",
+        Text("You're all caught up",
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: kInk)),
         const SizedBox(height: 2),
-        const Text('Nothing needs your attention right now.',
+        Text('Nothing needs your attention right now.',
             style: TextStyle(fontSize: 12.5, color: kMuted)),
       ]),
     ));
@@ -672,7 +672,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       Text(k.label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                          style: TextStyle(fontSize: 12.5, color: kMuted)),
                     ]),
               ),
             ],
@@ -716,7 +716,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                         p.title.isEmpty ? p.number : p.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: kInk)),
@@ -726,7 +726,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ]),
                 const SizedBox(height: 4),
                 Row(children: [
-                  const Icon(Icons.business, size: 13, color: kMuted),
+                  Icon(Icons.business, size: 13, color: kMuted),
                   const SizedBox(width: 4),
                   Flexible(
                     child: Text(
@@ -735,7 +735,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                             .join('  ·  '),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                        style: TextStyle(fontSize: 12.5, color: kMuted)),
                   ),
                 ]),
               ],
@@ -782,14 +782,14 @@ class _DashboardScreenState extends State<DashboardScreen>
               Text('${t['name']}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 14, fontWeight: FontWeight.w500, color: kInk)),
               if ('${t['site'] ?? ''}'.isNotEmpty) ...[
                 const SizedBox(height: 1),
                 Text('${t['site']}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, color: kMuted)),
+                    style: TextStyle(fontSize: 12, color: kMuted)),
               ],
             ]),
           ),
@@ -797,7 +797,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           Text(label,
               style: TextStyle(
                   fontSize: 12, fontWeight: FontWeight.w600, color: c)),
-          const Icon(Icons.chevron_right, size: 18, color: kMuted),
+          Icon(Icons.chevron_right, size: 18, color: kMuted),
         ]),
       ),
     );
@@ -830,13 +830,13 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: Text('${n['title']}',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13.5, color: kInk)),
+              style: TextStyle(fontSize: 13.5, color: kInk)),
         ),
         const SizedBox(width: 8),
         Text(_ago(when),
-            style: const TextStyle(fontSize: 11.5, color: kMuted)),
-        if (linkable) const Padding(
-          padding: EdgeInsets.only(left: 4),
+            style: TextStyle(fontSize: 11.5, color: kMuted)),
+        if (linkable) Padding(
+          padding: const EdgeInsets.only(left: 4),
           child: Icon(Icons.chevron_right, size: 16, color: kMuted)),
       ]),
     );
@@ -851,7 +851,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(title,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 17.5, fontWeight: FontWeight.w700, color: kInk,
                 letterSpacing: -0.3)),
         if (actionLabel != null)
@@ -862,11 +862,11 @@ class _DashboardScreenState extends State<DashboardScreen>
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Text(actionLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: kBrandDark)),
-                const Icon(Icons.chevron_right, size: 17, color: kBrandDark),
+                Icon(Icons.chevron_right, size: 17, color: kBrandDark),
               ]),
             ),
           ),
@@ -893,9 +893,9 @@ class _DashboardScreenState extends State<DashboardScreen>
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 14, fontWeight: FontWeight.w600, color: kInk)),
-            Text(body, style: const TextStyle(fontSize: 12.5, color: kMuted)),
+            Text(body, style: TextStyle(fontSize: 12.5, color: kMuted)),
           ]),
         ),
       ]),
@@ -998,7 +998,7 @@ class _LoadingView extends StatelessWidget {
               box(150, 14),
             ]),
           ),
-          _Shimmer(pulse: pulse, child: const CircleAvatar(radius: 21, backgroundColor: kLine)),
+          _Shimmer(pulse: pulse, child: CircleAvatar(radius: 21, backgroundColor: kLine)),
         ]),
         const SizedBox(height: 24),
         Row(children: List.generate(4, (i) => Padding(
@@ -1055,9 +1055,9 @@ class _ErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(padding: const EdgeInsets.symmetric(horizontal: 32), children: [
       const SizedBox(height: 140),
-      const Icon(Icons.cloud_off, size: 48, color: kMuted),
+      Icon(Icons.cloud_off, size: 48, color: kMuted),
       const SizedBox(height: 14),
-      const Center(
+      Center(
         child: Text('Something went wrong',
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: kInk)),
       ),
@@ -1065,7 +1065,7 @@ class _ErrorView extends StatelessWidget {
       Center(
         child: Text(_message,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13.5, color: kMuted)),
+            style: TextStyle(fontSize: 13.5, color: kMuted)),
       ),
       const SizedBox(height: 20),
       Center(

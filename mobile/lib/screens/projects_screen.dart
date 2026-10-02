@@ -85,10 +85,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 fillColor: kBg,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: kLine)),
+                    borderSide: BorderSide(color: kLine)),
                 enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: kLine)),
+                    borderSide: BorderSide(color: kLine)),
               ),
             ),
           ),
@@ -106,7 +106,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             if (snap.hasError) {
               return ListView(children: [
                 const SizedBox(height: 120),
-                const Icon(Icons.cloud_off, size: 44, color: kMuted),
+                Icon(Icons.cloud_off, size: 44, color: kMuted),
                 const SizedBox(height: 12),
                 Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
               ]);
@@ -115,7 +115,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             if (rows.isEmpty) {
               return ListView(children: [
                 const SizedBox(height: 120),
-                const Icon(Icons.work_outline, size: 46, color: kMuted),
+                Icon(Icons.work_outline, size: 46, color: kMuted),
                 const SizedBox(height: 12),
                 Center(
                     child: Text(_search.text.isEmpty
@@ -169,7 +169,7 @@ class _JobCard extends StatelessWidget {
                   child: Text(project.title.isEmpty ? project.number : project.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 15.5, fontWeight: FontWeight.w600, color: kInk)),
                 ),
                 const SizedBox(width: 8),
@@ -177,18 +177,18 @@ class _JobCard extends StatelessWidget {
               ]),
               const SizedBox(height: 5),
               Row(children: [
-                const Icon(Icons.business, size: 13, color: kMuted),
+                Icon(Icons.business, size: 13, color: kMuted),
                 const SizedBox(width: 5),
                 Expanded(
                   child: Text(sub.isEmpty ? project.number : sub,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                      style: TextStyle(fontSize: 12.5, color: kMuted)),
                 ),
                 if (project.workType.isNotEmpty) ...[
                   const SizedBox(width: 8),
                   Text(project.workType,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 11.5, color: kBrandDark, fontWeight: FontWeight.w600)),
                 ],
               ]),

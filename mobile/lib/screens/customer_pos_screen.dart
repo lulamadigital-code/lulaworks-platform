@@ -266,10 +266,10 @@ class _CustomerPoDetailScreenState extends State<CustomerPoDetailScreen> {
       if (matched && po['quotation_number'] != null) ...[
         const SizedBox(height: 4),
         Row(children: [
-          const Icon(Icons.link, size: 15, color: kGreen),
+          Icon(Icons.link, size: 15, color: kGreen),
           const SizedBox(width: 4),
           Text('Linked to ${po['quotation_number']}',
-              style: const TextStyle(color: kGreen, fontWeight: FontWeight.w600)),
+              style: TextStyle(color: kGreen, fontWeight: FontWeight.w600)),
         ]),
       ],
       if (variance != null && variance['has_variance'] == true) ...[
@@ -281,7 +281,7 @@ class _CustomerPoDetailScreenState extends State<CustomerPoDetailScreen> {
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: kOrange.withOpacity(0.4))),
           child: Row(children: [
-            const Icon(Icons.warning_amber, size: 18, color: kOrange),
+            Icon(Icons.warning_amber, size: 18, color: kOrange),
             const SizedBox(width: 8),
             Expanded(child: Text('${variance['message'] ?? 'Value variance.'}',
                 style: const TextStyle(fontSize: 12.5))),
@@ -315,7 +315,7 @@ class _CustomerPoDetailScreenState extends State<CustomerPoDetailScreen> {
             style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 6),
         if (suggestions.isEmpty)
-          const Text('No suggestions — link manually.',
+          Text('No suggestions — link manually.',
               style: TextStyle(color: kMuted, fontSize: 13)),
         for (final s in suggestions)
           Card(

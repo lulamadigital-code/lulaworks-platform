@@ -94,7 +94,7 @@ class _DocListState extends State<_DocList> with AutomaticKeepAliveClientMixin {
           if (snap.hasError) {
             return ListView(children: [
               const SizedBox(height: 120),
-              const Icon(Icons.cloud_off, size: 44, color: kMuted),
+              Icon(Icons.cloud_off, size: 44, color: kMuted),
               const SizedBox(height: 12),
               Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
             ]);
@@ -158,7 +158,7 @@ class _DocCard extends StatelessWidget {
                   child: Text('${row['number']}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 15, fontWeight: FontWeight.w700, color: kInk)),
                 ),
                 const SizedBox(width: 8),
@@ -168,12 +168,12 @@ class _DocCard extends StatelessWidget {
               Text('${row['client_name'] ?? row['quotation_number'] ?? ''}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                  style: TextStyle(fontSize: 12.5, color: kMuted)),
               if (isInvoice) ...[
                 const SizedBox(height: 8),
                 Row(children: [
                   Text(api.money(row['total']),
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 15, fontWeight: FontWeight.w700, color: kBrandDark)),
                   const Spacer(),
                   if (state.isNotEmpty) _payBadge(state),
@@ -375,7 +375,7 @@ class _DocDetailState extends State<_DocDetail> {
             ],
           ),
           body: doc == null
-              ? const Center(child: CircularProgressIndicator(color: kBrand))
+              ? Center(child: CircularProgressIndicator(color: kBrand))
               : (doc['kind'] == 'invoice'
                   ? _invoiceBody(context, snap.data!)
                   : _deliveryBody(context, snap.data!)),
@@ -415,12 +415,12 @@ class _DocDetailState extends State<_DocDetail> {
             if (i > 0) const Divider(height: 1),
             ListTile(
               dense: true,
-              leading: const Icon(Icons.payments_outlined, size: 20, color: kMuted),
+              leading: Icon(Icons.payments_outlined, size: 20, color: kMuted),
               title: Text(widget.api.money(payments[i]['amount']),
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: kInk)),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: kInk)),
               subtitle: Text('${payments[i]['date'] ?? ''}'
                   '${'${payments[i]['reference'] ?? ''}'.isNotEmpty ? ' · ${payments[i]['reference']}' : ''}',
-                  style: const TextStyle(color: kMuted)),
+                  style: TextStyle(color: kMuted)),
             ),
           ],
         ])),
@@ -446,10 +446,10 @@ class _DocDetailState extends State<_DocDetail> {
       const SizedBox(height: 6),
       if ('${doc['delivery_address'] ?? ''}'.isNotEmpty)
         Text('Deliver to: ${doc['delivery_address']}',
-            style: const TextStyle(fontSize: 13, color: kMuted)),
+            style: TextStyle(fontSize: 13, color: kMuted)),
       if ('${doc['delivery_date'] ?? ''}'.isNotEmpty)
         Text('Date: ${doc['delivery_date']}',
-            style: const TextStyle(fontSize: 13, color: kMuted)),
+            style: TextStyle(fontSize: 13, color: kMuted)),
       const SizedBox(height: 18),
       _label('ITEMS DELIVERED  ·  ${lines.length}'),
       const SizedBox(height: 10),
@@ -460,16 +460,16 @@ class _DocDetailState extends State<_DocDetail> {
           ListTile(
             dense: true,
             title: Text('${lines[i]['description'] ?? '—'}',
-                style: const TextStyle(color: kInk)),
+                style: TextStyle(color: kInk)),
             trailing: Text('${lines[i]['qty']} ${lines[i]['unit'] ?? ''}',
-                style: const TextStyle(fontWeight: FontWeight.w600, color: kInk)),
+                style: TextStyle(fontWeight: FontWeight.w600, color: kInk)),
           ),
         ],
       ])),
       if ('${doc['delivery_notes'] ?? ''}'.isNotEmpty) ...[
         const SizedBox(height: 12),
         Text('${doc['delivery_notes']}',
-            style: const TextStyle(fontSize: 13, color: kInk)),
+            style: TextStyle(fontSize: 13, color: kInk)),
       ],
       _workflow(context, d),
       RelatedRecords(api: widget.api, type: 'commercial_document', id: widget.docId),
@@ -481,11 +481,11 @@ class _DocDetailState extends State<_DocDetail> {
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('${doc['client_name'] ?? ''}',
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 18, fontWeight: FontWeight.w700, color: kInk)),
           if ('${doc['quotation_number'] ?? ''}'.isNotEmpty)
             Text('From ${doc['quotation_number']}',
-                style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                style: TextStyle(fontSize: 12.5, color: kMuted)),
         ]),
       ),
       const SizedBox(width: 8),
@@ -513,7 +513,7 @@ class _DocDetailState extends State<_DocDetail> {
   }
 
   Widget _label(String s) => Text(s,
-      style: const TextStyle(
+      style: TextStyle(
           fontSize: 11.5, fontWeight: FontWeight.w700,
           letterSpacing: 0.6, color: kMuted));
 
@@ -533,15 +533,15 @@ class _DocDetailState extends State<_DocDetail> {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('${l['description'] ?? '—'}',
-                style: const TextStyle(fontSize: 13.5, color: kInk)),
+                style: TextStyle(fontSize: 13.5, color: kInk)),
             const SizedBox(height: 2),
             Text('${l['qty'] ?? ''} ${l['unit'] ?? ''} × ${widget.api.money(l['unit_price'])}',
-                style: const TextStyle(fontSize: 12, color: kMuted)),
+                style: TextStyle(fontSize: 12, color: kMuted)),
           ]),
         ),
         const SizedBox(width: 10),
         Text(widget.api.money(l['line_total']),
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 13.5, fontWeight: FontWeight.w600, color: kInk)),
       ]),
     );

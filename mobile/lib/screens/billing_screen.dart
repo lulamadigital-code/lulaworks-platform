@@ -63,7 +63,7 @@ class _BillingScreenState extends State<BillingScreen> {
                           ? 'Billing is available to company admins.'
                           : '${snap.error}',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: kMuted)),
+                      style: TextStyle(color: kMuted)),
                 )),
               ]);
             }
@@ -87,7 +87,7 @@ class _BillingScreenState extends State<BillingScreen> {
         Row(children: [
           Expanded(
             child: Text(plan?['name'] ?? 'No active plan',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 20, fontWeight: FontWeight.w700, color: kInk)),
           ),
           _statusPill(status),
@@ -96,13 +96,13 @@ class _BillingScreenState extends State<BillingScreen> {
           const SizedBox(height: 4),
           Text('$cur ${plan['price']}'
               '${d['billing_cycle'] != null ? ' / ${d['billing_cycle']}' : ''}',
-              style: const TextStyle(fontSize: 14, color: kMuted)),
+              style: TextStyle(fontSize: 14, color: kMuted)),
         ],
         if (d['current_period_end'] != null) ...[
           const SizedBox(height: 8),
           Text(
               '${d['cancel_at_period_end'] == true ? 'Ends' : 'Renews'} on ${d['current_period_end']}',
-              style: const TextStyle(fontSize: 12.5, color: kMuted)),
+              style: TextStyle(fontSize: 12.5, color: kMuted)),
         ],
       ])),
 
@@ -142,7 +142,7 @@ class _BillingScreenState extends State<BillingScreen> {
         const SizedBox(height: 4),
         _card(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text("What's included",
+          Text("What's included",
               style: TextStyle(
                   fontSize: 11, fontWeight: FontWeight.w700,
                   letterSpacing: .5, color: kMuted)),
@@ -151,7 +151,7 @@ class _BillingScreenState extends State<BillingScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 3),
               child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Icon(Icons.check, size: 16, color: kGreen),
+                Icon(Icons.check, size: 16, color: kGreen),
                 const SizedBox(width: 8),
                 Expanded(child: Text('$f', style: const TextStyle(fontSize: 13.5))),
               ]),
@@ -164,9 +164,9 @@ class _BillingScreenState extends State<BillingScreen> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
             color: kBrandTint, borderRadius: BorderRadius.circular(12)),
-        child: const Row(children: [
+        child: Row(children: [
           Icon(Icons.info_outline, size: 18, color: kBrandDark),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               'To change your plan or payment method, open Lulaworks on the web. '
@@ -207,9 +207,9 @@ class _BillingScreenState extends State<BillingScreen> {
           Icon(icon, size: 18, color: kBrand),
           const SizedBox(width: 8),
           Text(title,
-              style: const TextStyle(fontWeight: FontWeight.w600, color: kInk)),
+              style: TextStyle(fontWeight: FontWeight.w600, color: kInk)),
           const Spacer(),
-          Text(valueLabel, style: const TextStyle(fontSize: 12.5, color: kMuted)),
+          Text(valueLabel, style: TextStyle(fontSize: 12.5, color: kMuted)),
         ]),
         if (showBar) ...[
           const SizedBox(height: 10),

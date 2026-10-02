@@ -116,11 +116,11 @@ class _CrmHomeScreenState extends State<CrmHomeScreen> {
       Padding(
         padding: const EdgeInsets.fromLTRB(2, 6, 2, 8),
         child: Row(children: [
-          const Text('People we work with',
+          Text('People we work with',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kInk)),
           const SizedBox(width: 6),
           if (d.peopleTotal > 0)
-            Text('· ${d.peopleTotal}', style: const TextStyle(fontSize: 13, color: kMuted)),
+            Text('· ${d.peopleTotal}', style: TextStyle(fontSize: 13, color: kMuted)),
         ]),
       ),
       Container(
@@ -131,7 +131,7 @@ class _CrmHomeScreenState extends State<CrmHomeScreen> {
         ),
         child: Column(children: [
           for (var i = 0; i < preview.length; i++) ...[
-            if (i > 0) const Divider(height: 1, color: kLine),
+            if (i > 0) Divider(height: 1, color: kLine),
             _personRow(preview[i]),
           ],
         ]),
@@ -143,7 +143,7 @@ class _CrmHomeScreenState extends State<CrmHomeScreen> {
           onPressed: () => _push(ContactsScreen(api: widget.api)),
           style: OutlinedButton.styleFrom(
             foregroundColor: kBrandDark,
-            side: const BorderSide(color: kLine),
+            side: BorderSide(color: kLine),
             padding: const EdgeInsets.symmetric(vertical: 12),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -170,27 +170,27 @@ class _CrmHomeScreenState extends State<CrmHomeScreen> {
         decoration: BoxDecoration(
             color: kBrand.withOpacity(0.10), borderRadius: BorderRadius.circular(11)),
         child: Text(name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kBrandDark)),
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kBrandDark)),
       ),
       title: Row(children: [
         Flexible(
           child: Text(name.isEmpty ? 'Unnamed' : name,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: kInk)),
+              style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: kInk)),
         ),
         if (isPrimary) ...[
           const SizedBox(width: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
             decoration: BoxDecoration(color: kBrandTint, borderRadius: BorderRadius.circular(6)),
-            child: const Text('Primary',
+            child: Text('Primary',
                 style: TextStyle(fontSize: 9, color: kBrandDark, fontWeight: FontWeight.w700)),
           ),
         ],
       ]),
       subtitle: Text(sub, overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 12, color: kMuted)),
-      trailing: const Icon(Icons.chevron_right, color: kMuted, size: 20),
+          style: TextStyle(fontSize: 12, color: kMuted)),
+      trailing: Icon(Icons.chevron_right, color: kMuted, size: 20),
       onTap: () => _push(
           ContactDetailScreen(api: widget.api, contactId: '${p['id']}')),
     );
@@ -214,18 +214,18 @@ class _CrmHomeScreenState extends State<CrmHomeScreen> {
           child: Icon(icon, color: kBrandDark, size: 22),
         ),
         title: Text(title,
-            style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: kInk)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12.5, color: kMuted)),
+            style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: kInk)),
+        subtitle: Text(subtitle, style: TextStyle(fontSize: 12.5, color: kMuted)),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
           if (count != null && count > 0)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
               decoration: BoxDecoration(color: kBrandTint, borderRadius: BorderRadius.circular(20)),
               child: Text('$count',
-                  style: const TextStyle(fontSize: 12.5, color: kBrandDark, fontWeight: FontWeight.w700)),
+                  style: TextStyle(fontSize: 12.5, color: kBrandDark, fontWeight: FontWeight.w700)),
             ),
           const SizedBox(width: 6),
-          const Icon(Icons.chevron_right, color: kMuted),
+          Icon(Icons.chevron_right, color: kMuted),
         ]),
         onTap: onTap,
       ),

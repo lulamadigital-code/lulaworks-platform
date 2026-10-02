@@ -189,12 +189,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             if (snap.hasError) {
               return ListView(children: [
                 const SizedBox(height: 120),
-                const Icon(Icons.cloud_off, size: 44, color: kMuted),
+                Icon(Icons.cloud_off, size: 44, color: kMuted),
                 const SizedBox(height: 12),
                 Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
               ]);
@@ -227,7 +227,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ]),
         const SizedBox(height: 8),
         if (events.isEmpty)
-          _card(const Text('No events yet today. Clock in to start.',
+          _card(Text('No events yet today. Clock in to start.',
               style: TextStyle(fontSize: 13, color: kMuted)))
         else
           _card(Column(children: [
@@ -274,10 +274,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ]),
         const SizedBox(height: 12),
         Text(_hms(worked),
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 40, fontWeight: FontWeight.w800, color: kInk,
-                letterSpacing: -1, fontFeatures: [])),
-        const Text('worked today', style: TextStyle(fontSize: 12.5, color: kMuted)),
+                letterSpacing: -1, fontFeatures: const [])),
+        Text('worked today', style: TextStyle(fontSize: 12.5, color: kMuted)),
         const SizedBox(height: 20),
         if (state == 'clocked_out')
           _bigButton('Clock in', Icons.login, kGreen,
@@ -325,12 +325,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: kOrange.withOpacity(0.3))),
         child: Row(children: [
-          const Icon(Icons.sync, color: kOrange, size: 18),
+          Icon(Icons.sync, color: kOrange, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text('$_pending event${_pending == 1 ? '' : 's'} saved offline — '
                 'pending sync.',
-                style: const TextStyle(fontSize: 13, color: kInk)),
+                style: TextStyle(fontSize: 13, color: kInk)),
           ),
         ]),
       );
@@ -346,7 +346,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: Text('${e['kind_display'] ?? kind}',
-              style: const TextStyle(fontSize: 14.5, color: kInk)),
+              style: TextStyle(fontSize: 14.5, color: kInk)),
         ),
         if (pending)
           Container(
@@ -355,7 +355,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             decoration: BoxDecoration(
                 color: kOrange.withOpacity(0.13),
                 borderRadius: BorderRadius.circular(6)),
-            child: const Text('Pending review',
+            child: Text('Pending review',
                 style: TextStyle(fontSize: 10.5, color: kOrange, fontWeight: FontWeight.w700)),
           ),
         Text(
@@ -363,7 +363,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ? ''
                 : '${when.hour.toString().padLeft(2, '0')}:'
                     '${when.minute.toString().padLeft(2, '0')}',
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 14, fontWeight: FontWeight.w700, color: kInk)),
       ]),
     );
@@ -403,7 +403,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       );
 
   Widget _sectionTitle(String t) => Text(t.toUpperCase(),
-      style: const TextStyle(
+      style: TextStyle(
           fontSize: 11.5, fontWeight: FontWeight.w700,
           letterSpacing: 0.6, color: kMuted));
 }
@@ -498,7 +498,7 @@ class _AttendanceClockStripState extends State<AttendanceClockStrip> {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Time & attendance',
+                Text('Time & attendance',
                     style: TextStyle(fontSize: 12.5, color: kMuted)),
                 Text(label,
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: c)),

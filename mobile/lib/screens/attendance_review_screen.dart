@@ -61,25 +61,25 @@ class _AttendanceReviewScreenState extends State<AttendanceReviewScreen> {
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             if (snap.hasError) {
               return ListView(children: [
                 const SizedBox(height: 120),
-                const Icon(Icons.cloud_off, size: 44, color: kMuted),
+                Icon(Icons.cloud_off, size: 44, color: kMuted),
                 const SizedBox(height: 12),
                 Center(child: Text('${snap.error}', textAlign: TextAlign.center)),
               ]);
             }
             final items = snap.data ?? const [];
             if (items.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 140),
+              return ListView(children: [
+                const SizedBox(height: 140),
                 Icon(Icons.verified_outlined, size: 48, color: kMuted),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Center(child: Text('Nothing to review',
                     style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: kInk))),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Center(child: Text('Attendance corrections will appear here.',
                     style: TextStyle(fontSize: 13, color: kMuted))),
               ]);
@@ -112,16 +112,16 @@ class _AttendanceReviewScreenState extends State<AttendanceReviewScreen> {
             width: 40, height: 40,
             decoration: BoxDecoration(
                 color: kBrandTint, borderRadius: BorderRadius.circular(11)),
-            child: const Icon(Icons.edit_calendar_outlined, color: kBrandDark, size: 21),
+            child: Icon(Icons.edit_calendar_outlined, color: kBrandDark, size: 21),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${e['user_name'] ?? 'Worker'}',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kInk)),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kInk)),
               Text('${e['kind_display'] ?? e['kind']}'
                   '${when == null ? '' : '  ·  ${_fmt(when)}'}',
-                  style: const TextStyle(fontSize: 12.5, color: kMuted)),
+                  style: TextStyle(fontSize: 12.5, color: kMuted)),
             ]),
           ),
         ]),
@@ -133,7 +133,7 @@ class _AttendanceReviewScreenState extends State<AttendanceReviewScreen> {
             decoration: BoxDecoration(
                 color: kBg, borderRadius: BorderRadius.circular(10)),
             child: Text('"$note"',
-                style: const TextStyle(fontSize: 13.5, color: kInk, height: 1.3)),
+                style: TextStyle(fontSize: 13.5, color: kInk, height: 1.3)),
           ),
         ],
         const SizedBox(height: 14),
@@ -144,7 +144,7 @@ class _AttendanceReviewScreenState extends State<AttendanceReviewScreen> {
               icon: const Icon(Icons.close, size: 18),
               label: const Text('Reject'),
               style: OutlinedButton.styleFrom(
-                  foregroundColor: kRed, side: const BorderSide(color: kLine)),
+                  foregroundColor: kRed, side: BorderSide(color: kLine)),
             ),
           ),
           const SizedBox(width: 12),

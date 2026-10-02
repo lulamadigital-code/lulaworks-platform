@@ -91,10 +91,10 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
         future: _future,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: kBrand));
+            return Center(child: CircularProgressIndicator(color: kBrand));
           }
           if (!snap.hasData) {
-            return const Center(child: Text('Could not load the lead.',
+            return Center(child: Text('Could not load the lead.',
                 style: TextStyle(color: kMuted)));
           }
           final l = snap.data!;
@@ -105,9 +105,9 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               Text('${l['company_name']}',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: kInk)),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: kInk)),
               const SizedBox(height: 4),
-              Text('${l['status_display'] ?? status}', style: const TextStyle(color: kMuted)),
+              Text('${l['status_display'] ?? status}', style: TextStyle(color: kMuted)),
               const SizedBox(height: 16),
               _row('Contact', '${l['contact_name'] ?? ''}'),
               _row('Email', '${l['email'] ?? ''}'),
@@ -153,8 +153,8 @@ class _LeadDetailScreenState extends State<LeadDetailScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SizedBox(width: 120, child: Text(label, style: const TextStyle(color: kMuted, fontSize: 13))),
-        Expanded(child: Text(value, style: const TextStyle(color: kInk, fontSize: 14))),
+        SizedBox(width: 120, child: Text(label, style: TextStyle(color: kMuted, fontSize: 13))),
+        Expanded(child: Text(value, style: TextStyle(color: kInk, fontSize: 14))),
       ]),
     );
   }
