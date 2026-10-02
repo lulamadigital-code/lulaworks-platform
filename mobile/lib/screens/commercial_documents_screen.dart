@@ -101,14 +101,14 @@ class _DocListState extends State<_DocList> with AutomaticKeepAliveClientMixin {
           }
           final rows = snap.data ?? const [];
           if (rows.isEmpty) {
-            return ListView(children: [
-              const SizedBox(height: 130),
-              Icon(isInvoice ? Icons.receipt_long_outlined : Icons.local_shipping_outlined,
-                  size: 46, color: kMuted),
-              const SizedBox(height: 12),
-              Center(
-                  child: Text('No ${isInvoice ? 'invoices' : 'delivery notes'} yet.')),
-            ]);
+            return LwEmptyState(
+              icon: isInvoice ? Icons.receipt_long_outlined : Icons.local_shipping_outlined,
+              title: isInvoice ? 'No invoices yet' : 'No delivery notes yet',
+              message: isInvoice
+                  ? 'Raise a tax invoice directly, or generate one from an '
+                      'approved quotation.'
+                  : 'Delivery notes generated from invoices will appear here.',
+            );
           }
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),

@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../nav/global_create.dart';
 import '../theme.dart';
+import '../ui/tokens.dart';
 import 'customer_detail_screen.dart';
+import 'lulaai_screen.dart';
 import 'quotations_screen.dart' show QuotationDetailScreen;
 
 /// Global search across the company's data — one debounced query to
@@ -106,7 +109,7 @@ class _SearchScreenState extends State<SearchScreen> {
           textInputAction: TextInputAction.search,
           onChanged: _onChanged,
           decoration: const InputDecoration(
-            hintText: 'Search customers, quotes, jobs…',
+            hintText: 'Search or ask…',
             border: InputBorder.none,
           ),
         ),
@@ -125,34 +128,67 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  void _askLula([String? q]) {
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => LulaAiScreen(
+            api: widget.api,
+            initialQuestion: (q != null && q.trim().length >= 2) ? q.trim() : null)));
+  }
+
   Widget _body() {
     if (_busy) return const Center(child: CircularProgressIndicator());
-    if (_error != null) {
-      return Center(child: Text(_error!, style: const TextStyle(color: kRed)));
-    }
+
+    // Command landing (empty query): act, don't just search (§50).
     if (_lastQuery.length < 2) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: Text('Type at least 2 characters to search.',
+      return ListView(children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 4),
+          child: Text('ACTIONS', style: LwType.section),
+        ),
+        ListTile(
+          leading: const Icon(Icons.add, color: kBrand),
+          title: const Text('Create…'),
+          subtitle: const Text('Quotation, invoice, customer, PO…'),
+          onTap: () => showGlobalCreate(context, widget.api),
+        ),
+        if (widget.api.canGenerateAi)
+          ListTile(
+            leading: const Icon(Icons.auto_awesome, color: kBrand),
+            title: const Text('Ask LulaAI'),
+            subtitle: const Text('Summaries, history, unpaid invoices…'),
+            onTap: () => _askLula(),
+          ),
+        const Padding(
+          padding: EdgeInsets.all(24),
+          child: Text('Or type to search customers, quotes, jobs, invoices…',
               style: TextStyle(color: kMuted), textAlign: TextAlign.center),
         ),
-      );
+      ]);
     }
-    if (_groups.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Text('No results for “$_lastQuery”.',
-              style: const TextStyle(color: kMuted), textAlign: TextAlign.center),
-        ),
-      );
-    }
+
     return ListView(
       children: [
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(_error!, style: const TextStyle(color: kRed)),
+          ),
+        // Always offer to ask LulaAI about whatever was typed.
+        if (widget.api.canGenerateAi)
+          ListTile(
+            leading: const Icon(Icons.auto_awesome, color: kBrand),
+            title: Text('Ask LulaAI about “$_lastQuery”'),
+            onTap: () => _askLula(_lastQuery),
+          ),
+        if (_error == null && _groups.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text('No records match “$_lastQuery”.',
+                style: const TextStyle(color: kMuted), textAlign: TextAlign.center),
+          ),
         for (final g in _groups) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Text('${g['label']}'.toUpperCase(),
                 style: const TextStyle(
                     fontSize: 11,

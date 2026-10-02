@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../models.dart';
 import '../theme.dart';
+import '../ui/lw_components.dart';
 import 'lead_detail_screen.dart';
 
 /// Sales leads — prospects before they become customers. List, add, and open a
@@ -71,10 +72,12 @@ class _LeadsScreenState extends State<LeadsScreen> {
             }
             final leads = snap.data!;
             if (leads.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 120),
-                Center(child: Text('No leads yet.', style: TextStyle(color: kMuted))),
-              ]);
+              return const LwEmptyState(
+                icon: Icons.person_search_outlined,
+                title: 'No leads yet',
+                message: 'Prospects you add or capture will appear here to '
+                    'convert or track.',
+              );
             }
             return ListView.separated(
               padding: const EdgeInsets.all(16),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
 import '../models.dart';
+import '../ui/lw_components.dart';
 import '../widgets/status_pill.dart';
 
 /// Estimates — the pre-quote costing. List + detail. Pricing fields are money,
@@ -41,10 +42,11 @@ class _EstimatesScreenState extends State<EstimatesScreen> {
             }
             final rows = snap.data ?? const [];
             if (rows.isEmpty) {
-              return ListView(children: const [
-                SizedBox(height: 120),
-                Center(child: Text('No estimates yet.')),
-              ]);
+              return const LwEmptyState(
+                icon: Icons.calculate_outlined,
+                title: 'No estimates yet',
+                message: 'Cost estimates will appear here once created.',
+              );
             }
             return ListView.separated(
               itemCount: rows.length,
