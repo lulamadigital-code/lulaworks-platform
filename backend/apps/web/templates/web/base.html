@@ -37,51 +37,38 @@
     .sub{color:var(--muted);margin:0 0 22px}
     .muted{color:var(--muted)} .right{text-align:right}
 
-    /* ---- App shell: top nav + workspace ---- */
-    body.shell{display:block;min-height:100vh}
+    /* ---- App shell: sidebar + workspace ---- */
+    body.shell{display:flex;min-height:100vh}
     body.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
               background:radial-gradient(1200px 500px at 50% -10%,var(--primary-t),var(--bg))}
     body.auth .main{flex:0 1 420px} body.auth .content{padding:0;max-width:none}
-
-    /* Top app bar with grouped dropdown menus */
-    .appbar{position:sticky;top:0;z-index:40;background:var(--surface);border-bottom:1px solid var(--line)}
-    .appbar-in{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:8px;height:60px;padding:0 20px}
-    .ab-logo{display:flex;align-items:center;gap:9px;flex:0 0 auto}
-    .ab-logo .brand-img{height:30px;width:auto;display:block} .ab-logo .mark{height:24px;width:auto}
-    .ab-logo .word{font-weight:800;font-size:18px;color:var(--primary);letter-spacing:-.02em}
-    .ab-nav{display:flex;align-items:center;gap:2px;margin-left:10px}
-    .ab-nav .lnk,.ab-item>.ab-top{display:inline-flex;align-items:center;gap:6px;padding:9px 12px;border-radius:9px;
-        color:var(--muted);font-weight:600;font-size:14px;background:none;border:0;cursor:pointer;font-family:inherit}
-    .ab-nav .lnk:hover,.ab-item>.ab-top:hover{background:#f2f3f8;color:var(--ink);text-decoration:none}
-    .ab-nav .lnk.active,.ab-item>.ab-top.on{background:var(--primary-t);color:var(--primary-d)}
-    .ab-nav .lnk svg{width:17px;height:17px}
-    .ab-top .car{width:13px;height:13px;color:var(--muted);transition:transform .15s}
-    .ab-item{position:relative}
-    .ab-item:hover .ab-top .car{transform:rotate(180deg)}
-    .ab-panel{position:absolute;top:calc(100% - 2px);left:0;min-width:232px;background:#fff;border:1px solid var(--line);
-        border-radius:14px;box-shadow:var(--shadow-lg);padding:7px;opacity:0;visibility:hidden;transform:translateY(6px);
-        transition:opacity .14s,transform .14s;z-index:50}
-    .ab-item:hover .ab-panel{opacity:1;visibility:visible;transform:translateY(0)}
-    .ab-panel a{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:var(--ink);font-weight:600;font-size:13.5px}
-    .ab-panel a svg{width:17px;height:17px;flex:0 0 17px;color:var(--muted)}
-    .ab-panel a:hover{background:var(--bg);text-decoration:none}
-    .ab-panel a.active{background:var(--primary-t);color:var(--primary-d)} .ab-panel a.active svg{color:var(--primary-d)}
-    .navbadge{margin-left:auto;background:var(--red);color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;font-weight:800}
-    .ab-sp{flex:1}
-    .ab-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
-    .ab-bell{position:relative;display:inline-flex;padding:8px;border-radius:9px;color:var(--muted)}
-    .ab-bell:hover{background:#f2f3f8;color:var(--ink);text-decoration:none} .ab-bell svg{width:20px;height:20px}
-    .ab-bell .b{position:absolute;top:1px;right:1px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;
-        font-size:10px;font-weight:800;line-height:16px;text-align:center;color:#fff}
-    .ab-avatar{display:inline-flex;padding:3px;border-radius:50%;background:none;border:0;cursor:pointer}
-    .ab-panel.ab-right{left:auto;right:0}
-    .ab-panel .who{padding:8px 11px 6px;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:5px}
-    .ab-foot{display:none}
-    .ab-toggle,.ab-check{display:none}
-    .btabs{display:none}
-
-    .main{min-width:0}
-    .content{max-width:1160px;margin:0 auto;padding:28px 34px 70px}
+    .sidebar{width:236px;background:var(--surface);border-right:1px solid var(--line);
+             position:sticky;top:0;height:100vh;display:flex;flex-direction:column;flex:0 0 236px}
+    .sidebar .logo{display:flex;align-items:center;gap:9px;padding:20px 20px 16px;font-weight:800;
+                   font-size:19px;color:var(--primary);letter-spacing:-.02em}
+    .sidebar .logo .mark{height:26px;width:auto}
+    .sidebar .logo .brand-img{height:34px;width:auto;display:block}
+    .nav{padding:6px 12px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+    .nav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:10px;color:var(--muted);
+           font-weight:600;font-size:14px;position:relative}
+    .nav a:hover{background:#f2f3f8;color:var(--ink);text-decoration:none}
+    .nav a.active{background:var(--primary-t);color:var(--primary-d)}
+    .nav a.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;
+                          border-radius:0 3px 3px 0;background:var(--primary)}
+    .nav a svg{width:18px;height:18px;flex:0 0 18px}
+    .navbadge{margin-left:auto;background:var(--red);color:#fff;border-radius:20px;
+              padding:1px 7px;font-size:11px;font-weight:800}
+    .nav-group{display:block;padding:16px 12px 5px;font-size:10.5px;font-weight:800;
+               letter-spacing:.09em;text-transform:uppercase;color:#9aa0b0}
+    .nav-group:first-child{padding-top:6px}
+    /* Group separator with no label — keeps the visual grouping without headings. */
+    .nav-gap{display:block;height:10px}
+    .side-foot{margin-top:auto;padding:14px 16px;border-top:1px solid var(--line);
+               display:flex;align-items:center;gap:10px}
+    .side-foot .who{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;flex:1}
+    .side-foot a{font-size:12.5px;font-weight:600}
+    .main{flex:1;min-width:0}
+    .content{max-width:1160px;margin:0 auto;padding:30px 34px 70px}
 
     /* ---- Cards / widgets ---- */
     .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
@@ -262,31 +249,24 @@
     .proprow input{width:auto;margin-top:3px;flex:0 0 auto}
     .proprow span:first-of-type{flex:1}
 
-    /* ---- Small screens: top bar keeps logo + bell, full menu opens as a sheet
-       from the bottom "More" tab, and a bottom tab bar holds the quick links ---- */
-    @media(max-width:900px){
-      .appbar-in{height:54px;padding:0 14px}
-      .ab-nav{display:none;position:fixed;top:54px;left:0;right:0;bottom:0;z-index:45;background:#fff;
-              flex-direction:column;align-items:stretch;gap:0;margin:0;padding:10px 14px 84px;overflow:auto}
-      .ab-check:checked ~ .appbar-in .ab-nav,.ab-check:checked ~ .ab-nav{display:flex}
-      .ab-nav .lnk,.ab-item>.ab-top{width:100%;justify-content:flex-start;font-size:16px;padding:13px 12px}
-      .ab-item{position:static}
-      .ab-item>.ab-top .car{margin-left:auto}
-      .ab-nav .ab-panel{position:static;opacity:1;visibility:visible;transform:none;box-shadow:none;
-                        border:0;border-radius:0;padding:0 0 8px 30px;min-width:0}
-      .ab-foot{display:block;margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
-      .content{padding:22px 16px 90px}
+    /* ---- Small screens: nav becomes a sticky scrollable strip, never hidden ---- */
+    @media(max-width:820px){
+      body.shell{display:block}
+      .sidebar{flex-direction:row;align-items:center;gap:8px;width:auto;height:auto;
+               flex:none;position:sticky;top:0;z-index:30;padding:9px 12px;
+               border-right:0;border-bottom:1px solid var(--line)}
+      .sidebar .logo{padding:0 6px 0 2px;font-size:16px;flex:0 0 auto}
+      .sidebar .logo .brand-img{width:auto;height:26px} .sidebar .logo .mark{height:22px}
+      .nav{flex-direction:row;padding:0;gap:4px;flex:1;overflow-x:auto;
+           scrollbar-width:none}
+      .nav::-webkit-scrollbar{display:none}
+      .nav a{white-space:nowrap;padding:8px 12px}
+      .nav-group{display:none}
+      .nav a.active::before{display:none}
+      .side-foot{display:none}
+      .content{padding:22px 16px 80px}
       .pagehead{align-items:flex-start}
-      .totop{right:14px;bottom:80px}
-      /* bottom tab bar */
-      .btabs{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;
-             border-top:1px solid var(--line);box-shadow:0 -4px 20px rgba(20,30,60,.07);
-             padding:6px 4px calc(4px + env(safe-area-inset-bottom))}
-      .btabs .bt{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 2px;
-             color:var(--muted);font-size:10.5px;font-weight:700;cursor:pointer;background:none;border:0;font-family:inherit}
-      .btabs .bt svg{width:22px;height:22px} .btabs .bt.active{color:var(--primary-d)}
-      .ab-actions .ab-item{display:none}   /* profile lives in the More sheet on mobile */
-      .lula-fab{bottom:78px} .totop{bottom:138px}
+      .totop{right:14px;bottom:14px}
     }
 
     /* ---- Customers ---- */
@@ -346,7 +326,7 @@
                     transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,.22)}
     .lula-fab svg{width:20px;height:20px;flex:0 0 auto}
     /* ---- Floating Inbox bell (top-right, all pages) ---- */
-    .inbox-fab{display:none;position:fixed;top:20px;right:22px;z-index:42;width:44px;height:44px;
+    .inbox-fab{position:fixed;top:20px;right:22px;z-index:42;width:44px;height:44px;
                border-radius:50%;background:var(--surface);border:1px solid var(--line);
                box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;
                color:var(--muted);transition:color .15s ease,border-color .15s ease,transform .15s ease}
@@ -359,9 +339,10 @@
                  font-weight:800;display:flex;align-items:center;justify-content:center;
                  border:2px solid var(--bg);box-shadow:0 2px 6px rgba(226,68,92,.4)}
     @media (max-width:640px){
-      .lula-fab{right:14px;bottom:78px;padding:12px;gap:0}
+      .lula-fab{right:14px;bottom:14px;padding:12px;gap:0}
       .lula-fab .lula-label{display:none}          /* icon-only on small screens */
-      .totop{right:14px;bottom:138px}
+      .totop{right:14px;bottom:74px}
+      .inbox-fab{top:14px;right:14px;width:40px;height:40px}
     }
 
     /* ---- Login ---- */
@@ -385,101 +366,59 @@
 </head>
 <body class="{% if user.is_authenticated %}shell{% else %}auth{% endif %}">
   {% if user.is_authenticated %}
-  <header class="appbar">
-    <input type="checkbox" id="appmenu" class="ab-check">
-    <div class="appbar-in">
-      <a class="ab-logo" href="{% block logo_href %}{% url 'web:dashboard' %}{% endblock %}">
-        {% if has_logo %}<img src="{% static logo_static %}" class="brand-img" alt="Lulaworks">
-        {% else %}{% include "web/_mark.svg" %}<span class="word">lulaworks</span>{% endif %}
+  <aside class="sidebar">
+    <a class="logo" href="{% block logo_href %}{% url 'web:dashboard' %}{% endblock %}">
+      {% if has_logo %}<img src="{% static logo_static %}" class="brand-img" alt="Lulaworks">
+      {% else %}{% include "web/_mark.svg" %}<span>lulaworks</span>{% endif %}
+    </a>
+    {% comment %}Ordered by the way the money actually moves: win it, deliver it,
+    get paid. Thirteen flat links were impossible to scan; the headings give the
+    eye somewhere to land and put related screens next to each other.
+
+    Note: {# #} is single-line only in Django — a multi-line one renders as
+    literal text in the sidebar, which is exactly what happened here.
+    {% endcomment %}
+    {% block sidebar_nav %}
+    <nav class="nav">
+      {% include "web/_navlink.html" with url='web:dashboard' key='dashboard' label='Dashboard' icon='grid' %}
+
+      {# Ordered by the money loop (win → deliver → buy → money), no section labels. #}
+      {% include "web/_navlink.html" with url='web:crm_hub' key='crm' label='CRM' icon='org' %}
+      {% if perms_marketing %}{% include "web/_navlink.html" with url='web:marketing' key='marketing' label='Marketing' icon='megaphone' %}{% endif %}
+      {% include "web/_navlink.html" with url='web:quotations' key='quotations' label='Quotations' icon='doc' %}
+      {% include "web/_navlink.html" with url='web:customer_pos' key='customer_pos' label='Purchase Orders' icon='box' %}
+      {% include "web/_navlink.html" with url='web:projects' key='projects' label='Projects' icon='folder' %}
+      {% include "web/_navlink.html" with url='web:work' key='jobs' label='Jobs' icon='check' %}
+      {# Field reports live inside each Job (Jobs → open a job), not as a top-level nav item. #}
+      {% if perms_procurement %}{% include "web/_navlink.html" with url='web:procurement' key='procurement' label='Procurement' icon='cart' %}{% endif %}
+      {% include "web/_navlink.html" with url='web:invoices' key='invoices' label='Invoices' icon='invoice' %}
+      {% if perms_money %}{% include "web/_navlink.html" with url='web:commercial' key='commercial' label='Finance' icon='cash' %}{% endif %}
+      {% include "web/_navlink.html" with url='web:people' key='people' label='People' icon='users' %}
+      {% if perms_import %}{% include "web/_navlink.html" with url='web:import_centre' key='import_centre' label='Business history' icon='building' %}{% endif %}
+
+      {# Utility items, set apart with a subtle gap (no label). #}
+      <span class="nav-gap"></span>
+      <a class="{% if nav_section == 'attention' %}active{% endif %}" href="{% url 'web:attention' %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        {% trans "Attention" %}
+        {% if attention_count %}<span style="margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:10px;font-size:11px;font-weight:800;line-height:18px;text-align:center;color:#fff;background:{% if attention_critical %}#e2445c{% else %}#f0a020{% endif %};">{{ attention_count }}</span>{% endif %}
       </a>
-      {% block sidebar_nav %}
-      <nav class="ab-nav">
-        <a class="lnk {% if nav_section == 'dashboard' %}active{% endif %}" href="{% url 'web:dashboard' %}">{% trans "Dashboard" %}</a>
-
-        {# Sales — win the work #}
-        <div class="ab-item">
-          <button type="button" class="ab-top {% if nav_section == 'crm' or nav_section == 'quotations' or nav_section == 'customer_pos' %}on{% endif %}">{% trans "Sales" %}<svg class="car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
-          <div class="ab-panel">
-            {% include "web/_navlink.html" with url='web:crm_hub' key='crm' label='CRM' icon='org' %}
-            {% include "web/_navlink.html" with url='web:quotations' key='quotations' label='Quotations' icon='doc' %}
-            {% include "web/_navlink.html" with url='web:customer_pos' key='customer_pos' label='Purchase Orders' icon='box' %}
-          </div>
-        </div>
-
-        {# Delivery — do the work #}
-        <div class="ab-item">
-          <button type="button" class="ab-top {% if nav_section == 'projects' or nav_section == 'jobs' or nav_section == 'procurement' or nav_section == 'people' %}on{% endif %}">{% trans "Delivery" %}<svg class="car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
-          <div class="ab-panel">
-            {% include "web/_navlink.html" with url='web:projects' key='projects' label='Projects' icon='folder' %}
-            {% include "web/_navlink.html" with url='web:work' key='jobs' label='Jobs' icon='check' %}
-            {% if perms_procurement %}{% include "web/_navlink.html" with url='web:procurement' key='procurement' label='Procurement' icon='cart' %}{% endif %}
-            {% include "web/_navlink.html" with url='web:people' key='people' label='People' icon='users' %}
-          </div>
-        </div>
-
-        {# Finance — get paid #}
-        <div class="ab-item">
-          <button type="button" class="ab-top {% if nav_section == 'invoices' or nav_section == 'commercial' %}on{% endif %}">{% trans "Finance" %}<svg class="car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
-          <div class="ab-panel">
-            {% include "web/_navlink.html" with url='web:invoices' key='invoices' label='Invoices' icon='invoice' %}
-            {% if perms_money %}{% include "web/_navlink.html" with url='web:commercial' key='commercial' label='Finance' icon='cash' %}{% endif %}
-          </div>
-        </div>
-
-        {# Insights — AI, automation, marketing, history #}
-        {% if perms_ai or perms_import or perms_marketing %}
-        <div class="ab-item">
-          <button type="button" class="ab-top {% if nav_section == 'ai_centre' or nav_section == 'automations' or nav_section == 'import_centre' or nav_section == 'marketing' %}on{% endif %}">{% trans "Insights" %}<svg class="car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
-          <div class="ab-panel">
-            {% if perms_ai %}{% include "web/_navlink.html" with url='web:ai_centre' key='ai_centre' label='Intelligence' icon='spark' %}{% endif %}
-            {% if perms_ai %}{% include "web/_navlink.html" with url='web:automations' key='automations' label='Automations' icon='spark' %}{% endif %}
-            {% if perms_marketing %}{% include "web/_navlink.html" with url='web:marketing' key='marketing' label='Marketing' icon='megaphone' %}{% endif %}
-            {% if perms_import %}{% include "web/_navlink.html" with url='web:import_centre' key='import_centre' label='Business history' icon='building' %}{% endif %}
-          </div>
-        </div>
-        {% endif %}
-
-        {# Profile & utility — only shown inside the mobile sheet. #}
-        <div class="ab-foot">
-          {% include "web/_navlink.html" with url='web:settings' key='settings' label='Settings' icon='gear' %}
-          {% include "web/_navlink.html" with url='web:support_home' key='support' label='Help & Support' icon='help' %}
-          {% include "web/_navlink.html" with url='web:profile' key='profile' label='My profile' icon='users' %}
-          <a class="lnk" href="{% url 'web:logout' %}">{% trans "Sign out" %}</a>
-        </div>
-      </nav>
-      {% endblock %}
-      <span class="ab-sp"></span>
-      <div class="ab-actions">
-        <a class="ab-bell" href="{% url 'web:notifications' %}" title="{% trans 'Inbox' %}" aria-label="{% trans 'Inbox' %}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-          {% if unread_notifications %}<span class="b" style="background:var(--red);">{{ unread_notifications }}</span>{% endif %}
-        </a>
-        <a class="ab-bell" href="{% url 'web:attention' %}" title="{% trans 'Attention' %}" aria-label="{% trans 'Attention' %}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-          {% if attention_count %}<span class="b" style="background:{% if attention_critical %}#e2445c{% else %}#f0a020{% endif %};">{{ attention_count }}</span>{% endif %}
-        </a>
-        <div class="ab-item">
-          <button type="button" class="ab-avatar" aria-label="{% trans 'Account' %}">{% include "web/_avatar.html" with p=user size=30 %}</button>
-          <div class="ab-panel ab-right">
-            <div class="who">{{ user.get_full_name|default:user.email }}</div>
-            {% include "web/_navlink.html" with url='web:profile' key='profile' label='My profile' icon='users' %}
-            {% include "web/_navlink.html" with url='web:settings' key='settings' label='Settings' icon='gear' %}
-            {% include "web/_navlink.html" with url='web:support_home' key='support' label='Help & Support' icon='help' %}
-            <a href="{% url 'web:logout' %}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>{% trans "Sign out" %}</a>
-          </div>
-        </div>
+      {% if perms_ai %}{% include "web/_navlink.html" with url='web:ai_centre' key='ai_centre' label='Intelligence' icon='spark' %}{% endif %}
+      {% if perms_ai %}{% include "web/_navlink.html" with url='web:automations' key='automations' label='Automations' icon='spark' %}{% endif %}
+      {% include "web/_navlink.html" with url='web:settings' key='settings' label='Settings' icon='gear' %}
+      {% include "web/_navlink.html" with url='web:support_home' key='support' label='Help & Support' icon='help' %}
+    </nav>
+    {% endblock %}
+    <div class="side-foot">
+      <a class="me" href="{% url 'web:profile' %}" title="{% trans 'My profile' %}">
+        {% include "web/_avatar.html" with p=user size=28 %}
+        <span>{{ user.get_full_name|default:user.email }}</span>
+      </a>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
+        <a href="{% url 'web:logout' %}">{% trans "Sign out" %}</a>
       </div>
     </div>
-  </header>
-
-  {# Mobile bottom tab bar — quick destinations + More (opens the menu sheet). #}
-  <nav class="btabs">
-    <a class="bt {% if nav_section == 'dashboard' %}active{% endif %}" href="{% url 'web:dashboard' %}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>{% trans "Home" %}</a>
-    <a class="bt {% if nav_section == 'crm' %}active{% endif %}" href="{% url 'web:crm_hub' %}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M10 6.5h4a2 2 0 0 1 2 2V14"/></svg>{% trans "CRM" %}</a>
-    <a class="bt {% if nav_section == 'jobs' %}active{% endif %}" href="{% url 'web:work' %}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>{% trans "Jobs" %}</a>
-    <a class="bt {% if nav_section == 'invoices' %}active{% endif %}" href="{% url 'web:invoices' %}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a1 1 0 0 1-1.4.9L16 20l-2 1-2-1-2 1-2-1-2.6 1.9A1 1 0 0 1 2 21V4a2 2 0 0 1 2-2z"/><path d="M14 2v6h6"/></svg>{% trans "Invoices" %}</a>
-    <label class="bt" for="appmenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>{% trans "More" %}</label>
-  </nav>
+  </aside>
   {% endif %}
   <main class="main" id="top">
     <div class="content">
