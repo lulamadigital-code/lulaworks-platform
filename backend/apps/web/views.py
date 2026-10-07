@@ -2766,7 +2766,13 @@ def suppliers_list(request):
     from apps.procurement.models import SupplierPrice
 
     q = (request.GET.get("q") or "").strip()
-    suppliers = Supplier.objects.all()
+    showing_disabled = request.GET.get("show") == "disabled"
+    if showing_disabled:
+        # The disabled (soft-deleted) suppliers — restore, or (platform owner) purge.
+        company = request.user.active_company
+        suppliers = Supplier.all_objects.filter(company=company, is_deleted=True)
+    else:
+        suppliers = Supplier.objects.all()
     if q:
         suppliers = suppliers.filter(name__icontains=q)
     suppliers = suppliers.order_by("-performance_score", "name")
@@ -2797,6 +2803,10 @@ def suppliers_list(request):
         "active_suppliers": m.get("active_suppliers"), "products": m.get("products"),
         "top_supplier": m.get("top_supplier"), "most_purchased": m.get("most_purchased"),
         "recent_prices": m.get("recent_prices"),
+        "showing_disabled": showing_disabled,
+        "is_platform_owner": _is_platform_owner(request.user),
+        "disabled_count": Supplier.all_objects.filter(
+            company=request.user.active_company, is_deleted=True).count(),
         "can_manage": request.user.has_perm_code("procurement.manage")})
 
 
@@ -2878,6 +2888,77 @@ def supplier_edit(request, pk):
     supplier.save()
     messages.success(request, "Supplier updated.")
     return redirect("web:supplier_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def supplier_delete(request, pk):
+    """DISABLE a supplier — a recoverable soft-delete. The row and its price/PO
+    history stay; it just leaves the active list. Only a platform owner can
+    purge it for good (supplier_hard_delete). Mirrors customer_delete."""
+    from apps.core.events import publish
+
+    if not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You do not have permission to delete suppliers.")
+        return redirect("web:supplier_detail", pk=pk)
+    supplier = get_object_or_404(Supplier.objects.all(), pk=pk)   # alive + this tenant
+    name = supplier.name
+    supplier.deleted_by = request.user
+    supplier.save(update_fields=["deleted_by"])
+    supplier.delete()                                             # soft
+    publish("SupplierDisabled", company=supplier.company, subject=supplier,
+            actor=request.user, payload={"name": name})
+    messages.success(request, f"{name} was disabled. It can be restored from "
+                              "Suppliers → Disabled.")
+    return redirect("web:suppliers")
+
+
+@login_required
+@require_POST
+def supplier_restore(request, pk):
+    """Bring a disabled supplier back. Same permission as disabling it; scoped to
+    the caller's own tenant."""
+    from apps.core.events import publish
+
+    if not request.user.has_perm_code("procurement.manage"):
+        messages.error(request, "You do not have permission to restore suppliers.")
+        return redirect("web:suppliers")
+    company = request.user.active_company
+    supplier = get_object_or_404(
+        Supplier.all_objects.filter(company=company, is_deleted=True), pk=pk)
+    supplier.is_deleted = False
+    supplier.deleted_at = None
+    supplier.deleted_by = None
+    supplier.updated_by = request.user
+    supplier.save(update_fields=["is_deleted", "deleted_at", "deleted_by",
+                                 "updated_by", "updated_at"])
+    publish("SupplierRestored", company=company, subject=supplier, actor=request.user)
+    messages.success(request, f"{supplier.name} was restored.")
+    return redirect("web:supplier_detail", pk=pk)
+
+
+@login_required
+@require_POST
+def supplier_hard_delete(request, pk):
+    """PERMANENTLY delete a supplier — the real removal, reserved for a platform
+    owner/admin, and only for an already-disabled supplier (a deliberate
+    two-step). Mirrors customer_hard_delete."""
+    from django.urls import reverse
+
+    from apps.core.events import publish
+
+    if not _is_platform_owner(request.user):
+        messages.error(request, "Only a platform administrator can permanently "
+                                "delete a supplier. You can disable it instead.")
+        return redirect("web:suppliers")
+    supplier = get_object_or_404(
+        Supplier.all_objects.filter(is_deleted=True), pk=pk)
+    name, company = supplier.name, supplier.company
+    publish("SupplierDeleted", company=company, subject=supplier, actor=request.user,
+            payload={"name": name})                              # before it's gone
+    supplier.delete(hard=True)                                   # real removal
+    messages.success(request, f"{name} was permanently deleted.")
+    return redirect(f"{reverse('web:suppliers')}?show=disabled")
 
 
 @login_required

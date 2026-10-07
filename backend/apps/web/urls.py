@@ -396,6 +396,12 @@ urlpatterns = [
     path("procurement/suppliers/<uuid:pk>/edit/", views.supplier_edit, name="supplier_edit"),
     path("procurement/suppliers/<uuid:pk>/documents/", views.supplier_document,
          name="supplier_document"),
+    path("procurement/suppliers/<uuid:pk>/delete/", views.supplier_delete,
+         name="supplier_delete"),
+    path("procurement/suppliers/<uuid:pk>/restore/", views.supplier_restore,
+         name="supplier_restore"),
+    path("procurement/suppliers/<uuid:pk>/purge/", views.supplier_hard_delete,
+         name="supplier_hard_delete"),
     # Keep old /suppliers/* links working.
     path("suppliers/", RedirectView.as_view(pattern_name="web:suppliers", permanent=False)),
     # Products (procurement intelligence — built from the price ledger)

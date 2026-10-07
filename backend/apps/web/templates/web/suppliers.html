@@ -17,6 +17,13 @@
   {% if q %}<a class="btn ghost" href="{% url 'web:suppliers' %}">{% trans "Clear" %}</a>{% endif %}
 </form>
 
+{% if can_manage %}
+<div class="row" style="gap:8px;margin:0 0 16px;">
+  <a class="btn {% if not showing_disabled %}primary{% else %}ghost{% endif %}" href="{% url 'web:suppliers' %}">{% trans "Active" %}</a>
+  <a class="btn {% if showing_disabled %}primary{% else %}ghost{% endif %}" href="{% url 'web:suppliers' %}?show=disabled">{% trans "Disabled" %}{% if disabled_count %} ({{ disabled_count }}){% endif %}</a>
+</div>
+{% endif %}
+
 <div class="grid">
   <div class="tile"><div class="n">{{ active_suppliers }}</div><div class="l">{% trans "Active suppliers" %}</div></div>
   <div class="tile"><div class="n">{{ products }}</div><div class="l">{% trans "Products tracked" %}</div></div>
@@ -99,13 +106,13 @@
 </div>
 {% endif %}
 
-<h2>{% if q %}{% trans "Matching suppliers" %}{% else %}{% trans "All suppliers" %}{% endif %}</h2>
-<div class="card" style="padding:0;">
+<h2>{% if showing_disabled %}{% trans "Disabled suppliers" %}{% elif q %}{% trans "Matching suppliers" %}{% else %}{% trans "All suppliers" %}{% endif %}</h2>
+<div class="card" style="padding:0;overflow-x:auto;">
   <table>
-    <tr><th>{% trans "Supplier" %}</th><th>{% trans "Categories" %}</th><th>{% trans "Terms" %}</th><th class="right">{% trans "Performance" %}</th></tr>
+    <tr><th>{% trans "Supplier" %}</th><th>{% trans "Categories" %}</th><th>{% trans "Terms" %}</th><th class="right">{% trans "Performance" %}</th>{% if showing_disabled %}<th>{% trans "Actions" %}</th>{% endif %}</tr>
     {% for s in suppliers %}
     <tr>
-      <td>{% if s.preferred %}★ {% endif %}<a href="{% url 'web:supplier_detail' s.id %}">{{ s.name }}</a></td>
+      <td>{% if s.preferred %}★ {% endif %}{% if showing_disabled %}<strong>{{ s.name }}</strong>{% else %}<a href="{% url 'web:supplier_detail' s.id %}">{{ s.name }}</a>{% endif %}</td>
       <td class="muted">{{ s.categories|join:", "|default:"—" }}</td>
       <td class="muted">{{ s.payment_terms }}</td>
       <td class="right">
@@ -113,9 +120,23 @@
         {% elif s.performance_score >= 50 %}<span class="chip warn">{{ s.performance_score }}</span>
         {% else %}<span class="chip">{{ s.performance_score }}</span>{% endif %}
       </td>
+      {% if showing_disabled %}
+      <td class="row" style="gap:6px;">
+        {% if can_manage %}
+        <form method="post" action="{% url 'web:supplier_restore' s.id %}" style="display:inline;margin:0;">{% csrf_token %}
+          <button class="btn ghost" type="submit">{% trans "Restore" %}</button></form>
+        {% endif %}
+        {% if is_platform_owner %}
+        <form method="post" action="{% url 'web:supplier_hard_delete' s.id %}" style="display:inline;margin:0;"
+              onsubmit="return confirm('{% trans "Permanently delete this supplier? This removes the record for good and cannot be undone." %}');">{% csrf_token %}
+          <button class="btn ghost" type="submit" style="color:var(--bad,#b42318);">{% trans "Delete permanently" %}</button></form>
+        {% endif %}
+        {% if not can_manage and not is_platform_owner %}<span class="muted">—</span>{% endif %}
+      </td>
+      {% endif %}
     </tr>
-    {% empty %}<tr><td colspan="4" class="muted" style="padding:20px;">
-      {% if q %}{% blocktrans %}No suppliers match “{{ q }}”.{% endblocktrans %}{% else %}{% trans "No suppliers yet — attach a receipt on a job and the seller lands here." %}{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="{% if showing_disabled %}5{% else %}4{% endif %}" class="muted" style="padding:20px;">
+      {% if showing_disabled %}{% trans "No disabled suppliers." %}{% elif q %}{% blocktrans %}No suppliers match “{{ q }}”.{% endblocktrans %}{% else %}{% trans "No suppliers yet — attach a receipt on a job and the seller lands here." %}{% endif %}</td></tr>
     {% endfor %}
   </table>
 </div>

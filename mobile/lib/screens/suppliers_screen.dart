@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../models.dart';
 import '../ui/lw_components.dart';
 import 'business_history_screen.dart';
+import 'disabled_records_screen.dart';
 import 'supplier_form_screen.dart';
 
 /// Suppliers — searchable list and a read detail. Sourcing is a field activity,
@@ -32,7 +33,28 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
   Widget build(BuildContext context) {
     final canManage = widget.api.can('procurement.manage');
     return Scaffold(
-      appBar: AppBar(title: const Text('Suppliers')),
+      appBar: AppBar(title: const Text('Suppliers'), actions: [
+        if (canManage)
+          IconButton(
+            icon: const Icon(Icons.inventory_2_outlined),
+            tooltip: 'Disabled suppliers',
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute(
+                    builder: (_) => DisabledRecordsScreen(
+                          api: widget.api,
+                          title: 'Disabled suppliers',
+                          collectionPath: '/suppliers',
+                          noun: 'supplier',
+                          icon: Icons.local_shipping_outlined,
+                          subtitle: (r) =>
+                              (r['categories'] as List?)?.join(', ') ??
+                              '${r['contact_person'] ?? ''}',
+                        )))
+                .then((_) {
+              if (mounted) setState(() => _future = _load());
+            }),
+          ),
+      ]),
       floatingActionButton: canManage
           ? FloatingActionButton.extended(
               onPressed: _create,
@@ -123,6 +145,35 @@ class _SupplierDetailState extends State<_SupplierDetail> {
     }
   }
 
+  /// Soft-delete (disable) the supplier — the backend keeps the record and its
+  /// price/PO history; a platform owner can later purge it from Suppliers →
+  /// Disabled. The supplier just stops appearing in the active list.
+  Future<void> _delete() async {
+    final name = '${supplier['name'] ?? 'this supplier'}';
+    final ok = await lwConfirm(context,
+        title: 'Disable supplier?',
+        message: '“$name” will be removed from your active suppliers. Its price '
+            'history and purchase orders are kept and it can be restored.',
+        confirmLabel: 'Disable',
+        destructive: true);
+    if (!ok || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    try {
+      await widget.api.delete('/suppliers/${supplier['id']}/');
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text('$name disabled')));
+      navigator.pop('deleted'); // list refreshes on return
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.isForbidden
+          ? "You don't have permission to delete suppliers."
+          : e.message)));
+    } catch (_) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Could not reach the server.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = supplier;
@@ -148,6 +199,9 @@ class _SupplierDetailState extends State<_SupplierDetail> {
                   builder: (_) => BusinessHistoryScreen(
                       api: widget.api, kind: 'supplier', id: '${s['id']}',
                       title: '${s['name'] ?? 'Supplier'}')))),
+          if (widget.api.can('procurement.manage'))
+            LwAction('Delete supplier', Icons.delete_outline, _delete,
+                destructive: true),
         ]),
       ]),
       body: ListView(padding: const EdgeInsets.all(16), children: [

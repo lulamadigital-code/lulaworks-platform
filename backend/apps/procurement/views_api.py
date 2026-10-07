@@ -24,10 +24,76 @@ class SupplierViewSet(TenantViewSet):
         "update": "procurement.manage",
         "partial_update": "procurement.manage",
         "destroy": "procurement.manage",
+        "restore": "procurement.manage",
+        "disabled": "procurement.manage",
+        # "purge" is intentionally absent — gated on platform ownership inline.
     }
 
     def get_queryset(self):
         return Supplier.objects.all()
+
+    # ── Delete model (same two-tier rule as customers) ───────────────────────
+    # A tenant procurement admin (procurement.manage) can DISABLE a supplier — a
+    # recoverable soft-delete that keeps the row and its price/PO history. Only
+    # the software owner (platform owner/admin) can PERMANENTLY purge it, and
+    # only once it is already disabled.
+    def perform_destroy(self, instance):
+        """DELETE /suppliers/<id>/ → soft delete (disable)."""
+        from apps.core.events import publish
+
+        name = instance.name
+        instance.deleted_by = self.request.user
+        instance.save(update_fields=["deleted_by"])
+        instance.delete()  # soft: is_deleted=True
+        publish("SupplierDisabled", company=instance.company, subject=instance,
+                actor=self.request.user, payload={"name": name})
+
+    @action(detail=False, methods=["get"])
+    def disabled(self, request):
+        """The tenant's disabled suppliers — the app's 'Disabled' view."""
+        qs = Supplier.all_objects.filter(
+            company=request.user.active_company, is_deleted=True).order_by("name")
+        return Response(SupplierSerializer(qs, many=True).data)
+
+    @action(detail=True, methods=["post"])
+    def restore(self, request, pk=None):
+        """Bring a disabled supplier back (procurement.manage), tenant-scoped."""
+        from apps.core.events import publish
+
+        supplier = get_object_or_404(
+            Supplier.all_objects.filter(
+                company=request.user.active_company, is_deleted=True),
+            pk=pk)
+        supplier.is_deleted = False
+        supplier.deleted_at = None
+        supplier.deleted_by = None
+        supplier.updated_by = request.user
+        supplier.save(update_fields=[
+            "is_deleted", "deleted_at", "deleted_by", "updated_by", "updated_at"])
+        publish("SupplierRestored", company=supplier.company, subject=supplier,
+                actor=request.user)
+        return Response(SupplierSerializer(supplier).data)
+
+    @action(detail=True, methods=["delete", "post"])
+    def purge(self, request, pk=None):
+        """PERMANENTLY delete a supplier — software-owner only, and only one that
+        is already disabled (deliberate two-step)."""
+        from apps.core.events import publish
+
+        if not request.user.is_platform_admin:
+            return Response({"error": {"code": "forbidden", "message":
+                "Only the software owner can permanently delete a supplier. "
+                "A procurement admin can disable it instead."}},
+                status=status.HTTP_403_FORBIDDEN)
+        supplier = get_object_or_404(
+            Supplier.all_objects.filter(
+                company=request.user.active_company, is_deleted=True),
+            pk=pk)
+        name, company = supplier.name, supplier.company
+        publish("SupplierDeleted", company=company, subject=supplier,
+                actor=request.user, payload={"name": name})  # before it's gone
+        supplier.delete(hard=True)  # real removal
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class PurchaseOrderViewSet(TenantViewSet):

@@ -7,7 +7,7 @@ import '../models.dart';
 import '../theme.dart';
 import 'customer_detail_screen.dart';
 import 'customer_form_screen.dart';
-import 'disabled_customers_screen.dart';
+import 'disabled_records_screen.dart';
 
 /// The customer database — searchable card list, tap through to detail. Anyone
 /// doing commercial work can browse; only customers.manage can add or edit.
@@ -73,7 +73,19 @@ class _CustomersScreenState extends State<CustomersScreen> {
               tooltip: 'Disabled customers',
               onPressed: () => Navigator.of(context)
                   .push(MaterialPageRoute(
-                      builder: (_) => DisabledCustomersScreen(api: widget.api)))
+                      builder: (_) => DisabledRecordsScreen(
+                            api: widget.api,
+                            title: 'Disabled customers',
+                            collectionPath: '/customers',
+                            noun: 'customer',
+                            icon: Icons.contacts_outlined,
+                            subtitle: (r) => [
+                              if ('${r['code'] ?? ''}'.isNotEmpty) '${r['code']}',
+                              [r['city'], r['province']]
+                                  .where((s) => '$s'.isNotEmpty)
+                                  .join(', '),
+                            ].where((s) => s.isNotEmpty).join('  ·  '),
+                          )))
                   .then((_) {
                 // A restore may have returned a customer to the active list.
                 if (mounted) setState(() => _future = _load(_search.text));
