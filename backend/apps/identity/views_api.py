@@ -55,6 +55,10 @@ def _me_payload(request):
         if user.active_company_id else None,
         "role": membership.role.name if membership and membership.role_id else None,
         "permissions": perms,
+        # Platform (Lulaworks staff) context. Lets the app surface owner-only
+        # actions such as permanently purging a record; blank for tenant users.
+        "platform_level": user.platform_level,
+        "is_platform_admin": user.is_platform_admin,
     }
 
 

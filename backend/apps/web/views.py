@@ -3910,8 +3910,9 @@ def customer_edit(request, pk):
 
 def _is_platform_owner(user) -> bool:
     """A platform administrator (owner/admin) — the only role allowed to REALLY
-    delete a customer. A tenant user can only disable (soft-delete) one."""
-    return getattr(user, "platform_level", None) in ("owner", "admin")
+    delete a customer. A tenant user can only disable (soft-delete) one. Delegates
+    to User.is_platform_admin so web and API share one rule."""
+    return bool(getattr(user, "is_platform_admin", False))
 
 
 @login_required

@@ -300,6 +300,9 @@ class ApiClient {
       can('work.approve') || can('execution.manage');
   String get userId => ((_me['user'] as Map?)?['id'] ?? '').toString();
   bool get canManageCustomers => can('customers.manage');
+  // The software owner — Lulaworks' own platform owner/admin. The only one who
+  // may PERMANENTLY purge a record; a tenant admin can only disable (soft-delete).
+  bool get isPlatformAdmin => _me['is_platform_admin'] == true;
   // Who should even see the customer database — anyone doing commercial work,
   // not pure field crew. Reads are open on the backend; this just scopes the UI.
   bool get canSeeCustomers =>

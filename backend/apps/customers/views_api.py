@@ -3,6 +3,7 @@ invoices/CRM flows all hang off. Mirrors the web behaviour by reusing the
 service layer (create_customer seeds departments + generates the code); the
 backend stays the single source of truth for business rules and permissions.
 """
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -58,6 +59,9 @@ class CustomerViewSet(TenantViewSet):
         "update": "customers.manage",
         "partial_update": "customers.manage",
         "destroy": "customers.manage",
+        "restore": "customers.manage",
+        "disabled": "customers.manage",
+        # "purge" is intentionally absent — gated on platform ownership inline.
     }
 
     def get_queryset(self):
@@ -77,6 +81,75 @@ class CustomerViewSet(TenantViewSet):
             request.user.active_company, request.user, name=name, **data
         )
         return Response(CustomerSerializer(customer).data, status=201)
+
+    # ── Delete model (web parity) ────────────────────────────────────────────
+    # A tenant company admin (customers.manage) can DISABLE a customer — a
+    # recoverable soft-delete that keeps the row and its whole history. Only the
+    # software owner (platform owner/admin) can PERMANENTLY purge it, and only
+    # once it is already disabled — a deliberate two-step, exactly as the web does.
+    def perform_destroy(self, instance):
+        """DELETE /customers/<id>/ → soft delete (disable). Records who disabled
+        it and emits the same domain event as the web."""
+        from apps.core.events import publish
+
+        name = instance.display_name
+        instance.deleted_by = self.request.user
+        instance.save(update_fields=["deleted_by"])
+        instance.delete()  # soft: is_deleted=True
+        publish("CustomerDisabled", company=instance.company, subject=instance,
+                actor=self.request.user, payload={"name": name})
+
+    @action(detail=False, methods=["get"])
+    def disabled(self, request):
+        """The tenant's disabled (soft-deleted) customers — the app's 'Disabled'
+        view, where an admin restores and the software owner can purge. Requires
+        customers.manage; always scoped to the caller's own company."""
+        qs = Customer.all_objects.filter(
+            company=request.user.active_company, is_deleted=True).order_by("name")
+        return Response(CustomerListSerializer(qs, many=True).data)
+
+    @action(detail=True, methods=["post"])
+    def restore(self, request, pk=None):
+        """Bring a disabled customer back (customers.manage). Tenant-scoped, so a
+        company can only ever restore its own record."""
+        from apps.core.events import publish
+
+        customer = get_object_or_404(
+            Customer.all_objects.filter(
+                company=request.user.active_company, is_deleted=True),
+            pk=pk)
+        customer.is_deleted = False
+        customer.deleted_at = None
+        customer.deleted_by = None
+        customer.updated_by = request.user
+        customer.save(update_fields=[
+            "is_deleted", "deleted_at", "deleted_by", "updated_by", "updated_at"])
+        publish("CustomerRestored", company=customer.company, subject=customer,
+                actor=request.user)
+        return Response(CustomerSerializer(customer).data)
+
+    @action(detail=True, methods=["delete", "post"])
+    def purge(self, request, pk=None):
+        """PERMANENTLY delete a customer — real removal, software-owner only. The
+        customer must already be disabled, so purging is always deliberate. Not in
+        required_perms: the platform-staff check below is the gate (tenant
+        permissions don't describe platform ownership)."""
+        from apps.core.events import publish
+
+        if not request.user.is_platform_admin:
+            return Response({"error": {"code": "forbidden", "message":
+                "Only the software owner can permanently delete a customer. "
+                "A company admin can disable it instead."}},
+                status=status.HTTP_403_FORBIDDEN)
+        customer = get_object_or_404(
+            Customer.all_objects.filter(
+                company=request.user.active_company, is_deleted=True),
+            pk=pk)
+        name, company = customer.display_name, customer.company
+        publish("CustomerDeleted", company=company, subject=customer,
+                actor=request.user, payload={"name": name})  # before it's gone
+        customer.delete(hard=True)  # real removal
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["get"])
     def overview(self, request, pk=None):

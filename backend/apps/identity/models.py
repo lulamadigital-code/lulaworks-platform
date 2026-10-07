@@ -248,6 +248,15 @@ class User(UUIDModel, AbstractBaseUser, PermissionsMixin):
         lvl = self.platform_level
         return set(self.PLATFORM_CAPS.get(lvl, set())) if lvl else set()
 
+    @property
+    def is_platform_admin(self) -> bool:
+        """Lulaworks' own owner/administrator — the software owner. The only one
+        allowed to perform irreversible platform operations such as PERMANENTLY
+        purging a tenant record. A tenant company admin can only disable
+        (soft-delete); this is the single source of truth for that boundary,
+        shared by the web views and the JSON API."""
+        return self.platform_level in ("owner", "admin")
+
     def can_platform(self, cap):
         return cap in self.platform_caps
 
