@@ -1649,7 +1649,7 @@ def _save_defaults(request, company):
         settings_row.tax_rate = _decimal_or_none(request.POST["tax_rate"]) or settings_row.tax_rate
     for flag in ("ai_suggestions_enabled", "ai_summaries_enabled",
                  "ai_cost_estimation_enabled", "ai_task_generation_enabled",
-                 "ai_compliance_detection_enabled"):
+                 "ai_compliance_detection_enabled", "ai_document_extraction_enabled"):
         setattr(settings_row, flag, bool(request.POST.get(flag)))
     settings_row.save()
     for field in ("currency", "timezone"):

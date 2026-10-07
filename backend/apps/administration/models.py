@@ -79,6 +79,11 @@ class CompanySettings(PlatformBaseModel):
     ai_cost_estimation_enabled = models.BooleanField(default=True)
     ai_task_generation_enabled = models.BooleanField(default=True)
     ai_compliance_detection_enabled = models.BooleanField(default=True)
+    # Reading uploaded documents (invoices, quotes, POs) with AI when the local
+    # deterministic parsers miss lines. Off → extraction stays 100% local
+    # (regex + table parsing + OCR); the app simply captures fewer awkward
+    # layouts rather than calling an external model.
+    ai_document_extraction_enabled = models.BooleanField(default=True)
 
     # ── Document templates (which layout each document type uses) ─────────
     document_templates = models.JSONField(default=dict, blank=True)

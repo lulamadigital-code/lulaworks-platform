@@ -20,7 +20,12 @@ import re
 import zipfile
 from email import message_from_bytes
 
-from apps.rfq.extraction import parse_loose_lines, parse_rfq_text, to_decimal
+from apps.rfq.extraction import (
+    parse_loose_lines,
+    parse_rfq_text,
+    parse_table_lines,
+    to_decimal,
+)
 from apps.rfq.extraction import extract_text as _pdf_text
 
 #: What the upload control accepts. Extensions we can read to some degree; an
@@ -179,7 +184,11 @@ def extract_items(text: str, *, type_key: str | None = None,
     if not text or not text.strip():
         return []
 
-    lines = list(parse_rfq_text(text).lines) + list(parse_loose_lines(text))
+    # Deterministic layer: the rigid RFQ table, columnar priced tables (covers
+    # invoice/quote grids, OCR output, spreadsheet rows), then loose prose.
+    lines = (list(parse_rfq_text(text).lines)
+             + list(parse_table_lines(text))
+             + list(parse_loose_lines(text)))
     default_unit = _TYPE_UNIT.get(type_key or "", "each")
 
     items, seen = [], set()
@@ -241,6 +250,16 @@ _FUEL_PROMPT = (
 )
 
 
+def _ai_extraction_allowed(company) -> bool:
+    """Whether this company permits AI document reading (default yes). When off,
+    extraction stays fully local. Missing settings default to allowed."""
+    try:
+        settings = getattr(company, "settings", None)
+        return bool(getattr(settings, "ai_document_extraction_enabled", True))
+    except Exception:                                # noqa: BLE001
+        return True
+
+
 def _ai_json(company, user, prompt_template: str, text: str, *, agent: str) -> dict:
     """Run one metered AI call and parse its JSON, tolerating ```json fences.
     Returns {} on any failure — a missing key, a provider error, unparseable
@@ -255,6 +274,8 @@ def _ai_json(company, user, prompt_template: str, text: str, *, agent: str) -> d
         return {}
     if company is None or user is None or not ai_configured():
         return {}
+    if not _ai_extraction_allowed(company):
+        return {}   # the company has turned AI document reading off — stay local
     try:
         prompt = prompt_template.replace("{text}", text[:12000])
         # Document extraction routes to Gemini first, then fails over.

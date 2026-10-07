@@ -547,6 +547,8 @@
         <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_cost_estimation_enabled" value="1" {% if settings.ai_cost_estimation_enabled %}checked{% endif %}> {% trans "AI cost estimation" %}</label>
         <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_task_generation_enabled" value="1" {% if settings.ai_task_generation_enabled %}checked{% endif %}> {% trans "AI task generation" %}</label>
         <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_compliance_detection_enabled" value="1" {% if settings.ai_compliance_detection_enabled %}checked{% endif %}> {% trans "AI compliance detection" %}</label>
+        <label class="inline" style="display:flex;margin:8px 0;"><input type="checkbox" name="ai_document_extraction_enabled" value="1" {% if settings.ai_document_extraction_enabled %}checked{% endif %}> {% trans "AI document reading (invoices / quotes / POs)" %}</label>
+        <p class="muted" style="margin:2px 0 0;font-size:12px;">{% trans "When off, uploaded documents are read entirely on-device (regex + table parsing + OCR), with no external model." %}</p>
       </div>
       <div class="secbtns"><button class="btn" type="submit">{% trans "Save AI settings" %}</button>
         <button class="btn ghost" type="button" data-cancel="ai">{% trans "Cancel" %}</button></div>

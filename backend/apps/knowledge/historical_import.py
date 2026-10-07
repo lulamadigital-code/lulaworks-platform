@@ -849,10 +849,13 @@ _TOTALS_RE = re.compile(
     r"balance(?:\s+due)?|deposit|nett?|excl|incl)\b", re.IGNORECASE)
 
 
-def _extract_priced_lines(text: str, *, company=None, user=None, use_ai=False) -> list[dict]:
-    """Pull priced lines from a supplier document. Deterministic first (lines with
-    an explicit amount + cents), then AI adds priced lines a regex missed. Never
-    an invented price."""
+def _extract_priced_lines(text: str, *, company=None, user=None, use_ai=False,
+                          pdf_bytes: bytes | None = None) -> list[dict]:
+    """Pull priced lines from a supplier document. All deterministic (local, no
+    AI credits) first: the single-line amount regex, then the columnar table
+    parser (covers columnar / OCR'd / no-cents layouts the regex misses), then a
+    PDF's real table grid when the bytes are available. AI only adds lines the
+    deterministic passes missed, and only when asked. Never an invented price."""
     out: list[dict] = []
     seen: set[str] = set()
 
@@ -874,6 +877,19 @@ def _extract_priced_lines(text: str, *, company=None, user=None, use_ai=False) -
             continue
         price = m.group("price").replace(" ", "").replace(",", "")
         add(m.group("desc"), m.group("unit"), price)
+
+    # Deterministic table passes (local). parse_table_lines reads columnar text
+    # (also OCR output / spreadsheet rows); extract_table_lines reads a native
+    # PDF's table grid for highest fidelity. Both only augment, never overwrite.
+    from apps.rfq.extraction import extract_table_lines, parse_table_lines
+    for ln in parse_table_lines(text):
+        if ln.unit_price is not None:
+            add(ln.description, ln.unit, f"{ln.unit_price:f}")
+    if pdf_bytes:
+        import io
+        for ln in extract_table_lines(io.BytesIO(pdf_bytes)):
+            if ln.unit_price is not None:
+                add(ln.description, ln.unit, f"{ln.unit_price:f}")
 
     if use_ai and company is not None and user is not None:
         from .document_intelligence import ai_extract_prices
@@ -907,6 +923,21 @@ def _company_currency(company) -> str:
     return (getattr(company, "currency", "") or "ZAR")[:3]
 
 
+def _pdf_bytes_of(doc: ImportedDocument) -> bytes | None:
+    """The document's raw PDF bytes, for table-grid extraction — or None if it
+    isn't a PDF or the file is gone. Never raises."""
+    if not (doc.filename or "").lower().endswith(".pdf") or not doc.file:
+        return None
+    try:
+        doc.file.open("rb")
+        try:
+            return doc.file.read()
+        finally:
+            doc.file.close()
+    except Exception:                                # noqa: BLE001
+        return None
+
+
 def _capture_document_lines(doc: ImportedDocument, user) -> int:
     """Structure a priced document's line items into the historical price ledger
     (HistoricalLineItem) — for BOTH what we bought (supplier docs) and what we
@@ -916,17 +947,19 @@ def _capture_document_lines(doc: ImportedDocument, user) -> int:
     if not spec or not (doc.text or "").strip():
         return 0
     direction, party_kind = spec
-    lines = _extract_priced_lines(doc.text, company=doc.company, user=user, use_ai=False)
+    pdf_bytes = _pdf_bytes_of(doc)
+    lines = _extract_priced_lines(doc.text, company=doc.company, user=user,
+                                  use_ai=False, pdf_bytes=pdf_bytes)
     if not lines:
-        # Columnar / OCR'd / no-cents invoice and quote layouts defeat the
-        # deterministic line regex, which otherwise leaves price history empty
-        # even though the document imported fine. Fall back to AI extraction
-        # (returns [] when no provider is configured) so imports build price
-        # history on their own — the price-history page promises exactly this,
-        # before any supplier is confirmed into the live ledger.
+        # If even the deterministic table passes find nothing (unusual layout,
+        # unreadable scan), fall back to AI extraction (returns [] when no
+        # provider is configured) so imports still build price history on their
+        # own — the price-history page promises exactly this, before any supplier
+        # is confirmed into the live ledger.
         try:
             lines = _extract_priced_lines(
-                doc.text, company=doc.company, user=user, use_ai=True)
+                doc.text, company=doc.company, user=user, use_ai=True,
+                pdf_bytes=pdf_bytes)
         except Exception:                            # noqa: BLE001
             lines = []
     if not lines:
