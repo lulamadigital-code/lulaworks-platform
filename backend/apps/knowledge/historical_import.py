@@ -918,6 +918,18 @@ def _capture_document_lines(doc: ImportedDocument, user) -> int:
     direction, party_kind = spec
     lines = _extract_priced_lines(doc.text, company=doc.company, user=user, use_ai=False)
     if not lines:
+        # Columnar / OCR'd / no-cents invoice and quote layouts defeat the
+        # deterministic line regex, which otherwise leaves price history empty
+        # even though the document imported fine. Fall back to AI extraction
+        # (returns [] when no provider is configured) so imports build price
+        # history on their own — the price-history page promises exactly this,
+        # before any supplier is confirmed into the live ledger.
+        try:
+            lines = _extract_priced_lines(
+                doc.text, company=doc.company, user=user, use_ai=True)
+        except Exception:                            # noqa: BLE001
+            lines = []
+    if not lines:
         return 0
     ent = doc.entities.filter(kind=party_kind).first()
     party_id = (ent.resolved_id if ent else "") or ""
