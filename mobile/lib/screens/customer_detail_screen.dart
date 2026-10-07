@@ -50,6 +50,38 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     if (saved != null) _reload();
   }
 
+  /// Soft-delete (disable) the customer — the backend keeps the record and the
+  /// whole transaction history; only a platform admin can hard-delete. The
+  /// customer simply stops appearing in the active list.
+  Future<void> _delete(Map<String, dynamic> customer) async {
+    final name = '${customer['name'] ?? customer['code'] ?? 'this customer'}';
+    final ok = await lwConfirm(
+      context,
+      title: 'Delete customer?',
+      message: '“$name” will be removed from your active customers. Its history '
+          '(quotes, jobs, invoices) is kept and it can be restored by an admin.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    try {
+      await widget.api.delete('/customers/${widget.customerId}/');
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text('$name deleted')));
+      navigator.pop('deleted'); // back to the list; it refreshes on return
+    } on ApiException catch (e) {
+      messenger.showSnackBar(SnackBar(
+          content: Text(e.isForbidden
+              ? "You don't have permission to delete customers."
+              : e.message)));
+    } catch (_) {
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Could not reach the server.')));
+    }
+  }
+
   Future<void> _log() async {
     final ok = await Navigator.of(context).push<bool>(MaterialPageRoute(
       builder: (_) => CrmLogScreen(api: widget.api, customerId: widget.customerId),
@@ -114,6 +146,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                             builder: (_) => LulaAiScreen(
                                 api: widget.api, ctxType: 'customer', ctxId: widget.customerId,
                                 ctxLabel: '${cst['name'] ?? cst['code'] ?? 'this customer'}')))),
+                  if (widget.api.canManageCustomers)
+                    LwAction('Delete customer', Icons.delete_outline,
+                        () => _delete(cst), destructive: true),
                 ]),
               ],
               bottom: const TabBar(tabs: [

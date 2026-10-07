@@ -129,9 +129,11 @@ class _CustomersScreenState extends State<CustomersScreen> {
               itemBuilder: (context, i) => _CustomerCard(
                 api: widget.api,
                 row: rows[i],
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => CustomerDetailScreen(
-                        api: widget.api, customerId: '${rows[i]['id']}'))),
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(
+                        builder: (_) => CustomerDetailScreen(
+                            api: widget.api, customerId: '${rows[i]['id']}')))
+                    .then((_) { if (mounted) setState(() { _future = _load(_search.text); }); }),
               ),
             );
           },
